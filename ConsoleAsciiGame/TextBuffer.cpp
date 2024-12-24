@@ -75,14 +75,6 @@ void TextBuffer::SetAt(const Utils::Point2DInt& rowColPos, const TextChar& newBu
 	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Color = newBufferChar.m_Color;
 }
 
-void TextBuffer::SetAt(const std::vector<Utils::Point2DInt>& rowColPos, const TextChar& newBufferChar)
-{
-	for (const auto& pos : rowColPos)
-	{
-		SetAt(rowColPos, newBufferChar);
-	}
-}
-
 void TextBuffer::SetAt(const Utils::Point2DInt& rowColPos, const char& newChar)
 {
 	if (!IsValidPos(rowColPos))
@@ -99,6 +91,49 @@ void TextBuffer::SetAt(const Utils::Point2DInt& rowColPos, const Color& newColor
 		return;
 	}
 	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Color = newColor;
+}
+
+void TextBuffer::SetAt(const std::vector<Utils::Point2DInt>& rowColPos, const TextChar& newBufferChar)
+{
+	for (const auto& pos : rowColPos)
+	{
+		SetAt(rowColPos, newBufferChar);
+	}
+}
+
+void TextBuffer::SetAt(const std::vector<TextCharPosition>& updatedCharsAtPos)
+{
+	for (const auto& posChar : updatedCharsAtPos)
+	{
+		SetAt(posChar.m_RowColPos, posChar.m_Text);
+	}
+}
+
+bool TextBuffer::TrySetRegion(const Utils::Point2DInt& rowColStartPos, const Utils::Point2DInt& size,
+	const std::vector<std::vector<TextChar>>& chars)
+{
+	//Subtract one from width and col since start pos is inclusive
+	Utils::Point2DInt rowColEndPos = rowColStartPos + size + Utils::Point2DInt(-1, -1);
+	if (!Utils::Assert(IsValidPos(rowColEndPos), "Tried to set text buffer region but size is too big!"))
+		return false;
+
+	if (!Utils::Assert(chars.size()==size.m_Y, "Tried to set text buffer region but HEIGHT "
+		"size does not match provided chars"))
+		return false;
+
+	Utils::Point2DInt globalRowCol = {};
+	for (int r = 0; r <= chars.size(); r++)
+	{
+		if (!Utils::Assert(chars[r].size() == size.m_X, "Tried to set text buffer region but WIDTH "
+			"size does not match provided chars"))
+			return false;
+
+		for (int c = 0; c <= chars[r].size(); c++)
+		{
+			globalRowCol = { rowColStartPos.m_X+r, rowColStartPos.m_Y+c };
+			SetAt(globalRowCol, chars[r][c]);
+		}
+	}
 }
 
 const TextChar* TextBuffer::GetAt(const Utils::Point2DInt& rowColPos) const

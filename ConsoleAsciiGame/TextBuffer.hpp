@@ -21,6 +21,12 @@ struct TextChar
 	bool operator==(const TextChar& other) const = default;
 };
 
+struct TextCharPosition
+{
+	Utils::Point2DInt m_RowColPos;
+	TextChar m_Text;
+};
+
 class TextBuffer
 {
 private:
@@ -39,9 +45,21 @@ public:
 	bool IsValidPos(const Utils::Point2DInt& rowColPos) const;
 
 	void SetAt(const Utils::Point2DInt& rowColPos, const TextChar& newBufferChar);
-	void SetAt(const std::vector<Utils::Point2DInt>& rowColPos, const TextChar& newBufferChar);
 	void SetAt(const Utils::Point2DInt& rowColPos, const char& newChar);
 	void SetAt(const Utils::Point2DInt& rowColPos, const Color& newColor);
+
+	void SetAt(const std::vector<Utils::Point2DInt>& rowColPos, const TextChar& newBufferChar);
+	void SetAt(const std::vector<TextCharPosition>& updatedCharsAtPos);
+
+	/// <summary>
+	/// Will set the region from row col start pos with size [WIDTH, HEIGHT]
+	/// </summary>
+	/// <param name="rowColStartPos"></param>
+	/// <param name="size"></param>
+	/// <param name="chars"></param>
+	/// <returns></returns>
+	bool TrySetRegion(const Utils::Point2DInt& rowColStartPos, const Utils::Point2DInt& size, 
+		const std::vector<std::vector<TextChar>>& chars);
 
 	const TextChar* GetAt(const Utils::Point2DInt& rowColPos) const;
 	const std::vector<TextChar>& GetAt(const int& rowPos) const;

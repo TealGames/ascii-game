@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <cstdint>
+#include <optional>
 #include <limits>
 #include "raylib.h"
 #include "Component.hpp"
@@ -45,6 +46,8 @@ namespace ECS
 		//=1 creates linear and >1 creates exponential decay
 		//and -1 means unused
 		const float m_falloffStrength;
+
+		std::vector<TextCharPosition> m_lastFrameData;
 
 	public:
 

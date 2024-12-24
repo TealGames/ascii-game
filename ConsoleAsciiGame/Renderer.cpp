@@ -13,7 +13,8 @@ namespace ECS
 {
 	Renderer::Renderer(const Transform& transform, TextBuffer& buffer,
 		const std::vector<std::vector<TextChar>>& visualData) :
-		m_transform(transform), m_outputBuffer(buffer), m_visualData(visualData), m_visualBoundsSize()
+		m_transform(transform), m_outputBuffer(buffer), m_visualData(visualData), 
+		m_visualBoundsSize()
 	{
 		int maxWidth = 0;
 		for (const auto& row : m_visualData)
@@ -80,7 +81,7 @@ namespace ECS
 	{
 		//Utils::Point2DInt half = {m_outputBuffer.m_HEIGHT/2, m_outputBuffer.m_WIDTH/2};
 		//std::cout << "Rendering at: " << half.ToString() << std::endl;
-		std::cout << "Rendering player" << std::endl;
+		//std::cout << "Rendering player" << std::endl;
 
 		Utils::Point2DInt bufferPos = {};
 		TextChar currentTextChar = {};

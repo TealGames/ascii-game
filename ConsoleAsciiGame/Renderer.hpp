@@ -1,12 +1,12 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <optional>
 #include "raylib.h"
 #include "TextBuffer.hpp"
 #include "Point2DInt.hpp"
 #include "Component.hpp"
 #include "Transform.hpp"
-#include "TextBuffer.hpp"
 
 namespace ECS
 {

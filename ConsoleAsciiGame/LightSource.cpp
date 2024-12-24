@@ -23,7 +23,8 @@ namespace ECS
         const std::vector<TextBuffer*>& buffers, const ColorGradient& filterColor, const int& lightRadius,
         const std::uint8_t& initialLightLevel, const float& falloffValue) :
 		Component(), m_renderer(renderer), m_transform(transform), m_outputBuffers(buffers),
-        m_gradientFilter(filterColor), m_lightRadius(lightRadius), m_intensity(initialLightLevel), m_falloffStrength(falloffValue)
+        m_gradientFilter(filterColor), m_lightRadius(lightRadius), m_intensity(initialLightLevel), 
+        m_falloffStrength(falloffValue), m_lastFrameData{}
 	{
 	}
 
@@ -39,18 +40,24 @@ namespace ECS
 
     void LightSource::UpdateStart(float deltaTime)
     {
-        //if (!m_transform.HasMovedThisFrame()) return;
+        if (!m_transform.HasMovedThisFrame() && !m_lastFrameData.empty())
+        {
+            for (const auto& buffer : m_outputBuffers)
+                buffer->SetAt(m_lastFrameData);
+            return;
+        }
         
         //TODO: currently light is only applied on the background layer
         //so we should also make it apply it to other layers too
+        if (!m_lastFrameData.empty()) m_lastFrameData.clear();
         RenderLight(true);
         //std::cout << "Rendering lgiht" << std::endl;
     }
+
     void LightSource::UpdateEnd(float deltaTime)
     {
-
+        
     }
-
 
     //TODO: this probably needs to be optimized
     //TODO: it seems that when going below a certain point the light becomes brighter/stronger
@@ -77,7 +84,7 @@ namespace ECS
         }
         //Utils::Log(std::format("Circle points: {}", Utils::ToStringIterable<std::vector<Utils::Point2D>, Utils::Point2D>(bottomCirclePoints)));
 
-        const Color lightGreen = { 163, 213, 137, 255 };
+        Color newColor = {};
         Utils::Point2DInt currentXYCoord = {};
         std::vector<Utils::Point2DInt> seenCoords = {};
         std::uint8_t lightLevel = MIN_LIGHT_LEVEL;
@@ -110,15 +117,17 @@ namespace ECS
                 /*Utils::Log(std::format("New color for {} from pos {} from color: {} is: {}", setPos.ToString(), centerPos.ToString(),
                     RaylibUtils::ToString(m_outputBuffer.GetAt(setPos)->m_Color), RaylibUtils::ToString(CalculateNewColor(setPos, centerPos))));*/
 
+                newColor = CalculateNewColor(buffer, bufferPosRowCol.GetFlipped(), centerPos, &lightLevel);
                 //We need to have both coords uisng same system so we convert buffer set pos from row col to match XY of center pos
-                buffer.SetAt(bufferPosRowCol, CalculateNewColor(buffer, bufferPosRowCol.GetFlipped(), centerPos, &lightLevel));
+                buffer.SetAt(bufferPosRowCol, newColor);
+               
                 if (displayLightLevels)
                 {
                     prevLevel = Utils::TryParse<int>(std::string(1, buffer.GetAt(bufferPosRowCol)->m_Char));
                     lightLevelStr = std::string(1, prevLevel != std::nullopt ? prevLevel.value() + lightLevel : lightLevel)[0];
                     buffer.SetAt(bufferPosRowCol, lightLevelStr[0]);
                 }
-                
+                m_lastFrameData.push_back(TextCharPosition{bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char}});
             }
         }
     }
@@ -127,6 +136,7 @@ namespace ECS
 	{
         std::vector<std::vector<TextChar>> visualData = m_renderer.GetVisualData();
         Utils::Point2DInt centerPos = {};
+        std::cout << "REDNER LIGHT" << std::endl;
 
         for (const auto& buffer : m_outputBuffers)
         {
