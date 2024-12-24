@@ -41,7 +41,8 @@ namespace ECS
 		UpdatePriority GetUpdatePriority() const override;
 
 		void Start() override;
-		void Update(float deltaTime) override;
+		void UpdateStart(float deltaTime) override;
+		void UpdateEnd(float deltaTime) override;
 
 		Utils::Point2DInt GetGlobalVisualPos(const Utils::Point2DInt& relativeVisualPos) const;
 

@@ -16,8 +16,11 @@ namespace ECS
     public:
         Player(Transform& transform, const char& playerChar);
 
+        UpdatePriority GetUpdatePriority() const override;
+
         void Start() override;
-        void Update(float deltaTime) override;
+        void UpdateStart(float deltaTime) override;
+        void UpdateEnd(float deltaTime) override;
     };
 }
 

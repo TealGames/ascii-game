@@ -48,10 +48,16 @@ namespace ECS
 		for (const auto& component : m_components) component->Start();
 	}
 
-	void Entity::Update(float deltaTime)
+	void Entity::UpdateStart(float deltaTime)
 	{
 		if (m_components.empty()) return;
-		for (const auto& component : m_components) component->Update(deltaTime);
+		for (const auto& component : m_components) component->UpdateStart(deltaTime);
+	}
+
+	void Entity::UpdateEnd(float deltaTime)
+	{
+		if (m_components.empty()) return;
+		for (const auto& component : m_components) component->UpdateEnd(deltaTime);
 	}
 
 	//int Entity::GetComponentTypeCount(const ComponentType& type) const

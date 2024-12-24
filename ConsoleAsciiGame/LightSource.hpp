@@ -39,18 +39,21 @@ namespace ECS
 		const ColorGradient m_gradientFilter;
 
 		//The strength of the light initially
-		std::uint8_t m_intensity;
+		const std::uint8_t m_intensity;
 
 		//where <1 creates more logarithmic curves, 
 		//=1 creates linear and >1 creates exponential decay
 		//and -1 means unused
-		float m_falloffStrength;
+		const float m_falloffStrength;
 
 	public:
 
 
 	private:
-		void RenderLight(bool displayLightLevels=false) const;
+		void CreateLightingForPoint(const Utils::Point2DInt& centerPos, 
+			TextBuffer& buffer, bool displayLightLevels);
+
+		void RenderLight(bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const float& distance) const;
 		Color CalculateNewColor(const TextBuffer& buffer, const Utils::Point2DInt& currentPos,
 			const Utils::Point2DInt& centerPos, std::uint8_t* outLightLevel=nullptr) const;
@@ -74,7 +77,8 @@ namespace ECS
 		UpdatePriority GetUpdatePriority() const override;
 
 		void Start() override;
-		void Update(float deltaTime) override;
+		void UpdateStart(float deltaTime) override;
+		void UpdateEnd(float deltaTime) override;
 	};
 
 }

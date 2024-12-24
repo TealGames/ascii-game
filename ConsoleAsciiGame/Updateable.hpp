@@ -8,8 +8,15 @@ struct Updateable
 	virtual void Start() = 0;
 
 	/// <summary>
-	/// Update is called on every frame update
+	/// UpdateStart is called on start every frame update
 	/// </summary>
 	/// <param name="deltaTime"></param>
-	virtual void Update(float deltaTime) = 0;
+	virtual void UpdateStart(float deltaTime) = 0;
+
+	/// <summary>
+	/// UpdateEnd is called on every frame update end.
+	/// Note: every UpdateStart will have finished by this point
+	/// </summary>
+	/// <param name="deltaTime"></param>
+	virtual void UpdateEnd(float deltaTime) = 0;
 };

@@ -29,9 +29,14 @@ namespace ECS
 	}
 
 	void Renderer::Start() {}
-	void Renderer::Update(float deltaTime) 
+	void Renderer::UpdateStart(float deltaTime) 
 	{
+		//if (!m_transform.HasMovedThisFrame()) return;
 		RenderInBuffer();
+	}
+	void Renderer::UpdateEnd(float deltaTime)
+	{
+
 	}
 
 	const std::vector<std::vector<TextChar>>& Renderer::GetVisualData() const
@@ -75,6 +80,7 @@ namespace ECS
 	{
 		//Utils::Point2DInt half = {m_outputBuffer.m_HEIGHT/2, m_outputBuffer.m_WIDTH/2};
 		//std::cout << "Rendering at: " << half.ToString() << std::endl;
+		std::cout << "Rendering player" << std::endl;
 
 		Utils::Point2DInt bufferPos = {};
 		TextChar currentTextChar = {};

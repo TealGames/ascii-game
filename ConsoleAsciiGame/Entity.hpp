@@ -135,7 +135,8 @@ namespace ECS
 		}
 
 		void Start() override;
-		void Update(float deltaTime) override;
+		void UpdateStart(float deltaTime) override;
+		void UpdateEnd(float deltaTime) override;
 	};
 
 }

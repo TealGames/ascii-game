@@ -263,18 +263,19 @@ int main() {
 
         //std::cout << "Player Pos: " << player.TryGetComponent<ECS::Transform>()->m_Pos.ToString() << std::endl;s
 
-        //We need to reset to default so changes past changes can be cleared and 
-        //new changes can appear with update
+        //We need to reset to default since previous changes were baked into the buffer
+        //so we need to clear it for a fresh update
         for (const auto& layer : RenderLayers) layer->ResetToDefault();
         
         //RenderPlayerLight(textBuffer, player.m_PlayerPos, 5);
-        player.Update(DeltaTime);
+        player.UpdateStart(DeltaTime);
         //Utils::Point2DInt half = { playerLayer.m_TextBuffer.m_HEIGHT / 2,  playerLayer.m_TextBuffer.m_WIDTH / 2 };
        /* Utils::Log(std::format("CHecking from main: {}", Utils::ToString(playerLayer.m_TextBuffer.GetAt(half)->m_Char)));
         std::cout << "PLAYER LAYER: " << playerLayer.ToString() << std::endl;*/
 
         RenderBuffer(CollapseLayersToSingle(RenderLayers));
 
+        player.UpdateEnd(DeltaTime);
         LastTime = CurrentTime;
 
        /* std::string layerStr = "";

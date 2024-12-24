@@ -9,12 +9,17 @@ namespace ECS
 
     }
 
+    UpdatePriority Player::GetUpdatePriority() const
+    {
+        return {MAX_PRIORITY};
+    }
+
     void Player::Start()
     {
         
     }
 
-    void Player::Update(float deltaTime)
+    void Player::UpdateStart(float deltaTime)
     {
 
         if (IsKeyPressed(KEY_DOWN))
@@ -34,5 +39,7 @@ namespace ECS
             m_transform.SetDeltaX(-1);
         }
     }
+
+    void Player::UpdateEnd(float deltaTime) {}
 }
 

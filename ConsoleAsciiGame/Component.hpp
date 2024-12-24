@@ -32,7 +32,8 @@ namespace ECS
 
 	public:
 		virtual void Start() = 0;
-		virtual void Update(float deltaTime) = 0;
+		virtual void UpdateStart(float deltaTime) = 0;
+		virtual void UpdateEnd(float deltaTime) = 0;
 
 	public:
 		Component();

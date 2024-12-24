@@ -37,16 +37,93 @@ namespace ECS
 
     }
 
-    void LightSource::Update(float deltaTime)
+    void LightSource::UpdateStart(float deltaTime)
     {
+        //if (!m_transform.HasMovedThisFrame()) return;
+        
         //TODO: currently light is only applied on the background layer
         //so we should also make it apply it to other layers too
         RenderLight(true);
         //std::cout << "Rendering lgiht" << std::endl;
     }
+    void LightSource::UpdateEnd(float deltaTime)
+    {
+
+    }
+
 
     //TODO: this probably needs to be optimized
-	void LightSource::RenderLight(bool displayLightLevels) const
+    //TODO: it seems that when going below a certain point the light becomes brighter/stronger
+    void LightSource::CreateLightingForPoint(const Utils::Point2DInt& centerPos, TextBuffer& buffer, bool displayLightLevels)
+    {
+        //std::cout << "Center pos: " << centerPos.ToString() << std::endl;
+        const Utils::Point2DInt maxXY = { centerPos.m_X + m_lightRadius, centerPos.m_Y + m_lightRadius };
+        const Utils::Point2DInt minXY = { centerPos.m_X - m_lightRadius, centerPos.m_Y - m_lightRadius };
+
+        //We approxiamte how accurate the circle should be by using the total area to figure out how many points we need
+        const int positiveSidePoints = std::min(buffer.m_HEIGHT, buffer.m_WIDTH) / m_lightRadius;
+        const float pointXValIncrement = 0.5f;
+
+        //We add all the points on circle using X, Y Coords
+        float x = minXY.m_X;
+        float y = 0;
+        std::vector<Utils::Point2D> bottomCirclePoints = {};
+        while (x <= maxXY.m_X)
+        {
+            y = std::sqrt(std::pow(m_lightRadius, 2) - std::pow(x - centerPos.m_X, 2)) + centerPos.m_Y;
+            bottomCirclePoints.push_back({ x, y });
+
+            x += pointXValIncrement;
+        }
+        //Utils::Log(std::format("Circle points: {}", Utils::ToStringIterable<std::vector<Utils::Point2D>, Utils::Point2D>(bottomCirclePoints)));
+
+        const Color lightGreen = { 163, 213, 137, 255 };
+        Utils::Point2DInt currentXYCoord = {};
+        std::vector<Utils::Point2DInt> seenCoords = {};
+        std::uint8_t lightLevel = MIN_LIGHT_LEVEL;
+        std::string lightLevelStr = "";
+        std::optional<int> prevLevel = std::nullopt;
+        bool isInitialPosValid = false;
+
+        for (const auto& point : bottomCirclePoints)
+        {
+            if (point.m_X <= centerPos.m_X) currentXYCoord.m_X = std::floor(point.m_X);
+            else currentXYCoord.m_X = std::ceil(point.m_X);
+
+            currentXYCoord.m_Y = std::ceil(point.m_Y);
+            isInitialPosValid = buffer.IsValidPos(currentXYCoord.GetFlipped());
+
+            //We need to check if it does not have them already since we may have a very short range with many points
+            //which could result in potential duplicates when floats are cut to ints
+            if (std::find(seenCoords.begin(), seenCoords.end(), currentXYCoord) != seenCoords.end()) continue;
+
+            //Utils::Log(std::format("Circle Y: {} -> {}", std::to_string(0), std::to_string(bufferPos.m_Y - centerPos.m_Y)));
+            Utils::Point2DInt bufferPosRowCol = {};
+            for (int circleY = currentXYCoord.m_Y; circleY >= centerPos.m_Y - (currentXYCoord.m_Y - centerPos.m_Y); circleY--)
+            {
+                bufferPosRowCol = Utils::Point2DInt(circleY, currentXYCoord.m_X);
+                seenCoords.push_back(bufferPosRowCol.GetFlipped());
+
+                if (!buffer.IsValidPos(bufferPosRowCol)) continue;
+                if (buffer.GetAt(bufferPosRowCol)->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
+
+                /*Utils::Log(std::format("New color for {} from pos {} from color: {} is: {}", setPos.ToString(), centerPos.ToString(),
+                    RaylibUtils::ToString(m_outputBuffer.GetAt(setPos)->m_Color), RaylibUtils::ToString(CalculateNewColor(setPos, centerPos))));*/
+
+                //We need to have both coords uisng same system so we convert buffer set pos from row col to match XY of center pos
+                buffer.SetAt(bufferPosRowCol, CalculateNewColor(buffer, bufferPosRowCol.GetFlipped(), centerPos, &lightLevel));
+                if (displayLightLevels)
+                {
+                    prevLevel = Utils::TryParse<int>(std::string(1, buffer.GetAt(bufferPosRowCol)->m_Char));
+                    lightLevelStr = std::string(1, prevLevel != std::nullopt ? prevLevel.value() + lightLevel : lightLevel)[0];
+                    buffer.SetAt(bufferPosRowCol, lightLevelStr[0]);
+                }
+                
+            }
+        }
+    }
+
+	void LightSource::RenderLight(bool displayLightLevels)
 	{
         std::vector<std::vector<TextChar>> visualData = m_renderer.GetVisualData();
         Utils::Point2DInt centerPos = {};
@@ -65,94 +142,8 @@ namespace ECS
                     //TODO: maybe abstract transform from one coord system to the other
                     centerPos = m_renderer.GetGlobalVisualPos({ r, c }).GetFlipped();
                     if (!buffer->IsValidPos(centerPos.GetFlipped())) continue;
-                    //std::cout << "Center pos: " << centerPos.ToString() << std::endl;
-                    const Utils::Point2DInt maxXY = { centerPos.m_X + m_lightRadius, centerPos.m_Y + m_lightRadius };
-                    const Utils::Point2DInt minXY = { centerPos.m_X - m_lightRadius, centerPos.m_Y - m_lightRadius };
 
-                    //We approxiamte how accurate the circle should be by using the total area to figure out how many points we need
-                    const int positiveSidePoints = std::min(buffer->m_HEIGHT, buffer->m_WIDTH) / m_lightRadius;
-                    const float pointXValIncrement = 0.5f;
-
-                    //We add all the points on circle using X, Y Coords
-                    float x = minXY.m_X;
-                    float y = 0;
-                    std::vector<Utils::Point2D> bottomCirclePoints = {};
-                    while (x <= maxXY.m_X)
-                    {
-                        y = std::sqrt(std::pow(m_lightRadius, 2) - std::pow(x - centerPos.m_X, 2)) + centerPos.m_Y;
-                        bottomCirclePoints.push_back({ x, y });
-
-                        x += pointXValIncrement;
-                    }
-                    //Utils::Log(std::format("Circle points: {}", Utils::ToStringIterable<std::vector<Utils::Point2D>, Utils::Point2D>(bottomCirclePoints)));
-
-                    //TODO: ideally, this color should not be hardcoded but should apply
-                    //a yellow (or other) color filter using math of the current color
-                    const Color lightGreen = { 163, 213, 137, 255 };
-                    Utils::Point2DInt currentXYCoord = {};
-                    std::vector<Utils::Point2DInt> seenCoords = {};
-                    std::uint8_t lightLevel = MIN_LIGHT_LEVEL;
-                    std::string lightLevelStr = "";
-                    std::optional<int> prevLevel = std::nullopt;
-                    bool isInitialPosValid = false;
-
-                    for (const auto& point : bottomCirclePoints)
-                    {
-                        if (point.m_X <= centerPos.m_X) currentXYCoord.m_X = std::floor(point.m_X);
-                        else currentXYCoord.m_X = std::ceil(point.m_X);
-                        /*if (!buffer->IsValidCol(currentXYCoord.m_X)) continue;*/
-
-                        currentXYCoord.m_Y = std::ceil(point.m_Y);
-                       /* if (!buffer->IsValidRow(currentXYCoord.m_Y)) continue;*/
-                        isInitialPosValid = buffer->IsValidPos(currentXYCoord.GetFlipped());
-
-                        //if (isInitialPosValid && buffer->GetAt(currentXYCoord.GetFlipped())->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
-
-                        //We need to check if it does not have them already since we may have a very short range with many points
-                        //which could result in potential duplicates when floats are cut to ints
-                        if (std::find(seenCoords.begin(), seenCoords.end(), currentXYCoord) != seenCoords.end()) continue;
-
-                        //Utils::Log(std::format("Circle Y: {} -> {}", std::to_string(0), std::to_string(bufferPos.m_Y - centerPos.m_Y)));
-                        Utils::Point2DInt bufferPosRowCol = {};
-                        //for (int circleY = 0; circleY <= currentXYCoord.m_Y - centerPos.m_Y; circleY++)
-                        for (int circleY = currentXYCoord.m_Y; circleY >= centerPos.m_Y - (currentXYCoord.m_Y - centerPos.m_Y); circleY--)
-                        {
-                            bufferPosRowCol = Utils::Point2DInt(circleY, currentXYCoord.m_X);
-                            if (!buffer->IsValidPos(bufferPosRowCol)) continue;
-                            if (buffer->GetAt(bufferPosRowCol)->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
-
-                            /*Utils::Log(std::format("New color for {} from pos {} from color: {} is: {}", setPos.ToString(), centerPos.ToString(),
-                                RaylibUtils::ToString(m_outputBuffer.GetAt(setPos)->m_Color), RaylibUtils::ToString(CalculateNewColor(setPos, centerPos))));*/
-
-                                //We need to have both coords uisng same system so we convert buffer set pos from row col to match XY of center pos
-                            buffer->SetAt(bufferPosRowCol, CalculateNewColor(*buffer, bufferPosRowCol.GetFlipped(), centerPos, &lightLevel));
-                            if (displayLightLevels)
-                            {
-                                prevLevel = Utils::TryParse<int>(std::string(1, buffer->GetAt(bufferPosRowCol)->m_Char));
-                                lightLevelStr = std::string(1, prevLevel != std::nullopt ? prevLevel.value() + lightLevel : lightLevel)[0];
-                                buffer->SetAt(bufferPosRowCol, lightLevelStr[0]);
-                            }
-                            seenCoords.push_back(bufferPosRowCol.GetFlipped());
-
-                            //TODO: maybe to simplify, add the negative versions to the search to prevent duplicate code
-
-                            ////Utils::Log(std::format("Setting pos: {} to lgiht green", Utils::Point2DInt({ centerPos.m_Y + circleY, bufferPos.m_X }).ToString()));
-                            //if (circleY != 0)
-                            //{
-                            //    bufferPosRowCol = Utils::Point2DInt(centerPos.m_Y - circleY, currentXYCoord.m_X);
-                            //    m_outputBuffer.SetAt(bufferPosRowCol, CalculateNewColor(bufferPosRowCol.GetFlipped(), centerPos, &lightLevel));
-                            //    //m_outputBuffer.SetAt(setPos, lightGreen);
-
-                            //    if (displayLightLevels)
-                            //    {
-                            //        prevLevel = Utils::TryParse<int>(std::string(1, m_outputBuffer.GetAt(bufferPosRowCol)->m_Char));
-                            //        lightLevelStr = std::string(1, prevLevel != std::nullopt ? prevLevel.value() + lightLevel : lightLevel)[0];
-                            //        m_outputBuffer.SetAt(bufferPosRowCol, lightLevelStr[0]);
-                            //    }
-                            //}
-                        }
-                       
-                    }
+                    CreateLightingForPoint(centerPos, *buffer, displayLightLevels);
                 }
             }
         }
