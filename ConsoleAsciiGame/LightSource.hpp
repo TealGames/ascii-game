@@ -9,6 +9,7 @@
 #include "LightSource.hpp"
 #include "Point2DInt.hpp"
 #include "TextBuffer.hpp"
+#include "ColorGradient.hpp"
 
 namespace ECS
 {
@@ -34,7 +35,8 @@ namespace ECS
 		const Transform& m_transform;
 		std::vector<TextBuffer*> m_outputBuffers;
 		const int m_lightRadius;
-		const Color m_filterColor;
+		//const Color m_filterColor;
+		const ColorGradient m_gradientFilter;
 
 		//The strength of the light initially
 		std::uint8_t m_intensity;
@@ -66,7 +68,7 @@ namespace ECS
 		/// <param name="falloffValue">THe rate that the light will fade away where <1 creates more logarithmic curves, 
 		//=1 creates linear and >1 creates exponential decay</param>
 		LightSource(const Transform& transform, const Renderer& renderer, 
-			const std::vector<TextBuffer*>& outputBuffers, const Color& filterColor, const int& lightRadius,
+			const std::vector<TextBuffer*>& outputBuffers, const ColorGradient& filterColor, const int& lightRadius,
 			const std::uint8_t& initialLightLevel, const float& falloffValue);
 
 		UpdatePriority GetUpdatePriority() const override;

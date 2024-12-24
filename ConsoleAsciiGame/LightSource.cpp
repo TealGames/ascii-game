@@ -15,14 +15,15 @@
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
+#include "ColorGradient.hpp"
 
 namespace ECS
 {
 	LightSource::LightSource(const Transform& transform, const Renderer& renderer, 
-        const std::vector<TextBuffer*>& buffers, const Color& filterColor, const int& lightRadius,
+        const std::vector<TextBuffer*>& buffers, const ColorGradient& filterColor, const int& lightRadius,
         const std::uint8_t& initialLightLevel, const float& falloffValue) :
 		Component(), m_renderer(renderer), m_transform(transform), m_outputBuffers(buffers),
-        m_filterColor(filterColor), m_lightRadius(lightRadius), m_intensity(initialLightLevel), m_falloffStrength(falloffValue)
+        m_gradientFilter(filterColor), m_lightRadius(lightRadius), m_intensity(initialLightLevel), m_falloffStrength(falloffValue)
 	{
 	}
 
@@ -40,10 +41,11 @@ namespace ECS
     {
         //TODO: currently light is only applied on the background layer
         //so we should also make it apply it to other layers too
-        RenderLight();
+        RenderLight(true);
         //std::cout << "Rendering lgiht" << std::endl;
     }
 
+    //TODO: this probably needs to be optimized
 	void LightSource::RenderLight(bool displayLightLevels) const
 	{
         std::vector<std::vector<TextChar>> visualData = m_renderer.GetVisualData();
@@ -62,6 +64,7 @@ namespace ECS
                     //we use default coords (x, y) but visual pos is in (row, col) so we flip
                     //TODO: maybe abstract transform from one coord system to the other
                     centerPos = m_renderer.GetGlobalVisualPos({ r, c }).GetFlipped();
+                    if (!buffer->IsValidPos(centerPos.GetFlipped())) continue;
                     //std::cout << "Center pos: " << centerPos.ToString() << std::endl;
                     const Utils::Point2DInt maxXY = { centerPos.m_X + m_lightRadius, centerPos.m_Y + m_lightRadius };
                     const Utils::Point2DInt minXY = { centerPos.m_X - m_lightRadius, centerPos.m_Y - m_lightRadius };
@@ -81,7 +84,7 @@ namespace ECS
 
                         x += pointXValIncrement;
                     }
-                    Utils::Log(std::format("Circle points: {}", Utils::ToStringIterable<std::vector<Utils::Point2D>, Utils::Point2D>(bottomCirclePoints)));
+                    //Utils::Log(std::format("Circle points: {}", Utils::ToStringIterable<std::vector<Utils::Point2D>, Utils::Point2D>(bottomCirclePoints)));
 
                     //TODO: ideally, this color should not be hardcoded but should apply
                     //a yellow (or other) color filter using math of the current color
@@ -91,17 +94,19 @@ namespace ECS
                     std::uint8_t lightLevel = MIN_LIGHT_LEVEL;
                     std::string lightLevelStr = "";
                     std::optional<int> prevLevel = std::nullopt;
+                    bool isInitialPosValid = false;
 
                     for (const auto& point : bottomCirclePoints)
                     {
                         if (point.m_X <= centerPos.m_X) currentXYCoord.m_X = std::floor(point.m_X);
                         else currentXYCoord.m_X = std::ceil(point.m_X);
-                        if (!buffer->IsValidCol(currentXYCoord.m_X)) continue;
+                        /*if (!buffer->IsValidCol(currentXYCoord.m_X)) continue;*/
 
                         currentXYCoord.m_Y = std::ceil(point.m_Y);
-                        if (!buffer->IsValidRow(currentXYCoord.m_Y)) continue;
+                       /* if (!buffer->IsValidRow(currentXYCoord.m_Y)) continue;*/
+                        isInitialPosValid = buffer->IsValidPos(currentXYCoord.GetFlipped());
 
-                        if (buffer->GetAt(currentXYCoord.GetFlipped())->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
+                        //if (isInitialPosValid && buffer->GetAt(currentXYCoord.GetFlipped())->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
 
                         //We need to check if it does not have them already since we may have a very short range with many points
                         //which could result in potential duplicates when floats are cut to ints
@@ -113,6 +118,9 @@ namespace ECS
                         for (int circleY = currentXYCoord.m_Y; circleY >= centerPos.m_Y - (currentXYCoord.m_Y - centerPos.m_Y); circleY--)
                         {
                             bufferPosRowCol = Utils::Point2DInt(circleY, currentXYCoord.m_X);
+                            if (!buffer->IsValidPos(bufferPosRowCol)) continue;
+                            if (buffer->GetAt(bufferPosRowCol)->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
+
                             /*Utils::Log(std::format("New color for {} from pos {} from color: {} is: {}", setPos.ToString(), centerPos.ToString(),
                                 RaylibUtils::ToString(m_outputBuffer.GetAt(setPos)->m_Color), RaylibUtils::ToString(CalculateNewColor(setPos, centerPos))));*/
 
@@ -170,17 +178,19 @@ namespace ECS
 
         if (!buffer.IsValidPos(currentPos.GetFlipped())) return {};
         Color originalColor = buffer.GetAt(currentPos.GetFlipped())->m_Color;
+        Color filterColor = m_gradientFilter.GetColorAt(distanceToCenter / m_lightRadius, false);
         
         //float alpha = m_filterColor.a / 255;
+        //TODO: known issue is that below a certain row, colors do not show up
         float colorMultiplier = static_cast<float>(lightLevel) / m_intensity;
     
-        originalColor.r = std::roundf((originalColor.r) * (1 - colorMultiplier) + (m_filterColor.r) * (colorMultiplier));
-        originalColor.g = std::roundf((originalColor.g) * (1 - colorMultiplier) + (m_filterColor.g) * (colorMultiplier));
-        originalColor.b = std::roundf((originalColor.b) * (1 - colorMultiplier) + (m_filterColor.b) * (colorMultiplier));
+        originalColor.r = std::roundf((originalColor.r) * (1 - colorMultiplier) + (filterColor.r) * (colorMultiplier));
+        originalColor.g = std::roundf((originalColor.g) * (1 - colorMultiplier) + (filterColor.g) * (colorMultiplier));
+        originalColor.b = std::roundf((originalColor.b) * (1 - colorMultiplier) + (filterColor.b) * (colorMultiplier));
 
-        Utils::Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
+        /*Utils::Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
             std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),
-            std::to_string(lightLevel), std::to_string(colorMultiplier), RaylibUtils::ToString(originalColor)));
+            std::to_string(lightLevel), std::to_string(colorMultiplier), RaylibUtils::ToString(originalColor)));*/
         return originalColor;
     }
 }

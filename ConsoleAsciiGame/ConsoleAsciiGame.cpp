@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <chrono>
-#include "raylib.h"
+#include <raylib.h>
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 #include "Point2DInt.hpp"
@@ -237,13 +237,12 @@ int main() {
 
     //TODO: ideally, the custom script like Player should handle the creation of other components
     ECS::Transform transform = ECS::Transform(Utils::Point2DInt{ PLAY_AREA_TEXT_BUFFER_WIDTH/ 2, PLAY_AREA_TEXT_BUFFER_HEIGHT / 2 });
-    //ECS::Renderer renderer = ECS::Renderer(transform, playerLayer.m_TextBuffer, { {TextChar(GRAY, '0')},  {TextChar(GRAY, '4')} });
-    ECS::Renderer renderer = ECS::Renderer(transform, playerLayer.m_TextBuffer, { {TextChar(GRAY, '0')} });
+    ECS::Renderer renderer = ECS::Renderer(transform, playerLayer.m_TextBuffer, { {TextChar(GRAY, '0')},  {TextChar(GRAY, '4')} });
     ECS::Player playerComponent = ECS::Player(transform, 'o');
     ECS::LightSource lightSource = ECS::LightSource(transform, renderer, 
-        //std::vector<TextBuffer*>{ &backgroundLayer.m_TextBuffer, &playerLayer.m_TextBuffer },
-        std::vector<TextBuffer*>{ &backgroundLayer.m_TextBuffer },
-        Color(243, 208, 67, 255), 8, 255, 1.2f);
+        std::vector<TextBuffer*>{ &backgroundLayer.m_TextBuffer, &playerLayer.m_TextBuffer },
+        //std::vector<TextBuffer*>{ &backgroundLayer.m_TextBuffer },
+        ColorGradient(Color(243, 208, 67, 255),  Color(228, 8, 10, 255)), 8, 255, 1.2f);
     ECS::Entity player = ECS::Entity("Player");
     player.TryAddComponent(&transform);
     player.TryAddComponent(&renderer);
@@ -252,6 +251,8 @@ int main() {
 
     LastTime = std::chrono::high_resolution_clock().now();
 
+    //TODO: it seems like doing this over and over might be slow
+    //so we need some optimizations
     while (!WindowShouldClose()) 
     {
         BeginDrawing();
@@ -268,7 +269,7 @@ int main() {
         
         //RenderPlayerLight(textBuffer, player.m_PlayerPos, 5);
         player.Update(DeltaTime);
-        Utils::Point2DInt half = { playerLayer.m_TextBuffer.m_HEIGHT / 2,  playerLayer.m_TextBuffer.m_WIDTH / 2 };
+        //Utils::Point2DInt half = { playerLayer.m_TextBuffer.m_HEIGHT / 2,  playerLayer.m_TextBuffer.m_WIDTH / 2 };
        /* Utils::Log(std::format("CHecking from main: {}", Utils::ToString(playerLayer.m_TextBuffer.GetAt(half)->m_Char)));
         std::cout << "PLAYER LAYER: " << playerLayer.ToString() << std::endl;*/
 
