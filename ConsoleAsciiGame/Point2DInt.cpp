@@ -4,12 +4,11 @@
 
 namespace Utils
 {
-	Point2DInt::Point2DInt()
+	constexpr Point2DInt::Point2DInt()
 		:m_X(0), m_Y(0) {}
 
-	Point2DInt::Point2DInt(int xPos, int yPos)
+	constexpr Point2DInt::Point2DInt(const int& xPos, const int& yPos)
 		: m_X(xPos), m_Y(yPos) {}
-
 
 	std::string Point2DInt::ToString() const
 	{

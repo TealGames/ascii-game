@@ -17,7 +17,7 @@ namespace ECS
 	//	TextChar CharData;
 	//};
 
-	class Renderer: public Component
+	class EntityRenderer: public Component
 	{
 	private:
 		const Transform& m_transform;
@@ -35,7 +35,7 @@ namespace ECS
 		void RenderInBuffer();
 
 	public:
-		Renderer(const Transform& transform, TextBuffer& buffer, 
+		EntityRenderer(const Transform& transform, TextBuffer& buffer, 
 			const std::vector<std::vector<TextChar>>& visualData);
 
 		UpdatePriority GetUpdatePriority() const override;

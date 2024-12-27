@@ -1,4 +1,4 @@
-#include "Renderer.hpp"
+#include "EntityRenderer.hpp"
 #include <string>
 #include <iostream>
 #include <vector>
@@ -11,7 +11,7 @@
 
 namespace ECS
 {
-	Renderer::Renderer(const Transform& transform, TextBuffer& buffer,
+	EntityRenderer::EntityRenderer(const Transform& transform, TextBuffer& buffer,
 		const std::vector<std::vector<TextChar>>& visualData) :
 		m_transform(transform), m_outputBuffer(buffer), m_visualData(visualData), 
 		m_visualBoundsSize()
@@ -24,28 +24,28 @@ namespace ECS
 		m_visualBoundsSize = Utils::Point2DInt(m_visualData.size(), maxWidth);
 	}
 
-	UpdatePriority Renderer::GetUpdatePriority() const
+	UpdatePriority EntityRenderer::GetUpdatePriority() const
 	{
 		return { MIN_PRIORITY+1 };
 	}
 
-	void Renderer::Start() {}
-	void Renderer::UpdateStart(float deltaTime) 
+	void EntityRenderer::Start() {}
+	void EntityRenderer::UpdateStart(float deltaTime) 
 	{
 		//if (!m_transform.HasMovedThisFrame()) return;
 		RenderInBuffer();
 	}
-	void Renderer::UpdateEnd(float deltaTime)
+	void EntityRenderer::UpdateEnd(float deltaTime)
 	{
 
 	}
 
-	const std::vector<std::vector<TextChar>>& Renderer::GetVisualData() const
+	const std::vector<std::vector<TextChar>>& EntityRenderer::GetVisualData() const
 	{
 		return m_visualData;
 	}
 
-	std::string Renderer::GetVisualString() const
+	std::string EntityRenderer::GetVisualString() const
 	{
 		std::string visualStr = "";
 		for (const auto& row : m_visualData)
@@ -66,7 +66,7 @@ namespace ECS
 	/// </summary>
 	/// <param name="relativeVisualPos"></param>
 	/// <returns></returns>
-	Utils::Point2DInt Renderer::GetGlobalVisualPos(const Utils::Point2DInt& relativeVisualPos) const
+	Utils::Point2DInt EntityRenderer::GetGlobalVisualPos(const Utils::Point2DInt& relativeVisualPos) const
 	{
 		Utils::Point2DInt centerBottom = m_transform.m_Pos.GetFlipped();
 
@@ -77,7 +77,7 @@ namespace ECS
 	}
 
 	//TODO: this just get camera to find the current position within appearing rect and put that in buffer
-	void Renderer::RenderInBuffer()
+	void EntityRenderer::RenderInBuffer()
 	{
 		//Utils::Point2DInt half = {m_outputBuffer.m_HEIGHT/2, m_outputBuffer.m_WIDTH/2};
 		//std::cout << "Rendering at: " << half.ToString() << std::endl;

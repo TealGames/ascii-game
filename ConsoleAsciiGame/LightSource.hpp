@@ -5,7 +5,7 @@
 #include <limits>
 #include "raylib.h"
 #include "Component.hpp"
-#include "Renderer.hpp"
+#include "EntityRenderer.hpp"
 #include "Transform.hpp"
 #include "LightSource.hpp"
 #include "Point2DInt.hpp"
@@ -32,7 +32,7 @@ namespace ECS
 	{
 	private:
 		//std::vector<PositionLightData> m_lightData;
-		const Renderer& m_renderer;
+		const EntityRenderer& m_renderer;
 		const Transform& m_transform;
 		std::vector<TextBuffer*> m_outputBuffers;
 		const int m_lightRadius;
@@ -73,7 +73,7 @@ namespace ECS
 		/// <param name="initialLightLevel">The light level that is present at the object's center/transform position</param>
 		/// <param name="falloffValue">THe rate that the light will fade away where <1 creates more logarithmic curves, 
 		//=1 creates linear and >1 creates exponential decay</param>
-		LightSource(const Transform& transform, const Renderer& renderer, 
+		LightSource(const Transform& transform, const EntityRenderer& renderer, 
 			const std::vector<TextBuffer*>& outputBuffers, const ColorGradient& filterColor, const int& lightRadius,
 			const std::uint8_t& initialLightLevel, const float& falloffValue);
 

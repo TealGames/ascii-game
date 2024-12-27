@@ -13,7 +13,7 @@ namespace ECS
 //	AudioSource,
 //};
 
-//std::string ToString(const ComponentType& type);
+
 	using UpdatePriority = short;
 
 	/// <summary>

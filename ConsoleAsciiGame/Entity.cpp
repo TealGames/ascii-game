@@ -9,37 +9,14 @@
 
 namespace ECS
 {
-	Entity::Entity(const std::string& name) :
-		m_name(name), m_Name(m_name), m_Id(), m_components{}
+	//TODO: add a reserved entity name ssytem and not allowing those names to be used
+
+	Entity::Entity(const std::string& name, Transform& transform, const UpdatePriority& updatePriority) :
+		m_name(name), m_Name(m_name),m_UpdatePriority(updatePriority),  
+		m_Id(), m_transform(transform), 
+		m_Transform(m_transform), m_components{}
 	{
-		static std::vector<int> takenIds = {};
-		static int lastId = -1;
-
-		/*if (objectId != -1)
-		{
-			if (objectId < -1)
-			{
-				std::string error = std::format("Tried to create a gameObject with name: {} "
-					"and an id ({}) that is not allowed!", m_Name, std::to_string(objectId));
-				Utils::Log(Utils::LogType::Error, error);
-				return;
-			}
-
-			if (std::find(takenIds.begin(), takenIds.end(), objectId) != takenIds.end())
-			{
-				std::string error = std::format("Tried to create a gameObject with name: {} "
-					"and an id ({}) that is no longer available!", m_Name, std::to_string(objectId));
-				Utils::Log(Utils::LogType::Error, error);
-				return;
-			}
-			m_id = objectId;
-			takenIds.push_back(objectId);
-		}
-		else
-		{
-			m_id = ++lastId;
-			takenIds.push_back(lastId);
-		}*/
+		TryAddComponent<ECS::Transform>(&m_transform);
 	}
 
 	void Entity::Start()
@@ -58,6 +35,11 @@ namespace ECS
 	{
 		if (m_components.empty()) return;
 		for (const auto& component : m_components) component->UpdateEnd(deltaTime);
+	}
+
+	UpdatePriority Entity::GetUpdatePriority() const
+	{
+		return m_UpdatePriority;
 	}
 
 	//int Entity::GetComponentTypeCount(const ComponentType& type) const

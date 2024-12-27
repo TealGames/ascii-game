@@ -11,6 +11,7 @@
 #include "Updateable.hpp"
 #include "TextBuffer.hpp"
 #include "Point2DInt.hpp"
+#include "Transform.hpp"
 
 namespace ECS
 {
@@ -22,11 +23,14 @@ namespace ECS
 		//the polymorphism data is lost
 		/*std::vector<Component> m_components = {};*/
 		ComponentCollectionType m_components;
+		Transform& m_transform;
 
 		std::string m_name;
 
 	public:
+		const UpdatePriority m_UpdatePriority;
 		const std::string& m_Name;
+		const Transform& m_Transform;
 		//TODO: maybe replace id with GUID (UIUD is available in boost library)
 		const EntityID m_Id;
 
@@ -64,13 +68,7 @@ namespace ECS
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="objectId"></param>
-		Entity(const std::string& name);
-
-		/*int GetComponentTypeCount(const ComponentType& type) const;
-		bool HasComponentOfType(const ComponentType& type) const;*/
-
-		/*bool HasComponentWithId(const int& componentId) const;
-		const Component* TryGetComponentWithId(const int& componentId) const;*/
+		Entity(const std::string& name, Transform& transform, const UpdatePriority& updatePriority=0);
 
 		template <typename T>
 		auto HasComponent()
@@ -137,6 +135,8 @@ namespace ECS
 		void Start() override;
 		void UpdateStart(float deltaTime) override;
 		void UpdateEnd(float deltaTime) override;
+
+		virtual UpdatePriority GetUpdatePriority() const;
 	};
 
 }

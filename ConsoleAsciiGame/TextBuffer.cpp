@@ -1,3 +1,4 @@
+#include <format>
 #include "raylib.h"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
@@ -9,55 +10,112 @@ TextChar::TextChar() :
 TextChar::TextChar(const Color& color, const char& textChar = EMPTY_CHAR_PLACEHOLDER) :
 	m_Color(color), m_Char(textChar) {}
 
-TextBuffer::TextBuffer(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars) :
-	m_WIDTH(width), m_HEIGHT(height), m_textBuffer({})
+std::string TextChar::ToString() const
 {
-	if (chars.size() > m_HEIGHT)
+	return std::format("[Color: {} C:{}]", 
+		RaylibUtils::ToString(m_Color), Utils::ToString(m_Char));
+}
+
+TextCharPosition::TextCharPosition(const Utils::Point2DInt pos, const TextChar& textChar) 
+	: m_RowColPos(pos), m_Text(textChar)
+{
+
+}
+
+std::string TextCharPosition::ToString() const
+{
+	return std::format("[Pos:{}, Data:{}]", 
+		m_RowColPos.ToString(), m_Text.ToString());
+}
+
+TextBuffer::TextBuffer() :
+	TextBuffer(0, 0, std::vector<std::vector<TextChar>>{ {TextChar(Color(), EMPTY_CHAR_PLACEHOLDER)} }) {}
+
+TextBuffer::TextBuffer(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars) :
+	m_width(width), m_height(height), m_textBuffer(chars)
+{
+	if (m_height == 0) return;
+	if (chars.size() != m_height)
 	{
-		const std::string err = std::format("Tried to init a text buffer with height ({}) greater than size specified ({})!",
-			std::to_string(chars.size()), std::to_string(m_HEIGHT));
+		const std::string err = std::format("Tried to init a text buffer with height ({}) that does not match character arg ({})!",
+			std::to_string(chars.size()), std::to_string(m_height));
 		Utils::Log(Utils::LogType::Error, err);
 		return;
 	}
 
-	m_textBuffer.reserve(m_HEIGHT);
 	for (auto& textRow : m_textBuffer)
 	{
-		if (chars.size() > m_WIDTH)
+		if (chars.size() != m_width)
 		{
-			const std::string err = std::format("Tried to init a text buffer with width ({}) greater than size specified ({})!",
-				std::to_string(chars.size()), std::to_string(m_WIDTH));
+			const std::string err = std::format("Tried to init a text buffer with width ({}) that does not match character arg ({})!",
+				std::to_string(chars.size()), std::to_string(m_width));
 			Utils::Log(Utils::LogType::Error, err);
 			return;
 		}
-		textRow.reserve(m_WIDTH);
 	}
-	m_textBuffer = chars;
 }
 
 TextBuffer::TextBuffer(const int& width, const int& height, const TextChar& duplicateBufferChar) :
-	m_WIDTH(width), m_HEIGHT(height), m_textBuffer({})
+	m_width(width), m_height(height), m_textBuffer(GetBufferOfChar(width, height, duplicateBufferChar))
 {
-	m_textBuffer.reserve(m_HEIGHT);
-	for (int r=0; r<m_HEIGHT; r++)
+	
+}
+
+TextBuffer::TextBuffer(const TextBuffer& other) :
+	m_width(other.m_width), m_height(other.m_height),
+	m_textBuffer(other.m_textBuffer) 
+{
+	//Utils::Log(std::format("Invoking move constructor on: {} with other: {}", ToString(), other.ToString()));
+}
+
+TextBuffer::TextBuffer(TextBuffer&& other) noexcept : 
+	m_width(std::move(other.m_width)), m_height(std::move(other.m_height)),
+	m_textBuffer(std::move(other.m_textBuffer))
+{
+	/*Utils::Log("Invoking copy constructor");*/
+}
+
+std::vector<std::vector<TextChar>> TextBuffer::GetBufferOfChar(const int& width, 
+	const int& height, const TextChar& duplicateBufferChar) const
+{
+	std::vector<std::vector<TextChar>> chars = {};
+	
+	chars.reserve(height);
+	for (int r=0; r< height; r++)
 	{
-		m_textBuffer.reserve(m_WIDTH);
-		m_textBuffer.push_back({});
-		for (int c = 0; c < m_WIDTH; c++)
+		chars.reserve(width);
+		chars.push_back({});
+		for (int c = 0; c < width; c++)
 		{
-			m_textBuffer[r].push_back(duplicateBufferChar);
+			chars[r].push_back(duplicateBufferChar);
 		}
 	}
+	return chars;
+}
+
+int TextBuffer::GetWidth() const
+{
+	return m_width;
+}
+
+int TextBuffer::GetHeight() const
+{
+	return m_height;
+}
+
+Utils::Point2DInt TextBuffer::GetSize() const
+{
+	return Utils::Point2DInt(GetWidth(), GetHeight());
 }
 
 bool TextBuffer::IsValidRow(const int& rowPos) const
 {
-	return 0 <= rowPos && rowPos < m_HEIGHT;
+	return 0 <= rowPos && rowPos < m_height;
 }
 
 bool TextBuffer::IsValidCol(const int& colPos) const
 {
-	return 0 <= colPos && colPos < m_WIDTH;
+	return 0 <= colPos && colPos < m_width;
 }
 
 bool TextBuffer::IsValidPos(const Utils::Point2DInt& rowColPos) const
@@ -67,29 +125,26 @@ bool TextBuffer::IsValidPos(const Utils::Point2DInt& rowColPos) const
 
 void TextBuffer::SetAt(const Utils::Point2DInt& rowColPos, const TextChar& newBufferChar)
 {
-	if (!IsValidPos(rowColPos))
-	{
-		return;
-	}
+	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to set the char: {} at INVALID row col: {} of full buffer: {}", 
+		Utils::ToString(newBufferChar.m_Char), rowColPos.ToString(), ToString()))) return;
+
 	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Char = newBufferChar.m_Char;
 	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Color = newBufferChar.m_Color;
 }
 
 void TextBuffer::SetAt(const Utils::Point2DInt& rowColPos, const char& newChar)
 {
-	if (!IsValidPos(rowColPos))
-	{
-		return;
-	}
+	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to set the char: {} at INVALID row col: {} of full buffer: {}",
+		Utils::ToString(newChar), rowColPos.ToString(), ToString()))) return;
+
 	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Char = newChar;
 }
 
 void TextBuffer::SetAt(const Utils::Point2DInt& rowColPos, const Color& newColor)
 {
-	if (!IsValidPos(rowColPos))
-	{
-		return;
-	}
+	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to set the color: {} at INVALID row col: {} of full buffer: {}",
+		RaylibUtils::ToString(newColor), rowColPos.ToString(), ToString()))) return;
+
 	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Color = newColor;
 }
 
@@ -138,38 +193,37 @@ bool TextBuffer::TrySetRegion(const Utils::Point2DInt& rowColStartPos, const Uti
 
 const TextChar* TextBuffer::GetAt(const Utils::Point2DInt& rowColPos) const
 {
-	if (!IsValidPos(rowColPos))
-	{
-		return nullptr;
-	}
+	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to get INVALID pos at row col: {} of full buffer: {}",
+		rowColPos.ToString(), ToString()))) return nullptr;
+
 	return &(m_textBuffer[rowColPos.m_X][rowColPos.m_Y]);
 }
 
 const std::vector<TextChar>& TextBuffer::GetAt(const int& rowPos) const
 {
-	if (IsValidRow(rowPos))
-	{
-		return {};
-	}
+	if (!Utils::Assert(IsValidRow(rowPos), std::format("Tried to get INVALID row pos {} of full buffer: {}",
+		std::to_string(rowPos), ToString()))) return {};
+
 	return m_textBuffer[rowPos];
 }
 
-std::string TextBuffer::ToString(bool convertChars) const
+std::string TextBuffer::ToString(const std::vector<std::vector<TextChar>>& buffer,
+	const bool convertChars)
 {
 	std::string fullStr = "";
 	char currentChar = '0';
-	for (int r = 0; r < m_HEIGHT; r++)
+	for (int r = 0; r < buffer.size(); r++)
 	{
-		for (int c = 0; c < m_WIDTH; c++)
+		for (int c = 0; c < buffer[r].size(); c++)
 		{
 			if (convertChars)
 			{
-				currentChar = GetAt({ r, c })->m_Char;
+				currentChar = buffer[r][c].m_Char;
 				fullStr += currentChar;
 			}
 			else
 			{
-				fullStr += RaylibUtils::ToString(GetAt({ r, c })->m_Color) +" ";
+				fullStr += RaylibUtils::ToString(buffer[r][c].m_Color) + " ";
 			}
 			/*if (currentChar == EMPTY_CHAR_PLACEHOLDER) fullStr += " ";
 			else fullStr += currentChar;*/
@@ -177,4 +231,37 @@ std::string TextBuffer::ToString(bool convertChars) const
 		fullStr += "\n";
 	}
 	return fullStr;
+}
+
+std::string TextBuffer::ToString(bool convertChars) const
+{
+	return std::format("(W:{} H:{})", 
+		std::to_string(m_width), std::to_string(m_height)) + ToString(m_textBuffer, convertChars);
+}
+
+TextBuffer& TextBuffer::operator=(const TextBuffer& other)
+{
+	if (&other == this) return *this;
+	/*Utils::Log("COPY ASSIGNMNT");*/
+	//Utils::Log(std::format("ASSIGNGIN BUFFER: {} to {}", other.ToString(), ToString()));
+	//Utils::Log(std::format("ASSIGNGIN BUFFER: {} -> {}", other.ToString(), ToString()));
+
+	//m_textBuffer = other.m_textBuffer;
+	m_textBuffer = other.m_textBuffer;
+	m_width = other.m_width;
+	m_height = other.m_height;
+	return *this;
+}
+
+TextBuffer& TextBuffer::operator=(TextBuffer&& other) noexcept
+{
+	if (this == &other)
+		return *this;
+
+	/*Utils::Log("MOVE ASSIGNMNT");*/
+	m_textBuffer = std::exchange(other.m_textBuffer, {});
+	m_width = std::exchange(other.m_width, 0);
+	m_height = std::exchange(other.m_height, 0);
+
+	return *this;
 }

@@ -10,7 +10,7 @@
 #include "Point2D.hpp"
 #include "Point2DInt.hpp"
 
-#include "Renderer.hpp"
+#include "EntityRenderer.hpp"
 #include "Transform.hpp"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
@@ -19,7 +19,7 @@
 
 namespace ECS
 {
-	LightSource::LightSource(const Transform& transform, const Renderer& renderer, 
+	LightSource::LightSource(const Transform& transform, const EntityRenderer& renderer, 
         const std::vector<TextBuffer*>& buffers, const ColorGradient& filterColor, const int& lightRadius,
         const std::uint8_t& initialLightLevel, const float& falloffValue) :
 		Component(), m_renderer(renderer), m_transform(transform), m_outputBuffers(buffers),
@@ -50,7 +50,7 @@ namespace ECS
         //TODO: currently light is only applied on the background layer
         //so we should also make it apply it to other layers too
         if (!m_lastFrameData.empty()) m_lastFrameData.clear();
-        RenderLight(true);
+        RenderLight(false);
         //std::cout << "Rendering lgiht" << std::endl;
     }
 
@@ -68,7 +68,7 @@ namespace ECS
         const Utils::Point2DInt minXY = { centerPos.m_X - m_lightRadius, centerPos.m_Y - m_lightRadius };
 
         //We approxiamte how accurate the circle should be by using the total area to figure out how many points we need
-        const int positiveSidePoints = std::min(buffer.m_HEIGHT, buffer.m_WIDTH) / m_lightRadius;
+        const int positiveSidePoints = std::min(buffer.GetHeight(), buffer.GetWidth()) / m_lightRadius;
         const float pointXValIncrement = 0.5f;
 
         //We add all the points on circle using X, Y Coords
@@ -124,7 +124,10 @@ namespace ECS
                 if (displayLightLevels)
                 {
                     prevLevel = Utils::TryParse<int>(std::string(1, buffer.GetAt(bufferPosRowCol)->m_Char));
-                    lightLevelStr = std::string(1, prevLevel != std::nullopt ? prevLevel.value() + lightLevel : lightLevel)[0];
+                    int newLevel = prevLevel != std::nullopt ? prevLevel.value() + lightLevel : lightLevel;
+                    newLevel = static_cast<double>(newLevel) / MAX_LIGHT_LEVEL * 10;
+                    lightLevelStr = std::to_string(newLevel)[0];
+                    //std::cout << "New level is:{} " << prevLevel.value_or(0) + lightLevel << std::endl;
                     buffer.SetAt(bufferPosRowCol, lightLevelStr[0]);
                 }
                 m_lastFrameData.push_back(TextCharPosition{bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char}});
@@ -188,6 +191,7 @@ namespace ECS
         originalColor.r = std::roundf((originalColor.r) * (1 - colorMultiplier) + (filterColor.r) * (colorMultiplier));
         originalColor.g = std::roundf((originalColor.g) * (1 - colorMultiplier) + (filterColor.g) * (colorMultiplier));
         originalColor.b = std::roundf((originalColor.b) * (1 - colorMultiplier) + (filterColor.b) * (colorMultiplier));
+        originalColor.a = 255;
 
         /*Utils::Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
             std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),

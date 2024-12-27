@@ -8,8 +8,8 @@ namespace Utils
 		int m_X;
 		int m_Y;
 
-		Point2DInt();
-		Point2DInt(int, int);
+		constexpr Point2DInt();
+		constexpr Point2DInt(const int& x, const int& y);
 		Point2DInt(const Point2DInt&) = default;
 
 		std::string ToString() const;

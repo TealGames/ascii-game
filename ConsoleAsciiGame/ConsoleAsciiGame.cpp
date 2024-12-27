@@ -3,27 +3,27 @@
 #include <string>
 #include <vector>
 #include <chrono>
-#include <raylib.h>
+#include "raylib.h"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 #include "Point2DInt.hpp"
 #include "Point2D.hpp"
 #include "Player.hpp"
-#include "Renderer.hpp"
+#include "EntityRenderer.hpp"
 #include "LightSource.hpp"
+#include "Camera.hpp"
 #include "Entity.hpp"
+#include "Globals.hpp"
+#include "RenderLayer.hpp"
+#include "GameRenderer.hpp"
+#include "SceneManager.hpp"
 
-const std::string WINDOW_NAME = "game";
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
-
-const int TEXT_BUFFER_MAX_WIDTH = 60;
-const int TEXT_BUFFER_MAX_HEIGHT = 30;
-
-const int PLAY_AREA_TEXT_BUFFER_WIDTH = 50;
-const int PLAY_AREA_TEXT_BUFFER_HEIGHT = 25;
-const int TEXT_BUFFER_FONT = 15;
-const Utils::Point2DInt TEXT_BUFFER_PADDING = {10, 10};
+#define ENABLE_MEMORY_LEAK_DETECTION
+#ifdef ENABLE_MEMORY_LEAK_DETECTION
+#define _CRTDBG_MAP_ALLOC
+#include <cstdlib>
+#include <crtdbg.h>
+#endif
 
 std::chrono::time_point<std::chrono::high_resolution_clock> LastTime;
 std::chrono::time_point<std::chrono::high_resolution_clock> CurrentTime;
@@ -31,141 +31,116 @@ float DeltaTime = 0;
 
 //NOTE: all positions are (x/Col, y/row) but buffer position is (row, col)
 
-struct RenderLayer
-{
-    TextBuffer m_TextBuffer;
-    const TextBuffer m_DefaultTextBuffer;
-    //Where the text buffer starts relative to the position of the max text buffer
-    Utils::Point2DInt m_StartPos;
-
-    RenderLayer(const TextBuffer& buffer, const Utils::Point2DInt startPos) :
-        m_TextBuffer(buffer), m_DefaultTextBuffer(m_TextBuffer), m_StartPos(startPos)
-    {
-
-    }
-
-    /// <summary>
-    /// Resets the buffer back to the original
-    /// </summary>
-    void ResetToDefault()
-    {
-        Utils::Point2DInt currentPos = {};
-        for (int r = 0; r < m_TextBuffer.m_HEIGHT; r++)
-        {
-            for (int c = 0; c < m_TextBuffer.m_WIDTH; c++)
-            {
-                currentPos = {r, c};
-                m_TextBuffer.SetAt(currentPos, *m_DefaultTextBuffer.GetAt(currentPos));
-            }
-        }
-    }
-
-    /// <summary>
-    /// Will return the amount of spacing between characters in (WIDTH, HEIGHT)
-    /// </summary>
-    /// <returns></returns>
-    Utils::Point2DInt CalculateCharSpacing() const
-    {
-        Utils::Point2DInt totalCharSpace = {-1, -1};
-        char drawStr[2] = { '1', '\0' };
-        for (int r = 0; r < m_TextBuffer.m_HEIGHT; r++)
-        {
-            totalCharSpace.m_Y += TEXT_BUFFER_FONT;
-
-            if (totalCharSpace.m_X != -1) continue;
-            for (int c = 0; c < m_TextBuffer.m_WIDTH; c++)
-            {
-                drawStr[0] = m_TextBuffer.GetAt({ r, c })->m_Char;
-                totalCharSpace.m_X+= MeasureText(drawStr, TEXT_BUFFER_FONT);
-            }
-        }
-
-        int widthSpacing = static_cast<double>(SCREEN_WIDTH - totalCharSpace.m_X) / (m_TextBuffer.m_WIDTH - 1);
-        int heightSpacing = static_cast<double>(SCREEN_HEIGHT - totalCharSpace.m_Y) / (m_TextBuffer.m_HEIGHT - 1);
-        return Utils::Point2DInt(widthSpacing, heightSpacing);
-    }
-
-    std::string ToString() const
-    {
-        return m_TextBuffer.ToString();
-    }
-};
+//struct RenderLayer
+//{
+//    TextBuffer m_TextBuffer;
+//    const TextBuffer m_DefaultTextBuffer;
+//    //Where the text buffer starts relative to the position of the max text buffer
+//    Utils::Point2DInt m_StartPos;
+//
+//    RenderLayer(const TextBuffer& buffer, const Utils::Point2DInt startPos) :
+//        m_TextBuffer(buffer), m_DefaultTextBuffer(m_TextBuffer), m_StartPos(startPos)
+//    {
+//
+//    }
+//
+//    /// <summary>
+//    /// Resets the buffer back to the original
+//    /// </summary>
+//    void ResetToDefault()
+//    {
+//        Utils::Point2DInt currentPos = {};
+//        for (int r = 0; r < m_TextBuffer.m_HEIGHT; r++)
+//        {
+//            for (int c = 0; c < m_TextBuffer.m_WIDTH; c++)
+//            {
+//                currentPos = {r, c};
+//                m_TextBuffer.SetAt(currentPos, *m_DefaultTextBuffer.GetAt(currentPos));
+//            }
+//        }
+//    }
+//
+//    /// <summary>
+//    /// Will return the amount of spacing between characters in (WIDTH, HEIGHT)
+//    /// </summary>
+//    /// <returns></returns>
+//    Utils::Point2DInt CalculateCharSpacing() const
+//    {
+//        Utils::Point2DInt totalCharSpace = {-1, -1};
+//        char drawStr[2] = { '1', '\0' };
+//        for (int r = 0; r < m_TextBuffer.m_HEIGHT; r++)
+//        {
+//            totalCharSpace.m_Y += TEXT_BUFFER_FONT;
+//
+//            if (totalCharSpace.m_X != -1) continue;
+//            for (int c = 0; c < m_TextBuffer.m_WIDTH; c++)
+//            {
+//                drawStr[0] = m_TextBuffer.GetAt({ r, c })->m_Char;
+//                totalCharSpace.m_X+= MeasureText(drawStr, TEXT_BUFFER_FONT);
+//            }
+//        }
+//
+//        int widthSpacing = static_cast<double>(SCREEN_WIDTH - totalCharSpace.m_X) / (m_TextBuffer.m_WIDTH - 1);
+//        int heightSpacing = static_cast<double>(SCREEN_HEIGHT - totalCharSpace.m_Y) / (m_TextBuffer.m_HEIGHT - 1);
+//        return Utils::Point2DInt(widthSpacing, heightSpacing);
+//    }
+//
+//    std::string ToString() const
+//    {
+//        return m_TextBuffer.ToString();
+//    }
+//};
 
 //All of the render layers in order from one drawn first to last
 static std::vector<RenderLayer*> RenderLayers = {};
 
-TextBuffer CollapseLayersToSingle(const std::vector<RenderLayer*>& layers)
-{
-    TextBuffer newBuffer = TextBuffer(TEXT_BUFFER_MAX_WIDTH, TEXT_BUFFER_MAX_HEIGHT, TextChar{});
-    Utils::Point2DInt globalPos = {};
-    Utils::Point2DInt localPos = {};
-    Utils::Point2DInt startPos = {};
+//TextBuffer CollapseLayersToSingle(const std::vector<RenderLayer*>& layers)
+//{
+//    TextBuffer newBuffer = TextBuffer(TEXT_BUFFER_MAX_WIDTH, TEXT_BUFFER_MAX_HEIGHT, TextChar{});
+//    Utils::Point2DInt globalPos = {};
+//    Utils::Point2DInt localPos = {};
+//    Utils::Point2DInt startPos = {};
+//
+//    Utils::Point2DInt half = { layers[1]->m_SquaredTextBuffer.m_HEIGHT / 2,  layers[1]->m_SquaredTextBuffer.m_WIDTH / 2};
+//   
+//    for (int r = 0; r < newBuffer.m_HEIGHT; r++)
+//    {
+//        for (int c = 0; c < newBuffer.m_WIDTH; c++)
+//        {
+//            globalPos = { r, c };
+//            for (int layerIndex = layers.size() - 1; layerIndex >= 0; layerIndex--)
+//            {
+//                /*std::cout << std::format("ayer index: {}/{} of r: {} c:{}", 
+//                    std::to_string(layerIndex), std::to_string(layers.size()), std::to_string(r), std::to_string(c)) << std::endl;*/
+//
+//                const RenderLayer& layer = *layers[layerIndex];
+//                startPos = layer.m_StartPos;
+//
+//                //If the global pos we are looking at is not contianed within the layer's buffer, continue
+//                if (globalPos.m_X < startPos.m_X || globalPos.m_X >= startPos.m_X + layer.m_SquaredTextBuffer.m_HEIGHT ||
+//                    globalPos.m_Y < startPos.m_Y || globalPos.m_Y >= startPos.m_Y + layer.m_SquaredTextBuffer.m_WIDTH)
+//                    continue;
+//
+//                localPos = globalPos - startPos;
+//
+//               /* Utils::Log(std::format("Attempting char at: {} of HEGIHT: {} WIDTH: {}", 
+//                    localPos.ToString(), std::to_string(layer.m_TextBuffer.m_HEIGHT), std::to_string(layer.m_TextBuffer.m_WIDTH)));*/
+//
+//                const TextChar* textChar = layer.m_SquaredTextBuffer.GetAt(localPos);
+//                
+//                //If the converted pos relative to the layer is placeholder continue
+//                if (textChar->m_Char == EMPTY_CHAR_PLACEHOLDER)
+//                    continue;
+//
+//                newBuffer.SetAt(globalPos, *textChar);
+//                break;
+//            }   
+//        }
+//    }
+//    return newBuffer;
+//}
 
-    Utils::Point2DInt half = { layers[1]->m_TextBuffer.m_HEIGHT / 2,  layers[1]->m_TextBuffer.m_WIDTH / 2};
-   
-    for (int r = 0; r < newBuffer.m_HEIGHT; r++)
-    {
-        for (int c = 0; c < newBuffer.m_WIDTH; c++)
-        {
-            globalPos = { r, c };
-            for (int layerIndex = layers.size() - 1; layerIndex >= 0; layerIndex--)
-            {
-                /*std::cout << std::format("ayer index: {}/{} of r: {} c:{}", 
-                    std::to_string(layerIndex), std::to_string(layers.size()), std::to_string(r), std::to_string(c)) << std::endl;*/
 
-                const RenderLayer& layer = *layers[layerIndex];
-                startPos = layer.m_StartPos;
-
-                //If the global pos we are looking at is not contianed within the layer's buffer, continue
-                if (globalPos.m_X < startPos.m_X || globalPos.m_X >= startPos.m_X + layer.m_TextBuffer.m_HEIGHT ||
-                    globalPos.m_Y < startPos.m_Y || globalPos.m_Y >= startPos.m_Y + layer.m_TextBuffer.m_WIDTH)
-                    continue;
-
-                localPos = globalPos - startPos;
-
-               /* Utils::Log(std::format("Attempting char at: {} of HEGIHT: {} WIDTH: {}", 
-                    localPos.ToString(), std::to_string(layer.m_TextBuffer.m_HEIGHT), std::to_string(layer.m_TextBuffer.m_WIDTH)));*/
-
-                const TextChar* textChar = layer.m_TextBuffer.GetAt(localPos);
-                
-                //If the converted pos relative to the layer is placeholder continue
-                if (textChar->m_Char == EMPTY_CHAR_PLACEHOLDER)
-                    continue;
-
-                newBuffer.SetAt(globalPos, *textChar);
-                break;
-            }   
-        }
-    }
-    return newBuffer;
-}
-
-void RenderBuffer(const TextBuffer& buffer)
-{
-    int totalUsableWidth = SCREEN_WIDTH - (2 * TEXT_BUFFER_PADDING.m_X);
-    int totalUsableHeight = SCREEN_HEIGHT - (2 * TEXT_BUFFER_PADDING.m_Y);
-    Utils::Point2DInt charArea = { totalUsableWidth/ buffer.m_WIDTH, totalUsableHeight/ buffer.m_HEIGHT};
-   /* std::cout << std::format("Out of total screen: W{}x H{} usable is W{} x H{} with char area: w{} h{}", 
-        std::to_string(SCREEN_WIDTH), std::to_string(SCREEN_HEIGHT), std::to_string(totalUsableWidth), std::to_string(totalUsableHeight), 
-        std::to_string(charArea.m_X), std::to_string(charArea.m_Y)) << std::endl;*/
-
-    int x = TEXT_BUFFER_PADDING.m_X;
-    int y = TEXT_BUFFER_PADDING.m_Y;
-    char drawStr[2] = {'1', '\0'};
-
-    for (int r = 0; r < buffer.m_HEIGHT; r++)
-    {
-        for (int c = 0; c < buffer.m_WIDTH; c++)
-        {
-            drawStr[0] = buffer.GetAt({ r, c })->m_Char;
-            DrawText(drawStr, x, y, TEXT_BUFFER_FONT, buffer.GetAt({r, c})->m_Color);
-            x += charArea.m_X;
-        }
-
-        y += charArea.m_Y;
-        x = TEXT_BUFFER_PADDING.m_X;
-    }
-}
 
 //void RenderPlayerLight(TextBuffer& buffer, const Utils::Point2DInt& centerPos, const int& radius)
 //{
@@ -215,67 +190,97 @@ void RenderBuffer(const TextBuffer& buffer)
 
 int main() {
 
+#ifdef ENABLE_MEMORY_LEAK_DETECTION
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
     const Color darkGreen = Color{ 57, 104, 48, 255};
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME.c_str());
     SetTargetFPS(60);
 
-    RenderLayers.reserve(3);
+    SceneManagement::SceneManager sceneManager = SceneManagement::SceneManager("scenes");
+    Utils::Log("Finished constructor of scene manager");
+    
+    sceneManager.TrySetActiveScene(0);
+    Utils::Log(std::format("Finished setting active scene. valid scene {}", std::to_string(sceneManager.GetActiveScene()!=nullptr)));
+    Utils::Log(sceneManager.GetActiveScene()->ToStringLayers());
 
-    RenderLayer uiLayer(TextBuffer(TEXT_BUFFER_MAX_WIDTH, TEXT_BUFFER_MAX_HEIGHT, TextChar{}), {0, 0});
-    uiLayer.m_TextBuffer.SetAt({ 0, 0 }, TextChar(RED, 'O'));
-    uiLayer.m_TextBuffer.SetAt({ 0, 1 }, TextChar(RED, 'O'));
+    //TODO: the UI layer should be a separate layer that will be combined by the camera with rendered layers
+    //RenderLayers.reserve(3);
+    /*RenderLayer uiLayer(TextBuffer(TEXT_BUFFER_MAX_WIDTH, TEXT_BUFFER_MAX_HEIGHT, TextChar{}), {0, 0});
+    uiLayer.m_SquaredTextBuffer.SetAt({ 0, 0 }, TextChar(RED, 'O'));
+    uiLayer.m_SquaredTextBuffer.SetAt({ 0, 1 }, TextChar(RED, 'O'));*/
 
-    Utils::Point2DInt playAreaOffset = {(TEXT_BUFFER_MAX_HEIGHT- PLAY_AREA_TEXT_BUFFER_HEIGHT)/2, (TEXT_BUFFER_MAX_WIDTH- PLAY_AREA_TEXT_BUFFER_WIDTH)/2};
-    RenderLayer backgroundLayer(TextBuffer(PLAY_AREA_TEXT_BUFFER_WIDTH, PLAY_AREA_TEXT_BUFFER_HEIGHT, TextChar{darkGreen, '^'}), playAreaOffset);
-    RenderLayer playerLayer(TextBuffer(PLAY_AREA_TEXT_BUFFER_WIDTH, PLAY_AREA_TEXT_BUFFER_HEIGHT, TextChar{}), playAreaOffset);
+    /*Utils::Point2DInt playAreaOffset = {(TEXT_BUFFER_MAX_HEIGHT- PLAY_AREA_TEXT_BUFFER_HEIGHT)/2, (TEXT_BUFFER_MAX_WIDTH- PLAY_AREA_TEXT_BUFFER_WIDTH)/2};
+    RenderLayer backgroundLayer(TextBuffer(PLAY_AREA_TEXT_BUFFER_WIDTH, PLAY_AREA_TEXT_BUFFER_HEIGHT, TextChar{darkGreen, '^'}), TEXT_BUFFER_FONT, CHAR_SPACING);
+    RenderLayer playerLayer(TextBuffer(PLAY_AREA_TEXT_BUFFER_WIDTH, PLAY_AREA_TEXT_BUFFER_HEIGHT, TextChar{}));*/
 
-    RenderLayers.push_back(&backgroundLayer);
+   /* RenderLayers.push_back(&backgroundLayer);
     RenderLayers.push_back(&playerLayer);
-    RenderLayers.push_back(&uiLayer);
+    RenderLayers.push_back(&uiLayer);*/
+
+    //RenderLayer playerLayer= RenderLayer(TextBuffer{PLAY_AREA_TEXT_BUFFER_WIDTH, PLAY_AREA_TEXT_BUFFER_HEIGHT, TextChar()}, TEXT_BUFFER_FONT, CHAR_SPACING);
+    RenderLayer& backgroundLayer = *sceneManager.GetActiveSceneMutable()->GetLayersMutable()[0];
+    RenderLayer& playerLayer= *sceneManager.GetActiveSceneMutable()->GetLayersMutable()[1];
     //ECS::Player player = ECS::Player(Utils::Point2DInt{ TEXT_BUFFER_MAX_WIDTH / 2, TEXT_BUFFER_MAX_HEIGHT / 2 }, 'o');
 
     //TODO: ideally, the custom script like Player should handle the creation of other components
-    ECS::Transform transform = ECS::Transform(Utils::Point2DInt{ PLAY_AREA_TEXT_BUFFER_WIDTH/ 2, PLAY_AREA_TEXT_BUFFER_HEIGHT / 2 });
-    ECS::Renderer renderer = ECS::Renderer(transform, playerLayer.m_TextBuffer, { {TextChar(GRAY, '0')},  {TextChar(GRAY, '4')} });
+    ECS::Transform transform = ECS::Transform(Utils::Point2DInt{ 3, 0 });
+    //ECS::EntityRenderer renderer = ECS::EntityRenderer(transform, playerLayer.m_SquaredTextBuffer, { {TextChar(GRAY, '0')},  {TextChar(GRAY, '4')} });
+    ECS::EntityRenderer renderer = ECS::EntityRenderer(transform, playerLayer.m_SquaredTextBuffer, 
+        { {TextChar(GRAY, 'H')}});
     ECS::Player playerComponent = ECS::Player(transform, 'o');
     ECS::LightSource lightSource = ECS::LightSource(transform, renderer, 
-        std::vector<TextBuffer*>{ &backgroundLayer.m_TextBuffer, &playerLayer.m_TextBuffer },
-        //std::vector<TextBuffer*>{ &backgroundLayer.m_TextBuffer },
+        std::vector<TextBuffer*>{ &backgroundLayer.m_SquaredTextBuffer, &playerLayer.m_SquaredTextBuffer },
         ColorGradient(Color(243, 208, 67, 255),  Color(228, 8, 10, 255)), 8, 255, 1.2f);
-    ECS::Entity player = ECS::Entity("Player");
-    player.TryAddComponent(&transform);
+    ECS::Entity player = ECS::Entity("Player", transform);
     player.TryAddComponent(&renderer);
     player.TryAddComponent(&playerComponent);
     player.TryAddComponent(&lightSource);
 
+    ECS::Transform mainCameraTransform = ECS::Transform({0, 0});
+    ECS::Entity mainCamera = ECS::Entity("MainCamera", mainCameraTransform, ECS::MIN_PRIORITY);
+    ECS::Camera camera = ECS::Camera(mainCameraTransform, sceneManager, 
+        player, Utils::Point2DInt(20, 20));
+    mainCamera.TryAddComponent<ECS::Camera>(&camera);
+    sceneManager.GetActiveSceneMutable()->AddEntity(mainCamera);
+    sceneManager.GetActiveSceneMutable()->AddEntity(player);
+
     LastTime = std::chrono::high_resolution_clock().now();
+
+    sceneManager.GetActiveSceneMutable()->Start();
 
     //TODO: it seems like doing this over and over might be slow
     //so we need some optimizations
     while (!WindowShouldClose()) 
     {
+        DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24,WHITE);
+
         BeginDrawing();
         ClearBackground(BLACK);
 
         CurrentTime = std::chrono::high_resolution_clock().now();
         DeltaTime= std::chrono::duration_cast<std::chrono::milliseconds>(CurrentTime - LastTime).count();
 
+        sceneManager.GetActiveSceneMutable()->UpdateStart(DeltaTime);
+        sceneManager.GetActiveSceneMutable()->UpdateEnd(DeltaTime);
+
         //std::cout << "Player Pos: " << player.TryGetComponent<ECS::Transform>()->m_Pos.ToString() << std::endl;s
 
         //We need to reset to default since previous changes were baked into the buffer
         //so we need to clear it for a fresh update
-        for (const auto& layer : RenderLayers) layer->ResetToDefault();
+        //for (const auto& layer : RenderLayers) layer->ResetToDefault();
         
         //RenderPlayerLight(textBuffer, player.m_PlayerPos, 5);
-        player.UpdateStart(DeltaTime);
+        //player.UpdateStart(DeltaTime);
         //Utils::Point2DInt half = { playerLayer.m_TextBuffer.m_HEIGHT / 2,  playerLayer.m_TextBuffer.m_WIDTH / 2 };
        /* Utils::Log(std::format("CHecking from main: {}", Utils::ToString(playerLayer.m_TextBuffer.GetAt(half)->m_Char)));
         std::cout << "PLAYER LAYER: " << playerLayer.ToString() << std::endl;*/
 
-        RenderBuffer(CollapseLayersToSingle(RenderLayers));
+        //RenderBuffer(CollapseLayersToSingle(RenderLayers));
 
-        player.UpdateEnd(DeltaTime);
+        //player.UpdateEnd(DeltaTime);
         LastTime = CurrentTime;
 
        /* std::string layerStr = "";

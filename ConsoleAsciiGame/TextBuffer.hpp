@@ -19,26 +19,43 @@ struct TextChar
 	TextChar(const TextChar&) = default;
 
 	bool operator==(const TextChar& other) const = default;
+	std::string ToString() const;
 };
 
 struct TextCharPosition
 {
 	Utils::Point2DInt m_RowColPos;
 	TextChar m_Text;
+
+	bool operator==(const TextCharPosition& other) const = default;
+	std::string ToString() const;
+
+	TextCharPosition(const Utils::Point2DInt pos, const TextChar& textChar);
 };
 
 class TextBuffer
 {
 private:
 	std::vector<std::vector<TextChar>> m_textBuffer;
+	int m_width;
+	int m_height;
+
 public:
-	const int m_WIDTH;
-	const int m_HEIGHT;
 
 private:
+	std::vector<std::vector<TextChar>> GetBufferOfChar(const int& width, 
+		const int& height, const TextChar& duplicateBufferChar) const;
+
 public:
+	TextBuffer();
 	TextBuffer(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars);
 	TextBuffer(const int& width, const int& height, const TextChar& duplicateBufferChar);
+	TextBuffer(const TextBuffer& other);
+	TextBuffer(TextBuffer&& other) noexcept;
+
+	int GetWidth() const;
+	int GetHeight() const;
+	Utils::Point2DInt GetSize() const;
 
 	bool IsValidRow(const int& rowPos) const;
 	bool IsValidCol(const int& colPos) const;
@@ -64,6 +81,11 @@ public:
 	const TextChar* GetAt(const Utils::Point2DInt& rowColPos) const;
 	const std::vector<TextChar>& GetAt(const int& rowPos) const;
 
-	std::string ToString(bool convertChars=true) const;
+	static std::string ToString(const std::vector<std::vector<TextChar>>& buffer, 
+		const bool convertChars = true);
+	std::string ToString(const bool convertChars=true) const;
+
+	TextBuffer& operator=(const TextBuffer& other);
+	TextBuffer& operator=(TextBuffer&& other) noexcept;
 };
 
