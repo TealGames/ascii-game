@@ -4,6 +4,7 @@
 #include <functional>
 #include <string>
 #include <filesystem>
+#include <fstream>
 #include "Point2DInt.hpp"
 #include "TextBuffer.hpp"
 #include "RenderLayer.hpp"
@@ -28,6 +29,7 @@ public:
 	static const std::string m_SCENE_FILE_PREFIX;
 
 private:
+	void ParseSceneFile(std::ifstream& stream, std::vector<std::vector<TextCharPosition>>& charPos) const;
 	void SortEntitiesByUpdatePriority();
 
 public:

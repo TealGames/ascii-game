@@ -18,7 +18,6 @@
 #include "GameRenderer.hpp"
 #include "SceneManager.hpp"
 
-#define ENABLE_MEMORY_LEAK_DETECTION
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
 #define _CRTDBG_MAP_ALLOC
 #include <cstdlib>

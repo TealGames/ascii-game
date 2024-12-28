@@ -1,6 +1,9 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <optional>
+#include <cstdint>
+#include <unordered_map>
 #include <fstream>
 #include <iostream>
 #include "raylib.h"
@@ -8,6 +11,7 @@
 #include "Scene.hpp"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
+#include "RaylibUtils.hpp"
 #include "StringUtil.hpp"
 #include "Globals.hpp"
 
@@ -39,23 +43,7 @@ Scene::Scene(const std::filesystem::path& scenePath) :
 		return;
 	}*/
 
-	int r = 0;
-	std::string currentLine = "";
-	while (std::getline(fstream, currentLine))
-	{
-		layerText.push_back({});
-		//std::cout << "ALLOC with line: "<<currentLine<< std::endl;
-		//if (currentLine.size() > maxLineChars) maxLineChars = currentLine.size();
-
-		for (int c=0; c<currentLine.size(); c++)
-		{
-			//TODO: what is the best way of doing this? putting in text chars and putting empty chars 
-			//which would work fine for init but hard to create collision bound 
-			//OR do we leave empty spots and put them in with positions?
-			layerText.back().push_back(TextCharPosition{ Utils::Point2DInt(r, c), TextChar(Color(), currentLine[c]) });
-		}
-		r++;
-	}
+	ParseSceneFile(fstream, layerText);
 
 	//Utils::Log("Creating new layer in scene");
 	const RenderLayer newLayer = RenderLayer(layerText, TEXT_BUFFER_FONT, CHAR_SPACING);
@@ -71,6 +59,85 @@ Scene::Scene(const std::filesystem::path& scenePath) :
 
 	const RenderLayer playerLayer = RenderLayer(TextBuffer{ newLayerW, newLayerH, TextChar()}, TEXT_BUFFER_FONT, CHAR_SPACING);
 	m_Layers.push_back(playerLayer);
+}
+
+void Scene::ParseSceneFile(std::ifstream& fstream, 
+	std::vector<std::vector<TextCharPosition>>& layerText) const
+{
+	int r = 0;
+	std::string currentLine = "";
+	std::unordered_map<std::string, Color> colorAliases = {};
+	const std::string keyHeader = "key:";
+	const std::string sceneHeader = "scene:";
+	const char charColorAliasStart = '[';
+	const char charColorAliasEnd = ']';
+	bool isParsingKey = false;
+
+	int lineIndex = -1;
+	const Color defaultColor = BLACK;
+	Color currentColor = defaultColor;
+	while (std::getline(fstream, currentLine))
+	{
+		lineIndex++;
+		if (currentLine.empty()) continue;
+
+		if (currentLine == keyHeader) isParsingKey = true;
+		else if (currentLine == sceneHeader) isParsingKey = false;
+
+		else if (isParsingKey)
+		{
+			int equalsSignIndex = currentLine.find('=');
+			std::string colorAlias = currentLine.substr(0, equalsSignIndex);
+			std::string hexString = currentLine.substr(equalsSignIndex + 1);
+			std::optional<uint32_t> maybeConvertedHex = Utils::TryParseHex<uint32_t>(hexString);
+			if (!Utils::Assert(maybeConvertedHex.has_value(), std::format("Tried to parse scene data: {}, but encountered "
+				"unparsable hex: '{}' at line: {}", m_SceneName, hexString, std::to_string(lineIndex)))) continue;
+
+			Color convertedColor = RaylibUtils::GetColorFromHex(maybeConvertedHex.value());
+			Utils::Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));
+			colorAliases.emplace(colorAlias, convertedColor);
+		}
+		else
+		{
+			layerText.push_back({});
+			//std::cout << "ALLOC with line: "<<currentLine<< std::endl;
+			//if (currentLine.size() > maxLineChars) maxLineChars = currentLine.size();
+
+			for (int i = 0; i < currentLine.size(); i++)
+			{
+				if (currentLine[i] == '\t' || currentLine[i]==' ') continue;
+				//We need to make sure there is at least 2 chars in front for at least one for alias and one for ending symbol
+				if (currentLine[i] == charColorAliasStart && i< currentLine.size()-2)
+				{
+					int colorAliasEndIndex = currentLine.find(charColorAliasEnd, i + 1);
+					if (!Utils::Assert(colorAliasEndIndex != std::string::npos, std::format("Tried to parse a color alias for scene data: {} at line: {} "
+						"but did not find color alias end at color alias start at index: {}", 
+						m_SceneName, std::to_string(lineIndex), std::to_string(i)))) continue;
+
+					std::string colorAlias = currentLine.substr(i + 1, colorAliasEndIndex - (i + 1));
+					if (!Utils::Assert(colorAliases.find(colorAlias) != colorAliases.end(), std::format("Tried to parse a color alias for scene data: {} at line: {} "
+						"but color alias: {} starting at index:{} has no color data defined in KEY section",
+						m_SceneName, std::to_string(lineIndex), colorAlias, std::to_string(i + 1))))
+					{
+						i = colorAliasEndIndex;
+						continue;
+					}
+
+					Utils::Log(std::format("Found good color alias: {}", colorAlias));
+					currentColor = colorAliases[colorAlias];
+					i = colorAliasEndIndex;
+					continue;
+				}
+
+				//TODO: what is the best way of doing this? putting in text chars and putting empty chars 
+				//which would work fine for init but hard to create collision bound 
+				//OR do we leave empty spots and put them in with positions?
+				Utils::Log(std::format("Added char: {} with color: {}", Utils::ToString(currentLine[i]), RaylibUtils::ToString(currentColor)));
+				layerText.back().push_back(TextCharPosition{ Utils::Point2DInt(r, i), TextChar(currentColor, currentLine[i])});
+			}
+			r++;
+		}
+	}
 }
 
 void Scene::SortEntitiesByUpdatePriority()

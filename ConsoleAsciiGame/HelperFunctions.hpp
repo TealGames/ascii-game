@@ -377,44 +377,61 @@ namespace Utils
 
 	std::string CollapseToSingleString(const std::vector<std::string>& collection);
 
+	constexpr std::uint8_t DEFAULT_PARSE_BASE = 10;
 	template<typename T>
-	std::optional<T> TryParse(const std::string& str)
+	std::optional<T> TryParse(const std::string& str, const std::uint8_t& base= DEFAULT_PARSE_BASE)
 	{
 		const std::type_info& tType = typeid(T);
 
-		if (tType == typeid(unsigned int) || tType == typeid(uint16_t))
+		/*if (tType == typeid(unsigned int) || tType == typeid(uint16_t))
 		{
 			std::string error = std::format("Tried to parse string {} to unsigned int or uint16_t, "
 				"which is not supported in C++ STL (there is no stoui function)", str);
 			Utils::Log(Utils::LogType::Error, error);
 			return std::nullopt;
-		}
-		else if (tType == typeid(long))
+		}*/
+		if (tType == typeid(long))
 		{
-			std::string error = std::format("Tried to parse string {} to long, "
+			const std::string error = std::format("Tried to parse string {} to long, "
 				"which is not supported since most systems only guarantee 64 "
 				"bits with long long (use long long or uint64_t instead)", str);
 			Utils::Log(Utils::LogType::Error, error);
 			return std::nullopt;
 		}
-		else if (tType == typeid(unsigned long) || tType == typeid(unsigned long long))
+		/*if (tType== typeid(unsigned int) || tType == typeid(unsigned long) || tType == typeid(unsigned long long))
 		{
-			std::string error = std::format("Tried to parse string {} to unsigned long or "
-				"unsigned long long, which is not supported since uint64_t and uint128_t "
+			const std::string error = std::format("Tried to parse string {} to unsigned long, unsigned int or "
+				"unsigned long long, which is not supported since uint32_t, uint64_t and uint128_t "
 				"offer better platform independence", str);
 			Utils::Log(Utils::LogType::Error, error);
+			return std::nullopt;
+		}*/
+
+		if (std::is_floating_point_v<T> && base != DEFAULT_PARSE_BASE)
+		{
+			const std::string err= std::format("Tried to parse string {} to floating point precision type "
+				"with base:{} that does not equal the default base; {}, which is not supported",
+				str, std::to_string(base), std::to_string(DEFAULT_PARSE_BASE));
+			Utils::Log(Utils::LogType::Error, err);
 			return std::nullopt;
 		}
 
 		T parsedVal;
 		try
 		{
-			if (tType == typeid(int)) parsedVal = std::stoi(str);
-			else if (tType == typeid(long long)) parsedVal = std::stoll(str);
+			if (tType == typeid(short)) parsedVal = static_cast<short>(std::stoi(str, nullptr, base));
+			else if (tType == typeid(int)) parsedVal = std::stoi(str, nullptr, base);
+			else if (tType == typeid(long long)) parsedVal = std::stoll(str, nullptr, base);
+
 			else if (tType == typeid(long double)) parsedVal = std::stold(str);
 			else if (tType == typeid(float)) parsedVal = std::stof(str);
 			else if (tType == typeid(double)) parsedVal = std::stod(str);
 			else if (tType == typeid(long double)) parsedVal = std::stold(str);
+
+			else if (tType == typeid(uint8_t)) parsedVal = static_cast<uint8_t>(std::stoul(str, nullptr, base));
+			else if (tType == typeid(uint16_t)) parsedVal = static_cast<uint16_t>(std::stoul(str, nullptr, base));
+			else if (tType == typeid(uint32_t)) parsedVal = static_cast<uint32_t>(std::stoul(str, nullptr, base));
+			else if (tType == typeid(uint64_t)) parsedVal = static_cast<uint64_t>(std::stoull(str, nullptr, base));
 			else
 			{
 				std::string error = std::format("Tried to parse string {} to type {} that can not "
@@ -437,6 +454,22 @@ namespace Utils
 			Utils::Log(Utils::LogType::Error, err);
 			return std::nullopt;
 		}
+		return parsedVal;
+	}
+
+	template<typename T>
+	std::optional<T> TryParseHex(const std::string& str)
+	{
+		std::optional<T> parsedVal = std::nullopt;
+		if (std::is_signed_v<T>)
+		{
+			std::string error = std::format("Tried to parse hex string {} but signed "
+				"integer values are not supported", str);
+			Utils::Log(Utils::LogType::Error, error);
+			return std::nullopt;
+		}
+
+		parsedVal = TryParse<T>(str, 16);
 		return parsedVal;
 	}
 

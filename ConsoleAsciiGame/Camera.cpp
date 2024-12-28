@@ -37,6 +37,8 @@ namespace ECS
 	void Camera::Start() {}
 	void Camera::UpdateStart(float deltaTime) 
     {
+        //TODO: another condition to optimize could be if scene is not marked as dirty (meaning no changes occured)
+        //we can just not update
         if (CACHE_LAST_BUFFER && !m_followTarget->m_Transform.HasMovedThisFrame()
             && m_lastFrameBuffer.has_value())
         {

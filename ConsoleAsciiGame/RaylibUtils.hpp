@@ -7,5 +7,6 @@
 namespace RaylibUtils
 {
 	std::string ToString(const Color& color);
+	Color GetColorFromHex(const unsigned int& hexNumber);
 }
 
