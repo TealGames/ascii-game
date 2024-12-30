@@ -1,6 +1,7 @@
 #include <format>
 #include <vector>
 #include <map>
+#include <chrono>
 #include <algorithm>
 #include "Entity.hpp"
 #include "EntityID.hpp"
@@ -29,14 +30,24 @@ namespace ECS
 	{
 		m_isDirtyThisFrame = false;
 		if (m_components.empty()) return;
+
+		int componentIndex = 0;
 		for (const auto& component : m_components)
 		{
+
+			auto start= std::chrono::high_resolution_clock::now();
 			component->UpdateStart(deltaTime);
 			if (component->IsDirty())
 			{
 				m_isDirtyThisFrame = true;
 				/*Utils::Log(std::format("Component is dirty: {}", typeid(component).name()));*/
 			}
+			auto end= std::chrono::high_resolution_clock::now();
+			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+			Utils::Log(std::format("BENCHMARK: For entity: {} component at index: {} took: {} ms", 
+				m_name, std::to_string(componentIndex), std::to_string(duration)));
+
+			componentIndex++;
 		}
 	}
 

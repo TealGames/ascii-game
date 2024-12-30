@@ -11,15 +11,27 @@
 
 namespace ECS
 {
+	struct CameraSettings
+	{
+		const ECS::Entity* m_FollowTarget;
+		bool m_HasFixedPosition;
+		Utils::Point2DInt m_ViewportSize;
+
+		/// <summary>
+		/// Moveable camera that follows target
+		/// </summary>
+		/// <param name="followTarget"></param>
+		CameraSettings(const ECS::Entity& followTarget, const Utils::Point2DInt& viewportSize);
+		CameraSettings(const Utils::Point2DInt& viewportSize);
+	};
+
 	class Camera : public Component
 	{
 	private:
 		Transform& m_transform;
 		const SceneManagement::SceneManager& m_sceneManager;
+		const CameraSettings m_cameraSettings;
 
-		Utils::Point2DInt m_viewportSize;
-
-		const ECS::Entity* m_followTarget;
 		std::optional<TextBuffer> m_lastFrameBuffer;
 
 	public:
@@ -37,7 +49,7 @@ namespace ECS
 		/// <param name="followTarget">The object that that camera attempts to follow</param>
 		/// <param name="viewportSize">THe amount of text vewied in WIDTH, HEIGHT</param>
 		Camera(Transform& transform, const SceneManagement::SceneManager& sceneManager, 
-			ECS::Entity& followTarget, const Utils::Point2DInt& viewportSize);
+			const CameraSettings& settings);
 		//Camera(Transform& transform, const Utils::Point2DInt& viewportSize);
 
 		void UpdateCameraPosition();

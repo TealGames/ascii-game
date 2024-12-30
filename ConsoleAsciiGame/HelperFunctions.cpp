@@ -25,7 +25,7 @@ namespace Utils
 		return __cplusplus == static_cast<long>(version);
 	}
 
-	const std::string LOG_ONLY_MESSAGE = "FRAME:";
+	const std::string LOG_ONLY_MESSAGE = "";
 	const std::optional<LogType> LOG_ONLY_TYPE = std::nullopt;
 	const bool LOG_MESSAGES = true;
 

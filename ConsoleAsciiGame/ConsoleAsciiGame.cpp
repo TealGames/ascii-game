@@ -241,7 +241,7 @@ int main() {
     ECS::Transform mainCameraTransform = ECS::Transform({0, 0});
     ECS::Entity mainCamera = ECS::Entity("MainCamera", mainCameraTransform, ECS::MIN_PRIORITY);
     ECS::Camera camera = ECS::Camera(mainCameraTransform, sceneManager, 
-        player, Utils::Point2DInt(20, 20));
+        ECS::CameraSettings(player, Utils::Point2DInt(20, 20)));
     mainCamera.TryAddComponent<ECS::Camera>(&camera);
     sceneManager.GetActiveSceneMutable()->AddEntity(mainCamera);
     sceneManager.GetActiveSceneMutable()->AddEntity(player);
@@ -250,7 +250,7 @@ int main() {
 
     sceneManager.GetActiveSceneMutable()->Start();
 
-    constexpr int FRAME_LIMIT = -1;
+    constexpr int FRAME_LIMIT = 10;
     constexpr bool SHOW_FPS = true;
     int currentFrameCounter = 0;
 

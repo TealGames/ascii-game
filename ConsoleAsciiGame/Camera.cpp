@@ -11,10 +11,15 @@ namespace ECS
 {
     static constexpr bool CACHE_LAST_BUFFER = true;
 
-	Camera::Camera(Transform& transform, const SceneManagement::SceneManager& sceneManager,
-        ECS::Entity& followTarget, const Utils::Point2DInt& viewportSize) :
-		m_sceneManager(sceneManager), m_transform(transform), m_followTarget(&followTarget), 
-        m_viewportSize(viewportSize), m_lastFrameBuffer(std::nullopt)
+
+    CameraSettings::CameraSettings(const ECS::Entity& followTarget, const Utils::Point2DInt& viewportSize) :
+        m_FollowTarget(&followTarget), m_HasFixedPosition(false), m_ViewportSize(viewportSize) {}
+
+    CameraSettings::CameraSettings(const Utils::Point2DInt& viewportSize) : 
+        m_FollowTarget(nullptr), m_HasFixedPosition(true), m_ViewportSize(viewportSize) {}
+
+	Camera::Camera(Transform& transform, const SceneManagement::SceneManager& sceneManager, const CameraSettings& settings) :
+		m_sceneManager(sceneManager), m_transform(transform), m_cameraSettings(settings), m_lastFrameBuffer(std::nullopt)
 	{
 	}
 
@@ -26,7 +31,7 @@ namespace ECS
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
     void Camera::UpdateCameraPosition()
     {
-        m_transform.SetPos(m_followTarget->m_Transform.m_Pos);
+        m_transform.SetPos(m_cameraSettings.m_FollowTarget->m_Transform.m_Pos);
     }
 
 	UpdatePriority Camera::GetUpdatePriority() const
@@ -45,8 +50,9 @@ namespace ECS
             Rendering::RenderBuffer(m_lastFrameBuffer.value());
             return;
         }
+
         m_isDirty = true;
-        UpdateCameraPosition();
+        if (!m_cameraSettings.m_HasFixedPosition) UpdateCameraPosition();
         //Rendering::RenderBuffer(TextBuffer(5, 5, TextChar(BLUE, 'V')));
         //m_lastFrameBuffer = TextBuffer(5, 5, TextChar(BLUE, 'V'));
         //m_lastFrameBuffer = CollapseLayersWithinViewport();
@@ -61,10 +67,10 @@ namespace ECS
 
     TextBuffer Camera::CollapseLayersWithinViewport() const
     {
-        TextBuffer newBuffer = TextBuffer(m_viewportSize.m_X, m_viewportSize.m_Y, TextChar{});
+        TextBuffer newBuffer = TextBuffer(m_cameraSettings.m_ViewportSize.m_X, m_cameraSettings.m_ViewportSize.m_Y, TextChar{});
         const std::vector<const RenderLayer*> layers = m_sceneManager.GetActiveScene()->GetLayers();
 
-        const Utils::Point2DInt cartesianTopLeft = m_transform.m_Pos - (m_viewportSize / 2);
+        const Utils::Point2DInt cartesianTopLeft = m_transform.m_Pos - (m_cameraSettings.m_ViewportSize / 2);
         const Utils::Point2DInt renderCoordsTopLeft = cartesianTopLeft.GetFlipped();
         /*Utils::Log(std::format("Collapse layers total: {} all layers: {} player pos: {} camera size: {} caresian tl: {} row col top left: {}", 
             std::to_string(layers.size()), m_sceneManager.GetActiveScene()->ToStringLayers(),

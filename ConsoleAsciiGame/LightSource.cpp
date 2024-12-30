@@ -145,7 +145,7 @@ namespace ECS
 	{
         std::vector<std::vector<TextChar>> visualData = m_renderer.GetVisualData();
         Utils::Point2DInt centerPos = {};
-        std::cout << "REDNER LIGHT" << std::endl;
+       // std::cout << "REDNER LIGHT" << std::endl;
 
         for (const auto& buffer : m_outputBuffers)
         {

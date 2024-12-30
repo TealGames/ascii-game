@@ -205,7 +205,7 @@ void Scene::UpdateStart(float deltaTime)
 	{
 		//Utils::Log("Calling udpate on entity: " + entity->m_Name);
 		entity->UpdateStart(deltaTime);
-		Utils::Log(std::format("Entity {} dirty; {}", entity->m_Name, std::to_string(entity->IsDirtyThisFrame())));
+		//Utils::Log(std::format("Entity {} dirty; {}", entity->m_Name, std::to_string(entity->IsDirtyThisFrame())));
 		m_currentFrameDirtyEntities += entity->IsDirtyThisFrame();
 	}
 }

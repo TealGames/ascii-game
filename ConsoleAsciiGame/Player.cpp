@@ -32,7 +32,7 @@ namespace ECS
         if (IsKeyPressed(KEY_LEFT)) currentMove.m_X--;
         
         m_isDirty = MovePlayerFromInput(currentMove);
-        Utils::Log(std::format("Update end PLAYER component dirty; {}", std::to_string(m_isDirty)));
+       /* Utils::Log(std::format("Update end PLAYER component dirty; {}", std::to_string(m_isDirty)));*/
     }
 
     void Player::UpdateEnd(float deltaTime) {}
