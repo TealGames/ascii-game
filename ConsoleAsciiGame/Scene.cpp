@@ -20,7 +20,7 @@ const std::string Scene::m_SCENE_FILE_PREFIX = "scene_";
 Scene::Scene(const std::filesystem::path& scenePath) :
 	m_Layers{}, m_sceneName(""),
 	m_SceneName(m_sceneName), m_ScenePath(scenePath),
-	m_entities{}
+	m_entities{}, m_currentFrameDirtyEntities(0)
 {
 	if (!Utils::Assert(std::filesystem::exists(scenePath), std::format("Tried to create a scene at path: {} "
 		"but that path does not exist", scenePath.string()))) 
@@ -190,6 +190,8 @@ void Scene::Start()
 
 void Scene::UpdateStart(float deltaTime)
 {
+	m_currentFrameDirtyEntities = 0;
+
 	//We need to reset to default since previous changes were baked into the buffer
 	//so we need to clear it for a fresh update
 	for (int i=0; i<m_Layers.size(); i++)
@@ -203,6 +205,8 @@ void Scene::UpdateStart(float deltaTime)
 	{
 		//Utils::Log("Calling udpate on entity: " + entity->m_Name);
 		entity->UpdateStart(deltaTime);
+		Utils::Log(std::format("Entity {} dirty; {}", entity->m_Name, std::to_string(entity->IsDirtyThisFrame())));
+		m_currentFrameDirtyEntities += entity->IsDirtyThisFrame();
 	}
 }
 
@@ -224,4 +228,14 @@ std::string Scene::ToStringLayers() const
 		result += layer.ToString();
 	}
 	return result;
+}
+
+int Scene::GetDirtyEntitiesCount() const
+{
+	return m_currentFrameDirtyEntities;
+}
+
+bool Scene::HasDirtyEntities() const
+{
+	return GetDirtyEntitiesCount() > 0;
 }

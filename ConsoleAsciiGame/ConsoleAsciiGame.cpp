@@ -250,17 +250,22 @@ int main() {
 
     sceneManager.GetActiveSceneMutable()->Start();
 
+    constexpr int FRAME_LIMIT = -1;
+    constexpr bool SHOW_FPS = true;
+    int currentFrameCounter = 0;
+
     //TODO: it seems like doing this over and over might be slow
     //so we need some optimizations
     while (!WindowShouldClose()) 
     {
-        DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24,WHITE);
-
-        BeginDrawing();
-        ClearBackground(BLACK);
+        if (FRAME_LIMIT != -1 || SHOW_FPS)
+        {
+            Utils::Log(std::format("FRAME: {}/{} FPS:{}\n--------------------------------------------\n", 
+                std::to_string(currentFrameCounter + 1), std::to_string(FRAME_LIMIT), std::to_string(GetFPS())));
+        }
 
         CurrentTime = std::chrono::high_resolution_clock().now();
-        DeltaTime= std::chrono::duration_cast<std::chrono::milliseconds>(CurrentTime - LastTime).count();
+        DeltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(CurrentTime - LastTime).count();
 
         sceneManager.GetActiveSceneMutable()->UpdateStart(DeltaTime);
         sceneManager.GetActiveSceneMutable()->UpdateEnd(DeltaTime);
@@ -307,9 +312,11 @@ int main() {
         {
             player.m_PlayerPos.m_X--;
         }*/
+        if (FRAME_LIMIT == -1) continue;
 
-        EndDrawing();
-        //return 0;
+        currentFrameCounter++;
+        if (currentFrameCounter>= FRAME_LIMIT)
+            return 0;
     }
 
     CloseWindow();

@@ -17,7 +17,14 @@ namespace ECS
 	}
 
 	void Transform::Start() {}
-	void Transform::UpdateStart(float deltaTime) {}
+	void Transform::UpdateStart(float deltaTime) 
+	{
+		//By default transform is always not dirty since
+		//other components will be the ones to change transform
+		//not itself
+		m_isDirty = false;
+	}
+
 	void Transform::UpdateEnd(float deltaTime) 
 	{
 		m_lastFramePos = m_Pos;
@@ -42,14 +49,20 @@ namespace ECS
 		SetPos(Utils::Point2DInt(m_pos.m_X, newY));
 	}
 
-	void Transform::SetDeltaX(const int& xDelta)
+	void Transform::SetPosDeltaX(const int& xDelta)
 	{
 		SetPosX(m_Pos.m_X + xDelta);
 	}
 
-	void Transform::SetDeltaY(const int yDelta)
+	void Transform::SetPosDeltaY(const int yDelta)
 	{
 		SetPosY(m_Pos.m_Y + yDelta);
+	}
+
+	void Transform::SetPosDelta(const Utils::Point2DInt& moveDelta)
+	{
+		SetPosDeltaX(moveDelta.m_X);
+		SetPosDeltaY(moveDelta.m_Y);
 	}
 
 	bool Transform::HasMovedThisFrame() const

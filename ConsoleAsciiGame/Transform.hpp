@@ -30,8 +30,9 @@ namespace ECS
 		void SetPosX(const int& newX);
 		void SetPosY(const int& newY);
 
-		void SetDeltaX(const int& xDelta);
-		void SetDeltaY(const int yDelta);
+		void SetPosDeltaX(const int& xDelta);
+		void SetPosDeltaY(const int yDelta);
+		void SetPosDelta(const Utils::Point2DInt& moveDelta);
 
 		bool HasMovedThisFrame() const;
 	};

@@ -26,6 +26,7 @@ namespace ECS
 		Transform& m_transform;
 
 		std::string m_name;
+		bool m_isDirtyThisFrame;
 
 	public:
 		const UpdatePriority m_UpdatePriority;
@@ -137,6 +138,7 @@ namespace ECS
 		void UpdateEnd(float deltaTime) override;
 
 		virtual UpdatePriority GetUpdatePriority() const;
+		bool IsDirtyThisFrame() const;
 	};
 
 }

@@ -27,8 +27,17 @@ namespace ECS
 
 	void Entity::UpdateStart(float deltaTime)
 	{
+		m_isDirtyThisFrame = false;
 		if (m_components.empty()) return;
-		for (const auto& component : m_components) component->UpdateStart(deltaTime);
+		for (const auto& component : m_components)
+		{
+			component->UpdateStart(deltaTime);
+			if (component->IsDirty())
+			{
+				m_isDirtyThisFrame = true;
+				/*Utils::Log(std::format("Component is dirty: {}", typeid(component).name()));*/
+			}
+		}
 	}
 
 	void Entity::UpdateEnd(float deltaTime)
@@ -40,6 +49,11 @@ namespace ECS
 	UpdatePriority Entity::GetUpdatePriority() const
 	{
 		return m_UpdatePriority;
+	}
+
+	bool Entity::IsDirtyThisFrame() const
+	{
+		return m_isDirtyThisFrame;
 	}
 
 	//int Entity::GetComponentTypeCount(const ComponentType& type) const

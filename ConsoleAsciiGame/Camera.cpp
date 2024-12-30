@@ -37,15 +37,15 @@ namespace ECS
 	void Camera::Start() {}
 	void Camera::UpdateStart(float deltaTime) 
     {
-        //TODO: another condition to optimize could be if scene is not marked as dirty (meaning no changes occured)
-        //we can just not update
-        if (CACHE_LAST_BUFFER && !m_followTarget->m_Transform.HasMovedThisFrame()
-            && m_lastFrameBuffer.has_value())
+        m_isDirty = false;
+
+        if (!m_sceneManager.GetActiveScene()->HasDirtyEntities() && m_lastFrameBuffer.has_value())
         {
-            Utils::Log("Saving camera render");
+            Utils::Log("NO camera render update");
             Rendering::RenderBuffer(m_lastFrameBuffer.value());
             return;
         }
+        m_isDirty = true;
         UpdateCameraPosition();
         //Rendering::RenderBuffer(TextBuffer(5, 5, TextChar(BLUE, 'V')));
         //m_lastFrameBuffer = TextBuffer(5, 5, TextChar(BLUE, 'V'));
@@ -54,7 +54,7 @@ namespace ECS
 
         TextBuffer collapsedBuffer = CollapseLayersWithinViewport();
         Rendering::RenderBuffer(collapsedBuffer);
-        m_lastFrameBuffer = collapsedBuffer;
+        if (CACHE_LAST_BUFFER) m_lastFrameBuffer = collapsedBuffer;
     }
 
 	void Camera::UpdateEnd(float deltaTime) {}

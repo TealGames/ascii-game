@@ -17,6 +17,7 @@ private:
 	std::string m_sceneName;
 	std::vector<RenderLayer> m_Layers;
 	std::vector<ECS::Entity*> m_entities;
+	int m_currentFrameDirtyEntities;
 
 public:
 	const std::string& m_SceneName;
@@ -44,5 +45,7 @@ public:
 	void UpdateEnd(float deltaTime) override;
 
 	std::string ToStringLayers() const;
+	int GetDirtyEntitiesCount() const;
+	bool HasDirtyEntities() const;
 };
 

@@ -19,6 +19,8 @@
 
 namespace ECS
 {
+    static constexpr bool CACHE_LAST_BUFFER = true;
+
 	LightSource::LightSource(const Transform& transform, const EntityRenderer& renderer, 
         const std::vector<TextBuffer*>& buffers, const ColorGradient& filterColor, const int& lightRadius,
         const std::uint8_t& initialLightLevel, const float& falloffValue) :
@@ -40,6 +42,7 @@ namespace ECS
 
     void LightSource::UpdateStart(float deltaTime)
     {
+        m_isDirty = false;
         if (!m_transform.HasMovedThisFrame() && !m_lastFrameData.empty())
         {
             for (const auto& buffer : m_outputBuffers)
@@ -51,6 +54,7 @@ namespace ECS
         //so we should also make it apply it to other layers too
         if (!m_lastFrameData.empty()) m_lastFrameData.clear();
         RenderLight(false);
+        m_isDirty = true;
         //std::cout << "Rendering lgiht" << std::endl;
     }
 
@@ -130,7 +134,9 @@ namespace ECS
                     //std::cout << "New level is:{} " << prevLevel.value_or(0) + lightLevel << std::endl;
                     buffer.SetAt(bufferPosRowCol, lightLevelStr[0]);
                 }
-                m_lastFrameData.push_back(TextCharPosition{bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char}});
+
+                if (CACHE_LAST_BUFFER) 
+                    m_lastFrameData.push_back(TextCharPosition{bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char}});
             }
         }
     }

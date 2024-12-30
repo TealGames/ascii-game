@@ -25,6 +25,7 @@ namespace ECS
 
 		//Stores every entity's visual from top row to bottom row
 		const std::vector<std::vector<TextChar>> m_visualData;
+		std::vector<TextCharPosition> m_lastFrameVisualData;
 
 		//The bounding box's size for this visual in (HEIGHT, WIDTH)
 		Utils::Point2DInt m_visualBoundsSize;

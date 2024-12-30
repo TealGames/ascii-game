@@ -26,4 +26,9 @@ namespace ECS
 	{
 		return {};
 	}
+
+	bool Component::IsDirty() const
+	{
+		return m_isDirty;
+	}
 }

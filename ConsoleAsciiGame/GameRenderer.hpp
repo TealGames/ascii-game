@@ -3,5 +3,6 @@
 
 namespace Rendering
 {
+
     void RenderBuffer(const TextBuffer& buffer);
 }

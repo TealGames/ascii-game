@@ -13,6 +13,8 @@ namespace ECS
         const char m_PlayerChar;
 
     private:
+        bool MovePlayerFromInput(const Utils::Point2DInt& moveDelta);
+
     public:
         Player(Transform& transform, const char& playerChar);
 

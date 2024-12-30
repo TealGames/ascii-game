@@ -11,10 +11,12 @@
 
 namespace ECS
 {
+	static constexpr bool CACHE_LAST_BUFFER = true;
+
 	EntityRenderer::EntityRenderer(const Transform& transform, TextBuffer& buffer,
 		const std::vector<std::vector<TextChar>>& visualData) :
 		m_transform(transform), m_outputBuffer(buffer), m_visualData(visualData), 
-		m_visualBoundsSize()
+		m_visualBoundsSize(), m_lastFrameVisualData{}
 	{
 		int maxWidth = 0;
 		for (const auto& row : m_visualData)
@@ -32,8 +34,18 @@ namespace ECS
 	void EntityRenderer::Start() {}
 	void EntityRenderer::UpdateStart(float deltaTime) 
 	{
-		//if (!m_transform.HasMovedThisFrame()) return;
+		m_isDirty = false;
+		if (!m_transform.HasMovedThisFrame() && !m_lastFrameVisualData.empty())
+		{
+			for (const auto& data : m_lastFrameVisualData) 
+				m_outputBuffer.SetAt(data.m_RowColPos, data.m_Text);
+			return;
+		}
+
+		if (!m_lastFrameVisualData.empty()) 
+			m_lastFrameVisualData.clear();
 		RenderInBuffer();
+		m_isDirty = true;
 	}
 	void EntityRenderer::UpdateEnd(float deltaTime)
 	{
@@ -96,6 +108,7 @@ namespace ECS
 				if (currentTextChar.m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
 
 				m_outputBuffer.SetAt(bufferPos, currentTextChar);
+				if (CACHE_LAST_BUFFER) m_lastFrameVisualData.emplace_back(bufferPos, currentTextChar);
 			}
 		}
 	}

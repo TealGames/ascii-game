@@ -9,10 +9,14 @@ namespace Rendering
     void RenderBuffer(const TextBuffer& buffer)
     {
         //Utils::Log(std::format("Rendering buffer: {}", buffer.ToString()));
-
         if (!Utils::Assert(buffer.GetWidth() != 0 && buffer.GetHeight() != 0,
             std::format("Tried to render a buffer with GameRenderer that has width and/or height of 0")))
             return;
+
+        BeginDrawing();
+
+        ClearBackground(BLACK);
+        DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
 
         //TODO: perhaps we should not calculate the best fit char area, but rather have a consistent size to allow
         //different scene sizes to appear the same with character area
@@ -45,5 +49,7 @@ namespace Rendering
             y += charArea.m_Y;
             x = TEXT_BUFFER_PADDING.m_X;
         }
+
+        EndDrawing();
     }
 }
