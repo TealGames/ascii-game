@@ -95,6 +95,7 @@ namespace ECS
 			T** doubleOutPtr = &singleOutPtr;
 
 			TryAddComponent<T>(std::move(component), doubleOutPtr);
+
 			if (Utils::IsValidPointer(doubleOutPtr)) return *doubleOutPtr;
 			return nullptr;
 		}

@@ -180,7 +180,8 @@ public:
 		const ComponentRowIndex componentRowIndex = GetRowIndexForComponentType(validCompType);
 		ComponentID compId = -1;
 		Utils::Log(std::format("Component index: {}/{}", std::to_string(componentRowIndex), std::to_string(m_allComponents.size())));
-
+		
+		T* outCompPtr = nullptr;
 		if (DO_COMPONENT_LINEAR_PLACEMENT)
 		{
 			auto existingEntityIt = m_entityComponentIds.find(entityId);
@@ -194,8 +195,8 @@ public:
 				//Note: this should use the copy assignment operator to prevent copies since those would only
 				//increase data storage without providing any benefit (since changes would be made to copy here)
 				m_allComponents[componentRowIndex][existingColIndex] = component;
-				T* pointer = TryConvertToComponentType<T>(m_allComponents[componentRowIndex][existingColIndex], validCompType);
-				outComponent = &(pointer);
+				outCompPtr = TryConvertToComponentType<T>(m_allComponents[componentRowIndex][existingColIndex], validCompType);
+				outComponent = &(outCompPtr);
 
 				compId = CreateComponentID(validCompType, existingColIndex);
 				StoreComponentForEntity(entityId, compId);
@@ -231,6 +232,9 @@ public:
 
 		if (elementIndex == 0) m_allComponents[componentRowIndex].emplace_back(component);
 		else m_allComponents[componentRowIndex][elementIndex] = component;
+
+		outCompPtr = TryConvertToComponentType<T>(m_allComponents[componentRowIndex][elementIndex], validCompType);
+		outComponent = &(outCompPtr);
 
 		compId = CreateComponentID(validCompType, elementIndex);
 		StoreComponentForEntity(entityId, compId);

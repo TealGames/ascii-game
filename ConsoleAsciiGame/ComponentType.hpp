@@ -4,11 +4,12 @@
 #include <cstdint>
 #include <limits>
 #include <cmath>
-//#include "CameraData.hpp"
-//#include "TransformData.hpp"
-//#include "PlayerData.hpp"
-//#include "LightSourceData.hpp"
-//#include "EntityRendererData.hpp"
+#include "CameraData.hpp"
+#include "TransformData.hpp"
+#include "PlayerData.hpp"
+#include "LightSourceData.hpp"
+#include "EntityRendererData.hpp"
+#include "HelperFunctions.hpp"
 
 //This means that the max number of components supported is 64 
 // (the amount of bits for the type)
@@ -69,12 +70,14 @@ template<typename T>
 ComponentType GetComponentFromType()
 {
 	//TODO: maybe a static map would be faster with O(1) lookup then checking every possible option?
-	/*if (typeid(T) == typeid(CameraData)) return ComponentType::Camera;
+	if (typeid(T) == typeid(CameraData)) return ComponentType::Camera;
 	if (typeid(T) == typeid(EntityRendererData)) return ComponentType::EntityRenderer;
 	if (typeid(T) == typeid(LightSourceData)) return ComponentType::LightSource;
 	if (typeid(T) == typeid(PlayerData)) return ComponentType::Player;
-	if (typeid(T) == typeid(TransformData)) return ComponentType::Transform;*/
+	if (typeid(T) == typeid(TransformData)) return ComponentType::Transform;
 	
-	return ComponentType::Transform;
+	Utils::Log(Utils::LogType::Error, std::format("Tried to parse type: {} "
+		"to component type but failed!", typeid(T).name()));
+	return ComponentType::None;
 }
 

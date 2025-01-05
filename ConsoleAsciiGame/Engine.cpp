@@ -52,6 +52,8 @@ namespace Core
 			return;
 
 		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData({ 0, 0 }));
+		Utils::Log("CREATED PLAYER ENTITY");
+
 		PlayerData* playerData = playerEntity.TryAddComponent<PlayerData>(PlayerData{});
 
 		if (!Utils::Assert(this, playerData!=nullptr, std::format("Tried to create player but failed to add player data"))) 

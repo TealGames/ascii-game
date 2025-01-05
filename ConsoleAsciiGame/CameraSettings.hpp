@@ -1,6 +1,10 @@
 #pragma once
-#include "Entity.hpp"
 #include "Point2DInt.hpp"
+
+namespace ECS
+{
+	class Entity;
+}
 
 struct CameraSettings
 {

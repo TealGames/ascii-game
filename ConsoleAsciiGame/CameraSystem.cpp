@@ -1,4 +1,5 @@
 #include "pch.hpp"
+#include "Entity.hpp"
 #include "CameraSystem.hpp"
 #include "Point2DInt.hpp"
 #include "Entity.hpp"
