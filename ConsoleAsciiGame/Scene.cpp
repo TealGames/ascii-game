@@ -1,26 +1,23 @@
-#include <vector>
-#include <string>
 #include <filesystem>
-#include <optional>
-#include <cstdint>
-#include <unordered_map>
 #include <fstream>
-#include <iostream>
+#include "pch.hpp"
 #include "raylib.h"
 #include "Point2DInt.hpp"
 #include "Scene.hpp"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
-#include "StringUtil.hpp"
 #include "Globals.hpp"
 
 const std::string Scene::m_SCENE_FILE_PREFIX = "scene_";
 
-Scene::Scene(const std::filesystem::path& scenePath) :
+Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& globalEntities) :
 	m_Layers{}, m_sceneName(""),
 	m_SceneName(m_sceneName), m_ScenePath(scenePath),
-	m_entities{}, m_currentFrameDirtyEntities(0)
+	m_localEntities(), //m_globalEntityLookup(globalEntities),
+	m_currentFrameDirtyEntities(0), m_entityMapper(),
+	m_mainCamera(nullptr), 
+	m_globalEntities(globalEntities), m_GlobalEntities(m_globalEntities)
 {
 	if (!Utils::Assert(std::filesystem::exists(scenePath), std::format("Tried to create a scene at path: {} "
 		"but that path does not exist", scenePath.string()))) 
@@ -55,10 +52,10 @@ Scene::Scene(const std::filesystem::path& scenePath) :
 	//TODO: right now we only have one layer, but later on we should add multiple
 	//Note: right now we make two layers one for background and one for player, but this should
 	//get abstracted more with ids and text file parsing of scene data
-	m_Layers.push_back(newLayer);
+	m_Layers.emplace(RenderLayerType::Background, newLayer);
 
 	const RenderLayer playerLayer = RenderLayer(TextBuffer{ newLayerW, newLayerH, TextChar()}, TEXT_BUFFER_FONT, CHAR_SPACING);
-	m_Layers.push_back(playerLayer);
+	m_Layers.emplace(RenderLayerType::Player, playerLayer);
 }
 
 void Scene::ParseSceneFile(std::ifstream& fstream, 
@@ -86,7 +83,7 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 
 		else if (isParsingKey)
 		{
-			int equalsSignIndex = currentLine.find('=');
+			std::size_t equalsSignIndex = currentLine.find('=');
 			std::string colorAlias = currentLine.substr(0, equalsSignIndex);
 			std::string hexString = currentLine.substr(equalsSignIndex + 1);
 			std::optional<uint32_t> maybeConvertedHex = Utils::TryParseHex<uint32_t>(hexString);
@@ -140,56 +137,145 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 	}
 }
 
-void Scene::SortEntitiesByUpdatePriority()
-{
-	if (m_entities.empty()) return;
-
-	std::sort(m_entities.begin(), m_entities.end(),
-		//more priority=> means goes sooner
-		[](const ECS::Entity* firstEn, const ECS::Entity* secndEnd) -> bool
-		{
-			return firstEn->GetUpdatePriority() > secndEnd->GetUpdatePriority();
-		});
-}
-
 std::vector<RenderLayer*> Scene::GetLayersMutable()
 {
 	if (m_Layers.empty()) return {};
 
 	std::vector<RenderLayer*> layers = {};
-	for (auto& layer : m_Layers) layers.push_back(&layer);
+	for (auto& layer : m_Layers) layers.push_back(&(layer.second));
 	return layers;
 }
 
-std::vector<const RenderLayer*> Scene::GetLayers() const
+std::vector<const RenderLayer*> Scene::GetLayers(const RenderLayerType& renderLayers) const
 {
 	if (m_Layers.empty()) return {};
 
 	std::vector<const RenderLayer*> layers = {};
-	for (const auto& layer : m_Layers) layers.push_back(&layer);
+	for (const auto& layer : m_Layers)
+	{
+		if ((layer.first & renderLayers)!=0) layers.push_back(&(layer.second));
+	}
 	return layers;
+}
+
+std::vector<const RenderLayer*> Scene::GetAllLayers() const
+{
+	if (m_Layers.empty()) return {};
+
+	std::vector<const RenderLayer*> layers = {};
+	for (const auto& layer : m_Layers)
+	{
+		layers.push_back(&(layer.second));
+	}
+	return layers;
+}
+
+std::vector<TextBuffer*> Scene::GetTextBuffersMutable(const RenderLayerType& renderLayers)
+{
+	if (m_Layers.empty()) return {};
+	//TODO: we could optimize this with the all choosen case by checking maxLayers & renderLayers == maxLayers
+
+	std::vector<TextBuffer*> buffers = {};
+	for (auto& layer : m_Layers)
+	{
+		if ((layer.first & renderLayers) != 0) buffers.push_back(&(layer.second.m_SquaredTextBuffer));
+	}
+	return buffers;
+}
+
+EntityCollection::iterator Scene::GetLocalEntityIterator(const EntityID& id)
+{
+	return m_localEntityLookup.find(id);
+}
+
+EntityCollection::iterator Scene::GetGlobalEntityIterator(const EntityID & id)
+{
+	return m_globalEntities.GetGlobalEntityIteratorMutable(id);
+}
+//EntityCollection::iterator Scene::GetEntityIterator(const EntityID& id)
+//{
+//	auto iterator = GetLocalEntityIterator(id);
+//	if (iterator != m_localEntityLookup.end()) return iterator;
+//	
+//	return m_globalEntities.GetGlobalEntityIteratorMutable(id);
+//}
+
+void Scene::SetMainCamera(ECS::Entity& cameraEntity)
+{
+	if (!Utils::Assert(cameraEntity.HasComponent(ComponentType::Camera), 
+		std::format("Tried to set the non-camera entity: {} as the main camera for scene: {}",
+			cameraEntity.m_Name, m_SceneName))) return;
+
+	m_mainCamera = &cameraEntity;
+}
+
+bool Scene::HasMainCamera() const
+{
+	return m_mainCamera != nullptr;
+}
+
+ECS::Entity* Scene::TryGetMainCameraEntity()
+{
+	return m_mainCamera;
+}
+
+CameraData* Scene::TryGetMainCameraData()
+{
+	if (!HasMainCamera()) return nullptr;
+	return m_mainCamera->TryGetComponent<CameraData>();
+}
+
+int Scene::GetEntityCount() const
+{
+	//return m_localEntities.size() + m_globalEntityLookup.size();
+	return m_localEntities.size() + m_globalEntities.GetCount();
+}
+
+bool Scene::HasEntities() const
+{
+	return GetEntityCount() > 0;
+}
+
+ECS::Entity& Scene::CreateEntity(const std::string& name, TransformData& transform)
+{
+	m_localEntities.emplace_back(name, m_entityMapper, transform);
+	m_localEntityLookup.emplace(m_localEntities.back().m_Id, &(m_localEntities.back()));
+	return m_localEntities.back();
+}
+
+bool Scene::HasEntity(const EntityID& id)
+{
+	bool isLocal = GetLocalEntityIterator(id) != m_localEntityLookup.end();
+	if (isLocal) return true;
+
+	return m_globalEntities.HasGlobalEntity(id);
 }
 
 //TODO: while this is fine, we should add version that allow us to add components to the entity
 //and would probably be best if we create them on the heap probably to extend memory lifetime
 
 //TODO: also maybe consider managing what objects are required to be in a scene, like a camera
-
-//TODO: ideally, each entity should live on its own render layer rather than the whole scene
-void Scene::AddEntity(ECS::Entity& entity)
+ECS::Entity* Scene::TryGetEntity(const EntityID& id)
 {
-	m_entities.push_back(&entity);
-	SortEntitiesByUpdatePriority();
+	auto localIt = GetLocalEntityIterator(id);
+	if (localIt != m_localEntityLookup.end()) return localIt->second;
+
+	auto globalIt = GetGlobalEntityIterator(id);
+	if (m_globalEntities.IsValidIterator(globalIt)) return globalIt->second;
+
+	return nullptr;
 }
 
 void Scene::Start()
 {
-	if (m_entities.empty()) return;
-	for (auto& entity : m_entities) entity->Start();
+	//if (m_entities.empty()) return;
+	//for (auto& entity : m_entities) entity->Start();
 }
 
 void Scene::UpdateStart(float deltaTime)
 {
+	return;
+	/*
 	m_currentFrameDirtyEntities = 0;
 
 	//We need to reset to default since previous changes were baked into the buffer
@@ -208,12 +294,15 @@ void Scene::UpdateStart(float deltaTime)
 		//Utils::Log(std::format("Entity {} dirty; {}", entity->m_Name, std::to_string(entity->IsDirtyThisFrame())));
 		m_currentFrameDirtyEntities += entity->IsDirtyThisFrame();
 	}
+	*/
 }
 
 void Scene::UpdateEnd(float deltaTime)
 {
+	/*
 	if (m_entities.empty()) return;
 	for (auto& entity : m_entities) entity->UpdateEnd(deltaTime);
+	*/
 }
 
 std::string Scene::ToStringLayers() const
@@ -224,8 +313,8 @@ std::string Scene::ToStringLayers() const
 	for (const auto& layer : m_Layers)
 	{
 		result += "\nLAYER: ";
-		Utils::Log(std::format("Display all scene layers at layer: {}", layer.ToString()));
-		result += layer.ToString();
+		Utils::Log(std::format("Display all scene layers at layer: {}", layer.second.ToString()));
+		result += layer.second.ToString();
 	}
 	return result;
 }

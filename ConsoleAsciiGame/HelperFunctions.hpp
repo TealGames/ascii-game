@@ -71,10 +71,29 @@ namespace Utils
 	void Log(const std::string& str);
 
 	/// <summary>
+	/// The same Log action but also logs the class
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
+	/// <param name="objPtr"></param>
+	/// <param name="logType"></param>
+	/// <param name="str"></param>
+	template<typename T>
+	void Log(const T* const objPtr, const LogType& logType, const std::string& str)
+	{
+		Log(logType, std::format("{}: {}", typeid(T).name(), str));
+	}
+
+	/// <summary>
 	/// If condition is false will log error and return false, othersise return true and does nothing
 	/// </summary>
 	bool Assert(const bool condition, const std::string& errMessage);
 
+	template<typename T>
+	bool Assert(const T* const objPtr, const bool condition, const std::string& errMessage)
+	{
+		if (!condition) Utils::Log<T>(objPtr, LogType::Error, errMessage);
+		return condition;
+	}
 
 	template <typename T>
 	constexpr bool IS_NUMERIC = std::is_arithmetic_v<T>;
@@ -473,6 +492,12 @@ namespace Utils
 		return parsedVal;
 	}
 
+	template<typename T>
+	size_t GetTypeBitSize()
+	{
+		return sizeof(T) * 8;
+	}
+
 	bool ExecuteIfTrue(const std::function<void()>& function, const std::function<bool()>& predicate);
 	bool ExecuteIfTrue(const std::function<void()>& function, const bool condition);
 
@@ -486,6 +511,18 @@ namespace Utils
 	bool AreSameType()
 	{
 		return std::is_same<Type1, Type2>::value;
+	}
+
+	template<typename T>
+	bool IsValidPointer(const T* const* const ptr)
+	{
+		return ptr != nullptr && *ptr != nullptr;
+	}
+
+	template<typename T>
+	bool IsValidPointer(const T* const ptr)
+	{
+		return ptr != nullptr;
 	}
 
 	std::string ReadFile(const std::filesystem::path& path);

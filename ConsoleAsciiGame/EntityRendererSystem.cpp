@@ -1,0 +1,117 @@
+#include "pch.hpp"
+#include "raylib.h"
+#include "EntityRendererSystem.hpp"
+#include "TextBuffer.hpp"
+#include "Point2DInt.hpp"
+#include "Component.hpp"
+#include "TransformSystem.hpp"
+#include "HelperFunctions.hpp"
+
+namespace ECS
+{
+	static constexpr bool CACHE_LAST_BUFFER = true;
+
+	EntityRendererSystem::EntityRendererSystem(const TransformSystem& transform) : 
+		m_transformSystem(transform)
+	{
+		
+	}
+
+	void EntityRendererSystem::SystemUpdate(Scene& scene, const float& deltaTime)
+	{
+		std::vector<TextBuffer*> affectedLayerBuffers = {};
+		scene.OperateOnComponents<EntityRendererData>(
+			[this, &scene, &affectedLayerBuffers](EntityRendererData& data, ECS::Entity& entity)-> void
+			{
+				data.m_Dirty = false;
+				affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_RenderLayers);
+				if (!Utils::Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
+					"but entity's render data: {} has no render layers", entity.m_Name))) return;
+
+				if (!m_transformSystem.HasMovedThisFrame(entity.m_Transform) && 
+					!data.m_LastFrameVisualData.empty())
+				{
+					for (auto& buffer : affectedLayerBuffers)
+					{
+						for (const auto& data : data.m_LastFrameVisualData)
+							buffer->SetAt(data.m_RowColPos, data.m_Text);
+					}
+					return;
+				}
+
+				if (!data.m_LastFrameVisualData.empty())
+					data.m_LastFrameVisualData.clear();
+				for (auto& buffer : affectedLayerBuffers)
+				{
+					if (!Utils::Assert(buffer != nullptr, std::format("Tried to update render system "
+						"but entity's render data: {} found a NULL render layer buffer", entity.m_Name))) return;
+
+					RenderInBuffer(*buffer, data, entity);
+				}
+				data.m_Dirty = true;
+			});
+	}
+
+	const std::vector<std::vector<TextChar>>& EntityRendererSystem::GetVisualData(const EntityRendererData& data) const
+	{
+		return data.m_VisualData;
+	}
+
+	std::string EntityRendererSystem::GetVisualString(const EntityRendererData& data) const
+	{
+		std::string visualStr = "";
+		for (const auto& row : data.m_VisualData)
+		{
+			for (const auto& col : row)
+			{
+				visualStr += col.m_Char;
+			}
+			visualStr += "\n";
+		}
+		return visualStr;
+	}
+
+	/// <summary>
+	/// Returns the global position of the relative position of a segment of the visual using the
+	/// current positon of the object.
+	/// NOTE: RETURNS AS RENDER COORDS IN ROW, COL
+	/// </summary>
+	/// <param name="relativeVisualPos"></param>
+	/// <returns></returns>
+	Utils::Point2DInt EntityRendererSystem::GetGlobalVisualPos(const Utils::Point2DInt& relativeVisualPos, 
+		const EntityRendererData& data, const Entity& entity) const
+	{
+		Utils::Point2DInt centerBottom = entity.m_Transform.m_Pos.GetFlipped();
+
+		Utils::Point2DInt bufferPos = {};
+		bufferPos.m_X = centerBottom.m_X - data.m_VisualBoundsSize.m_X + 1 + relativeVisualPos.m_X;
+		bufferPos.m_Y = centerBottom.m_Y - (data.m_VisualBoundsSize.m_Y / 2) + relativeVisualPos.m_Y;
+		return bufferPos;
+	}
+
+	//TODO: this just get camera to find the current position within appearing rect and put that in buffer
+	void EntityRendererSystem::RenderInBuffer(TextBuffer& buffer, EntityRendererData& data, const Entity& entity)
+	{
+		//Utils::Point2DInt half = {m_outputBuffer.m_HEIGHT/2, m_outputBuffer.m_WIDTH/2};
+		//std::cout << "Rendering at: " << half.ToString() << std::endl;
+		//std::cout << "Rendering player" << std::endl;
+
+		Utils::Point2DInt bufferPos = {};
+		TextChar currentTextChar = {};
+		for (int r = 0; r < data.m_VisualData.size(); r++)
+		{
+			for (int c = 0; c < data.m_VisualData[r].size(); c++)
+			{
+				bufferPos = GetGlobalVisualPos({ r, c }, data, entity);
+				if (!buffer.IsValidPos(bufferPos)) continue;
+
+				currentTextChar = data.m_VisualData[r][c];
+				if (currentTextChar.m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
+
+				buffer.SetAt(bufferPos, currentTextChar);
+				if (CACHE_LAST_BUFFER) data.m_LastFrameVisualData.emplace_back(bufferPos, currentTextChar);
+			}
+		}
+	}
+}
+

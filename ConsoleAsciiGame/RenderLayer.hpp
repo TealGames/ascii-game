@@ -1,7 +1,22 @@
 #pragma once
 #include <vector>
 #include <optional>
+#include <cstdint>
 #include "TextBuffer.hpp"
+
+using RenderLayerNumericType = std::uint8_t;
+enum class RenderLayerType : RenderLayerNumericType
+{
+    None= 0,
+    Background= 1<<0,
+    Player= 1 << 1,
+    UI= 1 << 2,
+};
+
+RenderLayerNumericType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs);
+RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs);
+RenderLayerNumericType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs);
+RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs);
 
 using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
 class RenderLayer

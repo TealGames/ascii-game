@@ -1,8 +1,6 @@
-#include <cstdint>
-#include <vector>
-#include <string>
 #include <limits>
-#include <algorithm>
+
+#include "pch.hpp"
 #include "ColorGradient.hpp"
 #include "raylib.h"
 #include "HelperFunctions.hpp"

@@ -1,9 +1,29 @@
-#include <format>
-#include <optional>
-#include <vector>
+#include "pch.hpp"
 #include "RenderLayer.hpp"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
+
+RenderLayerNumericType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs)
+{
+	return static_cast<RenderLayerType>(lhs) | static_cast<RenderLayerType>(rhs);
+}
+
+RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs)
+{
+	lhs = static_cast<RenderLayerType>(lhs | rhs);
+	return lhs;
+}
+
+RenderLayerNumericType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs)
+{
+	return static_cast<RenderLayerType>(lhs) & static_cast<RenderLayerType>(rhs);
+}
+
+RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs)
+{
+	lhs = static_cast<RenderLayerType>(lhs & rhs);
+	return lhs;
+}
 
 RenderLayer::RenderLayer(const RawTextBufferBlock& rawBuffer, const int& fontSize, 
 	const Utils::Point2DInt& charSpacing) :

@@ -1,17 +1,15 @@
 #include <numbers>
-#include <vector>
-#include <cstdint>
-#include <optional>
 #include <limits>
 #include <cmath>
-#include <iostream>
-#include "LightSource.hpp"
+
+#include "pch.hpp"
+#include "LightSourceSystem.hpp"
 #include "Component.hpp"
 #include "Point2D.hpp"
 #include "Point2DInt.hpp"
-
-#include "EntityRenderer.hpp"
-#include "Transform.hpp"
+#include "Scene.hpp"
+#include "EntityRendererSystem.hpp"
+#include "TransformSystem.hpp"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
@@ -21,58 +19,49 @@ namespace ECS
 {
     static constexpr bool CACHE_LAST_BUFFER = true;
 
-	LightSource::LightSource(const Transform& transform, const EntityRenderer& renderer, 
-        const std::vector<TextBuffer*>& buffers, const ColorGradient& filterColor, const int& lightRadius,
-        const std::uint8_t& initialLightLevel, const float& falloffValue) :
-		Component(), m_renderer(renderer), m_transform(transform), m_outputBuffers(buffers),
-        m_gradientFilter(filterColor), m_lightRadius(lightRadius), m_intensity(initialLightLevel), 
-        m_falloffStrength(falloffValue), m_lastFrameData{}
+	LightSourceSystem::LightSourceSystem(const TransformSystem& transform, const EntityRendererSystem& renderer) :
+        m_transformSystem(transform), m_rendererSystem(renderer)
 	{
 	}
 
-	UpdatePriority LightSource::GetUpdatePriority() const
-	{
-		return { MIN_PRIORITY };
-	}
-
-    void LightSource::Start()
+    void LightSourceSystem::SystemUpdate(Scene& scene, const float& deltaTime)
     {
+        std::vector<TextBuffer*> affectedLayerBuffers = {};
+        scene.OperateOnComponents<LightSourceData>(
+            [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
+            {
+                data.m_Dirty = false;
 
+                affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_AffectedLayers);
+                if (!m_transformSystem.HasMovedThisFrame(entity.m_Transform) 
+                    && !data.m_LastFrameData.empty())
+                {
+                    for (const auto& buffer : affectedLayerBuffers)
+                        buffer->SetAt(data.m_LastFrameData);
+                    return;
+                }
+
+                if (!data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
+                RenderLight(data, entity, affectedLayerBuffers);
+                data.m_Dirty = true;
+                //std::cout << "Rendering lgiht" << std::endl;
+            });
     }
 
-    void LightSource::UpdateStart(float deltaTime)
-    {
-        m_isDirty = false;
-        if (!m_transform.HasMovedThisFrame() && !m_lastFrameData.empty())
-        {
-            for (const auto& buffer : m_outputBuffers)
-                buffer->SetAt(m_lastFrameData);
-            return;
-        }
-        
-        //TODO: currently light is only applied on the background layer
-        //so we should also make it apply it to other layers too
-        if (!m_lastFrameData.empty()) m_lastFrameData.clear();
-        RenderLight(false);
-        m_isDirty = true;
-        //std::cout << "Rendering lgiht" << std::endl;
-    }
-
-    void LightSource::UpdateEnd(float deltaTime)
-    {
-        
-    }
-
+    
     //TODO: this probably needs to be optimized
     //TODO: it seems that when going below a certain point the light becomes brighter/stronger
-    void LightSource::CreateLightingForPoint(const Utils::Point2DInt& centerPos, TextBuffer& buffer, bool displayLightLevels)
+    void LightSourceSystem::CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity, 
+        const Utils::Point2DInt& centerPos, TextBuffer& buffer, bool displayLightLevels)
     {
+        
         //std::cout << "Center pos: " << centerPos.ToString() << std::endl;
-        const Utils::Point2DInt maxXY = { centerPos.m_X + m_lightRadius, centerPos.m_Y + m_lightRadius };
-        const Utils::Point2DInt minXY = { centerPos.m_X - m_lightRadius, centerPos.m_Y - m_lightRadius };
+        int radius = data.m_LightRadius;
+        const Utils::Point2DInt maxXY = { centerPos.m_X + radius, centerPos.m_Y + radius };
+        const Utils::Point2DInt minXY = { centerPos.m_X - radius, centerPos.m_Y - radius };
 
         //We approxiamte how accurate the circle should be by using the total area to figure out how many points we need
-        const int positiveSidePoints = std::min(buffer.GetHeight(), buffer.GetWidth()) / m_lightRadius;
+        const int positiveSidePoints = std::min(buffer.GetHeight(), buffer.GetWidth()) / radius;
         const float pointXValIncrement = 0.5f;
 
         //We add all the points on circle using X, Y Coords
@@ -81,7 +70,7 @@ namespace ECS
         std::vector<Utils::Point2D> bottomCirclePoints = {};
         while (x <= maxXY.m_X)
         {
-            y = std::sqrt(std::pow(m_lightRadius, 2) - std::pow(x - centerPos.m_X, 2)) + centerPos.m_Y;
+            y = std::sqrt(std::pow(data.m_LightRadius, 2) - std::pow(x - centerPos.m_X, 2)) + centerPos.m_Y;
             bottomCirclePoints.push_back({ x, y });
 
             x += pointXValIncrement;
@@ -118,10 +107,10 @@ namespace ECS
                 if (!buffer.IsValidPos(bufferPosRowCol)) continue;
                 if (buffer.GetAt(bufferPosRowCol)->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
 
-                /*Utils::Log(std::format("New color for {} from pos {} from color: {} is: {}", setPos.ToString(), centerPos.ToString(),
-                    RaylibUtils::ToString(m_outputBuffer.GetAt(setPos)->m_Color), RaylibUtils::ToString(CalculateNewColor(setPos, centerPos))));*/
+                //Utils::Log(std::format("New color for {} from pos {} from color: {} is: {}", setPos.ToString(), centerPos.ToString(),
+                //RaylibUtils::ToString(m_outputBuffer.GetAt(setPos)->m_Color), RaylibUtils::ToString(CalculateNewColor(setPos, centerPos))));
 
-                newColor = CalculateNewColor(buffer, bufferPosRowCol.GetFlipped(), centerPos, &lightLevel);
+                newColor = CalculateNewColor(data, entity, buffer, bufferPosRowCol.GetFlipped(), centerPos, &lightLevel);
                 //We need to have both coords uisng same system so we convert buffer set pos from row col to match XY of center pos
                 buffer.SetAt(bufferPosRowCol, newColor);
                
@@ -135,19 +124,26 @@ namespace ECS
                     buffer.SetAt(bufferPosRowCol, lightLevelStr[0]);
                 }
 
-                if (CACHE_LAST_BUFFER) 
-                    m_lastFrameData.push_back(TextCharPosition{bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char}});
+                if (CACHE_LAST_BUFFER)
+                    data.m_LastFrameData.push_back(TextCharPosition{ bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char} });
             }
         }
     }
 
-	void LightSource::RenderLight(bool displayLightLevels)
+	void LightSourceSystem::RenderLight(LightSourceData& data, ECS::Entity& entity, 
+        std::vector<TextBuffer*>& buffers, bool displayLightLevels)
 	{
-        std::vector<std::vector<TextChar>> visualData = m_renderer.GetVisualData();
+        EntityRendererData* renderData = entity.TryGetComponent<EntityRendererData>();
+        if (!Utils::Assert(renderData != nullptr, std::format("Tried to render light for entity: {} "
+            "but could not find its entity render component!", entity.m_Name))) return;
+
+        //TODO: it might not make sense for all lighting to just use the renderer to determine lighting start pos,
+        //so perhaps this needs to be more customizable to allow for this and other behavior
+        std::vector<std::vector<TextChar>> visualData = renderData->m_VisualData;
         Utils::Point2DInt centerPos = {};
        // std::cout << "REDNER LIGHT" << std::endl;
 
-        for (const auto& buffer : m_outputBuffers)
+        for (const auto& buffer : buffers)
         {
             if (buffer == nullptr) continue;
             //Utils::Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
@@ -159,49 +155,54 @@ namespace ECS
                 {
                     //we use default coords (x, y) but visual pos is in (row, col) so we flip
                     //TODO: maybe abstract transform from one coord system to the other
-                    centerPos = m_renderer.GetGlobalVisualPos({ r, c }).GetFlipped();
+                    centerPos = m_rendererSystem.GetGlobalVisualPos({ r, c }, *renderData, entity).GetFlipped();
                     if (!buffer->IsValidPos(centerPos.GetFlipped())) continue;
 
-                    CreateLightingForPoint(centerPos, *buffer, displayLightLevels);
+                    CreateLightingForPoint(data, entity, centerPos, *buffer, displayLightLevels);
                 }
             }
         }
 	}
 
-    std::uint8_t LightSource::CalculateLightLevelFromDistance(const float& distance) const
+    std::uint8_t LightSourceSystem::CalculateLightLevelFromDistance(const int index, const float& distance) const
     {
+        return 0;
         //We do radius +1 since we want there to be 0 light when we go PAST the radius
-        return m_intensity * std::powf(1- (distance/(m_lightRadius+1)), m_falloffStrength);
+        //return m_data[index].m_Intensity* std::powf(1 - (distance / (m_data[index].m_LightRadius + 1)), m_data[index].m_FalloffStrength);
     }
 
-    Color LightSource::CalculateNewColor(const TextBuffer& buffer, const Utils::Point2DInt& currentPos, 
+    Color LightSourceSystem::CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, 
+        const TextBuffer& buffer, const Utils::Point2DInt& currentPos,
         const Utils::Point2DInt& centerPos, std::uint8_t* outLightLevel) const
     {
+        return {};
+        /*
         float distanceToCenter = Utils::GetDistance(currentPos, centerPos);
-        /*Utils::Log(std::format("Distance between {} and {} is: {}",
-            currentPos.ToString(), centerPos.ToString(), std::to_string(distanceToCenter)));*/
+        //Utils::Log(std::format("Distance between {} and {} is: {}",
+        //currentPos.ToString(), centerPos.ToString(), std::to_string(distanceToCenter)));
 
-        uint8_t lightLevel = CalculateLightLevelFromDistance(distanceToCenter);
+        uint8_t lightLevel = CalculateLightLevelFromDistance(index, distanceToCenter);
        // Utils::Log(std::format("Light level for distance: {} is: {}", std::to_string(distanceToCenter), std::to_string(lightLevel)));
         //std::cout << "Light level is: " << std::to_string(lightLevel) << std::endl;
         if (outLightLevel != nullptr) *outLightLevel = lightLevel;
 
         if (!buffer.IsValidPos(currentPos.GetFlipped())) return {};
         Color originalColor = buffer.GetAt(currentPos.GetFlipped())->m_Color;
-        Color filterColor = m_gradientFilter.GetColorAt(distanceToCenter / m_lightRadius, false);
+        Color filterColor = m_data[index].m_GradientFilter.GetColorAt(distanceToCenter / m_data[index].m_LightRadius, false);
         
         //float alpha = m_filterColor.a / 255;
         //TODO: known issue is that below a certain row, colors do not show up
-        float colorMultiplier = static_cast<float>(lightLevel) / m_intensity;
+        float colorMultiplier = static_cast<float>(lightLevel) / m_data[index].m_Intensity;
     
         originalColor.r = std::roundf((originalColor.r) * (1 - colorMultiplier) + (filterColor.r) * (colorMultiplier));
         originalColor.g = std::roundf((originalColor.g) * (1 - colorMultiplier) + (filterColor.g) * (colorMultiplier));
         originalColor.b = std::roundf((originalColor.b) * (1 - colorMultiplier) + (filterColor.b) * (colorMultiplier));
         originalColor.a = 255;
 
-        /*Utils::Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
-            std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),
-            std::to_string(lightLevel), std::to_string(colorMultiplier), RaylibUtils::ToString(originalColor)));*/
+        //Utils::Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
+        //std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),
+        //std::to_string(lightLevel), std::to_string(colorMultiplier), RaylibUtils::ToString(originalColor)));
         return originalColor;
+        */
     }
 }

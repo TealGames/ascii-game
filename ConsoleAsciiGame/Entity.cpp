@@ -1,70 +1,86 @@
-#include <format>
-#include <vector>
-#include <map>
-#include <chrono>
-#include <algorithm>
+#include "pch.hpp"
 #include "Entity.hpp"
-#include "EntityID.hpp"
+#include "EntityMapper.hpp"
 #include "HelperFunctions.hpp"
-#include "TextBuffer.hpp"
 
 namespace ECS
 {
 	//TODO: add a reserved entity name ssytem and not allowing those names to be used
 
-	Entity::Entity(const std::string& name, Transform& transform, const UpdatePriority& updatePriority) :
-		m_name(name), m_Name(m_name),m_UpdatePriority(updatePriority),  
-		m_Id(), m_transform(transform), 
-		m_Transform(m_transform), m_components{}
+	/// <summary>
+	/// This will create the entity with name and mapper.
+	/// Note: the transform will be copied and then moved into the component storage 
+	/// </summary>
+	/// <param name="name"></param>
+	/// <param name="mapper"></param>
+	/// <param name="transform"></param>
+	Entity::Entity(const std::string& name, EntityMapper& mapper, const TransformData& transform) :
+		m_name(name), m_Name(m_name), m_entityMapper(mapper),
+		m_Id(m_entityMapper.ReserveAvailableEntityID()),
+		m_Transform(GetTransformRef(transform)), m_componentIDs{}
 	{
-		TryAddComponent<ECS::Transform>(&m_transform);
+		
+
 	}
 
-	void Entity::Start()
+	Entity::Entity(const std::string& name, EntityMapper& mapper, TransformData&& transform) :
+		m_name(name), m_Name(m_name), m_entityMapper(mapper),
+		m_Id(m_entityMapper.ReserveAvailableEntityID()),
+		m_Transform(GetTransformRef(std::move(transform))), m_componentIDs{}
 	{
-		if (m_components.empty()) return;
-		for (const auto& component : m_components) component->Start();
+
 	}
 
-	void Entity::UpdateStart(float deltaTime)
+	/// <summary>
+	/// This will get the transform ref of the stored transform 
+	/// after making a copy of the argument first
+	/// </summary>
+	/// <param name="transform"></param>
+	/// <returns></returns>
+	TransformData& Entity::GetTransformRef(const TransformData& transform)
 	{
-		m_isDirtyThisFrame = false;
-		if (m_components.empty()) return;
+		TransformData transformCopy = transform;
+		
+		TransformData* singleOutPtr = nullptr;
+		TransformData** doubleOutPtr = &singleOutPtr;
+		TryAddComponent<TransformData>(std::move(transformCopy), doubleOutPtr);
 
-		int componentIndex = 0;
-		for (const auto& component : m_components)
-		{
+		Utils::Assert(this, Utils::IsValidPointer(doubleOutPtr), std::format("Tried to bind transform data for entity: {} "
+			"using copy but failed to retrieve it after it has been added", m_Name));
 
-			auto start= std::chrono::high_resolution_clock::now();
-			component->UpdateStart(deltaTime);
-			if (component->IsDirty())
-			{
-				m_isDirtyThisFrame = true;
-				/*Utils::Log(std::format("Component is dirty: {}", typeid(component).name()));*/
-			}
-			auto end= std::chrono::high_resolution_clock::now();
-			auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-			Utils::Log(std::format("BENCHMARK: For entity: {} component at index: {} took: {} ms", 
-				m_name, std::to_string(componentIndex), std::to_string(duration)));
-
-			componentIndex++;
-		}
+		return *(*doubleOutPtr);
 	}
 
-	void Entity::UpdateEnd(float deltaTime)
+	/// <summary>
+	/// This will get the transform by directly moving the transform rvalue
+	/// </summary>
+	/// <param name="transform"></param>
+	/// <returns></returns>
+	TransformData& Entity::GetTransformRef(TransformData&& transform)
 	{
-		if (m_components.empty()) return;
-		for (const auto& component : m_components) component->UpdateEnd(deltaTime);
+		TransformData* singleOutPtr = nullptr;
+		TransformData** doubleOutPtr = &singleOutPtr;
+		TryAddComponent<TransformData>(std::move(transform), doubleOutPtr);
+
+		Utils::Assert(this, Utils::IsValidPointer(doubleOutPtr), std::format("Tried to bind transform data for entity: {} "
+			"using move but failed to retrieve it after it has been added", m_Name));
+
+		return *(*doubleOutPtr);
 	}
 
-	UpdatePriority Entity::GetUpdatePriority() const
+	ComponentCollectionType::iterator Entity::GetComponentIDIteratorMutable(const ComponentType& type)
 	{
-		return m_UpdatePriority;
+		return m_componentIDs.find(type);
 	}
 
-	bool Entity::IsDirtyThisFrame() const
+	ComponentCollectionType::const_iterator Entity::GetComponentIDIterator(const ComponentType& type) const
 	{
-		return m_isDirtyThisFrame;
+		return m_componentIDs.find(type);
+	}
+
+	bool Entity::HasComponent(const ComponentType& type) const
+	{
+		return GetComponentIDIterator(type) != m_componentIDs.end();
 	}
 
 	//int Entity::GetComponentTypeCount(const ComponentType& type) const

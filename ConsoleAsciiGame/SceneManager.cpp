@@ -1,8 +1,5 @@
 #include <filesystem>
-#include <vector>
-#include <iostream>
-#include <optional>
-#include <format>
+#include "pch.hpp"
 #include "SceneManager.hpp"
 #include "Scene.hpp"
 #include "HelperFunctions.hpp"
@@ -10,7 +7,8 @@
 namespace SceneManagement
 {
 	SceneManager::SceneManager(const std::filesystem::path& allScenesDir) : 
-		m_allScenes{}, m_activeScene(nullptr)
+		m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager()
+		/*m_globalEntities{}, m_globalEntitiesLookup{}, m_globalEntityMapper()*/
 	{
 		std::string fileName = "";
 		try
@@ -23,7 +21,7 @@ namespace SceneManagement
 				if (fileName.substr(0, Scene::m_SCENE_FILE_PREFIX.size()) != Scene::m_SCENE_FILE_PREFIX) continue;
 
 				//const Scene scene = Scene();
-				m_allScenes.emplace_back(file.path());
+				m_allScenes.emplace_back(file.path(), m_GlobalEntityManager);
 				//Utils::Log(std::format("Adding scene to scene manager constricutor: {}", scene.ToStringLayers()));
 			}
 		}

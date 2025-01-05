@@ -1,9 +1,6 @@
-#include "RaylibUtils.hpp"
-#include <string>
-#include <format>
-#include <cstdint>
+#include "pch.hpp"
 #include "raylib.h"
-#include "HelperFunctions.hpp"
+#include "RaylibUtils.hpp"
 
 namespace RaylibUtils
 {

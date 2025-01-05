@@ -1,67 +1,40 @@
 #pragma once
 #include <map>
 #include <string>
+#include <optional>
+#include <unordered_map>
 #include <vector>
 #include <memory>
 #include <type_traits>
 #include <algorithm>
-#include "EntityID.hpp"
-#include "Component.hpp"
+#include "EntityMapper.hpp"
 #include "HelperFunctions.hpp"
-#include "Updateable.hpp"
-#include "TextBuffer.hpp"
-#include "Point2DInt.hpp"
-#include "Transform.hpp"
+#include "TransformData.hpp"
+#include "ComponentType.hpp"
 
 namespace ECS
 {
-	using ComponentCollectionType = std::vector<Component*>;
-	class Entity : public Updateable
+	using ComponentCollectionType = std::unordered_map<ComponentType, ComponentID>;
+	class Entity
 	{
 	private:
-		//We can't do this because of slicing-> since they are value types
-		//the polymorphism data is lost
-		/*std::vector<Component> m_components = {};*/
-		ComponentCollectionType m_components;
-		Transform& m_transform;
+		EntityMapper& m_entityMapper;
+		ComponentCollectionType m_componentIDs;
 
 		std::string m_name;
-		bool m_isDirtyThisFrame;
 
 	public:
-		const UpdatePriority m_UpdatePriority;
 		const std::string& m_Name;
-		const Transform& m_Transform;
 		//TODO: maybe replace id with GUID (UIUD is available in boost library)
 		const EntityID m_Id;
+		TransformData& m_Transform;
 
 	private:
-		template <typename T>
-		ComponentCollectionType::iterator GetComponentIteratorMutable()
-		{
-			for (auto it = m_components.begin(); it != m_components.end(); it++)
-			{
-				if (typeid(*(*it)).name() == typeid(T).name()) return it;
-			}
-			return m_components.end();
-		}
+		TransformData& GetTransformRef(const TransformData& data);
+		TransformData& GetTransformRef(TransformData&& data);
 
-		template <typename T>
-		ComponentCollectionType::const_iterator GetComponentIterator() const
-		{
-			for (auto it = m_components.begin(); it != m_components.end(); it++)
-			{
-				if (typeid(*(*it)).name() == typeid(T).name()) return it;
-			}
-			return m_components.end();
-		}
-
-		/*template <typename T>
-		bool IsComponentType() const
-		{
-			if (typeid(T).name() == typeid(Component).name()) return false;
-			return static_cast<Component>(T);
-		}*/
+		ComponentCollectionType::iterator GetComponentIDIteratorMutable(const ComponentType& type);
+		ComponentCollectionType::const_iterator GetComponentIDIterator(const ComponentType& type) const;
 
 	public:
 		/// <summary>
@@ -69,77 +42,71 @@ namespace ECS
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="objectId"></param>
-		Entity(const std::string& name, Transform& transform, const UpdatePriority& updatePriority=0);
+		Entity(const std::string& name, EntityMapper& mapper, const TransformData& transform);
+		Entity(const std::string& name, EntityMapper& mapper, TransformData&& transform);
 
-		template <typename T>
-		auto HasComponent()
-			-> typename std::enable_if<std::is_base_of_v<Component, T>, bool>::type
-		{
-			return GetComponentIterator<T>() != m_components.end();
-		}
+		//We do not allow copying since the component data is stored in the entity mapper
+		//and copying would delete obj and not data since deleting/removing data is not implemented
+		//in the entity mapper yet
+		//Entity(Entity&& entity) = delete;
+
+		bool HasComponent(const ComponentType& type) const;
 
 		/// <summary>
-		/// 
+		/// Will add the specified type of component. To improve performance and prevent the need for
+		/// pointers/indirection and performance lost, the component data is moved.
+		/// Note: only rvalues are allowed since it helps performance since a component can not be added as a 
+		/// reference to the structure that stores componnents
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		/// <returns></returns>
-		template <typename T>
-		auto TryGetComponent()
-			-> typename std::enable_if<std::is_base_of_v<Component, T>, T*>::type
-		{
-			if (!HasComponent<T>()) return nullptr;
-			return dynamic_cast<T*>(*GetComponentIteratorMutable<T>());
-		}
-
-
-		/// <summary>
-		/// 
-		/// </summary>
 		/// <param name="component"></param>
-		/// <param name="id"></param>
-		template <typename T>
-		auto TryAddComponent(T* component)
-			-> typename std::enable_if<std::is_base_of_v<Component, T>, bool>::type
-		{
-			if (!Utils::Assert(!HasComponent<T>(), std::format("Tried to add a duplicate component of type {} to entity: {}",
-				typeid(T).name(), m_Name)))
-				return false;
-
-			m_components.push_back(component);
-			std::sort(m_components.begin(), m_components.end(), 
-				//more priority=> means goes sooner
-				[](const Component* firstComp, const Component* secondComp) -> bool
-				{
-					return secondComp->GetUpdatePriority() < firstComp->GetUpdatePriority();
-				});
-
-			return true;
-		}
-
-		/// <summary>
-		/// Will remove the component with the id specified
-		/// </summary>
-		/// <param name="id"></param>
+		/// <param name="outComponent">Pointer to the component stored (since the actual componenent is moved) 
+		/// since there is no point of keeping copies. Note: this should be a pointer to a null pointer (and not just null)
+		/// if you want to retrieve the out value</param>
 		/// <returns></returns>
-		template <typename T>
-		auto TryRemoveComponent()
-			-> typename std::enable_if<std::is_base_of_v<Component, T>, bool>::type
+		template<typename T>
+		requires std::is_rvalue_reference_v<T&&>
+		bool TryAddComponent(T&& component, T** outComponent)
 		{
-			if (!Utils::Assert(HasComponent<T>(), std::format("Tried to remove a non-existing component {} to entity: {}",
-				typeid(T).name(), m_Name)))
-				return false;
+			if (!Utils::Assert(this, std::is_copy_assignable_v<T>, std::format("Tried to add component of type: {} "
+				"to entity id: {} via ENTITY but that type does not have a valid move assignment operator to move the componnent",
+				typeid(T).name(), m_Name))) return false;
 
-			m_components.erase(GetComponentIterator<T>());
+			const ComponentType type = GetComponentFromType<T>();
+			if (!Utils::Assert(this, !HasComponent(type), std::format("Tried to add the component type: {} to entity: {} "
+				"but it already exists on this entity! Components: {}", 
+				ToString(type), m_Name, Utils::ToStringIterable(m_componentIDs)))) return false;
+
+			//Note: we forward it to preserve the rvalue reference (and not need for the function to deduce again)
+			std::optional<ComponentID> compID = m_entityMapper.TryAddComponent<T>(m_Id, std::forward<T>(component), type, outComponent);
+			if (!Utils::Assert(this, compID.has_value(), std::format("Tried to add the component type: {} to entity: {} "
+				"but the entity mapper failed to add it!", ToString(type), m_Name))) return false;
+
+			m_componentIDs.emplace(type, compID.value());
+			//outComponent = &(m_entityMapper.TryGetComponent<T>(m_Id, type));
 			return true;
 		}
 
-		void Start() override;
-		void UpdateStart(float deltaTime) override;
-		void UpdateEnd(float deltaTime) override;
+		template<typename T>
+		requires std::is_rvalue_reference_v<T&&>
+		T* TryAddComponent(T&& component)
+		{
+			T* singleOutPtr = nullptr;
+			T** doubleOutPtr = &singleOutPtr;
 
-		virtual UpdatePriority GetUpdatePriority() const;
-		bool IsDirtyThisFrame() const;
+			TryAddComponent<T>(std::move(component), doubleOutPtr);
+			if (Utils::IsValidPointer(doubleOutPtr)) return *doubleOutPtr;
+			return nullptr;
+		}
+
+		template<typename T>
+		T* TryGetComponent()
+		{
+			const ComponentType type = GetComponentFromType<T>();
+			auto it = GetComponentIDIteratorMutable(type);
+
+			return m_entityMapper.TryGetComponent<T>(it->second);
+		}
 	};
-
 }
 
