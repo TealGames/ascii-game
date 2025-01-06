@@ -196,7 +196,7 @@ public:
 				//increase data storage without providing any benefit (since changes would be made to copy here)
 				m_allComponents[componentRowIndex][existingColIndex] = component;
 				outCompPtr = TryConvertToComponentType<T>(m_allComponents[componentRowIndex][existingColIndex], validCompType);
-				outComponent = &(outCompPtr);
+				*outComponent = outCompPtr;
 
 				compId = CreateComponentID(validCompType, existingColIndex);
 				StoreComponentForEntity(entityId, compId);
@@ -230,11 +230,13 @@ public:
 			std::to_string(componentRowIndex), std::to_string(m_allComponents.size()-1), 
 			std::to_string(elementIndex), std::to_string(m_allComponents[componentRowIndex].size()-1)));
 
-		if (elementIndex == 0) m_allComponents[componentRowIndex].emplace_back(component);
-		else m_allComponents[componentRowIndex][elementIndex] = component;
+		//Since linear placement inits all spaces to empty we can index then OR if we have enough space (meaning we went back)
+		if (DO_COMPONENT_LINEAR_PLACEMENT || elementIndex<m_allComponents[componentRowIndex].size())
+			m_allComponents[componentRowIndex][elementIndex] = component;
+		else m_allComponents[componentRowIndex].emplace_back(component);
 
 		outCompPtr = TryConvertToComponentType<T>(m_allComponents[componentRowIndex][elementIndex], validCompType);
-		outComponent = &(outCompPtr);
+		*outComponent = outCompPtr;
 
 		compId = CreateComponentID(validCompType, elementIndex);
 		StoreComponentForEntity(entityId, compId);
@@ -269,11 +271,12 @@ public:
 	T* TryGetComponent(const ComponentID& compId)
 	{
 		ComponentRowIndex rowIndex= GetRowIndexForComponentID(compId);
-		if (m_allComponents.size() >= rowIndex) return nullptr;
+		if (m_allComponents.size() <= rowIndex) return nullptr;
 
 		ComponentIndex colIndex= GetColIndexForComponentID(compId);
-		if (m_allComponents[rowIndex].size() >= colIndex) return nullptr;
+		if (m_allComponents[rowIndex].size() <= colIndex) return nullptr;
 
+		Utils::Log(std::format("Converting to component with comp id: {}", std::to_string(compId)));
 		return TryConvertToComponentType<T>(m_allComponents[rowIndex][colIndex], GetComponentTypeFromID(compId));
 	}
 
@@ -320,5 +323,5 @@ public:
 		return result;
 	}
 
-
+	std::string ToStringData(bool doEntityComponents= false) const;
 };

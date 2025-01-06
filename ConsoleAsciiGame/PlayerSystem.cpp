@@ -33,12 +33,7 @@ namespace ECS
         bool isZero = moveDelta.m_X == 0 && moveDelta.m_Y == 0;
         if (isZero) return false;
 
-        TransformData* maybeTransform = entity.TryGetComponent<TransformData>();
-        if (!Utils::Assert(maybeTransform!=nullptr, std::format("Tried to move player entity: {} "
-            "by delta: {} but failed to retrieve its transform", 
-            std::to_string(entity.m_Id), moveDelta.ToString()))) return false;
-
-        m_transformSystem.SetPosDelta(*maybeTransform, moveDelta);
+        m_transformSystem.SetPosDelta(entity.m_Transform, moveDelta);
         return true;
     }
 }

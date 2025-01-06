@@ -2,13 +2,13 @@
 #include "Entity.hpp"
 #include "CameraSystem.hpp"
 #include "Point2DInt.hpp"
-#include "Entity.hpp"
 #include "Updateable.hpp"
 #include "Component.hpp"
 #include "Globals.hpp"
 #include "SceneManager.hpp"
 #include "GameRenderer.hpp"
 #include "HelperFunctions.hpp"
+#include "RaylibUtils.hpp"
 
 namespace ECS
 {
@@ -22,9 +22,6 @@ namespace ECS
     void CameraSystem::SystemUpdate(Scene& scene, CameraData& data,
         ECS::Entity& mainCamera, const float& deltaTime)
     {
-        ECS::Entity* cameraEntity = scene.TryGetMainCameraEntity();
-        if (!Utils::Assert(cameraEntity != nullptr, std::format("Tried to up"))) return;
-
         data.m_Dirty = false;
 
         if (!scene.HasDirtyEntities() && data.m_LastFrameBuffer.has_value())
@@ -36,10 +33,11 @@ namespace ECS
 
         data.m_Dirty = true;
         if (!data.m_CameraSettings.m_HasFixedPosition) UpdateCameraPosition(data, mainCamera);
-        Rendering::RenderBuffer(TextBuffer(5, 5, TextChar(BLUE, 'V')));
+       /* Rendering::RenderBuffer(TextBuffer(5, 5, TextChar(BLUE, 'V')));
         data.m_LastFrameBuffer = TextBuffer(5, 5, TextChar(BLUE, 'V'));
-        data.m_LastFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);
-        return;
+        data.m_LastFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);*/
+        //return;
+      
 
         TextBuffer collapsedBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);
         Rendering::RenderBuffer(collapsedBuffer);
@@ -49,10 +47,12 @@ namespace ECS
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
     void CameraSystem::UpdateCameraPosition(CameraData& cameraData, ECS::Entity& mainCamera)
     {
-        m_transformSystem.SetPos(mainCamera.m_Transform, 
+        Utils::Log(std::format("Main camera trans: {} follow trans: {}", mainCamera.m_Transform.m_Pos.ToString(), 
+            std::to_string(cameraData.m_CameraSettings.m_FollowTarget!=nullptr)));
+        //Utils::Log(std::format("Main camera trans: {} follow trans: ", mainCamera.m_Transform.m_Pos.ToString()));
+        m_transformSystem.SetPos(mainCamera.m_Transform,
             cameraData.m_CameraSettings.m_FollowTarget->m_Transform.m_Pos);
     }
-
 
     TextBuffer CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData, ECS::Entity& mainCamera) const
     {
@@ -61,6 +61,7 @@ namespace ECS
 
         const Utils::Point2DInt cartesianTopLeft = mainCamera.m_Transform.m_Pos - (cameraData.m_CameraSettings.m_ViewportSize / 2);
         const Utils::Point2DInt renderCoordsTopLeft = cartesianTopLeft.GetFlipped();
+        //Utils::Log(std::format("CAMERA: top left: {}", cartesianTopLeft.ToString()));
 
         //TODO: it seems like this process should proably be much quicker and maybe we should optimize
         //by first checking if the area is smaller and convering those automatically with empty chars
@@ -94,14 +95,19 @@ namespace ECS
                     if (posChar->m_Char== EMPTY_CHAR_PLACEHOLDER) continue;
 
                     hasFoundChar = true;
-                    //Utils::Log(std::format("Found valid topmost pos at: {} with char: {} at layer: {}", 
-                    //globalPos.ToString(), Utils::ToString(posChar->m_Char), std::to_string(layerIndex)));
+                   /* Utils::Log(std::format("Found valid topmost pos at: {} with char: {} color: {} at layer: {} BUT WHEN DIRECT COLOR: {}", 
+                    globalPos.ToString(), Utils::ToString(posChar->m_Char), RaylibUtils::ToString(posChar->m_Color), 
+                        std::to_string(layerIndex), layer.m_SquaredTextBuffer.ToString(false)));*/
                     break;
                 }
 
                 //Since we may have the camera go out of bounds at times to fit player at desired pos, or
                 //we may have smaller scene than camera size, we add invalid pos as empty chars
-                if (!hasFoundChar) newBuffer.SetAt(localPos, TextChar{ Color(), EMPTY_CHAR_PLACEHOLDER });
+                if (!hasFoundChar)
+                {
+                    newBuffer.SetAt(localPos, TextChar{ Color(), EMPTY_CHAR_PLACEHOLDER });
+                   /* Utils::Log("OUT OF BOUNDS SET EMPTYx");*/
+                }
                 else
                 {
                     newBuffer.SetAt(localPos, *posChar);
@@ -110,7 +116,7 @@ namespace ECS
                 }
             }
         }
-        //Utils::Log(std::format("Camera collapsing has buffer: {}", newBuffer.ToString()));
+        //Utils::Log(std::format("Camera collapsing has buffer: {}", newBuffer.ToString(false)));
         return newBuffer;
     }
     

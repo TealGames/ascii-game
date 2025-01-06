@@ -81,3 +81,5 @@ ComponentType GetComponentFromType()
 	return ComponentType::None;
 }
 
+ComponentType MergeComponents(const std::vector<ComponentType> components);
+

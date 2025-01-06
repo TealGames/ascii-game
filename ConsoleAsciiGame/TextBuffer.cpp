@@ -196,6 +196,10 @@ const TextChar* TextBuffer::GetAt(const Utils::Point2DInt& rowColPos) const
 	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to get INVALID pos at row col: {} of full buffer: {}",
 		rowColPos.ToString(), ToString()))) return nullptr;
 
+	Utils::Log(std::format("WHEN ACCESSING POS {} char: {} color is: {}", 
+		rowColPos.ToString(), Utils::ToString(m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Char), 
+		RaylibUtils::ToString(m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Color)));
+
 	return &(m_textBuffer[rowColPos.m_X][rowColPos.m_Y]);
 }
 
@@ -208,7 +212,7 @@ const std::vector<TextChar>& TextBuffer::GetAt(const int& rowPos) const
 }
 
 std::string TextBuffer::ToString(const std::vector<std::vector<TextChar>>& buffer,
-	const bool convertChars)
+	const bool convertAll)
 {
 	std::string fullStr = "";
 	char currentChar = '0';
@@ -216,12 +220,10 @@ std::string TextBuffer::ToString(const std::vector<std::vector<TextChar>>& buffe
 	{
 		for (int c = 0; c < buffer[r].size(); c++)
 		{
-			if (convertChars)
-			{
-				currentChar = buffer[r][c].m_Char;
-				fullStr += currentChar;
-			}
-			else
+			currentChar = buffer[r][c].m_Char;
+			fullStr += currentChar;
+			
+			if (convertAll)
 			{
 				fullStr += RaylibUtils::ToString(buffer[r][c].m_Color) + " ";
 			}

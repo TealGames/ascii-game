@@ -14,6 +14,19 @@
 
 namespace ECS
 {
+	template<typename T>
+	struct EntityComponentPair
+	{
+		//Note: the types are pointers so this object
+		//can easily be copied into things like optional, vector, etc
+
+		ECS::Entity* m_Entity;
+		T* m_Data;
+
+		EntityComponentPair(ECS::Entity& entity, T& data) :
+			m_Entity(&entity), m_Data(&data) {}
+	};
+
 	using ComponentCollectionType = std::unordered_map<ComponentType, ComponentID>;
 	class Entity
 	{
@@ -75,12 +88,15 @@ namespace ECS
 			const ComponentType type = GetComponentFromType<T>();
 			if (!Utils::Assert(this, !HasComponent(type), std::format("Tried to add the component type: {} to entity: {} "
 				"but it already exists on this entity! Components: {}", 
-				ToString(type), m_Name, Utils::ToStringIterable(m_componentIDs)))) return false;
+				::ToString(type), m_Name, Utils::ToStringIterable(m_componentIDs)))) return false;
+
+			Utils::Log(std::format("After adding comp: {} to entity: {} first: {} second: {}", 
+				::ToString(type), m_Name, std::to_string(outComponent!=nullptr), std::to_string(outComponent? *outComponent!=nullptr : false)));
 
 			//Note: we forward it to preserve the rvalue reference (and not need for the function to deduce again)
 			std::optional<ComponentID> compID = m_entityMapper.TryAddComponent<T>(m_Id, std::forward<T>(component), type, outComponent);
 			if (!Utils::Assert(this, compID.has_value(), std::format("Tried to add the component type: {} to entity: {} "
-				"but the entity mapper failed to add it!", ToString(type), m_Name))) return false;
+				"but the entity mapper failed to add it!", ::ToString(type), m_Name))) return false;
 
 			m_componentIDs.emplace(type, compID.value());
 			//outComponent = &(m_entityMapper.TryGetComponent<T>(m_Id, type));
@@ -105,9 +121,12 @@ namespace ECS
 		{
 			const ComponentType type = GetComponentFromType<T>();
 			auto it = GetComponentIDIteratorMutable(type);
+			Utils::Log(std::format("Trying to get component: {} type: {} from entity: {}", typeid(T).name(), ::ToString(type), ToString()));
 
 			return m_entityMapper.TryGetComponent<T>(it->second);
 		}
+
+		std::string ToString() const;
 	};
 }
 

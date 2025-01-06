@@ -20,11 +20,14 @@ namespace ECS
 	void EntityRendererSystem::SystemUpdate(Scene& scene, const float& deltaTime)
 	{
 		std::vector<TextBuffer*> affectedLayerBuffers = {};
+		Utils::Log("SYSTEM UPDATE FOR REDNER ENTITY");
 		scene.OperateOnComponents<EntityRendererData>(
 			[this, &scene, &affectedLayerBuffers](EntityRendererData& data, ECS::Entity& entity)-> void
 			{
 				data.m_Dirty = false;
 				affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_RenderLayers);
+				Utils::Log(std::format("RENDER LAYERS: {}", std::to_string(affectedLayerBuffers.size())));
+
 				if (!Utils::Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
 					"but entity's render data: {} has no render layers", entity.m_Name))) return;
 
@@ -94,7 +97,7 @@ namespace ECS
 	{
 		//Utils::Point2DInt half = {m_outputBuffer.m_HEIGHT/2, m_outputBuffer.m_WIDTH/2};
 		//std::cout << "Rendering at: " << half.ToString() << std::endl;
-		//std::cout << "Rendering player" << std::endl;
+		std::cout << "Rendering player" << std::endl;
 
 		Utils::Point2DInt bufferPos = {};
 		TextChar currentTextChar = {};
@@ -109,6 +112,7 @@ namespace ECS
 				if (currentTextChar.m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
 
 				buffer.SetAt(bufferPos, currentTextChar);
+				Utils::Log(std::format("Setting entity buffer render: {}", bufferPos.ToString()));
 				if (CACHE_LAST_BUFFER) data.m_LastFrameVisualData.emplace_back(bufferPos, currentTextChar);
 			}
 		}

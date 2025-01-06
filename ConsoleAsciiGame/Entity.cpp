@@ -20,7 +20,8 @@ namespace ECS
 		m_Transform(GetTransformRef(transform)), m_componentIDs{}
 	{
 		
-
+		Utils::Log(std::format("Creating entity with name {} with id: {}", 
+			m_name, std::to_string(m_Id)));
 	}
 
 	Entity::Entity(const std::string& name, EntityMapper& mapper, TransformData&& transform) :
@@ -81,6 +82,13 @@ namespace ECS
 	bool Entity::HasComponent(const ComponentType& type) const
 	{
 		return GetComponentIDIterator(type) != m_componentIDs.end();
+	}
+
+	std::string Entity::ToString() const
+	{
+		auto components= Utils::GetKeysFromMap<ComponentType, ComponentID>(m_componentIDs.begin(), m_componentIDs.end());
+		std::string componentsStr = ::ToString(MergeComponents(components));
+		return std::format("['{}' #{} c:{}]", m_Name, std::to_string(m_Id), componentsStr);
 	}
 
 	//int Entity::GetComponentTypeCount(const ComponentType& type) const

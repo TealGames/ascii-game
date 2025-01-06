@@ -53,12 +53,13 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	//Note: right now we make two layers one for background and one for player, but this should
 	//get abstracted more with ids and text file parsing of scene data
 	m_Layers.emplace(RenderLayerType::Background, newLayer);
+	Utils::Log(std::format("Scene background buffer: {}", m_Layers.at(RenderLayerType::Background).m_SquaredTextBuffer.ToString()));
 
 	const RenderLayer playerLayer = RenderLayer(TextBuffer{ newLayerW, newLayerH, TextChar()}, TEXT_BUFFER_FONT, CHAR_SPACING);
 	m_Layers.emplace(RenderLayerType::Player, playerLayer);
 }
 
-void Scene::ParseSceneFile(std::ifstream& fstream, 
+void Scene::ParseSceneFile(std::ifstream& fstream,  
 	std::vector<std::vector<TextCharPosition>>& layerText) const
 {
 	int r = 0;
@@ -317,6 +318,12 @@ std::string Scene::ToStringLayers() const
 		result += layer.second.ToString();
 	}
 	return result;
+}
+
+std::string Scene::ToStringEntityData() const
+{
+	return std::format("[Global: {} Local: {}]", 
+		m_globalEntities.ToStringEntityData(), m_entityMapper.ToStringData());
 }
 
 int Scene::GetDirtyEntitiesCount() const

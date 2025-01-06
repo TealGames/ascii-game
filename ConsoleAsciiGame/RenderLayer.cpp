@@ -3,9 +3,10 @@
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 
-RenderLayerNumericType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs)
+RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs)
 {
-	return static_cast<RenderLayerType>(lhs) | static_cast<RenderLayerType>(rhs);
+	return static_cast<RenderLayerType>(
+		static_cast<RenderLayerNumericType>(lhs) | static_cast<RenderLayerNumericType>(rhs));
 }
 
 RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs)
@@ -14,15 +15,26 @@ RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs)
 	return lhs;
 }
 
-RenderLayerNumericType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs)
+RenderLayerType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs)
 {
-	return static_cast<RenderLayerType>(lhs) & static_cast<RenderLayerType>(rhs);
+	return static_cast<RenderLayerType>(
+		static_cast<RenderLayerNumericType>(lhs) & static_cast<RenderLayerNumericType>(rhs));
 }
 
 RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs)
 {
 	lhs = static_cast<RenderLayerType>(lhs & rhs);
 	return lhs;
+}
+
+bool operator==(const RenderLayerType& lhs, const RenderLayerNumericType& rhs)
+{
+	return static_cast<RenderLayerNumericType>(lhs) == rhs;
+}
+
+bool operator!=(const RenderLayerType& lhs, const RenderLayerNumericType& rhs)
+{
+	return static_cast<RenderLayerNumericType>(lhs) != rhs;
 }
 
 RenderLayer::RenderLayer(const RawTextBufferBlock& rawBuffer, const int& fontSize, 

@@ -20,6 +20,8 @@ namespace Rendering
 
         ClearBackground(BLACK);
         DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
+        EndDrawing(); 
+        return;
 
         //TODO: perhaps we should not calculate the best fit char area, but rather have a consistent size to allow
         //different scene sizes to appear the same with character area
@@ -44,8 +46,8 @@ namespace Rendering
                 {
                     DrawText(drawStr, x, y, TEXT_BUFFER_FONT, buffer.GetAt({ r, c })->m_Color);
                 }
-               /* Utils::Log(std::format("Drawing character: {} at pos: {} with color: {}", 
-                    Utils::ToString(drawStr[0]), Utils::Point2DInt(r, c).ToString(), RaylibUtils::ToString(buffer.GetAt({ r, c })->m_Color)));*/
+               Utils::Log(std::format("Drawing character: {} at pos: {} with color: {}", 
+                    Utils::ToString(drawStr[0]), Utils::Point2DInt(r, c).ToString(), RaylibUtils::ToString(buffer.GetAt({ r, c })->m_Color)));
                 x += charArea.m_X;
             }
 

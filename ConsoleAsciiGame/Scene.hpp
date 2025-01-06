@@ -77,6 +77,7 @@ public:
 	std::vector<const RenderLayer*> GetAllLayers() const;
 	std::vector<TextBuffer*> GetTextBuffersMutable(const RenderLayerType& renderLayers);
 	std::string ToStringLayers() const;
+	std::string ToStringEntityData() const;
 
 	void Start() override;
 	void UpdateStart(float deltaTime) override;
@@ -109,16 +110,18 @@ public:
 		if (!Utils::Assert(type != ComponentType::None, std::format("Tried to operate on component type: {} "
 			"but failed to retrieve its enum value", typeid(T).name()))) return;
 
-		m_entityMapper.TryGetComponentsOfType<T>(type,
-			[this, &action](T* component, const EntityID& id)-> void
+		std::function<void(T*, const EntityID&)> actions = [this, &action](T* component, const EntityID& id)-> void
 			{
 				ECS::Entity* entityPtr = TryGetEntity(id);
-				if (!Utils::Assert(entityPtr!=nullptr, std::format("Tried to operate on component type: {} "
-					"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)", 
+				if (!Utils::Assert(entityPtr != nullptr, std::format("Tried to operate on component type: {} "
+					"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
 					typeid(T).name(), std::to_string(id)))) return;
-				
+
 				action(*component, *entityPtr);
-			});
+			};
+
+		m_entityMapper.TryGetComponentsOfType<T>(type,actions);
+		m_globalEntities.TryGetComponentsOfType<T>(type,actions);
 	}
 };
 

@@ -13,10 +13,13 @@ enum class RenderLayerType : RenderLayerNumericType
     UI= 1 << 2,
 };
 
-RenderLayerNumericType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs);
+RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs);
 RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs);
-RenderLayerNumericType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs);
+RenderLayerType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs);
 RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs);
+
+bool operator==(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
+bool operator!=(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
 
 using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
 class RenderLayer

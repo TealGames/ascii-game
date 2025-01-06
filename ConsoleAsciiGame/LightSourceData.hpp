@@ -6,18 +6,18 @@
 
 struct LightSourceData
 {
-	const std::uint8_t m_LightRadius;
+	std::uint8_t m_LightRadius;
 	//The layers which the light will apply its effect to
-	const RenderLayerType m_AffectedLayers;
-	const ColorGradient m_GradientFilter;
+	RenderLayerType m_AffectedLayers;
+	ColorGradient m_GradientFilter;
 
 	//The strength of the light initially
-	const std::uint8_t m_Intensity;
+	std::uint8_t m_Intensity;
 
 	//where <1 creates more logarithmic curves, 
 	//=1 creates linear and >1 creates exponential decay
 	//and -1 means unused
-	const float m_FalloffStrength;
+	float m_FalloffStrength;
 
 	std::vector<TextCharPosition> m_LastFrameData;
 	bool m_Dirty;

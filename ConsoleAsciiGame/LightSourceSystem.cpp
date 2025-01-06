@@ -164,35 +164,32 @@ namespace ECS
         }
 	}
 
-    std::uint8_t LightSourceSystem::CalculateLightLevelFromDistance(const int index, const float& distance) const
+    std::uint8_t LightSourceSystem::CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const
     {
-        return 0;
         //We do radius +1 since we want there to be 0 light when we go PAST the radius
-        //return m_data[index].m_Intensity* std::powf(1 - (distance / (m_data[index].m_LightRadius + 1)), m_data[index].m_FalloffStrength);
+        return data.m_Intensity* std::powf(1 - (distance / (data.m_LightRadius + 1)), data.m_FalloffStrength);
     }
 
     Color LightSourceSystem::CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, 
         const TextBuffer& buffer, const Utils::Point2DInt& currentPos,
         const Utils::Point2DInt& centerPos, std::uint8_t* outLightLevel) const
     {
-        return {};
-        /*
         float distanceToCenter = Utils::GetDistance(currentPos, centerPos);
         //Utils::Log(std::format("Distance between {} and {} is: {}",
         //currentPos.ToString(), centerPos.ToString(), std::to_string(distanceToCenter)));
 
-        uint8_t lightLevel = CalculateLightLevelFromDistance(index, distanceToCenter);
+        uint8_t lightLevel = CalculateLightLevelFromDistance(data, distanceToCenter);
        // Utils::Log(std::format("Light level for distance: {} is: {}", std::to_string(distanceToCenter), std::to_string(lightLevel)));
         //std::cout << "Light level is: " << std::to_string(lightLevel) << std::endl;
         if (outLightLevel != nullptr) *outLightLevel = lightLevel;
 
         if (!buffer.IsValidPos(currentPos.GetFlipped())) return {};
         Color originalColor = buffer.GetAt(currentPos.GetFlipped())->m_Color;
-        Color filterColor = m_data[index].m_GradientFilter.GetColorAt(distanceToCenter / m_data[index].m_LightRadius, false);
+        Color filterColor = data.m_GradientFilter.GetColorAt(distanceToCenter / data.m_LightRadius, false);
         
         //float alpha = m_filterColor.a / 255;
         //TODO: known issue is that below a certain row, colors do not show up
-        float colorMultiplier = static_cast<float>(lightLevel) / m_data[index].m_Intensity;
+        float colorMultiplier = static_cast<float>(lightLevel) / data.m_Intensity;
     
         originalColor.r = std::roundf((originalColor.r) * (1 - colorMultiplier) + (filterColor.r) * (colorMultiplier));
         originalColor.g = std::roundf((originalColor.g) * (1 - colorMultiplier) + (filterColor.g) * (colorMultiplier));
@@ -203,6 +200,5 @@ namespace ECS
         //std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),
         //std::to_string(lightLevel), std::to_string(colorMultiplier), RaylibUtils::ToString(originalColor)));
         return originalColor;
-        */
     }
 }

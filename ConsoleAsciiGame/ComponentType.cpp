@@ -45,8 +45,15 @@ ComponentType GetComponentTypeByPlace(const std::uint8_t value)
 		"but it is outside the possible range of enum values", std::to_string(value)))) return ComponentType::None;
 
 	ComponentNumericType one = 1;
-	ComponentNumericType componentBit = one << (static_cast<ComponentNumericType>(value) + 1);
+	ComponentNumericType componentBit = one << static_cast<ComponentNumericType>(value);
 	return static_cast<ComponentType>(componentBit);
+}
+
+ComponentType MergeComponents(const std::vector<ComponentType> components)
+{
+	ComponentType merged = ComponentType::None;
+	for (const auto& comp : components) merged |= comp;
+	return merged;
 }
 
 std::string ToString(const ComponentType& type)

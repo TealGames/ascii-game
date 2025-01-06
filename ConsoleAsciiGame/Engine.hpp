@@ -15,14 +15,6 @@ namespace Core
 	class Engine
 	{
 	private:
-		//TODO: this should not belong here and should get abstracted out
-		struct PlayerInfo
-		{
-			ECS::Entity* m_playerEntity;
-			PlayerData* m_playerData;
-
-			PlayerInfo(ECS::Entity& entity, PlayerData& playerData);
-		};
 
 		SceneManagement::SceneManager m_sceneManager;
 
@@ -37,7 +29,8 @@ namespace Core
 		ECS::PlayerSystem m_playerSystem;
 		ECS::EntityRendererSystem m_entityRendererSystem;
 
-		std::optional<PlayerInfo> m_playerInfo;
+		std::optional<ECS::EntityComponentPair<PlayerData>> m_playerInfo;
+		std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;
 
 		std::uint8_t m_currentFrameCounter;
 	public:

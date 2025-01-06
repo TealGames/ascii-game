@@ -15,15 +15,14 @@ namespace Core
 	static const std::string SCENES_PATH = "scenes";
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
-	constexpr std::uint8_t FRAME_LIMIT = 10;
+	constexpr std::uint8_t NO_FRAME_LIMIT = 0;
+	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
 	constexpr bool SHOW_FPS = true;
 
 	constexpr LoopCode SUCCESS_CODE = 0;
 	constexpr LoopCode END_CODE = 1;
 	constexpr LoopCode ERROR_CODE = 2;
-
-	Engine::PlayerInfo::PlayerInfo(ECS::Entity& entity, PlayerData& playerData) :
-		m_playerEntity(&entity), m_playerData(&playerData) {}
+		
 
 	void Engine::Init()
 	{
@@ -43,23 +42,50 @@ namespace Core
 		m_entityRendererSystem(m_transformSystem),
 		m_lightSystem(m_transformSystem, m_entityRendererSystem),
 		m_playerSystem(m_transformSystem),
+		m_currentFrameCounter(0),
 		m_playerInfo(std::nullopt),
-		m_currentFrameCounter(0)
+		m_mainCameraInfo(std::nullopt)
 	{
 		Init();
 		if (!Utils::Assert(this, m_sceneManager.TrySetActiveScene(0), 
 			std::format("Tried to set the active scene to the first one, but failed!"))) 
 			return;
 
-		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData({ 0, 0 }));
-		Utils::Log("CREATED PLAYER ENTITY");
+		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("Player", TransformData({ 0, 0 }));
+		Utils::Log(std::format("Created entity with name {} with id: {}",
+			playerEntity.m_Name, std::to_string(playerEntity.m_Id)));
 
 		PlayerData* playerData = playerEntity.TryAddComponent<PlayerData>(PlayerData{});
+		bool addedLight = playerEntity.TryAddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background | RenderLayerType::Player,
+			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
+		Utils::Assert(addedLight, "Failed to add player light");
 
-		if (!Utils::Assert(this, playerData!=nullptr, std::format("Tried to create player but failed to add player data"))) 
+		bool addedRender= playerEntity.TryAddComponent<EntityRendererData>(EntityRendererData{ { {TextChar(GRAY, 'H')}}, RenderLayerType::Player});
+		Utils::Assert(addedRender, "Failed to add player renderer");
+
+		if (!Utils::Assert(this, playerData!=nullptr, std::format("Tried to create player but failed to add player data. "
+			"Player : {}", playerEntity.ToString()))) 
 			return;
 
-		m_playerInfo = PlayerInfo{ playerEntity, *playerData};
+		m_playerInfo = ECS::EntityComponentPair<PlayerData>{ playerEntity, *playerData};
+		
+		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));
+		Utils::Log(std::format("Created entity with name {} with id: {} ",
+			mainCameraEntity.m_Name, std::to_string(mainCameraEntity.m_Id)));
+
+		CameraData* cameraData = mainCameraEntity.TryAddComponent<CameraData>(CameraData{ CameraSettings{playerEntity, Utils::Point2DInt(10, 10)} });
+		if (!Utils::Assert(this, cameraData != nullptr, std::format("Tried to create main camera but failed to add camera data. "
+			"Main Camera : {}", mainCameraEntity.ToString())))
+			return;
+
+		Utils::Log(std::format("All scene data. Player id: {} camera id: {}; {}",
+			std::to_string(playerEntity.m_Id), std::to_string(mainCameraEntity.m_Id),
+			m_sceneManager.GetActiveScene()->ToStringEntityData()));
+		Utils::Log(std::format("Camera data has follow is: {}", cameraData->m_CameraSettings.m_FollowTarget->ToString()));
+
+		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
+		Utils::Log(std::format("Current active camera is: {}", std::to_string(m_sceneManager.GetActiveSceneMutable()->TryGetMainCameraData()!=nullptr)));
+		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, *cameraData };
 	}
 
 	Engine::~Engine()
@@ -112,15 +138,21 @@ namespace Core
 			layer->ResetToDefault();
 		}
 
+		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
+		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
 		m_transformSystem.SystemUpdate(*activeScene, m_deltaTime);
-		m_playerSystem.SystemUpdate(*activeScene, *(m_playerInfo.value().m_playerData), *(m_playerInfo.value().m_playerEntity), m_deltaTime);
+		m_playerSystem.SystemUpdate(*activeScene, *(m_playerInfo.value().m_Data), *(m_playerInfo.value().m_Entity), m_deltaTime);
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
-		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
 
+		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
 		m_transformSystem.UpdateLastFramePos(*activeScene);
 
-		if (FRAME_LIMIT == -1) return SUCCESS_CODE;
+		Utils::Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
+
+		Utils::Log(m_sceneManager.GetActiveScene()->ToStringLayers());
+
+		if (FRAME_LIMIT == NO_FRAME_LIMIT) return SUCCESS_CODE;
 
 		m_currentFrameCounter++;
 		if (m_currentFrameCounter >= FRAME_LIMIT)
@@ -133,6 +165,9 @@ namespace Core
 		while (!WindowShouldClose())
 		{
 			currentCode = Update();
+			//We do not terminate update if we want to play a few frames
+			if (FRAME_LIMIT != NO_FRAME_LIMIT && m_currentFrameCounter < FRAME_LIMIT) continue;
+
 			if (!Utils::Assert(this, currentCode != ERROR_CODE, 
 				std::format("Update loop terminated due to error"))) return;
 

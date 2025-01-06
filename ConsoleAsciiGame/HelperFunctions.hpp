@@ -319,8 +319,8 @@ namespace Utils
 	}
 
 	template<typename KType, typename VType>
-	std::vector<KType> GetKeysFromMap(const typename std::unordered_map<KType, VType>::iterator start,
-		const typename std::unordered_map<KType, VType>::iterator end)
+	std::vector<KType> GetKeysFromMap(const typename std::unordered_map<KType, VType>::const_iterator start,
+		const typename std::unordered_map<KType, VType>::const_iterator end)
 	{
 		std::vector<KType> keys;
 		for (auto it = start; it != end; it++)
@@ -331,8 +331,8 @@ namespace Utils
 	}
 
 	template<typename KType, typename VType>
-	std::vector<VType> GetValuesFromMap(const typename std::unordered_map<KType, VType>::iterator start,
-		const typename std::unordered_map<KType, VType>::iterator end)
+	std::vector<VType> GetValuesFromMap(const typename std::unordered_map<KType, VType>::const_iterator start,
+		const typename std::unordered_map<KType, VType>::const_iterator end)
 	{
 		std::vector<VType> values;
 		for (auto it = start; it != end; it++)

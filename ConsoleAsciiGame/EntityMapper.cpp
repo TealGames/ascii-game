@@ -111,3 +111,25 @@ std::optional<EntityID> EntityMapper::TryGetEntityWithComponent(const ComponentI
 	if (iterator == m_componentEntityIds.end()) return std::nullopt;
 	return iterator->second;
 }
+
+std::string EntityMapper::ToStringData(bool doEntityComponents) const
+{
+	std::string result = "";
+	if (doEntityComponents)
+	{
+		for (const auto& entityComp : m_entityComponentIds)
+		{
+			result += std::format("[{}, {}]",
+				std::to_string(entityComp.first), Utils::ToStringIterable(entityComp.second));
+		}
+	}
+	else
+	{
+		for (const auto& entityComp : m_componentEntityIds)
+		{
+			result += std::format("[{}{}, {}]",
+				std::to_string(entityComp.first), ToString(GetComponentTypeFromID(entityComp.first)), std::to_string(entityComp.second));
+		}
+	}
+	return result;
+}
