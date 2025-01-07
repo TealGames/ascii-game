@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Entity.hpp"
-#include "EntityMapper.hpp"
+//#include "EntityMapper.hpp"
 #include "HelperFunctions.hpp"
 
 namespace ECS
@@ -14,23 +14,23 @@ namespace ECS
 	/// <param name="name"></param>
 	/// <param name="mapper"></param>
 	/// <param name="transform"></param>
-	Entity::Entity(const std::string& name, EntityMapper& mapper, const TransformData& transform) :
+	Entity::Entity(const std::string& name, entt::registry& mapper, const TransformData& transform) :
 		m_name(name), m_Name(m_name), m_entityMapper(mapper),
-		m_Id(m_entityMapper.ReserveAvailableEntityID()),
-		m_Transform(GetTransformRef(transform)), m_componentIDs{}
+		//m_Id(m_entityMapper.ReserveAvailableEntityID()),
+		m_Id(m_entityMapper.create()),
+		m_Transform(AddComponent<TransformData>(transform)) //m_componentIDs{}
 	{
 		
-		Utils::Log(std::format("Creating entity with name {} with id: {}", 
-			m_name, std::to_string(m_Id)));
 	}
 
-	Entity::Entity(const std::string& name, EntityMapper& mapper, TransformData&& transform) :
-		m_name(name), m_Name(m_name), m_entityMapper(mapper),
-		m_Id(m_entityMapper.ReserveAvailableEntityID()),
-		m_Transform(GetTransformRef(std::move(transform))), m_componentIDs{}
-	{
+	//Entity::Entity(const std::string& name, entt::registry& mapper, TransformData&& transform) :
+	//	m_name(name), m_Name(m_name), m_entityMapper(mapper),
+	//	//m_Id(m_entityMapper.ReserveAvailableEntityID()),
+	//	m_Id(m_entityMapper.create()),
+	//	m_Transform(std::move(transform)), m_componentIDs{}
+	//{
 
-	}
+	//}
 
 	/// <summary>
 	/// This will get the transform ref of the stored transform 
@@ -38,7 +38,7 @@ namespace ECS
 	/// </summary>
 	/// <param name="transform"></param>
 	/// <returns></returns>
-	TransformData& Entity::GetTransformRef(const TransformData& transform)
+	/*TransformData& Entity::GetTransformRef(const TransformData& transform)
 	{
 		TransformData transformCopy = transform;
 		
@@ -67,9 +67,9 @@ namespace ECS
 			"using move but failed to retrieve it after it has been added", m_Name));
 
 		return *(*doubleOutPtr);
-	}
+	}*/
 
-	ComponentCollectionType::iterator Entity::GetComponentIDIteratorMutable(const ComponentType& type)
+	/*ComponentCollectionType::iterator Entity::GetComponentIDIteratorMutable(const ComponentType& type)
 	{
 		return m_componentIDs.find(type);
 	}
@@ -77,18 +77,19 @@ namespace ECS
 	ComponentCollectionType::const_iterator Entity::GetComponentIDIterator(const ComponentType& type) const
 	{
 		return m_componentIDs.find(type);
-	}
+	}*/
 
-	bool Entity::HasComponent(const ComponentType& type) const
+	/*bool Entity::HasComponent(const ComponentType& type) const
 	{
 		return GetComponentIDIterator(type) != m_componentIDs.end();
-	}
+	}*/
 
 	std::string Entity::ToString() const
 	{
-		auto components= Utils::GetKeysFromMap<ComponentType, ComponentID>(m_componentIDs.begin(), m_componentIDs.end());
-		std::string componentsStr = ::ToString(MergeComponents(components));
-		return std::format("['{}' #{} c:{}]", m_Name, std::to_string(m_Id), componentsStr);
+		return "";
+		/*auto components= Utils::GetKeysFromMap<ComponentType, ComponentID>(m_componentIDs.begin(), m_componentIDs.end());
+		std::string componentsStr = ::ToString(MergeComponents(components));*/
+		//return std::format("['{}' c:{}]", m_Name, componentsStr);
 	}
 
 	//int Entity::GetComponentTypeCount(const ComponentType& type) const

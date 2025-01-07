@@ -1,6 +1,6 @@
+#include "pch.hpp"
 #include <filesystem>
 #include <fstream>
-#include "pch.hpp"
 #include "raylib.h"
 #include "Point2DInt.hpp"
 #include "Scene.hpp"
@@ -57,6 +57,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 
 	const RenderLayer playerLayer = RenderLayer(TextBuffer{ newLayerW, newLayerH, TextChar()}, TEXT_BUFFER_FONT, CHAR_SPACING);
 	m_Layers.emplace(RenderLayerType::Player, playerLayer);
+	m_localEntities.reserve(MAX_ENTITIES);
 }
 
 void Scene::ParseSceneFile(std::ifstream& fstream,  
@@ -184,15 +185,11 @@ std::vector<TextBuffer*> Scene::GetTextBuffersMutable(const RenderLayerType& ren
 	return buffers;
 }
 
-EntityCollection::iterator Scene::GetLocalEntityIterator(const EntityID& id)
+EntityCollection::iterator Scene::GetLocalEntityIterator(const ECS::EntityID& id)
 {
 	return m_localEntityLookup.find(id);
 }
 
-EntityCollection::iterator Scene::GetGlobalEntityIterator(const EntityID & id)
-{
-	return m_globalEntities.GetGlobalEntityIteratorMutable(id);
-}
 //EntityCollection::iterator Scene::GetEntityIterator(const EntityID& id)
 //{
 //	auto iterator = GetLocalEntityIterator(id);
@@ -201,9 +198,10 @@ EntityCollection::iterator Scene::GetGlobalEntityIterator(const EntityID & id)
 //	return m_globalEntities.GetGlobalEntityIteratorMutable(id);
 //}
 
+class CameraData;
 void Scene::SetMainCamera(ECS::Entity& cameraEntity)
 {
-	if (!Utils::Assert(cameraEntity.HasComponent(ComponentType::Camera), 
+	if (!Utils::Assert(cameraEntity.HasComponent<CameraData>(), 
 		std::format("Tried to set the non-camera entity: {} as the main camera for scene: {}",
 			cameraEntity.m_Name, m_SceneName))) return;
 
@@ -228,8 +226,8 @@ CameraData* Scene::TryGetMainCameraData()
 
 int Scene::GetEntityCount() const
 {
-	//return m_localEntities.size() + m_globalEntityLookup.size();
 	return m_localEntities.size() + m_globalEntities.GetCount();
+	/*return m_entityMapper.va + m_globalEntities.GetCount();*/
 }
 
 bool Scene::HasEntities() const
@@ -244,66 +242,28 @@ ECS::Entity& Scene::CreateEntity(const std::string& name, TransformData& transfo
 	return m_localEntities.back();
 }
 
-bool Scene::HasEntity(const EntityID& id)
+bool Scene::HasEntity(const ECS::EntityID& id)
 {
-	bool isLocal = GetLocalEntityIterator(id) != m_localEntityLookup.end();
+	return m_entityMapper.valid(id) || m_globalEntities.HasGlobalEntity(id);
+	/*bool isLocal = GetLocalEntityIterator(id) != m_localEntityLookup.end();
 	if (isLocal) return true;
 
-	return m_globalEntities.HasGlobalEntity(id);
+	return m_globalEntities.HasGlobalEntity(id);*/
 }
 
 //TODO: while this is fine, we should add version that allow us to add components to the entity
 //and would probably be best if we create them on the heap probably to extend memory lifetime
 
 //TODO: also maybe consider managing what objects are required to be in a scene, like a camera
-ECS::Entity* Scene::TryGetEntity(const EntityID& id)
+ECS::Entity* Scene::TryGetEntity(const ECS::EntityID& id)
 {
 	auto localIt = GetLocalEntityIterator(id);
 	if (localIt != m_localEntityLookup.end()) return localIt->second;
 
-	auto globalIt = GetGlobalEntityIterator(id);
+	auto globalIt = m_globalEntities.GetGlobalEntityIteratorMutable(id);
 	if (m_globalEntities.IsValidIterator(globalIt)) return globalIt->second;
 
 	return nullptr;
-}
-
-void Scene::Start()
-{
-	//if (m_entities.empty()) return;
-	//for (auto& entity : m_entities) entity->Start();
-}
-
-void Scene::UpdateStart(float deltaTime)
-{
-	return;
-	/*
-	m_currentFrameDirtyEntities = 0;
-
-	//We need to reset to default since previous changes were baked into the buffer
-	//so we need to clear it for a fresh update
-	for (int i=0; i<m_Layers.size(); i++)
-	{
-		//Utils::Log(std::format("Resetting to  default layer: {}/{}", std::to_string(i), std::to_string(m_Layers.size()-1)));
-		m_Layers[i].ResetToDefault();
-	}
-	
-	if (m_entities.empty()) return;
-	for (auto& entity : m_entities)
-	{
-		//Utils::Log("Calling udpate on entity: " + entity->m_Name);
-		entity->UpdateStart(deltaTime);
-		//Utils::Log(std::format("Entity {} dirty; {}", entity->m_Name, std::to_string(entity->IsDirtyThisFrame())));
-		m_currentFrameDirtyEntities += entity->IsDirtyThisFrame();
-	}
-	*/
-}
-
-void Scene::UpdateEnd(float deltaTime)
-{
-	/*
-	if (m_entities.empty()) return;
-	for (auto& entity : m_entities) entity->UpdateEnd(deltaTime);
-	*/
 }
 
 std::string Scene::ToStringLayers() const
@@ -322,8 +282,9 @@ std::string Scene::ToStringLayers() const
 
 std::string Scene::ToStringEntityData() const
 {
-	return std::format("[Global: {} Local: {}]", 
-		m_globalEntities.ToStringEntityData(), m_entityMapper.ToStringData());
+	return "NULL";
+	/*return std::format("[Global: {} Local: {}]", 
+		m_globalEntities.ToStringEntityData(), m_entityMapper.ToStringData());*/
 }
 
 int Scene::GetDirtyEntitiesCount() const

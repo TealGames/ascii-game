@@ -20,7 +20,8 @@ int GlobalEntityManager::GetCount() const
 
 std::string GlobalEntityManager::ToStringEntityData() const
 {
-	return m_globalEntityMapper.ToStringData();
+	return "";
+	//return m_globalEntityMapper.ToStringData();
 }
 
 std::string GlobalEntityManager::CleanName(const std::string name) const
@@ -29,11 +30,11 @@ std::string GlobalEntityManager::CleanName(const std::string name) const
 	return stringUtils.ToLowerCase().Trim().RemoveChar(' ').ToString();
 }
 
-EntityIDCollection::iterator GlobalEntityManager::GetGlobalEntityIteratorMutable(const EntityID& id)
+EntityIDCollection::iterator GlobalEntityManager::GetGlobalEntityIteratorMutable(const ECS::EntityID& id)
 {
 	return m_globalEntityIds.find(id);
 }
-EntityIDCollection::const_iterator GlobalEntityManager::GetGlobalEntityIterator(const EntityID& id) const
+EntityIDCollection::const_iterator GlobalEntityManager::GetGlobalEntityIterator(const ECS::EntityID& id) const
 {
 	return m_globalEntityIds.find(id);
 }
@@ -65,7 +66,7 @@ bool GlobalEntityManager::IsValidIterator(const EntityNameCollection::const_iter
 	return iterator != m_globalEntityNames.end();
 }
 
-bool GlobalEntityManager::HasGlobalEntity(const EntityID& id) const
+bool GlobalEntityManager::HasGlobalEntity(const ECS::EntityID& id) const
 {
 	return IsValidIterator(GetGlobalEntityIterator(id));
 }
@@ -106,7 +107,7 @@ ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, Tr
 	return m_globalEntities.back();
 }
 
-ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const EntityID& id)
+ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const ECS::EntityID& id)
 {
 	auto iterator = GetGlobalEntityIteratorMutable(id);
 	if (IsValidIterator(iterator)) return nullptr;
@@ -119,7 +120,7 @@ ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const std::string& n
 	return iterator->second;
 }
 
-const ECS::Entity* GlobalEntityManager::TryGetGlobalEntity(const EntityID& id) const
+const ECS::Entity* GlobalEntityManager::TryGetGlobalEntity(const ECS::EntityID& id) const
 {
 	auto iterator = GetGlobalEntityIterator(id);
 	if (IsValidIterator(iterator)) return nullptr;

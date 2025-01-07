@@ -18,6 +18,7 @@ namespace ECS
 	{
 	private:
 		TransformSystem& m_transformSystem;
+		std::optional<TextBuffer> m_currentFrameBuffer;
 
 	public:
 
@@ -40,5 +41,7 @@ namespace ECS
 
 		void SystemUpdate(Scene& scene, CameraData& component,
 			ECS::Entity& entity, const float& deltaTime) override;
+
+		const TextBuffer* GetCurrentFrameBuffer() const;
 	};
 }

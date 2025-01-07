@@ -16,3 +16,5 @@ const Utils::Point2DInt CHAR_SPACING = Utils::Point2DInt(5, 5);
 
 constexpr int TEXT_BUFFER_FONT = 15;
 const Utils::Point2DInt TEXT_BUFFER_PADDING = { 10, 10 };
+
+const Utils::Point2DInt CHAR_AREA = { 35, 35 };

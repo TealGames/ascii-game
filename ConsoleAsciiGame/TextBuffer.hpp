@@ -43,13 +43,17 @@ private:
 public:
 
 private:
-	std::vector<std::vector<TextChar>> GetBufferOfChar(const int& width, 
+	std::vector<std::vector<TextChar>> CreateBufferOfChar(const int& width, 
 		const int& height, const TextChar& duplicateBufferChar) const;
+
+	std::vector<std::vector<TextChar>> CreateBufferOfChar(const Color& color, 
+		const std::vector<std::vector<char>>& chars) const;
 
 public:
 	TextBuffer();
 	TextBuffer(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars);
 	TextBuffer(const int& width, const int& height, const TextChar& duplicateBufferChar);
+	TextBuffer(const int& width, const int& height, const Color& color, const std::vector<std::vector<char>>& chars);
 	TextBuffer(const TextBuffer& other);
 	TextBuffer(TextBuffer&& other) noexcept;
 

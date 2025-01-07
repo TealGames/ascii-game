@@ -6,7 +6,7 @@
 #include "Component.hpp"
 #include "Globals.hpp"
 #include "SceneManager.hpp"
-#include "GameRenderer.hpp"
+//#include "GameRenderer.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 
@@ -23,11 +23,13 @@ namespace ECS
         ECS::Entity& mainCamera, const float& deltaTime)
     {
         data.m_Dirty = false;
+        m_currentFrameBuffer = std::nullopt;
 
         if (!scene.HasDirtyEntities() && data.m_LastFrameBuffer.has_value())
         {
             Utils::Log("NO camera render update");
-            Rendering::RenderBuffer(data.m_LastFrameBuffer.value());
+            m_currentFrameBuffer = data.m_LastFrameBuffer.value();
+            //Rendering::RenderBuffer(data.m_LastFrameBuffer.value());
             return;
         }
 
@@ -39,9 +41,9 @@ namespace ECS
         //return;
       
 
-        TextBuffer collapsedBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);
-        Rendering::RenderBuffer(collapsedBuffer);
-        if (CACHE_LAST_BUFFER) data.m_LastFrameBuffer = collapsedBuffer;
+        //Rendering::RenderBuffer(collapsedBuffer);
+        m_currentFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);
+        if (CACHE_LAST_BUFFER) data.m_LastFrameBuffer = m_currentFrameBuffer;
     }
 
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
@@ -120,4 +122,9 @@ namespace ECS
         return newBuffer;
     }
     
+    const TextBuffer* CameraSystem::GetCurrentFrameBuffer() const
+    {
+        if (m_currentFrameBuffer.has_value()) return &(m_currentFrameBuffer.value());
+        else return nullptr;
+    }
 }

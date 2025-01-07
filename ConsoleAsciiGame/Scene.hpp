@@ -6,24 +6,27 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
+#include <entt/entt.hpp>
 #include "Point2DInt.hpp"
 #include "TextBuffer.hpp"
 #include "RenderLayer.hpp"
 #include "Updateable.hpp"
 #include "Entity.hpp"
-#include "EntityMapper.hpp"
+//#include "EntityMapper.hpp"
 #include "CameraData.hpp"
 #include "TransformData.hpp"
 #include "GlobalEntityManager.hpp"
+#include "HelperFunctions.hpp"
 
-using EntityCollection = std::unordered_map<EntityID, ECS::Entity*>;
-class Scene : public Updateable
+using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
+constexpr std::uint8_t MAX_ENTITIES = 20;
+class Scene 
 {
 private:
 	std::string m_sceneName;
 	std::unordered_map<RenderLayerType, RenderLayer> m_Layers;
 
-	EntityMapper m_entityMapper;
+	entt::registry m_entityMapper;
 	//This is where all the LOCAL entities are stored 
 	// (ones that exist solely within this scene)
 	std::vector<ECS::Entity> m_localEntities;
@@ -65,8 +68,7 @@ private:
 	/// <param name="id"></param>
 	/// <returns></returns>
 	EntityCollection::iterator GetEntityIterator(const EntityID& id);*/
-	EntityCollection::iterator GetLocalEntityIterator(const EntityID& id);
-	EntityCollection::iterator GetGlobalEntityIterator(const EntityID& id);
+	EntityCollection::iterator GetLocalEntityIterator(const ECS::EntityID& id);
 
 	/*bool IsGlobalEntity(const EntityID& id) const;*/
 
@@ -78,10 +80,6 @@ public:
 	std::vector<TextBuffer*> GetTextBuffersMutable(const RenderLayerType& renderLayers);
 	std::string ToStringLayers() const;
 	std::string ToStringEntityData() const;
-
-	void Start() override;
-	void UpdateStart(float deltaTime) override;
-	void UpdateEnd(float deltaTime) override;
 
 	int GetDirtyEntitiesCount() const;
 	bool HasDirtyEntities() const;
@@ -100,28 +98,22 @@ public:
 	bool HasEntities() const;
 
 	ECS::Entity& CreateEntity(const std::string& name, TransformData& transform);
-	bool HasEntity(const EntityID& id);
-	ECS::Entity* TryGetEntity(const EntityID& id);
+	bool HasEntity(const ECS::EntityID& id);
+	ECS::Entity* TryGetEntity(const ECS::EntityID& id);
 
 	template<typename T>
 	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)
 	{
-		const ComponentType type = GetComponentFromType<T>();
-		if (!Utils::Assert(type != ComponentType::None, std::format("Tried to operate on component type: {} "
-			"but failed to retrieve its enum value", typeid(T).name()))) return;
+		auto view = m_entityMapper.view<T>();
+		for (auto entityId : view)
+		{
+			ECS::Entity* entityPtr = TryGetEntity(entityId);
+			if (!Utils::Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
+				"but failed to retrieve entity with ID: (it probably does not exist in the scene)",
+				typeid(T).name()))) return;
 
-		std::function<void(T*, const EntityID&)> actions = [this, &action](T* component, const EntityID& id)-> void
-			{
-				ECS::Entity* entityPtr = TryGetEntity(id);
-				if (!Utils::Assert(entityPtr != nullptr, std::format("Tried to operate on component type: {} "
-					"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
-					typeid(T).name(), std::to_string(id)))) return;
-
-				action(*component, *entityPtr);
-			};
-
-		m_entityMapper.TryGetComponentsOfType<T>(type,actions);
-		m_globalEntities.TryGetComponentsOfType<T>(type,actions);
+			action(view.get<T>(entityId), *entityPtr);
+		}
+		m_globalEntities.OperateOnComponents<T>(action);
 	}
 };
-

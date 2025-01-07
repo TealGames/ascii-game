@@ -3,6 +3,7 @@
 #include "SceneManager.hpp"
 #include "raylib.h"
 #include "Globals.hpp"
+#include "GameRenderer.hpp"
 #include "HelperFunctions.hpp"
 #include "TransformSystem.hpp"
 #include "EntityRendererSystem.hpp"
@@ -18,6 +19,23 @@ namespace Core
 	constexpr std::uint8_t NO_FRAME_LIMIT = 0;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
 	constexpr bool SHOW_FPS = true;
+
+	const Rendering::RenderInfo RENDER_INFO = 
+	{
+		CHAR_AREA,
+		TEXT_BUFFER_PADDING,
+		Utils::Point2DInt(SCREEN_WIDTH, SCREEN_HEIGHT),
+		TEXT_BUFFER_FONT,
+		true
+	};
+
+	//If true, even if the current output from camera is null, will render default data.
+	//This is useful for testing the render loop and finding out FPS (since fps depends on drawing loop)
+	constexpr bool ALWAYS_RENDER = true;
+	const TextBuffer DEFAULT_RENDER_DATA = TextBuffer(22, 1, WHITE, {
+		{'N', 'O', EMPTY_CHAR_PLACEHOLDER, 'C', 'A', 'M', 'E', 'R', 'A',
+		EMPTY_CHAR_PLACEHOLDER, 'O','U', 'T', 'P', 'U', 'T', EMPTY_CHAR_PLACEHOLDER,
+		'F', 'O', 'U', 'N', 'D'} });
 
 	constexpr LoopCode SUCCESS_CODE = 0;
 	constexpr LoopCode END_CODE = 1;
@@ -52,40 +70,40 @@ namespace Core
 			return;
 
 		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("Player", TransformData({ 0, 0 }));
-		Utils::Log(std::format("Created entity with name {} with id: {}",
-			playerEntity.m_Name, std::to_string(playerEntity.m_Id)));
+		/*Utils::Log(std::format("Created entity with name {} with id: {}",
+			playerEntity.m_Name, std::to_string(playerEntity.m_Id)));*/
 
-		PlayerData* playerData = playerEntity.TryAddComponent<PlayerData>(PlayerData{});
-		bool addedLight = playerEntity.TryAddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background | RenderLayerType::Player,
+		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData{});
+		playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background | RenderLayerType::Player,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
-		Utils::Assert(addedLight, "Failed to add player light");
+		/*Utils::Assert(addedLight, "Failed to add player light");*/
 
-		bool addedRender= playerEntity.TryAddComponent<EntityRendererData>(EntityRendererData{ { {TextChar(GRAY, 'H')}}, RenderLayerType::Player});
-		Utils::Assert(addedRender, "Failed to add player renderer");
+		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{ { {TextChar(GRAY, 'H')}}, RenderLayerType::Player});
+		/*Utils::Assert(addedRender, "Failed to add player renderer");*/
 
-		if (!Utils::Assert(this, playerData!=nullptr, std::format("Tried to create player but failed to add player data. "
+		/*if (!Utils::Assert(this, playerData!=nullptr, std::format("Tried to create player but failed to add player data. "
 			"Player : {}", playerEntity.ToString()))) 
-			return;
+			return;*/
 
-		m_playerInfo = ECS::EntityComponentPair<PlayerData>{ playerEntity, *playerData};
+		m_playerInfo = ECS::EntityComponentPair<PlayerData>{ playerEntity, playerData};
 		
 		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));
-		Utils::Log(std::format("Created entity with name {} with id: {} ",
-			mainCameraEntity.m_Name, std::to_string(mainCameraEntity.m_Id)));
+		/*Utils::Log(std::format("Created entity with name {} with id: {} ",
+			mainCameraEntity.m_Name, std::to_string(mainCameraEntity.m_Id)));*/
 
-		CameraData* cameraData = mainCameraEntity.TryAddComponent<CameraData>(CameraData{ CameraSettings{playerEntity, Utils::Point2DInt(10, 10)} });
-		if (!Utils::Assert(this, cameraData != nullptr, std::format("Tried to create main camera but failed to add camera data. "
+		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{playerEntity, Utils::Point2DInt(10, 10)} });
+	/*	if (!Utils::Assert(this, cameraData != nullptr, std::format("Tried to create main camera but failed to add camera data. "
 			"Main Camera : {}", mainCameraEntity.ToString())))
-			return;
+			return;*/
 
-		Utils::Log(std::format("All scene data. Player id: {} camera id: {}; {}",
+		/*Utils::Log(std::format("All scene data. Player id: {} camera id: {}; {}",
 			std::to_string(playerEntity.m_Id), std::to_string(mainCameraEntity.m_Id),
 			m_sceneManager.GetActiveScene()->ToStringEntityData()));
-		Utils::Log(std::format("Camera data has follow is: {}", cameraData->m_CameraSettings.m_FollowTarget->ToString()));
+		Utils::Log(std::format("Camera data has follow is: {}", cameraData->m_CameraSettings.m_FollowTarget->ToString()));*/
 
 		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
 		Utils::Log(std::format("Current active camera is: {}", std::to_string(m_sceneManager.GetActiveSceneMutable()->TryGetMainCameraData()!=nullptr)));
-		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, *cameraData };
+		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
 	}
 
 	Engine::~Engine()
@@ -145,12 +163,16 @@ namespace Core
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
 
-		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
+		//m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
+		const TextBuffer* collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
+		Utils::Assert(this, collapsedBuffer != nullptr, std::format("Tried to render buffer from camera output, but it points to NULL data"));
+		if (collapsedBuffer != nullptr) Rendering::RenderBuffer(*collapsedBuffer, RENDER_INFO);
+		else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
+
 		m_transformSystem.UpdateLastFramePos(*activeScene);
 
-		Utils::Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
-
-		Utils::Log(m_sceneManager.GetActiveScene()->ToStringLayers());
+		//Utils::Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
+		//Utils::Log(m_sceneManager.GetActiveScene()->ToStringLayers());
 
 		if (FRAME_LIMIT == NO_FRAME_LIMIT) return SUCCESS_CODE;
 
