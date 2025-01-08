@@ -254,6 +254,7 @@ namespace Utils
 	}
 
 	std::string ToString(const char& c);
+	std::string ToStringDouble(const double& d, const std::streamsize& precision);
 
 	/// <summary>
 	///	This function means it will return bool if this function is iterable

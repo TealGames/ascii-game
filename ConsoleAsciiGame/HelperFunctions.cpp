@@ -159,6 +159,14 @@ namespace Utils
 		return std::string(1, c);
 	}
 
+	std::string ToStringDouble(const double& d, const std::streamsize& precision)
+	{
+		std::ostringstream oss;
+		oss.precision(precision);
+		oss << d;
+		return oss.str();
+	}
+
 	bool HasFlag(unsigned int fullFlag, unsigned int hasFlag)
 	{
 		return (fullFlag & hasFlag) != 0;

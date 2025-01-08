@@ -20,7 +20,8 @@ namespace Core
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_currentTime;
-		float m_deltaTime = 0;
+		double m_deltaTime = 0;
+		int m_currentFPS = 0;
 
 		//TODO: there has to be a way that does not involve us writing every possible system
 		ECS::TransformSystem m_transformSystem;

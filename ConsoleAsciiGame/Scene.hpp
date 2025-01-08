@@ -74,10 +74,13 @@ private:
 
 public:
 	Scene(const std::filesystem::path& scenePath, GlobalEntityManager& globalEntities);
+
 	std::vector<RenderLayer*> GetLayersMutable();
 	std::vector<const RenderLayer*> GetLayers(const RenderLayerType& renderLayers) const;
 	std::vector<const RenderLayer*> GetAllLayers() const;
 	std::vector<TextBuffer*> GetTextBuffersMutable(const RenderLayerType& renderLayers);
+	void ResetAllLayers();
+
 	std::string ToStringLayers() const;
 	std::string ToStringEntityData() const;
 

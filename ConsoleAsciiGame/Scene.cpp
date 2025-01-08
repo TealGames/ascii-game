@@ -46,6 +46,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	const RenderLayer newLayer = RenderLayer(layerText, TEXT_BUFFER_FONT, CHAR_SPACING);
 	int newLayerW = newLayer.m_SquaredTextBuffer.GetWidth();
 	int newLayerH = newLayer.m_SquaredTextBuffer.GetHeight();
+	Utils::Log(std::format("New layer w: {} h: {}", std::to_string(newLayerW), std::to_string(newLayerH)));
 	//TODO: right now these are global constants, but might have to be later parsed from data
 	//for each scene, allowing each scene to have its own settings
 
@@ -183,6 +184,11 @@ std::vector<TextBuffer*> Scene::GetTextBuffersMutable(const RenderLayerType& ren
 		if ((layer.first & renderLayers) != 0) buffers.push_back(&(layer.second.m_SquaredTextBuffer));
 	}
 	return buffers;
+}
+
+void Scene::ResetAllLayers()
+{
+	for (auto& layer : m_Layers) layer.second.ResetToDefault();
 }
 
 EntityCollection::iterator Scene::GetLocalEntityIterator(const ECS::EntityID& id)

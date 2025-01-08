@@ -21,8 +21,8 @@ namespace Rendering
 
         ClearBackground(BLACK);
         DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
-        /*EndDrawing(); 
-        return;*/
+        EndDrawing(); 
+        return;
 
         //TODO: perhaps we should not calculate the best fit char area, but rather have a consistent size to allow
         //different scene sizes to appear the same with character area

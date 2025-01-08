@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <array>
 #include "Point2DInt.hpp"
 #include "raylib.h"
 
@@ -36,6 +37,8 @@ struct TextCharPosition
 class TextBuffer
 {
 private:
+	//TODO: since we have set width and height it should probably be 2d array to avoid
+	//unnecessarat heap allocations
 	std::vector<std::vector<TextChar>> m_textBuffer;
 	int m_width;
 	int m_height;

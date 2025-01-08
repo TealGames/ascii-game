@@ -20,6 +20,8 @@ namespace Core
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
 	constexpr bool SHOW_FPS = true;
 
+	constexpr std::streamsize DOUBLE_LOG_PRECISION = 8;
+
 	const Rendering::RenderInfo RENDER_INFO = 
 	{
 		CHAR_AREA,
@@ -53,14 +55,17 @@ namespace Core
 		CloseWindow();
 	}
 
-	Engine::Engine() : 
+	Engine::Engine() :
 		m_sceneManager(SCENES_PATH),
-		m_transformSystem(), 
+		m_transformSystem(),
 		m_cameraSystem(m_transformSystem),
 		m_entityRendererSystem(m_transformSystem),
 		m_lightSystem(m_transformSystem, m_entityRendererSystem),
 		m_playerSystem(m_transformSystem),
 		m_currentFrameCounter(0),
+		m_currentFPS(0),
+		m_currentTime(std::chrono::high_resolution_clock().now()),
+		m_lastTime(std::chrono::high_resolution_clock().now()),
 		m_playerInfo(std::nullopt),
 		m_mainCameraInfo(std::nullopt)
 	{
@@ -112,6 +117,22 @@ namespace Core
 
 	LoopCode Engine::Update()
 	{
+		m_currentTime = std::chrono::high_resolution_clock().now();
+		m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_currentTime - m_lastTime).count() / static_cast<float>(1000);
+		m_currentFPS = 1 / m_deltaTime;
+
+		if (FRAME_LIMIT != -1 || SHOW_FPS)
+		{
+			//Utils::Log(std::format("last: {} currnet: {}", m_lastTime, ));
+			Utils::Log(std::format("FRAME: {}/{} DELTA_TIME: {} FPS:{} GraphicsFPS:{}\n--------------------------------------------\n",
+				std::to_string(m_currentFrameCounter + 1), std::to_string(FRAME_LIMIT), 
+				Utils::ToStringDouble(m_deltaTime, DOUBLE_LOG_PRECISION), 
+				Utils::ToStringDouble(m_currentFPS, DOUBLE_LOG_PRECISION), std::to_string(GetFPS())));
+		}
+
+		/*m_lastTime = m_currentTime;
+		return SUCCESS_CODE;*/
+
 		Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
 		if (!Utils::Assert(this, activeScene != nullptr, std::format("Tried to update the active scene but there "
 			"are none set as active right now", activeScene->m_SceneName)))
@@ -120,9 +141,6 @@ namespace Core
 		if (!Utils::Assert(this, activeScene->HasMainCamera(), std::format("Tried to update the active scene: {}, "
 			"but it has no main camera", activeScene->m_SceneName)))
 			return ERROR_CODE;
-
-		m_currentTime = std::chrono::high_resolution_clock().now();
-		m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_currentTime - m_lastTime).count() / static_cast<float>(1000);
 
 		if (!Utils::Assert(this, activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
 			"are no entities in the scene", activeScene->m_SceneName)))
@@ -142,19 +160,15 @@ namespace Core
 				"player info in a valid state", activeScene->m_SceneName)))
 			return ERROR_CODE;
 
-		if (FRAME_LIMIT != -1 || SHOW_FPS)
-		{
-			Utils::Log(std::format("FRAME: {}/{} FPS:{}\n--------------------------------------------\n",
-				std::to_string(m_currentFrameCounter + 1), std::to_string(FRAME_LIMIT), std::to_string(GetFPS())));
-		}
-
 		//We need to reset to default since previous changes were baked into the buffer
 		//so we need to clear it for a fresh update
-		for (auto layer : activeScene->GetLayersMutable())
-		{
-			//Utils::Log(std::format("Resetting to  default layer: {}/{}", std::to_string(i), std::to_string(m_Layers.size()-1)));
-			layer->ResetToDefault();
-		}
+
+		//for (auto& layer : activeScene->GetLayersMutable())
+		//{
+		//	//Utils::Log(std::format("Resetting to  default layer: {}/{}", std::to_string(i), std::to_string(m_Layers.size()-1)));
+		//	layer->ResetToDefault();
+		//}
+		activeScene->ResetAllLayers();
 
 		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
@@ -163,7 +177,7 @@ namespace Core
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
 
-		//m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
+		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
 		const TextBuffer* collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Utils::Assert(this, collapsedBuffer != nullptr, std::format("Tried to render buffer from camera output, but it points to NULL data"));
 		if (collapsedBuffer != nullptr) Rendering::RenderBuffer(*collapsedBuffer, RENDER_INFO);
@@ -173,6 +187,8 @@ namespace Core
 
 		//Utils::Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
 		//Utils::Log(m_sceneManager.GetActiveScene()->ToStringLayers());
+
+		m_lastTime = m_currentTime;
 
 		if (FRAME_LIMIT == NO_FRAME_LIMIT) return SUCCESS_CODE;
 

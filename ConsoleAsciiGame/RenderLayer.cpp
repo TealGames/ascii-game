@@ -137,37 +137,20 @@ void RenderLayer::ResetToDefault()
 {
 	//Utils::Log("Resetting to default: "+m_SquaredTextBuffer.ToString());
     Utils::Point2DInt currentPos = {};
+	const TextChar* defaultTextChar = nullptr;
     for (int r = 0; r < m_SquaredTextBuffer.GetHeight(); r++)
     {
         for (int c = 0; c < m_SquaredTextBuffer.GetWidth(); c++)
         {
             currentPos = { r, c };
+			defaultTextChar = m_defaultSquaredTextBuffer.GetAt(currentPos);
+			if (defaultTextChar == nullptr) continue;
 			//Utils::Log(std::format("Getting the ROW COL pos: {} of default buffer: {}", currentPos.ToString(), m_defaultSquaredTextBuffer.ToString()));
-            m_SquaredTextBuffer.SetAt(currentPos, *m_defaultSquaredTextBuffer.GetAt(currentPos));
+			
+			m_SquaredTextBuffer.SetAt(currentPos, *defaultTextChar);
         }
     }
 }
-
-//Utils::Point2DInt RenderLayer::CalculateCharSpacing() const
-//{
-//    Utils::Point2DInt totalCharSpace = { -1, -1 };
-//    char drawStr[2] = { '1', '\0' };
-//    for (int r = 0; r < m_SquaredTextBuffer.m_HEIGHT; r++)
-//    {
-//        totalCharSpace.m_Y += m_fontSize;
-//
-//        if (totalCharSpace.m_X != -1) continue;
-//        for (int c = 0; c < m_SquaredTextBuffer.m_WIDTH; c++)
-//        {
-//            drawStr[0] = m_SquaredTextBuffer.GetAt({ r, c })->m_Char;
-//            totalCharSpace.m_X += MeasureText(drawStr, m_fontSize);
-//        }
-//    }
-//
-//    int widthSpacing = static_cast<double>(m_charSpacing.m_X - totalCharSpace.m_X) / (m_SquaredTextBuffer.m_WIDTH - 1);
-//    int heightSpacing = static_cast<double>(m_charSpacing.m_Y - totalCharSpace.m_Y) / (m_SquaredTextBuffer.m_HEIGHT - 1);
-//    return Utils::Point2DInt(widthSpacing, heightSpacing);
-//}
 
 std::string RenderLayer::ToStringRawBuffer(const RawTextBufferBlock& block)
 {
