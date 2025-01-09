@@ -5,7 +5,7 @@
 #include "TextBuffer.hpp"
 
 CameraData::CameraData() :
-	m_CameraSettings(), m_LastFrameBuffer(std::nullopt), m_Dirty(false) {}
+	m_CameraSettings(), m_LastFrameBuffer(std::nullopt){}
 
 CameraData::CameraData(const CameraSettings& cameraSettings) :
-	m_CameraSettings(cameraSettings), m_LastFrameBuffer(std::nullopt), m_Dirty(false) {}
+	m_CameraSettings(cameraSettings), m_LastFrameBuffer(std::nullopt) {}

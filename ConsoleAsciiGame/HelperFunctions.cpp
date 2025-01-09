@@ -72,6 +72,11 @@ namespace Utils
 		return condition;
 	}
 
+	void ClearSTDCIN()
+	{
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	}
+
 	double ToRadians(const double deg)
 	{
 		return deg * (std::numbers::pi / 180.0);

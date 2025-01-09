@@ -10,6 +10,8 @@
 
 namespace Rendering
 {
+    constexpr bool DONT_RENDER_NON_UTILS = false;
+
     void RenderBuffer(const TextBuffer& buffer, const RenderInfo& renderInfo)
     {
         //Utils::Log(std::format("Rendering buffer: {}", buffer.ToString()));
@@ -21,9 +23,12 @@ namespace Rendering
 
         ClearBackground(BLACK);
         DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
-        EndDrawing(); 
-        return;
-
+        if (DONT_RENDER_NON_UTILS)
+        {
+            EndDrawing();
+            return;
+        }
+       
         //TODO: perhaps we should not calculate the best fit char area, but rather have a consistent size to allow
         //different scene sizes to appear the same with character area
         int totalUsableWidth = renderInfo.m_ScreenSize.m_X - (2 * renderInfo.m_Padding.m_X);
@@ -46,7 +51,7 @@ namespace Rendering
             x += (widthLeft/2);
             y += (heightLeft /2);
         }
-        Utils::Log(std::format("CHAR AREA: {}", charArea.ToString()));
+        //Utils::Log(std::format("CHAR AREA: {}", charArea.ToString()));
 
         char drawStr[2] = { '1', '\0' };
 
@@ -60,8 +65,8 @@ namespace Rendering
                 {
                     DrawText(drawStr, x, y, renderInfo.m_FontSize, buffer.GetAt({ r, c })->m_Color);
                 }
-               Utils::Log(std::format("Drawing character: {} at pos: {} with color: {}", 
-                    Utils::ToString(drawStr[0]), Utils::Point2DInt(r, c).ToString(), RaylibUtils::ToString(buffer.GetAt({ r, c })->m_Color)));
+               /*Utils::Log(std::format("Drawing character: {} at pos: {} with color: {}", 
+                    Utils::ToString(drawStr[0]), Utils::Point2DInt(r, c).ToString(), RaylibUtils::ToString(buffer.GetAt({ r, c })->m_Color)));*/
                 x += charArea.m_X;
             }
 

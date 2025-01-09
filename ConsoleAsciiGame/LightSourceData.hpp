@@ -20,7 +20,6 @@ struct LightSourceData
 	float m_FalloffStrength;
 
 	std::vector<TextCharPosition> m_LastFrameData;
-	bool m_Dirty;
 
 	LightSourceData();
 	LightSourceData(const std::uint8_t& lightRadius, const RenderLayerType& affectedLayers, const ColorGradient& colorFilter,

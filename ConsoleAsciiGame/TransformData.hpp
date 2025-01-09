@@ -9,7 +9,6 @@ struct TransformData
 	Utils::Point2DInt m_Pos;
 	Utils::Point2DInt m_LastPos;
 	Utils::Point2DInt m_LastFramePos;
-	bool m_Dirty;
 
 	TransformData();
 	TransformData(const Utils::Point2DInt& pos);

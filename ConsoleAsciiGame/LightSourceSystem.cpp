@@ -30,10 +30,8 @@ namespace ECS
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
             {
-                data.m_Dirty = false;
-
                 affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_AffectedLayers);
-                if (!m_transformSystem.HasMovedThisFrame(entity.m_Transform) 
+                if (CACHE_LAST_BUFFER && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) 
                     && !data.m_LastFrameData.empty())
                 {
                     for (const auto& buffer : affectedLayerBuffers)
@@ -41,9 +39,9 @@ namespace ECS
                     return;
                 }
 
+                scene.IncreaseFrameDirtyComponentCount();
                 if (!data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
                 RenderLight(data, entity, affectedLayerBuffers);
-                data.m_Dirty = true;
                 //std::cout << "Rendering lgiht" << std::endl;
             });
     }

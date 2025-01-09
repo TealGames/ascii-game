@@ -92,6 +92,11 @@ namespace ECS
 		//return std::format("['{}' c:{}]", m_Name, componentsStr);
 	}
 
+	std::string Entity::ToString(const EntityID& id)
+	{
+		return std::to_string(static_cast<uint32_t>(id));
+	}
+
 	//int Entity::GetComponentTypeCount(const ComponentType& type) const
 	//{
 	//	//TODO: optimization could be to batch group components of the same type

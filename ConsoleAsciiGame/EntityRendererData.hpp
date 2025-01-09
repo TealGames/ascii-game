@@ -13,7 +13,6 @@ struct EntityRendererData
 
 	//The bounding box's size for this visual in (HEIGHT, WIDTH)
 	Utils::Point2DInt m_VisualBoundsSize;
-	bool m_Dirty;
 	
 	EntityRendererData();
 	EntityRendererData(const std::vector<std::vector<TextChar>>& visualData, const RenderLayerType& renderLayers);

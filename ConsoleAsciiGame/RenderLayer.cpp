@@ -138,18 +138,20 @@ void RenderLayer::ResetToDefault()
 	//Utils::Log("Resetting to default: "+m_SquaredTextBuffer.ToString());
     Utils::Point2DInt currentPos = {};
 	const TextChar* defaultTextChar = nullptr;
-    for (int r = 0; r < m_SquaredTextBuffer.GetHeight(); r++)
-    {
-        for (int c = 0; c < m_SquaredTextBuffer.GetWidth(); c++)
-        {
-            currentPos = { r, c };
-			defaultTextChar = m_defaultSquaredTextBuffer.GetAt(currentPos);
-			if (defaultTextChar == nullptr) continue;
-			//Utils::Log(std::format("Getting the ROW COL pos: {} of default buffer: {}", currentPos.ToString(), m_defaultSquaredTextBuffer.ToString()));
-			
-			m_SquaredTextBuffer.SetAt(currentPos, *defaultTextChar);
-        }
-    }
+	m_SquaredTextBuffer = m_defaultSquaredTextBuffer;
+
+   // for (int r = 0; r < m_SquaredTextBuffer.GetHeight(); r++)
+   // {
+   //     for (int c = 0; c < m_SquaredTextBuffer.GetWidth(); c++)
+   //     {
+   //         currentPos = { r, c };
+			//defaultTextChar = m_defaultSquaredTextBuffer.GetAt(currentPos);
+			//if (defaultTextChar == nullptr) continue;
+			////Utils::Log(std::format("Getting the ROW COL pos: {} of default buffer: {}", currentPos.ToString(), m_defaultSquaredTextBuffer.ToString()));
+			//
+			//m_SquaredTextBuffer.SetAt(currentPos, *defaultTextChar);
+   //     }
+   // }
 }
 
 std::string RenderLayer::ToStringRawBuffer(const RawTextBufferBlock& block)

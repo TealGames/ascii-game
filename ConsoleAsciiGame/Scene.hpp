@@ -45,7 +45,7 @@ private:
 	//no matter if the entity is owned by the scene or not when retreiving it from scene
 	//EntityCollection& m_globalEntityLookup;
 
-	int m_currentFrameDirtyEntities;
+	int m_currentFrameDirtyComponents;
 
 public:
 	const std::string& m_SceneName;
@@ -84,8 +84,10 @@ public:
 	std::string ToStringLayers() const;
 	std::string ToStringEntityData() const;
 
-	int GetDirtyEntitiesCount() const;
-	bool HasDirtyEntities() const;
+	void ResetFrameDirtyComponentCount();
+	void IncreaseFrameDirtyComponentCount();
+	int GetDirtyComponentCount() const;
+	bool HasDirtyComponents() const;
 
 	bool HasMainCamera() const;
 	void SetMainCamera(ECS::Entity& cameraEntity);
@@ -99,7 +101,7 @@ public:
 	/// <returns></returns>
 	int GetEntityCount() const;
 	bool HasEntities() const;
-
+	
 	ECS::Entity& CreateEntity(const std::string& name, TransformData& transform);
 	bool HasEntity(const ECS::EntityID& id);
 	ECS::Entity* TryGetEntity(const ECS::EntityID& id);

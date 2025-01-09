@@ -104,8 +104,8 @@ public:
 		{
 			ECS::Entity* entityPtr = TryGetGlobalEntityMutable(entityId);
 			if (!Utils::Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
-				"but failed to retrieve entity with ID: (it probably does not exist in the scene)",
-				typeid(T).name()))) return;
+				"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
+				typeid(T).name(), ECS::Entity::ToString(entityId)))) return;
 
 			action(view.get<T>(entityId), *entityPtr);
 		}

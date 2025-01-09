@@ -1,4 +1,5 @@
 #include "pch.hpp"
+#include <thread>
 #include "Engine.hpp"
 #include "SceneManager.hpp"
 #include "raylib.h"
@@ -38,6 +39,8 @@ namespace Core
 		{'N', 'O', EMPTY_CHAR_PLACEHOLDER, 'C', 'A', 'M', 'E', 'R', 'A',
 		EMPTY_CHAR_PLACEHOLDER, 'O','U', 'T', 'P', 'U', 'T', EMPTY_CHAR_PLACEHOLDER,
 		'F', 'O', 'U', 'N', 'D'} });
+
+	const KeyboardKey TOGGLE_PAUSE_UPDATE = KEY_E;
 
 	constexpr LoopCode SUCCESS_CODE = 0;
 	constexpr LoopCode END_CODE = 1;
@@ -168,7 +171,10 @@ namespace Core
 		//	//Utils::Log(std::format("Resetting to  default layer: {}/{}", std::to_string(i), std::to_string(m_Layers.size()-1)));
 		//	layer->ResetToDefault();
 		//}
+		
+		//TODO: maybe some general scene stuff should be abstracted into scene manager
 		activeScene->ResetAllLayers();
+		activeScene->ResetFrameDirtyComponentCount();
 
 		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
@@ -180,6 +186,7 @@ namespace Core
 		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
 		const TextBuffer* collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Utils::Assert(this, collapsedBuffer != nullptr, std::format("Tried to render buffer from camera output, but it points to NULL data"));
+		Utils::Log(std::format("Collapsed camera buffer: {}", collapsedBuffer->ToString(false)));
 		if (collapsedBuffer != nullptr) Rendering::RenderBuffer(*collapsedBuffer, RENDER_INFO);
 		else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
 
@@ -202,6 +209,19 @@ namespace Core
 		LoopCode currentCode = SUCCESS_CODE;
 		while (!WindowShouldClose())
 		{
+			Utils::Log(std::format("Is key: {} down", IsKeyPressed(TOGGLE_PAUSE_UPDATE)));
+			/*if (!m_isLoopRunning && m_currentUpdatePauseCooldownFrames < TOGGLE_UPDATE_COOLDONW_FRAMES)
+			{
+				m_currentUpdatePauseCooldownFrames++;
+				continue;
+			}*/
+
+			if (IsKeyPressed(TOGGLE_PAUSE_UPDATE))
+			{
+				std::cin.get();
+				Utils::ClearSTDCIN();
+			}
+
 			currentCode = Update();
 			//We do not terminate update if we want to play a few frames
 			if (FRAME_LIMIT != NO_FRAME_LIMIT && m_currentFrameCounter < FRAME_LIMIT) continue;

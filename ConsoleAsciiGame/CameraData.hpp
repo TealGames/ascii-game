@@ -7,7 +7,6 @@ struct CameraData
 {
 	CameraSettings m_CameraSettings;
 	std::optional<TextBuffer> m_LastFrameBuffer;
-	bool m_Dirty;
 
 	CameraData();
 	CameraData(const CameraSettings& cameraSettings);

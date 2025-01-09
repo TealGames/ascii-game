@@ -15,7 +15,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	m_Layers{}, m_sceneName(""),
 	m_SceneName(m_sceneName), m_ScenePath(scenePath),
 	m_localEntities(), //m_globalEntityLookup(globalEntities),
-	m_currentFrameDirtyEntities(0), m_entityMapper(),
+	m_currentFrameDirtyComponents(0), m_entityMapper(),
 	m_mainCamera(nullptr), 
 	m_globalEntities(globalEntities), m_GlobalEntities(m_globalEntities)
 {
@@ -293,12 +293,22 @@ std::string Scene::ToStringEntityData() const
 		m_globalEntities.ToStringEntityData(), m_entityMapper.ToStringData());*/
 }
 
-int Scene::GetDirtyEntitiesCount() const
+void Scene::ResetFrameDirtyComponentCount()
 {
-	return m_currentFrameDirtyEntities;
+	m_currentFrameDirtyComponents = 0;
 }
 
-bool Scene::HasDirtyEntities() const
+void Scene::IncreaseFrameDirtyComponentCount()
 {
-	return GetDirtyEntitiesCount() > 0;
+	m_currentFrameDirtyComponents++;
+}
+
+int Scene::GetDirtyComponentCount() const
+{
+	return m_currentFrameDirtyComponents;
+}
+
+bool Scene::HasDirtyComponents() const
+{
+	return GetDirtyComponentCount() > 0;
 }

@@ -2,7 +2,7 @@
 
 struct PlayerData
 {
-	bool m_Dirty;
+	bool m_Placeholder;
 
 	PlayerData();
 };

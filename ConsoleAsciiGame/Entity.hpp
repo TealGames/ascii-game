@@ -162,6 +162,7 @@ namespace ECS
 		//}
 
 		std::string ToString() const;
+		static std::string ToString(const EntityID& id);
 	};
 }
 

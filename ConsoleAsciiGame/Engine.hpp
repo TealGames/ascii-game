@@ -34,6 +34,7 @@ namespace Core
 		std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;
 
 		std::uint8_t m_currentFrameCounter;
+
 	public:
 
 	private:

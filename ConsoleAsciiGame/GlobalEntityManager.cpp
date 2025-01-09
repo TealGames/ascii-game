@@ -110,26 +110,26 @@ ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, Tr
 ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const ECS::EntityID& id)
 {
 	auto iterator = GetGlobalEntityIteratorMutable(id);
-	if (IsValidIterator(iterator)) return nullptr;
-	return iterator->second;
+	if (IsValidIterator(iterator)) return iterator->second;
+	return nullptr;
 }
 ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const std::string& name)
 {
 	auto iterator = GetGlobalEntityIteratorMutable(name);
-	if (IsValidIterator(iterator)) return nullptr;
-	return iterator->second;
+	if (IsValidIterator(iterator)) iterator->second; 
+	return nullptr;
 }
 
 const ECS::Entity* GlobalEntityManager::TryGetGlobalEntity(const ECS::EntityID& id) const
 {
 	auto iterator = GetGlobalEntityIterator(id);
-	if (IsValidIterator(iterator)) return nullptr;
-	return iterator->second;
+	if (IsValidIterator(iterator)) return iterator->second;
+	return nullptr;
 }
 const ECS::Entity* GlobalEntityManager::TryGetGlobalEntity(const std::string& name) const
 {
 	auto iterator = GetGlobalEntityIterator(name);
-	if (IsValidIterator(iterator)) return nullptr;
-	return iterator->second;
+	if (IsValidIterator(iterator)) return iterator->second;
+	return nullptr;
 }
 

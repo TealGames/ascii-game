@@ -22,10 +22,11 @@ namespace ECS
     void CameraSystem::SystemUpdate(Scene& scene, CameraData& data,
         ECS::Entity& mainCamera, const float& deltaTime)
     {
-        data.m_Dirty = false;
         m_currentFrameBuffer = std::nullopt;
 
-        if (!scene.HasDirtyEntities() && data.m_LastFrameBuffer.has_value())
+        //TODO: somthing was wrong with dirty counting )(most likely) so the optimization was not working
+        //so instead use dirty from entities not from componentns
+        if (CACHE_LAST_BUFFER && !scene.HasDirtyComponents() && data.m_LastFrameBuffer.has_value())
         {
             Utils::Log("NO camera render update");
             m_currentFrameBuffer = data.m_LastFrameBuffer.value();
@@ -33,7 +34,7 @@ namespace ECS
             return;
         }
 
-        data.m_Dirty = true;
+        scene.IncreaseFrameDirtyComponentCount();
         if (!data.m_CameraSettings.m_HasFixedPosition) UpdateCameraPosition(data, mainCamera);
        /* Rendering::RenderBuffer(TextBuffer(5, 5, TextChar(BLUE, 'V')));
         data.m_LastFrameBuffer = TextBuffer(5, 5, TextChar(BLUE, 'V'));

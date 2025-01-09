@@ -24,14 +24,16 @@ namespace ECS
 		scene.OperateOnComponents<EntityRendererData>(
 			[this, &scene, &affectedLayerBuffers](EntityRendererData& data, ECS::Entity& entity)-> void
 			{
-				data.m_Dirty = false;
+				//Utils::Log(std::format("Player is at pos: {}", entity.m_Transform.m_Pos.ToString()));
 				affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_RenderLayers);
-				Utils::Log(std::format("RENDER LAYERS: {}", std::to_string(affectedLayerBuffers.size())));
+				//Utils::Log(std::format("RENDER LAYERS: {}", std::to_string(affectedLayerBuffers.size())));
+
+				Utils::Log(std::format("Moved this frame: {}", std::to_string(m_transformSystem.HasMovedThisFrame(entity.m_Transform))));
 
 				if (!Utils::Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
 					"but entity's render data: {} has no render layers", entity.m_Name))) return;
 
-				if (!m_transformSystem.HasMovedThisFrame(entity.m_Transform) && 
+				if (CACHE_LAST_BUFFER && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) && 
 					!data.m_LastFrameVisualData.empty())
 				{
 					for (auto& buffer : affectedLayerBuffers)
@@ -42,8 +44,10 @@ namespace ECS
 					return;
 				}
 
+				scene.IncreaseFrameDirtyComponentCount();
 				if (!data.m_LastFrameVisualData.empty())
 					data.m_LastFrameVisualData.clear();
+
 				for (auto& buffer : affectedLayerBuffers)
 				{
 					if (!Utils::Assert(buffer != nullptr, std::format("Tried to update render system "
@@ -51,7 +55,6 @@ namespace ECS
 
 					RenderInBuffer(*buffer, data, entity);
 				}
-				data.m_Dirty = true;
 			});
 	}
 
@@ -97,8 +100,9 @@ namespace ECS
 	{
 		//Utils::Point2DInt half = {m_outputBuffer.m_HEIGHT/2, m_outputBuffer.m_WIDTH/2};
 		//std::cout << "Rendering at: " << half.ToString() << std::endl;
-		std::cout << "Rendering player" << std::endl;
+		//std::cout << "Rendering player" << std::endl;
 
+		Utils::Log(std::format("Rendering player at; {}", entity.m_Transform.m_Pos.ToString()));
 		Utils::Point2DInt bufferPos = {};
 		TextChar currentTextChar = {};
 		for (int r = 0; r < data.m_VisualData.size(); r++)
