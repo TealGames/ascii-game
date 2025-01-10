@@ -40,10 +40,9 @@ namespace ECS
         data.m_LastFrameBuffer = TextBuffer(5, 5, TextChar(BLUE, 'V'));
         data.m_LastFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);*/
         //return;
-      
 
-        //Rendering::RenderBuffer(collapsedBuffer);
-        m_currentFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);
+        CollapseLayersWithinViewport(scene, data, mainCamera);
+        //m_currentFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);
         if (CACHE_LAST_BUFFER) data.m_LastFrameBuffer = m_currentFrameBuffer;
     }
 
@@ -57,9 +56,15 @@ namespace ECS
             cameraData.m_CameraSettings.m_FollowTarget->m_Transform.m_Pos);
     }
 
-    TextBuffer CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData, ECS::Entity& mainCamera) const
+    void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData, ECS::Entity& mainCamera)
     {
-        TextBuffer newBuffer = TextBuffer(cameraData.m_CameraSettings.m_ViewportSize.m_X, cameraData.m_CameraSettings.m_ViewportSize.m_Y, TextChar{});
+        //TODO: this is cuainsg some performance rpboelms
+        m_currentFrameBuffer = TextBuffer{ cameraData.m_CameraSettings.m_ViewportSize.m_X, cameraData.m_CameraSettings.m_ViewportSize.m_Y, TextChar{} };
+        Utils::Log("CAMERA SYSTME BUFER CREATED");
+        return;
+
+        TextBuffer& newBuffer = m_currentFrameBuffer.value();
+        /*TextBuffer newBuffer = TextBuffer(cameraData.m_CameraSettings.m_ViewportSize.m_X, cameraData.m_CameraSettings.m_ViewportSize.m_Y, TextChar{});*/
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
 
         const Utils::Point2DInt cartesianTopLeft = mainCamera.m_Transform.m_Pos - (cameraData.m_CameraSettings.m_ViewportSize / 2);
@@ -72,6 +77,7 @@ namespace ECS
         Utils::Point2DInt globalPos = {};
         const TextChar* posChar = nullptr;
         bool hasFoundChar = false;
+
         for (int r = 0; r < newBuffer.GetHeight(); r++)
         {
             for (int c = 0; c < newBuffer.GetWidth(); c++)
@@ -93,7 +99,7 @@ namespace ECS
                     if (!layer.m_SquaredTextBuffer.IsValidPos(globalPos)) continue;
                    
                     
-                    posChar = layer.m_SquaredTextBuffer.GetAt(globalPos);
+                    //posChar = layer.m_SquaredTextBuffer.GetAt(globalPos);
                     if (posChar == nullptr) continue;
                     if (posChar->m_Char== EMPTY_CHAR_PLACEHOLDER) continue;
 
@@ -120,7 +126,7 @@ namespace ECS
             }
         }
         //Utils::Log(std::format("Camera collapsing has buffer: {}", newBuffer.ToString(false)));
-        return newBuffer;
+        //return newBuffer;
     }
     
     const TextBuffer* CameraSystem::GetCurrentFrameBuffer() const

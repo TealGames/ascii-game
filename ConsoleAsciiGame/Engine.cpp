@@ -18,7 +18,7 @@ namespace Core
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = 0;
-	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
+	constexpr std::uint8_t FRAME_LIMIT = 2;
 	constexpr bool SHOW_FPS = true;
 
 	constexpr std::streamsize DOUBLE_LOG_PRECISION = 8;
@@ -178,15 +178,19 @@ namespace Core
 
 		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
+
 		m_transformSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_playerSystem.SystemUpdate(*activeScene, *(m_playerInfo.value().m_Data), *(m_playerInfo.value().m_Entity), m_deltaTime);
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
-		m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
+
+		//TODO: light system without any other problems drop frames to ~20 fps
+		//m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
 
 		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
 		const TextBuffer* collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Utils::Assert(this, collapsedBuffer != nullptr, std::format("Tried to render buffer from camera output, but it points to NULL data"));
-		Utils::Log(std::format("Collapsed camera buffer: {}", collapsedBuffer->ToString(false)));
+
+		//TODO: rendering buffer drops frames
 		if (collapsedBuffer != nullptr) Rendering::RenderBuffer(*collapsedBuffer, RENDER_INFO);
 		else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
 

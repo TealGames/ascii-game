@@ -23,7 +23,7 @@ namespace ECS
 	public:
 
 	private:
-		TextBuffer CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData, ECS::Entity& mainCamera) const;
+		void CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData, ECS::Entity& mainCamera);
 
 	public:
 		/// <summary>

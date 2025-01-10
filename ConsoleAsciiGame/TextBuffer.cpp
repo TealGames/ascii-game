@@ -58,7 +58,7 @@ TextBuffer::TextBuffer(const int& width, const int& height, const std::vector<st
 TextBuffer::TextBuffer(const int& width, const int& height, const TextChar& duplicateBufferChar) :
 	m_width(width), m_height(height), m_textBuffer(CreateBufferOfChar(width, height, duplicateBufferChar))
 {
-	
+	Utils::Log("DUPLICATE CHAR TEXT BUFFER");
 }
 
 TextBuffer::TextBuffer(const int& width, const int& height,
@@ -87,8 +87,8 @@ std::vector<std::vector<TextChar>> TextBuffer::CreateBufferOfChar(const int& wid
 	chars.reserve(height);
 	for (int r=0; r< height; r++)
 	{
-		chars.reserve(width);
 		chars.push_back({});
+		chars[r].reserve(width);
 		for (int c = 0; c < width; c++)
 		{
 			chars[r].push_back(duplicateBufferChar);
@@ -105,8 +105,8 @@ std::vector<std::vector<TextChar>> TextBuffer::CreateBufferOfChar(const Color& c
 	result.reserve(chars.size());
 	for (int r = 0; r < chars.size(); r++)
 	{
-		result.reserve(chars[r].size());
 		result.push_back({});
+		result[r].reserve(chars[r].size());
 		for (int c = 0; c < chars[r].size(); c++)
 		{
 			result[r].emplace_back(color, chars[r][c]);
@@ -266,6 +266,7 @@ std::string TextBuffer::ToString(bool convertChars) const
 
 TextBuffer& TextBuffer::operator=(const TextBuffer& other)
 {
+	Utils::Log("USING TEXT BUFFER LVALUE = OPERATOR");
 	if (&other == this) return *this;
 	/*Utils::Log("COPY ASSIGNMNT");*/
 	//Utils::Log(std::format("ASSIGNGIN BUFFER: {} to {}", other.ToString(), ToString()));
@@ -280,6 +281,7 @@ TextBuffer& TextBuffer::operator=(const TextBuffer& other)
 
 TextBuffer& TextBuffer::operator=(TextBuffer&& other) noexcept
 {
+	Utils::Log("USING TEXT BUFFER RVALUE = OPERATOR");
 	if (this == &other)
 		return *this;
 
