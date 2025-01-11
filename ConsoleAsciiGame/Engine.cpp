@@ -82,7 +82,7 @@ namespace Core
 			playerEntity.m_Name, std::to_string(playerEntity.m_Id)));*/
 
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData{});
-		playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background | RenderLayerType::Player,
+		playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 		/*Utils::Assert(addedLight, "Failed to add player light");*/
 

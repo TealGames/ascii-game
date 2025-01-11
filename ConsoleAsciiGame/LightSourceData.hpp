@@ -4,6 +4,12 @@
 #include "ColorGradient.hpp"
 #include "RenderLayer.hpp"
 
+struct LightMapChar
+{
+	Utils::Point2DInt RelativePos;
+	
+};
+
 struct LightSourceData
 {
 	std::uint8_t m_LightRadius;

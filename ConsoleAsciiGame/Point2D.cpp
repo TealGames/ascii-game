@@ -8,7 +8,7 @@ namespace Utils
 	Point2D::Point2D()
 		: m_X(0), m_Y(0) {}
 
-	Point2D::Point2D(float xPos, float yPos)
+	Point2D::Point2D(const float& xPos, const float& yPos)
 		: m_X(xPos), m_Y(yPos) {}
 
 	inline int Point2D::XAsInt() const
@@ -59,25 +59,18 @@ namespace Utils
 
 	Point2D Point2D::operator/(const Point2D& otherPos) const
 	{
-		if (otherPos.m_X == 0 || otherPos.m_Y == 0)
-		{
-			std::string message = std::format("Tried to divide Position {} "
-				"by a pointer with 0 {}", ToString(), otherPos.ToString());
-			Utils::Log(Utils::LogType::Error, message);
-			return {};
-		}
+		if (!Utils::Assert(this, otherPos.m_X != 0 && otherPos.m_Y != 0,
+			std::format("Tried to divide {} by a value with 0 {}",
+				ToString(), otherPos.ToString()))) return {};
 
 		return { m_X / otherPos.m_X, m_Y / otherPos.m_Y };
 	}
 
 	Point2D Point2D::operator/(const float factor) const
 	{
-		if (factor == 0)
-		{
-			std::string message = std::format("Tried to divide Position {} by factor of 0", ToString());
-			Utils::Log(Utils::LogType::Error, message);
-			return {};
-		}
+		if (!Utils::Assert(this, factor != 0,
+			std::format("Tried to divide {} by a value with 0 {}",
+				ToString(), std::to_string(factor)))) return {};
 
 		return { m_X / factor, m_Y / factor };
 	}

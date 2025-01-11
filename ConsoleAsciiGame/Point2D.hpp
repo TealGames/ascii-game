@@ -9,7 +9,7 @@ namespace Utils
 		float m_Y;
 
 		Point2D();
-		Point2D(float, float);
+		Point2D(const float& x, const float& y);
 		Point2D(const Point2D&) = default;
 
 		inline int XAsInt() const;
