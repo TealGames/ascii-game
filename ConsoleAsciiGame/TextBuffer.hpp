@@ -34,6 +34,17 @@ struct TextCharPosition
 	TextCharPosition(const Utils::Point2DInt pos, const TextChar& textChar);
 };
 
+struct ColorPosition
+{
+	Utils::Point2DInt m_RowColPos;
+	Color m_Color;
+	
+	bool operator==(const ColorPosition& other) const = default;
+	std::string ToString() const;
+
+	ColorPosition(const Utils::Point2DInt pos, const Color& color);
+};
+
 class TextBuffer
 {
 private:
@@ -74,6 +85,7 @@ public:
 
 	void SetAt(const std::vector<Utils::Point2DInt>& rowColPos, const TextChar& newBufferChar);
 	void SetAt(const std::vector<TextCharPosition>& updatedCharsAtPos);
+	void SetAt(const std::vector<ColorPosition>& updateColorsAtPos);
 
 	/// <summary>
 	/// Will set the region from row col start pos with size [WIDTH, HEIGHT]

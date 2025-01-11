@@ -181,9 +181,34 @@ std::vector<TextBuffer*> Scene::GetTextBuffersMutable(const RenderLayerType& ren
 	std::vector<TextBuffer*> buffers = {};
 	for (auto& layer : m_Layers)
 	{
-		if ((layer.first & renderLayers) != 0) buffers.push_back(&(layer.second.m_SquaredTextBuffer));
+		if ((layer.first & renderLayers) == 0) continue;
+		buffers.push_back(&(layer.second.m_SquaredTextBuffer));
 	}
 	return buffers;
+}
+
+void Scene::SetLayers(const RenderLayerType& renderLayers, const std::vector<TextCharPosition>& positions)
+{
+	if (renderLayers == RenderLayerType::None) return;
+	if (positions.empty()) return;
+
+	for (auto& layer : m_Layers)
+	{
+		if ((layer.first & renderLayers) == 0) continue;
+		layer.second.m_SquaredTextBuffer.SetAt(positions);
+	}
+}
+
+void Scene::SetLayers(const RenderLayerType& renderLayers, const std::vector<ColorPosition>& positions)
+{
+	if (renderLayers == RenderLayerType::None) return;
+	if (positions.empty()) return;
+
+	for (auto& layer : m_Layers)
+	{
+		if ((layer.first & renderLayers) == 0) continue;
+		layer.second.m_SquaredTextBuffer.SetAt(positions);
+	}
 }
 
 void Scene::ResetAllLayers()

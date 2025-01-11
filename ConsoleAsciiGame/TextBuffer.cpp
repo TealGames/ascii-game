@@ -28,6 +28,15 @@ std::string TextCharPosition::ToString() const
 		m_RowColPos.ToString(), m_Text.ToString());
 }
 
+ColorPosition::ColorPosition(const Utils::Point2DInt pos, const Color& color) : 
+	m_RowColPos(pos), m_Color(color) {}
+
+std::string ColorPosition::ToString() const
+{
+	return std::format("[Pos:{}, Color:{}]",
+		m_RowColPos.ToString(), RaylibUtils::ToString(m_Color));
+}
+
 TextBuffer::TextBuffer() :
 	TextBuffer(0, 0, std::vector<std::vector<TextChar>>{ {TextChar(Color(), EMPTY_CHAR_PLACEHOLDER)} }) {}
 
@@ -184,6 +193,14 @@ void TextBuffer::SetAt(const std::vector<TextCharPosition>& updatedCharsAtPos)
 	for (const auto& posChar : updatedCharsAtPos)
 	{
 		SetAt(posChar.m_RowColPos, posChar.m_Text);
+	}
+}
+
+void TextBuffer::SetAt(const std::vector<ColorPosition>& updateColorsAtPos)
+{
+	for (const auto& colorPos : updateColorsAtPos)
+	{
+		SetAt(colorPos.m_RowColPos, colorPos.m_Color);
 	}
 }
 

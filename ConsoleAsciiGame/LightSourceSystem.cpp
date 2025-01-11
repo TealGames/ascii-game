@@ -18,7 +18,8 @@
 
 namespace ECS
 {
-    static constexpr bool CACHE_LAST_BUFFER = false;
+    static constexpr bool CACHE_LAST_BUFFER = true;
+    static constexpr bool STORE_LIGHT_MAP = true;
 
 	LightSourceSystem::LightSourceSystem(const TransformSystem& transform, const EntityRendererSystem& renderer) :
         m_transformSystem(transform), m_rendererSystem(renderer)
@@ -30,6 +31,9 @@ namespace ECS
         //TODO: fixed lighting points should bake their lighting into the buffer rather than have to reapply calculations
         //TODO: SPEEDUP could maybe be lighting that does not change (even if the lighting moves) could be made into lightmap
         //and then could apply lightmap to pixels around it rather than regenerating lighting data
+
+        //TODO: optimization could be for us to not need to access text buffers directly and allow the scene to iteratoe
+        //which can prevent the ned for pointers
         std::vector<TextBuffer*> affectedLayerBuffers = {};
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
@@ -38,12 +42,11 @@ namespace ECS
                 if (CACHE_LAST_BUFFER && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) 
                     && !data.m_LastFrameData.empty())
                 {
-                    for (const auto& buffer : affectedLayerBuffers)
-                        buffer->SetAt(data.m_LastFrameData);
+                    scene.SetLayers(data.m_AffectedLayers, data.m_LastFrameData);
                     return;
                 }
 
-                if (!data.m_LightMap.empty())
+                if (STORE_LIGHT_MAP && !data.m_LightMap.empty())
                 {
                     Utils::Log(std::format("ALL light positions: {}", 
                         Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));
@@ -57,8 +60,8 @@ namespace ECS
                         {
                             globalRowColPos = entityRowColPos + lightMapChar.m_RelativeCartesianPos.GetFlipped();
 
-                           /* Utils::Log(std::format("Relative pos: {} global: {} valid: {}",
-                                lightMapChar.m_RelativeCartesianPos.ToString(), globalPos.ToString(), buffer->IsValidPos(globalPos)));*/
+                           //Utils::Log(std::format("Relative pos: {} global: {} valid: {}",
+                           // lightMapChar.m_RelativeCartesianPos.ToString(), globalPos.ToString(), buffer->IsValidPos(globalPos)));
                             if (!buffer->IsValidPos(globalRowColPos)) continue;
                             const TextChar& currentTextChar = buffer->GetAtUnsafe(globalRowColPos);
 
@@ -177,7 +180,7 @@ namespace ECS
                 //We still want to calculate color for this pos even if it is not valid (since it may be valid in another location
                 //so we can add it to the light map
                 newColor = CalculateNewColor(data, entity, buffer, bufferPosRowCol.GetFlipped(), centerCartesianPos, &lightLevel, &lightMapChar);
-                data.m_LightMap.push_back(lightMapChar);
+                if (STORE_LIGHT_MAP) data.m_LightMap.push_back(lightMapChar);
 
                 if (!buffer.IsValidPos(bufferPosRowCol)) continue;
                 if (buffer.GetAt(bufferPosRowCol)->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;

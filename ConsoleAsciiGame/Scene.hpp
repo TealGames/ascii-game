@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <queue>
+#include <vector>
 #include <optional>
 #include <functional>
 #include <string>
@@ -79,6 +80,8 @@ public:
 	std::vector<const RenderLayer*> GetLayers(const RenderLayerType& renderLayers) const;
 	std::vector<const RenderLayer*> GetAllLayers() const;
 	std::vector<TextBuffer*> GetTextBuffersMutable(const RenderLayerType& renderLayers);
+	void SetLayers(const RenderLayerType& renderLayers, const std::vector<TextCharPosition>& positions);
+	void SetLayers(const RenderLayerType& renderLayers, const std::vector<ColorPosition>& positions);
 	void ResetAllLayers();
 
 	std::string ToStringLayers() const;
