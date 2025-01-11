@@ -54,16 +54,20 @@ namespace Rendering
         //Utils::Log(std::format("CHAR AREA: {}", charArea.ToString()));
 
         char drawStr[2] = { '1', '\0' };
-
+       
+        //TODO: instead of drawing text directly and separeately maybe look into
+        //having the buffer be a texture and drawing the text there rather and then redenderign the texture each frame
+        //since text is not optimized very well in raylib
         int startX = x;
         for (int r = 0; r < buffer.GetHeight(); r++)
         {
             for (int c = 0; c < buffer.GetWidth(); c++)
             {
-                drawStr[0] = buffer.GetAt({ r, c })->m_Char;
+                const TextChar& currentChar = buffer.GetAtUnsafe({ r, c });
+                drawStr[0] = currentChar.m_Char;
                 if (drawStr[0] != EMPTY_CHAR_PLACEHOLDER)
                 {
-                    DrawText(drawStr, x, y, renderInfo.m_FontSize, buffer.GetAt({ r, c })->m_Color);
+                    DrawText(drawStr, x, y, renderInfo.m_FontSize, currentChar.m_Color);
                 }
                /*Utils::Log(std::format("Drawing character: {} at pos: {} with color: {}", 
                     Utils::ToString(drawStr[0]), Utils::Point2DInt(r, c).ToString(), RaylibUtils::ToString(buffer.GetAt({ r, c })->m_Color)));*/

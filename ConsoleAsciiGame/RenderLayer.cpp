@@ -170,5 +170,5 @@ std::string RenderLayer::ToStringRawBuffer(const RawTextBufferBlock& block)
 
 std::string RenderLayer::ToString() const
 {
-    return m_SquaredTextBuffer.ToString();
+    return m_SquaredTextBuffer.ToString(false);
 }

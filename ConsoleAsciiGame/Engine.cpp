@@ -18,7 +18,7 @@ namespace Core
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = 0;
-	constexpr std::uint8_t FRAME_LIMIT = 2;
+	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
 	constexpr bool SHOW_FPS = true;
 
 	constexpr std::streamsize DOUBLE_LOG_PRECISION = 8;
@@ -171,10 +171,12 @@ namespace Core
 		//	//Utils::Log(std::format("Resetting to  default layer: {}/{}", std::to_string(i), std::to_string(m_Layers.size()-1)));
 		//	layer->ResetToDefault();
 		//}
-		
+	
 		//TODO: maybe some general scene stuff should be abstracted into scene manager
 		activeScene->ResetAllLayers();
 		activeScene->ResetFrameDirtyComponentCount();
+
+		Utils::Log(std::format("All render layers: {}", activeScene->ToStringLayers()));
 
 		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
@@ -184,11 +186,12 @@ namespace Core
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 
 		//TODO: light system without any other problems drop frames to ~20 fps
-		//m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
 
 		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
 		const TextBuffer* collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Utils::Assert(this, collapsedBuffer != nullptr, std::format("Tried to render buffer from camera output, but it points to NULL data"));
+		if (collapsedBuffer != nullptr) Utils::Log(std::format("Collapsed buffer: {}", collapsedBuffer->ToString()));
 
 		//TODO: rendering buffer drops frames
 		if (collapsedBuffer != nullptr) Rendering::RenderBuffer(*collapsedBuffer, RENDER_INFO);

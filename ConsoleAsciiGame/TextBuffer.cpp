@@ -226,6 +226,11 @@ const TextChar* TextBuffer::GetAt(const Utils::Point2DInt& rowColPos) const
 	return &(m_textBuffer[rowColPos.m_X][rowColPos.m_Y]);
 }
 
+const TextChar& TextBuffer::GetAtUnsafe(const Utils::Point2DInt& rowColPos) const
+{
+	return m_textBuffer[rowColPos.m_X][rowColPos.m_Y];
+}
+
 const std::vector<TextChar>& TextBuffer::GetAt(const int& rowPos) const
 {
 	if (!Utils::Assert(IsValidRow(rowPos), std::format("Tried to get INVALID row pos {} of full buffer: {}",

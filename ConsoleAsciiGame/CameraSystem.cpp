@@ -60,12 +60,12 @@ namespace ECS
     {
         //TODO: this is cuainsg some performance rpboelms
         m_currentFrameBuffer = TextBuffer{ cameraData.m_CameraSettings.m_ViewportSize.m_X, cameraData.m_CameraSettings.m_ViewportSize.m_Y, TextChar{} };
-        Utils::Log("CAMERA SYSTME BUFER CREATED");
-        return;
 
         TextBuffer& newBuffer = m_currentFrameBuffer.value();
         /*TextBuffer newBuffer = TextBuffer(cameraData.m_CameraSettings.m_ViewportSize.m_X, cameraData.m_CameraSettings.m_ViewportSize.m_Y, TextChar{});*/
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
+        Utils::Log(std::format("ONE LAYER IN CAMERA: {}", layers[0]->ToString()));
+        Utils::Log(std::format("SECOND LAYER IN CAMERA: {}", layers[1]->ToString()));
 
         const Utils::Point2DInt cartesianTopLeft = mainCamera.m_Transform.m_Pos - (cameraData.m_CameraSettings.m_ViewportSize / 2);
         const Utils::Point2DInt renderCoordsTopLeft = cartesianTopLeft.GetFlipped();
@@ -75,23 +75,22 @@ namespace ECS
         //by first checking if the area is smaller and convering those automatically with empty chars
         Utils::Point2DInt localPos = {};
         Utils::Point2DInt globalPos = {};
-        const TextChar* posChar = nullptr;
         bool hasFoundChar = false;
 
         for (int r = 0; r < newBuffer.GetHeight(); r++)
         {
             for (int c = 0; c < newBuffer.GetWidth(); c++)
             {
-                posChar = {};
                 hasFoundChar = false;
                 localPos = { r, c };
                 globalPos = renderCoordsTopLeft + localPos;
                 for (int layerIndex = layers.size() - 1; layerIndex >= 0; layerIndex--)
                 {
-                    //std::cout << std::format("ayer index: {}/{} of r: {} c:{}",
-                    //std::to_string(layerIndex), std::to_string(layers.size()), std::to_string(r), std::to_string(c)) << std::endl;
-
                     const RenderLayer& layer = *layers[layerIndex];
+
+                    std::cout << std::format("Layer index: {}/{} of r: {} c:{} GLOBAL POS: {} valid: {}",
+                    std::to_string(layerIndex), std::to_string(layers.size()), std::to_string(r), 
+                        std::to_string(c), globalPos.ToString(), layer.m_SquaredTextBuffer.IsValidPos(globalPos)) << std::endl;
 
                     //Utils::Log(std::format("Attempting char at: {} of HEGIHT: {} WIDTH: {}",
                     //localPos.ToString(), std::to_string(layer.m_TextBuffer.m_HEIGHT), std::to_string(layer.m_TextBuffer.m_WIDTH)));
@@ -99,11 +98,14 @@ namespace ECS
                     if (!layer.m_SquaredTextBuffer.IsValidPos(globalPos)) continue;
                    
                     
-                    //posChar = layer.m_SquaredTextBuffer.GetAt(globalPos);
-                    if (posChar == nullptr) continue;
-                    if (posChar->m_Char== EMPTY_CHAR_PLACEHOLDER) continue;
+                    const TextChar posChar = layer.m_SquaredTextBuffer.GetAtUnsafe(globalPos);
+                    //if (posChar == nullptr) continue;
+                    if (posChar.m_Char== EMPTY_CHAR_PLACEHOLDER) continue;
 
                     hasFoundChar = true;
+                    newBuffer.SetAt(localPos, posChar);
+                    Utils::Log(std::format("Setting the position: {} of buffer with char: {}",
+                        localPos.ToString(), posChar.ToString()));
                    /* Utils::Log(std::format("Found valid topmost pos at: {} with char: {} color: {} at layer: {} BUT WHEN DIRECT COLOR: {}", 
                     globalPos.ToString(), Utils::ToString(posChar->m_Char), RaylibUtils::ToString(posChar->m_Color), 
                         std::to_string(layerIndex), layer.m_SquaredTextBuffer.ToString(false)));*/
@@ -115,17 +117,11 @@ namespace ECS
                 if (!hasFoundChar)
                 {
                     newBuffer.SetAt(localPos, TextChar{ Color(), EMPTY_CHAR_PLACEHOLDER });
-                   /* Utils::Log("OUT OF BOUNDS SET EMPTYx");*/
-                }
-                else
-                {
-                    newBuffer.SetAt(localPos, *posChar);
-                    //Utils::Log(std::format("Setting the position: {} of buffer with char: {}",
-                    //localPos.ToString(), posChar->ToString()));
+                    Utils::Log("OUT OF BOUNDS SET EMPTYx");
                 }
             }
         }
-        //Utils::Log(std::format("Camera collapsing has buffer: {}", newBuffer.ToString(false)));
+        Utils::Log(std::format("Camera collapsing has buffer: {}", newBuffer.ToString(false)));
         //return newBuffer;
     }
     

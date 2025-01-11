@@ -86,6 +86,7 @@ public:
 		const std::vector<std::vector<TextChar>>& chars);
 
 	const TextChar* GetAt(const Utils::Point2DInt& rowColPos) const;
+	const TextChar& GetAtUnsafe(const Utils::Point2DInt& rowColPos) const;
 	const std::vector<TextChar>& GetAt(const int& rowPos) const;
 
 	static std::string ToString(const std::vector<std::vector<TextChar>>& buffer, 

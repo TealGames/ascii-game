@@ -26,6 +26,9 @@ namespace ECS
 
     void LightSourceSystem::SystemUpdate(Scene& scene, const float& deltaTime)
     {
+        //TODO: fixed lighting points should bake their lighting into the buffer rather than have to reapply calculations
+        //TODO: SPEEDUP could maybe be lighting that does not change (even if the lighting moves) could be made into lightmap
+        //and then could apply lightmap to pixels around it rather than regenerating lighting data
         std::vector<TextBuffer*> affectedLayerBuffers = {};
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
@@ -48,7 +51,6 @@ namespace ECS
 
     
     //TODO: this probably needs to be optimized
-    //TODO: it seems that when going below a certain point the light becomes brighter/stronger
     void LightSourceSystem::CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity, 
         const Utils::Point2DInt& centerPos, TextBuffer& buffer, bool displayLightLevels)
     {
