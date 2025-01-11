@@ -11,6 +11,8 @@
 #include "CameraSystem.hpp"
 #include "LightSourceSystem.hpp"
 #include "PlayerSystem.hpp"
+#include "CartesianPosition.hpp"
+#include "Array2DPosition.hpp"
 
 namespace Core
 {
@@ -24,7 +26,7 @@ namespace Core
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = 0;
-	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
+	constexpr std::uint8_t FRAME_LIMIT = 2;
 	constexpr bool SHOW_FPS = true;
 
 	constexpr std::streamsize DOUBLE_LOG_PRECISION = 8;

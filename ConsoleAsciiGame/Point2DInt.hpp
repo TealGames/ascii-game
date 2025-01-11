@@ -12,7 +12,7 @@ namespace Utils
 		constexpr Point2DInt(const int& x, const int& y);
 		Point2DInt(const Point2DInt&) = default;
 
-		std::string ToString() const;
+		virtual std::string ToString() const;
 
 		Utils::Point2DInt GetFlipped() const;
 
