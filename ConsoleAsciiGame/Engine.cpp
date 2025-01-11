@@ -14,6 +14,12 @@
 
 namespace Core
 {
+	//-------------------------------------------------------------------
+	// GLOBAL TODO CHECKLIST
+	//-------------------------------------------------------------------
+	//TODO: instead of point2d for both row col and cartesian pos separate them out into different types
+	//so it is less confusing and easy to understand what to convert to
+
 	static const std::string SCENES_PATH = "scenes";
 	static constexpr std::uint8_t TARGET_FPS = 60;
 

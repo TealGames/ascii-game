@@ -8,8 +8,14 @@
 
 struct LightMapChar
 {
-	Utils::Point2DInt RelativePos;
-	Utils::Point3D ColorFactor;
+	Utils::Point2DInt m_RelativeCartesianPos;
+	Utils::Point3D m_FractionalFilterColor;
+	float m_ColorFactor;
+
+	LightMapChar();
+	LightMapChar(const Utils::Point2DInt& relativePos, 
+		const Utils::Point3D& fractionalFilterColor, const float& colorFactor);
+	std::string ToString() const;
 };
 
 struct LightSourceData
@@ -28,6 +34,7 @@ struct LightSourceData
 	float m_FalloffStrength;
 
 	std::vector<TextCharPosition> m_LastFrameData;
+	std::vector<LightMapChar> m_LightMap;
 
 	LightSourceData();
 	LightSourceData(const std::uint8_t& lightRadius, const RenderLayerType& affectedLayers, const ColorGradient& colorFilter,

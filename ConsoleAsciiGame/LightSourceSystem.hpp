@@ -10,6 +10,7 @@
 #include "TransformSystem.hpp"
 #include "LightSourceSystem.hpp"
 #include "Point2DInt.hpp"
+#include "Point4D.hpp"
 #include "TextBuffer.hpp"
 #include "ColorGradient.hpp"
 #include "LightSourceData.hpp"
@@ -41,13 +42,30 @@ namespace ECS
 
 
 	private:
+		/// <summary>
+		/// This will calculate a new color based on the original color and filter color and the strength of the color
+		/// </summary>
+		/// <param name="originalColor"></param>
+		/// <param name="filterColor"></param>
+		/// <param name="multiplier"></param>
+		/// <returns></returns>
+		Color GetColorFromMultiplier(const Color& originalColor, const Color& filterColor, const float& multiplier) const;
+
+		/// <summary>
+		/// This will calculate a new color by combining the fractional color with the original color
+		/// </summary>
+		/// <param name="originalColor"></param>
+		/// <param name="filterColor"></param>
+		/// <returns></returns>
+		Color ApplyColorFilter(const Color& originalColor, const Utils::Point3D& fractionalColor, const float& multiplier) const;
+
 		void CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity, const Utils::Point2DInt& centerPos,
 			TextBuffer& buffer, bool displayLightLevels);
 
 		void RenderLight(LightSourceData& data, ECS::Entity& entity, std::vector<TextBuffer*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
 		Color CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, const TextBuffer& buffer, const Utils::Point2DInt& currentPos,
-			const Utils::Point2DInt& centerPos, std::uint8_t* outLightLevel = nullptr) const;
+			const Utils::Point2DInt& centerPos, std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:
 		/// <summary>

@@ -1,4 +1,7 @@
+#pragma once
 #include <string>
+#include "Point2D.hpp"
+#include "Point3D.hpp"
 
 namespace Utils
 {
@@ -20,6 +23,19 @@ namespace Utils
 		inline int WAsInt() const;
 
 		std::string ToString() const;
+
+
+		/// <summary>
+		/// Returns just the x and y value to point2d
+		/// </summary>
+		/// <returns></returns>
+		Utils::Point2D ToPoint2D() const;
+
+		/// <summary>
+		/// Returns the x, y and z as a point3d
+		/// </summary>
+		/// <returns></returns>
+		Utils::Point3D ToPoint3D() const;
 
 		//TODO: add all other operators for rvalues as well
 		Point4D operator+(const Point4D&) const;

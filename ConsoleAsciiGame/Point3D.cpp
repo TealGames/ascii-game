@@ -34,7 +34,8 @@ namespace Utils
 
 	std::string Point3D::ToString() const
 	{
-		std::string str = std::format("({},{},{})", m_X, m_Y, m_Z);
+		std::string str = std::format("({},{},{})", Utils::ToStringDouble(m_X, 3), 
+			Utils::ToStringDouble(m_Y, 3), Utils::ToStringDouble(m_Z, 3));
 		return str;
 	}
 

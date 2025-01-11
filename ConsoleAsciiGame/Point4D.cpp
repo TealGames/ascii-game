@@ -1,5 +1,7 @@
 #include "pch.hpp"
 #include "Point4D.hpp"
+#include "Point3D.hpp"
+#include "Point2D.hpp"
 #include <cmath>
 #include "HelperFunctions.hpp"
 
@@ -29,6 +31,15 @@ namespace Utils
 	inline int Point4D::WAsInt() const
 	{
 		return static_cast<int>(m_W);
+	}
+
+	Utils::Point2D Point4D::ToPoint2D() const
+	{
+		return {m_X, m_Y};
+	}
+	Utils::Point3D Point4D::ToPoint3D() const
+	{
+		return {m_X, m_Y, m_Z};
 	}
 
 	std::string Point4D::ToString() const
