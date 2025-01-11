@@ -3,11 +3,13 @@
 #include "TextBuffer.hpp"
 #include "ColorGradient.hpp"
 #include "RenderLayer.hpp"
+#include "Point2D.hpp"
+#include "Point3D.hpp"
 
 struct LightMapChar
 {
 	Utils::Point2DInt RelativePos;
-	
+	Utils::Point3D ColorFactor;
 };
 
 struct LightSourceData

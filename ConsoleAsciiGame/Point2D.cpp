@@ -77,9 +77,8 @@ namespace Utils
 
 	bool Point2D::operator==(const Point2D& otherPos) const
 	{
-		bool sameX = Utils::ApproximateEquals(m_X, otherPos.m_X);
-		bool sameY = Utils::ApproximateEquals(m_Y, otherPos.m_Y);
-		return sameX && sameY;
+		return Utils::ApproximateEquals(m_X, otherPos.m_X) &&
+			Utils::ApproximateEquals(m_Y, otherPos.m_Y);
 	}
 
 	Point2D& Point2D::operator=(const Point2D& newPos)

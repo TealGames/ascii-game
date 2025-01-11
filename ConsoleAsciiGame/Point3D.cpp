@@ -34,7 +34,7 @@ namespace Utils
 
 	std::string Point3D::ToString() const
 	{
-		std::string str = std::format("({},{})", m_X, m_Y);
+		std::string str = std::format("({},{},{})", m_X, m_Y, m_Z);
 		return str;
 	}
 
@@ -77,10 +77,9 @@ namespace Utils
 
 	bool Point3D::operator==(const Point3D& otherPos) const
 	{
-		bool sameX = Utils::ApproximateEquals(m_X, otherPos.m_X);
-		bool sameY = Utils::ApproximateEquals(m_Y, otherPos.m_Y);
-		bool sameZ = Utils::ApproximateEquals(m_Z, otherPos.m_Z);
-		return sameX && sameY && sameZ;
+		return Utils::ApproximateEquals(m_X, otherPos.m_X) &&
+			   Utils::ApproximateEquals(m_Y, otherPos.m_Y) &&
+			   Utils::ApproximateEquals(m_Z, otherPos.m_Z);
 	}
 
 	Point3D& Point3D::operator=(const Point3D& newPos)
