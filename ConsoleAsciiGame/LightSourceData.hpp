@@ -3,17 +3,17 @@
 #include "TextBuffer.hpp"
 #include "ColorGradient.hpp"
 #include "RenderLayer.hpp"
-#include "Point2D.hpp"
+#include "CartesianPosition.hpp"
 #include "Point3D.hpp"
 
 struct LightMapChar
 {
-	Utils::Point2DInt m_RelativeCartesianPos;
+	CartesianPosition m_RelativePos;
 	Utils::Point3D m_FractionalFilterColor;
 	float m_ColorFactor;
 
 	LightMapChar();
-	LightMapChar(const Utils::Point2DInt& relativePos, 
+	LightMapChar(const CartesianPosition& relativePos,
 		const Utils::Point3D& fractionalFilterColor, const float& colorFactor);
 	std::string ToString() const;
 };

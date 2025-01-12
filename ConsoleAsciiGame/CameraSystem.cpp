@@ -7,6 +7,9 @@
 #include "Globals.hpp"
 #include "SceneManager.hpp"
 //#include "GameRenderer.hpp"
+#include "CartesianPosition.hpp"
+#include "Array2DPosition.hpp"
+#include "PositionConversions.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 
@@ -67,14 +70,14 @@ namespace ECS
         Utils::Log(std::format("ONE LAYER IN CAMERA: {}", layers[0]->ToString()));
         Utils::Log(std::format("SECOND LAYER IN CAMERA: {}", layers[1]->ToString()));
 
-        const Utils::Point2DInt cartesianTopLeft = mainCamera.m_Transform.m_Pos - (cameraData.m_CameraSettings.m_ViewportSize / 2);
-        const Utils::Point2DInt renderCoordsTopLeft = cartesianTopLeft.GetFlipped();
+        const CartesianPosition cartesianTopLeft = mainCamera.m_Transform.m_Pos - (cameraData.m_CameraSettings.m_ViewportSize / 2);
+        const Array2DPosition renderCoordsTopLeft = Conversions::CartesianToArray(cartesianTopLeft);
         //Utils::Log(std::format("CAMERA: top left: {}", cartesianTopLeft.ToString()));
 
         //TODO: it seems like this process should proably be much quicker and maybe we should optimize
         //by first checking if the area is smaller and convering those automatically with empty chars
-        Utils::Point2DInt localPos = {};
-        Utils::Point2DInt globalPos = {};
+        Array2DPosition localPos = {};
+        Array2DPosition globalPos = {};
         bool hasFoundChar = false;
 
         for (int r = 0; r < newBuffer.GetHeight(); r++)

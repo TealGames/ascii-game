@@ -3,6 +3,8 @@
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
+#include "Array2DPosition.hpp"
+#include "Point2DInt.hpp"
 
 TextChar::TextChar() :
 	m_Color{}, m_Char(EMPTY_CHAR_PLACEHOLDER) {}
@@ -16,7 +18,7 @@ std::string TextChar::ToString() const
 		RaylibUtils::ToString(m_Color), Utils::ToString(m_Char));
 }
 
-TextCharPosition::TextCharPosition(const Utils::Point2DInt pos, const TextChar& textChar) 
+TextCharPosition::TextCharPosition(const Array2DPosition& pos, const TextChar& textChar)
 	: m_RowColPos(pos), m_Text(textChar)
 {
 
@@ -28,7 +30,7 @@ std::string TextCharPosition::ToString() const
 		m_RowColPos.ToString(), m_Text.ToString());
 }
 
-ColorPosition::ColorPosition(const Utils::Point2DInt pos, const Color& color) : 
+ColorPosition::ColorPosition(const Array2DPosition& pos, const Color& color) :
 	m_RowColPos(pos), m_Color(color) {}
 
 std::string ColorPosition::ToString() const
@@ -150,37 +152,37 @@ bool TextBuffer::IsValidCol(const int& colPos) const
 	return 0 <= colPos && colPos < m_width;
 }
 
-bool TextBuffer::IsValidPos(const Utils::Point2DInt& rowColPos) const
+bool TextBuffer::IsValidPos(const Array2DPosition& rowColPos) const
 {
-	return IsValidRow(rowColPos.m_X) && IsValidCol(rowColPos.m_Y);
+	return IsValidRow(rowColPos.m_Row) && IsValidCol(rowColPos.m_Col);
 }
 
-void TextBuffer::SetAt(const Utils::Point2DInt& rowColPos, const TextChar& newBufferChar)
+void TextBuffer::SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar)
 {
 	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to set the char: {} at INVALID row col: {} of full buffer: {}", 
 		Utils::ToString(newBufferChar.m_Char), rowColPos.ToString(), ToString()))) return;
 
-	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Char = newBufferChar.m_Char;
-	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Color = newBufferChar.m_Color;
+	m_textBuffer[rowColPos.m_Row][rowColPos.m_Col].m_Char = newBufferChar.m_Char;
+	m_textBuffer[rowColPos.m_Row][rowColPos.m_Col].m_Color = newBufferChar.m_Color;
 }
 
-void TextBuffer::SetAt(const Utils::Point2DInt& rowColPos, const char& newChar)
+void TextBuffer::SetAt(const Array2DPosition& rowColPos, const char& newChar)
 {
 	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to set the char: {} at INVALID row col: {} of full buffer: {}",
 		Utils::ToString(newChar), rowColPos.ToString(), ToString()))) return;
 
-	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Char = newChar;
+	m_textBuffer[rowColPos.m_Row][rowColPos.m_Col].m_Char = newChar;
 }
 
-void TextBuffer::SetAt(const Utils::Point2DInt& rowColPos, const Color& newColor)
+void TextBuffer::SetAt(const Array2DPosition& rowColPos, const Color& newColor)
 {
 	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to set the color: {} at INVALID row col: {} of full buffer: {}",
 		RaylibUtils::ToString(newColor), rowColPos.ToString(), ToString()))) return;
 
-	m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Color = newColor;
+	m_textBuffer[rowColPos.m_Row][rowColPos.m_Col].m_Color = newColor;
 }
 
-void TextBuffer::SetAt(const std::vector<Utils::Point2DInt>& rowColPos, const TextChar& newBufferChar)
+void TextBuffer::SetAt(const std::vector<Array2DPosition>& rowColPos, const TextChar& newBufferChar)
 {
 	for (const auto& pos : rowColPos)
 	{
@@ -204,11 +206,11 @@ void TextBuffer::SetAt(const std::vector<ColorPosition>& updateColorsAtPos)
 	}
 }
 
-bool TextBuffer::TrySetRegion(const Utils::Point2DInt& rowColStartPos, const Utils::Point2DInt& size,
+bool TextBuffer::TrySetRegion(const Array2DPosition& rowColStartPos, const Utils::Point2DInt& size,
 	const std::vector<std::vector<TextChar>>& chars)
 {
 	//Subtract one from width and col since start pos is inclusive
-	Utils::Point2DInt rowColEndPos = rowColStartPos + size + Utils::Point2DInt(-1, -1);
+	Array2DPosition rowColEndPos = rowColStartPos + GetAsArray2DPos(size) + Array2DPosition(-1, -1);
 	if (!Utils::Assert(IsValidPos(rowColEndPos), "Tried to set text buffer region but size is too big!"))
 		return false;
 
@@ -216,7 +218,7 @@ bool TextBuffer::TrySetRegion(const Utils::Point2DInt& rowColStartPos, const Uti
 		"size does not match provided chars"))
 		return false;
 
-	Utils::Point2DInt globalRowCol = {};
+	Array2DPosition globalRowCol = {};
 	for (int r = 0; r <= chars.size(); r++)
 	{
 		if (!Utils::Assert(chars[r].size() == size.m_X, "Tried to set text buffer region but WIDTH "
@@ -225,13 +227,13 @@ bool TextBuffer::TrySetRegion(const Utils::Point2DInt& rowColStartPos, const Uti
 
 		for (int c = 0; c <= chars[r].size(); c++)
 		{
-			globalRowCol = { rowColStartPos.m_X+r, rowColStartPos.m_Y+c };
+			globalRowCol = { rowColStartPos.m_Row+r, rowColStartPos.m_Col+c };
 			SetAt(globalRowCol, chars[r][c]);
 		}
 	}
 }
 
-const TextChar* TextBuffer::GetAt(const Utils::Point2DInt& rowColPos) const
+const TextChar* TextBuffer::GetAt(const Array2DPosition& rowColPos) const
 {
 	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to get INVALID pos at row col: {} of full buffer: {}",
 		rowColPos.ToString(), ToString()))) return nullptr;
@@ -240,12 +242,12 @@ const TextChar* TextBuffer::GetAt(const Utils::Point2DInt& rowColPos) const
 		rowColPos.ToString(), Utils::ToString(m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Char), 
 		RaylibUtils::ToString(m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Color)));*/
 
-	return &(m_textBuffer[rowColPos.m_X][rowColPos.m_Y]);
+	return &(m_textBuffer[rowColPos.m_Row][rowColPos.m_Col]);
 }
 
-const TextChar& TextBuffer::GetAtUnsafe(const Utils::Point2DInt& rowColPos) const
+const TextChar& TextBuffer::GetAtUnsafe(const Array2DPosition& rowColPos) const
 {
-	return m_textBuffer[rowColPos.m_X][rowColPos.m_Y];
+	return m_textBuffer[rowColPos.m_Row][rowColPos.m_Col];
 }
 
 const std::vector<TextChar>& TextBuffer::GetAt(const int& rowPos) const

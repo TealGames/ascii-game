@@ -8,6 +8,8 @@
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 #include "Globals.hpp"
+#include "Array2DPosition.hpp"
+#include "CartesianPosition.hpp"
 
 const std::string Scene::m_SCENE_FILE_PREFIX = "scene_";
 
@@ -133,7 +135,7 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 				//which would work fine for init but hard to create collision bound 
 				//OR do we leave empty spots and put them in with positions?
 				Utils::Log(std::format("Added char: {} with color: {}", Utils::ToString(currentLine[i]), RaylibUtils::ToString(currentColor)));
-				layerText.back().push_back(TextCharPosition{ Utils::Point2DInt(r, i), TextChar(currentColor, currentLine[i])});
+				layerText.back().push_back(TextCharPosition{ Array2DPosition(r, i), TextChar(currentColor, currentLine[i])});
 			}
 			r++;
 		}

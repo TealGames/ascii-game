@@ -6,7 +6,9 @@
 #include "LightSourceSystem.hpp"
 #include "Component.hpp"
 #include "Point2D.hpp"
-#include "Point2DInt.hpp"
+#include "CartesianPosition.hpp"
+#include "Array2DPosition.hpp"
+#include "PositionConversions.hpp"
 #include "Point4D.hpp"
 #include "Scene.hpp"
 #include "EntityRendererSystem.hpp"
@@ -51,14 +53,14 @@ namespace ECS
                     Utils::Log(std::format("ALL light positions: {}", 
                         Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));
 
-                    Utils::Point2DInt globalRowColPos = {};
-                    Utils::Point2DInt entityRowColPos = entity.m_Transform.m_Pos.GetFlipped();
+                    Array2DPosition globalRowColPos = {};
+                    Array2DPosition entityRowColPos = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
                     Color newColor = {};
                     for (const auto& buffer : affectedLayerBuffers)
                     {
                         for (const auto& lightMapChar : data.m_LightMap)
                         {
-                            globalRowColPos = entityRowColPos + lightMapChar.m_RelativeCartesianPos.GetFlipped();
+                            globalRowColPos = entityRowColPos + Conversions::CartesianToArray(lightMapChar.m_RelativePos);
 
                            //Utils::Log(std::format("Relative pos: {} global: {} valid: {}",
                            // lightMapChar.m_RelativeCartesianPos.ToString(), globalPos.ToString(), buffer->IsValidPos(globalPos)));
@@ -94,7 +96,7 @@ namespace ECS
         //TODO: it might not make sense for all lighting to just use the renderer to determine lighting start pos,
         //so perhaps this needs to be more customizable to allow for this and other behavior
         std::vector<std::vector<TextChar>> visualData = renderData->m_VisualData;
-        Utils::Point2DInt centerPos = {};
+        CartesianPosition centerPos = {};
        // std::cout << "REDNER LIGHT" << std::endl;
 
         for (const auto& buffer : buffers)
@@ -109,8 +111,8 @@ namespace ECS
                 {
                     //we use default coords (x, y) but visual pos is in (row, col) so we flip
                     //TODO: maybe abstract transform from one coord system to the other
-                    centerPos = m_rendererSystem.GetGlobalVisualPos({ r, c }, *renderData, entity).GetFlipped();
-                    if (!buffer->IsValidPos(centerPos.GetFlipped())) continue;
+                    centerPos = Conversions::ArrayToCartesian(m_rendererSystem.GetGlobalVisualPos({ r, c }, *renderData, entity));
+                    if (!buffer->IsValidPos(Conversions::CartesianToArray(centerPos))) continue;
 
                     CreateLightingForPoint(data, entity, centerPos, *buffer, displayLightLevels);
                 }
@@ -121,14 +123,14 @@ namespace ECS
     //TODO: this probably needs to be optimized
     //TODO: there is a lot of get flopped and conversions from cartesia and row col pos so that could be optimized
     void LightSourceSystem::CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity,
-        const Utils::Point2DInt& centerCartesianPos, TextBuffer& buffer, bool displayLightLevels)
+        const CartesianPosition& centerCartesianPos, TextBuffer& buffer, bool displayLightLevels)
     {
         if (!data.m_LightMap.empty()) data.m_LightMap.clear();
 
         //std::cout << "Center pos: " << centerPos.ToString() << std::endl;
         int radius = data.m_LightRadius;
-        const Utils::Point2DInt maxXY = { centerCartesianPos.m_X + radius, centerCartesianPos.m_Y + radius };
-        const Utils::Point2DInt minXY = { centerCartesianPos.m_X - radius, centerCartesianPos.m_Y - radius };
+        const CartesianPosition maxXY = { centerCartesianPos.m_X + radius, centerCartesianPos.m_Y + radius };
+        const CartesianPosition minXY = { centerCartesianPos.m_X - radius, centerCartesianPos.m_Y - radius };
 
         //We approxiamte how accurate the circle should be by using the total area to figure out how many points we need
         const int positiveSidePoints = std::min(buffer.GetHeight(), buffer.GetWidth()) / radius;
@@ -137,21 +139,21 @@ namespace ECS
         //We add all the points on circle using X, Y Coords
         float x = minXY.m_X;
         float y = 0;
-        std::vector<Utils::Point2D> bottomCirclePoints = {};
+        std::vector<CartesianPosition> bottomCirclePoints = {};
         while (x <= maxXY.m_X)
         {
             y = std::sqrt(std::pow(data.m_LightRadius, 2) - std::pow(x - centerCartesianPos.m_X, 2)) + centerCartesianPos.m_Y;
-            bottomCirclePoints.push_back({ x, y });
+            bottomCirclePoints.push_back(CartesianPosition(x, y));
 
             x += pointXValIncrement;
         }
         //Utils::Log(std::format("Circle points: {}", Utils::ToStringIterable<std::vector<Utils::Point2D>, Utils::Point2D>(bottomCirclePoints)));
         
-        Utils::Point2DInt entityCartesianPos = entity.m_Transform.m_Pos;
+        const CartesianPosition entityCartesianPos = entity.m_Transform.m_Pos;
 
         Color newColor = {};
-        Utils::Point2DInt currentXYCoord = {};
-        std::vector<Utils::Point2DInt> seenCoords = {};
+        CartesianPosition currentXYCoord = {};
+        std::vector<CartesianPosition> seenCoords = {};
         std::uint8_t lightLevel = MIN_LIGHT_LEVEL;
         LightMapChar lightMapChar = {};
         std::string lightLevelStr = "";
@@ -164,22 +166,22 @@ namespace ECS
             else currentXYCoord.m_X = std::ceil(point.m_X);
 
             currentXYCoord.m_Y = std::ceil(point.m_Y);
-            isInitialPosValid = buffer.IsValidPos(currentXYCoord.GetFlipped());
+            isInitialPosValid = buffer.IsValidPos(Conversions::CartesianToArray(currentXYCoord));
 
             //We need to check if it does not have them already since we may have a very short range with many points
             //which could result in potential duplicates when floats are cut to ints
             if (std::find(seenCoords.begin(), seenCoords.end(), currentXYCoord) != seenCoords.end()) continue;
 
             //Utils::Log(std::format("Circle Y: {} -> {}", std::to_string(0), std::to_string(bufferPos.m_Y - centerPos.m_Y)));
-            Utils::Point2DInt bufferPosRowCol = {};
+            Array2DPosition bufferPosRowCol = {};
             for (int circleY = currentXYCoord.m_Y; circleY >= centerCartesianPos.m_Y - (currentXYCoord.m_Y - centerCartesianPos.m_Y); circleY--)
             {
-                bufferPosRowCol = Utils::Point2DInt(circleY, currentXYCoord.m_X);
-                seenCoords.push_back(bufferPosRowCol.GetFlipped());
+                bufferPosRowCol = Array2DPosition(circleY, currentXYCoord.m_X);
+                seenCoords.push_back(Conversions::ArrayToCartesian(bufferPosRowCol));
 
                 //We still want to calculate color for this pos even if it is not valid (since it may be valid in another location
                 //so we can add it to the light map
-                newColor = CalculateNewColor(data, entity, buffer, bufferPosRowCol.GetFlipped(), centerCartesianPos, &lightLevel, &lightMapChar);
+                newColor = CalculateNewColor(data, entity, buffer, Conversions::ArrayToCartesian(bufferPosRowCol), centerCartesianPos, &lightLevel, &lightMapChar);
                 if (STORE_LIGHT_MAP) data.m_LightMap.push_back(lightMapChar);
 
                 if (!buffer.IsValidPos(bufferPosRowCol)) continue;
@@ -229,8 +231,8 @@ namespace ECS
     }
 
     Color LightSourceSystem::CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, 
-        const TextBuffer& buffer, const Utils::Point2DInt& currentPos,
-        const Utils::Point2DInt& centerPos, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
+        const TextBuffer& buffer, const CartesianPosition& currentPos,
+        const CartesianPosition& centerPos, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
         float distanceToCenter = Utils::GetDistance(currentPos, centerPos);
         //Utils::Log(std::format("Distance between {} and {} is: {}",
@@ -247,8 +249,8 @@ namespace ECS
         const float colorMultiplier = static_cast<float>(lightLevel) / data.m_Intensity;
         if (lightMapChar != nullptr) *lightMapChar = LightMapChar(centerPos - currentPos, RaylibUtils::GetFractionalColorRGB(filterColor, colorMultiplier), colorMultiplier);
 
-        if (!buffer.IsValidPos(currentPos.GetFlipped())) return {};
-        const Color originalColor = buffer.GetAt(currentPos.GetFlipped())->m_Color;
+        if (!buffer.IsValidPos(Conversions::CartesianToArray(currentPos))) return {};
+        const Color originalColor = buffer.GetAt(Conversions::CartesianToArray(currentPos))->m_Color;
         const Color newColor = GetColorFromMultiplier(originalColor, filterColor, colorMultiplier);
 
         //Utils::Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",

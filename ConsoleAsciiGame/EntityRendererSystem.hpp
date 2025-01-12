@@ -4,7 +4,7 @@
 #include <optional>
 #include "raylib.h"
 #include "TextBuffer.hpp"
-#include "Point2DInt.hpp"
+#include "Array2DPosition.hpp"
 #include "Component.hpp"
 #include "TransformSystem.hpp"
 #include "EntityRendererData.hpp"
@@ -32,7 +32,7 @@ namespace ECS
 	public:
 		EntityRendererSystem(const TransformSystem& transform);
 
-		Utils::Point2DInt GetGlobalVisualPos(const Utils::Point2DInt& relativeVisualPos,
+		Array2DPosition GetGlobalVisualPos(const Array2DPosition& relativeVisualPos,
 			const EntityRendererData& data, const Entity& entity) const;
 
 		const std::vector<std::vector<TextChar>>& GetVisualData(const EntityRendererData& data) const;

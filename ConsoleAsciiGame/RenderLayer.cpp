@@ -2,6 +2,7 @@
 #include "RenderLayer.hpp"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
+#include "Array2DPosition.hpp"
 
 RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs)
 {
@@ -101,7 +102,7 @@ std::optional<TextBuffer> RenderLayer::CreateSquaredBuffer() const
 		for (int i = 1; i < row.size(); i++)
 		{
 			filledSpaces.back().push_back(row[i - 1].m_Text);
-			adjacentColDiff = row[i].m_RowColPos.m_Y - row[i - 1].m_RowColPos.m_Y;
+			adjacentColDiff = row[i].m_RowColPos.m_Row - row[i - 1].m_RowColPos.m_Col;
 
 			if (adjacentColDiff > 1)
 			{

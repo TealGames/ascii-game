@@ -3,15 +3,15 @@
 
 #include "LightSourceData.hpp"
 
-LightMapChar::LightMapChar() : m_RelativeCartesianPos(), m_ColorFactor() {}
-LightMapChar::LightMapChar(const Utils::Point2DInt& relativePos,
+LightMapChar::LightMapChar() : m_RelativePos(), m_ColorFactor() {}
+LightMapChar::LightMapChar(const CartesianPosition& relativePos,
 	const Utils::Point3D& fractionalFilterColor, const float& colorFactor) :
-	m_RelativeCartesianPos(relativePos), m_FractionalFilterColor(fractionalFilterColor), m_ColorFactor(colorFactor) {}
+	m_RelativePos(relativePos), m_FractionalFilterColor(fractionalFilterColor), m_ColorFactor(colorFactor) {}
 
 std::string LightMapChar::ToString() const
 {
 	return std::format("[Rel:{}, FilterColor fraction: {} Factor:{}]", 
-		m_RelativeCartesianPos.ToString(), m_FractionalFilterColor.ToString(), std::to_string(m_ColorFactor));
+		m_RelativePos.ToString(), m_FractionalFilterColor.ToString(), std::to_string(m_ColorFactor));
 }
 
 LightSourceData::LightSourceData() : LightSourceData(0, RenderLayerType::None, {}, 0, 0) {}

@@ -6,6 +6,7 @@
 #include "PlayerData.hpp"
 #include "TransformSystem.hpp"
 #include "EntityMapper.hpp"
+#include "CartesianPosition.hpp"
 
 namespace ECS
 {
@@ -17,7 +18,7 @@ namespace ECS
     public:
 
     private:
-        bool MovePlayerFromInput(const PlayerData& data, Entity& entity, const Utils::Point2DInt& moveDelta);
+        bool MovePlayerFromInput(const PlayerData& data, Entity& entity, const CartesianPosition& moveDelta);
 
     public:
         PlayerSystem(TransformSystem& transformSystem);

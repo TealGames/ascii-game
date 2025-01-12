@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include <array>
-#include "Point2DInt.hpp"
+#include "Array2DPosition.hpp"
 #include "raylib.h"
 
 //The character used for empty spaces and will NOT be rendered
@@ -25,24 +25,24 @@ struct TextChar
 
 struct TextCharPosition
 {
-	Utils::Point2DInt m_RowColPos;
+	Array2DPosition m_RowColPos;
 	TextChar m_Text;
 
 	bool operator==(const TextCharPosition& other) const = default;
 	std::string ToString() const;
 
-	TextCharPosition(const Utils::Point2DInt pos, const TextChar& textChar);
+	TextCharPosition(const Array2DPosition& pos, const TextChar& textChar);
 };
 
 struct ColorPosition
 {
-	Utils::Point2DInt m_RowColPos;
+	Array2DPosition m_RowColPos;
 	Color m_Color;
 	
 	bool operator==(const ColorPosition& other) const = default;
 	std::string ToString() const;
 
-	ColorPosition(const Utils::Point2DInt pos, const Color& color);
+	ColorPosition(const Array2DPosition& pos, const Color& color);
 };
 
 class TextBuffer
@@ -77,13 +77,13 @@ public:
 
 	bool IsValidRow(const int& rowPos) const;
 	bool IsValidCol(const int& colPos) const;
-	bool IsValidPos(const Utils::Point2DInt& rowColPos) const;
+	bool IsValidPos(const Array2DPosition& rowColPos) const;
 
-	void SetAt(const Utils::Point2DInt& rowColPos, const TextChar& newBufferChar);
-	void SetAt(const Utils::Point2DInt& rowColPos, const char& newChar);
-	void SetAt(const Utils::Point2DInt& rowColPos, const Color& newColor);
+	void SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar);
+	void SetAt(const Array2DPosition& rowColPos, const char& newChar);
+	void SetAt(const Array2DPosition& rowColPos, const Color& newColor);
 
-	void SetAt(const std::vector<Utils::Point2DInt>& rowColPos, const TextChar& newBufferChar);
+	void SetAt(const std::vector<Array2DPosition>& rowColPos, const TextChar& newBufferChar);
 	void SetAt(const std::vector<TextCharPosition>& updatedCharsAtPos);
 	void SetAt(const std::vector<ColorPosition>& updateColorsAtPos);
 
@@ -94,11 +94,11 @@ public:
 	/// <param name="size"></param>
 	/// <param name="chars"></param>
 	/// <returns></returns>
-	bool TrySetRegion(const Utils::Point2DInt& rowColStartPos, const Utils::Point2DInt& size, 
+	bool TrySetRegion(const Array2DPosition& rowColStartPos, const Utils::Point2DInt& size,
 		const std::vector<std::vector<TextChar>>& chars);
 
-	const TextChar* GetAt(const Utils::Point2DInt& rowColPos) const;
-	const TextChar& GetAtUnsafe(const Utils::Point2DInt& rowColPos) const;
+	const TextChar* GetAt(const Array2DPosition& rowColPos) const;
+	const TextChar& GetAtUnsafe(const Array2DPosition& rowColPos) const;
 	const std::vector<TextChar>& GetAt(const int& rowPos) const;
 
 	static std::string ToString(const std::vector<std::vector<TextChar>>& buffer, 

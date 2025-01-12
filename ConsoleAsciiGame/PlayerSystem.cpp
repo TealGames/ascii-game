@@ -5,6 +5,7 @@
 #include "PlayerSystem.hpp"
 #include "raylib.h"
 #include "HelperFunctions.hpp"
+#include "CartesianPosition.hpp"
 
 namespace ECS
 {
@@ -16,7 +17,7 @@ namespace ECS
 
     void PlayerSystem::SystemUpdate(Scene& scene, PlayerData& data, ECS::Entity& entity, const float& deltaTime)
     {
-        Utils::Point2DInt currentMove = {};
+        CartesianPosition currentMove = {};
         if (IsKeyPressed(KEY_DOWN)) currentMove.m_Y++;
         if (IsKeyPressed(KEY_UP)) currentMove.m_Y--;
         if (IsKeyPressed(KEY_RIGHT)) currentMove.m_X++;
@@ -33,7 +34,7 @@ namespace ECS
     /// <param name="entity"></param>
     /// <param name="moveDelta"></param>
     /// <returns></returns>
-    bool PlayerSystem::MovePlayerFromInput(const PlayerData& data, Entity& entity, const Utils::Point2DInt& moveDelta)
+    bool PlayerSystem::MovePlayerFromInput(const PlayerData& data, Entity& entity, const CartesianPosition& moveDelta)
     {
         bool isZero = moveDelta.m_X == 0 && moveDelta.m_Y == 0;
         if (isZero) return false;

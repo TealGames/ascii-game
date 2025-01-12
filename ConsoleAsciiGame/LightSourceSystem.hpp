@@ -15,6 +15,7 @@
 #include "ColorGradient.hpp"
 #include "LightSourceData.hpp"
 #include "Scene.hpp"
+#include "CartesianPosition.hpp"
 
 namespace ECS
 {
@@ -59,13 +60,13 @@ namespace ECS
 		/// <returns></returns>
 		Color ApplyColorFilter(const Color& originalColor, const Utils::Point3D& fractionalColor, const float& multiplier) const;
 
-		void CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity, const Utils::Point2DInt& centerPos,
+		void CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity, const CartesianPosition& centerPos,
 			TextBuffer& buffer, bool displayLightLevels);
 
 		void RenderLight(LightSourceData& data, ECS::Entity& entity, std::vector<TextBuffer*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
-		Color CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, const TextBuffer& buffer, const Utils::Point2DInt& currentPos,
-			const Utils::Point2DInt& centerPos, std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
+		Color CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, const TextBuffer& buffer, const CartesianPosition& currentPos,
+			const CartesianPosition& centerPos, std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:
 		/// <summary>

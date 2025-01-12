@@ -3,9 +3,11 @@
 #include "EntityRendererSystem.hpp"
 #include "TextBuffer.hpp"
 #include "Point2DInt.hpp"
+#include "Array2DPosition.hpp"
 #include "Component.hpp"
 #include "TransformSystem.hpp"
 #include "HelperFunctions.hpp"
+#include "PositionConversions.hpp"
 
 namespace ECS
 {
@@ -84,14 +86,14 @@ namespace ECS
 	/// </summary>
 	/// <param name="relativeVisualPos"></param>
 	/// <returns></returns>
-	Utils::Point2DInt EntityRendererSystem::GetGlobalVisualPos(const Utils::Point2DInt& relativeVisualPos, 
+	Array2DPosition EntityRendererSystem::GetGlobalVisualPos(const Array2DPosition& relativeVisualPos,
 		const EntityRendererData& data, const Entity& entity) const
 	{
-		Utils::Point2DInt centerBottom = entity.m_Transform.m_Pos.GetFlipped();
+		Array2DPosition centerBottom = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
 
-		Utils::Point2DInt bufferPos = {};
-		bufferPos.m_X = centerBottom.m_X - data.m_VisualBoundsSize.m_X + 1 + relativeVisualPos.m_X;
-		bufferPos.m_Y = centerBottom.m_Y - (data.m_VisualBoundsSize.m_Y / 2) + relativeVisualPos.m_Y;
+		Array2DPosition bufferPos = {};
+		bufferPos.m_Row = centerBottom.m_Row - data.m_VisualBoundsSize.m_X + 1 + relativeVisualPos.m_Row;
+		bufferPos.m_Col = centerBottom.m_Col - (data.m_VisualBoundsSize.m_Y / 2) + relativeVisualPos.m_Col;
 		return bufferPos;
 	}
 
@@ -103,7 +105,7 @@ namespace ECS
 		//std::cout << "Rendering player" << std::endl;
 
 		Utils::Log(std::format("Rendering player at; {}", entity.m_Transform.m_Pos.ToString()));
-		Utils::Point2DInt bufferPos = {};
+		Array2DPosition bufferPos = {};
 		TextChar currentTextChar = {};
 		for (int r = 0; r < data.m_VisualData.size(); r++)
 		{
