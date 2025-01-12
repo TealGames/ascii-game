@@ -22,7 +22,6 @@ namespace ECS
 	void EntityRendererSystem::SystemUpdate(Scene& scene, const float& deltaTime)
 	{
 		std::vector<TextBuffer*> affectedLayerBuffers = {};
-		Utils::Log("SYSTEM UPDATE FOR REDNER ENTITY");
 		scene.OperateOnComponents<EntityRendererData>(
 			[this, &scene, &affectedLayerBuffers](EntityRendererData& data, ECS::Entity& entity)-> void
 			{
@@ -30,7 +29,7 @@ namespace ECS
 				affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_RenderLayers);
 				//Utils::Log(std::format("RENDER LAYERS: {}", std::to_string(affectedLayerBuffers.size())));
 
-				Utils::Log(std::format("Moved this frame: {}", std::to_string(m_transformSystem.HasMovedThisFrame(entity.m_Transform))));
+				//Utils::Log(std::format("Moved this frame: {}", std::to_string(m_transformSystem.HasMovedThisFrame(entity.m_Transform))));
 
 				if (!Utils::Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
 					"but entity's render data: {} has no render layers", entity.m_Name))) return;
@@ -41,8 +40,8 @@ namespace ECS
 					for (auto& buffer : affectedLayerBuffers)
 					{
 						if (buffer == nullptr) continue;
-						Utils::Log(std::format("STARTING BUFFER: {}       -> ALL VISUAL DATA: {}",
-							buffer->ToString(), Utils::ToStringIterable<std::vector<TextCharPosition>, TextCharPosition>(data.m_LastFrameVisualData)));
+						/*Utils::Log(std::format("STARTING BUFFER: {}       -> ALL VISUAL DATA: {}",
+							buffer->ToString(), Utils::ToStringIterable<std::vector<TextCharPosition>, TextCharPosition>(data.m_LastFrameVisualData)));*/
 
 						for (const auto& data : data.m_LastFrameVisualData)
 							buffer->SetAt(data.m_RowColPos, data.m_Text);
@@ -108,7 +107,7 @@ namespace ECS
 		//std::cout << "Rendering at: " << half.ToString() << std::endl;
 		//std::cout << "Rendering player" << std::endl;
 
-		Utils::Log(std::format("Rendering player at; {}", entity.m_Transform.m_Pos.ToString()));
+		//Utils::Log(std::format("Rendering player at; {}", entity.m_Transform.m_Pos.ToString()));
 		Array2DPosition bufferPos = {};
 		TextChar currentTextChar = {};
 		for (int r = 0; r < data.m_VisualData.size(); r++)
@@ -122,7 +121,7 @@ namespace ECS
 				if (currentTextChar.m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
 
 				buffer.SetAt(bufferPos, currentTextChar);
-				Utils::Log(std::format("Setting entity buffer render: {}", bufferPos.ToString()));
+				//Utils::Log(std::format("Setting entity buffer render: {}", bufferPos.ToString()));
 				if (CACHE_LAST_BUFFER) data.m_LastFrameVisualData.emplace_back(bufferPos, currentTextChar);
 			}
 		}

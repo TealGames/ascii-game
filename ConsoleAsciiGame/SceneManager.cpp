@@ -15,7 +15,6 @@ namespace SceneManagement
 		{
 			for (const auto& file : std::filesystem::directory_iterator(allScenesDir))
 			{
-				std::cout << "Found child file: " << file.path().string() << std::endl;
 				fileName = file.path().filename().string();
 				if (!file.is_regular_file() || fileName.size() < Scene::m_SCENE_FILE_PREFIX.size()) continue;
 				if (fileName.substr(0, Scene::m_SCENE_FILE_PREFIX.size()) != Scene::m_SCENE_FILE_PREFIX) continue;
@@ -45,8 +44,8 @@ namespace SceneManagement
 	Scene* SceneManager::TryGetSceneWithIndex(const int& sceneIndex)
 	{
 		if (sceneIndex < 0 || sceneIndex >= m_allScenes.size()) return nullptr;
-		Utils::Log(std::format("Attempting to get valid index scene {}/{}. scene valid: {}",
-			std::to_string(sceneIndex), std::to_string(m_allScenes.size()), m_allScenes[sceneIndex].m_SceneName));
+		/*Utils::Log(std::format("Attempting to get valid index scene {}/{}. scene valid: {}",
+			std::to_string(sceneIndex), std::to_string(m_allScenes.size()), m_allScenes[sceneIndex].m_SceneName));*/
 		return &(m_allScenes[sceneIndex]);
 	}
 
@@ -87,8 +86,8 @@ namespace SceneManagement
 
 	const Scene* SceneManager::GetActiveScene() const
 	{
-		Utils::Log(std::format("Active scene is nullptr: {} active scene: {}", 
-			std::to_string(m_activeScene==nullptr), m_activeScene==nullptr? "NULL" : m_activeScene->m_SceneName));
+		/*Utils::Log(std::format("Active scene is nullptr: {} active scene: {}", 
+			std::to_string(m_activeScene==nullptr), m_activeScene==nullptr? "NULL" : m_activeScene->m_SceneName));*/
 
 		if (!Utils::Assert(m_activeScene != nullptr,
 			"Tried to get active scene (immutable) but there is no active scene set")) return nullptr;

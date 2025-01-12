@@ -81,6 +81,7 @@ namespace Core
 		m_mainCameraInfo(std::nullopt)
 	{
 		Init();
+
 		if (!Utils::Assert(this, m_sceneManager.TrySetActiveScene(0), 
 			std::format("Tried to set the active scene to the first one, but failed!"))) 
 			return;
@@ -118,8 +119,13 @@ namespace Core
 		Utils::Log(std::format("Camera data has follow is: {}", cameraData->m_CameraSettings.m_FollowTarget->ToString()));*/
 
 		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
-		Utils::Log(std::format("Current active camera is: {}", std::to_string(m_sceneManager.GetActiveSceneMutable()->TryGetMainCameraData()!=nullptr)));
+		//Utils::Log(std::format("Current active camera is: {}", std::to_string(m_sceneManager.GetActiveSceneMutable()->TryGetMainCameraData()!=nullptr)));
 		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
+
+		std::cout << "\n\n[ENGINE]: INITIALIZED GLOBALS" << std::endl;
+		std::cout << std::format("[ENGINE]: LOADED LAYERS FOR SCENE '{}': {}", 
+			m_sceneManager.GetActiveScene()->m_SceneName,
+			m_sceneManager.GetActiveScene()->ToStringLayers()) << std::endl;
 	}
 
 	Engine::~Engine()
@@ -134,11 +140,10 @@ namespace Core
 
 		if (FRAME_LIMIT != -1 || SHOW_FPS)
 		{
-			//Utils::Log(std::format("last: {} currnet: {}", m_lastTime, ));
-			Utils::Log(std::format("FRAME: {}/{} DELTA_TIME: {} FPS:{} GraphicsFPS:{}\n--------------------------------------------\n",
+			std::cout<<std::format("[ENGINE]: FRAME: {}/{} DELTA_TIME: {} FPS:{} GraphicsFPS:{}\n--------------------------------------------\n",
 				std::to_string(m_currentFrameCounter + 1), std::to_string(FRAME_LIMIT), 
 				Utils::ToStringDouble(m_deltaTime, DOUBLE_LOG_PRECISION), 
-				Utils::ToStringDouble(m_currentFPS, DOUBLE_LOG_PRECISION), std::to_string(GetFPS())));
+				Utils::ToStringDouble(m_currentFPS, DOUBLE_LOG_PRECISION), std::to_string(GetFPS()));
 		}
 
 		/*m_lastTime = m_currentTime;
@@ -184,8 +189,6 @@ namespace Core
 		activeScene->ResetAllLayers();
 		activeScene->ResetFrameDirtyComponentCount();
 
-		Utils::Log(std::format("All render layers: {}", activeScene->ToStringLayers()));
-
 		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
 
@@ -199,7 +202,6 @@ namespace Core
 		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
 		const TextBuffer* collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Utils::Assert(this, collapsedBuffer != nullptr, std::format("Tried to render buffer from camera output, but it points to NULL data"));
-		if (collapsedBuffer != nullptr) Utils::Log(std::format("Collapsed buffer: {}", collapsedBuffer->ToString()));
 
 		//TODO: rendering buffer drops frames
 		if (collapsedBuffer != nullptr) Rendering::RenderBuffer(*collapsedBuffer, RENDER_INFO);
@@ -224,13 +226,6 @@ namespace Core
 		LoopCode currentCode = SUCCESS_CODE;
 		while (!WindowShouldClose())
 		{
-			Utils::Log(std::format("Is key: {} down", IsKeyPressed(TOGGLE_PAUSE_UPDATE)));
-			/*if (!m_isLoopRunning && m_currentUpdatePauseCooldownFrames < TOGGLE_UPDATE_COOLDONW_FRAMES)
-			{
-				m_currentUpdatePauseCooldownFrames++;
-				continue;
-			}*/
-
 			if (IsKeyPressed(TOGGLE_PAUSE_UPDATE))
 			{
 				std::cin.get();

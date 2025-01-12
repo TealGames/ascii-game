@@ -48,7 +48,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	const RenderLayer newLayer = RenderLayer(layerText, TEXT_BUFFER_FONT, CHAR_SPACING);
 	int newLayerW = newLayer.m_SquaredTextBuffer.GetWidth();
 	int newLayerH = newLayer.m_SquaredTextBuffer.GetHeight();
-	Utils::Log(std::format("New layer w: {} h: {}", std::to_string(newLayerW), std::to_string(newLayerH)));
+	//Utils::Log(std::format("New layer w: {} h: {}", std::to_string(newLayerW), std::to_string(newLayerH)));
 	//TODO: right now these are global constants, but might have to be later parsed from data
 	//for each scene, allowing each scene to have its own settings
 
@@ -56,7 +56,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	//Note: right now we make two layers one for background and one for player, but this should
 	//get abstracted more with ids and text file parsing of scene data
 	m_Layers.emplace(RenderLayerType::Background, newLayer);
-	Utils::Log(std::format("Scene background buffer: {}", m_Layers.at(RenderLayerType::Background).m_SquaredTextBuffer.ToString()));
+	//Utils::Log(std::format("Scene background buffer: {}", m_Layers.at(RenderLayerType::Background).m_SquaredTextBuffer.ToString()));
 
 	const RenderLayer playerLayer = RenderLayer(TextBuffer{ newLayerW, newLayerH, TextChar()}, TEXT_BUFFER_FONT, CHAR_SPACING);
 	m_Layers.emplace(RenderLayerType::Player, playerLayer);
@@ -96,7 +96,7 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 				"unparsable hex: '{}' at line: {}", m_SceneName, hexString, std::to_string(lineIndex)))) continue;
 
 			Color convertedColor = RaylibUtils::GetColorFromHex(maybeConvertedHex.value());
-			Utils::Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));
+			/*Utils::Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));*/
 			colorAliases.emplace(colorAlias, convertedColor);
 		}
 		else
@@ -125,7 +125,7 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 						continue;
 					}
 
-					Utils::Log(std::format("Found good color alias: {}", colorAlias));
+					//Utils::Log(std::format("Found good color alias: {}", colorAlias));
 					currentColor = colorAliases[colorAlias];
 					i = colorAliasEndIndex;
 					continue;
@@ -134,7 +134,6 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 				//TODO: what is the best way of doing this? putting in text chars and putting empty chars 
 				//which would work fine for init but hard to create collision bound 
 				//OR do we leave empty spots and put them in with positions?
-				Utils::Log(std::format("Added char: {} with color: {}", Utils::ToString(currentLine[i]), RaylibUtils::ToString(currentColor)));
 				layerText.back().push_back(TextCharPosition{ Array2DPosition(r, i), TextChar(currentColor, currentLine[i])});
 			}
 			r++;
