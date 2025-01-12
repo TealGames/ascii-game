@@ -26,6 +26,11 @@ namespace Utils
 	const std::optional<LogType> LOG_ONLY_TYPE = std::nullopt;
 	const bool LOG_MESSAGES = true;
 
+	static const std::string ANSI_COLOR_ERROR = "\033[1;31m";
+	static const std::string ANSI_COLOR_WARNING = "\033[1;33m";
+	static const std::string ANSI_COLOR_DEFAULT = "\033[1;37m";
+	static const std::string ANSI_COLOR_CLEAR = "\033[0m";
+
 	void Log(const LogType& logType, const std::string& str)
 	{
 		if (!LOG_MESSAGES) return;
@@ -38,13 +43,13 @@ namespace Utils
 		switch (logType)
 		{
 		case LogType::Error:
-			logTypeMessage = "ERROR";
+			logTypeMessage = std::format("{}[{}!{}]{} ERROR:", ANSI_COLOR_DEFAULT, ANSI_COLOR_ERROR, ANSI_COLOR_DEFAULT, ANSI_COLOR_ERROR);
 			break;
 		case LogType::Warning:
-			logTypeMessage = "WARNING";
+			logTypeMessage = std::format("{}[{}!{}]{} WARNING:", ANSI_COLOR_DEFAULT, ANSI_COLOR_WARNING, ANSI_COLOR_DEFAULT, ANSI_COLOR_WARNING);
 			break;
 		case LogType::Log:
-			logTypeMessage = "LOG";
+			logTypeMessage = std::format("{}LOG:", ANSI_COLOR_DEFAULT);
 			break;
 		default:
 			std::string errMessage = "Tried to log message of message type "
@@ -52,7 +57,7 @@ namespace Utils
 			Log(LogType::Error, errMessage);
 			return;
 		}
-		std::string fullMessage = "\n" + logTypeMessage + ": " + str;
+		std::string fullMessage = "\n" + logTypeMessage + str +ANSI_COLOR_CLEAR;
 
 #ifdef LOG_WX_WIDGETS
 		wxLogMessage(fullMessage.c_str());

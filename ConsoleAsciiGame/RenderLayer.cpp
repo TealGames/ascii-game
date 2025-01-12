@@ -102,7 +102,7 @@ std::optional<TextBuffer> RenderLayer::CreateSquaredBuffer() const
 		for (int i = 1; i < row.size(); i++)
 		{
 			filledSpaces.back().push_back(row[i - 1].m_Text);
-			adjacentColDiff = row[i].m_RowColPos.m_Row - row[i - 1].m_RowColPos.m_Col;
+			adjacentColDiff = row[i].m_RowColPos.GetRow() - row[i - 1].m_RowColPos.GetCol();
 
 			if (adjacentColDiff > 1)
 			{

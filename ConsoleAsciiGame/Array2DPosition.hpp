@@ -6,15 +6,17 @@ class Array2DPosition final
 private:
 	Utils::Point2DInt m_Pos;
 
-public:
-	int& m_Row;
-	int& m_Col;
-
 private:
 public:
 	Array2DPosition();
 	Array2DPosition(const int& row, const int& col);
 	Array2DPosition(const Array2DPosition&) = default;
+
+	const int& GetRow() const;
+	const int& GetCol() const;
+
+	void SetRow(const int& row);
+	void SetCol(const int& col);
 
 	std::string ToString() const;
 

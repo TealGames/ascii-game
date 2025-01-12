@@ -154,7 +154,7 @@ bool TextBuffer::IsValidCol(const int& colPos) const
 
 bool TextBuffer::IsValidPos(const Array2DPosition& rowColPos) const
 {
-	return IsValidRow(rowColPos.m_Row) && IsValidCol(rowColPos.m_Col);
+	return IsValidRow(rowColPos.GetRow()) && IsValidCol(rowColPos.GetCol());
 }
 
 void TextBuffer::SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar)
@@ -162,8 +162,8 @@ void TextBuffer::SetAt(const Array2DPosition& rowColPos, const TextChar& newBuff
 	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to set the char: {} at INVALID row col: {} of full buffer: {}", 
 		Utils::ToString(newBufferChar.m_Char), rowColPos.ToString(), ToString()))) return;
 
-	m_textBuffer[rowColPos.m_Row][rowColPos.m_Col].m_Char = newBufferChar.m_Char;
-	m_textBuffer[rowColPos.m_Row][rowColPos.m_Col].m_Color = newBufferChar.m_Color;
+	m_textBuffer[rowColPos.GetRow()][rowColPos.GetCol()].m_Char = newBufferChar.m_Char;
+	m_textBuffer[rowColPos.GetRow()][rowColPos.GetCol()].m_Color = newBufferChar.m_Color;
 }
 
 void TextBuffer::SetAt(const Array2DPosition& rowColPos, const char& newChar)
@@ -171,7 +171,7 @@ void TextBuffer::SetAt(const Array2DPosition& rowColPos, const char& newChar)
 	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to set the char: {} at INVALID row col: {} of full buffer: {}",
 		Utils::ToString(newChar), rowColPos.ToString(), ToString()))) return;
 
-	m_textBuffer[rowColPos.m_Row][rowColPos.m_Col].m_Char = newChar;
+	m_textBuffer[rowColPos.GetRow()][rowColPos.GetCol()].m_Char = newChar;
 }
 
 void TextBuffer::SetAt(const Array2DPosition& rowColPos, const Color& newColor)
@@ -179,7 +179,7 @@ void TextBuffer::SetAt(const Array2DPosition& rowColPos, const Color& newColor)
 	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to set the color: {} at INVALID row col: {} of full buffer: {}",
 		RaylibUtils::ToString(newColor), rowColPos.ToString(), ToString()))) return;
 
-	m_textBuffer[rowColPos.m_Row][rowColPos.m_Col].m_Color = newColor;
+	m_textBuffer[rowColPos.GetRow()][rowColPos.GetCol()].m_Color = newColor;
 }
 
 void TextBuffer::SetAt(const std::vector<Array2DPosition>& rowColPos, const TextChar& newBufferChar)
@@ -227,7 +227,7 @@ bool TextBuffer::TrySetRegion(const Array2DPosition& rowColStartPos, const Utils
 
 		for (int c = 0; c <= chars[r].size(); c++)
 		{
-			globalRowCol = { rowColStartPos.m_Row+r, rowColStartPos.m_Col+c };
+			globalRowCol = { rowColStartPos.GetRow() + r, rowColStartPos.GetCol() + c};
 			SetAt(globalRowCol, chars[r][c]);
 		}
 	}
@@ -242,12 +242,12 @@ const TextChar* TextBuffer::GetAt(const Array2DPosition& rowColPos) const
 		rowColPos.ToString(), Utils::ToString(m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Char), 
 		RaylibUtils::ToString(m_textBuffer[rowColPos.m_X][rowColPos.m_Y].m_Color)));*/
 
-	return &(m_textBuffer[rowColPos.m_Row][rowColPos.m_Col]);
+	return &(m_textBuffer[rowColPos.GetRow()][rowColPos.GetCol()]);
 }
 
 const TextChar& TextBuffer::GetAtUnsafe(const Array2DPosition& rowColPos) const
 {
-	return m_textBuffer[rowColPos.m_Row][rowColPos.m_Col];
+	return m_textBuffer[rowColPos.GetRow()][rowColPos.GetCol()];
 }
 
 const std::vector<TextChar>& TextBuffer::GetAt(const int& rowPos) const

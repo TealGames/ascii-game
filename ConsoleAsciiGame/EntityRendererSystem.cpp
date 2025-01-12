@@ -40,6 +40,10 @@ namespace ECS
 				{
 					for (auto& buffer : affectedLayerBuffers)
 					{
+						if (buffer == nullptr) continue;
+						Utils::Log(std::format("STARTING BUFFER: {}       -> ALL VISUAL DATA: {}",
+							buffer->ToString(), Utils::ToStringIterable<std::vector<TextCharPosition>, TextCharPosition>(data.m_LastFrameVisualData)));
+
 						for (const auto& data : data.m_LastFrameVisualData)
 							buffer->SetAt(data.m_RowColPos, data.m_Text);
 					}
@@ -92,8 +96,8 @@ namespace ECS
 		Array2DPosition centerBottom = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
 
 		Array2DPosition bufferPos = {};
-		bufferPos.m_Row = centerBottom.m_Row - data.m_VisualBoundsSize.m_X + 1 + relativeVisualPos.m_Row;
-		bufferPos.m_Col = centerBottom.m_Col - (data.m_VisualBoundsSize.m_Y / 2) + relativeVisualPos.m_Col;
+		bufferPos.SetRow(centerBottom.GetRow() - data.m_VisualBoundsSize.m_X + 1 + relativeVisualPos.GetRow());
+		bufferPos.SetCol(centerBottom.GetCol() - (data.m_VisualBoundsSize.m_Y / 2) + relativeVisualPos.GetCol());
 		return bufferPos;
 	}
 

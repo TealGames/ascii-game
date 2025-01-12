@@ -4,43 +4,62 @@
 #include "HelperFunctions.hpp"
 
 Array2DPosition::Array2DPosition() : 
-	m_Pos(), m_Row(m_Pos.m_X), m_Col(m_Pos.m_Y) {}
+	m_Pos() {}
 Array2DPosition::Array2DPosition(const int& row, const int& col) : 
-	m_Pos(row, col), m_Row(m_Pos.m_X), m_Col(m_Pos.m_Y) {}
+	m_Pos(row, col) {}
 
 std::string Array2DPosition::ToString() const
 {
-	std::string str = std::format("({},{})", m_Row, m_Col);
+	std::string str = std::format("({},{})", std::to_string(GetRow()), std::to_string(GetCol()));
 	return str;
+}
+
+const int& Array2DPosition::GetRow() const
+{
+	return m_Pos.m_X;
+}
+const int& Array2DPosition::GetCol() const
+{
+	return m_Pos.m_Y;
+}
+
+void Array2DPosition::SetRow(const int& row)
+{
+	m_Pos.m_X = row;
+}
+
+void Array2DPosition::SetCol(const int& col)
+{
+	m_Pos.m_Y = col;
 }
 
 Array2DPosition Array2DPosition::operator+(const Array2DPosition& otherPos) const
 {
-	return { m_Row + otherPos.m_Row, m_Col + otherPos.m_Col };
+	return { GetRow() + otherPos.GetRow(), GetCol() + otherPos.GetCol() };
 }
 
 Array2DPosition Array2DPosition::operator-(const Array2DPosition& otherPos) const
 {
-	return { m_Row - otherPos.m_Row, m_Col - otherPos.m_Col };
+	return { GetRow() - otherPos.GetRow(), GetCol() - otherPos.GetCol() };
 }
 
 Array2DPosition Array2DPosition::operator*(const Array2DPosition& otherPos) const
 {
-	return { m_Row * otherPos.m_Row, m_Col * otherPos.m_Col };
+	return { GetRow() * otherPos.GetRow(), GetCol() * otherPos.GetCol() };
 }
 
 Array2DPosition Array2DPosition::operator*(const int factor) const
 {
-	return { m_Row * factor, m_Col * factor };
+	return { GetRow() * factor, GetCol() * factor };
 }
 
 Array2DPosition Array2DPosition::operator/(const Array2DPosition& otherPos) const
 {
-	if (!Utils::Assert(this, otherPos.m_Row != 0 && otherPos.m_Col != 0,
+	if (!Utils::Assert(this, otherPos.GetRow() != 0 && otherPos.GetCol() != 0,
 		std::format("Tried to divide {} by a value with 0 {}",
 			ToString(), otherPos.ToString()))) return {};
 
-	return { m_Row / otherPos.m_Row, m_Col / otherPos.m_Col };
+	return { GetRow() / otherPos.GetRow(), GetCol() / otherPos.GetCol() };
 }
 
 Array2DPosition Array2DPosition::operator/(const int factor) const
@@ -49,13 +68,13 @@ Array2DPosition Array2DPosition::operator/(const int factor) const
 		std::format("Tried to divide {} by a factor with 0 {}",
 			ToString(), std::to_string(factor)))) return {};
 
-	return { m_Row / factor, m_Col / factor };
+	return { GetRow() / factor, GetCol() / factor };
 }
 
 bool Array2DPosition::operator==(const Array2DPosition& otherPos) const
 {
-	bool sameX = Utils::ApproximateEquals(m_Row, otherPos.m_Row);
-	bool sameY = Utils::ApproximateEquals(m_Col, otherPos.m_Col);
+	bool sameX = Utils::ApproximateEquals(GetRow(), otherPos.GetRow());
+	bool sameY = Utils::ApproximateEquals(GetCol(), otherPos.GetCol());
 	return sameX && sameY;
 }
 
@@ -66,8 +85,8 @@ bool Array2DPosition::operator!=(const Array2DPosition& otherPos) const
 
 bool Array2DPosition::operator<(const Array2DPosition& otherPos) const
 {
-	if (m_Row == otherPos.m_Row) return m_Col < otherPos.m_Col;
-	else return m_Row < otherPos.m_Row;
+	if (GetRow() == otherPos.GetRow()) return GetCol() < otherPos.GetCol();
+	else return GetRow() < otherPos.GetRow();
 }
 bool Array2DPosition::operator<=(const Array2DPosition& otherPos) const
 {
@@ -87,8 +106,8 @@ Array2DPosition& Array2DPosition::operator=(const Array2DPosition& newPos)
 {
 	if (this != &newPos)
 	{
-		m_Row = newPos.m_Row;
-		m_Col = newPos.m_Col;
+		SetRow(newPos.GetRow());
+		SetCol(newPos.GetCol());
 	}
 	return *this;
 }
@@ -98,8 +117,8 @@ Array2DPosition& Array2DPosition::operator=(Array2DPosition&& other) noexcept
 	if (this == &other)
 		return *this;
 
-	m_Row = std::exchange(other.m_Row, 0);
-	m_Col = std::exchange(other.m_Col, 0);
+	m_Pos.m_X = std::exchange(other.m_Pos.m_X, 0);
+	m_Pos.m_Y = std::exchange(other.m_Pos.m_Y, 0);
 
 	return *this;
 }

@@ -12,6 +12,6 @@ namespace Conversions
 
 	CartesianPosition ArrayToCartesian(const Array2DPosition& pos)
 	{
-		return { pos.m_Col, pos.m_Row };
+		return { pos.GetCol(), pos.GetRow()};
 	}
 }
