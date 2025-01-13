@@ -6,7 +6,7 @@
 EntityRendererData::EntityRendererData() : EntityRendererData(std::vector<std::vector<TextChar>>{}, RenderLayerType::None) {}
 
 EntityRendererData::EntityRendererData(const std::vector<std::vector<TextChar>>& visualData, const RenderLayerType& renderLayers) :
-	m_VisualData(visualData), m_LastFrameVisualData(), m_VisualBoundsSize(), m_RenderLayers(renderLayers)
+	ComponentData(), m_VisualData(visualData), m_LastFrameVisualData(), m_VisualBoundsSize(), m_RenderLayers(renderLayers)
 {
 	int maxWidth = 0;
 	for (const auto& row : m_VisualData)

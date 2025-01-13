@@ -7,6 +7,7 @@
 #include "CameraData.hpp"
 #include "TransformData.hpp"
 #include "PlayerData.hpp"
+//#include "AnimatorData.hpp"
 #include "LightSourceData.hpp"
 #include "EntityRendererData.hpp"
 #include "HelperFunctions.hpp"
@@ -24,13 +25,30 @@ enum class ComponentType : ComponentNumericType
 	EntityRenderer= 1 << 1,
 	LightSource= 1<<2,
 	Camera= 1<<3,
-	Player= 1<<4
+	Player= 1<<4,
+	Animator= 1<<5
 };
 
-ComponentNumericType operator|(const ComponentType& lhs, const ComponentType& rhs);
-ComponentType& operator|=(ComponentType& lhs, const ComponentType& rhs);
-ComponentNumericType operator&(const ComponentType& lhs, const ComponentType& rhs);
-ComponentType& operator&=(ComponentType& lhs, const ComponentType& rhs);
+constexpr ComponentType operator|(const ComponentType& lhs, const ComponentType& rhs)
+{
+	return static_cast<ComponentType>(
+		static_cast<ComponentNumericType>(lhs) | static_cast<ComponentNumericType>(rhs));
+}
+constexpr ComponentType& operator|=(ComponentType& lhs, const ComponentType& rhs)
+{
+	lhs = lhs | rhs;
+	return lhs;
+}
+constexpr ComponentType operator&(const ComponentType& lhs, const ComponentType& rhs)
+{
+	return static_cast<ComponentType>(
+		static_cast<ComponentNumericType>(lhs) & static_cast<ComponentNumericType>(rhs));
+}
+constexpr ComponentType& operator&=(ComponentType& lhs, const ComponentType& rhs)
+{
+	lhs = lhs & rhs;
+	return lhs;
+}
 
 std::uint8_t GetPlaceOfComponentType(const ComponentType& type);
 
@@ -75,6 +93,7 @@ ComponentType GetComponentFromType()
 	if (typeid(T) == typeid(LightSourceData)) return ComponentType::LightSource;
 	if (typeid(T) == typeid(PlayerData)) return ComponentType::Player;
 	if (typeid(T) == typeid(TransformData)) return ComponentType::Transform;
+	//if (typeid(T) == typeid(AnimatorData)) return ComponentType::Animator;
 	
 	Utils::Log(Utils::LogType::Error, std::format("Tried to parse type: {} "
 		"to component type but failed!", typeid(T).name()));

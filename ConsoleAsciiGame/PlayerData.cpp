@@ -2,4 +2,4 @@
 #include "pch.hpp"
 #include "PlayerData.hpp"	
 
-PlayerData::PlayerData() : m_Placeholder(true){}
+PlayerData::PlayerData() : ComponentData(), m_Placeholder(true){}

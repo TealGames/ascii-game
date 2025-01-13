@@ -5,6 +5,7 @@
 #include "RenderLayer.hpp"
 #include "CartesianPosition.hpp"
 #include "Point3D.hpp"
+#include "ComponentData.hpp"
 
 struct LightMapChar
 {
@@ -18,7 +19,7 @@ struct LightMapChar
 	std::string ToString() const;
 };
 
-struct LightSourceData
+struct LightSourceData : ComponentData
 {
 	std::uint8_t m_LightRadius;
 	//The layers which the light will apply its effect to

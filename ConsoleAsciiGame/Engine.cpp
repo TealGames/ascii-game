@@ -11,6 +11,7 @@
 #include "CameraSystem.hpp"
 #include "LightSourceSystem.hpp"
 #include "PlayerSystem.hpp"
+#include "AnimatorSystem.hpp"
 #include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
 
@@ -73,6 +74,7 @@ namespace Core
 		m_entityRendererSystem(m_transformSystem),
 		m_lightSystem(m_transformSystem, m_entityRendererSystem),
 		m_playerSystem(m_transformSystem),
+		m_animatorSystem(*this),
 		m_currentFrameCounter(0),
 		m_currentFPS(0),
 		m_currentTime(std::chrono::high_resolution_clock().now()),
@@ -96,6 +98,9 @@ namespace Core
 		/*Utils::Assert(addedLight, "Failed to add player light");*/
 
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{ { {TextChar(GRAY, 'H')}}, RenderLayerType::Player});
+		playerEntity.AddComponent<AnimatorData>(AnimatorData({ 
+					AnimationKeyframe({AnimationProperty(ComponentType::LightSource, "LightRadius", std::uint8_t(8))}, 0),
+					AnimationKeyframe({AnimationProperty(ComponentType::LightSource, "LightRadius", std::uint8_t(1))}, 1)}, 1, true));
 		/*Utils::Assert(addedRender, "Failed to add player renderer");*/
 
 		/*if (!Utils::Assert(this, playerData!=nullptr, std::format("Tried to create player but failed to add player data. "
@@ -194,6 +199,7 @@ namespace Core
 
 		m_transformSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_playerSystem.SystemUpdate(*activeScene, *(m_playerInfo.value().m_Data), *(m_playerInfo.value().m_Entity), m_deltaTime);
+		m_animatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 
 		//TODO: light system without any other problems drop frames to ~20 fps

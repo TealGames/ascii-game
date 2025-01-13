@@ -1,6 +1,7 @@
 #pragma once
+#include "ComponentData.hpp"
 
-struct PlayerData
+struct PlayerData : ComponentData
 {
 	bool m_Placeholder;
 

@@ -3,28 +3,6 @@
 #include "ComponentType.hpp"
 #include "HelperFunctions.hpp"
 
-ComponentNumericType operator|(const ComponentType& lhs, const ComponentType& rhs)
-{
-	return static_cast<ComponentNumericType>(lhs) | static_cast<ComponentNumericType>(rhs);
-}
-
-ComponentType& operator|=(ComponentType& lhs, const ComponentType& rhs)
-{
-	lhs = static_cast<ComponentType>(lhs | rhs);
-	return lhs;
-}
-
-ComponentNumericType operator&(const ComponentType& lhs, const ComponentType& rhs)
-{
-	return static_cast<ComponentNumericType>(lhs) & static_cast<ComponentNumericType>(rhs);
-}
-
-ComponentType& operator&=(ComponentType& lhs, const ComponentType& rhs)
-{
-	lhs = static_cast<ComponentType>(lhs & rhs);
-	return lhs;
-}
-
 std::uint8_t GetPlaceOfComponentType(const ComponentType& type)
 {
 	ComponentNumericType integralType = static_cast<ComponentNumericType>(type);
@@ -62,11 +40,11 @@ std::string ToString(const ComponentType& type)
 	if (integralType == 0) return "";
 
 	std::vector<std::string> allStrs = {};
-	if ((type & ComponentType::Transform) != 0) allStrs.push_back("Transform");
-	if ((type & ComponentType::EntityRenderer) != 0) allStrs.push_back("EntityRenderer");
-	if ((type & ComponentType::LightSource) != 0) allStrs.push_back("LightSource");
-	if ((type & ComponentType::Camera) != 0) allStrs.push_back("Camera");
-	if ((type & ComponentType::Player) != 0)allStrs.push_back("Player");
+	if ((type & ComponentType::Transform) != ComponentType::None) allStrs.push_back("Transform");
+	if ((type & ComponentType::EntityRenderer) != ComponentType::None) allStrs.push_back("EntityRenderer");
+	if ((type & ComponentType::LightSource) != ComponentType::None) allStrs.push_back("LightSource");
+	if ((type & ComponentType::Camera) != ComponentType::None) allStrs.push_back("Camera");
+	if ((type & ComponentType::Player) != ComponentType::None) allStrs.push_back("Player");
 
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(allStrs);
 }

@@ -95,6 +95,40 @@ namespace Utils
 		return condition;
 	}
 
+	template <typename EnumType>
+	concept HasBitwiseAnd = requires(EnumType a, EnumType b) {
+		{ a & b } -> std::convertible_to<EnumType>;
+	};
+	template <typename EnumType>
+	concept HasBitwiseOr = requires(EnumType a, EnumType b) {
+		{ a | b } -> std::convertible_to<EnumType>;
+	};
+	template <typename T, typename... Args>
+	concept AllSameType = (std::is_same_v<T, Args> && ...);
+
+	template<typename... Args>
+	concept HasAtLeastOneArg = sizeof...(Args) >= 1;
+
+	template<typename EnumType, typename... CheckFlagType>
+	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>>
+			 && HasBitwiseAnd<EnumType> && HasBitwiseOr<EnumType> && 
+			 AllSameType<EnumType, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
+	constexpr bool HasFlagAny(const EnumType& enumBits, const CheckFlagType&... checkFlags)
+	{
+		EnumType flagsCombined = (checkFlags | ...);
+		return enumBits & flagsCombined != static_cast<EnumType>(0);
+	}
+
+	template<typename EnumType, typename... CheckFlagType>
+	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>>
+		     && HasBitwiseAnd<EnumType> && HasBitwiseOr<EnumType> && 
+			 AllSameType<EnumType, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
+	constexpr bool HasFlagAll (const EnumType& enumBits, const CheckFlagType&... checkFlags)
+	{
+		EnumType flagsCombined = (checkFlags | ...);
+		return enumBits & flagsCombined == flagsCombined;
+	}
+
 	template <typename T>
 	constexpr bool IS_NUMERIC = std::is_arithmetic_v<T>;
 

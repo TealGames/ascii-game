@@ -2,8 +2,9 @@
 #include <vector>
 #include "Point2DInt.hpp"
 #include "RenderLayer.hpp"
+#include "ComponentData.hpp"
 
-struct EntityRendererData
+struct EntityRendererData : ComponentData
 {
 	//Stores every entity's visual from top row to bottom row
 	//TODO: the enttiy render data should store the layer it should render at, but not the buffer itself

@@ -3,7 +3,7 @@
 #include "CameraSettings.hpp"
 #include "TextBuffer.hpp"
 
-struct CameraData
+struct CameraData : public ComponentData
 {
 	CameraSettings m_CameraSettings;
 	std::optional<TextBuffer> m_LastFrameBuffer;
