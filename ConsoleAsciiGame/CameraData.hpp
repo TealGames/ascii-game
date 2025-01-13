@@ -2,6 +2,7 @@
 #include <optional>
 #include "CameraSettings.hpp"
 #include "TextBuffer.hpp"
+#include "ComponentData.hpp"
 
 struct CameraData : public ComponentData
 {

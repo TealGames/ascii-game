@@ -41,14 +41,14 @@ namespace ECS
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
             {
                 affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_AffectedLayers);
-                if (CACHE_LAST_BUFFER && !data.m_DataMutated && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) 
+                if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) 
                     && !data.m_LastFrameData.empty())
                 {
                     scene.SetLayers(data.m_AffectedLayers, data.m_LastFrameData);
                     return;
                 }
 
-                if (STORE_LIGHT_MAP && !data.m_DataMutated && !data.m_LightMap.empty())
+                if (STORE_LIGHT_MAP && !data.m_MutatedThisFrame && !data.m_LightMap.empty())
                 {
                     Utils::Log(std::format("ALL light positions: {}", 
                         Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));
@@ -82,7 +82,7 @@ namespace ECS
                 scene.IncreaseFrameDirtyComponentCount();
                 if (!data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
                 RenderLight(data, entity, affectedLayerBuffers);
-                data.m_DataMutated = false;
+                data.m_MutatedThisFrame = false;
                 //std::cout << "Rendering lgiht" << std::endl;
             });
     }

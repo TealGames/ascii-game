@@ -87,7 +87,7 @@ namespace ECS
 
 						//TODO: this should BE TEMPORARY AND NEEDS TO BE DONE ABSTRACTED PROBABLY USING ENGINE FUNCTION
 						LightSourceData* data = entity.TryGetComponent<LightSourceData>();
-						data->m_DataMutated = true;
+						data->m_MutatedThisFrame = true;
 					}
 					else
 					{
