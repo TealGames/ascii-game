@@ -12,36 +12,57 @@
 
 constexpr ComponentType SUPPORTED_ANIMATOR_COMPONENTS = ComponentType::LightSource;
 
-using AnimationPropertyValue = std::variant<int, float, std::uint8_t>;
+template<typename T>
+class AnimationPropertyKeyframe
+{
+private:
+	float m_time;
+	T m_value;
+public:
+
+private:
+public:
+	AnimationPropertyKeyframe(const T& value, const float& time) : 
+		m_value(value), m_time(time) {}
+
+	const float& GetTime() const { return m_time; }
+	const T& GetValue() const { return m_value; }
+
+	std::string ToString() const
+	{
+		return std::format("[Time: {} Value: {}]", 
+			std::to_string(m_time), Utils::TryToString<T>(m_value));
+	}
+};
+
+template<typename T>
 struct AnimationProperty
 {
-	ComponentType m_ComponentType;
-	std::string m_PropertyName;
-	AnimationPropertyValue m_Value;
+	std::vector<AnimationPropertyKeyframe<T>> m_Keyframes;
+	size_t m_KeyframeIndex;
+	T& m_ComponentPropertyRef;
+	bool& m_ComponentDataMutationFlagRef;
 
-	AnimationProperty(const ComponentType& type, 
-		const std::string& name, const AnimationPropertyValue& value);
+	AnimationProperty(T& compoenentPropertyRef, bool& componentDataMutationRef, const std::vector<AnimationPropertyKeyframe<T>> keyframes) :
+		m_ComponentPropertyRef(compoenentPropertyRef), m_ComponentDataMutationFlagRef(componentDataMutationRef), m_Keyframes(keyframes), m_KeyframeIndex(0) {}
 
-	std::string ToString() const;
+	std::string ToString() const
+	{
+		return std::format("[Prop:{} keyframes:{}]", typeid(T).name(), 
+			Utils::ToStringIterable<std::vector<AnimationPropertyKeyframe<T>>, AnimationPropertyKeyframe<T>>(m_Keyframes));
+	}
 
 	bool operator==(const AnimationProperty& other) const = default;
-	bool operator<(const AnimationProperty& other) const;
 };
 
-struct AnimationKeyframe
-{
-	float m_Time;
-	std::unordered_map<std::string, AnimationProperty> m_Properties;
-
-	AnimationKeyframe();
-	AnimationKeyframe(const std::vector<AnimationProperty>& properties, const float& time);
-
-	std::string ToString() const;
-};
-
+//template <typename... Types>
+//using GeneratedVariant = std::variant<AnimationProperty<Types>...>;
+//
+//using AnimationPropertyVariant = GeneratedVariant<int, float, std::uint8_t>;
+using AnimationPropertyVariant = std::variant<AnimationProperty<int>, AnimationProperty<float>, AnimationProperty<std::uint8_t>>;
 struct AnimatorData : public ComponentData
 {
-	std::vector<AnimationKeyframe> m_Keyframes;
+	std::vector<AnimationPropertyVariant> m_Properties;
 	float m_AnimationSpeed;
 	float m_NormalizedTime;
 	size_t m_KeyframeIndex;
@@ -50,7 +71,16 @@ struct AnimatorData : public ComponentData
 	float m_EndTime;
 
 	AnimatorData();
-	AnimatorData(const std::vector<AnimationKeyframe>& frames, 
-		const float& speed, const bool& loop);
+	AnimatorData(const std::vector<AnimationPropertyVariant>& properties,
+		const float& animationTime, const float& speed, const bool& loop);
+};
+
+template<typename T>
+struct AnimationPropertyType;
+
+template<typename T>
+struct AnimationPropertyType<AnimationProperty<T>>
+{
+	using Type = T;
 };
 

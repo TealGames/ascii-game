@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <format>
+#include <variant>
 #include <functional>
 #include <sstream>
 #include <optional>
@@ -127,6 +128,23 @@ namespace Utils
 	{
 		EnumType flagsCombined = (checkFlags | ...);
 		return enumBits & flagsCombined == flagsCombined;
+	}
+
+	//TODO: make a function that can return the type that exists in a variant
+	template <size_t Index, typename Variant>
+	using VariantType = std::variant_alternative_t<Index, Variant>;
+
+	//Variant holds has a member with type 'value_types'
+	template <typename T>
+	concept IsVariant = requires { typename T::value_types; };
+
+	template <typename Variant>
+	auto GetVariantValue(const Variant& variant) 
+	{
+		return std::visit([](auto&& value) -> decltype(value) 
+			{
+				return std::get_if<std::decay_t<decltype(value)>>(&variant);
+			}, variant);
 	}
 
 	template <typename T>

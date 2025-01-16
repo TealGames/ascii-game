@@ -160,7 +160,7 @@ std::string RenderLayer::ToStringRawBuffer(const RawTextBufferBlock& block)
 	std::string result = "\nRaw Buffer:\n";
 	for (const auto& row : block)
 	{
-		for (const auto charPos : row)
+		for (const auto& charPos : row)
 		{
 			result += charPos.ToString() + " ";
 		}

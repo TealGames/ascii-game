@@ -40,6 +40,8 @@ namespace ECS
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
             {
+                Utils::Log(Utils::LogType::Warning, std::format("Light data for {} is mutated: {}", entity.m_Name, std::to_string(data.m_MutatedThisFrame)));
+
                 affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_AffectedLayers);
                 if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) 
                     && !data.m_LastFrameData.empty())

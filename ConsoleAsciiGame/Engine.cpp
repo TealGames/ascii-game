@@ -93,14 +93,18 @@ namespace Core
 			playerEntity.m_Name, std::to_string(playerEntity.m_Id)));*/
 
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData{});
-		playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
+		LightSourceData& lightSource= playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 		/*Utils::Assert(addedLight, "Failed to add player light");*/
 
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{ { {TextChar(GRAY, 'H')}}, RenderLayerType::Player});
-		playerEntity.AddComponent<AnimatorData>(AnimatorData({ 
+		playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
+				AnimationProperty<std::uint8_t>(lightSource.m_LightRadius, lightSource.m_MutatedThisFrame, {
+				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(8), 0),
+				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1)})}, 1, 1, true));
+		/*playerEntity.AddComponent<AnimatorData>(AnimatorData({ 
 					AnimationKeyframe({AnimationProperty(ComponentType::LightSource, "LightRadius", std::uint8_t(8))}, 0),
-					AnimationKeyframe({AnimationProperty(ComponentType::LightSource, "LightRadius", std::uint8_t(1))}, 1)}, 1, true));
+					AnimationKeyframe({AnimationProperty(ComponentType::LightSource, "LightRadius", std::uint8_t(1))}, 1)}, 1, true));*/
 		/*Utils::Assert(addedRender, "Failed to add player renderer");*/
 
 		/*if (!Utils::Assert(this, playerData!=nullptr, std::format("Tried to create player but failed to add player data. "
