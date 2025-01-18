@@ -98,7 +98,7 @@ namespace ECS
 
         //TODO: it might not make sense for all lighting to just use the renderer to determine lighting start pos,
         //so perhaps this needs to be more customizable to allow for this and other behavior
-        std::vector<std::vector<TextChar>> visualData = renderData->m_VisualData;
+        VisualData visualData = renderData->m_VisualData;
         CartesianPosition centerPos = {};
        // std::cout << "REDNER LIGHT" << std::endl;
 
@@ -108,9 +108,9 @@ namespace ECS
             //Utils::Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
             //Utils::Log(std::format("Player Pos color: {}", RaylibUtils::ToString(buffer->GetAt(m_transform.m_Pos.GetFlipped())->m_Color)));
 
-            for (int r = 0; r < visualData.size(); r++)
+            for (int r = 0; r < visualData.GetHeight(); r++)
             {
-                for (int c = 0; c < visualData[r].size(); c++)
+                for (int c = 0; c < visualData.GetWidth(); c++)
                 {
                     //we use default coords (x, y) but visual pos is in (row, col) so we flip
                     //TODO: maybe abstract transform from one coord system to the other

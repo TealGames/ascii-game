@@ -104,7 +104,7 @@ namespace ECS
 				property.m_ComponentPropertyRef = static_cast<T>(std::lerp(static_cast<double>(currentFrame.GetValue()), 
 																		   static_cast<double>(nextFrame.GetValue()), lerpVal));
 				property.m_ComponentDataMutationFlagRef = true;
-				Utils::Log(Utils::LogType::Warning, std::format("Set property value to; {}", std::to_string(property.m_ComponentDataMutationFlagRef)));
+				//Utils::Log(Utils::LogType::Warning, std::format("Set property value to; {}", std::to_string(property.m_ComponentDataMutationFlagRef)));
 			}
 			else
 			{

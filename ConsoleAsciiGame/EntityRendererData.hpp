@@ -3,12 +3,13 @@
 #include "Point2DInt.hpp"
 #include "RenderLayer.hpp"
 #include "ComponentData.hpp"
+#include "VisualData.hpp"
 
 struct EntityRendererData : ComponentData
 {
 	//Stores every entity's visual from top row to bottom row
 	//TODO: the enttiy render data should store the layer it should render at, but not the buffer itself
-	std::vector<std::vector<TextChar>> m_VisualData;
+	VisualData m_VisualData;
 	RenderLayerType m_RenderLayers;
 	std::vector<TextCharPosition> m_LastFrameVisualData;
 
@@ -16,5 +17,5 @@ struct EntityRendererData : ComponentData
 	Utils::Point2DInt m_VisualBoundsSize;
 	
 	EntityRendererData();
-	EntityRendererData(const std::vector<std::vector<TextChar>>& visualData, const RenderLayerType& renderLayers);
+	EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers);
 };

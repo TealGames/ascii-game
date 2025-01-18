@@ -1,6 +1,7 @@
 #pragma once
 #include "Point2DInt.hpp"
 
+constexpr int NULL_INDEX = -1;
 class Array2DPosition final
 {
 private:

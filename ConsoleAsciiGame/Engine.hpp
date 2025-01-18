@@ -11,6 +11,7 @@
 #include "CameraSystem.hpp"
 #include "LightSourceSystem.hpp"
 #include "AnimatorSystem.hpp"
+#include "SpriteAnimatorSystem.hpp"
 #include "PlayerSystem.hpp"
 
 namespace Core
@@ -34,6 +35,7 @@ namespace Core
 		ECS::PlayerSystem m_playerSystem;
 		ECS::EntityRendererSystem m_entityRendererSystem;
 		ECS::AnimatorSystem m_animatorSystem;
+		ECS::SpriteAnimatorSystem m_spriteAnimatorSystem;
 
 		std::optional<ECS::EntityComponentPair<PlayerData>> m_playerInfo;
 		std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;

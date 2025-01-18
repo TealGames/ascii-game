@@ -34,7 +34,7 @@ namespace ECS
 				if (!Utils::Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
 					"but entity's render data: {} has no render layers", entity.m_Name))) return;
 
-				if (CACHE_LAST_BUFFER && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) && 
+				if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) && 
 					!data.m_LastFrameVisualData.empty())
 				{
 					for (auto& buffer : affectedLayerBuffers)
@@ -60,18 +60,28 @@ namespace ECS
 
 					RenderInBuffer(*buffer, data, entity);
 				}
+				data.m_MutatedThisFrame = false;
 			});
+	}
+
+	void EntityRendererSystem::SetVisualData(EntityRendererData& data, const VisualData& visual)
+	{
+		data.m_VisualData = visual;
+	}
+	void EntityRendererSystem::SetVisualData(EntityRendererData& data, const VisualDataPositions& positions)
+	{
+		data.m_VisualData.SetAt(positions.m_Data);
 	}
 
 	const std::vector<std::vector<TextChar>>& EntityRendererSystem::GetVisualData(const EntityRendererData& data) const
 	{
-		return data.m_VisualData;
+		return data.m_VisualData.GetFull();
 	}
 
 	std::string EntityRendererSystem::GetVisualString(const EntityRendererData& data) const
 	{
 		std::string visualStr = "";
-		for (const auto& row : data.m_VisualData)
+		for (const auto& row : GetVisualData(data))
 		{
 			for (const auto& col : row)
 			{
@@ -110,14 +120,15 @@ namespace ECS
 		//Utils::Log(std::format("Rendering player at; {}", entity.m_Transform.m_Pos.ToString()));
 		Array2DPosition bufferPos = {};
 		TextChar currentTextChar = {};
-		for (int r = 0; r < data.m_VisualData.size(); r++)
+		const auto& fullData = data.m_VisualData.GetFull();
+		for (int r = 0; r < fullData.size(); r++)
 		{
-			for (int c = 0; c < data.m_VisualData[r].size(); c++)
+			for (int c = 0; c < fullData[r].size(); c++)
 			{
 				bufferPos = GetGlobalVisualPos({ r, c }, data, entity);
 				if (!buffer.IsValidPos(bufferPos)) continue;
 
-				currentTextChar = data.m_VisualData[r][c];
+				currentTextChar = fullData[r][c];
 				if (currentTextChar.m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
 
 				buffer.SetAt(bufferPos, currentTextChar);

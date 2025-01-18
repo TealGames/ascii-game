@@ -12,6 +12,7 @@
 #include "LightSourceSystem.hpp"
 #include "PlayerSystem.hpp"
 #include "AnimatorSystem.hpp"
+#include "SpriteAnimatorSystem.hpp"
 #include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
 
@@ -20,8 +21,9 @@ namespace Core
 	//-------------------------------------------------------------------
 	// GLOBAL TODO CHECKLIST
 	//-------------------------------------------------------------------
-	//TODO: instead of point2d for both row col and cartesian pos separate them out into different types
-	//so it is less confusing and easy to understand what to convert to
+	//TODO: maybe make an array version for text buffer (actually this time)
+	//TODO: make a separate TextArray or FragmentedTextArray (textcharpositions) as the base for text buffer and sprite
+	//so they can use the same methods and checking (so it is likely we need to make it array now to improve performance)
 
 	static const std::string SCENES_PATH = "scenes";
 	static constexpr std::uint8_t TARGET_FPS = 60;
@@ -74,6 +76,7 @@ namespace Core
 		m_entityRendererSystem(m_transformSystem),
 		m_lightSystem(m_transformSystem, m_entityRendererSystem),
 		m_playerSystem(m_transformSystem),
+		m_spriteAnimatorSystem(m_entityRendererSystem),
 		m_animatorSystem(*this),
 		m_currentFrameCounter(0),
 		m_currentFPS(0),
@@ -89,46 +92,27 @@ namespace Core
 			return;
 
 		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("Player", TransformData({ 0, 0 }));
-		/*Utils::Log(std::format("Created entity with name {} with id: {}",
-			playerEntity.m_Name, std::to_string(playerEntity.m_Id)));*/
 
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData{});
 		LightSourceData& lightSource= playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
-		/*Utils::Assert(addedLight, "Failed to add player light");*/
 
-		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{ { {TextChar(GRAY, 'H')}}, RenderLayerType::Player});
-		playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
+		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{ VisualData{1, 1, {TextChar(GRAY, 'H')}}, RenderLayerType::Player });
+		/*playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
 				AnimationProperty<std::uint8_t>(lightSource.m_LightRadius, lightSource.m_MutatedThisFrame, {
 				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(8), 0),
-				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1)})}, 1, 1, true));
-		/*playerEntity.AddComponent<AnimatorData>(AnimatorData({ 
-					AnimationKeyframe({AnimationProperty(ComponentType::LightSource, "LightRadius", std::uint8_t(8))}, 0),
-					AnimationKeyframe({AnimationProperty(ComponentType::LightSource, "LightRadius", std::uint8_t(1))}, 1)}, 1, true));*/
-		/*Utils::Assert(addedRender, "Failed to add player renderer");*/
-
-		/*if (!Utils::Assert(this, playerData!=nullptr, std::format("Tried to create player but failed to add player data. "
-			"Player : {}", playerEntity.ToString()))) 
-			return;*/
+				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1)})}, 1, 1, true));*/
+		playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData(
+			{ SpriteAnimationFrame(0, VisualData{1, 1, TextChar(WHITE, 'O')} ),
+			  SpriteAnimationFrame(2, VisualData{1, 1, TextChar(WHITE, '4')}) }, 1, 4, true));
 
 		m_playerInfo = ECS::EntityComponentPair<PlayerData>{ playerEntity, playerData};
 		
 		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));
-		/*Utils::Log(std::format("Created entity with name {} with id: {} ",
-			mainCameraEntity.m_Name, std::to_string(mainCameraEntity.m_Id)));*/
 
 		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{playerEntity, Utils::Point2DInt(10, 10)} });
-	/*	if (!Utils::Assert(this, cameraData != nullptr, std::format("Tried to create main camera but failed to add camera data. "
-			"Main Camera : {}", mainCameraEntity.ToString())))
-			return;*/
-
-		/*Utils::Log(std::format("All scene data. Player id: {} camera id: {}; {}",
-			std::to_string(playerEntity.m_Id), std::to_string(mainCameraEntity.m_Id),
-			m_sceneManager.GetActiveScene()->ToStringEntityData()));
-		Utils::Log(std::format("Camera data has follow is: {}", cameraData->m_CameraSettings.m_FollowTarget->ToString()));*/
 
 		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
-		//Utils::Log(std::format("Current active camera is: {}", std::to_string(m_sceneManager.GetActiveSceneMutable()->TryGetMainCameraData()!=nullptr)));
 		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
 
 		std::cout << "\n\n[ENGINE]: INITIALIZED GLOBALS" << std::endl;
@@ -204,6 +188,7 @@ namespace Core
 		m_transformSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_playerSystem.SystemUpdate(*activeScene, *(m_playerInfo.value().m_Data), *(m_playerInfo.value().m_Entity), m_deltaTime);
 		m_animatorSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_spriteAnimatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 
 		//TODO: light system without any other problems drop frames to ~20 fps

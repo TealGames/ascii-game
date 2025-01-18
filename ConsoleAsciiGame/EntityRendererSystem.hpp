@@ -35,6 +35,8 @@ namespace ECS
 		Array2DPosition GetGlobalVisualPos(const Array2DPosition& relativeVisualPos,
 			const EntityRendererData& data, const Entity& entity) const;
 
+		void SetVisualData(EntityRendererData& data, const VisualData& visual);
+		void SetVisualData(EntityRendererData& data, const VisualDataPositions& positions);
 		const std::vector<std::vector<TextChar>>& GetVisualData(const EntityRendererData& data) const;
 		std::string GetVisualString(const EntityRendererData& data) const;
 
