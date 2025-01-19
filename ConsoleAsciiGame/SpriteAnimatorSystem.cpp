@@ -2,6 +2,7 @@
 #include "SpriteAnimatorSystem.hpp"
 #include "HelperFunctions.hpp"
 #include "EntityRendererData.hpp"
+#include "ProfilerTimer.hpp"
 
 namespace ECS
 {
@@ -10,6 +11,10 @@ namespace ECS
 
 	void SpriteAnimatorSystem::SystemUpdate(Scene& scene, const float& deltaTime)
 	{
+#ifdef ENABLE_PROFILER
+		ProfilerTimer timer("SpriteAnimatorSystem::SystemUpdate");
+#endif 
+
 		scene.OperateOnComponents<SpriteAnimatorData>(
 			[this, &scene, &deltaTime](SpriteAnimatorData& data, ECS::Entity& entity)-> void
 			{

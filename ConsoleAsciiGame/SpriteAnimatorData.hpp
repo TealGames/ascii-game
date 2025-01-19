@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "VisualData.hpp"
+#include "ComponentData.hpp"
 
 /// <summary>
 /// Stores the whole entire visual frame. This is meant for the user interface for 
@@ -30,7 +31,7 @@ struct SpriteAnimationDelta
 };
 
 
-struct SpriteAnimatorData
+struct SpriteAnimatorData : public ComponentData
 {
 	std::vector<SpriteAnimationDelta> m_VisualDeltas;
 	size_t m_VisualDeltaIndex;

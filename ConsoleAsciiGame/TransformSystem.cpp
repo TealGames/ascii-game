@@ -3,6 +3,7 @@
 #include "Point2DInt.hpp"
 #include "TransformData.hpp"
 #include "CartesianPosition.hpp"
+#include "ProfilerTimer.hpp"
 
 namespace ECS
 {
@@ -10,6 +11,10 @@ namespace ECS
 
 	void TransformSystem::UpdateLastFramePos(Scene& scene)
 	{
+#ifdef ENABLE_PROFILER
+		ProfilerTimer timer("TransformSystem::UpdateLastFramePos");
+#endif 
+
 		scene.OperateOnComponents<TransformData>(
 			[](TransformData& transform, ECS::Entity& entity)->void
 			{

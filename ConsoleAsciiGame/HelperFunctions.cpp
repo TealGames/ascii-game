@@ -4,6 +4,7 @@
 #include <numbers>
 #include <numeric>
 #include <cmath>
+#include <chrono>
 #include <limits>
 #include <fstream>
 #include <filesystem>
@@ -26,12 +27,11 @@ namespace Utils
 	const std::optional<LogType> LOG_ONLY_TYPE = std::nullopt;
 	const bool LOG_MESSAGES = true;
 
-	static const std::string ANSI_COLOR_ERROR = "\033[1;31m";
-	static const std::string ANSI_COLOR_WARNING = "\033[1;33m";
-	static const std::string ANSI_COLOR_DEFAULT = "\033[1;37m";
-	static const std::string ANSI_COLOR_CLEAR = "\033[0m";
+	static const char* ANSI_COLOR_ERROR = "\033[1;31m";
+	static const char* ANSI_COLOR_WARNING = "\033[1;33m";
+	static const char* ANSI_COLOR_DEFAULT = "\033[1;37m";
 
-	void Log(const LogType& logType, const std::string& str)
+	void Log(const LogType& logType, const std::string& str, const bool& logTime)
 	{
 		if (!LOG_MESSAGES) return;
 		if (LOG_ONLY_TYPE.has_value() && logType != LOG_ONLY_TYPE) return;
@@ -40,16 +40,21 @@ namespace Utils
 			str.substr(0, LOG_ONLY_MESSAGE.size()) != LOG_ONLY_MESSAGE) return;
 
 		std::string logTypeMessage;
+		std::string timeFormatted = "";
+		if (logTime) timeFormatted= std::format("{}[{}{}{}]{}", ANSI_COLOR_DEFAULT, ANSI_COLOR_GRAY, FormatTime(GetCurrentTime()), ANSI_COLOR_DEFAULT, ANSI_COLOR_CLEAR);
+
 		switch (logType)
 		{
 		case LogType::Error:
-			logTypeMessage = std::format("{}[{}!{}]{} ERROR:", ANSI_COLOR_DEFAULT, ANSI_COLOR_ERROR, ANSI_COLOR_DEFAULT, ANSI_COLOR_ERROR);
+			logTypeMessage = std::format("{}[{}!{}] {} {}ERROR:", ANSI_COLOR_DEFAULT, 
+				ANSI_COLOR_ERROR, ANSI_COLOR_DEFAULT, timeFormatted, ANSI_COLOR_ERROR);
 			break;
 		case LogType::Warning:
-			logTypeMessage = std::format("{}[{}!{}]{} WARNING:", ANSI_COLOR_DEFAULT, ANSI_COLOR_WARNING, ANSI_COLOR_DEFAULT, ANSI_COLOR_WARNING);
+			logTypeMessage = std::format("{}[{}!{}] {} {}WARNING:", ANSI_COLOR_DEFAULT, 
+				ANSI_COLOR_WARNING, ANSI_COLOR_DEFAULT, timeFormatted, ANSI_COLOR_WARNING);
 			break;
 		case LogType::Log:
-			logTypeMessage = std::format("{}LOG:", ANSI_COLOR_DEFAULT);
+			logTypeMessage = std::format("{} {}LOG:", timeFormatted, ANSI_COLOR_DEFAULT);
 			break;
 		default:
 			std::string errMessage = "Tried to log message of message type "
@@ -66,15 +71,37 @@ namespace Utils
 #endif
 	}
 
-	void Log(const std::string& str)
+	void Log(const std::string& str, const bool& logTime)
 	{
-		Log(LogType::Log, str);
+		Log(LogType::Log, str, logTime);
 	}
 
 	bool Assert(const bool condition, const std::string& errMessage)
 	{
 		if (!condition) Utils::Log(LogType::Error, errMessage);
 		return condition;
+	}
+
+	LocalTime GetLocalTime(const SystemTime& time)
+	{
+		return std::chrono::zoned_time{ std::chrono::current_zone(), time };
+	}
+	LocalTime GetCurrentTime()
+	{
+		return GetLocalTime(std::chrono::system_clock::now());
+	}
+	std::string FormatTime(const LocalTime& time)
+	{
+		std::ostringstream oss;
+		oss << time;
+		std::string timeString = oss.str();
+
+		std::size_t nanosecondIndex = timeString.find('.');
+		if (nanosecondIndex != std::string::npos)
+		{
+			timeString = timeString.substr(0, nanosecondIndex);
+		}
+		return timeString;
 	}
 
 	void ClearSTDCIN()

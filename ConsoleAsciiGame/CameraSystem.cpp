@@ -12,6 +12,7 @@
 #include "PositionConversions.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
+#include "ProfilerTimer.hpp"
 
 namespace ECS
 {
@@ -25,6 +26,10 @@ namespace ECS
     void CameraSystem::SystemUpdate(Scene& scene, CameraData& data,
         ECS::Entity& mainCamera, const float& deltaTime)
     {
+#ifdef ENABLE_PROFILER
+        ProfilerTimer timer("CameraSystem::SystemUpdate");
+#endif 
+
         m_currentFrameBuffer = std::nullopt;
 
         //TODO: somthing was wrong with dirty counting )(most likely) so the optimization was not working

@@ -5,6 +5,7 @@
 #include "AnimatorData.hpp"
 #include "HelperFunctions.hpp"
 #include "Engine.hpp"
+#include "ProfilerTimer.hpp"
 
 namespace ECS
 {
@@ -12,6 +13,10 @@ namespace ECS
 
 	void AnimatorSystem::SystemUpdate(Scene& scene, const float& deltaTime)
 	{
+#ifdef ENABLE_PROFILER
+		ProfilerTimer timer("AnimatorSystem::SystemUpdate");
+#endif 
+
 		scene.OperateOnComponents<AnimatorData>(
 			[this, &scene, &deltaTime](AnimatorData& data, ECS::Entity& entity)-> void
 			{

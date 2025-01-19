@@ -15,6 +15,8 @@
 #include "SpriteAnimatorSystem.hpp"
 #include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
+#include "Timer.hpp"
+#include "ProfilerTimer.hpp"
 
 namespace Core
 {
@@ -24,6 +26,7 @@ namespace Core
 	//TODO: maybe make an array version for text buffer (actually this time)
 	//TODO: make a separate TextArray or FragmentedTextArray (textcharpositions) as the base for text buffer and sprite
 	//so they can use the same methods and checking (so it is likely we need to make it array now to improve performance)
+	//TODO: for performance make all members, function params that are const std::string that do not need to be vars (like are just direct times) as const char* (const char[])
 
 	static const std::string SCENES_PATH = "scenes";
 	static constexpr std::uint8_t TARGET_FPS = 60;
@@ -127,6 +130,10 @@ namespace Core
 
 	LoopCode Engine::Update()
 	{
+#ifdef ENABLE_PROFILER
+		ProfilerTimer timer("Engine::Update");
+#endif 
+
 		m_currentTime = std::chrono::high_resolution_clock().now();
 		m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_currentTime - m_lastTime).count() / static_cast<float>(1000);
 		m_currentFPS = 1 / m_deltaTime;
@@ -228,6 +235,10 @@ namespace Core
 			}
 
 			currentCode = Update();
+#ifdef ENABLE_PROFILER
+			ProfilerTimer::m_Profiler.LogPerformanceTimes();
+#endif
+
 			//We do not terminate update if we want to play a few frames
 			if (FRAME_LIMIT != NO_FRAME_LIMIT && m_currentFrameCounter < FRAME_LIMIT) continue;
 

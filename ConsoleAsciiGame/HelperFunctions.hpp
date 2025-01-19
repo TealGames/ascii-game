@@ -63,13 +63,17 @@ namespace Utils
 		Log,
 	};
 
-	void Log(const LogType& logType, const std::string& str);
+	inline const char* ANSI_COLOR_GRAY = "\033[1;90m";
+	inline const char* ANSI_COLOR_GREEN = "\033[1;32m";
+	inline const char* ANSI_COLOR_CLEAR = "\033[0m";
+
+	void Log(const LogType& logType, const std::string& str, const bool& logTime = true);
 
 	/// <summary>
 	/// Logs a message as a default LOG type
 	/// </summary>
 	/// <param name="str"></param>
-	void Log(const std::string& str);
+	void Log(const std::string& str, const bool& logTime = true);
 
 	/// <summary>
 	/// The same Log action but also logs the class
@@ -79,9 +83,9 @@ namespace Utils
 	/// <param name="logType"></param>
 	/// <param name="str"></param>
 	template<typename T>
-	void Log(const T* const objPtr, const LogType& logType, const std::string& str)
+	void Log(const T* const objPtr, const LogType& logType, const std::string& str, const bool& logTime = true)
 	{
-		Log(logType, std::format("{}: {}", typeid(T).name(), str));
+		Log(logType, std::format("{}: {}", typeid(T).name(), str), logTime);
 	}
 
 	/// <summary>
@@ -95,6 +99,12 @@ namespace Utils
 		if (!condition) Utils::Log<T>(objPtr, LogType::Error, errMessage);
 		return condition;
 	}
+
+	using SystemTime = std::chrono::time_point<std::chrono::system_clock>;
+	using LocalTime= std::chrono::zoned_time<std::chrono::system_clock::duration>;
+	LocalTime GetLocalTime(const SystemTime& time);
+	LocalTime GetCurrentTime();
+	std::string FormatTime(const LocalTime& time);
 
 	template <typename EnumType>
 	concept HasBitwiseAnd = requires(EnumType a, EnumType b) {

@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "HelperFunctions.hpp"
 #include "CartesianPosition.hpp"
+#include "ProfilerTimer.hpp"
 
 namespace ECS
 {
@@ -17,6 +18,10 @@ namespace ECS
 
     void PlayerSystem::SystemUpdate(Scene& scene, PlayerData& data, ECS::Entity& entity, const float& deltaTime)
     {
+#ifdef ENABLE_PROFILER
+        ProfilerTimer timer("PlayerSystem::SystemUpdate");
+#endif 
+
         CartesianPosition currentMove = {};
         if (IsKeyPressed(KEY_DOWN)) currentMove.m_Y++;
         if (IsKeyPressed(KEY_UP)) currentMove.m_Y--;

@@ -8,6 +8,7 @@
 #include "TransformSystem.hpp"
 #include "HelperFunctions.hpp"
 #include "PositionConversions.hpp"
+#include "ProfilerTimer.hpp"
 
 namespace ECS
 {
@@ -21,6 +22,10 @@ namespace ECS
 
 	void EntityRendererSystem::SystemUpdate(Scene& scene, const float& deltaTime)
 	{
+#ifdef ENABLE_PROFILER
+		ProfilerTimer timer("EntityRendererSystem::SystemUpdate");
+#endif 
+
 		std::vector<TextBuffer*> affectedLayerBuffers = {};
 		scene.OperateOnComponents<EntityRendererData>(
 			[this, &scene, &affectedLayerBuffers](EntityRendererData& data, ECS::Entity& entity)-> void

@@ -17,6 +17,7 @@
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 #include "ColorGradient.hpp"
+#include "ProfilerTimer.hpp"
 
 namespace ECS
 {
@@ -30,6 +31,10 @@ namespace ECS
 
     void LightSourceSystem::SystemUpdate(Scene& scene, const float& deltaTime)
     {
+#ifdef ENABLE_PROFILER
+        ProfilerTimer timer("LightSourceSystem::SystemUpdate");
+#endif 
+
         //TODO: fixed lighting points should bake their lighting into the buffer rather than have to reapply calculations
         //TODO: SPEEDUP could maybe be lighting that does not change (even if the lighting moves) could be made into lightmap
         //and then could apply lightmap to pixels around it rather than regenerating lighting data
@@ -40,7 +45,7 @@ namespace ECS
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
             {
-                Utils::Log(Utils::LogType::Warning, std::format("Light data for {} is mutated: {}", entity.m_Name, std::to_string(data.m_MutatedThisFrame)));
+                //Utils::Log(Utils::LogType::Warning, std::format("Light data for {} is mutated: {}", entity.m_Name, std::to_string(data.m_MutatedThisFrame)));
 
                 affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_AffectedLayers);
                 if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) 
@@ -52,8 +57,8 @@ namespace ECS
 
                 if (STORE_LIGHT_MAP && !data.m_MutatedThisFrame && !data.m_LightMap.empty())
                 {
-                    Utils::Log(std::format("ALL light positions: {}", 
-                        Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));
+                   /* Utils::Log(std::format("ALL light positions: {}", 
+                        Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));*/
 
                     Array2DPosition globalRowColPos = {};
                     Array2DPosition entityRowColPos = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
