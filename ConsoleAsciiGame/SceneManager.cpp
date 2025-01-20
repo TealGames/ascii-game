@@ -26,7 +26,7 @@ namespace SceneManagement
 		}
 		catch (const std::exception& e)
 		{
-			Utils::Log(Utils::LogType::Error, std::format("Tried to get all scenes at path: {} "
+			Utils::LogError(this, std::format("Tried to get all scenes at path: {} "
 				"but ran into error: {}", allScenesDir.string(), e.what()));
 		}
 	}

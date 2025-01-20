@@ -24,8 +24,6 @@ namespace Core
 	// GLOBAL TODO CHECKLIST
 	//-------------------------------------------------------------------
 	//TODO: maybe make an array version for text buffer (actually this time)
-	//TODO: make a separate TextArray or FragmentedTextArray (textcharpositions) as the base for text buffer and sprite
-	//so they can use the same methods and checking (so it is likely we need to make it array now to improve performance)
 	//TODO: for performance make all members, function params that are const std::string that do not need to be vars (like are just direct times) as const char* (const char[])
 
 	static const std::string SCENES_PATH = "scenes";
@@ -236,7 +234,7 @@ namespace Core
 
 			currentCode = Update();
 #ifdef ENABLE_PROFILER
-			ProfilerTimer::m_Profiler.LogPerformanceTimes();
+			ProfilerTimer::m_Profiler.LogCurrentRoundTimes();
 #endif
 
 			//We do not terminate update if we want to play a few frames

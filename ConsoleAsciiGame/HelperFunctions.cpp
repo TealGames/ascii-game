@@ -12,45 +12,42 @@
 #include "HelperFunctions.hpp"
 #include "StringUtil.hpp"
 
-#ifdef LOG_WX_WIDGETS
-#include <wx/wx.h>
-#endif
-
 namespace Utils
 {
+	inline static const std::string LOG_ONLY_MESSAGE = "";
+	inline static constexpr LogType LOG_MESSAGE_TYPES = LogType::Log | LogType::Error | LogType::Warning;
+	inline constexpr bool LOG_MESSAGES = true;
+
+	inline static const char* ANSI_COLOR_ERROR = "\033[1;31m";
+	inline static const char* ANSI_COLOR_WARNING = "\033[1;33m";
+	inline static const char* ANSI_COLOR_DEFAULT = "\033[1;37m";
+
 	constexpr bool IsCurrentVersion(const CPPVersion& version)
 	{
 		return __cplusplus == static_cast<long>(version);
 	}
 
-	const std::string LOG_ONLY_MESSAGE = "";
-	const std::optional<LogType> LOG_ONLY_TYPE = std::nullopt;
-	const bool LOG_MESSAGES = true;
-
-	static const char* ANSI_COLOR_ERROR = "\033[1;31m";
-	static const char* ANSI_COLOR_WARNING = "\033[1;33m";
-	static const char* ANSI_COLOR_DEFAULT = "\033[1;37m";
-
 	void Log(const LogType& logType, const std::string& str, const bool& logTime)
 	{
 		if (!LOG_MESSAGES) return;
-		if (LOG_ONLY_TYPE.has_value() && logType != LOG_ONLY_TYPE) return;
+		//if ((LOG_MESSAGE_TYPES & logType) != LogType::None) return;
+		if (HasFlagAny(LOG_MESSAGE_TYPES, logType)) return;
 
 		if (!LOG_ONLY_MESSAGE.empty() &&
 			str.substr(0, LOG_ONLY_MESSAGE.size()) != LOG_ONLY_MESSAGE) return;
 
 		std::string logTypeMessage;
 		std::string timeFormatted = "";
-		if (logTime) timeFormatted= std::format("{}[{}{}{}]{}", ANSI_COLOR_DEFAULT, ANSI_COLOR_GRAY, FormatTime(GetCurrentTime()), ANSI_COLOR_DEFAULT, ANSI_COLOR_CLEAR);
+		if (logTime) timeFormatted = std::format("{}[{}{}{}]{}", ANSI_COLOR_DEFAULT, ANSI_COLOR_GRAY, FormatTime(GetCurrentTime()), ANSI_COLOR_DEFAULT, ANSI_COLOR_CLEAR);
 
 		switch (logType)
 		{
 		case LogType::Error:
-			logTypeMessage = std::format("{}[{}!{}] {} {}ERROR:", ANSI_COLOR_DEFAULT, 
+			logTypeMessage = std::format("{}[{}!{}] {} {}ERROR:", ANSI_COLOR_DEFAULT,
 				ANSI_COLOR_ERROR, ANSI_COLOR_DEFAULT, timeFormatted, ANSI_COLOR_ERROR);
 			break;
 		case LogType::Warning:
-			logTypeMessage = std::format("{}[{}!{}] {} {}WARNING:", ANSI_COLOR_DEFAULT, 
+			logTypeMessage = std::format("{}[{}!{}] {} {}WARNING:", ANSI_COLOR_DEFAULT,
 				ANSI_COLOR_WARNING, ANSI_COLOR_DEFAULT, timeFormatted, ANSI_COLOR_WARNING);
 			break;
 		case LogType::Log:
@@ -62,23 +59,27 @@ namespace Utils
 			Log(LogType::Error, errMessage);
 			return;
 		}
-		std::string fullMessage = "\n" + logTypeMessage + str +ANSI_COLOR_CLEAR;
-
-#ifdef LOG_WX_WIDGETS
-		wxLogMessage(fullMessage.c_str());
-#else
+		std::string fullMessage = "\n" + logTypeMessage + str + ANSI_COLOR_CLEAR;
 		std::cout << fullMessage << std::endl;
-#endif
 	}
 
 	void Log(const std::string& str, const bool& logTime)
 	{
 		Log(LogType::Log, str, logTime);
 	}
+	void LogWarning(const std::string& str, const bool& logTime)
+	{
+		Log(LogType::Warning, str, logTime);
+	}
+	void LogError(const std::string& str, const bool& logTime)
+	{
+		Log(LogType::Error, str, logTime);
+	}
+
 
 	bool Assert(const bool condition, const std::string& errMessage)
 	{
-		if (!condition) Utils::Log(LogType::Error, errMessage);
+		if (!condition) LogError(errMessage);
 		return condition;
 	}
 
@@ -107,6 +108,13 @@ namespace Utils
 	void ClearSTDCIN()
 	{
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	}
+
+	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits)
+	{
+		std::ostringstream stream;
+		stream << std::setw(maxDigits) << std::setfill('0') << number;
+		return stream.str();
 	}
 
 	double ToRadians(const double deg)
@@ -264,7 +272,7 @@ namespace Utils
 		{
 			std::string err = std::format("Tried to read file at path {} but it could not be opened",
 				cleanedPath.string());
-			Utils::Log(Utils::LogType::Error, err);
+			Log(Utils::LogType::Error, err);
 			return "";
 		}
 
@@ -287,7 +295,7 @@ namespace Utils
 		{
 			std::string err = std::format("Tried to write {} to file at path {} "
 				"but it could not be opened", content, cleanedPath.string());
-			Utils::Log(Utils::LogType::Error, err);
+			Log(Utils::LogType::Error, err);
 			return;
 		}
 

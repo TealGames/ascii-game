@@ -88,7 +88,7 @@ namespace Utils
 			m_X = newPos.m_X;
 			m_Y = newPos.m_Y;
 		}
-		else return *this;
+		return *this;
 	}
 
 	Point2D& Point2D::operator=(Point2D&& other) noexcept

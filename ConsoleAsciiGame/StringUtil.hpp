@@ -10,6 +10,7 @@ namespace Utils {
 		StringUtil& Trim();
 		StringUtil& ToLowerCase();
 		StringUtil& RemoveChar(const char& c);
+		StringUtil& ReplaceAll(const char& oldChar, const char& newChar);
 
 		std::string ToString();
 		explicit operator std::string();

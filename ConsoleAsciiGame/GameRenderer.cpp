@@ -4,9 +4,9 @@
 
 #include "GameRenderer.hpp"
 #include "TextBuffer.hpp"
-//#include "Globals.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
+#include "ProfilerTimer.hpp"
 
 namespace Rendering
 {
@@ -14,6 +14,10 @@ namespace Rendering
 
     void RenderBuffer(const TextBuffer& buffer, const RenderInfo& renderInfo)
     {
+#ifdef ENABLE_PROFILER
+        ProfilerTimer timer("GameRenderer::RenderBuffer");
+#endif 
+
         //Utils::Log(std::format("Rendering buffer: {}", buffer.ToString()));
         if (!Utils::Assert(buffer.GetWidth() != 0 && buffer.GetHeight() != 0,
             std::format("Tried to render a buffer with GameRenderer that has width and/or height of 0")))

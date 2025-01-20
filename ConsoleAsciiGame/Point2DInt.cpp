@@ -52,7 +52,7 @@ namespace Utils
 		{
 			std::string message = std::format("Tried to divide Position {} "
 				"by a pointer with 0 {}", ToString(), otherPos.ToString());
-			Utils::Log(Utils::LogType::Error, message);
+			Utils::LogError(this, message);
 			return {};
 		}
 
@@ -64,7 +64,7 @@ namespace Utils
 		if (factor == 0)
 		{
 			std::string message = std::format("Tried to divide Position {} by factor of 0", ToString());
-			Utils::Log(Utils::LogType::Error, message);
+			Utils::LogError(this, message);
 			return {};
 		}
 

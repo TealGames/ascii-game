@@ -13,6 +13,10 @@
 
 namespace Utils
 {
+	inline const char* ANSI_COLOR_GRAY = "\033[1;90m";
+	inline const char* ANSI_COLOR_GREEN = "\033[1;32m";
+	inline const char* ANSI_COLOR_CLEAR = "\033[0m";
+
 	enum class CPPVersion : long
 	{
 		CPP11 = 201103L,
@@ -56,37 +60,106 @@ namespace Utils
 		static constexpr bool VALUE = type::value;
 	};
 
-	enum class LogType
+	using LogTypeIntegralType = std::uint8_t;
+	enum class LogType : LogTypeIntegralType
 	{
-		Error,
-		Warning,
-		Log,
+		None = 0,
+		Error= 1<<0,
+		Warning= 1<<1,
+		Log= 1<<2,
 	};
 
-	inline const char* ANSI_COLOR_GRAY = "\033[1;90m";
-	inline const char* ANSI_COLOR_GREEN = "\033[1;32m";
-	inline const char* ANSI_COLOR_CLEAR = "\033[0m";
+	constexpr LogType operator&(const LogType& lhs, const LogType& rhs)
+	{
+		return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
+			& static_cast<LogTypeIntegralType>(rhs));
+	}
+	constexpr LogType& operator&=(LogType& lhs, const LogType& rhs)
+	{
+		lhs = lhs & rhs;
+		return lhs;
+	}
+	constexpr LogType operator|(const LogType& lhs, const LogType& rhs)
+	{
+		return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
+			| static_cast<LogTypeIntegralType>(rhs));
+	}
+	constexpr LogType& operator|=(LogType& lhs, const LogType& rhs)
+	{
+		lhs = lhs | rhs;
+		return lhs;
+	}
 
-	void Log(const LogType& logType, const std::string& str, const bool& logTime = true);
+	inline static constexpr bool DEFAULT_LOG_TIME = true;
+	void Log(const LogType& logType, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
 
 	/// <summary>
-	/// Logs a message as a default LOG type
-	/// </summary>
-	/// <param name="str"></param>
-	void Log(const std::string& str, const bool& logTime = true);
-
-	/// <summary>
-	/// The same Log action but also logs the class
+	/// Achieves the same as defualt log but also includes the class that called it
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
 	/// <param name="objPtr"></param>
 	/// <param name="logType"></param>
 	/// <param name="str"></param>
 	template<typename T>
-	void Log(const T* const objPtr, const LogType& logType, const std::string& str, const bool& logTime = true)
+	void Log(const T* const objPtr, const LogType& logType, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
 	{
-		Log(logType, std::format("{}: {}", typeid(T).name(), str), logTime);
+		Log(logType, std::format("{}: {}", objPtr != nullptr ? typeid(T).name() : "", str), logTime);
 	}
+	
+	/// <summary>
+	/// Logs a message as a default LOG type
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
+	/// <param name="objPtr"></param>
+	/// <param name="str"></param>
+	/// <param name="logTime"></param>
+	template<typename T>
+	void Log(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
+	{
+		Log<T>(objPtr, LogType, str, logTime);
+	}
+	/// <summary>
+	/// Logs a message as a default LOG type
+	/// </summary>
+	/// <param name="str"></param>
+	/// <param name="logTime"></param>
+	void Log(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
+
+	/// <summary>
+	/// Logs a message as a WARNING type
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
+	/// <param name="objPtr"></param>
+	/// <param name="str"></param>
+	/// <param name="logTime"></param>
+	template<typename T>
+	void LogWarning(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
+	{
+		Log<T>(objPtr, LogType::Warning, str, logTime);
+	}
+	/// <summary>
+	/// Logs a message as a WARNING type
+	/// </summary>
+	/// <param name="str"></param>
+	/// <param name="logTime"></param>
+	void LogWarning(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
+
+	/// <summary>
+	/// Logs a message as an ERROR type
+	/// </summary>
+	/// <param name="str"></param>
+	/// <param name="logTime"></param>
+	template<typename T>
+	void LogError(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
+	{
+		Log<T>(objPtr, LogType::Error, str, logTime);
+	}
+	/// <summary>
+	/// Logs a message as an ERROR type
+	/// </summary>
+	/// <param name="str"></param>
+	/// <param name="logTime"></param>
+	void LogError(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
 
 	/// <summary>
 	/// If condition is false will log error and return false, othersise return true and does nothing
@@ -96,7 +169,7 @@ namespace Utils
 	template<typename T>
 	bool Assert(const T* const objPtr, const bool condition, const std::string& errMessage)
 	{
-		if (!condition) Utils::Log<T>(objPtr, LogType::Error, errMessage);
+		if (!condition) Utils::LogError<T>(objPtr, errMessage);
 		return condition;
 	}
 
@@ -127,7 +200,7 @@ namespace Utils
 	constexpr bool HasFlagAny(const EnumType& enumBits, const CheckFlagType&... checkFlags)
 	{
 		EnumType flagsCombined = (checkFlags | ...);
-		return enumBits & flagsCombined != static_cast<EnumType>(0);
+		return (enumBits & flagsCombined) != static_cast<EnumType>(0);
 	}
 
 	template<typename EnumType, typename... CheckFlagType>
@@ -137,7 +210,7 @@ namespace Utils
 	constexpr bool HasFlagAll (const EnumType& enumBits, const CheckFlagType&... checkFlags)
 	{
 		EnumType flagsCombined = (checkFlags | ...);
-		return enumBits & flagsCombined == flagsCombined;
+		return (enumBits & flagsCombined) == flagsCombined;
 	}
 
 	//TODO: make a function that can return the type that exists in a variant
@@ -318,6 +391,7 @@ namespace Utils
 	std::string ToString(const char& c);
 	std::string ToStringDouble(const double& d, const std::streamsize& precision);
 
+	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits);
 	void ClearSTDCIN();
 
 	/// <summary>

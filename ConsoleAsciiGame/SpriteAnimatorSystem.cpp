@@ -37,7 +37,6 @@ namespace ECS
 		if (!Utils::Assert(this, renderer != nullptr, std::format("Tried to set the visual on sprite animator for entity: {} "
 			"but it does not have entity renderer component", entity.m_Name))) return;
 
-		Utils::Log(Utils::LogType::Warning, "UPDATING SPERITE ANIAMTOR VISUAL");
 		m_EntityRenderer.SetVisualData(*renderer, positions);
 		renderer->m_MutatedThisFrame = true;
 	}
