@@ -4,8 +4,15 @@
 #include <filesystem>
 #include <fstream>
 #include "StringUtil.hpp"
+#include <cmath>
+#include "plplot/plstream.h"
+#include "plplot/plplot.h"
 
 static constexpr bool WRITE_TO_FILE = true;
+static constexpr bool DISPLAY_ALL_ROUTINE_GRAPHS = true;
+static constexpr std::uint16_t MAX_GRAPH_POINTS = 1000;
+
+static const std::string DISPLAY_GRAPH_ROUTINE_NAME = "LightSourceSystem::SystemUpdate";
 static const std::filesystem::path OUT_FILE_PATH = "profileroutput";
 static constexpr std::streamsize PROCESS_TIME_PRECISION = 6;
 
@@ -20,7 +27,6 @@ std::string ProfilerProcess::ToString(const bool& addProcessNumber, const bool& 
 	int spaceSize = std::max(
 		static_cast<int>(MAX_CHARS_BEFORE_PROCEDURE_TIME - nonTimeSegment.size()), 0);
 
-	Utils::LogError(std::format("LINE SPACE IS: {}", std::to_string(spaceSize)));
 	return std::format("{}{}{}", nonTimeSegment,
 		std::string(spaceSize, ' '), GetFormattedTime(m_MicrosecondsTime));
 }
@@ -93,8 +99,134 @@ Profiler::~Profiler()
 	if (!Utils::Assert(this, outStream.is_open(), std::format("Tried to open a file at path: {} "
 		"for writing to output profiler data but something went wrong", fullOutPath.string()))) return;
 
+	std::string url = EncodeGraphInDesmosURL(GraphColor::Green,
+				Utils::GetValuesFromMap<std::string, ProfilerRoutineSummary>(
+				m_profilerSummary.m_RoutineSummaries.begin(), m_profilerSummary.m_RoutineSummaries.end()));
+	data += std::format("\n\nMapped Data (DESMOS url): {}", url);
+
 	outStream << data << std::endl;
 	outStream.close();
+
+	//TODO: graphs are OK at the moment, but hard to reacd for all graphs in one and also 
+	//no zooming, panning, accessiblity features
+	//CHECK out PLOTLY for C++ (will require you to integrate Python code)
+	if (DISPLAY_ALL_ROUTINE_GRAPHS)
+	{
+		ProfilerProcess slowestProcess = m_profilerSummary.m_SlowestProcess.value_or(ProfilerProcess{});
+		float slowestTime = slowestProcess.m_MicrosecondsTime;
+
+		plstream* stream = CreatePLPlotGraph(m_roundNumber, slowestTime, "ALL ROUTINE TIMES");
+		GraphColorIntegralType graphColorValue = 0;
+		for (const auto& routine : m_profilerSummary.m_RoutineSummaries)
+		{
+			graphColorValue++;
+			AddPLPlotRoutine(*stream, static_cast<GraphColor>(graphColorValue), routine.first, routine.second);
+		}
+		delete stream;
+	}
+	else if (!DISPLAY_GRAPH_ROUTINE_NAME.empty())
+	{
+		auto graphDisplayRoutineIt = m_profilerSummary.m_RoutineSummaries.find(DISPLAY_GRAPH_ROUTINE_NAME);
+		if (!Utils::Assert(this, graphDisplayRoutineIt != m_profilerSummary.m_RoutineSummaries.end(), 
+			std::format("Tried to display a graph in profiler for routine: {} "
+			"but a routine of that name could not be found", DISPLAY_GRAPH_ROUTINE_NAME))) return;
+
+		plstream* stream = CreatePLPlotGraph(m_roundNumber, graphDisplayRoutineIt->second.m_SlowestTime, 
+			std::format("\"{}\" Routine Times", DISPLAY_GRAPH_ROUTINE_NAME).c_str());
+
+		AddPLPlotRoutine(*stream, GraphColor::Red, graphDisplayRoutineIt->first, graphDisplayRoutineIt->second);
+		delete stream;
+	}
+}
+
+plstream* Profiler::CreatePLPlotGraph(const double& roundMax, const double& timeMax, const char* name)
+{
+	plstream* stream = new plstream();
+
+	plsdev("wingcc");
+	stream->init();
+	stream->env(0.0, roundMax, 0, timeMax, 0, 0);
+	stream->lab("FRAME #", "TIME (microseconds)", name);
+
+	return stream;
+}
+
+void Profiler::AddPLPlotRoutine(plstream& stream, const GraphColor& color, const std::string& routineName, const ProfilerRoutineSummary& graphDisplayRoutine)
+{
+	PLFLT x[MAX_GRAPH_POINTS], y[MAX_GRAPH_POINTS];
+
+	//TODO: instead of having to go throguh each time maybe instead the memeber itself should be the PLFLT buffer
+	for (int i = 0; i < MAX_GRAPH_POINTS && i < graphDisplayRoutine.m_RoundTimes.size(); i++)
+	{
+		x[i] = graphDisplayRoutine.m_RoundTimes[i].m_Round;
+		y[i] = graphDisplayRoutine.m_RoundTimes[i].m_MicrosecondsTim;
+	}
+	
+	PLINT graphColorIndex = static_cast<GraphColorIntegralType>(color);
+	stream.col0(graphColorIndex);
+	stream.line(MAX_GRAPH_POINTS, x, y);
+	PLFLT width = 10;
+	PLFLT height = 10;
+	const char* title = routineName.c_str();
+	//TODO: add a legend, however the real args are really long and shitty api
+	/*
+	* (PLFLT * p_legend_width, PLFLT * p_legend_height,
+		PLINT opt, PLINT position, PLFLT x, PLFLT y, PLFLT plot_width,
+		PLINT bg_color, PLINT bb_color, PLINT bb_style,
+		PLINT nrow, PLINT ncolumn,
+		PLINT nlegend, const PLINT * opt_array,
+		PLFLT text_offset, PLFLT text_scale, PLFLT text_spacing,
+		PLFLT text_justification,
+		const PLINT * text_colors, const char* const* text,
+		const PLINT * box_colors, const PLINT * box_patterns,
+		const PLFLT * box_scales, const PLFLT * box_line_widths,
+		const PLINT * line_colors, const PLINT * line_styles,
+		const PLFLT * line_widths,
+		const PLINT * symbol_colors, const PLFLT * symbol_scales,
+		const PLINT * symbol_numbers, const char* const* symbols
+
+		stream.legend(
+		&width, &height, 0, 0, 0, 0, width,
+		0, 0, 0, 1, 1, 1, nullptr,
+		0, 1, 0, 0,
+		&graphColorIndex, &title,
+		nullptr, nullptr, nullptr, nullptr, nullptr,
+		nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+	*/
+}
+
+std::string Profiler::EncodeGraphInDesmosURL(const GraphColor& color, const std::vector<ProfilerRoutineSummary>& summaries)
+{
+	std::string exp = "";
+
+	std::string encodedX = "";
+	std::string encodedY = "";
+
+	const std::string columnStart = "{\"type\":\"column\",\"values\":[";
+	const std::string columnEnd = "],\"color\":\"#c74440\"}";
+	for (int i=0; i<summaries.size(); i++)
+	{
+		if (i != 0) exp += ",";
+
+		encodedX = columnStart;
+		encodedY = columnStart;
+		const ProfilerRoutineSummary& summary = summaries[i];
+		for (int j=0; j< summary.m_RoundTimes.size(); j++)
+		{
+			if (j != 0)
+			{
+				encodedX += ",";
+				encodedY += ",";
+			}
+			encodedX += std::to_string(summary.m_RoundTimes[j].m_Round);
+			encodedY += std::to_string(summary.m_RoundTimes[j].m_MicrosecondsTim);
+		}
+		encodedX += columnEnd;
+		encodedY += columnEnd;
+		exp += "{\"type\":\"table\",\"id\":\"1\",\"columns\":[" + encodedX + "," + encodedY + "]}";
+	}
+
+	return "https://www.desmos.com/calculator?expressions=[" + exp + "]";
 }
 
 ProcessCollectionType::iterator Profiler::TryGetProcessIterator(const std::string& processName)
@@ -132,6 +264,12 @@ void Profiler::UpdateProfilerSummary(const ProfilerProcess& process)
 		summaryIt = m_profilerSummary.m_RoutineSummaries.find(process.m_ProcessName);
 	}
 
+	//To not waste extra space we do not add unneeded times
+	if (DISPLAY_ALL_ROUTINE_GRAPHS || process.m_ProcessName == DISPLAY_GRAPH_ROUTINE_NAME)
+	{
+		summaryIt->second.m_RoundTimes.emplace_back(m_roundNumber, process.m_MicrosecondsTime);
+	}
+		
 	ProfilerRoutineSummary& routine = summaryIt->second;
 	if (process.m_MicrosecondsTime > routine.m_SlowestTime)
 	{

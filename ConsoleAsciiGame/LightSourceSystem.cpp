@@ -46,11 +46,11 @@ namespace ECS
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
             {
                 //Utils::Log(Utils::LogType::Warning, std::format("Light data for {} is mutated: {}", entity.m_Name, std::to_string(data.m_MutatedThisFrame)));
-
                 affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_AffectedLayers);
                 if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) 
                     && !data.m_LastFrameData.empty())
                 {
+                    Utils::LogWarning("LIGHT SOURCE READING LAST FRAME DATA");
                     scene.SetLayers(data.m_AffectedLayers, data.m_LastFrameData);
                     return;
                 }
@@ -59,12 +59,16 @@ namespace ECS
                 {
                    /* Utils::Log(std::format("ALL light positions: {}", 
                         Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));*/
-
+                    Utils::LogWarning("LIGHT SOURCE CALCULATING FROM LIGHT MAP");
                     Array2DPosition globalRowColPos = {};
                     Array2DPosition entityRowColPos = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
                     Color newColor = {};
-                    for (const auto& buffer : affectedLayerBuffers)
+
+                    //if (CACHE_LAST_BUFFER && !data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
+                    int frameDataIndex = 0;
+                    for (int i=0; i<affectedLayerBuffers.size(); i++)
                     {
+                        const auto& buffer = affectedLayerBuffers[i];
                         for (const auto& lightMapChar : data.m_LightMap)
                         {
                             globalRowColPos = entityRowColPos + Conversions::CartesianToArray(lightMapChar.m_RelativePos);
@@ -81,13 +85,23 @@ namespace ECS
                                 RaylibUtils::ToString(buffer->GetAtUnsafe(globalRowColPos).m_Color), std::to_string(lightMapChar.m_ColorFactor),
                                 RaylibUtils::ToString(newColor)));
                             buffer->SetAt(globalRowColPos, newColor);
+
+                            //We only need to do one buffer since it will be the same map for all buffers
+                            if (CACHE_LAST_BUFFER && i==0)
+                            {
+                                if (frameDataIndex < data.m_LastFrameData.size()) 
+                                    data.m_LastFrameData[frameDataIndex] = TextCharPosition{ globalRowColPos, buffer->GetAtUnsafe(globalRowColPos) };
+                                else data.m_LastFrameData.emplace_back(globalRowColPos, buffer->GetAtUnsafe(globalRowColPos));
+                                //data.m_LastFrameData[index] = TextCharPosition({}, TextChar());
+                                frameDataIndex++;
+                            }
                         }
                     }
                     return;
                 }
 
                 scene.IncreaseFrameDirtyComponentCount();
-                if (!data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
+                if (CACHE_LAST_BUFFER && !data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
                 RenderLight(data, entity, affectedLayerBuffers);
                 data.m_MutatedThisFrame = false;
                 //std::cout << "Rendering lgiht" << std::endl;
@@ -213,7 +227,10 @@ namespace ECS
                 }
 
                 if (CACHE_LAST_BUFFER)
-                    data.m_LastFrameData.push_back(TextCharPosition{ bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char} });
+                {
+                    Utils::LogWarning("Updating last frame data");
+                    data.m_LastFrameData.emplace_back(bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char});
+                }  
             }
         }
     }

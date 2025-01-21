@@ -31,7 +31,7 @@ namespace Utils
 	{
 		if (!LOG_MESSAGES) return;
 		//if ((LOG_MESSAGE_TYPES & logType) != LogType::None) return;
-		if (HasFlagAny(LOG_MESSAGE_TYPES, logType)) return;
+		if (!HasFlagAny(LOG_MESSAGE_TYPES, logType)) return;
 
 		if (!LOG_ONLY_MESSAGE.empty() &&
 			str.substr(0, LOG_ONLY_MESSAGE.size()) != LOG_ONLY_MESSAGE) return;

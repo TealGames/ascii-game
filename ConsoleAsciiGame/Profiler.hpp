@@ -1,6 +1,7 @@
 #pragma once
 #include "Timer.hpp"
 #include <string>
+#include <cstdint>
 #include <unordered_map>
 #include <cstdint>
 #include <optional>
@@ -22,8 +23,15 @@ struct ProfilerProcess
 	std::string ToString(const bool& addProcessNumber, const bool& addExtraSpacesBeforeTime=true) const;
 };
 
+struct RoundTime
+{
+	ProcessRoundIntegralType m_Round = 0;
+	float m_MicrosecondsTim = 0;
+};
+
 struct ProfilerRoutineSummary
 {
+	std::vector<RoundTime> m_RoundTimes;
 	ProcessRoundIntegralType m_TotalProcesses = 0;
 
 	float m_SlowestTime = 0;
@@ -45,6 +53,21 @@ struct ProfilerSummary
 
 std::string GetFormattedTime(const float& usTime);
 
+using GraphColorIntegralType = std::uint8_t;
+enum class GraphColor : GraphColorIntegralType
+{
+	None = 0,
+	Black= 1,
+	Red= 2,
+	Green= 3,
+	Blue= 4,
+	Yellow= 5,
+	Magenta= 6,
+	Cyan= 7,
+	White= 8
+};
+
+class plstream;
 using ProcessCollectionType = std::unordered_map<std::string, ProfilerProcess>; 
 class Profiler
 {
@@ -67,6 +90,11 @@ private:
 	ProcessCollectionType::iterator TryGetProcessIterator(const std::string& processName);
 	void UpdateProfilerSummary(const ProfilerProcess& process);
 	std::string FormatRound(const ProcessRoundIntegralType& roundNumber);
+	plstream* CreatePLPlotGraph(const double& roundMax, const double& timeMax, const char* name);
+	void AddPLPlotRoutine(plstream& stream, const GraphColor& color, 
+		const std::string& routineName, const ProfilerRoutineSummary& summary);
+
+	std::string EncodeGraphInDesmosURL(const GraphColor& color, const std::vector<ProfilerRoutineSummary>& summary);
 
 public:
 	Profiler();
