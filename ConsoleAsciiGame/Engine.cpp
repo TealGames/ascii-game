@@ -25,6 +25,7 @@ namespace Core
 	//-------------------------------------------------------------------
 	//TODO: maybe make an array version for text buffer (actually this time)
 	//TODO: for performance make all members, function params that are const std::string that do not need to be vars (like are just direct times) as const char* (const char[])
+	//TODO: add vector class instead of point (can just rename
 
 	static const std::string SCENES_PATH = "scenes";
 	static constexpr std::uint8_t TARGET_FPS = 60;

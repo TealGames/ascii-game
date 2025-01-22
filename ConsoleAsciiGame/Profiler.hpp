@@ -7,7 +7,7 @@
 #include <optional>
 #include "Timer.hpp"
 
-#define ENABLE_PROFILER
+//#define ENABLE_PROFILER
 
 //PROCESS is a single execution of some code 
 //ROUTINE is a PROCESS that repeats multiple times

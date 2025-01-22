@@ -9,7 +9,7 @@
 #include "plplot/plplot.h"
 
 static constexpr bool WRITE_TO_FILE = true;
-static constexpr bool DISPLAY_ALL_ROUTINE_GRAPHS = true;
+static constexpr bool DISPLAY_ALL_ROUTINE_GRAPHS = false;
 static constexpr std::uint16_t MAX_GRAPH_POINTS = 1000;
 
 static const std::string DISPLAY_GRAPH_ROUTINE_NAME = "LightSourceSystem::SystemUpdate";

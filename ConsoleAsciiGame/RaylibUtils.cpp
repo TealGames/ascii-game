@@ -80,4 +80,9 @@ namespace RaylibUtils
 		return color1.r == color2.r && color1.g == color2.g && 
 			color1.b == color2.b && color1.a == color2.a;
 	}
+
+	void DrawFPSCounter()
+	{
+		DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
+	}
 }

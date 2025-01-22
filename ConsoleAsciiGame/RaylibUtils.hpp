@@ -22,8 +22,10 @@ namespace RaylibUtils
 	Color GetColorFromPoint(const Utils::Point4D& rgba);
 	Color GetColorFromPoint(const Utils::Point3D& rgb);
 
-	Color GetColorFromHex(const unsigned int& hexNumber);
+	Color GetColorFromHex(const std::uint32_t& hexNumber);
 
 	bool ColorEqual(const Color& color1, const Color& color2);
+
+	void DrawFPSCounter();
 }
 

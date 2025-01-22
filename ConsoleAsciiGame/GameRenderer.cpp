@@ -7,6 +7,7 @@
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 #include "ProfilerTimer.hpp"
+#include "RaylibUtils.hpp"
 
 namespace Rendering
 {
@@ -26,7 +27,8 @@ namespace Rendering
         BeginDrawing();
 
         ClearBackground(BLACK);
-        DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
+        RaylibUtils::DrawFPSCounter();
+       /* DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);*/
         if (DONT_RENDER_NON_UTILS)
         {
             EndDrawing();
