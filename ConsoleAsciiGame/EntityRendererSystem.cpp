@@ -14,8 +14,7 @@ namespace ECS
 {
 	static constexpr bool CACHE_LAST_BUFFER = true;
 
-	EntityRendererSystem::EntityRendererSystem(const TransformSystem& transform) : 
-		m_transformSystem(transform)
+	EntityRendererSystem::EntityRendererSystem()
 	{
 		
 	}
@@ -31,7 +30,7 @@ namespace ECS
 			[this, &scene, &affectedLayerBuffers](EntityRendererData& data, ECS::Entity& entity)-> void
 			{
 				//Utils::Log(std::format("Player is at pos: {}", entity.m_Transform.m_Pos.ToString()));
-				affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_RenderLayers);
+				affectedLayerBuffers = scene.GetTextBuffersMutable(data.GetRenderLayers());
 				//Utils::Log(std::format("RENDER LAYERS: {}", std::to_string(affectedLayerBuffers.size())));
 
 				//Utils::Log(std::format("Moved this frame: {}", std::to_string(m_transformSystem.HasMovedThisFrame(entity.m_Transform))));
@@ -39,7 +38,7 @@ namespace ECS
 				if (!Utils::Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
 					"but entity's render data: {} has no render layers", entity.m_Name))) return;
 
-				if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !m_transformSystem.HasMovedThisFrame(entity.m_Transform) && 
+				if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !entity.m_Transform.HasMovedThisFrame() &&
 					!data.m_LastFrameVisualData.empty())
 				{
 					for (auto& buffer : affectedLayerBuffers)
@@ -80,7 +79,7 @@ namespace ECS
 
 	const std::vector<std::vector<TextChar>>& EntityRendererSystem::GetVisualData(const EntityRendererData& data) const
 	{
-		return data.m_VisualData.GetFull();
+		return data.GetVisualData().GetFull();
 	}
 
 	std::string EntityRendererSystem::GetVisualString(const EntityRendererData& data) const
@@ -110,8 +109,8 @@ namespace ECS
 		Array2DPosition centerBottom = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
 
 		Array2DPosition bufferPos = {};
-		bufferPos.SetRow(centerBottom.GetRow() - data.m_VisualBoundsSize.m_X + 1 + relativeVisualPos.GetRow());
-		bufferPos.SetCol(centerBottom.GetCol() - (data.m_VisualBoundsSize.m_Y / 2) + relativeVisualPos.GetCol());
+		bufferPos.SetRow(centerBottom.GetRow() - data.GetVisualBoundsSize().m_X + 1 + relativeVisualPos.GetRow());
+		bufferPos.SetCol(centerBottom.GetCol() - (data.GetVisualBoundsSize().m_Y / 2) + relativeVisualPos.GetCol());
 		return bufferPos;
 	}
 

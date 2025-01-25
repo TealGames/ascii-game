@@ -18,9 +18,10 @@
 #include "TransformData.hpp"
 #include "GlobalEntityManager.hpp"
 #include "HelperFunctions.hpp"
+#include "PhysicsWorld.hpp"
 
 using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
-constexpr std::uint8_t MAX_ENTITIES = 20;
+constexpr std::uint8_t MAX_ENTITIES = 100;
 class Scene 
 {
 private:
@@ -47,6 +48,11 @@ private:
 	//EntityCollection& m_globalEntityLookup;
 
 	int m_currentFrameDirtyComponents;
+
+	//TODO: right now the physics world does not really help us since it just stores physics bodies
+	//which we can retrieve from scene. This should be used to provide an effective and efficient traversal
+	//of data for physics simulations to really be useful
+	Physics::PhysicsWorld m_PhysicsWorld;
 
 public:
 	const std::string& m_SceneName;
@@ -97,6 +103,11 @@ public:
 	ECS::Entity* TryGetMainCameraEntity();
 	CameraData* TryGetMainCameraData();
 
+	void InitPhysicsWorld();
+	const Physics::PhysicsWorld& GetPhysicsWorld() const;
+	Physics::PhysicsWorld& GetPhysicsWorldMutable();
+
+
 	/// <summary>
 	/// Will return the total number of entities in the scene, including local and 
 	/// scene entities and global entities
@@ -106,6 +117,7 @@ public:
 	bool HasEntities() const;
 	
 	ECS::Entity& CreateEntity(const std::string& name, TransformData& transform);
+	ECS::Entity& CreateEntity(const std::string& name, TransformData&& transform);
 	bool HasEntity(const ECS::EntityID& id);
 	ECS::Entity* TryGetEntity(const ECS::EntityID& id);
 

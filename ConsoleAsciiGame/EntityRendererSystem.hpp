@@ -22,7 +22,7 @@ namespace ECS
 	class EntityRendererSystem : MultiBodySystem
 	{
 	private:
-		TransformSystem m_transformSystem;
+		//TransformSystem m_transformSystem;
 
 	public:
 
@@ -30,7 +30,7 @@ namespace ECS
 		void RenderInBuffer(TextBuffer& buffer, EntityRendererData& data, const Entity& entity);
 
 	public:
-		EntityRendererSystem(const TransformSystem& transform);
+		EntityRendererSystem();
 
 		Array2DPosition GetGlobalVisualPos(const Array2DPosition& relativeVisualPos,
 			const EntityRendererData& data, const Entity& entity) const;

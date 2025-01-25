@@ -116,7 +116,7 @@ namespace Utils
 	template<typename T>
 	void Log(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
 	{
-		Log<T>(objPtr, LogType, str, logTime);
+		Log<T>(objPtr, LogType::Log, str, logTime);
 	}
 	/// <summary>
 	/// Logs a message as a default LOG type
@@ -190,8 +190,17 @@ namespace Utils
 	template <typename T, typename... Args>
 	concept AllSameType = (std::is_same_v<T, Args> && ...);
 
+	template<typename BaseType, typename... Args>
+	concept AllSameBaseType = (std::is_base_of_v< BaseType, Args> && ...);
+
 	template<typename... Args>
 	concept HasAtLeastOneArg = sizeof...(Args) >= 1;
+
+	template <typename T>
+	struct ToPointerType
+	{
+		using Type = T*;
+	};
 
 	template<typename EnumType, typename... CheckFlagType>
 	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>>

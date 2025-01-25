@@ -28,6 +28,7 @@ namespace ECS
 		uint8_t LightLevel;
 	};*/
 
+
 	enum class LightShape
 	{
 		Circle,
@@ -36,7 +37,6 @@ namespace ECS
 	class LightSourceSystem : MultiBodySystem
 	{
 	private:
-		TransformSystem m_transformSystem;
 		EntityRendererSystem m_rendererSystem;
 
 	public:
@@ -60,13 +60,13 @@ namespace ECS
 		/// <returns></returns>
 		Color ApplyColorFilter(const Color& originalColor, const Utils::Point3D& fractionalColor, const float& multiplier) const;
 
-		void CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity, const CartesianPosition& centerPos,
+		void CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity, const CartesianGridPosition& centerPos,
 			TextBuffer& buffer, bool displayLightLevels);
 
 		void RenderLight(LightSourceData& data, ECS::Entity& entity, std::vector<TextBuffer*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
-		Color CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, const TextBuffer& buffer, const CartesianPosition& currentPos,
-			const CartesianPosition& centerPos, std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
+		Color CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, const TextBuffer& buffer, const CartesianGridPosition& currentPos,
+			const CartesianGridPosition& centerPos, std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:
 		/// <summary>
@@ -80,7 +80,7 @@ namespace ECS
 		/// <param name="initialLightLevel">The light level that is present at the object's center/transform position</param>
 		/// <param name="falloffValue">THe rate that the light will fade away where <1 creates more logarithmic curves, 
 		//=1 creates linear and >1 creates exponential decay</param>
-		LightSourceSystem(const TransformSystem& transform, const EntityRendererSystem& renderer);
+		LightSourceSystem(const EntityRendererSystem& renderer);
 
 		void SystemUpdate(Scene& scene, const float& deltaTime) override;
 	};

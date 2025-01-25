@@ -19,7 +19,8 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	m_localEntities(), //m_globalEntityLookup(globalEntities),
 	m_currentFrameDirtyComponents(0), m_entityMapper(),
 	m_mainCamera(nullptr), 
-	m_globalEntities(globalEntities), m_GlobalEntities(m_globalEntities)
+	m_globalEntities(globalEntities), m_GlobalEntities(m_globalEntities),
+	m_PhysicsWorld()
 {
 	if (!Utils::Assert(std::filesystem::exists(scenePath), std::format("Tried to create a scene at path: {} "
 		"but that path does not exist", scenePath.string()))) 
@@ -271,6 +272,17 @@ ECS::Entity& Scene::CreateEntity(const std::string& name, TransformData& transfo
 {
 	m_localEntities.emplace_back(name, m_entityMapper, transform);
 	m_localEntityLookup.emplace(m_localEntities.back().m_Id, &(m_localEntities.back()));
+	m_localEntities.back().m_Transform.m_Entity = &(m_localEntities.back());
+
+	return m_localEntities.back();
+}
+
+ECS::Entity& Scene::CreateEntity(const std::string& name, TransformData&& transform)
+{
+	m_localEntities.emplace_back(name, m_entityMapper, std::move(transform));
+	m_localEntityLookup.emplace(m_localEntities.back().m_Id, &(m_localEntities.back()));
+	m_localEntities.back().m_Transform.m_Entity = &(m_localEntities.back());
+
 	return m_localEntities.back();
 }
 
@@ -337,4 +349,33 @@ int Scene::GetDirtyComponentCount() const
 bool Scene::HasDirtyComponents() const
 {
 	return GetDirtyComponentCount() > 0;
+}
+
+void Scene::InitPhysicsWorld()
+{
+	for (auto& entity : m_localEntities)
+	{
+		if (PhysicsBodyData* maybeBody = entity.TryGetComponent<PhysicsBodyData>())
+		{
+			m_PhysicsWorld.AddBody(*maybeBody);
+		}
+	}
+
+	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
+	{
+		if (PhysicsBodyData* maybeBody = entity.TryGetComponent<PhysicsBodyData>())
+		{
+			m_PhysicsWorld.AddBody(*maybeBody);
+		}
+	}
+}
+
+const Physics::PhysicsWorld& Scene::GetPhysicsWorld() const
+{
+	return m_PhysicsWorld;
+}
+
+Physics::PhysicsWorld& Scene::GetPhysicsWorldMutable()
+{
+	return m_PhysicsWorld;
 }

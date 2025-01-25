@@ -1,14 +1,16 @@
 #pragma once
 #include <optional>
 #include "CameraSettings.hpp"
-#include "TextBuffer.hpp"
 #include "ComponentData.hpp"
+#include "TextBuffer.hpp"
 
-struct CameraData : public ComponentData
+class CameraData : public ComponentData
 {
+public:
 	CameraSettings m_CameraSettings;
 	std::optional<TextBuffer> m_LastFrameBuffer;
 
+public:
 	CameraData();
 	CameraData(const CameraSettings& cameraSettings);
 };

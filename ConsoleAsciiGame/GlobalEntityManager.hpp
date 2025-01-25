@@ -49,7 +49,6 @@ public:
 	bool IsValidIterator(const EntityIDCollection::const_iterator& iterator) const;
 	bool IsValidIterator(const EntityNameCollection::const_iterator& iterator) const;
 
-
 	bool HasGlobalEntity(const ECS::EntityID& id) const;
 	bool HasGlobalEntity(const std::string& name) const;
 	
@@ -61,6 +60,9 @@ public:
 	const ECS::Entity* TryGetGlobalEntity(const ECS::EntityID& id) const;
 	const ECS::Entity* TryGetGlobalEntity(const std::string& name) const;
 
+	const std::vector<ECS::Entity>& GetAllGlobalEntities() const;
+	std::vector<ECS::Entity>& GetAllGlobalEntitiesMutable();
+
 	/*template<typename T>
 	std::vector<T*> TryGetComponentsOfType(const ComponentType& type, 
 		const std::function<void(T*, const EntityID&)>& action = nullptr)
@@ -68,7 +70,7 @@ public:
 		return m_globalEntityMapper.TryGetComponentsOfType<T>(type, action);
 	}*/
 
-	template<typename T>
+	/*template<typename T>
 	bool AddComponent(ECS::Entity& entity, const T& component)
 	{
 		return entity.AddComponent<T>(component);
@@ -94,7 +96,7 @@ public:
 			typeid(T).name(), name))) return false;
 
 		return iterator->second->AddComponent<T>(component);
-	}
+	}*/
 
 	template<typename T>
 	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)

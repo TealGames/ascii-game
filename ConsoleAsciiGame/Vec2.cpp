@@ -15,6 +15,8 @@ const Vec2 Vec2::RIGHT(1, 0);
 const Vec2 Vec2::ZERO(0, 0);
 const Vec2 Vec2::ONE(1, 1);
 
+Vec2::Vec2() : m_X(0), m_Y(0) {}
+
 Vec2::Vec2(const float& xComp, const float& yComp)
 	: m_X(xComp), m_Y(yComp)
 {
@@ -59,16 +61,16 @@ std::string Vec2::ToString(VectorForm form) const
 	switch (form)
 	{
 	case VectorForm::Component:
-		str = std::format("({},{})", m_X, m_Y);
+		str = std::format("({},{})", std::to_string(m_X), std::to_string(m_Y));
 		break;
 
 	case VectorForm::Unit:
 		//Double braces needed on the outside to escape format {}
-		str = std::format("{{ {}i+{}j }}", m_X, m_Y);
+		str = std::format("{{ {}i+{}j }}", std::to_string(m_X), std::to_string(m_Y));
 		break;
 
 	case VectorForm::MagnitudeDirection:
-		str = std::format("{}@ {}°", GetMagnitude(), GetAngle(AngleMode::Degrees));
+		str = std::format("{}@ {}°", std::to_string(GetMagnitude()), std::to_string(GetAngle(AngleMode::Degrees)));
 		break;
 
 	default:
@@ -136,6 +138,10 @@ Vec2 GetVector(const Utils::Point2DInt& startPos, const Utils::Point2DInt& endPo
 {
 	Vec2 result(static_cast<double>(endPos.m_X - startPos.m_X), endPos.m_Y - startPos.m_Y);
 	return result;
+}
+Vec2 GetVector(const Utils::Point2DInt& intVec)
+{
+	return { static_cast<float>(intVec.m_X), static_cast<float>(intVec.m_Y) };
 }
 
 Utils::Point2D GetVectorEndPoint(const Utils::Point2D& startPos, const Vec2& vector)

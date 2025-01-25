@@ -20,12 +20,12 @@ namespace ECS
 		scene.OperateOnComponents<AnimatorData>(
 			[this, &scene, &deltaTime](AnimatorData& data, ECS::Entity& entity)-> void
 			{
-				if (data.m_NormalizedTime >= data.m_EndTime && !data.m_Loop) return;
+				if (data.m_NormalizedTime >= data.GetEndTime() && !data.GetDoLoop()) return;
 
 				data.m_NormalizedTime += deltaTime;
-				if (data.m_NormalizedTime >= data.m_EndTime && data.m_Loop)
+				if (data.m_NormalizedTime >= data.GetEndTime() && data.GetDoLoop())
 				{
-					data.m_NormalizedTime -= data.m_EndTime;
+					data.m_NormalizedTime -= data.GetEndTime();
 				}
 
 				for (auto& property : data.m_Properties)
@@ -51,7 +51,7 @@ namespace ECS
 								std::optional<size_t> newIndex = TryGetKeyFrameAtTime<ExtractedType>(data, *maybeProperty, data.m_NormalizedTime);
 								if (!Utils::Assert(this, newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
 									"and end time: {} on entity: {} but failed!", std::to_string(data.m_NormalizedTime),
-									std::to_string(data.m_EndTime), entity.m_Name)))
+									std::to_string(data.GetEndTime()), entity.m_Name)))
 									return;
 
 								maybeProperty->m_KeyframeIndex = newIndex.value();

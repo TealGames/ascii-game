@@ -12,6 +12,8 @@
 #include "LightSourceSystem.hpp"
 #include "AnimatorSystem.hpp"
 #include "SpriteAnimatorSystem.hpp"
+#include "PhysicsBodySystem.hpp"
+#include "InputSystem.hpp"
 #include "PlayerSystem.hpp"
 
 namespace Core
@@ -32,13 +34,17 @@ namespace Core
 		ECS::TransformSystem m_transformSystem;
 		ECS::CameraSystem m_cameraSystem;
 		ECS::LightSourceSystem m_lightSystem;
-		ECS::PlayerSystem m_playerSystem;
+		ECS::InputSystem m_inputSystem;
 		ECS::EntityRendererSystem m_entityRendererSystem;
 		ECS::AnimatorSystem m_animatorSystem;
 		ECS::SpriteAnimatorSystem m_spriteAnimatorSystem;
+		ECS::PhysicsBodySystem m_physicsBodySystem;
 
-		std::optional<ECS::EntityComponentPair<PlayerData>> m_playerInfo;
+		ECS::PlayerSystem m_playerSystem;
+
+		std::optional<ECS::EntityComponents<PlayerData, InputData, PhysicsBodyData>> m_playerInfo;
 		std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;
+		std::optional<ECS::EntityComponentPair<PhysicsBodyData>> m_obstacleInfo;
 
 		std::uint8_t m_currentFrameCounter;
 

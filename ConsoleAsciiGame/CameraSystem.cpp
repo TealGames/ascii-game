@@ -18,8 +18,7 @@ namespace ECS
 {
     static constexpr bool CACHE_LAST_BUFFER = true;
 
-	CameraSystem::CameraSystem(TransformSystem& transformSystem) :
-        m_transformSystem(transformSystem)
+	CameraSystem::CameraSystem()
 	{
 	}
 
@@ -60,8 +59,7 @@ namespace ECS
         /*Utils::Log(std::format("Main camera trans: {} follow trans: {}", mainCamera.m_Transform.m_Pos.ToString(), 
             std::to_string(cameraData.m_CameraSettings.m_FollowTarget!=nullptr)));*/
         //Utils::Log(std::format("Main camera trans: {} follow trans: ", mainCamera.m_Transform.m_Pos.ToString()));
-        m_transformSystem.SetPos(mainCamera.m_Transform,
-            cameraData.m_CameraSettings.m_FollowTarget->m_Transform.m_Pos);
+        mainCamera.m_Transform.SetPos(cameraData.m_CameraSettings.m_FollowTarget->m_Transform.m_Pos);
     }
 
     void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData, ECS::Entity& mainCamera)
@@ -75,8 +73,8 @@ namespace ECS
        /* Utils::Log(std::format("ONE LAYER IN CAMERA: {}", layers[0]->ToString()));
         Utils::Log(std::format("SECOND LAYER IN CAMERA: {}", layers[1]->ToString()));*/
 
-        const CartesianPosition cartesianTopLeft = mainCamera.m_Transform.m_Pos - (cameraData.m_CameraSettings.m_ViewportSize / 2);
-        const Array2DPosition renderCoordsTopLeft = Conversions::CartesianToArray(cartesianTopLeft);
+        const CartesianGridPosition cartesianTopLeft = Conversions::CartesianToGrid(mainCamera.m_Transform.m_Pos) - (cameraData.m_CameraSettings.m_ViewportSize / 2);
+        const Array2DPosition renderCoordsTopLeft = Conversions::GridToArray(cartesianTopLeft);
         //Utils::Log(std::format("CAMERA: top left: {}", cartesianTopLeft.ToString()));
 
         //TODO: it seems like this process should proably be much quicker and maybe we should optimize

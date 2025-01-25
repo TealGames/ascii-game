@@ -6,7 +6,7 @@
 #include <cmath>
 #include "CameraData.hpp"
 #include "TransformData.hpp"
-#include "PlayerData.hpp"
+#include "InputData.hpp"
 //#include "AnimatorData.hpp"
 #include "LightSourceData.hpp"
 #include "EntityRendererData.hpp"
@@ -91,7 +91,7 @@ ComponentType GetComponentFromType()
 	if (typeid(T) == typeid(CameraData)) return ComponentType::Camera;
 	if (typeid(T) == typeid(EntityRendererData)) return ComponentType::EntityRenderer;
 	if (typeid(T) == typeid(LightSourceData)) return ComponentType::LightSource;
-	if (typeid(T) == typeid(PlayerData)) return ComponentType::Player;
+	if (typeid(T) == typeid(InputData)) return ComponentType::Player;
 	if (typeid(T) == typeid(TransformData)) return ComponentType::Transform;
 	//if (typeid(T) == typeid(AnimatorData)) return ComponentType::Animator;
 	

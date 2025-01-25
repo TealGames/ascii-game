@@ -8,6 +8,9 @@ namespace Utils
 		int m_X;
 		int m_Y;
 
+		static const Point2DInt ONE;
+		static const Point2DInt ZERO;
+
 		constexpr Point2DInt();
 		constexpr Point2DInt(const int& x, const int& y);
 		Point2DInt(const Point2DInt&) = default;

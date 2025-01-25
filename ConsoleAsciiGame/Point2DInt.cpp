@@ -4,6 +4,9 @@
 
 namespace Utils
 {
+	const Point2DInt Point2DInt::ONE = { 1, 1 };
+	const Point2DInt Point2DInt::ZERO = { 0, 0 };
+
 	constexpr Point2DInt::Point2DInt()
 		:m_X(0), m_Y(0) {}
 

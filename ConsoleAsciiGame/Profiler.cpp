@@ -34,6 +34,10 @@ std::string ProfilerProcess::ToString(const bool& addProcessNumber, const bool& 
 Profiler::Profiler() : m_roundNumber(0), m_routines{}, m_profilerSummary{}, m_previousLogs(), m_profilerActionsTimer(){}
 Profiler::~Profiler()
 {
+#ifndef ENABLE_PROFILER
+	return;
+#endif
+
 	if (!WRITE_TO_FILE) return;
 
 	std::string data = m_previousLogs;

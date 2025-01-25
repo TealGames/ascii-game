@@ -60,19 +60,31 @@ struct AnimationProperty
 //
 //using AnimationPropertyVariant = GeneratedVariant<int, float, std::uint8_t>;
 using AnimationPropertyVariant = std::variant<AnimationProperty<int>, AnimationProperty<float>, AnimationProperty<std::uint8_t>>;
-struct AnimatorData : public ComponentData
+class AnimatorData : public ComponentData
 {
-	std::vector<AnimationPropertyVariant> m_Properties;
-	float m_AnimationSpeed;
-	float m_NormalizedTime;
-	size_t m_KeyframeIndex;
+private:
 	bool m_Loop;
-
+	
+	float m_AnimationSpeed;
 	float m_EndTime;
 
+public:
+	//All properties for the animator for this entity. 
+	//Note: this is exposed because we need to acess properties using functions woth no restrictions
+	std::vector<AnimationPropertyVariant> m_Properties;
+	float m_NormalizedTime;
+	size_t m_KeyframeIndex;
+
+public:
 	AnimatorData();
 	AnimatorData(const std::vector<AnimationPropertyVariant>& properties,
 		const float& animationTime, const float& speed, const bool& loop);
+
+
+	const bool& GetDoLoop() const;
+	const std::vector<AnimationPropertyVariant>& GetProperties() const;
+	const float& GetAnimationSpeed() const;
+	const float& GetEndTime() const;
 };
 
 template<typename T>

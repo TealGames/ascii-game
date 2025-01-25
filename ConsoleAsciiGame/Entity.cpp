@@ -18,9 +18,9 @@ namespace ECS
 		m_name(name), m_Name(m_name), m_entityMapper(mapper),
 		//m_Id(m_entityMapper.ReserveAvailableEntityID()),
 		m_Id(m_entityMapper.create()),
-		m_Transform(AddComponent<TransformData>(transform)) //m_componentIDs{}
+		m_Transform(AddComponent<TransformData>(transform)), 
+		m_componentNames() //m_componentIDs{}
 	{
-		
 	}
 
 	//Entity::Entity(const std::string& name, entt::registry& mapper, TransformData&& transform) :
@@ -86,7 +86,13 @@ namespace ECS
 
 	std::string Entity::ToString() const
 	{
-		return "";
+		std::string componentNames = "[COMPONENT FIND NOT IMPLEMENTED]";
+		if (!m_componentNames.empty())
+		{
+			componentNames = Utils::ToStringIterable<std::vector<std::string>, std::string>(m_componentNames);
+		}
+
+		return std::format("['{}'(ID: {})-> {}]", m_Name, Entity::ToString(m_Id), componentNames);
 		/*auto components= Utils::GetKeysFromMap<ComponentType, ComponentID>(m_componentIDs.begin(), m_componentIDs.end());
 		std::string componentsStr = ::ToString(MergeComponents(components));*/
 		//return std::format("['{}' c:{}]", m_Name, componentsStr);

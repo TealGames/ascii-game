@@ -17,9 +17,7 @@ namespace ECS
 	class CameraSystem : public SingleBodySystem<CameraData>
 	{
 	private:
-		TransformSystem& m_transformSystem;
 		std::optional<TextBuffer> m_currentFrameBuffer;
-
 	public:
 
 	private:
@@ -34,7 +32,7 @@ namespace ECS
 		/// <param name="sceneManager">Manager needed to retrieve viewed data</param>
 		/// <param name="followTarget">The object that that camera attempts to follow</param>
 		/// <param name="viewportSize">THe amount of text vewied in WIDTH, HEIGHT</param>
-		CameraSystem(TransformSystem& transform);
+		CameraSystem();
 		//Camera(Transform& transform, const Utils::Point2DInt& viewportSize);
 
 		void UpdateCameraPosition(CameraData& cameraData, ECS::Entity& entity);

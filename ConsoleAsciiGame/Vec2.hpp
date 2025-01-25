@@ -35,6 +35,7 @@ public:
 	static const Vec2 ONE;
 
 public:
+	Vec2();
 	Vec2(const float&, const float&);
 	Vec2(const Vec2&) = default;
 	Vec2(Vec2&&) noexcept = default;
@@ -71,6 +72,7 @@ public:
 /// <returns></returns>
 Vec2 GetVector(const Utils::Point2D& startPos, const Utils::Point2D& endPos);
 Vec2 GetVector(const Utils::Point2DInt& startPos, const Utils::Point2DInt& endPos);
+Vec2 GetVector(const Utils::Point2DInt& intVec);
 
 Utils::Point2D GetVectorEndPoint(const Utils::Point2D& startPos, const Vec2& vector);
 Utils::Point2DInt GetVectorEndPoint(const Utils::Point2DInt& startPos, const Vec2& vector);

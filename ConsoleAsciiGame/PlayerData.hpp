@@ -1,9 +1,16 @@
 #pragma once
 #include "ComponentData.hpp"
+#include "Vec2.hpp"
 
-struct PlayerData : ComponentData
+class PlayerData : public ComponentData
 {
-	bool m_Placeholder;
+private:
+	float m_moveSpeed;
 
+public:
 	PlayerData();
+	PlayerData(const float& moveSpeed);
+
+	const float& GetMoveSpeed() const;
 };
+

@@ -10,9 +10,10 @@
 #include "EntityRendererSystem.hpp"
 #include "CameraSystem.hpp"
 #include "LightSourceSystem.hpp"
-#include "PlayerSystem.hpp"
+#include "InputSystem.hpp"
 #include "AnimatorSystem.hpp"
 #include "SpriteAnimatorSystem.hpp"
+#include "PhysicsBodySystem.hpp"
 #include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
 #include "Timer.hpp"
@@ -74,12 +75,14 @@ namespace Core
 	Engine::Engine() :
 		m_sceneManager(SCENES_PATH),
 		m_transformSystem(),
-		m_cameraSystem(m_transformSystem),
-		m_entityRendererSystem(m_transformSystem),
-		m_lightSystem(m_transformSystem, m_entityRendererSystem),
-		m_playerSystem(m_transformSystem),
+		m_cameraSystem(),
+		m_entityRendererSystem(),
+		m_lightSystem(m_entityRendererSystem),
+		m_inputSystem(),
 		m_spriteAnimatorSystem(m_entityRendererSystem),
 		m_animatorSystem(*this),
+		m_physicsBodySystem(),
+		m_playerSystem(),
 		m_currentFrameCounter(0),
 		m_currentFPS(0),
 		m_currentTime(std::chrono::high_resolution_clock().now()),
@@ -95,10 +98,12 @@ namespace Core
 
 		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("Player", TransformData({ 0, 0 }));
 
-		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData{});
+		InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
+		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData{ 5});
 		LightSourceData& lightSource= playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
+		PhysicsBodyData& playerRB= playerEntity.AddComponent<PhysicsBodyData>(Physics::AABB({0,0}, {0,0}));
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{ VisualData{1, 1, {TextChar(GRAY, 'H')}}, RenderLayerType::Player });
 		/*playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
 				AnimationProperty<std::uint8_t>(lightSource.m_LightRadius, lightSource.m_MutatedThisFrame, {
@@ -108,10 +113,15 @@ namespace Core
 			{ SpriteAnimationFrame(0, VisualData{1, 1, TextChar(WHITE, 'O')} ),
 			  SpriteAnimationFrame(2, VisualData{1, 1, TextChar(WHITE, '4')}) }, 1, 4, true));
 
-		m_playerInfo = ECS::EntityComponentPair<PlayerData>{ playerEntity, playerData};
+		m_playerInfo = ECS::EntityComponents<PlayerData, InputData, PhysicsBodyData>{ playerEntity, playerData, inputData, playerRB };
+
+		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("Obstacle", TransformData({ 1, 1 }));
+		Utils::Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntity(obstacle.m_Id)->ToString()));
+		obstacle.AddComponent<EntityRendererData>(EntityRendererData{ VisualData{1, 1, {TextChar(GRAY, 'B')}}, RenderLayerType::Player });
+		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(Physics::AABB{ {0,0}, {0,0} });
+		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 		
 		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));
-
 		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{playerEntity, Utils::Point2DInt(10, 10)} });
 
 		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
@@ -121,6 +131,12 @@ namespace Core
 		std::cout << std::format("[ENGINE]: LOADED LAYERS FOR SCENE '{}': {}", 
 			m_sceneManager.GetActiveScene()->m_SceneName,
 			m_sceneManager.GetActiveScene()->ToStringLayers()) << std::endl;
+
+		Utils::Log(this, std::format("OBSACLE ID: {}", obstacle.ToString()));
+		Utils::Log(this, std::format("CAMERA ID: {}", playerEntity.ToString()));
+		Utils::Log(this, std::format("PLAYER ID: {}", mainCameraEntity.ToString()));
+
+		m_sceneManager.GetActiveSceneMutable()->InitPhysicsWorld();
 	}
 
 	Engine::~Engine()
@@ -192,11 +208,22 @@ namespace Core
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
 
 		m_transformSystem.SystemUpdate(*activeScene, m_deltaTime);
-		m_playerSystem.SystemUpdate(*activeScene, *(m_playerInfo.value().m_Data), *(m_playerInfo.value().m_Entity), m_deltaTime);
+		m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<1>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
+
+		//m_physicsBodySystem.SystemUpdate(*activeScene, m_deltaTime);
+		activeScene->GetPhysicsWorldMutable().Update(m_deltaTime);
+		m_playerSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<0>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
+
 		m_animatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_spriteAnimatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 
+		Utils::LogWarning(this, std::format("Player pos: {} last input: {} velocity: {} OBSTACLE POS: {} COLLISION: {}", 
+			m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
+			m_playerInfo.value().GetAt<1>().GetLastFrameInput().ToString(),
+			m_playerInfo.value().GetAt<2>().GetVelocity().ToString(),
+			m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
+			std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<2>(), *(m_obstacleInfo.value().m_Data)))));
 		//TODO: light system without any other problems drop frames to ~20 fps
 		m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
 

@@ -90,6 +90,8 @@ ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, co
 	m_globalEntities.emplace_back(name, m_globalEntityMapper, transform);
 	m_globalEntityIds.emplace(m_globalEntities.back().m_Id, &(m_globalEntities.back()));
 	m_globalEntityNames.emplace(cleanedName, &(m_globalEntities.back()));
+	m_globalEntities.back().m_Transform.m_Entity = &(m_globalEntities.back());
+
 	return m_globalEntities.back();
 }
 
@@ -101,9 +103,11 @@ ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, Tr
 		std::format("Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
 		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName));
 
-	m_globalEntities.emplace_back(name, m_globalEntityMapper, transform);
+	m_globalEntities.emplace_back(name, m_globalEntityMapper, std::move(transform));
 	m_globalEntityIds.emplace(m_globalEntities.back().m_Id, &(m_globalEntities.back()));
 	m_globalEntityNames.emplace(cleanedName, &(m_globalEntities.back()));
+	m_globalEntities.back().m_Transform.m_Entity = &(m_globalEntities.back());
+
 	return m_globalEntities.back();
 }
 
@@ -131,5 +135,15 @@ const ECS::Entity* GlobalEntityManager::TryGetGlobalEntity(const std::string& na
 	auto iterator = GetGlobalEntityIterator(name);
 	if (IsValidIterator(iterator)) return iterator->second;
 	return nullptr;
+}
+
+const std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntities() const
+{
+	return m_globalEntities;
+}
+
+std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntitiesMutable()
+{
+	return m_globalEntities;
 }
 

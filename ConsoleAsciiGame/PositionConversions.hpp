@@ -1,9 +1,13 @@
 #pragma once
 #include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
+#include "Point2D.hpp"
 
 namespace Conversions
 {
-	Array2DPosition CartesianToArray(const CartesianPosition& pos);
-	CartesianPosition ArrayToCartesian(const Array2DPosition& pos);
+	CartesianGridPosition ArrayToGrid(const Array2DPosition& pos);
+	Array2DPosition GridToArray(const CartesianGridPosition& pos);
+
+	CartesianGridPosition CartesianToGrid(const Utils::Point2D& pos);
+	Array2DPosition CartesianToArray(const Utils::Point2D& pos);
 }

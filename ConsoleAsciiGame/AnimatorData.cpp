@@ -18,3 +18,23 @@ AnimatorData::AnimatorData(const std::vector<AnimationPropertyVariant>& properti
 
 	//TODO: we need to check for some other conditions such as 
 }
+
+const bool& AnimatorData::GetDoLoop() const
+{
+	return m_Loop;
+}
+
+const std::vector<AnimationPropertyVariant>& AnimatorData::GetProperties() const
+{
+	return m_Properties;
+}
+
+const float& AnimatorData::GetAnimationSpeed() const
+{
+	return m_AnimationSpeed;
+}
+
+const float& AnimatorData::GetEndTime() const
+{
+	return m_EndTime;
+}

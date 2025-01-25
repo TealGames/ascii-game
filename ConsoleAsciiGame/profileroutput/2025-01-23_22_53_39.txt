@@ -1,0 +1,17 @@
+===========================================================
+		 PROFILER SUMMARY
+        Total Rounds:00000
+===========================================================
+
+OVERALL STATISTICS
+===================================================================
+
+FastestProcess:[NO DATA FOUND]
+
+SlowestProcess:[NO DATA FOUND]
+
+Ranked Routine Averages:
+
+TotalProfilerTime: 0us (0s)
+
+Mapped Data (DESMOS url): https://www.desmos.com/calculator?expressions=[]

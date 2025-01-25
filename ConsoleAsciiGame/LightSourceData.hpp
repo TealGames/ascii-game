@@ -9,12 +9,12 @@
 
 struct LightMapChar
 {
-	CartesianPosition m_RelativePos;
+	CartesianGridPosition m_RelativePos;
 	Utils::Point3D m_FractionalFilterColor;
 	float m_ColorFactor;
 
 	LightMapChar();
-	LightMapChar(const CartesianPosition& relativePos,
+	LightMapChar(const CartesianGridPosition& relativePos,
 		const Utils::Point3D& fractionalFilterColor, const float& colorFactor);
 	std::string ToString() const;
 };

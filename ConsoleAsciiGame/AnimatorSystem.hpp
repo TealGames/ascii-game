@@ -37,8 +37,8 @@ namespace ECS
 			if (time < firstTime) return std::nullopt;
 			if (Utils::ApproximateEqualsF(time, firstTime)) return 0;
 
-			if (time > data.m_EndTime) return std::nullopt;
-			if (Utils::ApproximateEqualsF(data.m_EndTime, firstTime)) return property.m_Keyframes.size() - 1;
+			if (time > data.GetEndTime()) return std::nullopt;
+			if (Utils::ApproximateEqualsF(data.GetEndTime(), firstTime)) return property.m_Keyframes.size() - 1;
 
 			int left = 1;
 			int right = property.m_Keyframes.size() - 1;

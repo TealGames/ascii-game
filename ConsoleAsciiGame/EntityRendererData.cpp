@@ -15,3 +15,17 @@ EntityRendererData::EntityRendererData(const VisualData& visualData, const Rende
 	}
 	m_VisualBoundsSize = Utils::Point2DInt(m_VisualData.GetHeight(), maxWidth);
 }
+
+const RenderLayerType& EntityRendererData::GetRenderLayers() const
+{
+	return m_RenderLayers;
+}
+const Utils::Point2DInt& EntityRendererData::GetVisualBoundsSize() const
+{
+	return m_VisualBoundsSize;
+}
+
+const VisualData& EntityRendererData::GetVisualData() const
+{
+	return m_VisualData;
+}
