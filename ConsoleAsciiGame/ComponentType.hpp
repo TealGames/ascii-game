@@ -1,13 +1,13 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <cstdint>
 #include <limits>
 #include <cmath>
 #include "CameraData.hpp"
 #include "TransformData.hpp"
 #include "InputData.hpp"
-//#include "AnimatorData.hpp"
+//#include "AnimatorData.hpp"#include <cstdint>
+
 #include "LightSourceData.hpp"
 #include "EntityRendererData.hpp"
 #include "HelperFunctions.hpp"

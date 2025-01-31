@@ -10,10 +10,10 @@ class EntityRendererData : public ComponentData
 private:
 	//Stores every entity's visual from top row to bottom row
 	//TODO: the enttiy render data should store the layer it should render at, but not the buffer itself
-	RenderLayerType m_RenderLayers;
+	RenderLayerType m_renderLayers;
 
-	//The bounding box's size for this visual in (HEIGHT, WIDTH)
-	Utils::Point2DInt m_VisualBoundsSize;
+	//The bounding box's size for this visual in (WIDTH, HEIGHT)
+	Utils::Point2DInt m_visualBoundsSize;
 
 public:
 	VisualData m_VisualData;
@@ -26,4 +26,6 @@ public:
 	const RenderLayerType& GetRenderLayers() const;
 	const Utils::Point2DInt& GetVisualBoundsSize() const;
 	const VisualData& GetVisualData() const;
+
+	void SetVisualData(const VisualDataPositions& positions);
 };

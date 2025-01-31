@@ -28,17 +28,17 @@ SpriteAnimatorData::SpriteAnimatorData(const std::vector<SpriteAnimationFrame>& 
 
 		if (i>0) prevData = &(frames[i - 1].m_VisualFrame);
 
-		for (int r = 0; r < currentData->GetHeight(); r++)
+		for (int r = 0; r < currentData->m_Text.GetHeight(); r++)
 		{
-			for (int c = 0; c < currentData->GetWidth(); c++)
+			for (int c = 0; c < currentData->m_Text.GetWidth(); c++)
 			{
 				if (prevData != nullptr)
 				{
-					if (r >= prevData->GetHeight() || c >= prevData->GetWidth()) continue;
-					if (currentData->GetAtUnsafe({r, c}) == prevData->GetAtUnsafe({r, c})) continue;
+					if (r >= prevData->m_Text.GetHeight() || c >= prevData->m_Text.GetWidth()) continue;
+					if (currentData->m_Text.GetAtUnsafe({r, c}) == prevData->m_Text.GetAtUnsafe({r, c})) continue;
 				}
 				
-				currentVisual.m_Data.emplace_back(Array2DPosition{r,c}, currentData->GetAtUnsafe({r, c}));
+				currentVisual.m_Data.emplace_back(Array2DPosition{r,c}, currentData->m_Text.GetAtUnsafe({r, c}));
 			}
 		}
 		visualDelta.m_VisualDelta = currentVisual;

@@ -3,12 +3,14 @@
 #include "CameraSettings.hpp"
 #include "ComponentData.hpp"
 #include "TextBuffer.hpp"
+#include "WorldPosition.hpp"
+#include <vector>
 
 class CameraData : public ComponentData
 {
 public:
 	CameraSettings m_CameraSettings;
-	std::optional<TextBuffer> m_LastFrameBuffer;
+	TextBufferMixed m_LastFrameBuffer;
 
 public:
 	CameraData();

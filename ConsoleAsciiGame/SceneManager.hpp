@@ -17,6 +17,7 @@ namespace SceneManagement
 	private:
 		Scene* m_activeScene;
 		std::vector<Scene> m_allScenes;
+		std::filesystem::path m_allScenePath;
 
 		/*EntityMapper m_globalEntityMapper;
 		std::vector<ECS::Entity> m_globalEntities;
@@ -33,6 +34,13 @@ namespace SceneManagement
 
 	public:
 		SceneManager(const std::filesystem::path& allScenesDir);
+
+		/// <summary>
+		/// Although this could be handled with RAII (constructor) but 
+		/// we may need to have it initialized with data after raylib window
+		/// such as fonts
+		/// </summary>
+		void LoadAllScenes();
 
 		Scene* GetActiveSceneMutable();
 		const Scene* GetActiveScene() const;

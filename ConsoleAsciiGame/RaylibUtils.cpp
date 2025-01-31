@@ -85,4 +85,24 @@ namespace RaylibUtils
 	{
 		DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
 	}
+
+	Vector2 ToRaylibVector(const Vec2& vec)
+	{
+		return { vec.m_X, vec.m_Y };
+	}
+
+	Vector2 ToRaylibVector(const Utils::Point2D& point)
+	{
+		return { point.m_X, point.m_Y };
+	}
+
+	bool IsValidFont(const Font& font)
+	{
+		return font.texture.id != 0;
+	}
+
+	bool FontSupportsChar(const Font& font, const char& character)
+	{
+		return GetGlyphIndex(font, character) != -1;
+	}
 }

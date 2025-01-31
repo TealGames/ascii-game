@@ -10,6 +10,7 @@
 #include "Globals.hpp"
 #include "Array2DPosition.hpp"
 #include "CartesianPosition.hpp"
+#include "VisualData.hpp"
 
 const std::string Scene::m_SCENE_FILE_PREFIX = "scene_";
 
@@ -45,10 +46,16 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 
 	ParseSceneFile(fstream, layerText);
 
+	m_localEntities.reserve(MAX_ENTITIES);
+	m_Layers.emplace(RenderLayerType::Background, RenderLayer{});
+	m_Layers.emplace(RenderLayerType::Player, RenderLayer{});
+
 	//Utils::Log("Creating new layer in scene");
-	const RenderLayer newLayer = RenderLayer(layerText, TEXT_BUFFER_FONT, CHAR_SPACING);
-	int newLayerW = newLayer.m_SquaredTextBuffer.GetWidth();
-	int newLayerH = newLayer.m_SquaredTextBuffer.GetHeight();
+	const VisualData backgroundVisual = VisualData(layerText, GetGlobalFont(), GLOBAL_FONT_SIZE, GLOBAL_CHAR_SPACING);
+	ECS::Entity backgroundEntity = CreateEntity("Background", TransformData({ 0,0 }));
+	EntityRendererData& backgroundRenderer= backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
+	Utils::LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
+
 	//Utils::Log(std::format("New layer w: {} h: {}", std::to_string(newLayerW), std::to_string(newLayerH)));
 	//TODO: right now these are global constants, but might have to be later parsed from data
 	//for each scene, allowing each scene to have its own settings
@@ -56,12 +63,6 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	//TODO: right now we only have one layer, but later on we should add multiple
 	//Note: right now we make two layers one for background and one for player, but this should
 	//get abstracted more with ids and text file parsing of scene data
-	m_Layers.emplace(RenderLayerType::Background, newLayer);
-	//Utils::Log(std::format("Scene background buffer: {}", m_Layers.at(RenderLayerType::Background).m_SquaredTextBuffer.ToString()));
-
-	const RenderLayer playerLayer = RenderLayer(TextBuffer{ newLayerW, newLayerH, TextChar()}, TEXT_BUFFER_FONT, CHAR_SPACING);
-	m_Layers.emplace(RenderLayerType::Player, playerLayer);
-	m_localEntities.reserve(MAX_ENTITIES);
 }
 
 void Scene::ParseSceneFile(std::ifstream& fstream,  
@@ -142,6 +143,26 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 	}
 }
 
+void Scene::InitScene()
+{
+
+	for (auto& entity : m_localEntities)
+	{
+		if (PhysicsBodyData* maybeBody = entity.TryGetComponent<PhysicsBodyData>())
+		{
+			m_PhysicsWorld.AddBody(*maybeBody);
+		}
+	}
+
+	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
+	{
+		if (PhysicsBodyData* maybeBody = entity.TryGetComponent<PhysicsBodyData>())
+		{
+			m_PhysicsWorld.AddBody(*maybeBody);
+		}
+	}
+}
+
 std::vector<RenderLayer*> Scene::GetLayersMutable()
 {
 	if (m_Layers.empty()) return {};
@@ -175,42 +196,67 @@ std::vector<const RenderLayer*> Scene::GetAllLayers() const
 	return layers;
 }
 
-std::vector<TextBuffer*> Scene::GetTextBuffersMutable(const RenderLayerType& renderLayers)
-{
-	if (m_Layers.empty()) return {};
-	//TODO: we could optimize this with the all choosen case by checking maxLayers & renderLayers == maxLayers
+//std::vector<TextBuffer*> Scene::GetTextBuffersMutable(const RenderLayerType& renderLayers)
+//{
+//	if (m_Layers.empty()) return {};
+//	//TODO: we could optimize this with the all choosen case by checking maxLayers & renderLayers == maxLayers
+//
+//	std::vector<TextBuffer*> buffers = {};
+//	for (auto& layer : m_Layers)
+//	{
+//		if ((layer.first & renderLayers) == 0) continue;
+//		buffers.push_back(&(layer.second.m_SquaredTextBuffer));
+//	}
+//	return buffers;
+//}
+//
+//void Scene::SetLayers(const RenderLayerType& renderLayers, const std::vector<TextCharPosition>& positions)
+//{
+//	if (renderLayers == RenderLayerType::None) return;
+//	if (positions.empty()) return;
+//
+//	for (auto& layer : m_Layers)
+//	{
+//		if ((layer.first & renderLayers) == 0) continue;
+//		layer.second.m_SquaredTextBuffer.SetAt(positions);
+//	}
+//}
+//
+//void Scene::SetLayers(const RenderLayerType& renderLayers, const std::vector<ColorPosition>& positions)
+//{
+//	if (renderLayers == RenderLayerType::None) return;
+//	if (positions.empty()) return;
+//
+//	for (auto& layer : m_Layers)
+//	{
+//		if ((layer.first & renderLayers) == 0) continue;
+//		layer.second.m_SquaredTextBuffer.SetAt(positions);
+//	}
+//}
 
-	std::vector<TextBuffer*> buffers = {};
+void Scene::AddToLayer(const RenderLayerType& layers, TextBufferPosition& textBufferPos)
+{
+	if (layers == RenderLayerType::None) return;
+
+	for (auto& layer : m_Layers)
+	{
+		if ((layer.first & layers) == 0) continue;
+		layer.second.AddText(textBufferPos);
+		return;
+	}
+}
+
+std::vector<TextBufferMixed*> Scene::GetLayerBufferMutable(const RenderLayerType& renderLayers)
+{
+	std::vector<TextBufferMixed*> buffers = {};
+	if (renderLayers == RenderLayerType::None) return buffers;
+
 	for (auto& layer : m_Layers)
 	{
 		if ((layer.first & renderLayers) == 0) continue;
-		buffers.push_back(&(layer.second.m_SquaredTextBuffer));
+		buffers.push_back(&layer.second.GetBufferMutable());
 	}
 	return buffers;
-}
-
-void Scene::SetLayers(const RenderLayerType& renderLayers, const std::vector<TextCharPosition>& positions)
-{
-	if (renderLayers == RenderLayerType::None) return;
-	if (positions.empty()) return;
-
-	for (auto& layer : m_Layers)
-	{
-		if ((layer.first & renderLayers) == 0) continue;
-		layer.second.m_SquaredTextBuffer.SetAt(positions);
-	}
-}
-
-void Scene::SetLayers(const RenderLayerType& renderLayers, const std::vector<ColorPosition>& positions)
-{
-	if (renderLayers == RenderLayerType::None) return;
-	if (positions.empty()) return;
-
-	for (auto& layer : m_Layers)
-	{
-		if ((layer.first & renderLayers) == 0) continue;
-		layer.second.m_SquaredTextBuffer.SetAt(positions);
-	}
 }
 
 void Scene::ResetAllLayers()
@@ -349,25 +395,6 @@ int Scene::GetDirtyComponentCount() const
 bool Scene::HasDirtyComponents() const
 {
 	return GetDirtyComponentCount() > 0;
-}
-
-void Scene::InitPhysicsWorld()
-{
-	for (auto& entity : m_localEntities)
-	{
-		if (PhysicsBodyData* maybeBody = entity.TryGetComponent<PhysicsBodyData>())
-		{
-			m_PhysicsWorld.AddBody(*maybeBody);
-		}
-	}
-
-	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
-	{
-		if (PhysicsBodyData* maybeBody = entity.TryGetComponent<PhysicsBodyData>())
-		{
-			m_PhysicsWorld.AddBody(*maybeBody);
-		}
-	}
 }
 
 const Physics::PhysicsWorld& Scene::GetPhysicsWorld() const

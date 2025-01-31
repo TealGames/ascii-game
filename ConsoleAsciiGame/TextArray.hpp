@@ -101,6 +101,8 @@ public:
 	const TextChar* GetAt(const Array2DPosition& rowColPos) const;
 	const TextChar& GetAtUnsafe(const Array2DPosition& rowColPos) const;
 	const std::vector<TextChar>& GetAt(const int& rowPos) const;
+	std::string GetStringAt(const int& rowColPos) const;
+
 	const TextArrayCollectionType& GetFull() const;
 
 	static std::string ToString(const std::vector<std::vector<TextChar>>& buffer,

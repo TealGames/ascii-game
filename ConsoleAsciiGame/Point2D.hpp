@@ -12,8 +12,8 @@ namespace Utils
 		Point2D(const float& x, const float& y);
 		Point2D(const Point2D&) = default;
 
-		inline int XAsInt() const;
-		inline int YAsInt() const;
+		int XAsInt() const;
+		int YAsInt() const;
 		std::string ToString() const;
 
 		Utils::Point2D GetFlipped() const;
@@ -22,9 +22,9 @@ namespace Utils
 		Point2D operator+(const Point2D&) const;
 		Point2D operator-(const Point2D&) const;
 		Point2D operator*(const Point2D&) const;
-		Point2D operator*(const float) const;
+		Point2D operator*(const float&) const;
 		Point2D operator/(const Point2D&) const;
-		Point2D operator/(const float) const;
+		Point2D operator/(const float&) const;
 
 		bool operator==(const Point2D&) const;
 

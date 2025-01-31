@@ -7,13 +7,18 @@
 namespace SceneManagement
 {
 	SceneManager::SceneManager(const std::filesystem::path& allScenesDir) : 
-		m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager()
+		m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager(), m_allScenePath(allScenesDir)
 		/*m_globalEntities{}, m_globalEntitiesLookup{}, m_globalEntityMapper()*/
+	{
+		
+	}
+
+	void SceneManager::LoadAllScenes()
 	{
 		std::string fileName = "";
 		try
 		{
-			for (const auto& file : std::filesystem::directory_iterator(allScenesDir))
+			for (const auto& file : std::filesystem::directory_iterator(m_allScenePath))
 			{
 				fileName = file.path().filename().string();
 				if (!file.is_regular_file() || fileName.size() < Scene::m_SCENE_FILE_PREFIX.size()) continue;
@@ -27,7 +32,7 @@ namespace SceneManagement
 		catch (const std::exception& e)
 		{
 			Utils::LogError(this, std::format("Tried to get all scenes at path: {} "
-				"but ran into error: {}", allScenesDir.string(), e.what()));
+				"but ran into error: {}", m_allScenePath.string(), e.what()));
 		}
 	}
 

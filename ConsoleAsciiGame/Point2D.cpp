@@ -11,12 +11,12 @@ namespace Utils
 	Point2D::Point2D(const float& xPos, const float& yPos)
 		: m_X(xPos), m_Y(yPos) {}
 
-	inline int Point2D::XAsInt() const
+	int Point2D::XAsInt() const
 	{
 		return static_cast<int>(m_X);
 	}
 
-	inline int Point2D::YAsInt() const
+	int Point2D::YAsInt() const
 	{
 		return static_cast<int>(m_Y);
 	}
@@ -52,7 +52,7 @@ namespace Utils
 		return { m_X * otherPos.m_X, m_Y * otherPos.m_Y };
 	}
 
-	Point2D Point2D::operator*(const float factor) const
+	Point2D Point2D::operator*(const float& factor) const
 	{
 		return { m_X * factor, m_Y * factor };
 	}
@@ -66,7 +66,7 @@ namespace Utils
 		return { m_X / otherPos.m_X, m_Y / otherPos.m_Y };
 	}
 
-	Point2D Point2D::operator/(const float factor) const
+	Point2D Point2D::operator/(const float& factor) const
 	{
 		if (!Utils::Assert(this, factor != 0,
 			std::format("Tried to divide {} by a value with 0 {}",

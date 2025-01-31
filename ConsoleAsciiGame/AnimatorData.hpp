@@ -2,15 +2,13 @@
 #include <format>
 #include <vector>
 #include <cstdint>
+#include <array>
 #include <unordered_map>
 #include <string>
 #include <variant>
 #include <type_traits>
-#include "ComponentType.hpp"
 #include "HelperFunctions.hpp"
 #include "ComponentData.hpp"
-
-constexpr ComponentType SUPPORTED_ANIMATOR_COMPONENTS = ComponentType::LightSource;
 
 template<typename T>
 class AnimationPropertyKeyframe

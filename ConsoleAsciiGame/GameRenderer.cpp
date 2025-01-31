@@ -1,88 +1,140 @@
 //NOT USED
 #include "pch.hpp"
 #include <optional>
+#include "Globals.hpp"
 
 #include "GameRenderer.hpp"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 #include "ProfilerTimer.hpp"
-#include "RaylibUtils.hpp"
 
 namespace Rendering
 {
     constexpr bool DONT_RENDER_NON_UTILS = false;
 
-    void RenderBuffer(const TextBuffer& buffer, const RenderInfo& renderInfo)
+    void RenderBuffer(const TextBufferMixed& buffer, const RenderInfo& renderInfo)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
 #endif 
 
-        //Utils::Log(std::format("Rendering buffer: {}", buffer.ToString()));
-        if (!Utils::Assert(buffer.GetWidth() != 0 && buffer.GetHeight() != 0,
-            std::format("Tried to render a buffer with GameRenderer that has width and/or height of 0")))
-            return;
+       // //Utils::Log(std::format("Rendering buffer: {}", buffer.ToString()));
+       // if (!Utils::Assert(buffer.GetWidth() != 0 && buffer.GetHeight() != 0,
+       //     std::format("Tried to render a buffer with GameRenderer that has width and/or height of 0")))
+       //     return;
+
+       // BeginDrawing();
+
+       // ClearBackground(BLACK);
+       // RaylibUtils::DrawFPSCounter();
+       ///* DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);*/
+       // if (DONT_RENDER_NON_UTILS)
+       // {
+       //     EndDrawing();
+       //     return;
+       // }
+       //
+       // //TODO: perhaps we should not calculate the best fit char area, but rather have a consistent size to allow
+       // //different scene sizes to appear the same with character area
+       // int totalUsableWidth = renderInfo.m_ScreenSize.m_X - (2 * renderInfo.m_Padding.m_X);
+       // int totalUsableHeight = renderInfo.m_ScreenSize.m_Y - (2 * renderInfo.m_Padding.m_Y);
+
+       // Utils::Point2DInt charArea;
+       // if (renderInfo.m_CharSpacing.has_value()) charArea = renderInfo.m_CharSpacing.value();
+       // else charArea = { totalUsableWidth / buffer.GetWidth(), totalUsableHeight / buffer.GetHeight() };
+       // /* std::cout << std::format("Out of total screen: W{}x H{} usable is W{} x H{} with char area: w{} h{}",
+       //      std::to_string(SCREEN_WIDTH), std::to_string(SCREEN_HEIGHT), std::to_string(totalUsableWidth), std::to_string(totalUsableHeight),
+       //      std::to_string(charArea.m_X), std::to_string(charArea.m_Y)) << std::endl;*/
+
+       // int x = renderInfo.m_Padding.m_X;
+       // int y = renderInfo.m_Padding.m_Y;
+       // if (renderInfo.m_CenterBuffer)
+       // {
+       //     int widthLeft = totalUsableWidth - (charArea.m_X* buffer.GetWidth());
+       //     int heightLeft = totalUsableHeight - (charArea.m_Y*buffer.GetHeight());
+
+       //     x += (widthLeft/2);
+       //     y += (heightLeft /2);
+       // }
+       // //Utils::Log(std::format("CHAR AREA: {}", charArea.ToString()));
+
+       // char drawStr[2] = { '1', '\0' };
+       //
+       // //TODO: instead of drawing text directly and separeately maybe look into
+       // //having the buffer be a texture and drawing the text there rather and then redenderign the texture each frame
+       // //since text is not optimized very well in raylib
+       // int startX = x;
+       // for (int r = 0; r < buffer.GetHeight(); r++)
+       // {
+       //     for (int c = 0; c < buffer.GetWidth(); c++)
+       //     {
+       //         const TextChar& currentChar = buffer.GetAtUnsafe({ r, c });
+       //         drawStr[0] = currentChar.m_Char;
+       //         if (drawStr[0] != EMPTY_CHAR_PLACEHOLDER)
+       //         {
+       //             DrawText(drawStr, x, y, renderInfo.m_FontSize, currentChar.m_Color);
+       //         }
+       //        /*Utils::Log(std::format("Drawing character: {} at pos: {} with color: {}", 
+       //             Utils::ToString(drawStr[0]), Utils::Point2DInt(r, c).ToString(), RaylibUtils::ToString(buffer.GetAt({ r, c })->m_Color)));*/
+       //         x += charArea.m_X;
+       //     }
+
+       //     y += charArea.m_Y;
+       //     x = startX;
+       // }
+
+       // EndDrawing();
+    }
+
+    void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer)
+    {
+#ifdef ENABLE_PROFILER
+        ProfilerTimer timer("GameRenderer::RenderBuffer");
+#endif 
 
         BeginDrawing();
 
         ClearBackground(BLACK);
         RaylibUtils::DrawFPSCounter();
-       /* DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);*/
+        /* DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);*/
         if (DONT_RENDER_NON_UTILS)
         {
             EndDrawing();
             return;
         }
-       
-        //TODO: perhaps we should not calculate the best fit char area, but rather have a consistent size to allow
-        //different scene sizes to appear the same with character area
-        int totalUsableWidth = renderInfo.m_ScreenSize.m_X - (2 * renderInfo.m_Padding.m_X);
-        int totalUsableHeight = renderInfo.m_ScreenSize.m_Y - (2 * renderInfo.m_Padding.m_Y);
 
-        Utils::Point2DInt charArea;
-        if (renderInfo.m_CharSpacing.has_value()) charArea = renderInfo.m_CharSpacing.value();
-        else charArea = { totalUsableWidth / buffer.GetWidth(), totalUsableHeight / buffer.GetHeight() };
-        /* std::cout << std::format("Out of total screen: W{}x H{} usable is W{} x H{} with char area: w{} h{}",
-             std::to_string(SCREEN_WIDTH), std::to_string(SCREEN_HEIGHT), std::to_string(totalUsableWidth), std::to_string(totalUsableHeight),
-             std::to_string(charArea.m_X), std::to_string(charArea.m_Y)) << std::endl;*/
-
-        int x = renderInfo.m_Padding.m_X;
-        int y = renderInfo.m_Padding.m_Y;
-        if (renderInfo.m_CenterBuffer)
-        {
-            int widthLeft = totalUsableWidth - (charArea.m_X* buffer.GetWidth());
-            int heightLeft = totalUsableHeight - (charArea.m_Y*buffer.GetHeight());
-
-            x += (widthLeft/2);
-            y += (heightLeft /2);
-        }
-        //Utils::Log(std::format("CHAR AREA: {}", charArea.ToString()));
+        //Utils::LogWarning(std::format("DRAWING MIXED BUFFER: {}", ToString(buffer)));
 
         char drawStr[2] = { '1', '\0' };
-       
-        //TODO: instead of drawing text directly and separeately maybe look into
-        //having the buffer be a texture and drawing the text there rather and then redenderign the texture each frame
-        //since text is not optimized very well in raylib
-        int startX = x;
-        for (int r = 0; r < buffer.GetHeight(); r++)
+        for (const auto& pos : buffer)
         {
-            for (int c = 0; c < buffer.GetWidth(); c++)
-            {
-                const TextChar& currentChar = buffer.GetAtUnsafe({ r, c });
-                drawStr[0] = currentChar.m_Char;
-                if (drawStr[0] != EMPTY_CHAR_PLACEHOLDER)
-                {
-                    DrawText(drawStr, x, y, renderInfo.m_FontSize, currentChar.m_Color);
-                }
-               /*Utils::Log(std::format("Drawing character: {} at pos: {} with color: {}", 
-                    Utils::ToString(drawStr[0]), Utils::Point2DInt(r, c).ToString(), RaylibUtils::ToString(buffer.GetAt({ r, c })->m_Color)));*/
-                x += charArea.m_X;
-            }
+            drawStr[0] = pos.m_Text.m_Char;
+            if (!Utils::Assert(RaylibUtils::FontSupportsChar(*pos.m_FontData.m_Font, pos.m_Text.m_Char), 
+                std::format("GameRenderer tried to render character: {} but font does not support this character!", Utils::ToString(pos.m_Text.m_Char))))
+                continue;
 
-            y += charArea.m_Y;
-            x = startX;
+            //Utils::LogWarning(std::format("Drawing text at pos: {}", pos.m_Pos.ToString()));
+            //This should be optimized to use rows of text rather going through each text char individiaully
+            DrawTextEx(*(pos.m_FontData.m_Font), drawStr, RaylibUtils::ToRaylibVector(pos.m_Pos), pos.m_FontData.m_FontSize, 0, pos.m_Text.m_Color);
         }
+
+        if (outlineBuffer != nullptr)
+        {
+            for (const auto& rectangle : outlineBuffer->m_RectangleBuffer)
+            {
+                DrawRectangleLines(rectangle.m_Position.m_X, rectangle.m_Position.m_Y, 
+                    rectangle.m_Size.XAsInt(), rectangle.m_Size.YAsInt(), COLLIDER_OUTLINE_COLOR);
+              /*  Utils::LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}", 
+                    rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
+            }
+        }
+
+        const float CENTER_CIRCLE_RADIUS = 5;
+        Color circleColor = WHITE;
+        circleColor.a = 50;
+        const WorldPosition centerPos = {(float)SCREEN_WIDTH/2, (float)SCREEN_HEIGHT/2};
+        DrawCircle(centerPos.m_X, centerPos.m_Y, CENTER_CIRCLE_RADIUS, circleColor);
 
         EndDrawing();
     }

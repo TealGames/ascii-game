@@ -37,8 +37,12 @@ namespace Physics
 			ECS::Entity bodyAEntity = bodyA.GetEntitySafe();
 			foundCollision = false;
 
-			for (int j = i + 1; j < m_bodies.size(); j++)
+			//Note: this could get optimized to not need double checking for each possible collision
+			//but we need it in this time to ensure that velocity and other updates occur for BOTH bodies
+			//and not just to one
+			for (int j = 0; j < m_bodies.size(); j++)
 			{
+				if (j == i) continue;
 				if (m_bodies[j] == nullptr) continue;
 
 				PhysicsBodyData& bodyB = *(m_bodies[j]);
@@ -51,11 +55,15 @@ namespace Physics
 				}
 			}
 
-			if (foundCollision) continue;
+			Utils::LogWarning(std::format("COLLISION FOR ENTITY: {} FOUND: {}", bodyA.m_Entity->m_Name, std::to_string(foundCollision)));
+			if (foundCollision)
+			{
+				bodyA.SetVelocity(bodyA.GetVelocity().GetNormal());
+			}
 
 			float xVelocity = bodyA.GetVelocity().m_X * deltaTime;;
 			float yVelocity = bodyA.GetVelocity().m_Y * deltaTime;;
-			Utils::LogWarning(std::format("ENTITY SETTING POS: {}", std::to_string(xVelocity), std::to_string(yVelocity)));
+			//Utils::LogWarning(std::format("ENTITY SETTING POS: {}", std::to_string(xVelocity), std::to_string(yVelocity)));
 			bodyAEntity.m_Transform.m_Pos.m_X += xVelocity;
 			bodyAEntity.m_Transform.m_Pos.m_Y += yVelocity;
 

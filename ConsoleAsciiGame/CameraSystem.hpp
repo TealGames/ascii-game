@@ -11,17 +11,25 @@
 #include "SceneManager.hpp"
 #include "Scene.hpp"
 #include "CameraData.hpp"
+#include "WorldPosition.hpp"
+#include "ScreenPosition.hpp"
+#include "TextBuffer.hpp"
+#include "ColliderOutlineBuffer.hpp"
 
 namespace ECS
 {
 	class CameraSystem : public SingleBodySystem<CameraData>
 	{
 	private:
-		std::optional<TextBuffer> m_currentFrameBuffer;
+		TextBufferMixed m_currentFrameBuffer;
+		ColliderOutlineBuffer* m_colliderOutlineBuffer;
+
 	public:
 
 	private:
 		void CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData, ECS::Entity& mainCamera);
+
+		bool IsWithinViewport(const CameraData& camera, const WorldPosition& pos) const;
 
 	public:
 		/// <summary>
@@ -32,7 +40,7 @@ namespace ECS
 		/// <param name="sceneManager">Manager needed to retrieve viewed data</param>
 		/// <param name="followTarget">The object that that camera attempts to follow</param>
 		/// <param name="viewportSize">THe amount of text vewied in WIDTH, HEIGHT</param>
-		CameraSystem();
+		CameraSystem(ColliderOutlineBuffer* colliderBuffer);
 		//Camera(Transform& transform, const Utils::Point2DInt& viewportSize);
 
 		void UpdateCameraPosition(CameraData& cameraData, ECS::Entity& entity);
@@ -40,6 +48,7 @@ namespace ECS
 		void SystemUpdate(Scene& scene, CameraData& component,
 			ECS::Entity& entity, const float& deltaTime) override;
 
-		const TextBuffer* GetCurrentFrameBuffer() const;
+		const TextBufferMixed& GetCurrentFrameBuffer() const;
+		const ColliderOutlineBuffer* GetCurrentColliderOutlineBuffer() const;
 	};
 }

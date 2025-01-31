@@ -82,12 +82,20 @@ private:
 public:
 	Scene(const std::filesystem::path& scenePath, GlobalEntityManager& globalEntities);
 
+	/// <summary>
+	/// Will initialize the scene with deserialized entities and will initialize physics simulation
+	/// </summary>
+	void InitScene();
+
 	std::vector<RenderLayer*> GetLayersMutable();
 	std::vector<const RenderLayer*> GetLayers(const RenderLayerType& renderLayers) const;
 	std::vector<const RenderLayer*> GetAllLayers() const;
-	std::vector<TextBuffer*> GetTextBuffersMutable(const RenderLayerType& renderLayers);
-	void SetLayers(const RenderLayerType& renderLayers, const std::vector<TextCharPosition>& positions);
-	void SetLayers(const RenderLayerType& renderLayers, const std::vector<ColorPosition>& positions);
+
+	void AddToLayer(const RenderLayerType& type, TextBufferPosition& texture);
+	std::vector<TextBufferMixed*> GetLayerBufferMutable(const RenderLayerType& renderLayers);
+	//std::vector<TextBuffer*> GetTextBuffersMutable(const RenderLayerType& renderLayers);
+	//void SetLayers(const RenderLayerType& renderLayers, const std::vector<TextCharPosition>& positions);
+	//void SetLayers(const RenderLayerType& renderLayers, const std::vector<ColorPosition>& positions);
 	void ResetAllLayers();
 
 	std::string ToStringLayers() const;
@@ -103,10 +111,8 @@ public:
 	ECS::Entity* TryGetMainCameraEntity();
 	CameraData* TryGetMainCameraData();
 
-	void InitPhysicsWorld();
 	const Physics::PhysicsWorld& GetPhysicsWorld() const;
 	Physics::PhysicsWorld& GetPhysicsWorldMutable();
-
 
 	/// <summary>
 	/// Will return the total number of entities in the scene, including local and 

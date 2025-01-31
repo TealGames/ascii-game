@@ -41,6 +41,8 @@ namespace ECS
 
         //TODO: optimization could be for us to not need to access text buffers directly and allow the scene to iteratoe
         //which can prevent the ned for pointers
+
+        /*
         std::vector<TextBuffer*> affectedLayerBuffers = {};
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
@@ -57,8 +59,8 @@ namespace ECS
 
                 if (STORE_LIGHT_MAP && !data.m_MutatedThisFrame && !data.m_LightMap.empty())
                 {
-                   /* Utils::Log(std::format("ALL light positions: {}", 
-                        Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));*/
+                   //Utils::Log(std::format("ALL light positions: {}", 
+                    //Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));
                     Utils::LogWarning("LIGHT SOURCE CALCULATING FROM LIGHT MAP");
                     Array2DPosition globalRowColPos = {};
                     Array2DPosition entityRowColPos = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
@@ -106,11 +108,13 @@ namespace ECS
                 data.m_MutatedThisFrame = false;
                 //std::cout << "Rendering lgiht" << std::endl;
             });
+            */
     }
 
 	void LightSourceSystem::RenderLight(LightSourceData& data, ECS::Entity& entity, 
-        std::vector<TextBuffer*>& buffers, bool displayLightLevels)
+        std::vector<TextBufferMixed*>& buffers, bool displayLightLevels)
 	{
+        /*
         EntityRendererData* renderData = entity.TryGetComponent<EntityRendererData>();
         if (!Utils::Assert(renderData != nullptr, std::format("Tried to render light for entity: {} "
             "but could not find its entity render component!", entity.m_Name))) return;
@@ -127,9 +131,9 @@ namespace ECS
             //Utils::Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
             //Utils::Log(std::format("Player Pos color: {}", RaylibUtils::ToString(buffer->GetAt(m_transform.m_Pos.GetFlipped())->m_Color)));
 
-            for (int r = 0; r < visualData.GetHeight(); r++)
+            for (int r = 0; r < visualData.m_Text.GetHeight(); r++)
             {
-                for (int c = 0; c < visualData.GetWidth(); c++)
+                for (int c = 0; c < visualData.m_Text.GetWidth(); c++)
                 {
                     //we use default coords (x, y) but visual pos is in (row, col) so we flip
                     //TODO: maybe abstract transform from one coord system to the other
@@ -140,13 +144,15 @@ namespace ECS
                 }
             }
         }
+        */
 	}
 
     //TODO: this probably needs to be optimized
     //TODO: there is a lot of get flopped and conversions from cartesia and row col pos so that could be optimized
     void LightSourceSystem::CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity,
-        const CartesianGridPosition& centerCartesianPos, TextBuffer& buffer, bool displayLightLevels)
+        const CartesianGridPosition& centerCartesianPos, TextBufferMixed& buffer, bool displayLightLevels)
     {
+        /*
         if (!data.m_LightMap.empty()) data.m_LightMap.clear();
 
         //std::cout << "Center pos: " << centerPos.ToString() << std::endl;
@@ -233,6 +239,7 @@ namespace ECS
                 }  
             }
         }
+        */
     }
 
     std::uint8_t LightSourceSystem::CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const
@@ -256,9 +263,11 @@ namespace ECS
     }
 
     Color LightSourceSystem::CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, 
-        const TextBuffer& buffer, const CartesianGridPosition& currentPos,
+        const TextBufferMixed& buffer, const CartesianGridPosition& currentPos,
         const CartesianGridPosition& centerPos, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
+        return {};
+        /*
         float distanceToCenter = Utils::GetDistance(currentPos, centerPos);
         //Utils::Log(std::format("Distance between {} and {} is: {}",
         //currentPos.ToString(), centerPos.ToString(), std::to_string(distanceToCenter)));
@@ -282,5 +291,6 @@ namespace ECS
         //std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),
         //std::to_string(lightLevel), std::to_string(colorMultiplier), RaylibUtils::ToString(originalColor)));
         return newColor;
+        */
     }
 }

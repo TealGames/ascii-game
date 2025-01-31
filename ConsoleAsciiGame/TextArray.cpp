@@ -210,17 +210,17 @@ bool TextArray::TrySetRegion(const Array2DPosition& rowColStartPos, const Utils:
 {
 	//Subtract one from width and col since start pos is inclusive
 	Array2DPosition rowColEndPos = rowColStartPos + GetAsArray2DPos(size) + Array2DPosition(-1, -1);
-	if (!Utils::Assert(IsValidPos(rowColEndPos), "Tried to set text buffer region but size is too big!"))
+	if (!Utils::Assert(this, IsValidPos(rowColEndPos), "Tried to set text buffer region but size is too big!"))
 		return false;
 
-	if (!Utils::Assert(chars.size() == size.m_Y, "Tried to set text buffer region but HEIGHT "
+	if (!Utils::Assert(this, chars.size() == size.m_Y, "Tried to set text buffer region but HEIGHT "
 		"size does not match provided chars"))
 		return false;
 
 	Array2DPosition globalRowCol = {};
 	for (int r = 0; r <= chars.size(); r++)
 	{
-		if (!Utils::Assert(chars[r].size() == size.m_X, "Tried to set text buffer region but WIDTH "
+		if (!Utils::Assert(this, chars[r].size() == size.m_X, "Tried to set text buffer region but WIDTH "
 			"size does not match provided chars"))
 			return false;
 
@@ -230,11 +230,12 @@ bool TextArray::TrySetRegion(const Array2DPosition& rowColStartPos, const Utils:
 			SetAt(globalRowCol, chars[r][c]);
 		}
 	}
+	return true;
 }
 
 const TextChar* TextArray::GetAt(const Array2DPosition& rowColPos) const
 {
-	if (!Utils::Assert(IsValidPos(rowColPos), std::format("Tried to get INVALID pos at row col: {} of full buffer: {}",
+	if (!Utils::Assert(this, IsValidPos(rowColPos), std::format("Tried to get INVALID pos at row col: {} of full buffer: {}",
 		rowColPos.ToString(), ToString()))) return nullptr;
 
 	/*Utils::Log(std::format("WHEN ACCESSING POS {} char: {} color is: {}",
@@ -251,10 +252,23 @@ const TextChar& TextArray::GetAtUnsafe(const Array2DPosition& rowColPos) const
 
 const std::vector<TextChar>& TextArray::GetAt(const int& rowPos) const
 {
-	if (!Utils::Assert(IsValidRow(rowPos), std::format("Tried to get INVALID row pos {} of full buffer: {}",
+	if (!Utils::Assert(this, IsValidRow(rowPos), std::format("Tried to get INVALID row pos {} of full buffer: {}",
 		std::to_string(rowPos), ToString()))) return {};
 
 	return m_TextArray[rowPos];
+}
+
+std::string TextArray::GetStringAt(const int& rowColPos) const
+{
+	if (!Utils::Assert(this, IsValidRow(rowColPos), std::format("Tried to get INVALID row pos {} of full buffer: {}",
+		std::to_string(rowColPos), ToString()))) return {};
+
+	std::string rowStr = "";
+	for (const auto& textChar : m_TextArray[rowColPos])
+	{
+		rowStr += textChar.m_Char;
+	}
+	return rowStr;
 }
 
 const TextArrayCollectionType& TextArray::GetFull() const

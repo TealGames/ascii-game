@@ -61,11 +61,11 @@ namespace ECS
 		Color ApplyColorFilter(const Color& originalColor, const Utils::Point3D& fractionalColor, const float& multiplier) const;
 
 		void CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity, const CartesianGridPosition& centerPos,
-			TextBuffer& buffer, bool displayLightLevels);
+			TextBufferMixed& buffer, bool displayLightLevels);
 
-		void RenderLight(LightSourceData& data, ECS::Entity& entity, std::vector<TextBuffer*>& buffers, bool displayLightLevels = false);
+		void RenderLight(LightSourceData& data, ECS::Entity& entity, std::vector<TextBufferMixed*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
-		Color CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, const TextBuffer& buffer, const CartesianGridPosition& currentPos,
+		Color CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, const TextBufferMixed& buffer, const CartesianGridPosition& currentPos,
 			const CartesianGridPosition& centerPos, std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:

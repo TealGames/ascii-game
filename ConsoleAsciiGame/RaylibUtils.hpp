@@ -7,6 +7,7 @@
 #include "HelperFunctions.hpp"
 #include "Point4D.hpp"
 #include "Point3D.hpp"
+#include "Vec2.hpp"
 
 namespace RaylibUtils
 {
@@ -27,5 +28,11 @@ namespace RaylibUtils
 	bool ColorEqual(const Color& color1, const Color& color2);
 
 	void DrawFPSCounter();
+
+	Vector2 ToRaylibVector(const Vec2& vec);
+	Vector2 ToRaylibVector(const Utils::Point2D& point);
+
+	bool IsValidFont(const Font& font);
+	bool FontSupportsChar(const Font& font, const char& character);
 }
 

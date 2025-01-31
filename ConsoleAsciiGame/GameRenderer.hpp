@@ -2,6 +2,7 @@
 #include <optional>
 #include "TextBuffer.hpp"
 #include "Point2DInt.hpp"
+#include "ColliderOutlineBuffer.hpp"
 
 namespace Rendering
 {
@@ -14,5 +15,6 @@ namespace Rendering
         bool m_CenterBuffer;
     };
 
-    void RenderBuffer(const TextBuffer& buffer, const RenderInfo& renderInfo);
+    void RenderBuffer(const TextBufferMixed& buffer, const RenderInfo& renderInfo);
+    void RenderBuffer(const TextBufferMixed& layerBuffers, const ColliderOutlineBuffer* outlineBuffer= nullptr);
 }

@@ -2,6 +2,7 @@
 #include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
 #include "Point2D.hpp"
+#include "CameraData.hpp"
 
 namespace Conversions
 {
@@ -10,4 +11,6 @@ namespace Conversions
 
 	CartesianGridPosition CartesianToGrid(const Utils::Point2D& pos);
 	Array2DPosition CartesianToArray(const Utils::Point2D& pos);
+
+	ScreenPosition WorldToScreenPosition(const CameraData& camera, const WorldPosition& pos);
 }

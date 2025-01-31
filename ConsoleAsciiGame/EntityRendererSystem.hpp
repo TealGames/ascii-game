@@ -27,7 +27,7 @@ namespace ECS
 	public:
 
 	private:
-		void RenderInBuffer(TextBuffer& buffer, EntityRendererData& data, const Entity& entity);
+		void AddTextToBuffer(TextBufferMixed& buffer, EntityRendererData& data, const Entity& entity);
 
 	public:
 		EntityRendererSystem();
@@ -35,9 +35,6 @@ namespace ECS
 		Array2DPosition GetGlobalVisualPos(const Array2DPosition& relativeVisualPos,
 			const EntityRendererData& data, const Entity& entity) const;
 
-		void SetVisualData(EntityRendererData& data, const VisualData& visual);
-		void SetVisualData(EntityRendererData& data, const VisualDataPositions& positions);
-		const std::vector<std::vector<TextChar>>& GetVisualData(const EntityRendererData& data) const;
 		std::string GetVisualString(const EntityRendererData& data) const;
 
 		void SystemUpdate(Scene& scene, const float& deltaTime) override;

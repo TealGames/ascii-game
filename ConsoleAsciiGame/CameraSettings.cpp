@@ -5,11 +5,11 @@
 #include "Entity.hpp"
 #include "Point2DInt.hpp"
 
-CameraSettings::CameraSettings() : CameraSettings(Utils::Point2DInt{ 5, 5 }) {}
+CameraSettings::CameraSettings() : CameraSettings(WorldPosition{ 5, 5 }, nullptr) {}
 
-CameraSettings::CameraSettings(const ECS::Entity& followTarget, const Utils::Point2DInt& viewportSize) :
-    m_FollowTarget(&followTarget), m_HasFixedPosition(false), m_ViewportSize(viewportSize) {}
+CameraSettings::CameraSettings(const WorldPosition& viewportSize, 
+    const ECS::Entity* followTarget) :
+    m_WorldViewportSize(viewportSize), 
+    m_FollowTarget(followTarget), m_HasFixedPosition(m_FollowTarget==nullptr) {}
 
-CameraSettings::CameraSettings(const Utils::Point2DInt& viewportSize) :
-    m_FollowTarget(nullptr), m_HasFixedPosition(true), m_ViewportSize(viewportSize) {}
 

@@ -22,8 +22,8 @@ namespace ECS
 #endif 
 
         CartesianGridPosition currentMove = {};
-        if (IsKeyDown(KEY_DOWN)) currentMove.m_Y++;
-        if (IsKeyDown(KEY_UP)) currentMove.m_Y--;
+        if (IsKeyDown(KEY_DOWN)) currentMove.m_Y--;
+        if (IsKeyDown(KEY_UP)) currentMove.m_Y++;
         if (IsKeyDown(KEY_RIGHT)) currentMove.m_X++;
         if (IsKeyDown(KEY_LEFT)) currentMove.m_X--;
 
