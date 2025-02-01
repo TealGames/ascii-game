@@ -34,6 +34,7 @@ struct LightSourceData : ComponentData
 	//and -1 means unused
 	float m_FalloffStrength;
 
+	//TODO: last frame data should instead be all positions/data of buffer added data
 	std::vector<TextCharPosition> m_LastFrameData;
 	std::vector<LightMapChar> m_LightMap;
 

@@ -38,6 +38,6 @@ namespace Conversions
 					 (topLeftY - pos.m_Y) / camera.m_CameraSettings.m_WorldViewportSize.m_Y };
 
 		//TODO: right now we assume the position is for the whole screen, but we may not want the whole screen covered by the viewport
-		return { static_cast<int>(screenPercent.m_X * SCREEN_WIDTH), static_cast<int>(screenPercent.m_Y * SCREEN_HEIGHT) };
+		return { static_cast<int>(screenPercent.m_X * (float)SCREEN_WIDTH), static_cast<int>(screenPercent.m_Y * (float)SCREEN_HEIGHT) };
 	}
 }

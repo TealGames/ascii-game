@@ -41,6 +41,18 @@ public:
 	Vec2(Vec2&&) noexcept = default;
 
 	/// <summary>
+	/// Will get the x value as its own vector
+	/// </summary>
+	/// <returns></returns>
+	Vec2 GetXAsVector() const;
+
+	/// <summary>
+	/// Will get the x value as its own vector
+	/// </summary>
+	/// <returns></returns>
+	Vec2 GetYAsVector() const;
+
+	/// <summary>
 	/// Returns the angle of the vector by default in radians (or degrees)
 	/// Examples: <0, -1> returns 
 	/// </summary>
@@ -50,6 +62,7 @@ public:
 	float GetMagnitude() const;
 	Vec2 GetNormalized() const;
 	Vec2 GetNormal() const;
+	Vec2 GetOppositeDirection() const;
 
 	std::string ToString(const VectorForm form = VectorForm::MagnitudeDirection) const;
 

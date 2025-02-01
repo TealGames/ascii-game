@@ -9,10 +9,10 @@
 //using TextBuffer = TextArray;
 struct FontData
 {
-	std::uint8_t m_FontSize;
+	float m_FontSize;
 	const Font* m_Font;
 
-	FontData(const std::uint8_t& fontSize, const Font& font);
+	FontData(const float& fontSize, const Font& font);
 };
 
 //TODO: perhaps the camera or something should group together into a new structure with the same font and font size
@@ -27,7 +27,7 @@ struct TextBufferPosition
 	std::string ToString() const;
 
 	TextBufferPosition(const Utils::Point2D& pos, const TextChar& textChar, 
-		const Font& font, const std::uint8_t& fontSize);
+		const Font& font, const float& fontSize);
 };
 
 using TextBufferMixed = std::vector<TextBufferPosition>;

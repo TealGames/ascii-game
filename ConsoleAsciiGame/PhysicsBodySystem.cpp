@@ -11,8 +11,9 @@
 namespace ECS
 {
 	static constexpr bool RENDER_COLLIDER_OUTLINES = true;
+	static constexpr bool DRAW_BODY_VELOCITY_VECTORS = true;
 
-	PhysicsBodySystem::PhysicsBodySystem() : m_ColliderOutlineBuffer() {}
+	PhysicsBodySystem::PhysicsBodySystem() : m_colliderOutlineBuffer() {}
 
 	void PhysicsBodySystem::SystemUpdate(Scene& scene, const float& deltaTime)
 	{
@@ -26,7 +27,8 @@ namespace ECS
 
 		//TODO: this could probably be optimized to not clear static objects (ones that do not move)
 		if (!RENDER_COLLIDER_OUTLINES) return;
-		m_ColliderOutlineBuffer.ClearAll();
+		m_colliderOutlineBuffer.ClearAll();
+		m_lineBuffer.clear();
 
 		CameraData* mainCamera = scene.TryGetMainCameraData();
 		scene.OperateOnComponents<PhysicsBodyData>(
@@ -38,23 +40,41 @@ namespace ECS
 						"but the scene:{} has no active camera!", entity.m_Name, scene.m_SceneName))) return;
 
 					WorldPosition topLeftColliderPos = body.GetAABBTopLeftWorldPos(entity.m_Transform.m_Pos);
+					//TODO: the camera should convert to screen pos not here
 					ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(*mainCamera, topLeftColliderPos);
-					Utils::LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}", 
-						entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));
+					/*Utils::LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}", 
+						entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
 
-					m_ColliderOutlineBuffer.AddRectangle(RectangleOutlineData(body.GetAABB().GetSize(), topLeftScreenPos));
+					m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body.GetAABB().GetSize(), topLeftScreenPos));
+				}
+
+				float velocityMagnitude = body.GetVelocity().GetMagnitude();
+				if (DRAW_BODY_VELOCITY_VECTORS && !Utils::ApproximateEqualsF(velocityMagnitude, 0))
+				{
+					m_lineBuffer.emplace_back(entity.m_Transform.m_Pos, 
+						GetVectorEndPoint(entity.m_Transform.m_Pos, body.GetVelocity()));
 				}
 			});
 	}
 
-	const ColliderOutlineBuffer* PhysicsBodySystem::TryGetColliderBuffer() const
+	const ColliderOutlineBuffer& PhysicsBodySystem::GetColliderBuffer() const
 	{
-		return &m_ColliderOutlineBuffer;
+		return m_colliderOutlineBuffer;
 	}
 
-	ColliderOutlineBuffer* PhysicsBodySystem::TryGetColliderBufferMutable()
+	ColliderOutlineBuffer& PhysicsBodySystem::GetColliderBufferMutable()
 	{
-		return &m_ColliderOutlineBuffer;
+		return m_colliderOutlineBuffer;
+	}
+
+	const LineBuffer& PhysicsBodySystem::GetLineBuffer() const
+	{
+		return m_lineBuffer;
+	}
+
+	LineBuffer& PhysicsBodySystem::GetLineBufferMutable()
+	{
+		return m_lineBuffer;
 	}
 }
 

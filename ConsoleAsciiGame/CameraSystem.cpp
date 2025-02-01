@@ -19,9 +19,10 @@ namespace ECS
 {
     static constexpr bool CACHE_LAST_BUFFER = true;
     static constexpr bool DO_SIZE_SCALING = true;
+    static constexpr float FONT_SIZE_FACTOR = 0.1;
 
-	CameraSystem::CameraSystem(ColliderOutlineBuffer* colliderBuffer) : 
-        m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer)
+	CameraSystem::CameraSystem(ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer) :
+        m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
 	{
         Utils::LogWarning(std::format("CREATED CAMERA SYSTEM: {}", std::to_string(colliderBuffer!=nullptr)));
 	}
@@ -81,6 +82,9 @@ namespace ECS
         float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_CameraSettings.m_WorldViewportSize.m_X, 
                                      SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y);
 
+        Utils::LogWarning(std::format("COLLAPSING CAMERA with scale: {}", std::to_string(scaleFactor)));
+
+
         /*TextBuffer newBuffer = TextBuffer(cameraData.m_CameraSettings.m_ViewportSize.m_X, cameraData.m_CameraSettings.m_ViewportSize.m_Y, TextChar{});*/
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
         //Utils::Log(std::format("Total layers: {}", std::to_string(layers.size())));
@@ -97,18 +101,34 @@ namespace ECS
                     textBufferPos.m_Pos.ToString(), WorldToScreenPosition(cameraData, textBufferPos.m_Pos).ToString()));*/
 
                 m_currentFrameBuffer.emplace_back(textBufferPos);
-                if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_FontSize *= scaleFactor;
+                //TODO: it seems as thoguh font scaling causes problems and size inconsistencies with rest of world
+                if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_FontSize *= (FONT_SIZE_FACTOR* scaleFactor);
                 newScreenPos = Conversions::WorldToScreenPosition(cameraData, textBufferPos.m_Pos);
                 m_currentFrameBuffer.back().m_Pos = Utils::Point2D(static_cast<float>(newScreenPos.m_X), static_cast<float>(newScreenPos.m_Y));
             }
         }
 
-        if (DO_SIZE_SCALING && m_colliderOutlineBuffer!=nullptr && m_colliderOutlineBuffer->HasData())
+        if (DO_SIZE_SCALING)
         {
-            //Utils::LogWarning("DOING SIZE SCALING");
-            for (auto& outline : m_colliderOutlineBuffer->m_RectangleBuffer)
+            if (m_colliderOutlineBuffer != nullptr && m_colliderOutlineBuffer->HasData())
             {
-                outline.m_Size = outline.m_Size* scaleFactor;
+                //Utils::LogWarning("DOING SIZE SCALING");
+                for (auto& outline : m_colliderOutlineBuffer->m_RectangleBuffer)
+                {
+                    outline.m_Size = outline.m_Size * scaleFactor;
+                }
+            }
+        }
+
+        if (m_lineBuffer != nullptr && !m_lineBuffer->empty())
+        {
+            for (auto& line : *m_lineBuffer)
+            {
+                ScreenPosition startScreenPos = Conversions::WorldToScreenPosition(cameraData, line.m_StartPos);
+                line.m_StartPos = { static_cast<float>(startScreenPos.m_X), static_cast<float>(startScreenPos.m_Y)};
+
+                ScreenPosition endScreenPos = Conversions::WorldToScreenPosition(cameraData, line.m_EndPos);
+                line.m_EndPos = { static_cast<float>(endScreenPos.m_X), static_cast<float>(endScreenPos.m_Y) };
             }
         }
 
@@ -186,5 +206,10 @@ namespace ECS
     const ColliderOutlineBuffer* CameraSystem::GetCurrentColliderOutlineBuffer() const
     {
         return m_colliderOutlineBuffer;
+    }
+
+    const LineBuffer* CameraSystem::GetCurrentLineBuffer() const
+    {
+        return m_lineBuffer;
     }
 }

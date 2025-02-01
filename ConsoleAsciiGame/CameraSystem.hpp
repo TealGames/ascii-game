@@ -15,6 +15,7 @@
 #include "ScreenPosition.hpp"
 #include "TextBuffer.hpp"
 #include "ColliderOutlineBuffer.hpp"
+#include "LineBuffer.hpp"
 
 namespace ECS
 {
@@ -23,6 +24,7 @@ namespace ECS
 	private:
 		TextBufferMixed m_currentFrameBuffer;
 		ColliderOutlineBuffer* m_colliderOutlineBuffer;
+		LineBuffer* m_lineBuffer;
 
 	public:
 
@@ -40,7 +42,7 @@ namespace ECS
 		/// <param name="sceneManager">Manager needed to retrieve viewed data</param>
 		/// <param name="followTarget">The object that that camera attempts to follow</param>
 		/// <param name="viewportSize">THe amount of text vewied in WIDTH, HEIGHT</param>
-		CameraSystem(ColliderOutlineBuffer* colliderBuffer);
+		CameraSystem(ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer);
 		//Camera(Transform& transform, const Utils::Point2DInt& viewportSize);
 
 		void UpdateCameraPosition(CameraData& cameraData, ECS::Entity& entity);
@@ -50,5 +52,6 @@ namespace ECS
 
 		const TextBufferMixed& GetCurrentFrameBuffer() const;
 		const ColliderOutlineBuffer* GetCurrentColliderOutlineBuffer() const;
+		const LineBuffer* GetCurrentLineBuffer() const;
 	};
 }

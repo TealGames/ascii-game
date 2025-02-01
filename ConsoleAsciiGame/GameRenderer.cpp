@@ -87,7 +87,7 @@ namespace Rendering
        // EndDrawing();
     }
 
-    void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer)
+    void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer, const LineBuffer* lineBuffer)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
@@ -127,6 +127,16 @@ namespace Rendering
                     rectangle.m_Size.XAsInt(), rectangle.m_Size.YAsInt(), COLLIDER_OUTLINE_COLOR);
               /*  Utils::LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}", 
                     rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
+            }
+        }
+
+        if (lineBuffer != nullptr)
+        {
+            for (const auto& line : *lineBuffer)
+            {
+                DrawLine(line.m_StartPos.m_X, line.m_StartPos.m_Y, line.m_EndPos.m_X, line.m_EndPos.m_Y, LINE_COLOR);
+                /*  Utils::LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}",
+                      rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
             }
         }
 

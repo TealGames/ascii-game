@@ -94,7 +94,7 @@ namespace Core
 		m_animatorSystem(*this),
 		m_physicsBodySystem(),
 		m_playerSystem(),
-		m_cameraSystem(m_physicsBodySystem.TryGetColliderBufferMutable()),
+		m_cameraSystem(&(m_physicsBodySystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
 		m_currentFrameCounter(0),
 		m_currentFPS(0),
 		m_currentTime(std::chrono::high_resolution_clock().now()),
@@ -143,7 +143,7 @@ namespace Core
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 		
 		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));
-		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{ WorldPosition(30, 30), &playerEntity} });
+		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 60, &playerEntity} });
 		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
 		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
 
@@ -241,21 +241,28 @@ namespace Core
 		//m_spriteAnimatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 	
-		Utils::LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} last input: {} velocity: {} OBSTACLE POS: {} ", 
+		Utils::LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
 			std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<2>(), *(m_obstacleInfo.value().m_Data))),
 			m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
+			//TODO: this is technically wrong since we use transform pos as center for aabb global pos but it could be offset (just for testing when offset=0)
+			m_playerInfo.value().GetAt<2>().GetAABB().ToString(m_playerInfo.value().m_Entity->m_Transform.m_Pos),
 			m_playerInfo.value().GetAt<1>().GetLastFrameInput().ToString(),
 			m_playerInfo.value().GetAt<2>().GetVelocity().ToString(),
-			m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
+			m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
+			m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));
 		//TODO: light system without any other problems drop frames to ~20 fps
-		//m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
 
 		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
 		const TextBufferMixed& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Utils::Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
 		//TODO: rendering buffer drops frames
-		if (!collapsedBuffer.empty()) Rendering::RenderBuffer(collapsedBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer());
+		if (!collapsedBuffer.empty())
+		{
+			Rendering::RenderBuffer(collapsedBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(), 
+				m_cameraSystem.GetCurrentLineBuffer());
+		}
 		//else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
 
 		m_transformSystem.UpdateLastFramePos(*activeScene);

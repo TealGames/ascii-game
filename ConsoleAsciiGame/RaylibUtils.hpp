@@ -33,6 +33,7 @@ namespace RaylibUtils
 	Vector2 ToRaylibVector(const Utils::Point2D& point);
 
 	bool IsValidFont(const Font& font);
+	void RemoveFontExtraSpacing(Font& font);
 	bool FontSupportsChar(const Font& font, const char& character);
 }
 

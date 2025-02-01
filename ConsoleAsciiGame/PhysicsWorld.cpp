@@ -28,14 +28,18 @@ namespace Physics
 		ProfilerTimer timer("PhysicsWorld::Update");
 #endif 
 
-		bool foundCollision = false;
+		AABBIntersectionData collision = {};
 		for (int i = 0; i< m_bodies.size(); i++)
 		{
 			if (m_bodies[i] == nullptr) continue;
 
 			PhysicsBodyData& bodyA = *(m_bodies[i]);
 			ECS::Entity bodyAEntity = bodyA.GetEntitySafe();
-			foundCollision = false;
+
+			//We do not need to simulate bodies with no movement since collisions are resolved on bodies that move
+			if (Utils::ApproximateEqualsF(bodyA.GetVelocity().GetMagnitude(), 0)) continue;
+
+			collision = {};
 
 			//Note: this could get optimized to not need double checking for each possible collision
 			//but we need it in this time to ensure that velocity and other updates occur for BOTH bodies
@@ -48,17 +52,23 @@ namespace Physics
 				PhysicsBodyData& bodyB = *(m_bodies[j]);
 				ECS::Entity bodyBEntity = bodyB.GetEntitySafe();
 
-				if (Physics::DoAABBIntersect(bodyAEntity.m_Transform.m_Pos, bodyA.GetAABB(), bodyBEntity.m_Transform.m_Pos, bodyB.GetAABB()))
-				{
-					foundCollision = true;
-					break;
-				}
+				//Intersection is handled as body1 being the non-moving body and body2 as the body moving into the bounding area of body1
+				collision = Physics::GetAABBIntersectionData(bodyBEntity.m_Transform.m_Pos, bodyB.GetAABB(), bodyAEntity.m_Transform.m_Pos, bodyA.GetAABB());
+				if (collision.m_DoIntersect) break;
 			}
 
-			Utils::LogWarning(std::format("COLLISION FOR ENTITY: {} FOUND: {}", bodyA.m_Entity->m_Name, std::to_string(foundCollision)));
-			if (foundCollision)
+			Utils::LogWarning(std::format("COLLISION FOR ENTITY: {} FOUND: {} DEPTH: {}", bodyA.m_Entity->m_Name, 
+				std::to_string(collision.m_DoIntersect), collision.m_Depth.ToString()));
+
+			if (collision.m_DoIntersect)
 			{
-				bodyA.SetVelocity(bodyA.GetVelocity().GetNormal());
+				bool xIsMin = std::abs(collision.m_Depth.m_X) < std::abs(collision.m_Depth.m_Y);
+				float moveDelta = -(xIsMin ? collision.m_Depth.m_X : collision.m_Depth.m_Y);
+
+				if (xIsMin) bodyAEntity.m_Transform.m_Pos.m_X += moveDelta;
+				else bodyAEntity.m_Transform.m_Pos.m_Y += moveDelta;
+
+				//bodyA.SetVelocity(collision.m_Depth.GetOppositeDirection());
 			}
 
 			float xVelocity = bodyA.GetVelocity().m_X * deltaTime;;

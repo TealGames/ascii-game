@@ -542,6 +542,15 @@ namespace Utils
 	int GenerateRandomInt(int minInclusive, int maxInclusive);
 	double GenerateRandomDouble(double minInclusive, double maxExclusive);
 
+	/// <summary>
+	/// Will returns the minimum value considering their ABSOLUTE VALUE (disregarding sign)
+	///	The returned value WILL include the sign as given by argument
+	/// </summary>
+	/// <param name="num1"></param>
+	/// <param name="num2"></param>
+	/// <returns></returns>
+	float MinAbs(const float& num1, const float& num2);
+
 	std::string CollapseToSingleString(const std::vector<std::string>& collection);
 
 	constexpr std::uint8_t DEFAULT_PARSE_BASE = 10;

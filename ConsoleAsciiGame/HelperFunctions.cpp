@@ -14,7 +14,7 @@
 
 namespace Utils
 {
-	inline static const std::string LOG_ONLY_MESSAGE = "";
+	inline static const std::string LOG_ONLY_MESSAGE = "COLLAPSING CAMERA with scale:";
 	inline static constexpr LogType LOG_MESSAGE_TYPES = LogType::Log | LogType::Error | LogType::Warning;
 	inline constexpr bool LOG_MESSAGES = true;
 
@@ -192,6 +192,12 @@ namespace Utils
 		std::mt19937 engine(rd());
 		std::uniform_real_distribution<double> dist(minInclusive, maxExclusive);
 		return dist(engine);
+	}
+
+	float MinAbs(const float& num1, const float& num2)
+	{
+		if (std::abs(num1) < std::abs(num2)) return num1;
+		return num2;
 	}
 
 	std::string CollapseToSingleString(const std::vector<std::string>& vec)

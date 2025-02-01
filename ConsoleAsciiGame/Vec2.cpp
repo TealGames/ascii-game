@@ -23,6 +23,16 @@ Vec2::Vec2(const float& xComp, const float& yComp)
 
 }
 
+Vec2 Vec2::GetXAsVector() const
+{
+	return { m_X, 0 };
+}
+
+Vec2 Vec2::GetYAsVector() const
+{
+	return {0, m_Y};
+}
+
 float Vec2::GetAngle(const AngleMode& angleMode) const
 {
 	//Just in case to prevent implementations returning undefined
@@ -53,6 +63,11 @@ Vec2 Vec2::GetNormalized() const
 Vec2 Vec2::GetNormal() const
 {
 	return Vec2(m_Y, -m_X);
+}
+
+Vec2 Vec2::GetOppositeDirection() const
+{
+	return Vec2(-m_X, -m_Y);
 }
 
 std::string Vec2::ToString(VectorForm form) const

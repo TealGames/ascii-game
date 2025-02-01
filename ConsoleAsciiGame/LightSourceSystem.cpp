@@ -42,65 +42,65 @@ namespace ECS
         //TODO: optimization could be for us to not need to access text buffers directly and allow the scene to iteratoe
         //which can prevent the ned for pointers
 
-        /*
-        std::vector<TextBuffer*> affectedLayerBuffers = {};
+        
+        std::vector<TextBufferMixed*> affectedLayerBuffers = {};
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
             {
                 //Utils::Log(Utils::LogType::Warning, std::format("Light data for {} is mutated: {}", entity.m_Name, std::to_string(data.m_MutatedThisFrame)));
-                affectedLayerBuffers = scene.GetTextBuffersMutable(data.m_AffectedLayers);
-                if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !entity.m_Transform.HasMovedThisFrame()
+                affectedLayerBuffers = scene.GetLayerBufferMutable(data.m_AffectedLayers);
+              /*  if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !entity.m_Transform.HasMovedThisFrame()
                     && !data.m_LastFrameData.empty())
                 {
                     Utils::LogWarning("LIGHT SOURCE READING LAST FRAME DATA");
                     scene.SetLayers(data.m_AffectedLayers, data.m_LastFrameData);
                     return;
-                }
+                }*/
 
-                if (STORE_LIGHT_MAP && !data.m_MutatedThisFrame && !data.m_LightMap.empty())
-                {
-                   //Utils::Log(std::format("ALL light positions: {}", 
-                    //Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));
-                    Utils::LogWarning("LIGHT SOURCE CALCULATING FROM LIGHT MAP");
-                    Array2DPosition globalRowColPos = {};
-                    Array2DPosition entityRowColPos = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
-                    Color newColor = {};
+                //if (STORE_LIGHT_MAP && !data.m_MutatedThisFrame && !data.m_LightMap.empty())
+                //{
+                //   //Utils::Log(std::format("ALL light positions: {}", 
+                //    //Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));
+                //    Utils::LogWarning("LIGHT SOURCE CALCULATING FROM LIGHT MAP");
+                //    Array2DPosition globalRowColPos = {};
+                //    Array2DPosition entityRowColPos = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
+                //    Color newColor = {};
 
-                    //if (CACHE_LAST_BUFFER && !data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
-                    int frameDataIndex = 0;
-                    for (int i=0; i<affectedLayerBuffers.size(); i++)
-                    {
-                        const auto& buffer = affectedLayerBuffers[i];
-                        for (const auto& lightMapChar : data.m_LightMap)
-                        {
-                            globalRowColPos = entityRowColPos + Conversions::GridToArray(lightMapChar.m_RelativePos);
+                //    //if (CACHE_LAST_BUFFER && !data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
+                //    int frameDataIndex = 0;
+                //    for (int i=0; i<affectedLayerBuffers.size(); i++)
+                //    {
+                //        const auto& buffer = affectedLayerBuffers[i];
+                //        for (const auto& lightMapChar : data.m_LightMap)
+                //        {
+                //            globalRowColPos = entityRowColPos + Conversions::GridToArray(lightMapChar.m_RelativePos);
 
-                           //Utils::Log(std::format("Relative pos: {} global: {} valid: {}",
-                           // lightMapChar.m_RelativeCartesianPos.ToString(), globalPos.ToString(), buffer->IsValidPos(globalPos)));
-                            if (!buffer->IsValidPos(globalRowColPos)) continue;
-                            const TextChar& currentTextChar = buffer->GetAtUnsafe(globalRowColPos);
+                //           //Utils::Log(std::format("Relative pos: {} global: {} valid: {}",
+                //           // lightMapChar.m_RelativeCartesianPos.ToString(), globalPos.ToString(), buffer->IsValidPos(globalPos)));
+                //            if (!buffer->IsValidPos(globalRowColPos)) continue;
+                //            const TextChar& currentTextChar = buffer->GetAtUnsafe(globalRowColPos);
 
-                            if (currentTextChar.m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
+                //            if (currentTextChar.m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
 
-                            newColor = ApplyColorFilter(currentTextChar.m_Color, lightMapChar.m_FractionalFilterColor, lightMapChar.m_ColorFactor);
-                            Utils::Log(std::format("CREATING LIGHT MAP COLORS: old: {} factor: {} new: {}", 
-                                RaylibUtils::ToString(buffer->GetAtUnsafe(globalRowColPos).m_Color), std::to_string(lightMapChar.m_ColorFactor),
-                                RaylibUtils::ToString(newColor)));
-                            buffer->SetAt(globalRowColPos, newColor);
+                //            newColor = ApplyColorFilter(currentTextChar.m_Color, lightMapChar.m_FractionalFilterColor, lightMapChar.m_ColorFactor);
+                //            Utils::Log(std::format("CREATING LIGHT MAP COLORS: old: {} factor: {} new: {}", 
+                //                RaylibUtils::ToString(buffer->GetAtUnsafe(globalRowColPos).m_Color), std::to_string(lightMapChar.m_ColorFactor),
+                //                RaylibUtils::ToString(newColor)));
+                //            buffer->SetAt(globalRowColPos, newColor);
 
-                            //We only need to do one buffer since it will be the same map for all buffers
-                            if (CACHE_LAST_BUFFER && i==0)
-                            {
-                                if (frameDataIndex < data.m_LastFrameData.size()) 
-                                    data.m_LastFrameData[frameDataIndex] = TextCharPosition{ globalRowColPos, buffer->GetAtUnsafe(globalRowColPos) };
-                                else data.m_LastFrameData.emplace_back(globalRowColPos, buffer->GetAtUnsafe(globalRowColPos));
-                                //data.m_LastFrameData[index] = TextCharPosition({}, TextChar());
-                                frameDataIndex++;
-                            }
-                        }
-                    }
-                    return;
-                }
+                //            //We only need to do one buffer since it will be the same map for all buffers
+                //            if (CACHE_LAST_BUFFER && i==0)
+                //            {
+                //                if (frameDataIndex < data.m_LastFrameData.size()) 
+                //                    data.m_LastFrameData[frameDataIndex] = TextCharPosition{ globalRowColPos, buffer->GetAtUnsafe(globalRowColPos) };
+                //                else data.m_LastFrameData.emplace_back(globalRowColPos, buffer->GetAtUnsafe(globalRowColPos));
+                //                //data.m_LastFrameData[index] = TextCharPosition({}, TextChar());
+                //                frameDataIndex++;
+                //            }
+                //        }
+                //    }
+                //    return;
+                //}
 
                 scene.IncreaseFrameDirtyComponentCount();
                 if (CACHE_LAST_BUFFER && !data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
@@ -108,13 +108,14 @@ namespace ECS
                 data.m_MutatedThisFrame = false;
                 //std::cout << "Rendering lgiht" << std::endl;
             });
-            */
+            
     }
 
 	void LightSourceSystem::RenderLight(LightSourceData& data, ECS::Entity& entity, 
         std::vector<TextBufferMixed*>& buffers, bool displayLightLevels)
-	{
-        /*
+    {
+        //TODO: right now we use only the transform pos, but we should also use every pos on player too
+        
         EntityRendererData* renderData = entity.TryGetComponent<EntityRendererData>();
         if (!Utils::Assert(renderData != nullptr, std::format("Tried to render light for entity: {} "
             "but could not find its entity render component!", entity.m_Name))) return;
@@ -125,33 +126,47 @@ namespace ECS
         CartesianGridPosition centerPos = {};
        // std::cout << "REDNER LIGHT" << std::endl;
 
-        for (const auto& buffer : buffers)
+        for (auto& buffer : buffers)
         {
             if (buffer == nullptr) continue;
+            CreateLightingForPoint(data, entity, entity.m_Transform.m_Pos, *buffer, false);
+
             //Utils::Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
             //Utils::Log(std::format("Player Pos color: {}", RaylibUtils::ToString(buffer->GetAt(m_transform.m_Pos.GetFlipped())->m_Color)));
 
+            /*
             for (int r = 0; r < visualData.m_Text.GetHeight(); r++)
             {
                 for (int c = 0; c < visualData.m_Text.GetWidth(); c++)
                 {
-                    //we use default coords (x, y) but visual pos is in (row, col) so we flip
-                    //TODO: maybe abstract transform from one coord system to the other
-                    centerPos = Conversions::ArrayToGrid(m_rendererSystem.GetGlobalVisualPos({ r, c }, *renderData, entity));
-                    if (!buffer->IsValidPos(Conversions::GridToArray(centerPos))) continue;
-
-                    CreateLightingForPoint(data, entity, centerPos, *buffer, displayLightLevels);
+                    //Implement how to find the global pos of a point of visual data
+                    CreateLightingForPoint(data, entity, );
                 }
             }
+            */
         }
-        */
-	}
+    }
 
     //TODO: this probably needs to be optimized
     //TODO: there is a lot of get flopped and conversions from cartesia and row col pos so that could be optimized
-    void LightSourceSystem::CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity,
-        const CartesianGridPosition& centerCartesianPos, TextBufferMixed& buffer, bool displayLightLevels)
+    void LightSourceSystem::CreateLightingForPoint(LightSourceData & data, const ECS::Entity & entity,
+        const WorldPosition& centerPos, TextBufferMixed & buffer, bool displayLightLevels)
     {
+        std::sort(buffer.begin(), buffer.end(), 
+            [&centerPos](const TextBufferPosition& first, const TextBufferPosition& second) -> bool
+            {
+                return Utils::GetDistance(centerPos, first.m_Pos) < Utils::GetDistance(centerPos, second.m_Pos);
+                
+            });
+
+        float centerDistance = 0;
+        for (auto& bufferPos : buffer)
+        {
+            centerDistance = Utils::GetDistance(centerPos, bufferPos.m_Pos);
+            if (centerDistance > data.m_LightRadius) break;
+
+            bufferPos.m_Text.m_Color = CalculateNewColor(data, entity, bufferPos, centerDistance, nullptr, nullptr);
+        }
         /*
         if (!data.m_LightMap.empty()) data.m_LightMap.clear();
 
@@ -263,34 +278,28 @@ namespace ECS
     }
 
     Color LightSourceSystem::CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, 
-        const TextBufferMixed& buffer, const CartesianGridPosition& currentPos,
-        const CartesianGridPosition& centerPos, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
+        const TextBufferPosition& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
-        return {};
-        /*
-        float distanceToCenter = Utils::GetDistance(currentPos, centerPos);
         //Utils::Log(std::format("Distance between {} and {} is: {}",
         //currentPos.ToString(), centerPos.ToString(), std::to_string(distanceToCenter)));
 
-        uint8_t lightLevel = CalculateLightLevelFromDistance(data, distanceToCenter);
+        uint8_t lightLevel = CalculateLightLevelFromDistance(data, distance);
        // Utils::Log(std::format("Light level for distance: {} is: {}", std::to_string(distanceToCenter), std::to_string(lightLevel)));
         //std::cout << "Light level is: " << std::to_string(lightLevel) << std::endl;
         if (outLightLevel != nullptr) *outLightLevel = lightLevel;
 
         //We want to figure out the color data even if the pos is not valid in case we might need
         //light data to be stored even on invalid positions (so the light map can be created)
-        const Color filterColor = data.m_GradientFilter.GetColorAt(distanceToCenter / data.m_LightRadius, false);
+        const Color filterColor = data.m_GradientFilter.GetColorAt(distance / data.m_LightRadius, false);
         const float colorMultiplier = static_cast<float>(lightLevel) / data.m_Intensity;
-        if (lightMapChar != nullptr) *lightMapChar = LightMapChar(centerPos - currentPos, RaylibUtils::GetFractionalColorRGB(filterColor, colorMultiplier), colorMultiplier);
+        //if (lightMapChar != nullptr) *lightMapChar = LightMapChar(centerPos - currentPos, RaylibUtils::GetFractionalColorRGB(filterColor, colorMultiplier), colorMultiplier);
 
-        if (!buffer.IsValidPos(Conversions::GridToArray(currentPos))) return {};
-        const Color originalColor = buffer.GetAt(Conversions::GridToArray(currentPos))->m_Color;
+        const Color originalColor = bufferPos.m_Text.m_Color;
         const Color newColor = GetColorFromMultiplier(originalColor, filterColor, colorMultiplier);
 
         //Utils::Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
         //std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),
         //std::to_string(lightLevel), std::to_string(colorMultiplier), RaylibUtils::ToString(originalColor)));
         return newColor;
-        */
     }
 }

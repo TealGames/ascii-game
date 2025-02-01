@@ -25,6 +25,7 @@ namespace ECS
 		if (!Utils::Assert(this, body != nullptr, std::format("Tried to move player from system update "
 			"of PlayerSystem but it does not have a input component!"))) return;
 
+		//Player moves faster on diagonals
 		body->SetVelocity(GetVector(input->GetLastFrameInput()) * component.GetMoveSpeed());
 	}
 }

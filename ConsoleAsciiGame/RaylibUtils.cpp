@@ -101,6 +101,16 @@ namespace RaylibUtils
 		return font.texture.id != 0;
 	}
 
+	void RemoveFontExtraSpacing(Font& font)
+	{
+		for (int i = 0; i < font.glyphCount; i++)
+		{
+			font.glyphs[i].offsetX = 0; 
+			font.glyphs[i].offsetY = 0;
+			font.glyphs[i].advanceX = 0;
+		}
+	}
+
 	bool FontSupportsChar(const Font& font, const char& character)
 	{
 		return GetGlyphIndex(font, character) != -1;

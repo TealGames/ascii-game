@@ -20,8 +20,8 @@ using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
 class VisualData
 {
 public:
-	const std::uint8_t& DEFAULT_FONT_SIZE = GLOBAL_FONT_SIZE;
-	const Utils::Point2DInt& DEFAULT_CHAR_SPACING = GLOBAL_CHAR_SPACING;
+	const float& DEFAULT_FONT_SIZE = GLOBAL_FONT_SIZE;
+	const Utils::Point2D& DEFAULT_CHAR_SPACING = GLOBAL_CHAR_SPACING;
 
 	static const Utils::Point2D PIVOT_TOP_LEFT;
 	static const Utils::Point2D PIVOT_TOP_RIGHT;
@@ -35,7 +35,7 @@ private:
 	/// <summary>
 	/// The spacing between characters in the visual in [WIDTH, HEIGHT]
 	/// </summary>
-	Utils::Point2DInt m_charSpacing;
+	Utils::Point2D m_charSpacing;
 
 	/// <summary>
 	/// The position relative to the visual that corresponds to the transform position.
@@ -44,7 +44,7 @@ private:
 	Utils::Point2D m_pivotRelative;
 
 	const Font* m_font;
-	std::uint8_t m_fontSize;
+	float m_fontSize;
 
 public:
 	TextArray m_Text;
@@ -56,7 +56,7 @@ private:
 public:
 	VisualData();
 	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, 
-		const std::uint8_t& fontSize, const Utils::Point2DInt& charSpacing, const Utils::Point2D& relativePivotPos= PIVOT_TOP_LEFT);
+		const std::uint8_t& fontSize, const Utils::Point2D& charSpacing, const Utils::Point2D& relativePivotPos= PIVOT_TOP_LEFT);
 	
 	std::optional<TextArray> CreateSquaredBuffer(const RawTextBufferBlock& rawBuffer) const;
 	std::string ToStringRawBuffer(const RawTextBufferBlock& block);
@@ -70,9 +70,9 @@ public:
 	/// <returns></returns>
 	void AddTextPositionsToBuffer(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
 
-	const Utils::Point2DInt& GetCharSpacing() const;
+	const Utils::Point2D& GetCharSpacing() const;
 	const Font& GetFont() const;
-	const std::uint8_t GetFontSize() const;
+	const float GetFontSize() const;
 
 	const Utils::Point2D& GetPivot() const;
 };

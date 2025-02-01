@@ -15,7 +15,7 @@ const Utils::Point2D VisualData::PIVOT_TOP_CENTER = {0.5, 1};
 
 VisualData::VisualData() : VisualData(RawTextBufferBlock(), GetGlobalFont(), DEFAULT_FONT_SIZE, DEFAULT_CHAR_SPACING) {}
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, 
-	const std::uint8_t& fontSize, const Utils::Point2DInt& charSpacing, const Utils::Point2D& relativePivotPos)
+	const std::uint8_t& fontSize, const Utils::Point2D& charSpacing, const Utils::Point2D& relativePivotPos)
 	: m_Text(), m_font(&font), m_fontSize(fontSize), m_charSpacing(charSpacing), m_pivotRelative(relativePivotPos)
 {
 	if (rawBuffer.empty()) return;
@@ -191,11 +191,11 @@ void VisualData::AddTextPositionsToBuffer(const WorldPosition& transformPos, Tex
 	float previousRowsHeight = 0;
 	float currentRowMaxHeight = 0;
 	Vector2 currentSize = {};
-	
 
-	char currentTextChar[2] = {'1', '\0'};
-	
+	int maxColHeight = 0;
+	char maxColHeightChar = '1';
 
+	char currentTextChar[2] = { '1', '\0' };
 	std::vector<TextBufferPosition> textBufferData = {};
 
 	//First pass will calculate distance from top left corner of the text using relative coords
@@ -205,16 +205,24 @@ void VisualData::AddTextPositionsToBuffer(const WorldPosition& transformPos, Tex
 		currentRowMaxHeight = 0;
 		currentColsWidth = 0;
 
+		maxColHeight = 0;
+
 		for (int c = 0; c < charArrSize.m_X; c++)
 		{
 			currentTextChar[0] = m_Text.GetAtUnsafe({ r, c }).m_Char;
 			currentSize = MeasureTextEx(GetFont(), currentTextChar, m_fontSize, 0);
-			if (currentSize.y > currentRowMaxHeight) currentRowMaxHeight = currentSize.y;
+			currentSize.y = m_font->baseSize;
+			if (currentSize.y > currentRowMaxHeight)
+			{
+				currentRowMaxHeight = currentSize.y;
+				maxColHeight = c;
+				maxColHeightChar = currentTextChar[0];
+			}
 
 			if (c == 0)
 			{
 				textBufferData.push_back(TextBufferPosition{ Utils::Point2D{ 0, -previousRowsHeight },
-				m_Text.GetAtUnsafe({r, c}), *m_font, m_fontSize });
+					m_Text.GetAtUnsafe({r, c}), *m_font, m_fontSize });
 			}
 
 			//We do this here even for when c == width-1 so we can use be added towards total
@@ -227,8 +235,10 @@ void VisualData::AddTextPositionsToBuffer(const WorldPosition& transformPos, Tex
 				m_Text.GetAtUnsafe({r, c + 1}), *m_font, m_fontSize });
 			}
 		}
-		
 
+		Utils::Log(std::format("Tried to make visual data now at row: {} has max colL: {} with char: {} of hieght: {}",
+			std::to_string(r), std::to_string(maxColHeight), Utils::ToString(maxColHeightChar), std::to_string(currentRowMaxHeight)));
+		
 		//Update the current total size based on the stored previous row and col sizes
 		previousRowsHeight += (currentRowMaxHeight + m_charSpacing.m_Y);
 		totalSize.m_Y = previousRowsHeight;
@@ -237,7 +247,7 @@ void VisualData::AddTextPositionsToBuffer(const WorldPosition& transformPos, Tex
 	//Utils::Log(std::format("World size for: {} is: {}", m_Text.ToString(), totalSize.ToString()));
 
 	WorldPosition topLeftPos = {transformPos.m_X - m_pivotRelative.m_X*totalSize.m_X, 
-							    transformPos.m_Y+ (1- m_pivotRelative.m_Y)* totalSize.m_X };
+							    transformPos.m_Y+ (1- m_pivotRelative.m_Y)* totalSize.m_Y };
 
 	//Second pass will add the top left position calculated based on total size from first pass
 	for (auto& textBuffer : textBufferData)
@@ -256,7 +266,7 @@ void VisualData::AddTextPositionsToBuffer(const WorldPosition& transformPos, Tex
 	return;
 }
 
-const Utils::Point2DInt& VisualData::GetCharSpacing() const
+const Utils::Point2D& VisualData::GetCharSpacing() const
 {
 	return m_charSpacing;
 }
@@ -271,7 +281,7 @@ const Font& VisualData::GetFont() const
 		
 	return *m_font;
 }
-const std::uint8_t VisualData::GetFontSize() const
+const float VisualData::GetFontSize() const
 {
 	return m_fontSize;
 }
