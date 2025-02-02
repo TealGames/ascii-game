@@ -29,6 +29,7 @@ namespace RaylibUtils
 
 	void DrawFPSCounter();
 
+	std::string ToString(const Vector2& vec);
 	Vector2 ToRaylibVector(const Vec2& vec);
 	Vector2 ToRaylibVector(const Utils::Point2D& point);
 

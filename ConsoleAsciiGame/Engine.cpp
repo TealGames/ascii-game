@@ -42,15 +42,6 @@ namespace Core
 
 	constexpr std::streamsize DOUBLE_LOG_PRECISION = 8;
 
-	const Rendering::RenderInfo RENDER_INFO = 
-	{
-		CHAR_AREA,
-		TEXT_BUFFER_PADDING,
-		Utils::Point2DInt(SCREEN_WIDTH, SCREEN_HEIGHT),
-		GLOBAL_FONT_SIZE,
-		true
-	};
-
 	//If true, even if the current output from camera is null, will render default data.
 	//This is useful for testing the render loop and finding out FPS (since fps depends on drawing loop)
 	constexpr bool ALWAYS_RENDER = true;
@@ -108,7 +99,7 @@ namespace Core
 			std::format("Tried to set the active scene to the first one, but failed!"))) 
 			return;
 
-		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("Player", TransformData({ 0, 0 }));
+		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("Player", TransformData({ 10, 10 }));
 
 		InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData{ 5});
@@ -119,7 +110,8 @@ namespace Core
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0)));
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },
-				GetGlobalFont(), GLOBAL_FONT_SIZE, GLOBAL_CHAR_SPACING), RenderLayerType::Player});
+				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
+				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player});
 		/*playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
 				AnimationProperty<std::uint8_t>(lightSource.m_LightRadius, lightSource.m_MutatedThisFrame, {
 				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(8), 0),
@@ -136,14 +128,15 @@ namespace Core
 		
 		obstacle.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'B')) } },
-				GetGlobalFont(), GLOBAL_FONT_SIZE, GLOBAL_CHAR_SPACING), RenderLayerType::Player });
+				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
+				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
 		Utils::Log("CREATING OBSTACLE RB");
 		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(10, 10), Utils::Point2D(0, 0)));
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 		
 		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));
-		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 60, &playerEntity} });
+		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
 		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
 		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
 
@@ -290,7 +283,16 @@ namespace Core
 				Utils::ClearSTDCIN();
 			}
 
-			currentCode = Update();
+			try
+			{
+				currentCode = Update();
+			}
+			catch (const std::exception& e)
+			{
+				Utils::LogError(this, std::format("Update loop terminated due to exception: {}", e.what()));
+				return;
+			}
+
 #ifdef ENABLE_PROFILER
 			ProfilerTimer::m_Profiler.LogCurrentRoundTimes();
 #endif

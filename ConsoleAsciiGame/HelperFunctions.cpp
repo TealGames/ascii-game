@@ -14,7 +14,7 @@
 
 namespace Utils
 {
-	inline static const std::string LOG_ONLY_MESSAGE = "COLLAPSING CAMERA with scale:";
+	inline static const std::string LOG_ONLY_MESSAGE = "";
 	inline static constexpr LogType LOG_MESSAGE_TYPES = LogType::Log | LogType::Error | LogType::Warning;
 	inline constexpr bool LOG_MESSAGES = true;
 

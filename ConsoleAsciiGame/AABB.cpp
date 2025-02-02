@@ -82,9 +82,6 @@ namespace Physics
 			if (min2Global.m_Y < min1Global.m_Y) result.m_Depth.m_Y = max2Global.m_Y - min1Global.m_Y;
 			//Coming from top side
 			else if (min2Global.m_Y > min1Global.m_Y) result.m_Depth.m_Y = min2Global.m_Y - max1Global.m_Y;
-			
-			
-			
 		}
 		return result;
 	}

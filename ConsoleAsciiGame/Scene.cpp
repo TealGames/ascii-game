@@ -11,6 +11,8 @@
 #include "Array2DPosition.hpp"
 #include "CartesianPosition.hpp"
 #include "VisualData.hpp"
+#include "PhysicsBodyData.hpp"
+#include "TransformData.hpp"
 
 const std::string Scene::m_SCENE_FILE_PREFIX = "scene_";
 
@@ -47,14 +49,21 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	ParseSceneFile(fstream, layerText);
 
 	m_localEntities.reserve(MAX_ENTITIES);
+	m_localEntityLookup.reserve(MAX_ENTITIES);
 	m_Layers.emplace(RenderLayerType::Background, RenderLayer{});
 	m_Layers.emplace(RenderLayerType::Player, RenderLayer{});
 
 	//Utils::Log("Creating new layer in scene");
-	const VisualData backgroundVisual = VisualData(layerText, GetGlobalFont(), GLOBAL_FONT_SIZE, GLOBAL_CHAR_SPACING);
-	ECS::Entity backgroundEntity = CreateEntity("Background", TransformData({ 0,0 }));
+	const VisualData backgroundVisual = VisualData(layerText, GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE,
+										VisualData::DEFAULT_CHAR_SPACING, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::PIVOT_CENTER);
+	ECS::Entity& backgroundEntity = CreateEntity("Background", TransformData({ 0,0 }));
 	EntityRendererData& backgroundRenderer= backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
 	Utils::LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
+	Utils::LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.m_Name, backgroundRenderer.m_Entity->m_Name));
+
+	PhysicsBodyData& physicsBody= backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(backgroundVisual.GetWorldSize(), {0,0}));
+	Utils::LogWarning(std::format("Created Physics body: {} visual size: {}", 
+		physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), backgroundVisual.m_Text.GetSize().ToString()));
 
 	//Utils::Log(std::format("New layer w: {} h: {}", std::to_string(newLayerW), std::to_string(newLayerH)));
 	//TODO: right now these are global constants, but might have to be later parsed from data

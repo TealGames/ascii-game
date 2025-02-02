@@ -24,7 +24,7 @@ int main()
     Vector2 lightPosition = { SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 };
 
     // Load a font (you can use any font you like)
-    Font font = LoadFont("resources/DejaVuSans.ttf");
+    Font font = GetFontDefault();
 
     // Define the text character you want to use as a texture
     const std::string text = "`";
@@ -61,6 +61,10 @@ int main()
     // Unload the image since we no longer need it
     UnloadImage(textImage);
 
+    char testChar[2] = { 'C', '\0'};
+    const float fontSize = 12*20;
+    Vector2 size = MeasureTextEx(font, testChar, fontSize, 0);
+
     // Main game loop
     while (!WindowShouldClose()) 
     {
@@ -74,6 +78,10 @@ int main()
         ClearBackground(BLACK);
         DrawFPS(0,0);
 
+        DrawTextEx(font, testChar, { 0, 0 }, fontSize, 0, GREEN);
+        DrawTextEx(font, testChar, size, fontSize, 0, RED);
+
+        /*
         int x = 0;
         int y = 0;
         bool found = false;
@@ -89,6 +97,7 @@ int main()
         BeginBlendMode(BLEND_ADDITIVE);
         DrawTexture(lightTexture, lightPosition.x, lightPosition.y, WHITE);
         EndBlendMode();
+        */
 
         // End drawing
         EndDrawing();

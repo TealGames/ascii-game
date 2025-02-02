@@ -16,12 +16,28 @@ struct VisualSizeInfo
 	Utils::Point2D m_TotalSize;
 };
 
+/// <summary>
+/// The type of character spacing used for text of visual
+/// </summary>
+enum class CharAreaType
+{
+	/// <summary>
+	/// Will use a predefined width and height for any character
+	/// </summary>
+	Predefined,
+	/// <summary>
+	/// Will use the actual size taken up by the character
+	/// </summary>
+	Adaptive,
+};
+
 using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
 class VisualData
 {
 public:
-	const float& DEFAULT_FONT_SIZE = GLOBAL_FONT_SIZE;
-	const Utils::Point2D& DEFAULT_CHAR_SPACING = GLOBAL_CHAR_SPACING;
+	static const float& DEFAULT_FONT_SIZE;
+	static const Utils::Point2D& DEFAULT_CHAR_SPACING;
+	static const Utils::Point2D& DEFAULT_PREDEFINED_CHAR_AREA;
 
 	static const Utils::Point2D PIVOT_TOP_LEFT;
 	static const Utils::Point2D PIVOT_TOP_RIGHT;
@@ -31,11 +47,16 @@ public:
 	static const Utils::Point2D PIVOT_BOTTOM_CENTER;
 	static const Utils::Point2D PIVOT_TOP_CENTER;
 
+	static const Utils::Point2D DEFAULT_PIVOT;
+
 private:
 	/// <summary>
 	/// The spacing between characters in the visual in [WIDTH, HEIGHT]
 	/// </summary>
 	Utils::Point2D m_charSpacing;
+
+	CharAreaType m_charAreaType;
+	Utils::Point2D m_predefinedCharArea;
 
 	/// <summary>
 	/// The position relative to the visual that corresponds to the transform position.
@@ -53,15 +74,48 @@ private:
 	bool HasValidFont() const;
 	bool ValidatePivot(Utils::Point2D& pivot) const;
 
+	WorldPosition GetTopLeftPos(const WorldPosition& pivotWorldPos, const Utils::Point2D& totalSize) const;
+	void AddTextPositionsToBufferPredefined(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
+	void AddTextPositionsToBufferAdaptive(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
+
+private:
+	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
+		const float& fontSize, const Utils::Point2D& charSpacing,
+		const Utils::Point2D& relativePivotPos, const CharAreaType& charAreaType,
+		const Utils::Point2D& predefinedCharArea);
+
 public:
 	VisualData();
+	/// <summary>
+	/// This constructor is used for the adaptive char area for the text
+	/// </summary>
+	/// <param name="rawBuffer"></param>
+	/// <param name="font"></param>
+	/// <param name="fontSize"></param>
+	/// <param name="charSpacing"></param>
+	/// <param name="relativePivotPos"></param>
 	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, 
-		const std::uint8_t& fontSize, const Utils::Point2D& charSpacing, const Utils::Point2D& relativePivotPos= PIVOT_TOP_LEFT);
+		const float& fontSize, const Utils::Point2D& charSpacing, 
+		const Utils::Point2D& relativePivotPos);
+
+	/// <summary>
+	/// This constructor applies to predefined char area for text
+	/// </summary>
+	/// <param name="rawBuffer"></param>
+	/// <param name="font"></param>
+	/// <param name="fontSize"></param>
+	/// <param name="charSpacing"></param>
+	/// <param name="predefinedCharArea"></param>
+	/// <param name="relativePivotPos"></param>
+	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
+		const float& fontSize, const Utils::Point2D& charSpacing,
+		const Utils::Point2D& predefinedCharArea,
+		const Utils::Point2D& relativePivotPos);
 	
 	std::optional<TextArray> CreateSquaredBuffer(const RawTextBufferBlock& rawBuffer) const;
 	std::string ToStringRawBuffer(const RawTextBufferBlock& block);
 
-	Utils::Point2DInt GetWorldSize() const;
+	Utils::Point2D GetWorldSize() const;
 	/// <summary>
 	/// Pivot position is relative to origin of bottom left [0,0] and top right [1, 1]
 	/// </summary>

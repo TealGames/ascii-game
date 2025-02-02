@@ -27,7 +27,7 @@ namespace ECS
         if (IsKeyDown(KEY_RIGHT)) currentMove.m_X++;
         if (IsKeyDown(KEY_LEFT)) currentMove.m_X--;
 
-       if (UpdateData(data, currentMove)) scene.IncreaseFrameDirtyComponentCount();
+        if (UpdateData(data, currentMove)) scene.IncreaseFrameDirtyComponentCount();
         /* Utils::Log(std::format("Update end PLAYER component dirty; {}", std::to_string(m_isDirty)));*/
     }
 

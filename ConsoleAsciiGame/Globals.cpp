@@ -5,12 +5,12 @@
 Font& GetGlobalFont()
 {
 	static Font font = GetFontDefault();
-	static bool removedSpacing = false;
+	/*static bool removedSpacing = false;
 	if (!removedSpacing)
 	{
 		RaylibUtils::RemoveFontExtraSpacing(font);
 		removedSpacing = true;
-	}
+	}*/
 
 	return font;
 }

@@ -86,6 +86,11 @@ namespace RaylibUtils
 		DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
 	}
 
+	std::string ToString(const Vector2& vec)
+	{
+		return std::format("[x:{} y:{}]", std::to_string(vec.x), std::to_string(vec.y));
+	}
+
 	Vector2 ToRaylibVector(const Vec2& vec)
 	{
 		return { vec.m_X, vec.m_Y };

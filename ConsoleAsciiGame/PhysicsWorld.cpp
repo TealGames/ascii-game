@@ -19,6 +19,7 @@ namespace Physics
 
 	void PhysicsWorld::AddBody(PhysicsBodyData& body)
 	{
+		Utils::LogWarning(this, std::format("Adding body: {}", body.m_Entity->m_Name));
 		m_bodies.push_back(&body);
 	}
 
@@ -34,11 +35,10 @@ namespace Physics
 			if (m_bodies[i] == nullptr) continue;
 
 			PhysicsBodyData& bodyA = *(m_bodies[i]);
-			ECS::Entity bodyAEntity = bodyA.GetEntitySafe();
+			ECS::Entity& bodyAEntity = bodyA.GetEntitySafe();
 
 			//We do not need to simulate bodies with no movement since collisions are resolved on bodies that move
 			if (Utils::ApproximateEqualsF(bodyA.GetVelocity().GetMagnitude(), 0)) continue;
-
 			collision = {};
 
 			//Note: this could get optimized to not need double checking for each possible collision
@@ -50,15 +50,16 @@ namespace Physics
 				if (m_bodies[j] == nullptr) continue;
 
 				PhysicsBodyData& bodyB = *(m_bodies[j]);
-				ECS::Entity bodyBEntity = bodyB.GetEntitySafe();
+				ECS::Entity& bodyBEntity = bodyB.GetEntitySafe();
 
 				//Intersection is handled as body1 being the non-moving body and body2 as the body moving into the bounding area of body1
 				collision = Physics::GetAABBIntersectionData(bodyBEntity.m_Transform.m_Pos, bodyB.GetAABB(), bodyAEntity.m_Transform.m_Pos, bodyA.GetAABB());
+				//Utils::LogWarning(std::format("BodyB: {} transform:{}", bodyB.GetAABB().m_MaxPos.ToString(), bodyBEntity.m_Name));
 				if (collision.m_DoIntersect) break;
 			}
 
-			Utils::LogWarning(std::format("COLLISION FOR ENTITY: {} FOUND: {} DEPTH: {}", bodyA.m_Entity->m_Name, 
-				std::to_string(collision.m_DoIntersect), collision.m_Depth.ToString()));
+			/*Utils::LogWarning(std::format("COLLISION FOR ENTITY: {} FOUND: {} DEPTH: {}", bodyA.m_Entity->m_Name, 
+				std::to_string(collision.m_DoIntersect), collision.m_Depth.ToString()));*/
 
 			if (collision.m_DoIntersect)
 			{

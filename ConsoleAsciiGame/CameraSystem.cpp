@@ -82,7 +82,9 @@ namespace ECS
         float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_CameraSettings.m_WorldViewportSize.m_X, 
                                      SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y);
 
-        Utils::LogWarning(std::format("COLLAPSING CAMERA with scale: {}", std::to_string(scaleFactor)));
+        Utils::LogWarning(std::format("COLLAPSING CAMERA with scale: {} wdith factor: {} height factoer: {}",
+            std::to_string(scaleFactor), std::to_string(SCREEN_WIDTH / cameraData.m_CameraSettings.m_WorldViewportSize.m_X), 
+            std::to_string(SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y)));
 
 
         /*TextBuffer newBuffer = TextBuffer(cameraData.m_CameraSettings.m_ViewportSize.m_X, cameraData.m_CameraSettings.m_ViewportSize.m_Y, TextChar{});*/
@@ -102,7 +104,8 @@ namespace ECS
 
                 m_currentFrameBuffer.emplace_back(textBufferPos);
                 //TODO: it seems as thoguh font scaling causes problems and size inconsistencies with rest of world
-                if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_FontSize *= (FONT_SIZE_FACTOR* scaleFactor);
+
+                if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_FontSize *= scaleFactor;
                 newScreenPos = Conversions::WorldToScreenPosition(cameraData, textBufferPos.m_Pos);
                 m_currentFrameBuffer.back().m_Pos = Utils::Point2D(static_cast<float>(newScreenPos.m_X), static_cast<float>(newScreenPos.m_Y));
             }

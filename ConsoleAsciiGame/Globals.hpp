@@ -19,9 +19,8 @@ constexpr int PLAY_AREA_TEXT_BUFFER_HEIGHT = 25;
 
 inline const Utils::Point2DInt TEXT_BUFFER_PADDING = { 10, 10 };
 
-inline const Utils::Point2DInt CHAR_AREA = { 35, 35 };
-
-constexpr float GLOBAL_FONT_SIZE = 15;
+inline const Utils::Point2D GLOBAL_CHAR_AREA = { 2, 2 };
+constexpr float GLOBAL_FONT_SIZE = 2;
 inline const Utils::Point2D GLOBAL_CHAR_SPACING = Utils::Point2D(1,1);
 
 inline const Color COLLIDER_OUTLINE_COLOR = GREEN;

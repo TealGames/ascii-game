@@ -18,7 +18,6 @@ private:
 	
 	Vec2 m_Velocity;
 	Vec2 m_Acceleration;
-	
 
 	//TODO: add other settings like restitution (bounciness), friction, gravity, etc
 
