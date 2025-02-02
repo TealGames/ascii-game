@@ -2,9 +2,18 @@
 #include <vector>
 #include "Point2DInt.hpp"
 #include "PhysicsBodyData.hpp"
+#include "Vec2.hpp"
+#include "WorldPosition.hpp"
 
 namespace Physics
 {
+	struct RaycastInfo
+	{
+		PhysicsBodyData* m_BodyHit = nullptr;
+		WorldPosition m_HitPos = {};
+		Vec2 m_Displacement = Vec2::ZERO;
+	};
+
 	using BodyCollectionType = std::vector<PhysicsBodyData*>;
 	class PhysicsWorld
 	{
@@ -29,9 +38,29 @@ namespace Physics
 		void AddBody(PhysicsBodyData& body);
 
 		void Update(const float& deltaTime);
+
+		/// <summary>
+		/// Will raycast from the origin using the ray with magnitude and direction using the slab method
+		/// It is essentially like creating a line and finding where it intersections the 4 sides
+		/// Slab refers to the area between parallel lines, so we essnetially find min (closest) and max (farthest) 
+		/// intersection points for lines for x (both vertical lines) and y (both horizontal lines). Then we
+		/// combine those positions into the intersection point which is the min for all segments
+		/// </summary>
+		/// <param name="origin"></param>
+		/// <param name="ray"></param>
+		/// <returns></returns>
+		RaycastInfo Raycast(const WorldPosition& origin, const Vec2& ray);
 	};
 
+	/// <summary>
+	/// Will check if the two bodies AABB intersect with each other
+	/// </summary>
+	/// <param name="body1"></param>
+	/// <param name="body2"></param>
+	/// <returns></returns>
 	bool DoBodiesIntersect(const PhysicsBodyData& body1, const PhysicsBodyData& body2);
+
+	Utils::Point2D GetBodyMinDisplacement(const PhysicsBodyData& body1, const PhysicsBodyData& body2);
 }
 
 

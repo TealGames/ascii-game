@@ -49,6 +49,9 @@ namespace Physics
 
 	AABBIntersectionData GetAABBIntersectionData(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
 		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
+
+	Utils::Point2D GetAABBMinDisplacement(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
+		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
 }
 
 

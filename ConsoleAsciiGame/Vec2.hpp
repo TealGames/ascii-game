@@ -64,6 +64,8 @@ public:
 	Vec2 GetNormal() const;
 	Vec2 GetOppositeDirection() const;
 
+	bool IsUnitVector() const;
+
 	std::string ToString(const VectorForm form = VectorForm::MagnitudeDirection) const;
 
 	Vec2 operator+(const Vec2& other) const;
@@ -86,6 +88,7 @@ public:
 Vec2 GetVector(const Utils::Point2D& startPos, const Utils::Point2D& endPos);
 Vec2 GetVector(const Utils::Point2DInt& startPos, const Utils::Point2DInt& endPos);
 Vec2 GetVector(const Utils::Point2DInt& intVec);
+Vec2 GetVector(const Vec2& unitVector, const float& magnitude);
 
 Utils::Point2D GetVectorEndPoint(const Utils::Point2D& startPos, const Vec2& vector);
 Utils::Point2DInt GetVectorEndPoint(const Utils::Point2DInt& startPos, const Vec2& vector);

@@ -70,6 +70,11 @@ Vec2 Vec2::GetOppositeDirection() const
 	return Vec2(-m_X, -m_Y);
 }
 
+bool Vec2::IsUnitVector() const
+{
+	return Utils::ApproximateEqualsF(GetMagnitude(), 1);
+}
+
 std::string Vec2::ToString(VectorForm form) const
 {
 	std::string str;
@@ -157,6 +162,11 @@ Vec2 GetVector(const Utils::Point2DInt& startPos, const Utils::Point2DInt& endPo
 Vec2 GetVector(const Utils::Point2DInt& intVec)
 {
 	return { static_cast<float>(intVec.m_X), static_cast<float>(intVec.m_Y) };
+}
+Vec2 GetVector(const Vec2& unitVector, const float& magnitude)
+{
+	Vec2 unitVectorConverted = unitVector.IsUnitVector() ? unitVector : unitVector.GetNormalized();
+	return { unitVectorConverted.m_X * magnitude, unitVectorConverted.m_Y * magnitude};
 }
 
 Utils::Point2D GetVectorEndPoint(const Utils::Point2D& startPos, const Vec2& vector)

@@ -107,7 +107,7 @@ namespace Core
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
 		Utils::Log("CREATING PLAYER RB");
-		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0)));
+		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY));
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
@@ -132,7 +132,7 @@ namespace Core
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
 		Utils::Log("CREATING OBSTACLE RB");
-		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(10, 10), Utils::Point2D(0, 0)));
+		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(10, 10), Utils::Point2D(0, 0), 0));
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 		
 		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));

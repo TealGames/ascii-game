@@ -15,5 +15,6 @@ struct ComponentData
 	ECS::Entity* m_Entity;
 
 	ComponentData();
-	ECS::Entity& GetEntitySafe();
+	ECS::Entity& GetEntitySafeMutable();
+	const ECS::Entity& GetEntitySafe() const;
 };
