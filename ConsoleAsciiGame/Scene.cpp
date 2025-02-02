@@ -61,7 +61,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	Utils::LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
 	Utils::LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.m_Name, backgroundRenderer.m_Entity->m_Name));
 
-	PhysicsBodyData& physicsBody= backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(backgroundVisual.GetWorldSize(), {0,0}, 0));
+	PhysicsBodyData& physicsBody= backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(backgroundVisual.GetWorldSize(), {0,0}));
 	Utils::LogWarning(std::format("Created Physics body: {} visual size: {}", 
 		physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), backgroundVisual.m_Text.GetSize().ToString()));
 

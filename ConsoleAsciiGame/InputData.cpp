@@ -2,14 +2,31 @@
 #include "pch.hpp"
 #include "InputData.hpp"	
 
-InputData::InputData() : ComponentData(), m_LastFrameDirectionalInput() {}
+InputData::InputData() : ComponentData(), 
+	m_currentFrameDirectionalInput(), m_lastFrameDirectionalInput() {}
+
+const Utils::Point2DInt& InputData::GetFrameInput() const
+{
+	return m_currentFrameDirectionalInput;
+}
 
 const Utils::Point2DInt& InputData::GetLastFrameInput() const
 {
-	return m_LastFrameDirectionalInput;
+	return m_lastFrameDirectionalInput;
 }
 
-void InputData::SetLastFrameInput(const Utils::Point2DInt& lastFrameInput)
+bool InputData::HasInputChanged() const
 {
-	m_LastFrameDirectionalInput = lastFrameInput;
+	return m_currentFrameDirectionalInput != m_lastFrameDirectionalInput;
+}
+
+void InputData::SetFrameInput(const Utils::Point2DInt& input)
+{
+	m_lastFrameDirectionalInput = m_currentFrameDirectionalInput;
+	m_currentFrameDirectionalInput = input;
+}
+
+Utils::Point2DInt InputData::GetInputDelta() const
+{
+	return m_currentFrameDirectionalInput - m_lastFrameDirectionalInput;
 }

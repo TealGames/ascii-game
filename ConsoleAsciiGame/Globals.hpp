@@ -11,15 +11,18 @@ constexpr int SCREEN_WIDTH = 800;
 constexpr int SCREEN_HEIGHT = 600;
 inline const Utils::Point2D SCREEN_ASPECT_RATIO = { 4, 3 };
 
-constexpr float GRAVITY = 20;
+constexpr float GRAVITY = 9.8;
 
-constexpr int TEXT_BUFFER_MAX_WIDTH = 60;
-constexpr int TEXT_BUFFER_MAX_HEIGHT = 30;
+//constexpr int TEXT_BUFFER_MAX_WIDTH = 60;
+//constexpr int TEXT_BUFFER_MAX_HEIGHT = 30;
+//
+//constexpr int PLAY_AREA_TEXT_BUFFER_WIDTH = 50;
+//constexpr int PLAY_AREA_TEXT_BUFFER_HEIGHT = 25;
+//
+//inline const Utils::Point2DInt TEXT_BUFFER_PADDING = { 10, 10 };
 
-constexpr int PLAY_AREA_TEXT_BUFFER_WIDTH = 50;
-constexpr int PLAY_AREA_TEXT_BUFFER_HEIGHT = 25;
-
-inline const Utils::Point2DInt TEXT_BUFFER_PADDING = { 10, 10 };
+constexpr float DEBUG_INFO_FONT_SIZE = 15;
+inline const Utils::Point2D DEBUG_INFO_CHAR_SPACING = { 3, 2 };
 
 inline const Utils::Point2D GLOBAL_CHAR_AREA = { 2, 2 };
 constexpr float GLOBAL_FONT_SIZE = 2;

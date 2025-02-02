@@ -53,7 +53,7 @@ float Vec2::GetMagnitude() const
 Vec2 Vec2::GetNormalized() const
 {
 	float magnitude = GetMagnitude();
-	if (!Utils::Assert(this, Utils::ApproximateEqualsF(magnitude, 0), 
+	if (!Utils::Assert(this, !Utils::ApproximateEqualsF(magnitude, 0),
 		std::format("Tried to normalize vector: {} but it has magnitude 0", ToString())))
 		return Vec2::ZERO;
 

@@ -15,6 +15,7 @@
 #include "PhysicsBodySystem.hpp"
 #include "InputSystem.hpp"
 #include "PlayerSystem.hpp"
+#include "DebugInfo.hpp"
 
 namespace Core
 {
@@ -48,6 +49,8 @@ namespace Core
 
 		std::uint8_t m_currentFrameCounter;
 
+		DebugInfo m_debugInfo;
+		bool m_enableDebugInfo;
 	public:
 
 	private:

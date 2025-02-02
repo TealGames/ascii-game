@@ -27,6 +27,10 @@ namespace Physics
 		/// </summary>
 		BodyCollectionType m_bodies;
 	public:
+		/// <summary>
+		/// The max distance from another body that is still considered as a "collision"/ touching
+		/// </summary>
+		static constexpr float MAX_DISTANCE_FOR_COLLISION = 0.01;
 
 	private:
 	public:
@@ -37,7 +41,8 @@ namespace Physics
 
 		void AddBody(PhysicsBodyData& body);
 
-		void Update(const float& deltaTime);
+		void UpdateStart(const float& deltaTime);
+		void UpdateEnd();
 
 		/// <summary>
 		/// Will raycast from the origin using the ray with magnitude and direction using the slab method

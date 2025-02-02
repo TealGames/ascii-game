@@ -25,7 +25,7 @@ namespace Physics
 		m_bodies.push_back(&body);
 	}
 
-	void PhysicsWorld::Update(const float& deltaTime)
+	void PhysicsWorld::UpdateStart(const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("PhysicsWorld::Update");
@@ -63,6 +63,24 @@ namespace Physics
 				collision = Physics::GetAABBIntersectionData(bodyBEntity.m_Transform.m_Pos, bodyB.GetAABB(), bodyAEntity.m_Transform.m_Pos, bodyA.GetAABB());
 				if (collision.m_DoIntersect)
 				{
+					if (!Utils::ApproximateEqualsF(bodyA.GetVelocity().GetMagnitude(), 0))
+					{
+						bool xIsMin = std::abs(collision.m_Depth.m_X) < std::abs(collision.m_Depth.m_Y);
+						float moveDelta = -(xIsMin ? collision.m_Depth.m_X : collision.m_Depth.m_Y);
+						//We add the extra distance so that they are still considered as colliding but would not cause any awkward jittering
+						//moveDelta += Utils::GetSign(moveDelta) * MAX_DISTANCE_FOR_COLLISION;
+
+						if (xIsMin) bodyAEntity.m_Transform.SetPosDeltaX(moveDelta);
+						else bodyAEntity.m_Transform.SetPosDeltaY(moveDelta);
+
+						bodyA.SetAcceleration(Vec2::ZERO);
+						bodyA.SetVelocity(Vec2::ZERO);
+
+						minBodyDisplacement = GetBodyMinDisplacement(bodyB, bodyA);
+						minBodyDisplacementVec = { std::abs(minBodyDisplacement.m_X), std::abs(minBodyDisplacement.m_Y) };
+						Utils::LogWarning(std::format("After collision prevented new distance: {}", minBodyDisplacementVec.ToString()));
+						/*throw new std::invalid_argument("yeah");*/
+					}
 					if (!isValidIt) bodyA.AddCollidingBody(bodyB);
 					break;
 				}
@@ -71,7 +89,7 @@ namespace Physics
 				minBodyDisplacementVec = { std::abs(minBodyDisplacement.m_X), std::abs(minBodyDisplacement.m_Y) };
 				//If we pass intersect check (meaning we didnt intersect) and it was valid we can remove iterator if we pass
 				//the threshold in order to allow for some degree of touching to still be considered as colliding
-				if (isValidIt && minBodyDisplacementVec.GetMagnitude() >= PhysicsBodyData::NO_COLLISION_DISTANCE_THRESHOLD)
+				if (isValidIt && minBodyDisplacementVec.GetMagnitude() > MAX_DISTANCE_FOR_COLLISION)
 				{
 					bodyA.RemoveCollidingBody(entityACollisionBIt);
 				}
@@ -80,34 +98,29 @@ namespace Physics
 			/*Utils::LogWarning(std::format("COLLISION FOR ENTITY: {} FOUND: {} DEPTH: {}", bodyA.m_Entity->m_Name, 
 				std::to_string(collision.m_DoIntersect), collision.m_Depth.ToString()));*/
 
-			Utils::LogError(std::format("Setting acceleration! Collisions: {}", std::to_string(bodyA.GetTotalBodyCollisions())));
-			if (!bodyA.IsCollidingWithAnyBody())
+			Utils::LogError(std::format("Setting acceleration! Collisions: {} vel: {} vvel magnitude: {} ENTITY: {} has COLLIDING BODIES: {}", 
+				std::to_string(bodyA.GetTotalBodyCollisions()), bodyA.GetVelocity().ToString(), 
+				std::to_string(bodyA.GetVelocity().GetMagnitude()), bodyA.GetEntitySafe().m_Name, bodyA.ToStringCollidingBodies()));
+
+			if (!bodyA.IsCollidingWithAnyBody() && !Utils::ApproximateEqualsF(bodyA.GetGravity(), 0))
 			{
 				bodyA.SetAcceleration({ bodyA.GetAcceleration().m_X, bodyA.GetGravity() });
 			}
 
 			//TODO: all of the code below here should probably be extracted out into separate functions later
-			if (collision.m_DoIntersect && !Utils::ApproximateEqualsF(bodyA.GetVelocity().GetMagnitude(), 0))
-			{
-				bool xIsMin = std::abs(collision.m_Depth.m_X) < std::abs(collision.m_Depth.m_Y);
-				float moveDelta = -(xIsMin ? collision.m_Depth.m_X : collision.m_Depth.m_Y);
 
-				if (xIsMin) bodyAEntity.m_Transform.m_Pos.m_X += moveDelta;
-				else bodyAEntity.m_Transform.m_Pos.m_Y += moveDelta;
+			bodyA.SetVelocityDelta(bodyA.GetAcceleration() * deltaTime);
 
-				bodyA.SetAcceleration(Vec2::ZERO);
-				bodyA.SetVelocity(collision.m_Depth.GetOppositeDirection());
-			}
-
-			bodyA.SetVelocityXDelta(bodyA.GetAcceleration().m_X * deltaTime);
-			bodyA.SetVelocityYDelta(bodyA.GetAcceleration().m_Y * deltaTime);
-
+			//TOOD: surely there is a better way then frame velocities to handle outside velocities?
 			float xVelocity = bodyA.GetVelocity().m_X * deltaTime;;
 			float yVelocity = bodyA.GetVelocity().m_Y * deltaTime;;
+
 			//Utils::LogWarning(std::format("ENTITY SETTING POS: {}", std::to_string(xVelocity), std::to_string(yVelocity)));
-			bodyAEntity.m_Transform.m_Pos.m_X += xVelocity;
-			bodyAEntity.m_Transform.m_Pos.m_Y += yVelocity;
+			bodyAEntity.m_Transform.SetPosDelta(Utils::Point2D(xVelocity, yVelocity));
 		}
+	}
+	void PhysicsWorld::UpdateEnd()
+	{
 	}
 
 	bool DoBodiesIntersect(const PhysicsBodyData& body1, const PhysicsBodyData& body2)

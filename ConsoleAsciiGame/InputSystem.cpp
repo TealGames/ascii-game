@@ -41,7 +41,7 @@ namespace ECS
     bool InputSystem::UpdateData(InputData& data, const CartesianGridPosition& moveDelta)
     {
         //Utils::Log("Player move delta: {}", moveDelta.ToString());
-        data.SetLastFrameInput(moveDelta);
+        data.SetFrameInput(moveDelta);
         return moveDelta.m_X != 0 || moveDelta.m_Y != 0;
     }
 }

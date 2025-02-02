@@ -26,6 +26,13 @@ namespace ECS
 			"of PlayerSystem but it does not have a input component!"))) return;
 
 		//Player moves faster on diagonals
-		body->SetVelocity(GetVector(input->GetLastFrameInput()) * component.GetMoveSpeed());
+		if (!input->HasInputChanged()) return;
+
+		Vec2 dirDelta = GetVector(input->GetInputDelta());
+		if (dirDelta == Vec2::ZERO) return;
+
+		//TODO: if the player stops pressing a button we should remove that velocity
+		dirDelta = dirDelta.GetNormalized();
+		body->SetVelocityDelta(dirDelta * component.GetMoveSpeed());
 	}
 }

@@ -19,6 +19,7 @@
 #include "Timer.hpp"
 #include "ProfilerTimer.hpp"
 #include "PositionConversions.hpp"
+#include "DebugInfo.hpp"
 
 namespace Core
 {
@@ -54,12 +55,12 @@ namespace Core
 		EMPTY_CHAR_PLACEHOLDER, 'O','U', 'T', 'P', 'U', 'T', EMPTY_CHAR_PLACEHOLDER,
 		'F', 'O', 'U', 'N', 'D'} });*/
 
-	const KeyboardKey TOGGLE_PAUSE_UPDATE = KEY_E;
+	const KeyboardKey TOGGLE_PAUSE_UPDATE_KEY = KEY_E;
+	const KeyboardKey TOGGLE_DEBUG_INFO_KEY = KEY_TAB;
 
 	constexpr LoopCode SUCCESS_CODE = 0;
 	constexpr LoopCode END_CODE = 1;
 	constexpr LoopCode ERROR_CODE = 2;
-		
 
 	void Engine::Init()
 	{
@@ -91,7 +92,9 @@ namespace Core
 		m_currentTime(std::chrono::high_resolution_clock().now()),
 		m_lastTime(std::chrono::high_resolution_clock().now()),
 		m_playerInfo(std::nullopt),
-		m_mainCameraInfo(std::nullopt)
+		m_mainCameraInfo(std::nullopt),
+		m_debugInfo{}, 
+		m_enableDebugInfo(false)
 	{
 		Init();
 
@@ -107,7 +110,7 @@ namespace Core
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
 		Utils::Log("CREATING PLAYER RB");
-		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY));
+		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY, 20));
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
@@ -132,7 +135,7 @@ namespace Core
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
 		Utils::Log("CREATING OBSTACLE RB");
-		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(10, 10), Utils::Point2D(0, 0), 0));
+		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(10, 10), Utils::Point2D(0, 0)));
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 		
 		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));
@@ -173,6 +176,7 @@ namespace Core
 				Utils::ToStringDouble(m_deltaTime, DOUBLE_LOG_PRECISION), 
 				Utils::ToStringDouble(m_currentFPS, DOUBLE_LOG_PRECISION), std::to_string(GetFPS()));
 		}
+		if (m_enableDebugInfo) m_debugInfo.AddProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
 
 		/*m_lastTime = m_currentTime;
 		return SUCCESS_CODE;*/
@@ -223,8 +227,13 @@ namespace Core
 		m_transformSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<1>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
-		activeScene->GetPhysicsWorldMutable().Update(m_deltaTime);
 		m_playerSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<0>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
+		if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<1>().GetFrameInput().ToString()));
+
+		activeScene->GetPhysicsWorldMutable().UpdateStart(m_deltaTime);
+		if (m_enableDebugInfo) m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
+		if (m_enableDebugInfo) m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<2>().GetVelocity().ToString(VectorForm::Component)));
+		if (m_enableDebugInfo) m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<2>().GetAcceleration().ToString(VectorForm::Component)));
 
 		m_physicsBodySystem.SystemUpdate(*activeScene, m_deltaTime);
 		Utils::Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
@@ -239,7 +248,7 @@ namespace Core
 			m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 			//TODO: this is technically wrong since we use transform pos as center for aabb global pos but it could be offset (just for testing when offset=0)
 			m_playerInfo.value().GetAt<2>().GetAABB().ToString(m_playerInfo.value().m_Entity->m_Transform.m_Pos),
-			m_playerInfo.value().GetAt<1>().GetLastFrameInput().ToString(),
+			m_playerInfo.value().GetAt<1>().GetFrameInput().ToString(),
 			m_playerInfo.value().GetAt<2>().GetVelocity().ToString(),
 			m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 			m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));
@@ -254,11 +263,13 @@ namespace Core
 		if (!collapsedBuffer.empty())
 		{
 			Rendering::RenderBuffer(collapsedBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(), 
-				m_cameraSystem.GetCurrentLineBuffer());
+				m_cameraSystem.GetCurrentLineBuffer(), m_enableDebugInfo? &m_debugInfo : nullptr);
 		}
 		//else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
 
 		m_transformSystem.UpdateLastFramePos(*activeScene);
+		activeScene->GetPhysicsWorldMutable().UpdateEnd();
+		if (m_enableDebugInfo) m_debugInfo.ClearProperties();
 
 		//Utils::Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
 		//Utils::Log(m_sceneManager.GetActiveScene()->ToStringLayers());
@@ -277,10 +288,14 @@ namespace Core
 		LoopCode currentCode = SUCCESS_CODE;
 		while (!WindowShouldClose())
 		{
-			if (IsKeyPressed(TOGGLE_PAUSE_UPDATE))
+			if (IsKeyPressed(TOGGLE_PAUSE_UPDATE_KEY))
 			{
 				std::cin.get();
 				Utils::ClearSTDCIN();
+			}
+			if (IsKeyPressed(TOGGLE_DEBUG_INFO_KEY))
+			{
+				m_enableDebugInfo = !m_enableDebugInfo;
 			}
 
 			try

@@ -2,12 +2,18 @@
 #include "PhysicsBodyData.hpp"
 #include "HelperFunctions.hpp"
 #include "Entity.hpp"
+#include <limits>
 
-PhysicsBodyData::PhysicsBodyData() : PhysicsBodyData({}, {}, 0) {}
+PhysicsBodyData::PhysicsBodyData() : 
+	PhysicsBodyData({}, {}, 0, std::numeric_limits<float>::max()) {}
 
-PhysicsBodyData::PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity)
+PhysicsBodyData::PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset) : 
+	PhysicsBodyData(boundingBoxSize, transformOffset, 0, 0) {}
+
+PhysicsBodyData::PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity)
 	: ComponentData(), m_aabb(CreateAABB(boundingBoxSize, transformOffset)), 
-	m_velocity(), m_acceleration(), m_transformOffset(transformOffset), m_collidingBodies(), m_gravity(-std::abs(gravity))
+	m_velocity(), m_acceleration(), m_transformOffset(transformOffset), m_collidingBodies(), 
+	m_gravity(-std::abs(gravity)), m_terminalYVelocity(-std::abs(terminalYVelocity))
 {
 	//Utils::LogWarning(std::format("Created physics body of size: {} offset: {} that has min: {} max: {} size: {}",
 	//boundingBoxSize.ToString(), transformOffset.ToString(), m_AABB.m_MinPos.ToString(), 
@@ -32,18 +38,22 @@ Physics::AABB PhysicsBodyData::CreateAABB(const Utils::Point2D& boundingBoxSize,
 	return {transformOffset- (boundingBoxSize/2), transformOffset+ (boundingBoxSize / 2) };
 }
 	
-void PhysicsBodyData::SetVelocity(const Vec2& vel)
-{
-	m_velocity = vel;
-}
-
 void PhysicsBodyData::SetVelocityXDelta(const float& xDelta)
 {
-	m_velocity.m_X += xDelta;
+	SetVelocityDelta({ xDelta, 0 });
 }
 void PhysicsBodyData::SetVelocityYDelta(const float& yDelta)
 {
-	m_velocity.m_Y += yDelta;
+	SetVelocityDelta({0, yDelta});
+}
+void PhysicsBodyData::SetVelocityDelta(const Vec2& vel)
+{
+	SetVelocity(m_velocity + vel);
+}
+void PhysicsBodyData::SetVelocity(const Vec2& vel)
+{
+	m_velocity.m_X = vel.m_X;
+	m_velocity.m_Y = std::max(vel.m_Y, m_terminalYVelocity);
 }
 
 void PhysicsBodyData::SetAcceleration(const Vec2& acc)
@@ -126,4 +136,17 @@ bool PhysicsBodyData::IsCollidingWithBody(const PhysicsBodyData& physicsBody)
 int PhysicsBodyData::GetTotalBodyCollisions()
 {
 	return m_collidingBodies.size();
+}
+std::string PhysicsBodyData::ToStringCollidingBodies() const
+{
+	if (m_collidingBodies.empty()) return "[]";
+	std::string bodiesStr = "[";
+
+	for (const auto& body : m_collidingBodies)
+	{
+		if (body == nullptr) continue;
+		bodiesStr += std::format("{},", body->GetEntitySafe().ToString());
+	}
+	bodiesStr += "]";
+	return bodiesStr;
 }

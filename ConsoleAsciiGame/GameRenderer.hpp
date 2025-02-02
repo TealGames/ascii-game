@@ -4,6 +4,7 @@
 #include "Point2DInt.hpp"
 #include "ColliderOutlineBuffer.hpp"
 #include "LineBuffer.hpp"
+#include "DebugInfo.hpp"
 
 namespace Rendering
 {
@@ -17,5 +18,6 @@ namespace Rendering
     };
 
     void RenderBuffer(const TextBufferMixed& buffer, const RenderInfo& renderInfo);
-    void RenderBuffer(const TextBufferMixed& layerBuffers, const ColliderOutlineBuffer* outlineBuffer= nullptr, const LineBuffer* lineBuffer=nullptr);
+    void RenderBuffer(const TextBufferMixed& layerBuffers, const ColliderOutlineBuffer* outlineBuffer= nullptr, 
+        const LineBuffer* lineBuffer=nullptr, const DebugInfo* debugInfo=nullptr);
 }

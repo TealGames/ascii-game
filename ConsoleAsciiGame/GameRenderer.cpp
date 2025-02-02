@@ -87,16 +87,14 @@ namespace Rendering
        // EndDrawing();
     }
 
-    void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer, const LineBuffer* lineBuffer)
+    void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer, const LineBuffer* lineBuffer, const DebugInfo* debugInfo)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
 #endif 
-
         BeginDrawing();
 
         ClearBackground(BLACK);
-        RaylibUtils::DrawFPSCounter();
         /* DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);*/
         if (DONT_RENDER_NON_UTILS)
         {
@@ -137,6 +135,20 @@ namespace Rendering
                 DrawLine(line.m_StartPos.m_X, line.m_StartPos.m_Y, line.m_EndPos.m_X, line.m_EndPos.m_Y, LINE_COLOR);
                 /*  Utils::LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}",
                       rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
+            }
+        }
+
+        if (debugInfo != nullptr)
+        {
+            Vector2 startPos = {5, 5};
+            Vector2 currentPos = startPos;
+            Vector2 currentSize = {};
+            for (const auto& text : debugInfo->GetText())
+            {
+                currentSize = MeasureTextEx(GetGlobalFont(), text.c_str(), DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X);
+                DrawTextEx(GetGlobalFont(), text.c_str(), currentPos, DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, WHITE);
+
+                currentPos.y += currentSize.y + DEBUG_INFO_CHAR_SPACING.m_Y;
             }
         }
 

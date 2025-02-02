@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include "ComponentData.hpp"
 #include "Point2D.hpp"
 #include "Vec2.hpp"
@@ -18,15 +19,17 @@ private:
 	WorldPosition m_transformOffset;
 	
 	Vec2 m_velocity;
+	/// <summary>
+	/// The max velocity for both the x and y velocities
+	/// </summary>
+	float m_terminalYVelocity;
 	Vec2 m_acceleration;
+	float m_gravity;
 
 	std::vector<PhysicsBodyData*> m_collidingBodies;
 
-	float m_gravity;
-
 	//TODO: add other settings like restitution (bounciness), friction, gravity, etc
 public:
-	static constexpr float NO_COLLISION_DISTANCE_THRESHOLD= 0.01;
 
 private:
 	bool ValidateAABB(const Physics::AABB& boundingBox) const;
@@ -34,9 +37,11 @@ private:
 
 public:
 	PhysicsBodyData();
-	PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity);
+	PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset);
+	PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity);
 
 	void SetVelocity(const Vec2& vel);
+	void SetVelocityDelta(const Vec2& vel);
 	void SetVelocityXDelta(const float& xDelta);
 	void SetVelocityYDelta(const float& yDelta);
 
@@ -58,5 +63,7 @@ public:
 	PhysicsBodyData* TryGetCollidingBody(const PhysicsBodyData& physicsBody);
 	bool IsCollidingWithBody(const PhysicsBodyData& physicsBody);
 	int GetTotalBodyCollisions();
+
+	std::string ToStringCollidingBodies() const;
 };
 

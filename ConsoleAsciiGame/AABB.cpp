@@ -94,7 +94,22 @@ namespace Physics
 		Utils::Point2D min2Global = Utils::Point2D(entity2Pos.m_X + entity2Bounding.m_MinPos.m_X, entity2Pos.m_Y + entity2Bounding.m_MinPos.m_Y);
 		Utils::Point2D max2Global = Utils::Point2D(entity2Pos.m_X + entity2Bounding.m_MaxPos.m_X, entity2Pos.m_Y + entity2Bounding.m_MaxPos.m_Y);
 
-		Vec2 body2Dir = GetVector(min1Global, max2Global);
+		Utils::Point2D displacement = {};
+
+		//body 2 is fully to the RIGHT of body1
+		if (max1Global.m_X < max2Global.m_X && max1Global.m_X < min2Global.m_X) displacement.m_X = min2Global.m_X - max1Global.m_X;
+		//body2 is fully to the LEFT of body1
+		else if (max2Global.m_X < min1Global.m_X && min2Global.m_X < min1Global.m_X) displacement.m_X = max2Global.m_X - min1Global.m_X;
+		//If body2 is touching body1 or is only in vertical dir then displacement is 0
+		else displacement.m_X = 0;
+
+		// body 2 is fully ON TOP of body1
+		if (max1Global.m_Y < max2Global.m_Y && max1Global.m_Y < min2Global.m_Y) displacement.m_Y = min2Global.m_Y - max1Global.m_Y;
+		// body 2 is fully BELOW body1
+		else if (max2Global.m_Y < min1Global.m_Y && min2Global.m_Y < min1Global.m_Y) displacement.m_Y = max2Global.m_Y - min1Global.m_Y;
+		else displacement.m_Y = 0;
+
+		/*Vec2 body2Dir = GetVector(min1Global, max2Global);
 		Utils::Point2D displacement = {};
 		if (body2Dir.m_X > 0) displacement.m_X = min2Global.m_X - max1Global.m_X;
 		else if (body2Dir.m_X < 0) displacement.m_X = max2Global.m_X - min1Global.m_X;
@@ -102,7 +117,7 @@ namespace Physics
 
 		if (body2Dir.m_Y > 0) displacement.m_Y = min2Global.m_Y - max1Global.m_Y;
 		else if (body2Dir.m_Y < 0) displacement.m_Y = max2Global.m_Y - min1Global.m_Y;
-		else displacement.m_Y = 0;
+		else displacement.m_Y = 0;*/
 
 		return displacement;
 	}
