@@ -4,7 +4,9 @@
 #include "CartesianPosition.hpp"
 #include "WorldPosition.hpp"
 #include "Vec2.hpp"
+#include "Direction.hpp"
 #include <string>
+#include <optional>
 
 namespace Physics
 {
@@ -41,6 +43,14 @@ namespace Physics
 		/// <returns></returns>
 		Utils::Point2D GetHalfExtent() const;
 
+		/// <summary>
+		/// Will get the AABB pos based on the relative pos of the AABB
+		/// where (0,0) is bottom left and (1, 1) is top right
+		/// </summary>
+		/// <param name="relativePos"></param>
+		/// <returns></returns>
+		WorldPosition GetWorldPos(const WorldPosition& currentPos, const Utils::Point2D& relativePos) const;
+
 		std::string ToString(const WorldPosition& transformPos) const;
 	};
 
@@ -51,6 +61,9 @@ namespace Physics
 		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
 
 	Utils::Point2D GetAABBMinDisplacement(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
+		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
+
+	std::optional<Direction> GetAABBDirection(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
 		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
 }
 

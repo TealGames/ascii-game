@@ -33,6 +33,7 @@ namespace Core
 	//TODO: currentyl the camera maps world pos to its pos based on whole screen to accureately position it basewd on the viewport, but it does not manipulate the size 
 	//meaning that for example a pos at the top left will maintain its distance from the top edge in the camera output but say something like size of a collider
 	//will keep its size from world pos to screen pos (making it inconcistent with sizing)
+	//TODO: there is a bug in phsycis system where if you jump and fall down holding one direction it can get stuck moving in that one way
 
 	static const std::string SCENES_PATH = "scenes";
 	static constexpr std::uint8_t TARGET_FPS = 60;
@@ -103,14 +104,15 @@ namespace Core
 			return;
 
 		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("Player", TransformData({ 10, 10 }));
+		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY, 20));
+		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
 
 		InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
-		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData{ 5});
 		LightSourceData& lightSource= playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
 		Utils::Log("CREATING PLAYER RB");
-		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY, 20));
+		
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
@@ -231,9 +233,13 @@ namespace Core
 		if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<1>().GetFrameInput().ToString()));
 
 		activeScene->GetPhysicsWorldMutable().UpdateStart(m_deltaTime);
-		if (m_enableDebugInfo) m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
-		if (m_enableDebugInfo) m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<2>().GetVelocity().ToString(VectorForm::Component)));
-		if (m_enableDebugInfo) m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<2>().GetAcceleration().ToString(VectorForm::Component)));
+		if (m_enableDebugInfo)
+		{
+			m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
+			m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<2>().GetVelocity().ToString(VectorForm::Component)));
+			m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<2>().GetAcceleration().ToString(VectorForm::Component)));
+			m_debugInfo.AddProperty("Grounded:", std::format("{}", std::to_string(m_playerInfo.value().GetAt<0>().GetIsGrounded())));
+		}
 
 		m_physicsBodySystem.SystemUpdate(*activeScene, m_deltaTime);
 		Utils::Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 

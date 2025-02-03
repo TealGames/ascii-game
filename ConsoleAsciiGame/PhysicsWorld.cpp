@@ -78,7 +78,7 @@ namespace Physics
 
 						minBodyDisplacement = GetBodyMinDisplacement(bodyB, bodyA);
 						minBodyDisplacementVec = { std::abs(minBodyDisplacement.m_X), std::abs(minBodyDisplacement.m_Y) };
-						Utils::LogWarning(std::format("After collision prevented new distance: {}", minBodyDisplacementVec.ToString()));
+						//Utils::LogWarning(std::format("After collision prevented new distance: {}", minBodyDisplacementVec.ToString()));
 						/*throw new std::invalid_argument("yeah");*/
 					}
 					if (!isValidIt) bodyA.AddCollidingBody(bodyB);
@@ -97,12 +97,13 @@ namespace Physics
 
 			/*Utils::LogWarning(std::format("COLLISION FOR ENTITY: {} FOUND: {} DEPTH: {}", bodyA.m_Entity->m_Name, 
 				std::to_string(collision.m_DoIntersect), collision.m_Depth.ToString()));*/
-
+			/*
 			Utils::LogError(std::format("Setting acceleration! Collisions: {} vel: {} vvel magnitude: {} ENTITY: {} has COLLIDING BODIES: {}", 
 				std::to_string(bodyA.GetTotalBodyCollisions()), bodyA.GetVelocity().ToString(), 
 				std::to_string(bodyA.GetVelocity().GetMagnitude()), bodyA.GetEntitySafe().m_Name, bodyA.ToStringCollidingBodies()));
+			*/
 
-			if (!bodyA.IsCollidingWithAnyBody() && !Utils::ApproximateEqualsF(bodyA.GetGravity(), 0))
+			if (!bodyA.IsCollidingWithBodyInDir(Direction::Down) && !Utils::ApproximateEqualsF(bodyA.GetGravity(), 0))
 			{
 				bodyA.SetAcceleration({ bodyA.GetAcceleration().m_X, bodyA.GetGravity() });
 			}
