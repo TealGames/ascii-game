@@ -36,12 +36,14 @@ namespace Physics
 		return { size.m_X/2, size.m_Y/2 };
 	}
 
-	WorldPosition AABB::GetWorldPos(const WorldPosition& currentPos, const Utils::Point2D& relativePos) const
+	WorldPosition AABB::GetWorldPos(const WorldPosition& centerPos, const Utils::Point2D& relativePos) const
 	{
 		Utils::Point2D relativePosSafe = { std::clamp(relativePos.m_X, float(0), float(1)), std::clamp(relativePos.m_Y, float(0), float(1)) };
 		Utils::Point2D boundSize = GetSize();
+		WorldPosition bottomLeftPos = centerPos - WorldPosition(boundSize.m_X / 2, boundSize.m_Y/2);
+		if (relativePos== Utils::Point2D{0, 0}) return bottomLeftPos;
 
-		return currentPos + WorldPosition(relativePosSafe.m_X * boundSize.m_X, relativePosSafe.m_Y * boundSize.m_Y);
+		return bottomLeftPos + WorldPosition(relativePosSafe.m_X * boundSize.m_X, relativePosSafe.m_Y * boundSize.m_Y);
 	}
 
 	std::string AABB::ToString(const WorldPosition& transformPos) const

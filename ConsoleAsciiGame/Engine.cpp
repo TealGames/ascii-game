@@ -103,6 +103,9 @@ namespace Core
 			std::format("Tried to set the active scene to the first one, but failed!"))) 
 			return;
 
+		VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
+				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
+
 		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("Player", TransformData({ 10, 10 }));
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY, 20));
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
@@ -114,17 +117,16 @@ namespace Core
 		Utils::Log("CREATING PLAYER RB");
 		
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },
-				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
-				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player});
-		/*playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
+			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },visualPreset), RenderLayerType::Player});
+
+		playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
 				AnimationProperty<std::uint8_t>(lightSource.m_LightRadius, lightSource.m_MutatedThisFrame, {
 				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(8), 0),
-				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1)})}, 1, 1, true));*/
+				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1)})}, 1, 1, true));
 
-		/*playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData(
-			{ SpriteAnimationFrame(0, VisualData{1, 1, TextChar(WHITE, 'O')} ),
-			  SpriteAnimationFrame(2, VisualData{1, 1, TextChar(WHITE, '4')}) }, 1, 4, true));*/
+		playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData(
+			{ SpriteAnimationFrame(0, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, 'O'))}}, visualPreset)),
+			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));
 
 		m_playerInfo = ECS::EntityComponents<PlayerData, InputData, PhysicsBodyData>{ playerEntity, playerData, inputData, playerRB };
 
@@ -245,8 +247,8 @@ namespace Core
 		Utils::Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
 			Conversions::WorldToScreenPosition(*mainCamera, m_playerInfo.value().m_Entity->m_Transform.m_Pos).ToString()));
 		
-		//m_animatorSystem.SystemUpdate(*activeScene, m_deltaTime);
-		//m_spriteAnimatorSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_animatorSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_spriteAnimatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 	
 		Utils::LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 

@@ -39,7 +39,7 @@ namespace ECS
 					if (!Utils::Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
 						"but the scene:{} has no active camera!", entity.m_Name, scene.m_SceneName))) return;
 
-					WorldPosition topLeftColliderPos = body.GetAABBTopLeftWorldPos(entity.m_Transform.m_Pos);
+					WorldPosition topLeftColliderPos = body.GetAABBTopLeftWorldPos();
 					//TODO: the camera should convert to screen pos not here
 					ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(*mainCamera, topLeftColliderPos);
 					/*Utils::LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}", 

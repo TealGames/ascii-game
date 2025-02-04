@@ -36,8 +36,9 @@ namespace ECS
 		{
 			if (inputVel.m_Y > 0) inputVel.m_Y = 0;
 
-			Utils::Point2D rayOrigin = player.GetBodyMutableSafe().GetAABBPos({ 0, 0.5 });
-			if (scene.GetPhysicsWorldMutable().Raycast()
+			Utils::Point2D rayOrigin = player.GetBodyMutableSafe().GetAABBWorldPos({ 0, 0.5 });
+			//TODO: add raycast to ground to add auto jump when holding up before ground hit
+			//if (scene.GetPhysicsWorldMutable().Raycast()
 		}
 
 		player.GetBodyMutableSafe().SetVelocityDelta(inputVel);

@@ -8,13 +8,15 @@
 #include "Globals.hpp"
 #include "TextBuffer.hpp"
 
-//TODO: the data from get world size of visual data should be abstracted
-//so the entity renderer does not have to guess where top left pos is
-struct VisualSizeInfo
-{
-	Utils::Point2D m_TextSize;
-	Utils::Point2D m_TotalSize;
-};
+
+
+////TODO: the data from get world size of visual data should be abstracted
+////so the entity renderer does not have to guess where top left pos is
+//struct VisualSizeInfo
+//{
+//	Utils::Point2D m_TextSize;
+//	Utils::Point2D m_TotalSize;
+//};
 
 /// <summary>
 /// The type of character spacing used for text of visual
@@ -29,6 +31,20 @@ enum class CharAreaType
 	/// Will use the actual size taken up by the character
 	/// </summary>
 	Adaptive,
+};
+
+struct VisualDataPreset
+{
+	const Font* m_Font = nullptr;
+	float m_FontSize = 0;
+	Utils::Point2D m_CharSpacing = {};
+	CharAreaType m_CharAreaType = CharAreaType::Adaptive;
+	Utils::Point2D m_PredefinedCharArea = {};
+	Utils::Point2D m_RelativePivotPos = {};
+
+	VisualDataPreset(const Font& font, const float& fontSize, const Utils::Point2D& charSpacing,
+		const CharAreaType& charAreaType, const Utils::Point2D& predefinedCharArea, 
+		const Utils::Point2D& relativePivotPos);
 };
 
 using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
@@ -111,6 +127,8 @@ public:
 		const float& fontSize, const Utils::Point2D& charSpacing,
 		const Utils::Point2D& predefinedCharArea,
 		const Utils::Point2D& relativePivotPos);
+
+	VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPreset& preset);
 	
 	std::optional<TextArray> CreateSquaredBuffer(const RawTextBufferBlock& rawBuffer) const;
 	std::string ToStringRawBuffer(const RawTextBufferBlock& block);

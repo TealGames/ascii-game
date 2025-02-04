@@ -62,6 +62,7 @@ public:
 	bool IsExperiencingGravity() const;
 
 	const Physics::AABB& GetAABB() const;
+	const WorldPosition GetAABBCenterWorldPos() const;
 	const WorldPosition GetAABBTopLeftWorldPos() const;
 	/// <summary>
 	/// Will get the AABB pos based on the relative pos of the AABB

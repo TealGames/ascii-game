@@ -98,7 +98,12 @@ const WorldPosition PhysicsBodyData::GetAABBTopLeftWorldPos() const
 
 const WorldPosition PhysicsBodyData::GetAABBWorldPos(const Utils::Point2D& relativePos) const
 {
-	return m_aabb.GetWorldPos(GetEntitySafe().m_Transform.m_Pos, relativePos);
+	return m_aabb.GetWorldPos(GetAABBCenterWorldPos(), relativePos);
+}
+
+const WorldPosition PhysicsBodyData::GetAABBCenterWorldPos() const
+{
+	return GetEntitySafe().m_Transform.m_Pos + m_transformOffset;
 }
 
 void PhysicsBodyData::AddCollidingBody(PhysicsBodyData& collidingBody)
@@ -107,8 +112,8 @@ void PhysicsBodyData::AddCollidingBody(PhysicsBodyData& collidingBody)
 	
 	//Note: although we are using current pos to get dir and pos may change, no matter what direction colliding body goes
 	//it should maintain its direction from this body OR it would not be considered a colliding body and should get removed
-	std::optional<Direction> collidingDir = Physics::GetAABBDirection(GetEntitySafe().m_Transform.m_Pos, GetAABB(),
-		collidingBody.GetEntitySafe().m_Transform.m_Pos, collidingBody.GetAABB());
+	std::optional<Direction> collidingDir = Physics::GetAABBDirection(GetAABBCenterWorldPos(), GetAABB(),
+		collidingBody.GetAABBCenterWorldPos(), collidingBody.GetAABB());
 	if (!collidingDir.has_value()) return;
 
 	m_collidingBodies.push_back(CollidingObject(&collidingBody, collidingDir.value()));

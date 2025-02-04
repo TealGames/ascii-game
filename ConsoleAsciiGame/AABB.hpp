@@ -49,7 +49,7 @@ namespace Physics
 		/// </summary>
 		/// <param name="relativePos"></param>
 		/// <returns></returns>
-		WorldPosition GetWorldPos(const WorldPosition& currentPos, const Utils::Point2D& relativePos) const;
+		WorldPosition GetWorldPos(const WorldPosition& centerPos, const Utils::Point2D& relativePos) const;
 
 		std::string ToString(const WorldPosition& transformPos) const;
 	};

@@ -19,6 +19,11 @@ const Utils::Point2D VisualData::PIVOT_TOP_CENTER = {0.5, 1};
 
 const Utils::Point2D VisualData::DEFAULT_PIVOT = PIVOT_TOP_LEFT;
 
+VisualDataPreset::VisualDataPreset(const Font& font, const float& fontSize, const Utils::Point2D& charSpacing,
+	const CharAreaType& charAreaType, const Utils::Point2D& predefinedCharArea, const Utils::Point2D& relativePivotPos) :
+	m_Font(&font), m_FontSize(fontSize), m_CharSpacing(charSpacing), m_CharAreaType(charAreaType), 
+		m_PredefinedCharArea(predefinedCharArea), m_RelativePivotPos(relativePivotPos) {}
+
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize, 
 	const Utils::Point2D& charSpacing, const Utils::Point2D& relativePivotPos, const CharAreaType& charAreaType,
 	const Utils::Point2D& predefinedCharArea) :
@@ -48,6 +53,13 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
 	const float& fontSize, const Utils::Point2D& charSpacing,
 	const Utils::Point2D& predefinedCharArea, const Utils::Point2D& relativePivotPos) 
 	: VisualData(rawBuffer, font, fontSize, charSpacing, relativePivotPos, CharAreaType::Predefined, predefinedCharArea)
+{
+
+}
+
+VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPreset& preset) : 
+	VisualData(rawBuffer, *preset.m_Font, preset.m_FontSize, preset.m_CharSpacing, 
+		preset.m_RelativePivotPos, preset.m_CharAreaType, preset.m_PredefinedCharArea)
 {
 
 }
