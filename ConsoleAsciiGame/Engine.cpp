@@ -34,6 +34,7 @@ namespace Core
 	//meaning that for example a pos at the top left will maintain its distance from the top edge in the camera output but say something like size of a collider
 	//will keep its size from world pos to screen pos (making it inconcistent with sizing)
 	//TODO: there is a bug in phsycis system where if you jump and fall down holding one direction it can get stuck moving in that one way
+	//TODO: separate the helper functions log stuff into separate class and then also add option to maybe throw on errors to prevent them from getting missed sometimes
 
 	static const std::string SCENES_PATH = "scenes";
 	static constexpr std::uint8_t TARGET_FPS = 60;
@@ -56,8 +57,9 @@ namespace Core
 		EMPTY_CHAR_PLACEHOLDER, 'O','U', 'T', 'P', 'U', 'T', EMPTY_CHAR_PLACEHOLDER,
 		'F', 'O', 'U', 'N', 'D'} });*/
 
-	const KeyboardKey TOGGLE_PAUSE_UPDATE_KEY = KEY_E;
+	const KeyboardKey TOGGLE_PAUSE_UPDATE_KEY = KEY_F1;
 	const KeyboardKey TOGGLE_DEBUG_INFO_KEY = KEY_TAB;
+	const KeyboardKey TOGGLE_COMMAND_CONSOLE_KEY = KEY_F2;
 
 	constexpr LoopCode SUCCESS_CODE = 0;
 	constexpr LoopCode END_CODE = 1;
@@ -95,7 +97,9 @@ namespace Core
 		m_playerInfo(std::nullopt),
 		m_mainCameraInfo(std::nullopt),
 		m_debugInfo{}, 
-		m_enableDebugInfo(false)
+		m_enableDebugInfo(false),
+		m_commandConsole(),
+		m_enableCommandConsole(false)
 	{
 		Init();
 
@@ -106,7 +110,7 @@ namespace Core
 		VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
 
-		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("Player", TransformData({ 10, 10 }));
+		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData({ 10, 10 }));
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY, 20));
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
 
@@ -119,18 +123,18 @@ namespace Core
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },visualPreset), RenderLayerType::Player});
 
-		playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
+		/*playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
 				AnimationProperty<std::uint8_t>(lightSource.m_LightRadius, lightSource.m_MutatedThisFrame, {
 				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(8), 0),
 				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1)})}, 1, 1, true));
 
 		playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData(
 			{ SpriteAnimationFrame(0, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, 'O'))}}, visualPreset)),
-			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));
+			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));*/
 
 		m_playerInfo = ECS::EntityComponents<PlayerData, InputData, PhysicsBodyData>{ playerEntity, playerData, inputData, playerRB };
 
-		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("Obstacle", TransformData({ 20, 20 }));
+		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData({ 20, 20 }));
 		Utils::Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntity(obstacle.m_Id)->ToString()));
 		
 		obstacle.AddComponent<EntityRendererData>(EntityRendererData{
@@ -157,10 +161,38 @@ namespace Core
 		Utils::Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
 
 		m_sceneManager.GetActiveSceneMutable()->InitScene();
+		InitConsoleCommands();
 	}
 
 	Engine::~Engine()
 	{
+		m_commandConsole.DeletePrompts();
+	}
+
+	void Engine::InitConsoleCommands()
+	{
+		m_commandConsole.AddPrompt(new CommandPrompt<std::string, float, float>("setpos", {"Entity_Name", "Pos_X", "Pos_Y"},
+			[this](const std::string& entityName, const float& x, const float& y) -> void {
+				if (ECS::Entity* entity= m_sceneManager.GetActiveSceneMutable()->TryGetEntity(entityName))
+				{
+					entity->m_Transform.SetPos({ x, y });
+				}
+			}));
+
+		/*m_commandConsole.AddPrompt(new CommandPrompt<float, std::string>("setpos", { "Yas3", "YAS"},
+			[this](const float& x, const std::string& entityName) -> void {
+				if (ECS::Entity* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntity(entityName))
+				{
+					entity->m_Transform.SetPos({ x, 0});
+				}
+				else throw std::invalid_argument(std::format("BUTT: {}", entityName, std::to_string(x+10)));
+			}));*/
+
+		m_commandConsole.AddPrompt(new CommandPrompt<>("docs", std::vector<std::string>{},
+			[this]() -> void {
+				m_commandConsole.LogOutputMessagesUnrestricted(
+					m_commandConsole.GetPromptDocumentationAll(), ConsoleOutputMessageType::Default);
+			}));
 	}
 
 	LoopCode Engine::Update()
@@ -267,11 +299,14 @@ namespace Core
 		const TextBufferMixed& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Utils::Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
+		if (m_enableCommandConsole) m_commandConsole.Update();
+
 		//TODO: rendering buffer drops frames
 		if (!collapsedBuffer.empty())
 		{
 			Rendering::RenderBuffer(collapsedBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(), 
-				m_cameraSystem.GetCurrentLineBuffer(), m_enableDebugInfo? &m_debugInfo : nullptr);
+				m_cameraSystem.GetCurrentLineBuffer(), m_enableDebugInfo? &m_debugInfo : nullptr, 
+				m_enableCommandConsole? &m_commandConsole : nullptr);
 		}
 		//else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
 
@@ -304,6 +339,11 @@ namespace Core
 			if (IsKeyPressed(TOGGLE_DEBUG_INFO_KEY))
 			{
 				m_enableDebugInfo = !m_enableDebugInfo;
+			}
+			if (IsKeyPressed(TOGGLE_COMMAND_CONSOLE_KEY))
+			{
+				m_enableCommandConsole = !m_enableCommandConsole;
+				if (!m_enableCommandConsole) m_commandConsole.ResetInput();
 			}
 
 			try

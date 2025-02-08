@@ -110,6 +110,16 @@ namespace Utils
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	}
 
+	std::vector<std::string> Split(const std::string& str, const char& separator)
+	{
+		std::vector<std::string> tokens;
+		for (auto part : std::views::split(str, separator))
+		{
+			tokens.emplace_back(part.begin(), part.end());
+		}
+		return tokens;
+	}
+
 	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits)
 	{
 		std::ostringstream stream;

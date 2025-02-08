@@ -10,6 +10,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <type_traits>
+#include <ranges>
+#include <utility>
+#include <array>
 
 namespace Utils
 {
@@ -25,6 +28,58 @@ namespace Utils
 		CPP20 = 202002L,
 	};
 	constexpr bool IsCurrentVersion(const CPPVersion& version);
+
+
+	template <std::size_t...Idxs>
+	constexpr auto GetSubstringAsArray(std::string_view str, std::index_sequence<Idxs...>)
+	{
+		return std::array{ str[Idxs]..., '\n' };
+	}
+
+	template <typename T>
+	constexpr auto GetTypeNameArray()
+	{
+#if defined(__clang__)
+		constexpr auto prefix = std::string_view{ "[T = " };
+		constexpr auto suffix = std::string_view{ "]" };
+		constexpr auto function = std::string_view{ __PRETTY_FUNCTION__ };
+#elif defined(__GNUC__)
+		constexpr auto prefix = std::string_view{ "with T = " };
+		constexpr auto suffix = std::string_view{ "]" };
+		constexpr auto function = std::string_view{ __PRETTY_FUNCTION__ };
+#elif defined(_MSC_VER)
+		constexpr auto prefix = std::string_view{ "GetTypeNameArray<" };
+		constexpr auto suffix = std::string_view{ ">(void)" };
+		constexpr auto function = std::string_view{ __FUNCSIG__ };
+#else
+# error Unsupported compiler
+#endif
+
+		constexpr auto start = function.find(prefix) + prefix.size();
+		constexpr auto end = function.rfind(suffix);
+
+		static_assert(start < end);
+
+		constexpr auto name = function.substr(start, (end - start));
+		return GetSubstringAsArray(name, std::make_index_sequence<name.size()>{});
+	}
+
+	template <typename T>
+	struct TypeNameHolder
+	{
+		static inline constexpr auto value = GetTypeNameArray<T>();
+	};
+
+	template <typename T>
+	constexpr std::string GetTypeName()
+	{
+		if (typeid(T) == typeid(std::string)) return "string";
+
+		constexpr auto& value = TypeNameHolder<T>::value;
+		std::string_view stringView= std::string_view{ value.data(), value.size() };
+		return std::string(stringView.data());
+	}
+
 
 	//This is the fallback in case we supply incorrect type args
 	template <typename, typename T>
@@ -402,6 +457,8 @@ namespace Utils
 
 	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits);
 	void ClearSTDCIN();
+
+	std::vector<std::string> Split(const std::string& str, const char& separator);
 
 	/// <summary>
 	///	This function means it will return bool if this function is iterable

@@ -16,6 +16,7 @@
 #include "InputSystem.hpp"
 #include "PlayerSystem.hpp"
 #include "DebugInfo.hpp"
+#include "CommandConsole.hpp"
 
 namespace Core
 {
@@ -51,6 +52,9 @@ namespace Core
 
 		DebugInfo m_debugInfo;
 		bool m_enableDebugInfo;
+
+		CommandConsole m_commandConsole;
+		bool m_enableCommandConsole;
 	public:
 
 	private:
@@ -64,6 +68,8 @@ namespace Core
 		/// </summary>
 		/// <returns></returns>
 		LoopCode Update();
+
+		void InitConsoleCommands();
 
 	public:
 		Engine();

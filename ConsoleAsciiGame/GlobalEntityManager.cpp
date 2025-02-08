@@ -120,7 +120,7 @@ ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const ECS::EntityID&
 ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const std::string& name)
 {
 	auto iterator = GetGlobalEntityIteratorMutable(name);
-	if (IsValidIterator(iterator)) iterator->second; 
+	if (IsValidIterator(iterator)) return iterator->second; 
 	return nullptr;
 }
 

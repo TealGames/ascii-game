@@ -125,7 +125,20 @@ public:
 	ECS::Entity& CreateEntity(const std::string& name, TransformData& transform);
 	ECS::Entity& CreateEntity(const std::string& name, TransformData&& transform);
 	bool HasEntity(const ECS::EntityID& id);
+	/// <summary>
+	/// Will try to find an entity within the scene (global or local)
+	/// </summary>
+	/// <param name="id"></param>
+	/// <returns></returns>
 	ECS::Entity* TryGetEntity(const ECS::EntityID& id);
+
+	/// <summary>
+	/// A overloaded version of the entity id function. 
+	/// Note: THIS IS SLOW SINCE IT LOOPS THROUGH ALL ENTITIES AND SHOULD RARELY BE USED
+	/// </summary>
+	/// <param name="name"></param>
+	/// <returns></returns>
+	ECS::Entity* TryGetEntity(const std::string& name);
 
 	template<typename T>
 	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)

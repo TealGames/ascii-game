@@ -365,6 +365,16 @@ ECS::Entity* Scene::TryGetEntity(const ECS::EntityID& id)
 	return nullptr;
 }
 
+ECS::Entity* Scene::TryGetEntity(const std::string& name)
+{
+	for (auto& localEntity : m_localEntities)
+	{
+		if (localEntity.m_Name == name) return &localEntity;
+	}
+
+	return m_globalEntities.TryGetGlobalEntityMutable(name);
+}
+
 std::string Scene::ToStringLayers() const
 {
 	//Utils::Log(std::format("Began to stirng alyers fro scene. first layer: {}", m_Layers[0].m_SquaredTextBuffer.GetSize().ToString()));

@@ -3,6 +3,8 @@
 
 #include "Engine.hpp"
 #include "raylib.h"
+#include <optional>
+#include "CommandPromptType.hpp"
 
 
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
@@ -16,8 +18,19 @@ int main() {
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
-    Core::Engine engine;
-    engine.BeginUpdateLoop();
 
-    
+    //std::optional<float> maybeFloat = TryConvertPromptArgToType<float>("0");
+    //Utils::Log(std::format("Maybe float val: {}", std::to_string(maybeFloat.value() + 1)));
+    //throw std::invalid_argument("");
+
+    try
+    {
+        Core::Engine engine; 
+        engine.BeginUpdateLoop();
+    }
+    catch (const std::exception& e)
+    {
+        Utils::LogError(std::format("Encountered Engine error: {}", e.what()));
+        return 0;
+    }
 }

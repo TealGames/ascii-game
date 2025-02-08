@@ -31,6 +31,11 @@ inline const Utils::Point2D GLOBAL_CHAR_SPACING = Utils::Point2D(1,1);
 inline const Color COLLIDER_OUTLINE_COLOR = GREEN;
 inline const Color LINE_COLOR = RED;
 
+constexpr float COMMAND_CONSOLE_HEIGHT = 30;
+constexpr float COMMAND_CONSOLE_FONT_SIZE = 30;
+constexpr float COMMAND_CONSOLE_SPACING = 3;
+constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 15;
+
 //Will get the global font. This is needed so that the first call to it
 //is guaranteed to create a valid font object rather than pre-initialize with invalid font
 //NOTE: this can only be called after Raylib InitWindow() 

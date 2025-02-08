@@ -87,7 +87,8 @@ namespace Rendering
        // EndDrawing();
     }
 
-    void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer, const LineBuffer* lineBuffer, const DebugInfo* debugInfo)
+    void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer, 
+        const LineBuffer* lineBuffer, const DebugInfo* debugInfo, const CommandConsole* console)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
@@ -152,11 +153,30 @@ namespace Rendering
             }
         }
 
+        //Draws the center screen indicator
         const float CENTER_CIRCLE_RADIUS = 5;
         Color circleColor = WHITE;
         circleColor.a = 50;
         const WorldPosition centerPos = {(float)SCREEN_WIDTH/2, (float)SCREEN_HEIGHT/2};
         DrawCircle(centerPos.m_X, centerPos.m_Y, CENTER_CIRCLE_RADIUS, circleColor);
+
+        if (console != nullptr)
+        {
+            Vector2 currentPos = {0, SCREEN_HEIGHT - COMMAND_CONSOLE_HEIGHT };
+            DrawRectangle(currentPos.x, currentPos.y, SCREEN_WIDTH, COMMAND_CONSOLE_HEIGHT, GRAY);
+
+            DrawTextEx(GetGlobalFont(), console->GetInput().c_str(), currentPos, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, WHITE);
+            currentPos.y -= COMMAND_CONSOLE_HEIGHT;
+
+            auto outputMessages = console->GetOutputMessages();
+            Vector2 currentMessageSize = {};
+            for (int i = 0; i < outputMessages.size(); i++)
+            {
+                currentMessageSize = MeasureTextEx(GetGlobalFont(), outputMessages[i].m_Message.c_str(), COMMAND_CONSOLE_OUPUT_FONT_SIZE, COMMAND_CONSOLE_SPACING);
+                DrawTextEx(GetGlobalFont(), outputMessages[i].m_Message.c_str(), currentPos, COMMAND_CONSOLE_OUPUT_FONT_SIZE, COMMAND_CONSOLE_SPACING, outputMessages[i].m_Color);
+                currentPos.y -= currentMessageSize.y;
+            }
+        }
 
         EndDrawing();
     }
