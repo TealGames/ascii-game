@@ -15,6 +15,7 @@
 #include "PhysicsBodySystem.hpp"
 #include "InputSystem.hpp"
 #include "PlayerSystem.hpp"
+#include "UIObjectSystem.hpp"
 #include "DebugInfo.hpp"
 #include "CommandConsole.hpp"
 #include "Debug.hpp"
@@ -41,6 +42,7 @@ namespace Core
 		//TODO: there has to be a way that does not involve us writing every possible system
 		ECS::TransformSystem m_transformSystem;
 		ECS::CameraSystem m_cameraSystem;
+		ECS::UIObjectSystem m_uiSystem;
 		ECS::LightSourceSystem m_lightSystem;
 		ECS::InputSystem m_inputSystem;
 		ECS::EntityRendererSystem m_entityRendererSystem;

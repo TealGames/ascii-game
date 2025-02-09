@@ -52,6 +52,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	m_localEntityLookup.reserve(MAX_ENTITIES);
 	m_Layers.emplace(RenderLayerType::Background, RenderLayer{});
 	m_Layers.emplace(RenderLayerType::Player, RenderLayer{});
+	m_Layers.emplace(RenderLayerType::UI, RenderLayer{});
 
 	//Log("Creating new layer in scene");
 	const VisualData backgroundVisual = VisualData(layerText, GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE,

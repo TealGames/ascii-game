@@ -35,6 +35,8 @@ namespace Core
 	//will keep its size from world pos to screen pos (making it inconcistent with sizing)
 	//TODO: there is a bug in phsycis system where if you jump and fall down holding one direction it can get stuck moving in that one way
 	//TODO: separate the helper functions log stuff into separate class and then also add option to maybe throw on errors to prevent them from getting missed sometimes
+	//TODO: make normalized screen position that is just a warapper for point 2d and then clamps x and y to be normalized in screen pos for [0,0] bottom left
+	//TODO: remove the cartesian grid and other unnecesssary position types
 
 	static const std::string SCENES_PATH = "scenes";
 	static constexpr std::uint8_t TARGET_FPS = 60;
@@ -82,6 +84,7 @@ namespace Core
 	Engine::Engine() :
 		m_sceneManager(SCENES_PATH),
 		m_transformSystem(),
+		m_uiSystem(),
 		m_entityRendererSystem(),
 		m_lightSystem(m_entityRendererSystem),
 		m_inputSystem(),
@@ -143,6 +146,13 @@ namespace Core
 		Log("CREATING OBSTACLE RB");
 		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(10, 10), Utils::Point2D(0, 0)));
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
+
+		ECS::Entity& uiIcon= m_sceneManager.GetActiveSceneMutable()->CreateEntity("icon", TransformData({ 0, 0 }));
+		uiIcon.AddComponent<UIObjectData>(NormalizedPosition(0.1, 0.9));
+		uiIcon.AddComponent<EntityRendererData>(EntityRendererData{
+			VisualData({ {TextCharPosition({0,0}, TextChar(ORANGE, '*')) } },
+				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
+				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::UI });
 		
 		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));
 		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
@@ -309,6 +319,8 @@ namespace Core
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
 
 		m_transformSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_uiSystem.SystemUpdate(*activeScene, m_deltaTime);
+
 		m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<1>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
 		m_playerSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<0>(), *(m_playerInfo.value().m_Entity), m_deltaTime);

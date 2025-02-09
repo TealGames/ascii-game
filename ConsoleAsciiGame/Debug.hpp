@@ -89,9 +89,7 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 		throw std::invalid_argument(errMessage);
 	}
 	std::string objectName = objPtr != nullptr ? std::format("{}:", typeid(T).name())  : "";
-	std::string fullMessage = std::format("\nCan Log:{}({}) current:{} {}{}{}{}", LogTypeToString(logType), 
-		std::to_string(Utils::HasFlagAny(LogTypeFilter, logType)), LogTypeToString(LogTypeFilter),
-		logTypeMessage, objectName, message, ANSI_COLOR_CLEAR);
+	std::string fullMessage = std::format("\n{}{}{}{}", logTypeMessage, objectName, message, ANSI_COLOR_CLEAR);
 	std::cout << fullMessage << std::endl;
 }
 
