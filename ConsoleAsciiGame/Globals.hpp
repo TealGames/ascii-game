@@ -36,6 +36,9 @@ constexpr float COMMAND_CONSOLE_FONT_SIZE = 25;
 constexpr float COMMAND_CONSOLE_SPACING = 3;
 constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
 
+inline const Color DEBUG_TEXT_COLOR = WHITE;
+inline const Color DEBUG_HIGHLIGHTED_TEXT_COLOR = YELLOW;
+
 //Will get the global font. This is needed so that the first call to it
 //is guaranteed to create a valid font object rather than pre-initialize with invalid font
 //NOTE: this can only be called after Raylib InitWindow() 

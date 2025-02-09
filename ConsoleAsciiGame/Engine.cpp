@@ -90,8 +90,6 @@ namespace Core
 		m_physicsBodySystem(),
 		m_playerSystem(),
 		m_cameraSystem(&(m_physicsBodySystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
-		m_currentFrameCounter(0),
-		m_currentFPS(0),
 		m_currentTime(std::chrono::high_resolution_clock().now()),
 		m_lastTime(std::chrono::high_resolution_clock().now()),
 		m_playerInfo(std::nullopt),
@@ -195,7 +193,8 @@ namespace Core
 				std::optional<LogType> maybeLogType = StringToLogType(typeFilter);
 				if (maybeLogType == std::nullopt)
 				{
-					m_commandConsole.LogOutputMessage(std::format("Invalid LogType: {}", typeFilter), ConsoleOutputMessageType::Error);
+					m_commandConsole.LogOutputMessage(std::format("Invalid LogType: {}", 
+						typeFilter), ConsoleOutputMessageType::Error);
 					return;
 				}
 
@@ -209,6 +208,34 @@ namespace Core
 			[this]() -> void {
 				ResetLogFilters();
 			}));
+
+		m_commandConsole.AddPrompt(new CommandPrompt<float>("settimestep", std::vector<std::string>{"TimeStep"},
+			[this](const float& timeStep) -> void {
+				m_timeStep = timeStep;
+			}));
+
+		m_commandConsole.AddPrompt(new CommandPrompt<int>("debugmark", std::vector<std::string>{"Index"},
+			[this](const int& index) -> void {
+				if (index == -1)
+				{
+					m_debugInfo.ClearHighlightedIndices();
+					return;
+				}
+
+				if (index < 0 || index >= m_debugInfo.GetText().size())
+				{
+					m_commandConsole.LogOutputMessage(std::format("Invalid Index: {}", 
+						std::to_string(index)), ConsoleOutputMessageType::Error);
+					return;
+				}
+
+				if (!m_debugInfo.TryAddHighlightedIndex(static_cast<std::size_t>(index)))
+				{
+					m_commandConsole.LogOutputMessage(std::format("Index already added: {}",
+						std::to_string(index)), ConsoleOutputMessageType::Error);
+					return;
+				}
+			}));
 	}
 
 	LoopCode Engine::Update()
@@ -218,7 +245,7 @@ namespace Core
 #endif 
 
 		m_currentTime = std::chrono::high_resolution_clock().now();
-		m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_currentTime - m_lastTime).count() / static_cast<float>(1000);
+		m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_currentTime - m_lastTime).count() / static_cast<float>(1000) * m_timeStep;
 		m_currentFPS = 1 / m_deltaTime;
 
 		if (FRAME_LIMIT != -1 || SHOW_FPS)
@@ -228,7 +255,12 @@ namespace Core
 				Utils::ToStringDouble(m_deltaTime, DOUBLE_LOG_PRECISION), 
 				Utils::ToStringDouble(m_currentFPS, DOUBLE_LOG_PRECISION), std::to_string(GetFPS()));
 		}
-		if (m_enableDebugInfo) m_debugInfo.AddProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
+		if (m_enableDebugInfo)
+		{
+			m_debugInfo.AddProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
+			m_debugInfo.AddProperty("DeltaTime", std::format("{} s", std::to_string(m_deltaTime)));
+			m_debugInfo.AddProperty("TimeStep", std::format("{} s", std::to_string(m_timeStep)));
+		}
 
 		/*m_lastTime = m_currentTime;
 		return SUCCESS_CODE;*/

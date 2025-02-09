@@ -145,12 +145,35 @@ namespace Rendering
             Vector2 startPos = {5, 5};
             Vector2 currentPos = startPos;
             Vector2 currentSize = {};
+
+            Color defaultColor = DEBUG_TEXT_COLOR;
+            Color currentColor = defaultColor;
+
+            const auto& highlightedIndices = debugInfo->GetHighlightedIndicesSorted();
+            if (!highlightedIndices.empty()) defaultColor.a = 100;
+
+            size_t currentIndex = 0;
+            size_t currentCollectionIndex = 0;
+            size_t nextHighlightedIndex = !highlightedIndices.empty() ? highlightedIndices[currentCollectionIndex] : -1;
+
             for (const auto& text : debugInfo->GetText())
             {
+                if (!highlightedIndices.empty() && currentIndex == nextHighlightedIndex)
+                {
+                    currentColor = DEBUG_HIGHLIGHTED_TEXT_COLOR;
+                    currentCollectionIndex++;
+                    if (currentCollectionIndex < highlightedIndices.size())
+                    {
+                        nextHighlightedIndex = highlightedIndices[currentCollectionIndex];
+                    }
+                }
+                else currentColor = defaultColor;
+
                 currentSize = MeasureTextEx(GetGlobalFont(), text.c_str(), DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X);
-                DrawTextEx(GetGlobalFont(), text.c_str(), currentPos, DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, WHITE);
+                DrawTextEx(GetGlobalFont(), text.c_str(), currentPos, DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, currentColor);
 
                 currentPos.y += currentSize.y + DEBUG_INFO_CHAR_SPACING.m_Y;
+                currentIndex++;
             }
         }
 
@@ -172,7 +195,7 @@ namespace Rendering
             DrawTextEx(GetGlobalFont(), console->GetInput().c_str(), {currentPos.x+consoleIndent, currentPos.y}, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, WHITE);
             currentPos.y -= COMMAND_CONSOLE_HEIGHT;
 
-            auto outputMessages = console->GetOutputMessages();
+            const auto& outputMessages = console->GetOutputMessages();
             Vector2 currentMessageSize = {};
             for (int i = 0; i < outputMessages.size(); i++)
             {

@@ -8,7 +8,12 @@
 static constexpr int MAX_OUTPUT_MESSAGES = 10;
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 
-CommandConsole::CommandConsole() : m_prompts(), m_isEnabled(false), m_input(), m_outputMessages() 
+static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
+static constexpr KeyboardKey DELETE_KEY = KEY_BACKSPACE;
+static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_LEFT_CONTROL;
+
+CommandConsole::CommandConsole() : 
+	m_prompts(), m_isEnabled(false), m_input(), m_outputMessages(), m_lastCommand()
 {
 
 }
@@ -164,16 +169,22 @@ void CommandConsole::LogOutputMessagesUnrestricted(const std::vector<std::string
 
 void CommandConsole::Update()
 {
-	if (IsKeyPressed(KEY_ENTER))
+	if (IsKeyPressed(SUBMIT_KEY))
 	{
+		m_lastCommand = m_input;
 		TryInvokePrompt();
 		ResetInput();
 		return;
 	}
 
-	if (IsKeyPressed(KEY_BACKSPACE) && !m_input.empty())
+	if (IsKeyPressed(DELETE_KEY) && !m_input.empty())
 	{
 		m_input.pop_back();
+	}
+
+	if (IsKeyPressed(LAST_COMMAND_KEY))
+	{
+		m_input = m_lastCommand;
 	}
 
 	int key = GetKeyPressed();

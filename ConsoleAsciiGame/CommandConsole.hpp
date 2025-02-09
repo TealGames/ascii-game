@@ -34,6 +34,7 @@ private:
 	bool m_isEnabled;
 
 	std::string m_input;
+	std::string m_lastCommand;
 	std::vector<ConsoleOutputMessage> m_outputMessages;
 
 public:

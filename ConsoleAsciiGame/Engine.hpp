@@ -31,6 +31,11 @@ namespace Core
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_currentTime;
 		double m_deltaTime = 0;
+		/// <summary>
+		/// The step corresponding to one second. 
+		/// =1 is default, <1 will slow down >1 speed up
+		/// </summary>
+		double m_timeStep = 1;
 		int m_currentFPS = 0;
 
 		//TODO: there has to be a way that does not involve us writing every possible system
@@ -49,7 +54,7 @@ namespace Core
 		std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;
 		std::optional<ECS::EntityComponentPair<PhysicsBodyData>> m_obstacleInfo;
 
-		std::uint8_t m_currentFrameCounter;
+		std::uint8_t m_currentFrameCounter = 0;
 
 		DebugInfo m_debugInfo;
 		bool m_enableDebugInfo;
