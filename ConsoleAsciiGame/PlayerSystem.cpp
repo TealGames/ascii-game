@@ -18,7 +18,7 @@ namespace ECS
 
 #endif 
 		InputData* input = entity.TryGetComponent<InputData>();
-		if (!Utils::Assert(this, input != nullptr, std::format("Tried to move player from system update "
+		if (!Assert(this, input != nullptr, std::format("Tried to move player from system update "
 			"of PlayerSystem but it does not have a input component!"))) return;
 
 		//Player moves faster on diagonals

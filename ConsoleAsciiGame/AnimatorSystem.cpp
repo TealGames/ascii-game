@@ -34,22 +34,22 @@ namespace ECS
 						{
 							using PropertyConvertedType = std::remove_reference_t<decltype(value)>;
 							using ExtractedType = AnimationPropertyType<PropertyConvertedType>::Type;
-							/*Utils::Log(Utils::LogType::Warning, std::format("Trying to run animator with property variant value; {} integral: {}", 
+							/*Log(LogType::Warning, std::format("Trying to run animator with property variant value; {} integral: {}", 
 								typeid(PropertyConvertedType).name(), typeid(ExtractedType).name()));*/
 
 							AnimationProperty<ExtractedType>* maybeProperty = std::get_if<AnimationProperty<ExtractedType>>(&property);
-							if (!Utils::Assert(this, maybeProperty != nullptr, std::format("Tried to get the current type in variant as: {} "
+							if (!Assert(this, maybeProperty != nullptr, std::format("Tried to get the current type in variant as: {} "
 								"but it failed to be converted from value: {}", typeid(PropertyConvertedType).name(),
 								typeid(maybeProperty).name()))) return;
 
-							if (!Utils::Assert(this, IsValidKeyframeIndex<ExtractedType>(*maybeProperty, maybeProperty->m_KeyframeIndex),
+							if (!Assert(this, IsValidKeyframeIndex<ExtractedType>(*maybeProperty, maybeProperty->m_KeyframeIndex),
 								std::format("Tried to get next key from from index: {} but it is not valid", std::to_string(maybeProperty->m_KeyframeIndex))))
 								return;
 
 							if (data.m_NormalizedTime >= maybeProperty->m_Keyframes[maybeProperty->m_KeyframeIndex].GetTime())
 							{
 								std::optional<size_t> newIndex = TryGetKeyFrameAtTime<ExtractedType>(data, *maybeProperty, data.m_NormalizedTime);
-								if (!Utils::Assert(this, newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
+								if (!Assert(this, newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
 									"and end time: {} on entity: {} but failed!", std::to_string(data.m_NormalizedTime),
 									std::to_string(data.GetEndTime()), entity.m_Name)))
 									return;
@@ -68,7 +68,7 @@ namespace ECS
 							}
 							else
 							{
-								Utils::Log(Utils::LogType::Error, std::format("Tried to update property in animator for entity:{} "
+								LogError(this, std::format("Tried to update property in animator for entity:{} "
 									"but could not find any Type specific actions to take for it (probably due to not defining actions for this type)", entity.m_Name));
 							}
 						}, property);

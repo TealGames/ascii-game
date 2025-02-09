@@ -147,7 +147,7 @@ public:
 		for (auto entityId : view)
 		{
 			ECS::Entity* entityPtr = TryGetEntity(entityId);
-			if (!Utils::Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
+			if (!Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
 				"but failed to retrieve entity with ID: (it probably does not exist in the scene)",
 				typeid(T).name()))) return;
 

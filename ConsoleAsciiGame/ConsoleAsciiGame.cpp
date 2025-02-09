@@ -20,7 +20,7 @@ int main() {
 #endif
 
     //std::optional<float> maybeFloat = TryConvertPromptArgToType<float>("0");
-    //Utils::Log(std::format("Maybe float val: {}", std::to_string(maybeFloat.value() + 1)));
+    //Log(std::format("Maybe float val: {}", std::to_string(maybeFloat.value() + 1)));
     //throw std::invalid_argument("");
 
     try
@@ -30,7 +30,7 @@ int main() {
     }
     catch (const std::exception& e)
     {
-        Utils::LogError(std::format("Encountered Engine error: {}", e.what()));
+        LogError(std::format("Encountered Engine error: {}", e.what()));
         return 0;
     }
 }

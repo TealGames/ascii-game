@@ -5,6 +5,7 @@
 #include "raylib.h"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
+#include "Debug.hpp"
 
 bool ColorGradientKeyFrame::operator<(const ColorGradientKeyFrame& other) const
 {
@@ -34,11 +35,11 @@ ColorGradient::ColorGradient(const Color& leftColor, const Color& rightColor) :
 ColorGradient::ColorGradient(const std::vector<ColorGradientKeyFrame>& frames) 
 	: m_colorFrames(frames)
 {
-	if (!Utils::Assert(!frames.empty(),
+	if (!Assert(!frames.empty(),
 		std::format("Tried creating a gradient with no frames!")))
 		return;
 
-	if (!Utils::Assert(frames.size()!=1,
+	if (!Assert(frames.size()!=1,
 		std::format("Tried creating a gradient with only 1 frame!")))
 		return;
 
@@ -75,7 +76,7 @@ Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 			if (Utils::ApproximateEqualsF(m_colorFrames[i].m_Location, location))
 				return m_colorFrames[i].m_Color;
 
-			/*Utils::Log(std::format("Searching gradient loc: {} with {} - > {}",
+			/*Log(std::format("Searching gradient loc: {} with {} - > {}",
 				std::to_string(location), m_colorFrames[i - 1].ToString(), m_colorFrames[i].ToString()));*/
 			if (m_colorFrames[i - 1].m_Location < location &&
 				location < m_colorFrames[i].m_Location)
@@ -87,7 +88,7 @@ Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 		}
 	}
 	
-	/*if (!Utils::Assert(left != -1 && right != -1,
+	/*if (!Assert(left != -1 && right != -1,
 		std::format("Tried searching for a gradient at location: {} but it could not be found. Full Gradient:{}", 
 			std::to_string(location), ToString())))
 		return {};*/
@@ -106,7 +107,7 @@ Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 	unsigned char newA = std::numeric_limits<unsigned char>::max();
 	if (includeAlpha) newA = std::lerp(leftColor.a, rightColor.a, keysNormalizedVal);
 
-	/*Utils::Log(std::format("Color at {} is: {} FULL:{}", std::to_string(location), 
+	/*Log(std::format("Color at {} is: {} FULL:{}", std::to_string(location), 
 		RaylibUtils::ToString(Color{ newR, newG, newB, newA }), ToString()));*/
 	return {newR, newG, newB, newA};
 }

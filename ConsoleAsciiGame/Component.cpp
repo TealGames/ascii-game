@@ -14,7 +14,7 @@ namespace ECS
 //		case ComponentType::AudioSource: return "AudioSource";
 //		default:
 //			std::string error = std::format("Tried to convert an undefined component type to string!");
-//			Utils::Log(Utils::LogType::Error, error);
+//			Log(LogType::Error, error);
 //			return "";
 //	}
 //	return "";

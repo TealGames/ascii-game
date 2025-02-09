@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "PlayerData.hpp"
 #include "HelperFunctions.hpp"
+#include "Debug.hpp"
 
 PlayerData::PlayerData() :
 	m_body(nullptr), m_xMoveSpeed(), m_maxJumpHeight(), m_initialJumpSpeed() {}
@@ -26,7 +27,7 @@ const bool& PlayerData::GetIsGrounded() const
 
 PhysicsBodyData& PlayerData::GetBodyMutableSafe()
 {
-	if (!Utils::Assert(this, m_body != nullptr, 
+	if (!Assert(this, m_body != nullptr, 
 		std::format("Tried to get the physics body mutable from player data but it is NULL")))
 		throw std::invalid_argument("Invalid PlayerData PhysicsBody State");
 

@@ -8,6 +8,7 @@
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 #include "ProfilerTimer.hpp"
+#include "Debug.hpp"
 
 namespace Rendering
 {
@@ -19,8 +20,8 @@ namespace Rendering
         ProfilerTimer timer("GameRenderer::RenderBuffer");
 #endif 
 
-       // //Utils::Log(std::format("Rendering buffer: {}", buffer.ToString()));
-       // if (!Utils::Assert(buffer.GetWidth() != 0 && buffer.GetHeight() != 0,
+       // //Log(std::format("Rendering buffer: {}", buffer.ToString()));
+       // if (!Assert(buffer.GetWidth() != 0 && buffer.GetHeight() != 0,
        //     std::format("Tried to render a buffer with GameRenderer that has width and/or height of 0")))
        //     return;
 
@@ -57,7 +58,7 @@ namespace Rendering
        //     x += (widthLeft/2);
        //     y += (heightLeft /2);
        // }
-       // //Utils::Log(std::format("CHAR AREA: {}", charArea.ToString()));
+       // //Log(std::format("CHAR AREA: {}", charArea.ToString()));
 
        // char drawStr[2] = { '1', '\0' };
        //
@@ -75,7 +76,7 @@ namespace Rendering
        //         {
        //             DrawText(drawStr, x, y, renderInfo.m_FontSize, currentChar.m_Color);
        //         }
-       //        /*Utils::Log(std::format("Drawing character: {} at pos: {} with color: {}", 
+       //        /*Log(std::format("Drawing character: {} at pos: {} with color: {}", 
        //             Utils::ToString(drawStr[0]), Utils::Point2DInt(r, c).ToString(), RaylibUtils::ToString(buffer.GetAt({ r, c })->m_Color)));*/
        //         x += charArea.m_X;
        //     }
@@ -103,17 +104,17 @@ namespace Rendering
             return;
         }
 
-        //Utils::LogWarning(std::format("DRAWING MIXED BUFFER: {}", ToString(buffer)));
+        //LogWarning(std::format("DRAWING MIXED BUFFER: {}", ToString(buffer)));
 
         char drawStr[2] = { '1', '\0' };
         for (const auto& pos : buffer)
         {
             drawStr[0] = pos.m_Text.m_Char;
-            if (!Utils::Assert(RaylibUtils::FontSupportsChar(*pos.m_FontData.m_Font, pos.m_Text.m_Char), 
+            if (!Assert(RaylibUtils::FontSupportsChar(*pos.m_FontData.m_Font, pos.m_Text.m_Char), 
                 std::format("GameRenderer tried to render character: {} but font does not support this character!", Utils::ToString(pos.m_Text.m_Char))))
                 continue;
 
-            //Utils::LogWarning(std::format("Drawing text at pos: {}", pos.m_Pos.ToString()));
+            //LogWarning(std::format("Drawing text at pos: {}", pos.m_Pos.ToString()));
             //This should be optimized to use rows of text rather going through each text char individiaully
             DrawTextEx(*(pos.m_FontData.m_Font), drawStr, RaylibUtils::ToRaylibVector(pos.m_Pos), pos.m_FontData.m_FontSize, 0, pos.m_Text.m_Color);
         }
@@ -124,7 +125,7 @@ namespace Rendering
             {
                 DrawRectangleLines(rectangle.m_Position.m_X, rectangle.m_Position.m_Y, 
                     rectangle.m_Size.XAsInt(), rectangle.m_Size.YAsInt(), COLLIDER_OUTLINE_COLOR);
-              /*  Utils::LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}", 
+              /*  LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}", 
                     rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
             }
         }
@@ -134,7 +135,7 @@ namespace Rendering
             for (const auto& line : *lineBuffer)
             {
                 DrawLine(line.m_StartPos.m_X, line.m_StartPos.m_Y, line.m_EndPos.m_X, line.m_EndPos.m_Y, LINE_COLOR);
-                /*  Utils::LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}",
+                /*  LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}",
                       rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
             }
         }
@@ -162,10 +163,13 @@ namespace Rendering
 
         if (console != nullptr)
         {
+            float consoleIndent = 10;
             Vector2 currentPos = {0, SCREEN_HEIGHT - COMMAND_CONSOLE_HEIGHT };
-            DrawRectangle(currentPos.x, currentPos.y, SCREEN_WIDTH, COMMAND_CONSOLE_HEIGHT, GRAY);
+            Color consoleColor = GRAY;
+            consoleColor.a = 100;
+            DrawRectangle(currentPos.x, currentPos.y, SCREEN_WIDTH, COMMAND_CONSOLE_HEIGHT, consoleColor);
 
-            DrawTextEx(GetGlobalFont(), console->GetInput().c_str(), currentPos, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, WHITE);
+            DrawTextEx(GetGlobalFont(), console->GetInput().c_str(), {currentPos.x+consoleIndent, currentPos.y}, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, WHITE);
             currentPos.y -= COMMAND_CONSOLE_HEIGHT;
 
             auto outputMessages = console->GetOutputMessages();
@@ -173,7 +177,8 @@ namespace Rendering
             for (int i = 0; i < outputMessages.size(); i++)
             {
                 currentMessageSize = MeasureTextEx(GetGlobalFont(), outputMessages[i].m_Message.c_str(), COMMAND_CONSOLE_OUPUT_FONT_SIZE, COMMAND_CONSOLE_SPACING);
-                DrawTextEx(GetGlobalFont(), outputMessages[i].m_Message.c_str(), currentPos, COMMAND_CONSOLE_OUPUT_FONT_SIZE, COMMAND_CONSOLE_SPACING, outputMessages[i].m_Color);
+                DrawTextEx(GetGlobalFont(), outputMessages[i].m_Message.c_str(), { currentPos.x + consoleIndent, currentPos.y }, 
+                    COMMAND_CONSOLE_OUPUT_FONT_SIZE, COMMAND_CONSOLE_SPACING, outputMessages[i].m_Color);
                 currentPos.y -= currentMessageSize.y;
             }
         }

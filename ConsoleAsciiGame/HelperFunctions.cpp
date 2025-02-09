@@ -14,73 +14,9 @@
 
 namespace Utils
 {
-	inline static const std::string LOG_ONLY_MESSAGE = "";
-	inline static constexpr LogType LOG_MESSAGE_TYPES = LogType::Log | LogType::Error | LogType::Warning;
-	inline constexpr bool LOG_MESSAGES = true;
-
-	inline static const char* ANSI_COLOR_ERROR = "\033[1;31m";
-	inline static const char* ANSI_COLOR_WARNING = "\033[1;33m";
-	inline static const char* ANSI_COLOR_DEFAULT = "\033[1;37m";
-
 	constexpr bool IsCurrentVersion(const CPPVersion& version)
 	{
 		return __cplusplus == static_cast<long>(version);
-	}
-
-	void Log(const LogType& logType, const std::string& str, const bool& logTime)
-	{
-		if (!LOG_MESSAGES) return;
-		//if ((LOG_MESSAGE_TYPES & logType) != LogType::None) return;
-		if (!HasFlagAny(LOG_MESSAGE_TYPES, logType)) return;
-
-		if (!LOG_ONLY_MESSAGE.empty() &&
-			str.substr(0, LOG_ONLY_MESSAGE.size()) != LOG_ONLY_MESSAGE) return;
-
-		std::string logTypeMessage;
-		std::string timeFormatted = "";
-		if (logTime) timeFormatted = std::format("{}[{}{}{}]{}", ANSI_COLOR_DEFAULT, ANSI_COLOR_GRAY, FormatTime(GetCurrentTime()), ANSI_COLOR_DEFAULT, ANSI_COLOR_CLEAR);
-
-		switch (logType)
-		{
-		case LogType::Error:
-			logTypeMessage = std::format("{}[{}!{}] {} {}ERROR:", ANSI_COLOR_DEFAULT,
-				ANSI_COLOR_ERROR, ANSI_COLOR_DEFAULT, timeFormatted, ANSI_COLOR_ERROR);
-			break;
-		case LogType::Warning:
-			logTypeMessage = std::format("{}[{}!{}] {} {}WARNING:", ANSI_COLOR_DEFAULT,
-				ANSI_COLOR_WARNING, ANSI_COLOR_DEFAULT, timeFormatted, ANSI_COLOR_WARNING);
-			break;
-		case LogType::Log:
-			logTypeMessage = std::format("{} {}LOG:", timeFormatted, ANSI_COLOR_DEFAULT);
-			break;
-		default:
-			std::string errMessage = "Tried to log message of message type "
-				"that is not defined: ";
-			Log(LogType::Error, errMessage);
-			return;
-		}
-		std::string fullMessage = "\n" + logTypeMessage + str + ANSI_COLOR_CLEAR;
-		std::cout << fullMessage << std::endl;
-	}
-
-	void Log(const std::string& str, const bool& logTime)
-	{
-		Log(LogType::Log, str, logTime);
-	}
-	void LogWarning(const std::string& str, const bool& logTime)
-	{
-		Log(LogType::Warning, str, logTime);
-	}
-	void LogError(const std::string& str, const bool& logTime)
-	{
-		Log(LogType::Error, str, logTime);
-	}
-
-
-	bool Assert(const bool condition, const std::string& errMessage)
-	{
-		if (!condition) LogError(errMessage);
-		return condition;
 	}
 
 	LocalTime GetLocalTime(const SystemTime& time)
@@ -271,7 +207,7 @@ namespace Utils
 		if (!std::filesystem::exists(path))
 		{
 			std::string err = std::format("File path {} does not exist", path.string());
-			Log(LogType::Error, err);
+			std::cout << err << std::endl;
 			return false;
 		}
 		return true;
@@ -288,7 +224,7 @@ namespace Utils
 		{
 			std::string err = std::format("Tried to read file at path {} but it could not be opened",
 				cleanedPath.string());
-			Log(Utils::LogType::Error, err);
+			std::cout << err << std::endl;
 			return "";
 		}
 
@@ -311,7 +247,7 @@ namespace Utils
 		{
 			std::string err = std::format("Tried to write {} to file at path {} "
 				"but it could not be opened", content, cleanedPath.string());
-			Log(Utils::LogType::Error, err);
+			std::cout << err << std::endl;
 			return;
 		}
 

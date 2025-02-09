@@ -3,8 +3,9 @@
 #include "StringUtil.hpp"
 #include "HelperFunctions.hpp"
 #include "CommandPromptType.hpp"
+#include "Debug.hpp"
 
-static constexpr int MAX_OUTPUT_MESSAGES = 3;
+static constexpr int MAX_OUTPUT_MESSAGES = 10;
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 
 CommandConsole::CommandConsole() : m_prompts(), m_isEnabled(false), m_input(), m_outputMessages() 
@@ -63,11 +64,11 @@ bool CommandConsole::TryInvokePrompt()
 	std::string formattedPrompt = FormatPromptName(m_input);
 	std::vector<std::string> promptSegments = Utils::Split(formattedPrompt, ' ');
 
-	if (!Utils::Assert(this, !promptSegments.empty(), 
+	if (!Assert(this, !promptSegments.empty(), 
 		std::format("Tried to check input for command prompt but found no prompt segments!")))
 		return false;
 
-	if (!Utils::Assert(this, !promptSegments[0].empty(),
+	if (!Assert(this, !promptSegments[0].empty(),
 		std::format("Tried to check input for command prompt but first prompt segment is empty")))
 		return false;
 	
@@ -98,7 +99,7 @@ bool CommandConsole::TryInvokePrompt()
 		{
 			const std::string message = std::format("Console command: {} has been successfully executed", m_input);
 			LogOutputMessage(message, ConsoleOutputMessageType::Success);
-			Utils::Log(message);
+			Log(message);
 			return true;
 		}
 	}

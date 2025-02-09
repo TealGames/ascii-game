@@ -2,6 +2,7 @@
 #include "CommandPromptType.hpp"
 #include "HelperFunctions.hpp"
 #include "StringUtil.hpp"
+#include "Debug.hpp"
 
 const std::type_info& GetCommandPromptTypeFromEnum(const CommandPromptType& prompt)
 {
@@ -9,7 +10,7 @@ const std::type_info& GetCommandPromptTypeFromEnum(const CommandPromptType& prom
 	else if (prompt == CommandPromptType::Boolean) return typeid(bool);
 	else if (prompt == CommandPromptType::String) return typeid(std::string);
 
-	Utils::LogError(std::format("Tried to get command prompt type from enum but no actions found!"));
+	LogError(std::format("Tried to get command prompt type from enum but no actions found!"));
 	return typeid(std::string);
 }
 

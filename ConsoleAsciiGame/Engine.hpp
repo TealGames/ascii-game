@@ -17,6 +17,7 @@
 #include "PlayerSystem.hpp"
 #include "DebugInfo.hpp"
 #include "CommandConsole.hpp"
+#include "Debug.hpp"
 
 namespace Core
 {
@@ -85,7 +86,7 @@ namespace Core
 			if (type == ComponentType::LightSource)
 			{
 				LightSourceData* maybeData = entity.TryGetComponent<LightSourceData>();
-				if (!Utils::Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
+				if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
 					"but it does not have that component", propertyName, entity.m_Name, ToString(type)))) return nullptr;
 
 				if (propertyName == "LightRadius" && std::is_same_v<PropertyType, decltype(maybeData->m_LightRadius)>)
@@ -96,14 +97,14 @@ namespace Core
 					return reinterpret_cast<PropertyType*>(&(maybeData->m_Intensity));
 				else
 				{
-					if (!Utils::Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
+					if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
 						"but it did not match any names and/or their types with type: {}!", propertyName, 
 						entity.m_Name, ToString(type), typeid(PropertyType).name()))) return nullptr;
 				}
 			}
 			else
 			{
-				Utils::Log(Utils::LogType::Error, std::format("Tried to get property: {} from "
+				LogError(this, std::format("Tried to get property: {} from "
 					"engine for entity: {} of an undefined type: {}", propertyName, entity.m_Name, ToString(type)));
 			}
 			return nullptr;

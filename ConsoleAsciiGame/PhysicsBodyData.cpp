@@ -16,7 +16,7 @@ PhysicsBodyData::PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const Wo
 	m_velocity(), m_acceleration(), m_transformOffset(transformOffset), m_collidingBodies(), 
 	m_gravity(-std::abs(gravity)), m_terminalYVelocity(-std::abs(terminalYVelocity))
 {
-	//Utils::LogWarning(std::format("Created physics body of size: {} offset: {} that has min: {} max: {} size: {}",
+	//LogWarning(std::format("Created physics body of size: {} offset: {} that has min: {} max: {} size: {}",
 	//boundingBoxSize.ToString(), transformOffset.ToString(), m_AABB.m_MinPos.ToString(), 
 	//m_AABB.m_MaxPos.ToString(), m_AABB.GetSize().ToString());
 
@@ -26,7 +26,7 @@ PhysicsBodyData::PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const Wo
 bool PhysicsBodyData::ValidateAABB(const Physics::AABB& bounding) const
 {
 	const Utils::Point2D size = bounding.GetSize();
-	if (Utils::Assert(this, size.m_X!=0 && size.m_Y!=0, 
+	if (Assert(this, size.m_X!=0 && size.m_Y!=0, 
 		std::format("Tried to create a Physics Body but the AABB cannot have 0 x or y size: {}. "
 			"This could be due to bad bounding size or offset!", size.ToString()))) 
 		return false;

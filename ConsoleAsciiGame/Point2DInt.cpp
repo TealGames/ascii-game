@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "Point2DInt.hpp"
 #include "HelperFunctions.hpp"
+#include "Debug.hpp"
 
 namespace Utils
 {
@@ -55,7 +56,7 @@ namespace Utils
 		{
 			std::string message = std::format("Tried to divide Position {} "
 				"by a pointer with 0 {}", ToString(), otherPos.ToString());
-			Utils::LogError(this, message);
+			LogError(this, message);
 			return {};
 		}
 
@@ -67,7 +68,7 @@ namespace Utils
 		if (factor == 0)
 		{
 			std::string message = std::format("Tried to divide Position {} by factor of 0", ToString());
-			Utils::LogError(this, message);
+			LogError(this, message);
 			return {};
 		}
 

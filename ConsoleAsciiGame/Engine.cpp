@@ -59,7 +59,7 @@ namespace Core
 
 	const KeyboardKey TOGGLE_PAUSE_UPDATE_KEY = KEY_F1;
 	const KeyboardKey TOGGLE_DEBUG_INFO_KEY = KEY_TAB;
-	const KeyboardKey TOGGLE_COMMAND_CONSOLE_KEY = KEY_F2;
+	const KeyboardKey TOGGLE_COMMAND_CONSOLE_KEY = KEY_TAB;
 
 	constexpr LoopCode SUCCESS_CODE = 0;
 	constexpr LoopCode END_CODE = 1;
@@ -103,7 +103,7 @@ namespace Core
 	{
 		Init();
 
-		if (!Utils::Assert(this, m_sceneManager.TrySetActiveScene(0), 
+		if (!Assert(this, m_sceneManager.TrySetActiveScene(0), 
 			std::format("Tried to set the active scene to the first one, but failed!"))) 
 			return;
 
@@ -118,7 +118,7 @@ namespace Core
 		LightSourceData& lightSource= playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
-		Utils::Log("CREATING PLAYER RB");
+		Log("CREATING PLAYER RB");
 		
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },visualPreset), RenderLayerType::Player});
@@ -135,14 +135,14 @@ namespace Core
 		m_playerInfo = ECS::EntityComponents<PlayerData, InputData, PhysicsBodyData>{ playerEntity, playerData, inputData, playerRB };
 
 		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData({ 20, 20 }));
-		Utils::Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntity(obstacle.m_Id)->ToString()));
+		Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntity(obstacle.m_Id)->ToString()));
 		
 		obstacle.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'B')) } },
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
-		Utils::Log("CREATING OBSTACLE RB");
+		Log("CREATING OBSTACLE RB");
 		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(10, 10), Utils::Point2D(0, 0)));
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 		
@@ -156,9 +156,9 @@ namespace Core
 			m_sceneManager.GetActiveScene()->m_SceneName,
 			m_sceneManager.GetActiveScene()->ToStringLayers()) << std::endl;
 
-		Utils::Log(this, std::format("OBSACLE ID: {}", obstacle.ToString()));
-		Utils::Log(this, std::format("CAMERA ID: {}", mainCameraEntity.ToString()));
-		Utils::Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
+		Log(this, std::format("OBSACLE ID: {}", obstacle.ToString()));
+		Log(this, std::format("CAMERA ID: {}", mainCameraEntity.ToString()));
+		Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
 
 		m_sceneManager.GetActiveSceneMutable()->InitScene();
 		InitConsoleCommands();
@@ -171,7 +171,7 @@ namespace Core
 
 	void Engine::InitConsoleCommands()
 	{
-		m_commandConsole.AddPrompt(new CommandPrompt<std::string, float, float>("setpos", {"Entity_Name", "Pos_X", "Pos_Y"},
+		m_commandConsole.AddPrompt(new CommandPrompt<std::string, float, float>("setpos", {"EntityName", "PosX", "PosY"},
 			[this](const std::string& entityName, const float& x, const float& y) -> void {
 				if (ECS::Entity* entity= m_sceneManager.GetActiveSceneMutable()->TryGetEntity(entityName))
 				{
@@ -179,19 +179,35 @@ namespace Core
 				}
 			}));
 
-		/*m_commandConsole.AddPrompt(new CommandPrompt<float, std::string>("setpos", { "Yas3", "YAS"},
-			[this](const float& x, const std::string& entityName) -> void {
-				if (ECS::Entity* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntity(entityName))
-				{
-					entity->m_Transform.SetPos({ x, 0});
-				}
-				else throw std::invalid_argument(std::format("BUTT: {}", entityName, std::to_string(x+10)));
-			}));*/
-
 		m_commandConsole.AddPrompt(new CommandPrompt<>("docs", std::vector<std::string>{},
 			[this]() -> void {
 				m_commandConsole.LogOutputMessagesUnrestricted(
 					m_commandConsole.GetPromptDocumentationAll(), ConsoleOutputMessageType::Default);
+			}));
+
+		m_commandConsole.AddPrompt(new CommandPrompt<std::string>("debugmessage", std::vector<std::string>{"MessageFilter"},
+			[](const std::string& messageFilter) -> void {
+				SetLogMessageFilter(messageFilter);
+			}));
+
+		m_commandConsole.AddPrompt(new CommandPrompt<std::string>("debugtype", std::vector<std::string>{"MessageType"},
+			[this](const std::string& typeFilter) -> void {
+				std::optional<LogType> maybeLogType = StringToLogType(typeFilter);
+				if (maybeLogType == std::nullopt)
+				{
+					m_commandConsole.LogOutputMessage(std::format("Invalid LogType: {}", typeFilter), ConsoleOutputMessageType::Error);
+					return;
+				}
+
+				SetLogTypeFilter(maybeLogType.value());
+				LogError(std::format("The new log type: {} has log: {}", LogTypeToString(GetLogTypeFilter()), 
+					std::to_string(Utils::HasFlagAny(GetLogTypeFilter(), LogType::Log))));
+				//throw std::invalid_argument("POOP");
+			}));
+
+		m_commandConsole.AddPrompt(new CommandPrompt<>("debugreset", std::vector<std::string>{},
+			[this]() -> void {
+				ResetLogFilters();
 			}));
 	}
 
@@ -218,28 +234,28 @@ namespace Core
 		return SUCCESS_CODE;*/
 
 		Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
-		if (!Utils::Assert(this, activeScene != nullptr, std::format("Tried to update the active scene but there "
+		if (!Assert(this, activeScene != nullptr, std::format("Tried to update the active scene but there "
 			"are none set as active right now", activeScene->m_SceneName)))
 			return ERROR_CODE;
 
-		if (!Utils::Assert(this, activeScene->HasMainCamera(), std::format("Tried to update the active scene: {}, "
+		if (!Assert(this, activeScene->HasMainCamera(), std::format("Tried to update the active scene: {}, "
 			"but it has no main camera", activeScene->m_SceneName)))
 			return ERROR_CODE;
 
-		if (!Utils::Assert(this, activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
+		if (!Assert(this, activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
 			"are no entities in the scene", activeScene->m_SceneName)))
 			return ERROR_CODE;
 		
 		CameraData* mainCamera = activeScene->TryGetMainCameraData();
 		ECS::Entity* mainCameraEntity = activeScene->TryGetMainCameraEntity();
 
-		if (!Utils::Assert(this, mainCamera != nullptr && mainCameraEntity != nullptr,
+		if (!Assert(this, mainCamera != nullptr && mainCameraEntity != nullptr,
 			std::format("Tried to update the active scene:{} but failed to retrieve "
 				"main camera(found:{}) and/or its entity(found:{})", activeScene->m_SceneName,
 				std::to_string(mainCamera != nullptr), std::to_string(mainCameraEntity != nullptr))))
 			return ERROR_CODE;
 
-		if (!Utils::Assert(this, m_playerInfo.has_value(),
+		if (!Assert(this, m_playerInfo.has_value(),
 			std::format("Tried to update the active scene:{} but failed to get "
 				"player info in a valid state", activeScene->m_SceneName)))
 			return ERROR_CODE;
@@ -249,7 +265,7 @@ namespace Core
 
 		//for (auto& layer : activeScene->GetLayersMutable())
 		//{
-		//	//Utils::Log(std::format("Resetting to  default layer: {}/{}", std::to_string(i), std::to_string(m_Layers.size()-1)));
+		//	//Log(std::format("Resetting to  default layer: {}/{}", std::to_string(i), std::to_string(m_Layers.size()-1)));
 		//	layer->ResetToDefault();
 		//}
 	
@@ -276,14 +292,14 @@ namespace Core
 		}
 
 		m_physicsBodySystem.SystemUpdate(*activeScene, m_deltaTime);
-		Utils::Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
+		Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
 			Conversions::WorldToScreenPosition(*mainCamera, m_playerInfo.value().m_Entity->m_Transform.m_Pos).ToString()));
 		
 		m_animatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_spriteAnimatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 	
-		Utils::LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
+		LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
 			std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<2>(), *(m_obstacleInfo.value().m_Data))),
 			m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 			//TODO: this is technically wrong since we use transform pos as center for aabb global pos but it could be offset (just for testing when offset=0)
@@ -297,7 +313,7 @@ namespace Core
 
 		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
 		const TextBufferMixed& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
-		Utils::Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
+		Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
 		if (m_enableCommandConsole) m_commandConsole.Update();
 
@@ -314,8 +330,8 @@ namespace Core
 		activeScene->GetPhysicsWorldMutable().UpdateEnd();
 		if (m_enableDebugInfo) m_debugInfo.ClearProperties();
 
-		//Utils::Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
-		//Utils::Log(m_sceneManager.GetActiveScene()->ToStringLayers());
+		//Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
+		//Log(m_sceneManager.GetActiveScene()->ToStringLayers());
 
 		m_lastTime = m_currentTime;
 
@@ -352,7 +368,7 @@ namespace Core
 			}
 			catch (const std::exception& e)
 			{
-				Utils::LogError(this, std::format("Update loop terminated due to exception: {}", e.what()));
+				LogError(this, std::format("Update loop terminated due to exception: {}", e.what()));
 				return;
 			}
 
@@ -363,10 +379,10 @@ namespace Core
 			//We do not terminate update if we want to play a few frames
 			if (FRAME_LIMIT != NO_FRAME_LIMIT && m_currentFrameCounter < FRAME_LIMIT) continue;
 
-			if (!Utils::Assert(this, currentCode != ERROR_CODE, 
+			if (!Assert(this, currentCode != ERROR_CODE, 
 				std::format("Update loop terminated due to error"))) return;
 
-			if (!Utils::Assert(this, currentCode != END_CODE,
+			if (!Assert(this, currentCode != END_CODE,
 				std::format("Update loop terminated due to loop end triggered"))) return;
 		}
 	}

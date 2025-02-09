@@ -25,11 +25,11 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	m_globalEntities(globalEntities), m_GlobalEntities(m_globalEntities),
 	m_PhysicsWorld()
 {
-	if (!Utils::Assert(std::filesystem::exists(scenePath), std::format("Tried to create a scene at path: {} "
+	if (!Assert(std::filesystem::exists(scenePath), std::format("Tried to create a scene at path: {} "
 		"but that path does not exist", scenePath.string()))) 
 		return;
 
-	if (!Utils::Assert(scenePath.has_filename(), std::format("Tried to create a scene at path: {} "
+	if (!Assert(scenePath.has_filename(), std::format("Tried to create a scene at path: {} "
 		"but that path does not lead to a file", scenePath.string()))) 
 		return;
 
@@ -39,7 +39,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	std::replace(m_sceneName.begin(), m_sceneName.end(), '_', ' ');
 	std::ifstream fstream(scenePath);
 	
-	/*if (!Utils::Assert(!!fstream, std::format("Tried to create scene at: {} "
+	/*if (!Assert(!!fstream, std::format("Tried to create scene at: {} "
 		"but it could not open file at that path", scenePath.string())))
 	{
 		std::cout << "RETURN" << std::endl;
@@ -53,19 +53,19 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	m_Layers.emplace(RenderLayerType::Background, RenderLayer{});
 	m_Layers.emplace(RenderLayerType::Player, RenderLayer{});
 
-	//Utils::Log("Creating new layer in scene");
+	//Log("Creating new layer in scene");
 	const VisualData backgroundVisual = VisualData(layerText, GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE,
 										VisualData::DEFAULT_CHAR_SPACING, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::PIVOT_CENTER);
 	ECS::Entity& backgroundEntity = CreateEntity("Background", TransformData({ 0,0 }));
 	EntityRendererData& backgroundRenderer= backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
-	Utils::LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
-	Utils::LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.m_Name, backgroundRenderer.m_Entity->m_Name));
+	LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
+	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.m_Name, backgroundRenderer.m_Entity->m_Name));
 
 	PhysicsBodyData& physicsBody= backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(backgroundVisual.GetWorldSize(), {0,0}));
-	Utils::LogWarning(std::format("Created Physics body: {} visual size: {}", 
+	LogWarning(std::format("Created Physics body: {} visual size: {}", 
 		physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), backgroundVisual.m_Text.GetSize().ToString()));
 
-	//Utils::Log(std::format("New layer w: {} h: {}", std::to_string(newLayerW), std::to_string(newLayerH)));
+	//Log(std::format("New layer w: {} h: {}", std::to_string(newLayerW), std::to_string(newLayerH)));
 	//TODO: right now these are global constants, but might have to be later parsed from data
 	//for each scene, allowing each scene to have its own settings
 
@@ -103,11 +103,11 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 			std::string colorAlias = currentLine.substr(0, equalsSignIndex);
 			std::string hexString = currentLine.substr(equalsSignIndex + 1);
 			std::optional<uint32_t> maybeConvertedHex = Utils::TryParseHex<uint32_t>(hexString);
-			if (!Utils::Assert(maybeConvertedHex.has_value(), std::format("Tried to parse scene data: {}, but encountered "
+			if (!Assert(maybeConvertedHex.has_value(), std::format("Tried to parse scene data: {}, but encountered "
 				"unparsable hex: '{}' at line: {}", m_SceneName, hexString, std::to_string(lineIndex)))) continue;
 
 			Color convertedColor = RaylibUtils::GetColorFromHex(maybeConvertedHex.value());
-			/*Utils::Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));*/
+			/*Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));*/
 			colorAliases.emplace(colorAlias, convertedColor);
 		}
 		else
@@ -123,12 +123,12 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 				if (currentLine[i] == charColorAliasStart && i< currentLine.size()-2)
 				{
 					int colorAliasEndIndex = currentLine.find(charColorAliasEnd, i + 1);
-					if (!Utils::Assert(colorAliasEndIndex != std::string::npos, std::format("Tried to parse a color alias for scene data: {} at line: {} "
+					if (!Assert(colorAliasEndIndex != std::string::npos, std::format("Tried to parse a color alias for scene data: {} at line: {} "
 						"but did not find color alias end at color alias start at index: {}", 
 						m_SceneName, std::to_string(lineIndex), std::to_string(i)))) continue;
 
 					std::string colorAlias = currentLine.substr(i + 1, colorAliasEndIndex - (i + 1));
-					if (!Utils::Assert(colorAliases.find(colorAlias) != colorAliases.end(), std::format("Tried to parse a color alias for scene data: {} at line: {} "
+					if (!Assert(colorAliases.find(colorAlias) != colorAliases.end(), std::format("Tried to parse a color alias for scene data: {} at line: {} "
 						"but color alias: {} starting at index:{} has no color data defined in KEY section",
 						m_SceneName, std::to_string(lineIndex), colorAlias, std::to_string(i + 1))))
 					{
@@ -136,7 +136,7 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 						continue;
 					}
 
-					//Utils::Log(std::format("Found good color alias: {}", colorAlias));
+					//Log(std::format("Found good color alias: {}", colorAlias));
 					currentColor = colorAliases[colorAlias];
 					i = colorAliasEndIndex;
 					continue;
@@ -289,7 +289,7 @@ EntityCollection::iterator Scene::GetLocalEntityIterator(const ECS::EntityID& id
 class CameraData;
 void Scene::SetMainCamera(ECS::Entity& cameraEntity)
 {
-	if (!Utils::Assert(cameraEntity.HasComponent<CameraData>(), 
+	if (!Assert(cameraEntity.HasComponent<CameraData>(), 
 		std::format("Tried to set the non-camera entity: {} as the main camera for scene: {}",
 			cameraEntity.m_Name, m_SceneName))) return;
 
@@ -377,13 +377,13 @@ ECS::Entity* Scene::TryGetEntity(const std::string& name)
 
 std::string Scene::ToStringLayers() const
 {
-	//Utils::Log(std::format("Began to stirng alyers fro scene. first layer: {}", m_Layers[0].m_SquaredTextBuffer.GetSize().ToString()));
+	//Log(std::format("Began to stirng alyers fro scene. first layer: {}", m_Layers[0].m_SquaredTextBuffer.GetSize().ToString()));
 	std::string result = "\n" + m_SceneName + ":\n";
 
 	for (const auto& layer : m_Layers)
 	{
 		result += "\nLAYER: ";
-		Utils::Log(std::format("Display all scene layers at layer: {}", layer.second.ToString()));
+		Log(std::format("Display all scene layers at layer: {}", layer.second.ToString()));
 		result += layer.second.ToString();
 	}
 	return result;

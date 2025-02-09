@@ -11,6 +11,7 @@
 #include "LightSourceData.hpp"
 #include "EntityRendererData.hpp"
 #include "HelperFunctions.hpp"
+#include "Debug.hpp"
 
 //This means that the max number of components supported is 64 
 // (the amount of bits for the type)
@@ -95,7 +96,7 @@ ComponentType GetComponentFromType()
 	if (typeid(T) == typeid(TransformData)) return ComponentType::Transform;
 	//if (typeid(T) == typeid(AnimatorData)) return ComponentType::Animator;
 	
-	Utils::Log(Utils::LogType::Error, std::format("Tried to parse type: {} "
+	Log(LogType::Error, std::format("Tried to parse type: {} "
 		"to component type but failed!", typeid(T).name()));
 	return ComponentType::None;
 }

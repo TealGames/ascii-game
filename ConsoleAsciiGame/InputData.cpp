@@ -22,8 +22,13 @@ bool InputData::HasInputChanged() const
 
 void InputData::SetFrameInput(const Utils::Point2DInt& input)
 {
+	static bool updatingFrame = false;
+	if (updatingFrame) return;
+
+	updatingFrame = true;
 	m_lastFrameDirectionalInput = m_currentFrameDirectionalInput;
 	m_currentFrameDirectionalInput = input;
+	updatingFrame = false;
 }
 
 Utils::Point2DInt InputData::GetInputDelta() const

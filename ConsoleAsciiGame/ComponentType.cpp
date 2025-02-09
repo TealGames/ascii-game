@@ -6,7 +6,7 @@
 std::uint8_t GetPlaceOfComponentType(const ComponentType& type)
 {
 	ComponentNumericType integralType = static_cast<ComponentNumericType>(type);
-	Utils::Log(std::format("integral type for: {} is: {}", ToString(type), std::to_string(integralType)));
+	Log(std::format("integral type for: {} is: {}", ToString(type), std::to_string(integralType)));
 	return static_cast<std::uint8_t>(std::log2(integralType));
 }
 
@@ -19,7 +19,7 @@ std::uint8_t GetPlaceOfComponentType(const ComponentType& type)
 /// <returns></returns>
 ComponentType GetComponentTypeByPlace(const std::uint8_t value)
 {
-	if (!Utils::Assert(value <= MAX_COMPONENT_TYPES - 1, std::format("Tried to get component type by palce: {} "
+	if (!Assert(value <= MAX_COMPONENT_TYPES - 1, std::format("Tried to get component type by palce: {} "
 		"but it is outside the possible range of enum values", std::to_string(value)))) return ComponentType::None;
 
 	ComponentNumericType one = 1;

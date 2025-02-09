@@ -24,7 +24,7 @@ namespace ECS
 	CameraSystem::CameraSystem(ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer) :
         m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
 	{
-        Utils::LogWarning(std::format("CREATED CAMERA SYSTEM: {}", std::to_string(colliderBuffer!=nullptr)));
+        LogWarning(std::format("CREATED CAMERA SYSTEM: {}", std::to_string(colliderBuffer!=nullptr)));
 	}
 
     void CameraSystem::SystemUpdate(Scene& scene, CameraData& data,
@@ -40,7 +40,7 @@ namespace ECS
         //so instead use dirty from entities not from componentns
         if (CACHE_LAST_BUFFER && !scene.HasDirtyComponents() && !data.m_LastFrameBuffer.empty())
         {
-            //Utils::Log("NO camera render update");
+            //Log("NO camera render update");
             m_currentFrameBuffer = data.m_LastFrameBuffer;
             //Rendering::RenderBuffer(data.m_LastFrameBuffer.value());
             return;
@@ -61,9 +61,9 @@ namespace ECS
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
     void CameraSystem::UpdateCameraPosition(CameraData& cameraData, ECS::Entity& mainCamera)
     {
-        /*Utils::Log(std::format("Main camera trans: {} follow trans: {}", mainCamera.m_Transform.m_Pos.ToString(), 
+        /*Log(std::format("Main camera trans: {} follow trans: {}", mainCamera.m_Transform.m_Pos.ToString(), 
             std::to_string(cameraData.m_CameraSettings.m_FollowTarget!=nullptr)));*/
-        //Utils::Log(std::format("Main camera trans: {} follow trans: ", mainCamera.m_Transform.m_Pos.ToString()));
+        //Log(std::format("Main camera trans: {} follow trans: ", mainCamera.m_Transform.m_Pos.ToString()));
         mainCamera.m_Transform.SetPos(cameraData.m_CameraSettings.m_FollowTarget->m_Transform.m_Pos);
     }
 
@@ -82,24 +82,24 @@ namespace ECS
         float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_CameraSettings.m_WorldViewportSize.m_X, 
                                      SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y);
 
-        Utils::LogWarning(std::format("COLLAPSING CAMERA with scale: {} wdith factor: {} height factoer: {}",
+        LogWarning(std::format("COLLAPSING CAMERA with scale: {} wdith factor: {} height factoer: {}",
             std::to_string(scaleFactor), std::to_string(SCREEN_WIDTH / cameraData.m_CameraSettings.m_WorldViewportSize.m_X), 
             std::to_string(SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y)));
 
 
         /*TextBuffer newBuffer = TextBuffer(cameraData.m_CameraSettings.m_ViewportSize.m_X, cameraData.m_CameraSettings.m_ViewportSize.m_Y, TextChar{});*/
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
-        //Utils::Log(std::format("Total layers: {}", std::to_string(layers.size())));
+        //Log(std::format("Total layers: {}", std::to_string(layers.size())));
         ScreenPosition newScreenPos = {};
         for (const auto& layer : layers)
         {
-            //Utils::Log(std::format("LAYER has buffer: {}", layer->ToString()));
+            //Log(std::format("LAYER has buffer: {}", layer->ToString()));
             for (const auto& textBufferPos : layer->GetBuffer())
             {
-                /*Utils::Log(std::format("Is pos {} within viewport: {}", textBufferPos.ToString(), 
+                /*Log(std::format("Is pos {} within viewport: {}", textBufferPos.ToString(), 
                     std::to_string(IsWithinViewport(cameraData, textBufferPos.m_Pos))));*/
                 if (!IsWithinViewport(cameraData, textBufferPos.m_Pos)) continue;
-               /* Utils::Log(std::format("Convert pos: {} to screen pos; {}", 
+               /* Log(std::format("Convert pos: {} to screen pos; {}", 
                     textBufferPos.m_Pos.ToString(), WorldToScreenPosition(cameraData, textBufferPos.m_Pos).ToString()));*/
 
                 m_currentFrameBuffer.emplace_back(textBufferPos);
@@ -115,7 +115,7 @@ namespace ECS
         {
             if (m_colliderOutlineBuffer != nullptr && m_colliderOutlineBuffer->HasData())
             {
-                //Utils::LogWarning("DOING SIZE SCALING");
+                //LogWarning("DOING SIZE SCALING");
                 for (auto& outline : m_colliderOutlineBuffer->m_RectangleBuffer)
                 {
                     outline.m_Size = outline.m_Size * scaleFactor;
@@ -138,12 +138,12 @@ namespace ECS
         if (CACHE_LAST_BUFFER) cameraData.m_LastFrameBuffer = m_currentFrameBuffer;
 
         /*
-        //Utils::Log(std::format("ONE LAYER IN CAMERA: {}", layers[0]->ToString()));
-        //Utils::Log(std::format("SECOND LAYER IN CAMERA: {}", layers[1]->ToString()));
+        //Log(std::format("ONE LAYER IN CAMERA: {}", layers[0]->ToString()));
+        //Log(std::format("SECOND LAYER IN CAMERA: {}", layers[1]->ToString()));
 
         const CartesianGridPosition cartesianTopLeft = Conversions::CartesianToGrid(mainCamera.m_Transform.m_Pos) - (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
         const Array2DPosition renderCoordsTopLeft = Conversions::GridToArray(cartesianTopLeft);
-        //Utils::Log(std::format("CAMERA: top left: {}", cartesianTopLeft.ToString()));
+        //Log(std::format("CAMERA: top left: {}", cartesianTopLeft.ToString()));
 
         //TODO: it seems like this process should proably be much quicker and maybe we should optimize
         //by first checking if the area is smaller and convering those automatically with empty chars
@@ -166,7 +166,7 @@ namespace ECS
                     //std::to_string(layerIndex), std::to_string(layers.size()), std::to_string(r), 
                     //std::to_string(c), globalPos.ToString(), layer.m_SquaredTextBuffer.IsValidPos(globalPos)) << std::endl;
 
-                    //Utils::Log(std::format("Attempting char at: {} of HEGIHT: {} WIDTH: {}",
+                    //Log(std::format("Attempting char at: {} of HEGIHT: {} WIDTH: {}",
                     //localPos.ToString(), std::to_string(layer.m_TextBuffer.m_HEIGHT), std::to_string(layer.m_TextBuffer.m_WIDTH)));
                     
                     if (!layer.m_SquaredTextBuffer.IsValidPos(globalPos)) continue;
@@ -178,9 +178,9 @@ namespace ECS
 
                     hasFoundChar = true;
                     newBuffer.SetAt(localPos, posChar);
-                    //Utils::Log(std::format("Setting the position: {} of buffer with char: {}",
+                    //Log(std::format("Setting the position: {} of buffer with char: {}",
                      // localPos.ToString(), posChar.ToString()));
-                   //Utils::Log(std::format("Found valid topmost pos at: {} with char: {} color: {} at layer: {} BUT WHEN DIRECT COLOR: {}", 
+                   //Log(std::format("Found valid topmost pos at: {} with char: {} color: {} at layer: {} BUT WHEN DIRECT COLOR: {}", 
                    // globalPos.ToString(), Utils::ToString(posChar->m_Char), RaylibUtils::ToString(posChar->m_Color), 
                     //std::to_string(layerIndex), layer.m_SquaredTextBuffer.ToString(false)));
                     break;
@@ -191,12 +191,12 @@ namespace ECS
                 if (!hasFoundChar)
                 {
                     newBuffer.SetAt(localPos, TextChar{ Color(), EMPTY_CHAR_PLACEHOLDER });
-                    //Utils::Log("OUT OF BOUNDS SET EMPTYx");
+                    //Log("OUT OF BOUNDS SET EMPTYx");
                 }
             }
         }
         */
-        //Utils::Log(std::format("Camera collapsing has buffer: {}", newBuffer.ToString(false)));
+        //Log(std::format("Camera collapsing has buffer: {}", newBuffer.ToString(false)));
         //return newBuffer;
     }
     

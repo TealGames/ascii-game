@@ -4,6 +4,7 @@
 #include "Point2D.hpp"
 #include <cmath>
 #include "HelperFunctions.hpp"
+#include "Debug.hpp"
 
 namespace Utils
 {
@@ -70,7 +71,7 @@ namespace Utils
 
 	Point4D Point4D::operator/(const Point4D& otherPos) const
 	{
-		if (!Utils::Assert(this, otherPos.m_X != 0 && otherPos.m_Y != 0 && otherPos.m_Z != 0 && otherPos.m_W!=0,
+		if (!Assert(this, otherPos.m_X != 0 && otherPos.m_Y != 0 && otherPos.m_Z != 0 && otherPos.m_W!=0,
 			std::format("Tried to divide {} by a value with 0 {}",
 				ToString(), otherPos.ToString()))) return {};
 
@@ -79,7 +80,7 @@ namespace Utils
 
 	Point4D Point4D::operator/(const float factor) const
 	{
-		if (!Utils::Assert(this, factor != 0, std::format("Tried to divide {} by a value with 0 {}",
+		if (!Assert(this, factor != 0, std::format("Tried to divide {} by a value with 0 {}",
 			ToString(), std::to_string(factor)))) return {};
 
 		return { m_X / factor, m_Y / factor, m_Z / factor, m_W/factor};

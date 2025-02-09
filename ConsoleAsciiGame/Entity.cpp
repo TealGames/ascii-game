@@ -46,7 +46,7 @@ namespace ECS
 		TransformData** doubleOutPtr = &singleOutPtr;
 		TryAddComponent<TransformData>(std::move(transformCopy), doubleOutPtr);
 
-		Utils::Assert(this, Utils::IsValidPointer(doubleOutPtr), std::format("Tried to bind transform data for entity: {} "
+		Assert(this, Utils::IsValidPointer(doubleOutPtr), std::format("Tried to bind transform data for entity: {} "
 			"using copy but failed to retrieve it after it has been added", m_Name));
 
 		return *(*doubleOutPtr);
@@ -63,7 +63,7 @@ namespace ECS
 		TransformData** doubleOutPtr = &singleOutPtr;
 		TryAddComponent<TransformData>(std::move(transform), doubleOutPtr);
 
-		Utils::Assert(this, Utils::IsValidPointer(doubleOutPtr), std::format("Tried to bind transform data for entity: {} "
+		Assert(this, Utils::IsValidPointer(doubleOutPtr), std::format("Tried to bind transform data for entity: {} "
 			"using move but failed to retrieve it after it has been added", m_Name));
 
 		return *(*doubleOutPtr);
@@ -149,7 +149,7 @@ namespace ECS
 	//		std::string error = std::format("Tried to place a component of type: {} "
 	//			"on gameObject {} but it already contains the max: {}",
 	//			ToString(component->m_Type), m_Name, std::to_string(component->GetMaxPerObject()));
-	//		Utils::Log(Utils::LogType::Error, error);
+	//		Log(LogType::Error, error);
 	//		return false;
 	//	}
 	//	static int lastId = -1;
@@ -160,7 +160,7 @@ namespace ECS
 	//		{
 	//			std::string error = std::format("Tried to add a component of {} to gameObject with name: {} "
 	//				"but the component id ({}) is not allowed!", ToString(component->m_Type), m_Name, std::to_string(componentId));
-	//			Utils::Log(Utils::LogType::Error, error);
+	//			Log(LogType::Error, error);
 	//			return false;
 	//		}
 
@@ -168,7 +168,7 @@ namespace ECS
 	//		{
 	//			std::string error = std::format("Tried to add a component of {} to gameObject with name: {} "
 	//				"but the component id ({}) is already taken!", ToString(component->m_Type), m_Name, std::to_string(componentId));
-	//			Utils::Log(Utils::LogType::Error, error);
+	//			Log(LogType::Error, error);
 	//			return false;
 	//		}
 	//		m_components.emplace(componentId, component);

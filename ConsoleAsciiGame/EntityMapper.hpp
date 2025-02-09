@@ -136,7 +136,7 @@ namespace Old
 			}
 			catch (const std::bad_any_cast& e)
 			{
-				Utils::Log(this, Utils::LogType::Error, std::format("Tried to get component of type: {} "
+				Log(this, LogType::Error, std::format("Tried to get component of type: {} "
 					"but casting to type: {} failed since actual type is: {}",
 					ToString(compType), typeid(T).name(), anyType.type().name()));
 				return nullptr;
@@ -165,11 +165,11 @@ namespace Old
 		std::optional<ComponentID> TryAddComponent(const EntityID& entityId, T&& component,
 			const ComponentType& compType = ComponentType::None, T** outComponent = nullptr)
 		{
-			if (!Utils::Assert(this, std::is_copy_assignable_v<T>, std::format("Tried to add component of type: {} "
+			if (!Assert(this, std::is_copy_assignable_v<T>, std::format("Tried to add component of type: {} "
 				"to entity id: {} but that type does not have a valid move assignment operator to move the componnent",
 				typeid(T).name(), std::to_string(entityId)))) return std::nullopt;
 
-			if (!Utils::Assert(this, HasEntityWithID(entityId), std::format("ENTITY:MAPPER: Tried to add component of type: {} "
+			if (!Assert(this, HasEntityWithID(entityId), std::format("ENTITY:MAPPER: Tried to add component of type: {} "
 				"to entity id: {} but that entity ID is not reserved! Reserved: {}",
 				ToString(compType), std::to_string(entityId), Utils::ToStringIterable(m_entityComponentIds)))) return std::nullopt;
 
@@ -181,13 +181,13 @@ namespace Old
 
 			const ComponentRowIndex componentRowIndex = GetRowIndexForComponentType(validCompType);
 			ComponentID compId = -1;
-			Utils::Log(std::format("Component index: {}/{}", std::to_string(componentRowIndex), std::to_string(m_allComponents.size())));
+			Log(std::format("Component index: {}/{}", std::to_string(componentRowIndex), std::to_string(m_allComponents.size())));
 
 			T* outCompPtr = nullptr;
 			if (DO_COMPONENT_LINEAR_PLACEMENT)
 			{
 				auto existingEntityIt = m_entityComponentIds.find(entityId);
-				Utils::Log(std::format("Attempting to add component: {}. exists: {} is empty: {}",
+				Log(std::format("Attempting to add component: {}. exists: {} is empty: {}",
 					ToString(compType), std::to_string(existingEntityIt != m_entityComponentIds.end()), std::to_string(existingEntityIt->second.empty())));
 
 				if (existingEntityIt != m_entityComponentIds.end() && !(existingEntityIt->second.empty()))
@@ -220,15 +220,15 @@ namespace Old
 			}
 
 			const ComponentIndex elementIndex = m_nextAvailableComponentIndices[componentRowIndex];
-			Utils::Log(std::format("Element index is; {}", std::to_string(elementIndex)));
-			if (!Utils::Assert(this, elementIndex <= MAX_COMPONENT_COL_INDEX, std::format("ENTITY MAPPER: Tried to "
+			Log(std::format("Element index is; {}", std::to_string(elementIndex)));
+			if (!Assert(this, elementIndex <= MAX_COMPONENT_COL_INDEX, std::format("ENTITY MAPPER: Tried to "
 				"add component type: {} but there is already a max entity limit: {}",
 				typeid(T).name(), std::to_string(MAX_COMPONENT_COL_INDEX))))
 			{
 				return std::nullopt;
 			}
 
-			Utils::Log(std::format("Assign componentn to mapper. found r: {}/{} c: {}/{}",
+			Log(std::format("Assign componentn to mapper. found r: {}/{} c: {}/{}",
 				std::to_string(componentRowIndex), std::to_string(m_allComponents.size() - 1),
 				std::to_string(elementIndex), std::to_string(m_allComponents[componentRowIndex].size() - 1)));
 
@@ -243,7 +243,7 @@ namespace Old
 			compId = CreateComponentID(validCompType, elementIndex);
 			StoreComponentForEntity(entityId, compId);
 
-			Utils::Log("finding nextg comp index");
+			Log("finding nextg comp index");
 			FindNextAvailableComponentIndex(componentRowIndex);
 			return compId;
 		}
@@ -253,7 +253,7 @@ namespace Old
 		template<typename T>
 		T* TryGetComponent(const EntityID& entityId, const ComponentType& compType)
 		{
-			if (!Utils::Assert(this, HasEntityWithID(entityId), std::format("ENTITY MAPPER: Tried to get component of type: {} "
+			if (!Assert(this, HasEntityWithID(entityId), std::format("ENTITY MAPPER: Tried to get component of type: {} "
 				"to entity id : {} but that entity ID is not reserved!",
 				ToString(compType), std::to_string(entityId)))) return -1;
 
@@ -278,7 +278,7 @@ namespace Old
 			ComponentIndex colIndex = GetColIndexForComponentID(compId);
 			if (m_allComponents[rowIndex].size() <= colIndex) return nullptr;
 
-			Utils::Log(std::format("Converting to component with comp id: {}", std::to_string(compId)));
+			Log(std::format("Converting to component with comp id: {}", std::to_string(compId)));
 			return TryConvertToComponentType<T>(m_allComponents[rowIndex][colIndex], GetComponentTypeFromID(compId));
 		}
 
@@ -316,7 +316,7 @@ namespace Old
 					const ComponentID compId = CreateComponentID(type, col);
 					std::optional<EntityID> maybeId = TryGetEntityWithComponent(compId);
 
-					if (!Utils::Assert(this, maybeId.has_value(), std::format("ENTITY MAPPER: Tried to get all components of type: {} "
+					if (!Assert(this, maybeId.has_value(), std::format("ENTITY MAPPER: Tried to get all components of type: {} "
 						"but failed to retrieve its entity id from col index: {}", ToString(type), std::to_string(col)))) return {};
 					action(compPtr, maybeId.value());
 				}

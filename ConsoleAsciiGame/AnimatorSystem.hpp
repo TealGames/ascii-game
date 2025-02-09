@@ -3,6 +3,7 @@
 #include <type_traits>
 #include "MultiBodySystem.hpp"
 #include "AnimatorData.hpp"
+#include "Debug.hpp"
 
 namespace Core
 {
@@ -87,7 +88,7 @@ namespace ECS
 			if (data.m_NormalizedTime >= property.m_Keyframes[property.m_KeyframeIndex].GetTime())
 			{
 				std::optional<size_t> newIndex = TryGetKeyFrameAtTime<T>(data, property, data.m_NormalizedTime);
-				if (!Utils::Assert(this, newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
+				if (!Assert(this, newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
 					"and end time: {} on entity: {} but failed!", std::to_string(data.m_NormalizedTime),
 					std::to_string(data.m_EndTime), entity.m_Name)))
 					return;
@@ -104,11 +105,11 @@ namespace ECS
 				property.m_ComponentPropertyRef = static_cast<T>(std::lerp(static_cast<double>(currentFrame.GetValue()), 
 																		   static_cast<double>(nextFrame.GetValue()), lerpVal));
 				property.m_ComponentDataMutationFlagRef = true;
-				//Utils::Log(Utils::LogType::Warning, std::format("Set property value to; {}", std::to_string(property.m_ComponentDataMutationFlagRef)));
+				//Log(LogType::Warning, std::format("Set property value to; {}", std::to_string(property.m_ComponentDataMutationFlagRef)));
 			}
 			else
 			{
-				Utils::Log(Utils::LogType::Error, std::format("Tried to update property in animator for entity:{} "
+				LogError(this, std::format("Tried to update property in animator for entity:{} "
 					"but could not find any Type specific actions to take for it (probably due to not defining actions for this type)", entity.m_Name));
 			}
 		}

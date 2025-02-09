@@ -8,6 +8,7 @@
 #include "CommandPromptType.hpp"
 #include "ICommandPrompt.hpp"
 #include "HelperFunctions.hpp"
+#include "Debug.hpp"
 
 template<typename ...Args>
 class CommandPrompt : public ICommandPrompt
@@ -26,7 +27,7 @@ public:
 	CommandPrompt(const std::string& commandName, const std::vector<std::string>& argNames, const std::function<void(Args...)>& action) : 
 		ICommandPrompt(commandName), m_action(action)
 	{
-		if (!Utils::Assert(this, GetArgCount() == argNames.size(), std::format("Tried to create a command prompt "
+		if (!Assert(this, GetArgCount() == argNames.size(), std::format("Tried to create a command prompt "
 			"but the arg count names: {} does not match total args: {}",
 			std::to_string(argNames.size()), std::to_string(GetArgCount()))))
 		{
@@ -44,9 +45,9 @@ public:
 
 		std::vector<std::string> thing = {};
 		(thing.push_back(typeid(Args).name()), ...);
-		Utils::Log(std::format("HERE YOU GO: args: {} doc: {} RECENT TRY: {}", 
+		/*Log(std::format("HERE YOU GO: args: {} doc: {} RECENT TRY: {}", 
 			Utils::ToStringIterable<std::vector<std::string>, std::string>(args), GetDocumentation(),
-			Utils::ToStringIterable<std::vector<std::string>, std::string>(thing)));
+			Utils::ToStringIterable<std::vector<std::string>, std::string>(thing)));*/
 
 		//throw std::invalid_argument(0);
 

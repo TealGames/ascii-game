@@ -31,12 +31,20 @@ inline const Utils::Point2D GLOBAL_CHAR_SPACING = Utils::Point2D(1,1);
 inline const Color COLLIDER_OUTLINE_COLOR = GREEN;
 inline const Color LINE_COLOR = RED;
 
-constexpr float COMMAND_CONSOLE_HEIGHT = 30;
-constexpr float COMMAND_CONSOLE_FONT_SIZE = 30;
+constexpr float COMMAND_CONSOLE_HEIGHT = 25;
+constexpr float COMMAND_CONSOLE_FONT_SIZE = 25;
 constexpr float COMMAND_CONSOLE_SPACING = 3;
-constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 15;
+constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
 
 //Will get the global font. This is needed so that the first call to it
 //is guaranteed to create a valid font object rather than pre-initialize with invalid font
 //NOTE: this can only be called after Raylib InitWindow() 
 Font& GetGlobalFont();
+
+
+inline const char* ANSI_COLOR_RED = "\033[1;31m";
+inline const char* ANSI_COLOR_YELLOW = "\033[1;33m";
+inline const char* ANSI_COLOR_WHITE = "\033[1;37m";
+inline const char* ANSI_COLOR_GRAY = "\033[1;90m";
+inline const char* ANSI_COLOR_GREEN = "\033[1;32m";
+inline const char* ANSI_COLOR_CLEAR = "\033[0m";

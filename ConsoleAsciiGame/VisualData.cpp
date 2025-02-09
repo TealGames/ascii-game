@@ -4,6 +4,7 @@
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 #include "raylib.h"
+#include "Debug.hpp"
 
 const float& VisualData::DEFAULT_FONT_SIZE = GLOBAL_FONT_SIZE;
 const Utils::Point2D& VisualData::DEFAULT_CHAR_SPACING = GLOBAL_CHAR_SPACING;
@@ -33,9 +34,9 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, co
 	if (rawBuffer.empty()) return;
 
 	std::optional<TextArray> squaredBuffer = CreateSquaredBuffer(rawBuffer);
-	if (!Utils::Assert(squaredBuffer.has_value(), std::format("Tried to create a Visual data with raw buffer: {}, "
+	if (!Assert(squaredBuffer.has_value(), std::format("Tried to create a Visual data with raw buffer: {}, "
 		"but failed to square data", ToStringRawBuffer(rawBuffer)))) return;
-	//Utils::Log(std::format("Square buffer val in optional: {}", squaredBuffer.value().ToString()));
+	//Log(std::format("Square buffer val in optional: {}", squaredBuffer.value().ToString()));
 
 	m_Text = squaredBuffer.value();
 	ValidatePivot(m_pivotRelative);
@@ -66,13 +67,13 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPres
 
 bool VisualData::HasValidFont() const
 {
-	return Utils::Assert(this, RaylibUtils::IsValidFont(GetFont()), std::format("Tried to retrieve font for visual data: {} "
+	return Assert(this, RaylibUtils::IsValidFont(GetFont()), std::format("Tried to retrieve font for visual data: {} "
 		"but the font is not valid (could be due to not being loaded properly)", m_Text.ToString()));
 }
 
 bool VisualData::ValidatePivot(Utils::Point2D& pivot) const
 {
-	if (!Utils::Assert(this, 0 <= pivot.m_X && pivot.m_X <=1 && 
+	if (!Assert(this, 0 <= pivot.m_X && pivot.m_X <=1 && 
 		0 <= pivot.m_Y && pivot.m_Y <= 1, std::format("Validated pivot: {} for visual: {} "
 		"but it is not relative to visual so it was automatically adjusted", pivot.ToString(), m_Text.ToString())))
 	{
@@ -91,7 +92,7 @@ bool VisualData::ValidatePivot(Utils::Point2D& pivot) const
 //
 //	//TOOD: we do not set this to true when we update the text since that is a puplic member
 //
-//	Utils::Log("Trying to create texture");
+//	Log("Trying to create texture");
 //	m_textureSize = {m_charSpacing.m_X * m_Text.GetWidth()+1, m_charSpacing.m_Y * m_Text.GetHeight() +1};
 //	int textureWidth = 2 * m_charSpacing.m_X;
 //	int textureHeight = 0;
@@ -170,12 +171,12 @@ std::optional<TextArray> VisualData::CreateSquaredBuffer(const RawTextBufferBloc
 		}
 		filledSpaces.back().push_back(row.back().m_Text);
 	}
-	//Utils::Log(std::format("After intercolumn check max len: {} actual chars; {}", std::to_string(maxRowCharLen), TextBuffer::ToString(filledSpaces)));
+	//Log(std::format("After intercolumn check max len: {} actual chars; {}", std::to_string(maxRowCharLen), TextBuffer::ToString(filledSpaces)));
 
 	for (int r = 0; r < filledSpaces.size(); r++)
 	{
 		if (filledSpaces[r].size() == maxRowCharLen) continue;
-		/*if (!Utils::Assert(filledSpaces[r].size() < maxRowCharLen,
+		/*if (!Assert(filledSpaces[r].size() < maxRowCharLen,
 			std::format("Tried to get rectangalized scene text for render layer but the current "
 				"row size: {} is bigger than the max: {}",
 				std::to_string(filledSpaces[r].size()), std::to_string(maxRowCharLen))))
@@ -185,7 +186,7 @@ std::optional<TextArray> VisualData::CreateSquaredBuffer(const RawTextBufferBloc
 			filledSpaces[r].push_back(TextChar(Color(), EMPTY_CHAR_PLACEHOLDER));
 	}
 	TextArray result = TextArray(filledSpaces[0].size(), filledSpaces.size(), filledSpaces);
-	/*Utils::Log(std::format("Size: {}x{} result: {}",
+	/*Log(std::format("Size: {}x{} result: {}",
 		std::to_string(filledSpaces.size()), std::to_string(filledSpaces[0].size()), result.ToString()));*/
 	return result;
 }
@@ -201,7 +202,7 @@ Utils::Point2D VisualData::GetWorldSize() const
 		Utils::Point2D size = { width* m_predefinedCharArea.m_X + (width - 1) * m_charSpacing.m_X,
 				height* m_predefinedCharArea.m_Y+ (height - 1) * m_charSpacing.m_Y };
 
-		//Utils::Log(std::format("Getting bad world size: {} real size: {}", size.ToString(), ({size.m_X * })));
+		//Log(std::format("Getting bad world size: {} real size: {}", size.ToString(), ({size.m_X * })));
 		return size;
 	}
 
@@ -217,14 +218,14 @@ Utils::Point2D VisualData::GetWorldSize() const
 
 		currentRowTextSize= MeasureTextEx(GetFont(), currentRowText.c_str(), m_fontSize, 0);
 		currentWidth = currentRowTextSize.x + (m_Text.GetWidth() - 1) * m_charSpacing.m_X;
-		Utils::Log(std::format("Current width for: {} at: {} ({}) is: {} text sixe: {}", 
+		Log(std::format("Current width for: {} at: {} ({}) is: {} text sixe: {}", 
 			m_Text.ToString(), std::to_string(r), currentRowText, std::to_string(currentWidth), std::to_string(currentRowTextSize.x)));
 		if (currentWidth > maxWidth) maxWidth = currentWidth;
 
 		textureHeight += currentRowTextSize.y;
 		if (r != 0) textureHeight += m_charSpacing.m_Y;
 	}
-	Utils::Log(std::format("World size for: {} is: {}", m_Text.ToString(), Utils::Point2D{ maxWidth, textureHeight }.ToString()));
+	Log(std::format("World size for: {} is: {}", m_Text.ToString(), Utils::Point2D{ maxWidth, textureHeight }.ToString()));
 	return { maxWidth, textureHeight };
 }
 
@@ -237,7 +238,7 @@ WorldPosition VisualData::GetTopLeftPos(const WorldPosition& pivotWorldPos, cons
 void VisualData::AddTextPositionsToBufferPredefined(const WorldPosition& transformPos, TextBufferMixed& buffer) const
 {
 	if (!HasValidFont()) return;
-	if (!Utils::Assert(this, m_charAreaType == CharAreaType::Predefined,
+	if (!Assert(this, m_charAreaType == CharAreaType::Predefined,
 		std::format("Tried to add text positions to buffer at transform: {} PREDEFINED "
 			"but char area type does not have that setting!", transformPos.ToString()))) 
 		return;
@@ -264,7 +265,7 @@ void VisualData::AddTextPositionsToBufferPredefined(const WorldPosition& transfo
 void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transformPos, TextBufferMixed& buffer) const
 {
 	if (!HasValidFont()) return;
-	if (!Utils::Assert(this, m_charAreaType == CharAreaType::Adaptive, 
+	if (!Assert(this, m_charAreaType == CharAreaType::Adaptive, 
 		std::format("Tried to add text positions to buffer at transform: {} ADPATIVE "
 		"but char area type does not have that setting!", transformPos.ToString()))) 
 		return;
@@ -294,7 +295,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 		{
 			currentTextChar[0] = m_Text.GetAtUnsafe({ r, c }).m_Char;
 			currentSize = MeasureTextEx(GetFont(), currentTextChar, m_fontSize, 0);
-			Utils::Log(std::format("TEXT CHAR SIZE Char: {} of font size: {} at r: {} c: {} has size: {}", Utils::ToString(currentTextChar[0]),
+			Log(std::format("TEXT CHAR SIZE Char: {} of font size: {} at r: {} c: {} has size: {}", Utils::ToString(currentTextChar[0]),
 				std::to_string(m_fontSize), std::to_string(r), std::to_string(c), RaylibUtils::ToString(currentSize)));
 			//currentSize.y = m_font->baseSize;
 			if (currentSize.y > currentRowMaxHeight)
@@ -321,7 +322,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 			}
 		}
 
-		Utils::Log(std::format("Tried to make visual data now at row: {} has max colL: {} with char: {} of hieght: {}",
+		Log(std::format("Tried to make visual data now at row: {} has max colL: {} with char: {} of hieght: {}",
 			std::to_string(r), std::to_string(maxColHeight), Utils::ToString(maxColHeightChar), std::to_string(currentRowMaxHeight)));
 
 		//Update the current total size based on the stored previous row and col sizes
@@ -329,7 +330,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 		totalSize.m_Y = previousRowsHeight;
 		if (currentColsWidth > totalSize.m_X) totalSize.m_X = currentColsWidth;
 	}
-	//Utils::Log(std::format("World size for: {} is: {}", m_Text.ToString(), totalSize.ToString()));
+	//Log(std::format("World size for: {} is: {}", m_Text.ToString(), totalSize.ToString()));
 
 	WorldPosition topLeftPos = GetTopLeftPos(transformPos, totalSize);
 
@@ -338,7 +339,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 	{
 		textBuffer.m_Pos.m_X += topLeftPos.m_X;
 		textBuffer.m_Pos.m_Y += topLeftPos.m_Y;
-		/*Utils::Log(std::format("Visual TRANSFORM POS: {} total size: {} top left:{} has buffer: {} ",
+		/*Log(std::format("Visual TRANSFORM POS: {} total size: {} top left:{} has buffer: {} ",
 			transformPos.ToString(), totalSize.ToString(), topLeftPos.ToString(), textBuffer.ToString()));*/
 	}
 
@@ -354,7 +355,7 @@ void VisualData::AddTextPositionsToBuffer(const WorldPosition& transformPos, Tex
 	else if (m_charAreaType == CharAreaType::Adaptive) AddTextPositionsToBufferAdaptive(transformPos, buffer);
 	else
 	{
-		Utils::LogError(this, std::format("Tried to add text positions to buffer at transform: {} "
+		LogError(this, std::format("Tried to add text positions to buffer at transform: {} "
 			"but char area tyoe has no actions defiend", transformPos.ToString()));
 	}
 }
@@ -366,7 +367,7 @@ const Utils::Point2D& VisualData::GetCharSpacing() const
 
 const Font& VisualData::GetFont() const
 {
-	if (!Utils::Assert(this, m_font != nullptr,
+	if (!Assert(this, m_font != nullptr,
 		std::format("Tried to get font for visual but the font is NULL")))
 	{
 		throw new std::invalid_argument("Invalid font member on VisualData");

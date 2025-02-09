@@ -28,7 +28,7 @@ namespace ECS
         if (IsKeyDown(KEY_LEFT)) currentMove.m_X--;
 
         if (UpdateData(data, currentMove)) scene.IncreaseFrameDirtyComponentCount();
-        /* Utils::Log(std::format("Update end PLAYER component dirty; {}", std::to_string(m_isDirty)));*/
+        /* Log(std::format("Update end PLAYER component dirty; {}", std::to_string(m_isDirty)));*/
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ namespace ECS
     /// <returns></returns>
     bool InputSystem::UpdateData(InputData& data, const CartesianGridPosition& moveDelta)
     {
-        //Utils::Log("Player move delta: {}", moveDelta.ToString());
+        //Log("Player move delta: {}", moveDelta.ToString());
         data.SetFrameInput(moveDelta);
         return moveDelta.m_X != 0 || moveDelta.m_Y != 0;
     }

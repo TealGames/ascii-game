@@ -83,7 +83,7 @@ ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, co
 {
 	std::string cleanedName = CleanName(name);
 	//Since we want cleaned name to use in error message, we choose to not clean second time when checking for entity
-	Utils::Assert(this, !HasGlobalEntity(name, false), 
+	Assert(this, !HasGlobalEntity(name, false), 
 		std::format("Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
 		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName));
 
@@ -99,7 +99,7 @@ ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, Tr
 {
 	std::string cleanedName = CleanName(name);
 	//Since we want cleaned name to use in error message, we choose to not clean second time when checking for entity
-	Utils::Assert(this, !HasGlobalEntity(cleanedName, false), 
+	Assert(this, !HasGlobalEntity(cleanedName, false), 
 		std::format("Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
 		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName));
 

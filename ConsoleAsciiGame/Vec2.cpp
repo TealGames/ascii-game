@@ -6,6 +6,7 @@
 #include "Vec2.hpp"
 #include "Point2D.hpp"
 #include "Point2DInt.hpp"
+#include "Debug.hpp"
 
 const Vec2 Vec2::UP(0, 1);
 const Vec2 Vec2::DOWN(0, -1);
@@ -53,7 +54,7 @@ float Vec2::GetMagnitude() const
 Vec2 Vec2::GetNormalized() const
 {
 	float magnitude = GetMagnitude();
-	if (!Utils::Assert(this, !Utils::ApproximateEqualsF(magnitude, 0),
+	if (!Assert(this, !Utils::ApproximateEqualsF(magnitude, 0),
 		std::format("Tried to normalize vector: {} but it has magnitude 0", ToString())))
 		return Vec2::ZERO;
 
@@ -94,7 +95,7 @@ std::string Vec2::ToString(VectorForm form) const
 		break;
 
 	default:
-		Utils::LogError(this, std::format("Tried to convert vector ({},{}) to string "
+		LogError(this, std::format("Tried to convert vector ({},{}) to string "
 			"with undefined form {}", m_X, m_Y, ToString(form)));
 		break;
 	}
@@ -184,7 +185,7 @@ std::string ToString(const AngleMode& mode)
 	else if (mode == AngleMode::Radians) return "Radians";
 	else
 	{
-		Utils::LogError("Tried to convert undefined Vector2 angle mode to string");
+		LogError("Tried to convert undefined Vector2 angle mode to string");
 		return "";
 	}
 }
@@ -196,7 +197,7 @@ std::string ToString(const VectorForm& form)
 	else if (form == VectorForm::Unit) return "Unit";
 	else
 	{
-		Utils::LogError("Tried to convert undefined Vec2 form mode to string");
+		LogError("Tried to convert undefined Vec2 form mode to string");
 		return "";
 	}
 }

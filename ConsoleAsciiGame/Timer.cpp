@@ -3,6 +3,7 @@
 #include "HelperFunctions.hpp"
 #include <chrono>
 #include "StringUtil.hpp"
+#include "Debug.hpp"
 
 TimerResult::TimerResult() : TimerResult({}, {}, 0) {}
 
@@ -45,7 +46,7 @@ Timer::~Timer()
 
 void Timer::Start()
 {
-	if (!Utils::Assert(this, !m_isRunning, 
+	if (!Assert(this, !m_isRunning, 
 		std::format("Tried to START a timer while it is already running!"))) 
 		return;
 
@@ -56,7 +57,7 @@ void Timer::Start()
 
 TimerResult Timer::Stop()
 {
-	if (!Utils::Assert(this, m_isRunning,
+	if (!Assert(this, m_isRunning,
 		std::format("Tried to STOP a timer while it is not running!")))
 		return {};
 

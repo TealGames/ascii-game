@@ -8,11 +8,12 @@
 #include <type_traits>
 #include <algorithm>
 #include <entt/entt.hpp>
+#include <tuple>
 //#include "EntityMapper.hpp"
 #include "HelperFunctions.hpp"
 #include "TransformData.hpp"
 #include "ComponentType.hpp"
-#include <tuple>
+#include "Debug.hpp"
 
 namespace ECS
 {
@@ -101,7 +102,7 @@ namespace ECS
 		requires IsComponent<T>
 		T& AddComponent(Args&&... args)
 		{
-			if (!Utils::Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
+			if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
 				"but it already has this type (and duplicates are not allowed)", typeid(T).name(),
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
@@ -119,7 +120,7 @@ namespace ECS
 		requires IsComponent<T> && std::is_default_constructible_v<T>
 		T& AddComponent()
 		{
-			if (!Utils::Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
+			if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
 				"but it already has this type (and duplicates are not allowed)", typeid(T).name(), 
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
@@ -139,7 +140,7 @@ namespace ECS
 		requires IsComponent<T>
 		T& AddComponent(const T& component)
 		{
-			if (!Utils::Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
+			if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
 				"but it already has this type (and duplicates are not allowed)", typeid(T).name(),
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
@@ -181,21 +182,21 @@ namespace ECS
 		//requires std::is_rvalue_reference_v<T&&>
 		//bool TryAddComponent(T&& component, T** outComponent)
 		//{
-		//	if (!Utils::Assert(this, std::is_copy_assignable_v<T>, std::format("Tried to add component of type: {} "
+		//	if (!Assert(this, std::is_copy_assignable_v<T>, std::format("Tried to add component of type: {} "
 		//		"to entity id: {} via ENTITY but that type does not have a valid move assignment operator to move the componnent",
 		//		typeid(T).name(), m_Name))) return false;
 
 		//	const ComponentType type = GetComponentFromType<T>();
-		//	if (!Utils::Assert(this, !HasComponent(type), std::format("Tried to add the component type: {} to entity: {} "
+		//	if (!Assert(this, !HasComponent(type), std::format("Tried to add the component type: {} to entity: {} "
 		//		"but it already exists on this entity! Components: {}", 
 		//		::ToString(type), m_Name, Utils::ToStringIterable(m_componentIDs)))) return false;
 
-		//	Utils::Log(std::format("After adding comp: {} to entity: {} first: {} second: {}", 
+		//	Log(std::format("After adding comp: {} to entity: {} first: {} second: {}", 
 		//		::ToString(type), m_Name, std::to_string(outComponent!=nullptr), std::to_string(outComponent? *outComponent!=nullptr : false)));
 
 		//	//Note: we forward it to preserve the rvalue reference (and not need for the function to deduce again)
 		//	std::optional<ComponentID> compID = m_entityMapper.TryAddComponent<T>(m_Id, std::forward<T>(component), type, outComponent);
-		//	if (!Utils::Assert(this, compID.has_value(), std::format("Tried to add the component type: {} to entity: {} "
+		//	if (!Assert(this, compID.has_value(), std::format("Tried to add the component type: {} to entity: {} "
 		//		"but the entity mapper failed to add it!", ::ToString(type), m_Name))) return false;
 
 		//	m_componentIDs.emplace(type, compID.value());
@@ -221,7 +222,7 @@ namespace ECS
 		//{
 		//	const ComponentType type = GetComponentFromType<T>();
 		//	auto it = GetComponentIDIteratorMutable(type);
-		//	Utils::Log(std::format("Trying to get component: {} type: {} from entity: {}", typeid(T).name(), ::ToString(type), ToString()));
+		//	Log(std::format("Trying to get component: {} type: {} from entity: {}", typeid(T).name(), ::ToString(type), ToString()));
 
 		//	return m_entityMapper.TryGetComponent<T>(it->second);
 		//}

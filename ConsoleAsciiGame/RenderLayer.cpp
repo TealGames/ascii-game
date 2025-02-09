@@ -67,7 +67,7 @@ const TextBufferMixed& RenderLayer::GetBuffer() const
 //	m_SquaredTextBuffer(),
 //	m_defaultSquaredTextBuffer(m_SquaredTextBuffer)
 //{
-//	/*Utils::Log(std::format("BEFORE Squared buffer: ({}x{}) {}",
+//	/*Log(std::format("BEFORE Squared buffer: ({}x{}) {}",
 //		std::to_string(m_SquaredTextBuffer.GetWidth()),
 //		std::to_string(m_SquaredTextBuffer.GetHeight()),
 //		m_SquaredTextBuffer.ToString()));*/
@@ -75,19 +75,19 @@ const TextBufferMixed& RenderLayer::GetBuffer() const
 //	if (rawBuffer.empty()) return;
 //
 //	std::optional<TextBuffer> squaredBuffer = CreateSquaredBuffer();
-//	if (!Utils::Assert(squaredBuffer.has_value(), std::format("Tried to create a render layer with raw buffer: {}, "
+//	if (!Assert(squaredBuffer.has_value(), std::format("Tried to create a render layer with raw buffer: {}, "
 //		"but failed to square data", ToStringRawBuffer(m_rawTextBuffer)))) return;
-//	//Utils::Log(std::format("Square buffer val in optional: {}", squaredBuffer.value().ToString()));
+//	//Log(std::format("Square buffer val in optional: {}", squaredBuffer.value().ToString()));
 //
 //	m_SquaredTextBuffer = squaredBuffer.value();
 //	m_defaultSquaredTextBuffer = m_SquaredTextBuffer;
 //	
-//	/*Utils::Log(std::format("AFTER Squared buffer: ({}x{}) {}",
+//	/*Log(std::format("AFTER Squared buffer: ({}x{}) {}",
 //		std::to_string(m_SquaredTextBuffer.GetWidth()),
 //		std::to_string(m_SquaredTextBuffer.GetHeight()),
 //		m_SquaredTextBuffer.ToString()));*/
 //
-//	/*Utils::Log(std::format("USING RAW CONSTURCUTOR Creating square buffer: {} default square; {}",
+//	/*Log(std::format("USING RAW CONSTURCUTOR Creating square buffer: {} default square; {}",
 //		m_SquaredTextBuffer.ToString(), m_defaultSquaredTextBuffer.ToString()));*/
 //}
 
@@ -100,13 +100,13 @@ const TextBufferMixed& RenderLayer::GetBuffer() const
 //	//the copy in the initializer list will only copy data from the square's initialzier list member values, not after
 //	//the full body constructor runs, so this guarantees we copy it after it is run
 //	m_defaultSquaredTextBuffer = m_SquaredTextBuffer;
-//	/*Utils::Log(std::format("USING SQUAER CONSTURCUTOR Creating square buffer: {} default square; {}", 
+//	/*Log(std::format("USING SQUAER CONSTURCUTOR Creating square buffer: {} default square; {}", 
 //		m_SquaredTextBuffer.ToString(), m_defaultSquaredTextBuffer.ToString()));*/
 //}
 
 //std::optional<TextBuffer> RenderLayer::CreateSquaredBuffer() const
 //{
-//	//Utils::Log("Began creating squared buffer");
+//	//Log("Began creating squared buffer");
 //	if (m_rawTextBuffer.empty()) return TextBuffer{};
 //
 //	std::vector<std::vector<TextChar>> filledSpaces = {};
@@ -137,12 +137,12 @@ const TextBufferMixed& RenderLayer::GetBuffer() const
 //		}
 //		filledSpaces.back().push_back(row.back().m_Text);
 //	}
-//	//Utils::Log(std::format("After intercolumn check max len: {} actual chars; {}", std::to_string(maxRowCharLen), TextBuffer::ToString(filledSpaces)));
+//	//Log(std::format("After intercolumn check max len: {} actual chars; {}", std::to_string(maxRowCharLen), TextBuffer::ToString(filledSpaces)));
 //
 //	for (int r = 0; r < filledSpaces.size(); r++)
 //	{
 //		if (filledSpaces[r].size() == maxRowCharLen) continue;
-//		/*if (!Utils::Assert(filledSpaces[r].size() < maxRowCharLen,
+//		/*if (!Assert(filledSpaces[r].size() < maxRowCharLen,
 //			std::format("Tried to get rectangalized scene text for render layer but the current "
 //				"row size: {} is bigger than the max: {}",
 //				std::to_string(filledSpaces[r].size()), std::to_string(maxRowCharLen))))
@@ -152,14 +152,14 @@ const TextBufferMixed& RenderLayer::GetBuffer() const
 //			filledSpaces[r].push_back(TextChar(Color(), EMPTY_CHAR_PLACEHOLDER));
 //	}
 //	TextBuffer result= TextBuffer(filledSpaces[0].size(), filledSpaces.size(), filledSpaces);
-//	/*Utils::Log(std::format("Size: {}x{} result: {}", 
+//	/*Log(std::format("Size: {}x{} result: {}", 
 //		std::to_string(filledSpaces.size()), std::to_string(filledSpaces[0].size()), result.ToString()));*/
 //	return result;
 //}
 
 void RenderLayer::ResetToDefault()
 {
-	//Utils::Log("Resetting to default: "+m_SquaredTextBuffer.ToString());
+	//Log("Resetting to default: "+m_SquaredTextBuffer.ToString());
 	m_buffer.clear();
 }
 

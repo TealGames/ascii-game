@@ -4,6 +4,7 @@
 #include "ProfilerTimer.hpp"
 #include "Point2D.hpp"
 #include "HelperFunctions.hpp"
+#include "Debug.hpp"
 
 namespace Physics
 {
@@ -21,7 +22,7 @@ namespace Physics
 
 	void PhysicsWorld::AddBody(PhysicsBodyData& body)
 	{
-		Utils::LogWarning(this, std::format("Adding body: {}", body.m_Entity->m_Name));
+		LogWarning(this, std::format("Adding body: {}", body.m_Entity->m_Name));
 		m_bodies.push_back(&body);
 	}
 
@@ -78,7 +79,7 @@ namespace Physics
 
 						minBodyDisplacement = GetBodyMinDisplacement(bodyB, bodyA);
 						minBodyDisplacementVec = { std::abs(minBodyDisplacement.m_X), std::abs(minBodyDisplacement.m_Y) };
-						//Utils::LogWarning(std::format("After collision prevented new distance: {}", minBodyDisplacementVec.ToString()));
+						//LogWarning(std::format("After collision prevented new distance: {}", minBodyDisplacementVec.ToString()));
 						/*throw new std::invalid_argument("yeah");*/
 					}
 					if (!isValidIt) bodyA.AddCollidingBody(bodyB);
@@ -95,10 +96,10 @@ namespace Physics
 				}
 			}
 
-			/*Utils::LogWarning(std::format("COLLISION FOR ENTITY: {} FOUND: {} DEPTH: {}", bodyA.m_Entity->m_Name, 
+			/*LogWarning(std::format("COLLISION FOR ENTITY: {} FOUND: {} DEPTH: {}", bodyA.m_Entity->m_Name, 
 				std::to_string(collision.m_DoIntersect), collision.m_Depth.ToString()));*/
 			/*
-			Utils::LogError(std::format("Setting acceleration! Collisions: {} vel: {} vvel magnitude: {} ENTITY: {} has COLLIDING BODIES: {}", 
+			LogError(std::format("Setting acceleration! Collisions: {} vel: {} vvel magnitude: {} ENTITY: {} has COLLIDING BODIES: {}", 
 				std::to_string(bodyA.GetTotalBodyCollisions()), bodyA.GetVelocity().ToString(), 
 				std::to_string(bodyA.GetVelocity().GetMagnitude()), bodyA.GetEntitySafe().m_Name, bodyA.ToStringCollidingBodies()));
 			*/
@@ -116,7 +117,7 @@ namespace Physics
 			float xVelocity = bodyA.GetVelocity().m_X * deltaTime;;
 			float yVelocity = bodyA.GetVelocity().m_Y * deltaTime;;
 
-			//Utils::LogWarning(std::format("ENTITY SETTING POS: {}", std::to_string(xVelocity), std::to_string(yVelocity)));
+			//LogWarning(std::format("ENTITY SETTING POS: {}", std::to_string(xVelocity), std::to_string(yVelocity)));
 			bodyAEntity.m_Transform.SetPosDelta(Utils::Point2D(xVelocity, yVelocity));
 		}
 	}

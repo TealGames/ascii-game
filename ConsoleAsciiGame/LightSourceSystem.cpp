@@ -47,21 +47,21 @@ namespace ECS
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
             {
-                //Utils::Log(Utils::LogType::Warning, std::format("Light data for {} is mutated: {}", entity.m_Name, std::to_string(data.m_MutatedThisFrame)));
+                //Log(LogType::Warning, std::format("Light data for {} is mutated: {}", entity.m_Name, std::to_string(data.m_MutatedThisFrame)));
                 affectedLayerBuffers = scene.GetLayerBufferMutable(data.m_AffectedLayers);
               /*  if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !entity.m_Transform.HasMovedThisFrame()
                     && !data.m_LastFrameData.empty())
                 {
-                    Utils::LogWarning("LIGHT SOURCE READING LAST FRAME DATA");
+                    LogWarning("LIGHT SOURCE READING LAST FRAME DATA");
                     scene.SetLayers(data.m_AffectedLayers, data.m_LastFrameData);
                     return;
                 }*/
 
                 //if (STORE_LIGHT_MAP && !data.m_MutatedThisFrame && !data.m_LightMap.empty())
                 //{
-                //   //Utils::Log(std::format("ALL light positions: {}", 
+                //   //Log(std::format("ALL light positions: {}", 
                 //    //Utils::ToStringIterable<std::vector<LightMapChar>, LightMapChar>(data.m_LightMap)));
-                //    Utils::LogWarning("LIGHT SOURCE CALCULATING FROM LIGHT MAP");
+                //    LogWarning("LIGHT SOURCE CALCULATING FROM LIGHT MAP");
                 //    Array2DPosition globalRowColPos = {};
                 //    Array2DPosition entityRowColPos = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
                 //    Color newColor = {};
@@ -75,7 +75,7 @@ namespace ECS
                 //        {
                 //            globalRowColPos = entityRowColPos + Conversions::GridToArray(lightMapChar.m_RelativePos);
 
-                //           //Utils::Log(std::format("Relative pos: {} global: {} valid: {}",
+                //           //Log(std::format("Relative pos: {} global: {} valid: {}",
                 //           // lightMapChar.m_RelativeCartesianPos.ToString(), globalPos.ToString(), buffer->IsValidPos(globalPos)));
                 //            if (!buffer->IsValidPos(globalRowColPos)) continue;
                 //            const TextChar& currentTextChar = buffer->GetAtUnsafe(globalRowColPos);
@@ -83,7 +83,7 @@ namespace ECS
                 //            if (currentTextChar.m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
 
                 //            newColor = ApplyColorFilter(currentTextChar.m_Color, lightMapChar.m_FractionalFilterColor, lightMapChar.m_ColorFactor);
-                //            Utils::Log(std::format("CREATING LIGHT MAP COLORS: old: {} factor: {} new: {}", 
+                //            Log(std::format("CREATING LIGHT MAP COLORS: old: {} factor: {} new: {}", 
                 //                RaylibUtils::ToString(buffer->GetAtUnsafe(globalRowColPos).m_Color), std::to_string(lightMapChar.m_ColorFactor),
                 //                RaylibUtils::ToString(newColor)));
                 //            buffer->SetAt(globalRowColPos, newColor);
@@ -117,7 +117,7 @@ namespace ECS
         //TODO: right now we use only the transform pos, but we should also use every pos on player too
         
         EntityRendererData* renderData = entity.TryGetComponent<EntityRendererData>();
-        if (!Utils::Assert(renderData != nullptr, std::format("Tried to render light for entity: {} "
+        if (!Assert(renderData != nullptr, std::format("Tried to render light for entity: {} "
             "but could not find its entity render component!", entity.m_Name))) return;
 
         //TODO: it might not make sense for all lighting to just use the renderer to determine lighting start pos,
@@ -131,8 +131,8 @@ namespace ECS
             if (buffer == nullptr) continue;
             CreateLightingForPoint(data, entity, entity.m_Transform.m_Pos, *buffer, false);
 
-            //Utils::Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
-            //Utils::Log(std::format("Player Pos color: {}", RaylibUtils::ToString(buffer->GetAt(m_transform.m_Pos.GetFlipped())->m_Color)));
+            //Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
+            //Log(std::format("Player Pos color: {}", RaylibUtils::ToString(buffer->GetAt(m_transform.m_Pos.GetFlipped())->m_Color)));
 
             /*
             for (int r = 0; r < visualData.m_Text.GetHeight(); r++)
@@ -190,7 +190,7 @@ namespace ECS
 
             x += pointXValIncrement;
         }
-        //Utils::Log(std::format("Circle points: {}", Utils::ToStringIterable<std::vector<Utils::Point2D>, Utils::Point2D>(bottomCirclePoints)));
+        //Log(std::format("Circle points: {}", Utils::ToStringIterable<std::vector<Utils::Point2D>, Utils::Point2D>(bottomCirclePoints)));
         
         const CartesianGridPosition entityCartesianPos = Conversions::CartesianToGrid(entity.m_Transform.m_Pos);
 
@@ -215,7 +215,7 @@ namespace ECS
             //which could result in potential duplicates when floats are cut to ints
             if (std::find(seenCoords.begin(), seenCoords.end(), currentXYCoord) != seenCoords.end()) continue;
 
-            //Utils::Log(std::format("Circle Y: {} -> {}", std::to_string(0), std::to_string(bufferPos.m_Y - centerPos.m_Y)));
+            //Log(std::format("Circle Y: {} -> {}", std::to_string(0), std::to_string(bufferPos.m_Y - centerPos.m_Y)));
             Array2DPosition bufferPosRowCol = {};
             for (int circleY = currentXYCoord.m_Y; circleY >= centerCartesianPos.m_Y - (currentXYCoord.m_Y - centerCartesianPos.m_Y); circleY--)
             {
@@ -230,7 +230,7 @@ namespace ECS
                 if (!buffer.IsValidPos(bufferPosRowCol)) continue;
                 if (buffer.GetAt(bufferPosRowCol)->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
 
-                //Utils::Log(std::format("New color for {} from pos {} from color: {} is: {}", setPos.ToString(), centerPos.ToString(),
+                //Log(std::format("New color for {} from pos {} from color: {} is: {}", setPos.ToString(), centerPos.ToString(),
                 //RaylibUtils::ToString(m_outputBuffer.GetAt(setPos)->m_Color), RaylibUtils::ToString(CalculateNewColor(setPos, centerPos))));
 
 
@@ -249,7 +249,7 @@ namespace ECS
 
                 if (CACHE_LAST_BUFFER)
                 {
-                    Utils::LogWarning("Updating last frame data");
+                    LogWarning("Updating last frame data");
                     data.m_LastFrameData.emplace_back(bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char});
                 }  
             }
@@ -280,11 +280,11 @@ namespace ECS
     Color LightSourceSystem::CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, 
         const TextBufferPosition& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
-        //Utils::Log(std::format("Distance between {} and {} is: {}",
+        //Log(std::format("Distance between {} and {} is: {}",
         //currentPos.ToString(), centerPos.ToString(), std::to_string(distanceToCenter)));
 
         uint8_t lightLevel = CalculateLightLevelFromDistance(data, distance);
-       // Utils::Log(std::format("Light level for distance: {} is: {}", std::to_string(distanceToCenter), std::to_string(lightLevel)));
+       // Log(std::format("Light level for distance: {} is: {}", std::to_string(distanceToCenter), std::to_string(lightLevel)));
         //std::cout << "Light level is: " << std::to_string(lightLevel) << std::endl;
         if (outLightLevel != nullptr) *outLightLevel = lightLevel;
 
@@ -297,7 +297,7 @@ namespace ECS
         const Color originalColor = bufferPos.m_Text.m_Color;
         const Color newColor = GetColorFromMultiplier(originalColor, filterColor, colorMultiplier);
 
-        //Utils::Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
+        //Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
         //std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),
         //std::to_string(lightLevel), std::to_string(colorMultiplier), RaylibUtils::ToString(originalColor)));
         return newColor;

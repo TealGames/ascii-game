@@ -80,7 +80,7 @@ public:
 	bool AddComponent(const ECS::EntityID& id, const T& component)
 	{
 		auto iterator = GetGlobalEntityIteratorMutable(id);
-		if (!Utils::Assert(this, IsValidIterator(iterator), std::format("Tried to add component: {} "
+		if (!Assert(this, IsValidIterator(iterator), std::format("Tried to add component: {} "
 			"to global entity by ID: {} but it does not exist as a global entity",
 			typeid(T).name(), std::to_string(id)))) return false;
 
@@ -91,7 +91,7 @@ public:
 	bool AddComponent(const std::string& name, const T& component)
 	{
 		auto iterator = GetGlobalEntityIteratorMutable(name);
-		if (!Utils::Assert(this, IsValidIterator(iterator), std::format("Tried to add component: {} "
+		if (!Assert(this, IsValidIterator(iterator), std::format("Tried to add component: {} "
 			"to global entity by NAME: {} but it does not exist as a global entity",
 			typeid(T).name(), name))) return false;
 
@@ -105,20 +105,20 @@ public:
 		for (auto entityId : view)
 		{
 			ECS::Entity* entityPtr = TryGetGlobalEntityMutable(entityId);
-			if (!Utils::Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
+			if (!Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
 				"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
 				typeid(T).name(), ECS::Entity::ToString(entityId)))) return;
 
 			action(view.get<T>(entityId), *entityPtr);
 		}
 		/*const ComponentType type = GetComponentFromType<T>();
-		if (!Utils::Assert(type != ComponentType::None, std::format("Tried to operate on component type: {} "
+		if (!Assert(type != ComponentType::None, std::format("Tried to operate on component type: {} "
 			"but failed to retrieve its enum value", typeid(T).name()))) return;
 
 		std::function<void(T*, const EntityID&)> actions = [this, &action](T* component, const EntityID& id)-> void
 			{
 				ECS::Entity* entityPtr = TryGetEntity(id);
-				if (!Utils::Assert(entityPtr != nullptr, std::format("Tried to operate on component type: {} "
+				if (!Assert(entityPtr != nullptr, std::format("Tried to operate on component type: {} "
 					"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
 					typeid(T).name(), std::to_string(id)))) return;
 

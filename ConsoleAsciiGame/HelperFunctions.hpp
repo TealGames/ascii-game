@@ -16,10 +16,6 @@
 
 namespace Utils
 {
-	inline const char* ANSI_COLOR_GRAY = "\033[1;90m";
-	inline const char* ANSI_COLOR_GREEN = "\033[1;32m";
-	inline const char* ANSI_COLOR_CLEAR = "\033[0m";
-
 	enum class CPPVersion : long
 	{
 		CPP11 = 201103L,
@@ -115,119 +111,6 @@ namespace Utils
 		static constexpr bool VALUE = type::value;
 	};
 
-	using LogTypeIntegralType = std::uint8_t;
-	enum class LogType : LogTypeIntegralType
-	{
-		None = 0,
-		Error= 1<<0,
-		Warning= 1<<1,
-		Log= 1<<2,
-	};
-
-	constexpr LogType operator&(const LogType& lhs, const LogType& rhs)
-	{
-		return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
-			& static_cast<LogTypeIntegralType>(rhs));
-	}
-	constexpr LogType& operator&=(LogType& lhs, const LogType& rhs)
-	{
-		lhs = lhs & rhs;
-		return lhs;
-	}
-	constexpr LogType operator|(const LogType& lhs, const LogType& rhs)
-	{
-		return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
-			| static_cast<LogTypeIntegralType>(rhs));
-	}
-	constexpr LogType& operator|=(LogType& lhs, const LogType& rhs)
-	{
-		lhs = lhs | rhs;
-		return lhs;
-	}
-
-	inline static constexpr bool DEFAULT_LOG_TIME = true;
-	void Log(const LogType& logType, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
-
-	/// <summary>
-	/// Achieves the same as defualt log but also includes the class that called it
-	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <param name="objPtr"></param>
-	/// <param name="logType"></param>
-	/// <param name="str"></param>
-	template<typename T>
-	void Log(const T* const objPtr, const LogType& logType, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
-	{
-		Log(logType, std::format("{}: {}", objPtr != nullptr ? typeid(T).name() : "", str), logTime);
-	}
-	
-	/// <summary>
-	/// Logs a message as a default LOG type
-	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <param name="objPtr"></param>
-	/// <param name="str"></param>
-	/// <param name="logTime"></param>
-	template<typename T>
-	void Log(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
-	{
-		Log<T>(objPtr, LogType::Log, str, logTime);
-	}
-	/// <summary>
-	/// Logs a message as a default LOG type
-	/// </summary>
-	/// <param name="str"></param>
-	/// <param name="logTime"></param>
-	void Log(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
-
-	/// <summary>
-	/// Logs a message as a WARNING type
-	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <param name="objPtr"></param>
-	/// <param name="str"></param>
-	/// <param name="logTime"></param>
-	template<typename T>
-	void LogWarning(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
-	{
-		Log<T>(objPtr, LogType::Warning, str, logTime);
-	}
-	/// <summary>
-	/// Logs a message as a WARNING type
-	/// </summary>
-	/// <param name="str"></param>
-	/// <param name="logTime"></param>
-	void LogWarning(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
-
-	/// <summary>
-	/// Logs a message as an ERROR type
-	/// </summary>
-	/// <param name="str"></param>
-	/// <param name="logTime"></param>
-	template<typename T>
-	void LogError(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
-	{
-		Log<T>(objPtr, LogType::Error, str, logTime);
-	}
-	/// <summary>
-	/// Logs a message as an ERROR type
-	/// </summary>
-	/// <param name="str"></param>
-	/// <param name="logTime"></param>
-	void LogError(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
-
-	/// <summary>
-	/// If condition is false will log error and return false, othersise return true and does nothing
-	/// </summary>
-	bool Assert(const bool condition, const std::string& errMessage);
-
-	template<typename T>
-	bool Assert(const T* const objPtr, const bool condition, const std::string& errMessage)
-	{
-		if (!condition) Utils::LogError<T>(objPtr, errMessage);
-		return condition;
-	}
-
 	using SystemTime = std::chrono::time_point<std::chrono::system_clock>;
 	using LocalTime= std::chrono::zoned_time<std::chrono::system_clock::duration>;
 	LocalTime GetLocalTime(const SystemTime& time);
@@ -276,6 +159,7 @@ namespace Utils
 		EnumType flagsCombined = (checkFlags | ...);
 		return (enumBits & flagsCombined) == flagsCombined;
 	}
+
 
 	//TODO: make a function that can return the type that exists in a variant
 	template <size_t Index, typename Variant>
@@ -440,18 +324,6 @@ namespace Utils
 		return str;
 	}
 
-	template<typename T>
-	std::string ToStringEnum()
-	{
-		const bool isEnum = std::is_enum<T>::value;
-		if (!isEnum)
-		{
-			const std::string err = std::format();
-			Utils::Log(Utils::LogType::Error, err);
-			return "";
-		}
-	}
-
 	std::string ToString(const char& c);
 	std::string ToStringDouble(const double& d, const std::streamsize& precision);
 
@@ -512,8 +384,7 @@ namespace Utils
 		{
 			std::string err = std::format("Tried to get map from vectors but sizes do not match."
 				"Argument 1 size: {}, Argument 2 size : {}", keys.size(), vals.size());
-			Utils::Log(Utils::LogType::Error, err);
-			return result;
+			throw std::invalid_argument(err);
 		}
 
 		for (size_t i = 0; i < keys.size(); i++)
@@ -620,7 +491,7 @@ namespace Utils
 		{
 			std::string error = std::format("Tried to parse string {} to unsigned int or uint16_t, "
 				"which is not supported in C++ STL (there is no stoui function)", str);
-			Utils::Log(Utils::LogType::Error, error);
+			Log(LogType::Error, error);
 			return std::nullopt;
 		}*/
 		if (tType == typeid(long))
@@ -628,15 +499,14 @@ namespace Utils
 			const std::string error = std::format("Tried to parse string {} to long, "
 				"which is not supported since most systems only guarantee 64 "
 				"bits with long long (use long long or uint64_t instead)", str);
-			Utils::Log(Utils::LogType::Error, error);
-			return std::nullopt;
+			throw std::invalid_argument(error);
 		}
 		/*if (tType== typeid(unsigned int) || tType == typeid(unsigned long) || tType == typeid(unsigned long long))
 		{
 			const std::string error = std::format("Tried to parse string {} to unsigned long, unsigned int or "
 				"unsigned long long, which is not supported since uint32_t, uint64_t and uint128_t "
 				"offer better platform independence", str);
-			Utils::Log(Utils::LogType::Error, error);
+			Log(LogType::Error, error);
 			return std::nullopt;
 		}*/
 
@@ -645,8 +515,7 @@ namespace Utils
 			const std::string err= std::format("Tried to parse string {} to floating point precision type "
 				"with base:{} that does not equal the default base; {}, which is not supported",
 				str, std::to_string(base), std::to_string(DEFAULT_PARSE_BASE));
-			Utils::Log(Utils::LogType::Error, err);
-			return std::nullopt;
+			throw std::invalid_argument(err);
 		}
 
 		T parsedVal;
@@ -669,8 +538,7 @@ namespace Utils
 			{
 				std::string error = std::format("Tried to parse string {} to type {} that can not "
 					"be converted to string", str, tType.name());
-				Utils::Log(Utils::LogType::Error, error);
-				return std::nullopt;
+				throw std::invalid_argument(error);
 			}
 		}
 		catch (const std::invalid_argument& e)
@@ -684,8 +552,7 @@ namespace Utils
 		catch (...)
 		{
 			std::string err = std::format("Tried to parse string {} to int but encountered unknwon error", str);
-			Utils::Log(Utils::LogType::Error, err);
-			return std::nullopt;
+			throw std::invalid_argument(err);
 		}
 		return parsedVal;
 	}
@@ -698,8 +565,7 @@ namespace Utils
 		{
 			std::string error = std::format("Tried to parse hex string {} but signed "
 				"integer values are not supported", str);
-			Utils::Log(Utils::LogType::Error, error);
-			return std::nullopt;
+			throw std::invalid_argument(error);
 		}
 
 		parsedVal = TryParse<T>(str, 16);

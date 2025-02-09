@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "AABB.hpp"
 #include "HelperFunctions.hpp"
+#include "Debug.hpp"
 
 namespace Physics
 {
@@ -136,7 +137,7 @@ namespace Physics
 		else if (min2Global.m_Y < min1Global.m_Y && max2Global.m_Y <= min1Global.m_Y) return Direction::Down;
 		else
 		{
-			Utils::LogError(std::format("Tried to get AABB direction but no directions match any of the criteria!"));
+			LogError(std::format("Tried to get AABB direction but no directions match any of the criteria!"));
 			return std::nullopt;
 		}
 	}
