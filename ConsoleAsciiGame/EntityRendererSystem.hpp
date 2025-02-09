@@ -12,17 +12,9 @@
 
 namespace ECS
 {
-	//struct VisualData
-	//{
-	//	//The position of the char data relative to the position of the character
-	//	Utils::Point2DInt CharRelativePos;
-	//	TextChar CharData;
-	//};
-
 	class EntityRendererSystem : MultiBodySystem
 	{
 	private:
-		//TransformSystem m_transformSystem;
 
 	public:
 
@@ -31,9 +23,6 @@ namespace ECS
 
 	public:
 		EntityRendererSystem();
-
-		Array2DPosition GetGlobalVisualPos(const Array2DPosition& relativeVisualPos,
-			const EntityRendererData& data, const Entity& entity) const;
 
 		std::string GetVisualString(const EntityRendererData& data) const;
 

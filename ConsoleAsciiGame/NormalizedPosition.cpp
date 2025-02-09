@@ -7,13 +7,18 @@ NormalizedPosition::NormalizedPosition() :
 NormalizedPosition::NormalizedPosition(const Utils::Point2D& pos) : 
 	NormalizedPosition(pos.m_X, pos.m_Y) {}
 
-NormalizedPosition::NormalizedPosition(const float& x, const float& y) : m_pos(x, y)
+NormalizedPosition::NormalizedPosition(const float& x, const float& y) : m_pos()
 {
-	m_pos.m_X = std::clamp(m_pos.m_X, float(0), float(1));
-	m_pos.m_Y = std::clamp(m_pos.m_Y, float(0), float(1));
+	SetPos({ x, y });
 }
 
 const Utils::Point2D& NormalizedPosition::GetPos() const
 {
 	return m_pos;
+}
+
+void NormalizedPosition::SetPos(const Utils::Point2D& relativePos)
+{
+	m_pos.m_X = std::clamp(relativePos.m_X, float(0), float(1));
+	m_pos.m_Y = std::clamp(relativePos.m_Y, float(0), float(1));
 }

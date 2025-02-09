@@ -7,6 +7,7 @@
 #include "AABB.hpp"
 #include "WorldPosition.hpp"
 #include "Direction.hpp"
+#include "NormalizedPosition.hpp"
 
 class PhysicsBodyData;
 struct CollidingObject
@@ -70,7 +71,7 @@ public:
 	/// </summary>
 	/// <param name="relativePos"></param>
 	/// <returns></returns>
-	const WorldPosition GetAABBWorldPos(const Utils::Point2D& relativePos) const;
+	const WorldPosition GetAABBWorldPos(const NormalizedPosition& relativePos) const;
 
 	void AddCollidingBody(PhysicsBodyData& collidingBody);
 	void RemoveCollidingBody(const CollidingBodiesCollection::iterator& removeBodyIterator);

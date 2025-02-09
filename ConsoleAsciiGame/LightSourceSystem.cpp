@@ -6,7 +6,6 @@
 #include "LightSourceSystem.hpp"
 #include "Component.hpp"
 #include "Point2D.hpp"
-#include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
 #include "PositionConversions.hpp"
 #include "Point4D.hpp"
@@ -123,7 +122,7 @@ namespace ECS
         //TODO: it might not make sense for all lighting to just use the renderer to determine lighting start pos,
         //so perhaps this needs to be more customizable to allow for this and other behavior
         const VisualData& visualData = renderData->GetVisualData();
-        CartesianGridPosition centerPos = {};
+       /* CartesianGridPosition centerPos = {};*/
        // std::cout << "REDNER LIGHT" << std::endl;
 
         for (auto& buffer : buffers)
@@ -133,17 +132,6 @@ namespace ECS
 
             //Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
             //Log(std::format("Player Pos color: {}", RaylibUtils::ToString(buffer->GetAt(m_transform.m_Pos.GetFlipped())->m_Color)));
-
-            /*
-            for (int r = 0; r < visualData.m_Text.GetHeight(); r++)
-            {
-                for (int c = 0; c < visualData.m_Text.GetWidth(); c++)
-                {
-                    //Implement how to find the global pos of a point of visual data
-                    CreateLightingForPoint(data, entity, );
-                }
-            }
-            */
         }
     }
 
@@ -167,94 +155,6 @@ namespace ECS
 
             bufferPos.m_Text.m_Color = CalculateNewColor(data, entity, bufferPos, centerDistance, nullptr, nullptr);
         }
-        /*
-        if (!data.m_LightMap.empty()) data.m_LightMap.clear();
-
-        //std::cout << "Center pos: " << centerPos.ToString() << std::endl;
-        int radius = data.m_LightRadius;
-        const CartesianGridPosition maxXY = { centerCartesianPos.m_X + radius, centerCartesianPos.m_Y + radius };
-        const CartesianGridPosition minXY = { centerCartesianPos.m_X - radius, centerCartesianPos.m_Y - radius };
-
-        //We approxiamte how accurate the circle should be by using the total area to figure out how many points we need
-        const int positiveSidePoints = std::min(buffer.GetHeight(), buffer.GetWidth()) / radius;
-        const float pointXValIncrement = 0.5f;
-
-        //We add all the points on circle using X, Y Coords
-        float x = minXY.m_X;
-        float y = 0;
-        std::vector<CartesianGridPosition> bottomCirclePoints = {};
-        while (x <= maxXY.m_X)
-        {
-            y = std::sqrt(std::pow(data.m_LightRadius, 2) - std::pow(x - centerCartesianPos.m_X, 2)) + centerCartesianPos.m_Y;
-            bottomCirclePoints.push_back(CartesianGridPosition(x, y));
-
-            x += pointXValIncrement;
-        }
-        //Log(std::format("Circle points: {}", Utils::ToStringIterable<std::vector<Utils::Point2D>, Utils::Point2D>(bottomCirclePoints)));
-        
-        const CartesianGridPosition entityCartesianPos = Conversions::CartesianToGrid(entity.m_Transform.m_Pos);
-
-        Color newColor = {};
-        CartesianGridPosition currentXYCoord = {};
-        std::vector<CartesianGridPosition> seenCoords = {};
-        std::uint8_t lightLevel = MIN_LIGHT_LEVEL;
-        LightMapChar lightMapChar = {};
-        std::string lightLevelStr = "";
-        std::optional<int> prevLevel = std::nullopt;
-        bool isInitialPosValid = false;
-
-        for (const auto& point : bottomCirclePoints)
-        {
-            if (point.m_X <= centerCartesianPos.m_X) currentXYCoord.m_X = std::floor(point.m_X);
-            else currentXYCoord.m_X = std::ceil(point.m_X);
-
-            currentXYCoord.m_Y = std::ceil(point.m_Y);
-            isInitialPosValid = buffer.IsValidPos(Conversions::GridToArray(currentXYCoord));
-
-            //We need to check if it does not have them already since we may have a very short range with many points
-            //which could result in potential duplicates when floats are cut to ints
-            if (std::find(seenCoords.begin(), seenCoords.end(), currentXYCoord) != seenCoords.end()) continue;
-
-            //Log(std::format("Circle Y: {} -> {}", std::to_string(0), std::to_string(bufferPos.m_Y - centerPos.m_Y)));
-            Array2DPosition bufferPosRowCol = {};
-            for (int circleY = currentXYCoord.m_Y; circleY >= centerCartesianPos.m_Y - (currentXYCoord.m_Y - centerCartesianPos.m_Y); circleY--)
-            {
-                bufferPosRowCol = Array2DPosition(circleY, currentXYCoord.m_X);
-                seenCoords.push_back(Conversions::ArrayToGrid(bufferPosRowCol));
-
-                //We still want to calculate color for this pos even if it is not valid (since it may be valid in another location
-                //so we can add it to the light map
-                newColor = CalculateNewColor(data, entity, buffer, Conversions::ArrayToGrid(bufferPosRowCol), centerCartesianPos, &lightLevel, &lightMapChar);
-                if (STORE_LIGHT_MAP) data.m_LightMap.push_back(lightMapChar);
-
-                if (!buffer.IsValidPos(bufferPosRowCol)) continue;
-                if (buffer.GetAt(bufferPosRowCol)->m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
-
-                //Log(std::format("New color for {} from pos {} from color: {} is: {}", setPos.ToString(), centerPos.ToString(),
-                //RaylibUtils::ToString(m_outputBuffer.GetAt(setPos)->m_Color), RaylibUtils::ToString(CalculateNewColor(setPos, centerPos))));
-
-
-                //We need to have both coords uisng same system so we convert buffer set pos from row col to match XY of center pos
-                buffer.SetAt(bufferPosRowCol, newColor);
-
-                if (displayLightLevels)
-                {
-                    prevLevel = Utils::TryParse<int>(std::string(1, buffer.GetAt(bufferPosRowCol)->m_Char));
-                    int newLevel = prevLevel != std::nullopt ? prevLevel.value() + lightLevel : lightLevel;
-                    newLevel = static_cast<double>(newLevel) / MAX_LIGHT_LEVEL * 10;
-                    lightLevelStr = std::to_string(newLevel)[0];
-                    //std::cout << "New level is:{} " << prevLevel.value_or(0) + lightLevel << std::endl;
-                    buffer.SetAt(bufferPosRowCol, lightLevelStr[0]);
-                }
-
-                if (CACHE_LAST_BUFFER)
-                {
-                    LogWarning("Updating last frame data");
-                    data.m_LastFrameData.emplace_back(bufferPosRowCol , TextChar{newColor, buffer.GetAt(bufferPosRowCol)->m_Char});
-                }  
-            }
-        }
-        */
     }
 
     std::uint8_t LightSourceSystem::CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const

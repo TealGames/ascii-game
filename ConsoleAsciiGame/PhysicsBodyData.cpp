@@ -96,7 +96,7 @@ const WorldPosition PhysicsBodyData::GetAABBTopLeftWorldPos() const
 	*/
 }
 
-const WorldPosition PhysicsBodyData::GetAABBWorldPos(const Utils::Point2D& relativePos) const
+const WorldPosition PhysicsBodyData::GetAABBWorldPos(const NormalizedPosition& relativePos) const
 {
 	return m_aabb.GetWorldPos(GetAABBCenterWorldPos(), relativePos);
 }

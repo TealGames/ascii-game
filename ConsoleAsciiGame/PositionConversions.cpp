@@ -1,6 +1,5 @@
 #pragma once
 #include "pch.hpp"
-#include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
 #include "PositionConversions.hpp"
 #include "Entity.hpp"
@@ -8,7 +7,7 @@
 
 namespace Conversions
 {
-	Array2DPosition GridToArray(const CartesianGridPosition& pos)
+	/*Array2DPosition GridToArray(const CartesianGridPosition& pos)
 	{
 		return { pos.m_Y, pos.m_X };
 	}
@@ -27,7 +26,7 @@ namespace Conversions
 	Array2DPosition CartesianToArray(const Utils::Point2D& pos)
 	{
 		return GridToArray(CartesianToGrid(pos));
-	}
+	}*/
 
 	ScreenPosition WorldToScreenPosition(const CameraData& camera, const WorldPosition& pos)
 	{

@@ -2,7 +2,6 @@
 #include "TransformSystem.hpp"
 #include "Point2DInt.hpp"
 #include "TransformData.hpp"
-#include "CartesianPosition.hpp"
 #include "ProfilerTimer.hpp"
 
 namespace ECS

@@ -9,7 +9,6 @@
 #include "RaylibUtils.hpp"
 #include "Globals.hpp"
 #include "Array2DPosition.hpp"
-#include "CartesianPosition.hpp"
 #include "VisualData.hpp"
 #include "PhysicsBodyData.hpp"
 #include "TransformData.hpp"

@@ -1,6 +1,5 @@
 #pragma once
 #include "Point2DInt.hpp"
-#include "CartesianPosition.hpp"
 #include "Point2D.hpp"
 #include "ComponentData.hpp"
 

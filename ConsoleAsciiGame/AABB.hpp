@@ -1,12 +1,12 @@
 #pragma once
 #include "Point2DInt.hpp" 
 #include "Point2D.hpp" 
-#include "CartesianPosition.hpp"
 #include "WorldPosition.hpp"
 #include "Vec2.hpp"
 #include "Direction.hpp"
 #include <string>
 #include <optional>
+#include "NormalizedPosition.hpp"
 
 namespace Physics
 {
@@ -49,7 +49,7 @@ namespace Physics
 		/// </summary>
 		/// <param name="relativePos"></param>
 		/// <returns></returns>
-		WorldPosition GetWorldPos(const WorldPosition& centerPos, const Utils::Point2D& relativePos) const;
+		WorldPosition GetWorldPos(const WorldPosition& centerPos, const NormalizedPosition& relativePos) const;
 
 		std::string ToString(const WorldPosition& transformPos) const;
 	};

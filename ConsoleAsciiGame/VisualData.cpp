@@ -21,12 +21,12 @@ const Utils::Point2D VisualData::PIVOT_TOP_CENTER = {0.5, 1};
 const Utils::Point2D VisualData::DEFAULT_PIVOT = PIVOT_TOP_LEFT;
 
 VisualDataPreset::VisualDataPreset(const Font& font, const float& fontSize, const Utils::Point2D& charSpacing,
-	const CharAreaType& charAreaType, const Utils::Point2D& predefinedCharArea, const Utils::Point2D& relativePivotPos) :
+	const CharAreaType& charAreaType, const Utils::Point2D& predefinedCharArea, const NormalizedPosition& relativePivotPos) :
 	m_Font(&font), m_FontSize(fontSize), m_CharSpacing(charSpacing), m_CharAreaType(charAreaType), 
 		m_PredefinedCharArea(predefinedCharArea), m_RelativePivotPos(relativePivotPos) {}
 
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize, 
-	const Utils::Point2D& charSpacing, const Utils::Point2D& relativePivotPos, const CharAreaType& charAreaType,
+	const Utils::Point2D& charSpacing, const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
 	const Utils::Point2D& predefinedCharArea) :
 	m_Text(), m_font(&font), m_fontSize(fontSize), m_charSpacing(charSpacing), m_pivotRelative(relativePivotPos),
 	m_charAreaType(charAreaType), m_predefinedCharArea(predefinedCharArea)
@@ -39,12 +39,11 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, co
 	//Log(std::format("Square buffer val in optional: {}", squaredBuffer.value().ToString()));
 
 	m_Text = squaredBuffer.value();
-	ValidatePivot(m_pivotRelative);
 }
 
 VisualData::VisualData() : VisualData(RawTextBufferBlock(), GetGlobalFont(), DEFAULT_FONT_SIZE, DEFAULT_CHAR_SPACING, DEFAULT_PIVOT) {}
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, 
-	const float& fontSize, const Utils::Point2D& charSpacing, const Utils::Point2D& relativePivotPos)
+	const float& fontSize, const Utils::Point2D& charSpacing, const NormalizedPosition& relativePivotPos)
 	: VisualData(rawBuffer, font, fontSize, charSpacing, relativePivotPos, CharAreaType::Adaptive, {})
 {
 	
@@ -52,7 +51,7 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
 
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
 	const float& fontSize, const Utils::Point2D& charSpacing,
-	const Utils::Point2D& predefinedCharArea, const Utils::Point2D& relativePivotPos) 
+	const Utils::Point2D& predefinedCharArea, const NormalizedPosition& relativePivotPos)
 	: VisualData(rawBuffer, font, fontSize, charSpacing, relativePivotPos, CharAreaType::Predefined, predefinedCharArea)
 {
 
@@ -69,19 +68,6 @@ bool VisualData::HasValidFont() const
 {
 	return Assert(this, RaylibUtils::IsValidFont(GetFont()), std::format("Tried to retrieve font for visual data: {} "
 		"but the font is not valid (could be due to not being loaded properly)", m_Text.ToString()));
-}
-
-bool VisualData::ValidatePivot(Utils::Point2D& pivot) const
-{
-	if (!Assert(this, 0 <= pivot.m_X && pivot.m_X <=1 && 
-		0 <= pivot.m_Y && pivot.m_Y <= 1, std::format("Validated pivot: {} for visual: {} "
-		"but it is not relative to visual so it was automatically adjusted", pivot.ToString(), m_Text.ToString())))
-	{
-		pivot.m_X = std::clamp(pivot.m_X, (float)0, (float)1);
-		pivot.m_Y = std::clamp(pivot.m_Y, (float)0, (float)1);
-		return false;
-	}
-	return true;
 }
 
 ////TODO: this function handles the scale in the final camera viewport which makes no sense
@@ -231,8 +217,8 @@ Utils::Point2D VisualData::GetWorldSize() const
 
 WorldPosition VisualData::GetTopLeftPos(const WorldPosition& pivotWorldPos, const Utils::Point2D& totalSize) const
 {
-	return { pivotWorldPos.m_X - (m_pivotRelative.m_X * totalSize.m_X),
-			 pivotWorldPos.m_Y + (1 - m_pivotRelative.m_Y) * totalSize.m_Y };
+	return { pivotWorldPos.m_X - (m_pivotRelative.GetPos().m_X * totalSize.m_X),
+			 pivotWorldPos.m_Y + (1 - m_pivotRelative.GetPos().m_Y) * totalSize.m_Y };
 }
 
 void VisualData::AddTextPositionsToBufferPredefined(const WorldPosition& transformPos, TextBufferMixed& buffer) const
@@ -382,7 +368,7 @@ const float VisualData::GetFontSize() const
 
 const Utils::Point2D& VisualData::GetPivot() const
 {
-	return m_pivotRelative;
+	return m_pivotRelative.GetPos();
 }
 
 std::string VisualData::ToStringRawBuffer(const RawTextBufferBlock& block)

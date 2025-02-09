@@ -6,7 +6,6 @@
 #include "InputData.hpp"
 #include "TransformSystem.hpp"
 #include "EntityMapper.hpp"
-#include "CartesianPosition.hpp"
 
 namespace ECS
 {
@@ -17,7 +16,7 @@ namespace ECS
     public:
 
     private:
-        bool UpdateData(InputData& data, const CartesianGridPosition& moveDelta);
+        bool UpdateData(InputData& data, const Utils::Point2DInt& moveDelta);
 
     public:
         InputSystem();

@@ -4,7 +4,7 @@
 #include "LightSourceData.hpp"
 
 LightMapChar::LightMapChar() : m_RelativePos(), m_ColorFactor() {}
-LightMapChar::LightMapChar(const CartesianGridPosition& relativePos,
+LightMapChar::LightMapChar(const Utils::Point2DInt& relativePos,
 	const Utils::Point3D& fractionalFilterColor, const float& colorFactor) :
 	m_RelativePos(relativePos), m_FractionalFilterColor(fractionalFilterColor), m_ColorFactor(colorFactor) {}
 

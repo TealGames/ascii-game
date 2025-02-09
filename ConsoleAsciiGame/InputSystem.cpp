@@ -5,7 +5,6 @@
 #include "InputSystem.hpp"
 #include "raylib.h"
 #include "HelperFunctions.hpp"
-#include "CartesianPosition.hpp"
 #include "ProfilerTimer.hpp"
 
 namespace ECS
@@ -21,7 +20,7 @@ namespace ECS
         ProfilerTimer timer("InputSystem::SystemUpdate");
 #endif 
 
-        CartesianGridPosition currentMove = {};
+        Utils::Point2DInt currentMove = {};
         if (IsKeyDown(KEY_DOWN)) currentMove.m_Y--;
         if (IsKeyDown(KEY_UP)) currentMove.m_Y++;
         if (IsKeyDown(KEY_RIGHT)) currentMove.m_X++;
@@ -38,7 +37,7 @@ namespace ECS
     /// <param name="entity"></param>
     /// <param name="moveDelta"></param>
     /// <returns></returns>
-    bool InputSystem::UpdateData(InputData& data, const CartesianGridPosition& moveDelta)
+    bool InputSystem::UpdateData(InputData& data, const Utils::Point2DInt& moveDelta)
     {
         //Log("Player move delta: {}", moveDelta.ToString());
         data.SetFrameInput(moveDelta);

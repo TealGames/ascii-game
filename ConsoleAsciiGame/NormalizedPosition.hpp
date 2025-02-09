@@ -18,5 +18,6 @@ public:
 	NormalizedPosition(const Utils::Point2D& pos);
 
 	const Utils::Point2D& GetPos() const;
+	void SetPos(const Utils::Point2D& relativePos);
 };
 

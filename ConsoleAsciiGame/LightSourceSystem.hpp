@@ -15,7 +15,6 @@
 #include "ColorGradient.hpp"
 #include "LightSourceData.hpp"
 #include "Scene.hpp"
-#include "CartesianPosition.hpp"
 
 namespace ECS
 {

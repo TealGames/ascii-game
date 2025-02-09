@@ -7,7 +7,7 @@
 #include <optional>
 #include "Globals.hpp"
 #include "TextBuffer.hpp"
-
+#include "NormalizedPosition.hpp"
 
 
 ////TODO: the data from get world size of visual data should be abstracted
@@ -40,11 +40,11 @@ struct VisualDataPreset
 	Utils::Point2D m_CharSpacing = {};
 	CharAreaType m_CharAreaType = CharAreaType::Adaptive;
 	Utils::Point2D m_PredefinedCharArea = {};
-	Utils::Point2D m_RelativePivotPos = {};
+	NormalizedPosition m_RelativePivotPos = {};
 
 	VisualDataPreset(const Font& font, const float& fontSize, const Utils::Point2D& charSpacing,
 		const CharAreaType& charAreaType, const Utils::Point2D& predefinedCharArea, 
-		const Utils::Point2D& relativePivotPos);
+		const NormalizedPosition& relativePivotPos);
 };
 
 using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
@@ -78,7 +78,7 @@ private:
 	/// The position relative to the visual that corresponds to the transform position.
 	/// Note: (0,0) refers to bottom left, (1,1) refers to top right
 	/// </summary>
-	Utils::Point2D m_pivotRelative;
+	NormalizedPosition m_pivotRelative;
 
 	const Font* m_font;
 	float m_fontSize;
@@ -88,7 +88,6 @@ public:
 
 private:
 	bool HasValidFont() const;
-	bool ValidatePivot(Utils::Point2D& pivot) const;
 
 	WorldPosition GetTopLeftPos(const WorldPosition& pivotWorldPos, const Utils::Point2D& totalSize) const;
 	void AddTextPositionsToBufferPredefined(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
@@ -97,7 +96,7 @@ private:
 private:
 	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
 		const float& fontSize, const Utils::Point2D& charSpacing,
-		const Utils::Point2D& relativePivotPos, const CharAreaType& charAreaType,
+		const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
 		const Utils::Point2D& predefinedCharArea);
 
 public:
@@ -112,7 +111,7 @@ public:
 	/// <param name="relativePivotPos"></param>
 	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, 
 		const float& fontSize, const Utils::Point2D& charSpacing, 
-		const Utils::Point2D& relativePivotPos);
+		const NormalizedPosition& relativePivotPos);
 
 	/// <summary>
 	/// This constructor applies to predefined char area for text
@@ -126,7 +125,7 @@ public:
 	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
 		const float& fontSize, const Utils::Point2D& charSpacing,
 		const Utils::Point2D& predefinedCharArea,
-		const Utils::Point2D& relativePivotPos);
+		const NormalizedPosition& relativePivotPos);
 
 	VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPreset& preset);
 	

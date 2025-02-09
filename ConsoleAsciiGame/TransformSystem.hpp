@@ -5,7 +5,6 @@
 #include "TransformData.hpp"
 #include "MultiBodySystem.hpp"
 #include "Scene.hpp"
-#include "CartesianPosition.hpp"
 
 namespace ECS
 {

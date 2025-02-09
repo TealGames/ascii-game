@@ -7,8 +7,6 @@
 #include "Globals.hpp"
 #include "Globals.hpp"
 #include "SceneManager.hpp"
-//#include "GameRenderer.hpp"
-#include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
 #include "PositionConversions.hpp"
 #include "HelperFunctions.hpp"
@@ -86,8 +84,6 @@ namespace ECS
             std::to_string(scaleFactor), std::to_string(SCREEN_WIDTH / cameraData.m_CameraSettings.m_WorldViewportSize.m_X), 
             std::to_string(SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y)));
 
-
-        /*TextBuffer newBuffer = TextBuffer(cameraData.m_CameraSettings.m_ViewportSize.m_X, cameraData.m_CameraSettings.m_ViewportSize.m_Y, TextChar{});*/
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
         //Log(std::format("Total layers: {}", std::to_string(layers.size())));
         ScreenPosition newScreenPos = {};
@@ -136,68 +132,6 @@ namespace ECS
         }
 
         if (CACHE_LAST_BUFFER) cameraData.m_LastFrameBuffer = m_currentFrameBuffer;
-
-        /*
-        //Log(std::format("ONE LAYER IN CAMERA: {}", layers[0]->ToString()));
-        //Log(std::format("SECOND LAYER IN CAMERA: {}", layers[1]->ToString()));
-
-        const CartesianGridPosition cartesianTopLeft = Conversions::CartesianToGrid(mainCamera.m_Transform.m_Pos) - (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
-        const Array2DPosition renderCoordsTopLeft = Conversions::GridToArray(cartesianTopLeft);
-        //Log(std::format("CAMERA: top left: {}", cartesianTopLeft.ToString()));
-
-        //TODO: it seems like this process should proably be much quicker and maybe we should optimize
-        //by first checking if the area is smaller and convering those automatically with empty chars
-        Array2DPosition localPos = {};
-        Array2DPosition globalPos = {};
-        bool hasFoundChar = false;
-
-        for (int r = 0; r < newBuffer.GetHeight(); r++)
-        {
-            for (int c = 0; c < newBuffer.GetWidth(); c++)
-            {
-                hasFoundChar = false;
-                localPos = { r, c };
-                globalPos = renderCoordsTopLeft + localPos;
-                for (int layerIndex = layers.size() - 1; layerIndex >= 0; layerIndex--)
-                {
-                    const RenderLayer& layer = *layers[layerIndex];
-
-                    //std::cout << std::format("Layer index: {}/{} of r: {} c:{} GLOBAL POS: {} valid: {}",
-                    //std::to_string(layerIndex), std::to_string(layers.size()), std::to_string(r), 
-                    //std::to_string(c), globalPos.ToString(), layer.m_SquaredTextBuffer.IsValidPos(globalPos)) << std::endl;
-
-                    //Log(std::format("Attempting char at: {} of HEGIHT: {} WIDTH: {}",
-                    //localPos.ToString(), std::to_string(layer.m_TextBuffer.m_HEIGHT), std::to_string(layer.m_TextBuffer.m_WIDTH)));
-                    
-                    if (!layer.m_SquaredTextBuffer.IsValidPos(globalPos)) continue;
-                   
-                    
-                    const TextChar posChar = layer.m_SquaredTextBuffer.GetAtUnsafe(globalPos);
-                    //if (posChar == nullptr) continue;
-                    if (posChar.m_Char== EMPTY_CHAR_PLACEHOLDER) continue;
-
-                    hasFoundChar = true;
-                    newBuffer.SetAt(localPos, posChar);
-                    //Log(std::format("Setting the position: {} of buffer with char: {}",
-                     // localPos.ToString(), posChar.ToString()));
-                   //Log(std::format("Found valid topmost pos at: {} with char: {} color: {} at layer: {} BUT WHEN DIRECT COLOR: {}", 
-                   // globalPos.ToString(), Utils::ToString(posChar->m_Char), RaylibUtils::ToString(posChar->m_Color), 
-                    //std::to_string(layerIndex), layer.m_SquaredTextBuffer.ToString(false)));
-                    break;
-                }
-
-                //Since we may have the camera go out of bounds at times to fit player at desired pos, or
-                //we may have smaller scene than camera size, we add invalid pos as empty chars
-                if (!hasFoundChar)
-                {
-                    newBuffer.SetAt(localPos, TextChar{ Color(), EMPTY_CHAR_PLACEHOLDER });
-                    //Log("OUT OF BOUNDS SET EMPTYx");
-                }
-            }
-        }
-        */
-        //Log(std::format("Camera collapsing has buffer: {}", newBuffer.ToString(false)));
-        //return newBuffer;
     }
     
     const TextBufferMixed& CameraSystem::GetCurrentFrameBuffer() const

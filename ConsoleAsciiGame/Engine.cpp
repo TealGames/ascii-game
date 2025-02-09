@@ -14,7 +14,6 @@
 #include "AnimatorSystem.hpp"
 #include "SpriteAnimatorSystem.hpp"
 #include "PhysicsBodySystem.hpp"
-#include "CartesianPosition.hpp"
 #include "Array2DPosition.hpp"
 #include "Timer.hpp"
 #include "ProfilerTimer.hpp"

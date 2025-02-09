@@ -77,55 +77,9 @@ namespace ECS
 		return data.GetVisualData().m_Text.ToString();
 	}
 
-	/// <summary>
-	/// Returns the global position of the relative position of a segment of the visual using the
-	/// current positon of the object.
-	/// NOTE: RETURNS AS RENDER COORDS IN ROW, COL
-	/// </summary>
-	/// <param name="relativeVisualPos"></param>
-	/// <returns></returns>
-	Array2DPosition EntityRendererSystem::GetGlobalVisualPos(const Array2DPosition& relativeVisualPos,
-		const EntityRendererData& data, const Entity& entity) const
-	{
-		Array2DPosition centerBottom = Conversions::CartesianToArray(entity.m_Transform.m_Pos);
-
-		Array2DPosition bufferPos = {};
-		bufferPos.SetRow(centerBottom.GetRow() - data.GetVisualBoundsSize().m_X + 1 + relativeVisualPos.GetRow());
-		bufferPos.SetCol(centerBottom.GetCol() - (data.GetVisualBoundsSize().m_Y / 2) + relativeVisualPos.GetCol());
-		return bufferPos;
-	}
-
 	void EntityRendererSystem::AddTextToBuffer(TextBufferMixed& buffer, EntityRendererData& data, const Entity& entity)
 	{
 		data.GetVisualData().AddTextPositionsToBuffer(entity.m_Transform.m_Pos, buffer);
 	}
-
-	////TODO: this just get camera to find the current position within appearing rect and put that in buffer
-	//void EntityRendererSystem::RenderInBuffer(TextBuffer& buffer, EntityRendererData& data, const Entity& entity)
-	//{
-	//	//Utils::Point2DInt half = {m_outputBuffer.m_HEIGHT/2, m_outputBuffer.m_WIDTH/2};
-	//	//std::cout << "Rendering at: " << half.ToString() << std::endl;
-	//	//std::cout << "Rendering player" << std::endl;
-
-	//	//Log(std::format("Rendering player at; {}", entity.m_Transform.m_Pos.ToString()));
-	//	Array2DPosition bufferPos = {};
-	//	TextChar currentTextChar = {};
-	//	const auto& fullData = data.m_VisualData.GetFull();
-	//	for (int r = 0; r < fullData.size(); r++)
-	//	{
-	//		for (int c = 0; c < fullData[r].size(); c++)
-	//		{
-	//			bufferPos = GetGlobalVisualPos({ r, c }, data, entity);
-	//			if (!buffer.IsValidPos(bufferPos)) continue;
-
-	//			currentTextChar = fullData[r][c];
-	//			if (currentTextChar.m_Char == EMPTY_CHAR_PLACEHOLDER) continue;
-
-	//			buffer.SetAt(bufferPos, currentTextChar);
-	//			//Log(std::format("Setting entity buffer render: {}", bufferPos.ToString()));
-	//			if (CACHE_LAST_BUFFER) data.m_LastFrameVisualData.emplace_back(bufferPos, currentTextChar);
-	//		}
-	//	}
-	//}
 }
 

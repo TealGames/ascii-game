@@ -21,13 +21,12 @@ namespace ECS
 		if (!Assert(this, input != nullptr, std::format("Tried to move player from system update "
 			"of PlayerSystem but it does not have a input component!"))) return;
 
-		//Player moves faster on diagonals
+		//TODO: Player moves faster on diagonals
 		if (!input->HasInputChanged()) return;
 
 		Vec2 dirDelta = GetVector(input->GetInputDelta());
 		if (dirDelta == Vec2::ZERO) return;
 
-		//TODO: if the player stops pressing a button we should remove that velocity
 		dirDelta = dirDelta.GetNormalized();
 		Vec2 inputVel = { dirDelta.m_X * player.GetMoveSpeed(), dirDelta.m_Y* player.GetInitialJumpSpeed()};
 
