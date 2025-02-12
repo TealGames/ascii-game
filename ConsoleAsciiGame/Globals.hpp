@@ -11,7 +11,7 @@ constexpr int SCREEN_WIDTH = 800;
 constexpr int SCREEN_HEIGHT = 600;
 inline const Utils::Point2D SCREEN_ASPECT_RATIO = { 4, 3 };
 
-constexpr float GRAVITY = 9.8;
+constexpr float GRAVITY = 12;
 
 //constexpr int TEXT_BUFFER_MAX_WIDTH = 60;
 //constexpr int TEXT_BUFFER_MAX_HEIGHT = 30;

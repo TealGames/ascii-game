@@ -82,11 +82,12 @@ namespace Core
 
 	Engine::Engine() :
 		m_sceneManager(SCENES_PATH),
+		m_inputManager(0.5),
 		m_transformSystem(),
 		m_uiSystem(),
 		m_entityRendererSystem(),
 		m_lightSystem(m_entityRendererSystem),
-		m_inputSystem(),
+		m_inputSystem(m_inputManager),
 		m_spriteAnimatorSystem(m_entityRendererSystem),
 		m_animatorSystem(*this),
 		m_physicsBodySystem(),
@@ -320,6 +321,7 @@ namespace Core
 		m_transformSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_uiSystem.SystemUpdate(*activeScene, m_deltaTime);
 
+		m_inputManager.Update(m_deltaTime);
 		m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<1>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
 		m_playerSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<0>(), *(m_playerInfo.value().m_Entity), m_deltaTime);

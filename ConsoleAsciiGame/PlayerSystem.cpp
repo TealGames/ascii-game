@@ -27,6 +27,7 @@ namespace ECS
 		Vec2 dirDelta = GetVector(input->GetInputDelta());
 		if (dirDelta == Vec2::ZERO) return;
 
+		//TODO: normalized should be handled in input retrieving
 		dirDelta = dirDelta.GetNormalized();
 		Vec2 inputVel = { dirDelta.m_X * player.GetMoveSpeed(), dirDelta.m_Y* player.GetInitialJumpSpeed()};
 

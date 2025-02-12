@@ -1,7 +1,6 @@
 
 //NOT USED
 #include "pch.hpp"
-
 #include "InputSystem.hpp"
 #include "raylib.h"
 #include "HelperFunctions.hpp"
@@ -9,9 +8,13 @@
 
 namespace ECS
 {
-    InputSystem::InputSystem()
-    {
+    static const std::string MOVE_COMPOUND_NAME = "move";
 
+    InputSystem::InputSystem(InputManager& inputManager) : m_inputManager(inputManager)
+    {
+        inputManager.TryAddCompoundInput(MOVE_COMPOUND_NAME,
+            { {Direction::Up, KEY_UP}, {Direction::Down, KEY_DOWN},
+              {Direction::Left, KEY_LEFT} , {Direction::Right, KEY_RIGHT} });
     }
 
     void InputSystem::SystemUpdate(Scene& scene, InputData& data, ECS::Entity& entity, const float& deltaTime)
@@ -19,14 +22,13 @@ namespace ECS
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("InputSystem::SystemUpdate");
 #endif 
+        std::optional<Utils::Point2DInt> moveInput = m_inputManager.TryGetCompoundInputDown(MOVE_COMPOUND_NAME);
+        LogError(std::format("MOVE INPUT COMPOUND: {}", m_inputManager.GetCompoundToString(MOVE_COMPOUND_NAME)));
 
-        Utils::Point2DInt currentMove = {};
-        if (IsKeyDown(KEY_DOWN)) currentMove.m_Y--;
-        if (IsKeyDown(KEY_UP)) currentMove.m_Y++;
-        if (IsKeyDown(KEY_RIGHT)) currentMove.m_X++;
-        if (IsKeyDown(KEY_LEFT)) currentMove.m_X--;
+        if (!Assert(this, moveInput.has_value(), std::format("Tried to update input system "
+            "but compound input: {} could not be found", MOVE_COMPOUND_NAME))) return;
 
-        if (UpdateData(data, currentMove)) scene.IncreaseFrameDirtyComponentCount();
+        if (UpdateData(data, moveInput.value())) scene.IncreaseFrameDirtyComponentCount();
         /* Log(std::format("Update end PLAYER component dirty; {}", std::to_string(m_isDirty)));*/
     }
 

@@ -36,7 +36,7 @@ namespace ECS
 	class LightSourceSystem : MultiBodySystem
 	{
 	private:
-		EntityRendererSystem m_rendererSystem;
+		const EntityRendererSystem& m_rendererSystem;
 
 	public:
 

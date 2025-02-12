@@ -31,7 +31,7 @@ namespace ECS
     void LightSourceSystem::SystemUpdate(Scene& scene, const float& deltaTime)
     {
 #ifdef ENABLE_PROFILER
-        ProfilerTimer timer("LightSourceSystem::SystemUpdate");
+        ProfilerTimer timer("LightSourceSystem::SystemUpdate"); 
 #endif 
 
         //TODO: fixed lighting points should bake their lighting into the buffer rather than have to reapply calculations

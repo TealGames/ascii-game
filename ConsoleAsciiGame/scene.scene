@@ -1,0 +1,52 @@
+#define Point: Utils::Point2D
+#define AABB: (float float float);
+
+@Main
+Name: "TestScene"
+
+@Entities
+{
+	Name: "Test"
+	Components:
+	{
+		Type: "Renderer"
+		Pivot: <Point>(5 5)
+
+		String: "string"
+		Number: 5
+		Float: 5.5
+		Boolean: true
+		Custom: Point(5, 5)
+	}
+}
+
+
+{
+	"Main":
+	{
+		"Name": "TestScene",
+		"Count": 5
+	},
+
+	"Entities":
+	[{
+		Name: "Name",
+		Components:
+		[{
+			"Type":"LightSource",
+			Radius: 5.5,
+			Shape: "Circle",
+		 },
+		 {
+			Type:"Renderer",
+			Pivot: 
+			{
+				"X": 0.5,
+				"Y": 0.5,
+			}
+			Shape: "Circle",
+		 },
+		]
+	 },
+	{}]
+}
