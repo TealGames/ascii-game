@@ -23,6 +23,7 @@ namespace Physics
 	void PhysicsWorld::AddBody(PhysicsBodyData& body)
 	{
 		LogWarning(this, std::format("Adding body: {}", body.m_Entity->m_Name));
+		body.SetPhysicsWorld(*this);
 		m_bodies.push_back(&body);
 	}
 
@@ -64,7 +65,8 @@ namespace Physics
 				collision = Physics::GetAABBIntersectionData(bodyBEntity.m_Transform.m_Pos, bodyB.GetAABB(), bodyAEntity.m_Transform.m_Pos, bodyA.GetAABB());
 				if (collision.m_DoIntersect)
 				{
-					if (!Utils::ApproximateEqualsF(bodyA.GetVelocity().GetMagnitude(), 0))
+					//if (!Utils::ApproximateEqualsF(bodyA.GetVelocity().GetMagnitude(), 0))
+					if (bodyA.GetEntitySafe().m_Transform.m_Pos!= bodyA.GetEntitySafe().m_Transform.m_LastPos)
 					{
 						bool xIsMin = std::abs(collision.m_Depth.m_X) < std::abs(collision.m_Depth.m_Y);
 						float moveDelta = -(xIsMin ? collision.m_Depth.m_X : collision.m_Depth.m_Y);
@@ -77,6 +79,7 @@ namespace Physics
 						bodyA.SetAcceleration(Vec2::ZERO);
 						bodyA.SetVelocity(Vec2::ZERO);
 
+						//TODO: problem is if there is body above and below, making it possible for it to move back and worth between collisions of the two
 						minBodyDisplacement = GetBodyMinDisplacement(bodyB, bodyA);
 						minBodyDisplacementVec = { std::abs(minBodyDisplacement.m_X), std::abs(minBodyDisplacement.m_Y) };
 						//LogWarning(std::format("After collision prevented new distance: {}", minBodyDisplacementVec.ToString()));
@@ -137,7 +140,7 @@ namespace Physics
 			body2.m_Entity->m_Transform.m_Pos, body2.GetAABB());
 	}
 
-	RaycastInfo PhysicsWorld::Raycast(const WorldPosition& origin, const Vec2& ray)
+	RaycastInfo PhysicsWorld::Raycast(const WorldPosition& origin, const Vec2& ray) const
 	{
 		RaycastInfo result = {};
 		int xSign = Utils::GetSign(ray.m_X);
@@ -152,14 +155,14 @@ namespace Physics
 		float t2 = 0;
 
 		//Since we consider t values from origin and onward (where tMin represents origin point and tMax represents ray end)
-		float tMin = 0.0f;
+		float tMin = 0;
 		float tMax = std::numeric_limits<float>::infinity();
 		
-		for (const auto& body : m_bodies)
+		for (auto& body : m_bodies)
 		{
 			const AABB& currentBounds = body->GetAABB();
 			boundsWorldMin = currentBounds.GetGlobalMin(body->GetEntitySafe().m_Transform.m_Pos);
-			boundsWorldMax= currentBounds.GetGlobalMin(body->GetEntitySafe().m_Transform.m_Pos);
+			boundsWorldMax= currentBounds.GetGlobalMax(body->GetEntitySafe().m_Transform.m_Pos);
 
 			//TODO: perhaps optimizations could be made by checking to see if distance is too big to make it to this collider
 			//so we can just continue
@@ -169,6 +172,9 @@ namespace Physics
 			if (Utils::ApproximateEqualsF(ray.m_X, 0) &&
 				(origin.m_X < boundsWorldMin.m_X || origin.m_X > boundsWorldMax.m_X))
 			{
+				/*LogError(std::format("PERFECT LINE origin: {} ray; {} body: {} (body pos: {}) body min: {} max: {}", 
+					origin.ToString(), ray.ToString(), body->m_Entity->m_Name, body->GetEntitySafe().m_Transform.m_Pos.ToString(), 
+					boundsWorldMin.ToString(), boundsWorldMax.ToString()));*/
 				continue;
 			}
 
@@ -179,7 +185,11 @@ namespace Physics
 			tMin = std::max(tMin, t1);
 			tMax = std::min(tMax, t2);
 
-			if (tMin > tMax) continue;
+			if (tMin > tMax)
+			{
+				//LogError(std::format("SKIPPING DUE TO MIN: {} > max; {}", std::to_string(tMin), std::to_string(tMax)));
+				continue;
+			}
 			
 			//----------- Y AXIS -----------
 			//Repeats the same process but for y axis
@@ -197,10 +207,15 @@ namespace Physics
 
 			if (tMin > tMax) continue;
 
+			
 			//Note: when reaching this point tMin is the intersecction distance from origin
 			result.m_BodyHit = body;
 			result.m_Displacement = {rayDir.m_X * tMin, rayDir.m_Y * tMin};
 			result.m_HitPos = origin + Utils::Point2D(result.m_Displacement.m_X, result.m_Displacement.m_Y);
+
+			LogError(std::format("REACHED LINE END origin {} ray; {} body: {} (body pos: {}) body min: {} max: {} displacement; {}",
+				origin.ToString(), ray.ToString(), body->m_Entity->m_Name, body->GetEntitySafe().m_Transform.m_Pos.ToString(),
+				boundsWorldMin.ToString(), boundsWorldMax.ToString(), result.m_Displacement.ToString()));
 			return result;
 		}
 		return result;

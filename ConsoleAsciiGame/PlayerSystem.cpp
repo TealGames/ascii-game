@@ -2,13 +2,18 @@
 #include "PlayerSystem.hpp"
 #include "HelperFunctions.hpp"
 #include "PhysicsBodyData.hpp"
+#include "CameraData.hpp"
 #include "InputData.hpp"
 #include "Vec2.hpp"
 #include "ProfilerTimer.hpp"
+#include "raylib.h"
+#include "PositionConversions.hpp"
 
 namespace ECS
 {
-	PlayerSystem::PlayerSystem() {}
+	static constexpr bool CHEATS_ENABLED_DEFAULT = false;
+
+	PlayerSystem::PlayerSystem() : m_cheatsEnabled(CHEATS_ENABLED_DEFAULT) {}
 
 	void PlayerSystem::SystemUpdate(Scene& scene, PlayerData& player,
 		ECS::Entity& entity, const float& deltaTime)
@@ -17,6 +22,33 @@ namespace ECS
 		ProfilerTimer timer("PlayerSystem::SystemUpdate");
 
 #endif 
+		if (m_cheatsEnabled && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+		{
+			CameraData* camera = scene.TryGetMainCameraData();
+			if (!Assert(this, camera != nullptr, std::format("Tried to get camera to convert screen "
+				"to world point for mouse position cheat but it is null"))) return;
+
+			Vector2 mousePos = GetMousePosition();
+			WorldPosition worldPos = Conversions::ScreenToWorldPosition(*camera, { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y)});
+			player.GetEntitySafeMutable().m_Transform.SetPos(worldPos);
+		}
+
+		bool isGroundedNow = player.GetIsGrounded();
+		if (isGroundedNow != m_isGroudnedLastFrame)
+		{
+			if (groundedTimes >= 2)
+			{
+				LogError(this, std::format("GROUNDED CHANGED TO: {} distance:{}", std::to_string(isGroundedNow),
+					std::to_string(player.GetVerticalDistanceToGround())));
+				//throw new std::invalid_argument("POOP");
+			}
+			else
+			{
+				groundedTimes++;
+			}
+		}
+		m_isGroudnedLastFrame = isGroundedNow;
+
 		InputData* input = entity.TryGetComponent<InputData>();
 		if (!Assert(this, input != nullptr, std::format("Tried to move player from system update "
 			"of PlayerSystem but it does not have a input component!"))) return;
@@ -42,5 +74,10 @@ namespace ECS
 		}
 
 		player.GetBodyMutableSafe().SetVelocityDelta(inputVel);
+	}
+
+	void PlayerSystem::SetCheatStatus(const bool& enableCheats)
+	{
+		m_cheatsEnabled = enableCheats;
 	}
 }

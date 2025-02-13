@@ -38,6 +38,20 @@ Physics::AABB PhysicsBodyData::CreateAABB(const Utils::Point2D& boundingBoxSize,
 {
 	return {transformOffset- (boundingBoxSize/2), transformOffset+ (boundingBoxSize / 2) };
 }
+
+void PhysicsBodyData::SetPhysicsWorld(const Physics::PhysicsWorld& world)
+{
+	m_physicsSimulation = &world;
+}
+const Physics::PhysicsWorld& PhysicsBodyData::GetPhysicsWorldSafe()
+{
+	if (!Assert(this, m_physicsSimulation != nullptr,
+		std::format("Tried to get physics world of body: '{}' "
+			"but it is NULL", m_Entity->m_Name)))
+		throw std::invalid_argument("Failed to retrieve physics world");
+
+	return *m_physicsSimulation;
+}
 	
 void PhysicsBodyData::SetVelocityXDelta(const float& xDelta)
 {

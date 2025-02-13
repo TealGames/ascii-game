@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <cstdint>
 
 namespace Utils
 {
@@ -14,7 +15,7 @@ namespace Utils
 
 		int XAsInt() const;
 		int YAsInt() const;
-		std::string ToString() const;
+		std::string ToString(const std::uint8_t& decimalPlaces= 5) const;
 
 		Utils::Point2D GetFlipped() const;
 

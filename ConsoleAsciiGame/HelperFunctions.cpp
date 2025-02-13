@@ -124,6 +124,12 @@ namespace Utils
 		return std::isalnum(c);
 	}
 
+	float Roundf(const float& decimal, const std::uint8_t& places)
+	{
+		float factor = std::pow(10.0f, places);
+		return std::round(decimal * factor) / factor;
+	}
+
 	int GenerateRandomInt(int minInclusive, int maxInclusive)
 	{
 		std::random_device rd;

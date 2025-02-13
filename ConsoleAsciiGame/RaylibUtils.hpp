@@ -32,6 +32,7 @@ namespace RaylibUtils
 	std::string ToString(const Vector2& vec);
 	Vector2 ToRaylibVector(const Vec2& vec);
 	Vector2 ToRaylibVector(const Utils::Point2D& point);
+	Vector2 ToRaylibVector(const Utils::Point2DInt& point);
 
 	bool IsValidFont(const Font& font);
 	void RemoveFontExtraSpacing(Font& font);

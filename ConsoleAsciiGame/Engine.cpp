@@ -111,7 +111,7 @@ namespace Core
 		VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
 
-		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData({ 10, 10 }));
+		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData({ 10, 5 }));
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY, 20));
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
 
@@ -119,7 +119,7 @@ namespace Core
 		LightSourceData& lightSource= playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
-		Log("CREATING PLAYER RB");
+		//Log("CREATING PLAYER RB");
 		
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },visualPreset), RenderLayerType::Player});
@@ -246,6 +246,11 @@ namespace Core
 					return;
 				}
 			}));
+
+		m_commandConsole.AddPrompt(new CommandPrompt<bool>("cheats", std::vector<std::string>{"CheapStatus"},
+			[this](const bool& enableCheats) -> void {
+				m_playerSystem.SetCheatStatus(enableCheats);
+			}));
 	}
 
 	LoopCode Engine::Update()
@@ -334,6 +339,7 @@ namespace Core
 			m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<2>().GetVelocity().ToString(VectorForm::Component)));
 			m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<2>().GetAcceleration().ToString(VectorForm::Component)));
 			m_debugInfo.AddProperty("Grounded:", std::format("{}", std::to_string(m_playerInfo.value().GetAt<0>().GetIsGrounded())));
+			m_debugInfo.AddProperty("GroundDist:", std::format("{} m", std::to_string(m_playerInfo.value().GetAt<0>().GetVerticalDistanceToGround())));
 		}
 
 		m_physicsBodySystem.SystemUpdate(*activeScene, m_deltaTime);
@@ -361,6 +367,14 @@ namespace Core
 		Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
 		if (m_enableCommandConsole) m_commandConsole.Update();
+
+		if (m_enableDebugInfo)
+		{
+			Vector2 mousePos = GetMousePosition();
+			ScreenPosition mouseScreenPos = { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y)};
+			WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(*m_mainCameraInfo.value().m_Data, mouseScreenPos);
+			m_debugInfo.SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X+15, mouseScreenPos.m_Y} });
+		}
 
 		//TODO: rendering buffer drops frames
 		if (!collapsedBuffer.empty())

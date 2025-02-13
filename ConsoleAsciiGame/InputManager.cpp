@@ -207,8 +207,8 @@ std::optional<Utils::Point2DInt> InputManager::TryGetCompoundInputDown(const std
 	Utils::Point2DInt dir = {};
 	for (const auto& entry : it->second.GetEntries())
 	{
-		LogError(this, std::format("Compound: {} key: {} STATE: {} (down: {})", name, std::to_string(entry.second), 
-			ToString(GetKeyState(entry.second)), std::to_string(IsKeyDown(entry.second))));
+		/*LogError(this, std::format("Compound: {} key: {} STATE: {} (down: {})", name, std::to_string(entry.second), 
+			ToString(GetKeyState(entry.second)), std::to_string(IsKeyDown(entry.second))));*/
 		if (!IsKeyDown(entry.second)) continue;
 
 		if (entry.first == Direction::Up) dir.m_Y++;
@@ -216,7 +216,7 @@ std::optional<Utils::Point2DInt> InputManager::TryGetCompoundInputDown(const std
 		else if (entry.first == Direction::Right) dir.m_X++;
 		else if (entry.first == Direction::Left) dir.m_X--;
 	}
-	LogError(this, std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
+	//LogError(this, std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
 	return dir;
 }
 std::vector<KeyState> InputManager::GetCompoundKeyStates(const std::string& name) const

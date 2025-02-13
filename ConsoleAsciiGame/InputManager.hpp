@@ -73,7 +73,6 @@ public:
 	std::size_t GetEntriesCount() const;
 };
 
-
 using KeyStateCollection = std::unordered_map<KeyboardKey, InputState>;
 using CompoundInputCollection = std::unordered_map<std::string, CompoundInput>;
 class InputManager

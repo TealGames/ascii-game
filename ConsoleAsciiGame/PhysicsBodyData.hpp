@@ -16,6 +16,11 @@ struct CollidingObject
 	Direction m_Direction = Direction::Up;
 };
 
+namespace Physics
+{
+	class PhysicsWorld;
+}
+
 using CollidingBodiesCollection = std::vector<CollidingObject>;
 class PhysicsBodyData : public ComponentData
 {
@@ -38,6 +43,8 @@ private:
 
 	CollidingBodiesCollection m_collidingBodies;
 
+	const Physics::PhysicsWorld* m_physicsSimulation;
+
 	//TODO: add other settings like restitution (bounciness), friction, gravity, etc
 public:
 
@@ -49,6 +56,9 @@ public:
 	PhysicsBodyData();
 	PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset);
 	PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity);
+
+	void SetPhysicsWorld(const Physics::PhysicsWorld& world);
+	const Physics::PhysicsWorld& GetPhysicsWorldSafe();
 
 	void SetVelocity(const Vec2& vel);
 	void SetVelocityDelta(const Vec2& vel);

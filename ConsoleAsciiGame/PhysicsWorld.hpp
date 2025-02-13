@@ -54,7 +54,7 @@ namespace Physics
 		/// <param name="origin"></param>
 		/// <param name="ray"></param>
 		/// <returns></returns>
-		RaycastInfo Raycast(const WorldPosition& origin, const Vec2& ray);
+		RaycastInfo Raycast(const WorldPosition& origin, const Vec2& ray) const;
 	};
 
 	/// <summary>

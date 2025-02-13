@@ -32,9 +32,10 @@ namespace Utils
 		return std::sqrtf(std::powf(p1.m_X-p2.m_X, 2)+std::powf(p1.m_Y-p2.m_Y, 2));
 	}
 
-	std::string Point2D::ToString() const
+	std::string Point2D::ToString(const std::uint8_t& decimalPlaces) const
 	{
-		std::string str = std::format("({},{})", m_X, m_Y);
+		std::string str = std::format("({},{})", 
+			Utils::Roundf(m_X, decimalPlaces), Utils::Roundf(m_Y, decimalPlaces));
 		return str;
 	}
 

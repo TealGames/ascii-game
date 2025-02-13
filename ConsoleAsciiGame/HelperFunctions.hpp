@@ -467,6 +467,14 @@ namespace Utils
 	inline bool IsLetter(char);
 	inline bool IsLetterOrNumber(char);
 
+	/// <summary>
+	/// Will round a float to contain the set amount of places after DECIMAL
+	/// </summary>
+	/// <param name="decimal"></param>
+	/// <param name="places"></param>
+	/// <returns></returns>
+	float Roundf(const float& decimal, const std::uint8_t& places);
+
 	int GenerateRandomInt(int minInclusive, int maxInclusive);
 	double GenerateRandomDouble(double minInclusive, double maxExclusive);
 

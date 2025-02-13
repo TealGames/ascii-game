@@ -175,6 +175,16 @@ namespace Rendering
                 currentPos.y += currentSize.y + DEBUG_INFO_CHAR_SPACING.m_Y;
                 currentIndex++;
             }
+
+            auto maybeMouseData = debugInfo->GetMouseDebugData();
+            if (maybeMouseData.has_value())
+            {
+                std::string textAsStr = std::format("{}", maybeMouseData.value().m_MouseWorldPos.ToString(2));
+                const char* text = textAsStr.c_str();
+                DrawTextEx(GetGlobalFont(), text, RaylibUtils::ToRaylibVector(maybeMouseData.value().m_MouseTextScreenPos), 
+                    DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, WHITE);
+
+            } 
         }
 
         //Draws the center screen indicator

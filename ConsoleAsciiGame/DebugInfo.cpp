@@ -1,7 +1,8 @@
 #include "pch.hpp"
 #include "DebugInfo.hpp"
 
-DebugInfo::DebugInfo() : m_text(), m_highlightedIndices() {}
+DebugInfo::DebugInfo() : 
+	m_text(), m_highlightedIndices(), m_mouseDebugData(std::nullopt) {}
 
 void DebugInfo::ClearProperties()
 {
@@ -42,4 +43,13 @@ void DebugInfo::ClearHighlightedIndices()
 const std::vector<std::size_t>& DebugInfo::GetHighlightedIndicesSorted() const
 {
 	return m_highlightedIndices;
+}
+
+void DebugInfo::SetMouseDebugData(const DebugMousePosition& info)
+{
+	m_mouseDebugData = info;
+}
+const std::optional<DebugMousePosition>& DebugInfo::GetMouseDebugData() const
+{
+	return m_mouseDebugData;
 }

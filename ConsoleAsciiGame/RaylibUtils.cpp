@@ -100,6 +100,10 @@ namespace RaylibUtils
 	{
 		return { point.m_X, point.m_Y };
 	}
+	Vector2 ToRaylibVector(const Utils::Point2DInt& point)
+	{
+		return { static_cast<float>(point.m_X), static_cast<float>(point.m_Y )};
+	}
 
 	bool IsValidFont(const Font& font)
 	{
