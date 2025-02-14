@@ -5,7 +5,7 @@
 #include "raylib.h"
 #include <memory>
 #include <queue>
-#include <chrono>
+#include <chrono> 
 
 using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;
@@ -39,6 +39,7 @@ private:
 
 public:
 	static constexpr char COMMAND_CHAR= '/';
+	//static CommandConsole& ActiveConsole;
 
 private:
 	std::string FormatPromptName(const std::string& name);
@@ -50,6 +51,8 @@ private:
 	
 public:
 	CommandConsole();
+
+	//void SetActiveConsole(CommandConsole& console);
 
 	void AddPrompt(ICommandPrompt* prompt);
 	bool HasPrompt(const std::string& promptName);

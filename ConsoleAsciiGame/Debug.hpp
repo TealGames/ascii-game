@@ -1,6 +1,7 @@
 #pragma once
 #include "HelperFunctions.hpp"
 #include "Globals.hpp"
+#include "Event.hpp"
 #include <optional>
 #include <cstdint>
 
@@ -42,9 +43,12 @@ std::string LogTypeToString(const LogType& logType);
 
 constexpr LogType LOG_TYPE_ALL = LogType::Log | LogType::Error | LogType::Warning;
 constexpr bool DEFAULT_LOG_TIME = true;
+constexpr bool DEFAULT_LOG_TO_GAME_CONSOLE= false;
 constexpr bool THROW_ON_FAILED_ASSERT = true;
 extern std::string MessageFilter;
 extern LogType LogTypeFilter;
+
+extern Event<void, LogType, std::string, bool> OnMessageLogged;
 
 /// <summary>
 /// Achieves the same as defualt log but also includes the class that called it
@@ -54,7 +58,8 @@ extern LogType LogTypeFilter;
 /// <param name="logType"></param>
 /// <param name="str"></param>
 template<typename T>
-void LogMessage(const T* const objPtr, const LogType& logType, const std::string& message, const bool& logTime = DEFAULT_LOG_TIME)
+void LogMessage(const T* const objPtr, const LogType& logType, const std::string& message, 
+	 const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
 {
 	//Log(logType, std::format("{}: {}", objPtr != nullptr ? typeid(T).name() : "", str), logTime);
 
@@ -91,6 +96,8 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 	std::string objectName = objPtr != nullptr ? std::format("{}:", typeid(T).name())  : "";
 	std::string fullMessage = std::format("\n{}{}{}{}", logTypeMessage, objectName, message, ANSI_COLOR_CLEAR);
 	std::cout << fullMessage << std::endl;
+
+	OnMessageLogged.Invoke(logType, message, logToGameConsole);
 }
 
 /// <summary>
@@ -101,16 +108,18 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 /// <param name="str"></param>
 /// <param name="logTime"></param>
 template<typename T>
-void Log(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
+void Log(const T* const objPtr, const std::string& str, 
+	const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
 {
-	LogMessage<T>(objPtr, LogType::Log, str, logTime);
+	LogMessage<T>(objPtr, LogType::Log, str, logTime, logToGameConsole);
 }
 /// <summary>
 /// Logs a message as a default LOG type
 /// </summary>
 /// <param name="str"></param>
 /// <param name="logTime"></param>
-void Log(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
+void Log(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE);
 
 /// <summary>
 /// Logs a message as a WARNING type
@@ -120,16 +129,18 @@ void Log(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
 /// <param name="str"></param>
 /// <param name="logTime"></param>
 template<typename T>
-void LogWarning(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
+void LogWarning(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
 {
-	LogMessage<T>(objPtr, LogType::Warning, str, logTime);
+	LogMessage<T>(objPtr, LogType::Warning, str, logTime, logToGameConsole);
 }
 /// <summary>
 /// Logs a message as a WARNING type
 /// </summary>
 /// <param name="str"></param>
 /// <param name="logTime"></param>
-void LogWarning(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
+void LogWarning(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE);
 
 /// <summary>
 /// Logs a message as an ERROR type
@@ -137,16 +148,18 @@ void LogWarning(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
 /// <param name="str"></param>
 /// <param name="logTime"></param>
 template<typename T>
-void LogError(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME)
+void LogError(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
 {
-	LogMessage<T>(objPtr, LogType::Error, str, logTime);
+	LogMessage<T>(objPtr, LogType::Error, str, logTime, logToGameConsole);
 }
 /// <summary>
 /// Logs a message as an ERROR type
 /// </summary>
 /// <param name="str"></param>
 /// <param name="logTime"></param>
-void LogError(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME);
+void LogError(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE);
 
 /// <summary>
 /// If condition is false will log error and return false, othersise return true and does nothing
@@ -158,7 +171,7 @@ bool Assert(const T* const objPtr, const bool condition, const std::string& errM
 {
 	if (!condition)
 	{
-		LogError<T>(objPtr, errMessage);
+		LogError<T>(objPtr, errMessage, DEFAULT_LOG_TIME, true);
 		if (THROW_ON_FAILED_ASSERT) throw std::invalid_argument(errMessage);
 	}
 	return condition;

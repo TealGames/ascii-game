@@ -5,6 +5,7 @@
 #include "raylib.h"
 #include <optional>
 #include "CommandPromptType.hpp"
+#include "Event.hpp"
 
 
 #ifdef ENABLE_MEMORY_LEAK_DETECTION

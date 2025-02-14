@@ -15,7 +15,16 @@ static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_LEFT_CONTROL;
 CommandConsole::CommandConsole() : 
 	m_prompts(), m_isEnabled(false), m_input(), m_outputMessages(), m_lastCommand()
 {
+	OnMessageLogged.AddListener(
+		[this](const LogType& logType, const std::string& message, const bool& logToConsole)-> void
+		{
+			if (!logToConsole) return;
 
+			ConsoleOutputMessageType messageType = ConsoleOutputMessageType::Default;
+			if (logType == LogType::Error) messageType = ConsoleOutputMessageType::Error;
+
+			LogOutputMessage(message, messageType);
+		});
 }
 
 std::string CommandConsole::FormatPromptName(const std::string& name)

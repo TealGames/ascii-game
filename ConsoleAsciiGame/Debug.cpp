@@ -5,6 +5,11 @@
 std::string MessageFilter = "";
 LogType LogTypeFilter = LOG_TYPE_ALL;
 
+/// <summary>
+/// Where args are return type, log type, is logged to game console
+/// </summary>
+Event<void, LogType, std::string, bool> OnMessageLogged;
+
 std::optional<LogType> StringToLogType(const std::string& str)
 {
 	std::string strFormatted = Utils::StringUtil(str).ToLowerCase().ToString();
@@ -27,17 +32,17 @@ std::string LogTypeToString(const LogType& logType)
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(elementBits);
 }
 
-void Log(const std::string& str, const bool& logTime)
+void Log(const std::string& str, const bool& logTime, const bool& logToGameConsole)
 {
-	Log<int>(nullptr, str, logTime);
+	Log<int>(nullptr, str, logTime, logToGameConsole);
 }
-void LogWarning(const std::string& str, const bool& logTime)
+void LogWarning(const std::string& str, const bool& logTime, const bool& logToGameConsole)
 {
-	LogWarning<int>(nullptr, str, logTime);
+	LogWarning<int>(nullptr, str, logTime, logToGameConsole);
 }
-void LogError(const std::string& str, const bool& logTime)
+void LogError(const std::string& str, const bool& logTime, const bool& logToGameConsole)
 {
-	LogError<int>(nullptr, str, logTime);
+	LogError<int>(nullptr, str, logTime, logToGameConsole);
 }
 
 bool Assert(const bool condition, const std::string& errMessage)

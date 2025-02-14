@@ -39,7 +39,7 @@ namespace ECS
 			if (groundedTimes >= 2)
 			{
 				LogError(this, std::format("GROUNDED CHANGED TO: {} distance:{}", std::to_string(isGroundedNow),
-					std::to_string(player.GetVerticalDistanceToGround())));
+					std::to_string(player.GetVerticalDistanceToGround())), true, true);
 				//throw new std::invalid_argument("POOP");
 			}
 			else

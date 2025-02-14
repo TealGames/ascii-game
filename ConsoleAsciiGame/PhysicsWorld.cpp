@@ -213,9 +213,9 @@ namespace Physics
 			result.m_Displacement = {rayDir.m_X * tMin, rayDir.m_Y * tMin};
 			result.m_HitPos = origin + Utils::Point2D(result.m_Displacement.m_X, result.m_Displacement.m_Y);
 
-			LogError(std::format("REACHED LINE END origin {} ray; {} body: {} (body pos: {}) body min: {} max: {} displacement; {}",
+			/*LogError(std::format("REACHED LINE END origin {} ray; {} body: {} (body pos: {}) body min: {} max: {} displacement; {}",
 				origin.ToString(), ray.ToString(), body->m_Entity->m_Name, body->GetEntitySafe().m_Transform.m_Pos.ToString(),
-				boundsWorldMin.ToString(), boundsWorldMax.ToString(), result.m_Displacement.ToString()));
+				boundsWorldMin.ToString(), boundsWorldMax.ToString(), result.m_Displacement.ToString()));*/
 			return result;
 		}
 		return result;

@@ -176,7 +176,7 @@ namespace Rendering
                 currentIndex++;
             }
 
-            auto maybeMouseData = debugInfo->GetMouseDebugData();
+           auto maybeMouseData = debugInfo->GetMouseDebugData();
             if (maybeMouseData.has_value())
             {
                 std::string textAsStr = std::format("{}", maybeMouseData.value().m_MouseWorldPos.ToString(2));
