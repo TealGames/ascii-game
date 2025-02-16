@@ -75,18 +75,17 @@ namespace Physics
 		if (result.m_DoIntersect && min1Global.m_X <= min2Global.m_X && max2Global.m_X <= max1Global.m_X &&
 			min1Global.m_Y <= min2Global.m_Y && max2Global.m_Y <= max1Global.m_Y)
 		{
-			result.m_Depth.m_X = Utils::MinAbs(min2Global.m_X - min1Global.m_X, max2Global.m_X - max1Global.m_X);
-			result.m_Depth.m_Y = Utils::MinAbs(min2Global.m_Y - min1Global.m_Y, max2Global.m_Y - max1Global.m_Y);
+			result.m_Depth.m_X = Utils::MinAbs(min2Global.m_X - max1Global.m_X, max2Global.m_X - min1Global.m_X);
+			result.m_Depth.m_Y = Utils::MinAbs(min2Global.m_Y - max1Global.m_Y, max2Global.m_Y - min1Global.m_Y);
 
-			LogError(std::format("Calculating min abs X of {} and {} is: {} ", std::to_string(min2Global.m_X - min1Global.m_X), 
-				std::to_string(max2Global.m_X - max1Global.m_X), std::to_string(result.m_Depth.m_X)));
+			LogError(std::format("Calculating min abs X of {} and {} is: {} MIN DEPTH Y: {}", std::to_string(min2Global.m_X - min1Global.m_X), 
+				std::to_string(max2Global.m_X - max1Global.m_X), std::to_string(result.m_Depth.m_X), std::to_string(result.m_Depth.m_Y)));
 			return result;
 		}
 
 		//TODO: intersection vector depth might not work if smaller collider is fully inside bigger collider
 		if (result.m_DoIntersect)
 		{
-			
 			//Coming from right side
 			if (max2Global.m_X > max1Global.m_X)
 			{
