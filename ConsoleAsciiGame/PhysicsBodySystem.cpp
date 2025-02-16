@@ -1,12 +1,15 @@
 #include "pch.hpp"
 #include "PhysicsBodySystem.hpp"
-#include "ProfilerTimer.hpp"
 #include "PhysicsBodyData.hpp"
 #include "PhysicsWorld.hpp"
 #include "InputData.hpp"
 #include "PositionConversions.hpp"
 #include "HelperFunctions.hpp"
 #include "CameraData.hpp"
+
+#ifdef ENABLE_PROFILER
+#include "ProfilerTimer.hpp"
+#endif 
 
 namespace ECS
 {

@@ -8,7 +8,10 @@
 #include "TransformSystem.hpp"
 #include "HelperFunctions.hpp"
 #include "PositionConversions.hpp"
+
+#ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
+#endif 
 
 namespace ECS
 {

@@ -66,12 +66,13 @@ public:
 
 	bool IsUnitVector() const;
 
-	std::string ToString(const VectorForm form = VectorForm::MagnitudeDirection) const;
+	std::string ToString(const VectorForm form = VectorForm::Component) const;
 
 	Vec2 operator+(const Vec2& other) const;
 	Vec2 operator-(const Vec2& other) const;
 	Vec2 operator*(const Vec2& other) const;
 	Vec2 operator*(const float& scalar) const;
+	Vec2 operator/(const float& scalar) const;
 
 	bool operator==(const Vec2& other) const;
 
@@ -92,4 +93,16 @@ Vec2 GetVector(const Vec2& unitVector, const float& magnitude);
 
 Utils::Point2D GetVectorEndPoint(const Utils::Point2D& startPos, const Vec2& vector);
 Utils::Point2DInt GetVectorEndPoint(const Utils::Point2DInt& startPos, const Vec2& vector);
+
+/// <summary>
+/// Returns the scalar dot product. 
+/// -> This essentially finds how much one vector is aligned in terms of the other (where order does NOT matter and produces the same result)
+/// -> If one vector is a unit vector, it essnetially then can find how much of a vector is in the same direction as the unit vector
+/// -> THIS IS MOST USEFUL FOR GETTING THE SCALAR FOR VECTORS IN PARALLEL DIRECTIONS (and extracting the parts in that direction)
+/// -> Note: <0 result means they are in opposite directions, >0 means they are <90 degrees from each other and =0 means they are at 90 degrees
+/// </summary>
+/// <param name="vecA"></param>
+/// <param name="vecB"></param>
+/// <returns></returns>
+float DotProduct(const Vec2& vecA, const Vec2& vecB);
 

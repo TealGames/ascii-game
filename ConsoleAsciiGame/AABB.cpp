@@ -77,21 +77,34 @@ namespace Physics
 		{
 			result.m_Depth.m_X = Utils::MinAbs(min2Global.m_X - min1Global.m_X, max2Global.m_X - max1Global.m_X);
 			result.m_Depth.m_Y = Utils::MinAbs(min2Global.m_Y - min1Global.m_Y, max2Global.m_Y - max1Global.m_Y);
+
+			LogError(std::format("Calculating min abs X of {} and {} is: {} ", std::to_string(min2Global.m_X - min1Global.m_X), 
+				std::to_string(max2Global.m_X - max1Global.m_X), std::to_string(result.m_Depth.m_X)));
 			return result;
 		}
 
 		//TODO: intersection vector depth might not work if smaller collider is fully inside bigger collider
 		if (result.m_DoIntersect)
 		{
-			//Coming in from left side
-			if (max2Global.m_X < max1Global.m_X) result.m_Depth.m_X = max2Global.m_X - min1Global.m_X;
+			
 			//Coming from right side
-			else if (max2Global.m_X > max1Global.m_X) result.m_Depth.m_X = min2Global.m_X - max1Global.m_X;
-
+			if (max2Global.m_X > max1Global.m_X)
+			{
+				result.m_Depth.m_X = min2Global.m_X - max1Global.m_X;
+				LogError(std::format("CALCULATING OUTSIDE VAL RIGHT with AAABB 1:{} and 2:{} -> DEPTH: {}", 
+					entity1Bounding.ToString(entity1Pos), entity2Bounding.ToString(entity2Pos), std::to_string(result.m_Depth.m_X)));
+			}
 			//Coming from bottom side
-			if (min2Global.m_Y < min1Global.m_Y) result.m_Depth.m_Y = max2Global.m_Y - min1Global.m_Y;
-			//Coming from top side
-			else if (min2Global.m_Y > min1Global.m_Y) result.m_Depth.m_Y = min2Global.m_Y - max1Global.m_Y;
+			else if (min2Global.m_X < min1Global.m_X)
+			{
+				result.m_Depth.m_X = max2Global.m_X - min1Global.m_X;
+				LogError("CALCULATING OUTSIDE VAL LEFT");
+			}
+
+			//Coming in from top
+			if (max2Global.m_Y > max1Global.m_Y) result.m_Depth.m_Y = min2Global.m_Y - max1Global.m_Y;
+			//Coming from bottom side
+			else if (min2Global.m_Y < min1Global.m_Y) result.m_Depth.m_Y = max2Global.m_Y - min1Global.m_Y;
 		}
 		return result;
 	}

@@ -61,27 +61,57 @@ namespace Physics
 				auto entityACollisionBIt = bodyA.GetCollidingBodyIterator(bodyB);
 				bool isValidIt = bodyA.IsValidCollidingBodyIterator(entityACollisionBIt);
 
-				//Intersection is handled as body1 being the non-moving body and body2 as the body moving into the bounding area of body1
+				//Intersection is handled as BODYA is the body that is colliding with BODYB (Pretending as though bodyb is not moving)
 				collision = Physics::GetAABBIntersectionData(bodyBEntity.m_Transform.m_Pos, bodyB.GetAABB(), bodyAEntity.m_Transform.m_Pos, bodyA.GetAABB());
 				if (collision.m_DoIntersect)
 				{
 					//if (!Utils::ApproximateEqualsF(bodyA.GetVelocity().GetMagnitude(), 0))
 					if (bodyA.GetEntitySafe().m_Transform.m_Pos!= bodyA.GetEntitySafe().m_Transform.m_LastPos)
 					{
-						bool xIsMin = std::abs(collision.m_Depth.m_X) < std::abs(collision.m_Depth.m_Y);
-						float moveDelta = -(xIsMin ? collision.m_Depth.m_X : collision.m_Depth.m_Y);
-						//We add the extra distance so that they are still considered as colliding but would not cause any awkward jittering
-						//moveDelta += Utils::GetSign(moveDelta) * MAX_DISTANCE_FOR_COLLISION;
+						if (bodyA.GetVelocity() == Vec2::ZERO || !bodyA.ConservesMomentum() || !bodyB.ConservesMomentum())
+						{
+							bool xIsMin = std::abs(collision.m_Depth.m_X) < std::abs(collision.m_Depth.m_Y);
+							float moveDelta = -(xIsMin ? collision.m_Depth.m_X : collision.m_Depth.m_Y);
+							//We add the extra distance so that they are still considered as colliding but would not cause any awkward jittering
+							//moveDelta += Utils::GetSign(moveDelta) * MAX_DISTANCE_FOR_COLLISION;
 
-						if (xIsMin) bodyAEntity.m_Transform.SetPosDeltaX(moveDelta);
-						else bodyAEntity.m_Transform.SetPosDeltaY(moveDelta);
+							if (xIsMin) bodyAEntity.m_Transform.SetPosDeltaX(moveDelta);
+							else bodyAEntity.m_Transform.SetPosDeltaY(moveDelta);
 
-						bodyA.SetAcceleration(Vec2::ZERO);
-						bodyA.SetVelocity(Vec2::ZERO);
+							bodyA.SetAcceleration(Vec2::ZERO);
+							bodyA.SetVelocity(Vec2::ZERO);
+						}
+						else
+						{
+							//TODO: the collision normal does not fully consider cases where things may hit at angles
+							const Vec2 collsionNormal = bodyA.GetVelocity().GetOppositeDirection().GetNormalized();
+							const Vec2& oldMomenumn = bodyA.GetMomentum();
+							const Vec2 newMomentum = oldMomenumn + (collsionNormal * CalculateImpulse(bodyA, bodyB, collsionNormal));
+
+							
+
+							Vec2 newVel = newMomentum / bodyA.GetMass();
+							if (std::abs(newVel.m_X) <= BOUNCE_END_SPEED_THRESHOLD) newVel.m_X = 0;
+							if (std::abs(newVel.m_Y) <= BOUNCE_END_SPEED_THRESHOLD) newVel.m_Y = 0;
+
+
+							Vec2 moveDelta = collision.m_Depth.GetOppositeDirection();
+							bodyAEntity.m_Transform.SetPosDelta({ moveDelta.m_X, moveDelta.m_Y });
+
+							Log(this, std::format("COSNERVING for {} MASS A: {} MASS B: {} DEPTH: {} in norma: {} old p: {} j delta;{} new: {} vel: {}",
+								bodyA.GetEntitySafe().m_Name, std::to_string(bodyA.GetMass()), std::to_string(bodyB.GetMass()),
+								moveDelta.ToString(),
+								collsionNormal.ToString(), oldMomenumn.ToString(), std::to_string(CalculateImpulse(bodyA, bodyB, collsionNormal)),
+								newMomentum.ToString(), (newMomentum / bodyA.GetMass()).ToString()));
+
+							bodyA.SetAcceleration(Vec2::ZERO);
+							bodyA.SetVelocity(newVel);
+							//throw std::invalid_argument("FART");
+						}
 
 						//TODO: problem is if there is body above and below, making it possible for it to move back and worth between collisions of the two
-						minBodyDisplacement = GetBodyMinDisplacement(bodyB, bodyA);
-						minBodyDisplacementVec = { std::abs(minBodyDisplacement.m_X), std::abs(minBodyDisplacement.m_Y) };
+						//minBodyDisplacement = GetBodyMinDisplacement(bodyB, bodyA);
+						//minBodyDisplacementVec = { std::abs(minBodyDisplacement.m_X), std::abs(minBodyDisplacement.m_Y) };
 						//LogWarning(std::format("After collision prevented new distance: {}", minBodyDisplacementVec.ToString()));
 						/*throw new std::invalid_argument("yeah");*/
 					}
@@ -126,6 +156,21 @@ namespace Physics
 	}
 	void PhysicsWorld::UpdateEnd()
 	{
+	}
+
+	float PhysicsWorld::CalculateImpulse(const PhysicsBodyData& targetObject, const PhysicsBodyData& collidedObject, const Vec2& collisionNormal)
+	{
+		float averageRestitution = (targetObject.GetPhysicsProfile().m_RestitutionCoefficient + 
+									collidedObject.GetPhysicsProfile().m_RestitutionCoefficient) / 2;
+
+		const float& massA = targetObject.GetMass();
+		const float& massB = collidedObject.GetMass();
+
+		const Vec2 velA = targetObject.GetVelocity();
+		const Vec2 velB = collidedObject.GetVelocity();
+		LogError(std::format("Dot product for{} dot {} is: {}", velA.ToString(), velB.ToString(),std::to_string(DotProduct(velA, velB)) ));
+		return ((1 + averageRestitution) * massA * massB) / (massA + massB) * 
+			   (DotProduct(velB, collisionNormal) - DotProduct(velA, collisionNormal));
 	}
 
 	bool DoBodiesIntersect(const PhysicsBodyData& body1, const PhysicsBodyData& body2)

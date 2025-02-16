@@ -21,8 +21,8 @@ namespace SceneManagement
 			for (const auto& file : std::filesystem::directory_iterator(m_allScenePath))
 			{
 				fileName = file.path().filename().string();
-				if (!file.is_regular_file() || fileName.size() < Scene::m_SCENE_FILE_PREFIX.size()) continue;
-				if (fileName.substr(0, Scene::m_SCENE_FILE_PREFIX.size()) != Scene::m_SCENE_FILE_PREFIX) continue;
+				if (!file.is_regular_file() || fileName.size() < Scene::SCENE_FILE_PREFIX.size()) continue;
+				if (fileName.substr(0, Scene::SCENE_FILE_PREFIX.size()) != Scene::SCENE_FILE_PREFIX) continue;
 
 				//const Scene scene = Scene();
 				m_allScenes.emplace_back(file.path(), m_GlobalEntityManager);

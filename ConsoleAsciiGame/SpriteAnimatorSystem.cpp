@@ -2,8 +2,10 @@
 #include "SpriteAnimatorSystem.hpp"
 #include "HelperFunctions.hpp"
 #include "EntityRendererData.hpp"
-#include "ProfilerTimer.hpp"
 
+#ifdef ENABLE_PROFILER
+#include "ProfilerTimer.hpp"
+#endif 
 namespace ECS
 {
 	SpriteAnimatorSystem::SpriteAnimatorSystem(EntityRendererSystem& entityRenderer) 

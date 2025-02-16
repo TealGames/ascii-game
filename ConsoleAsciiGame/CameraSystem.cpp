@@ -11,7 +11,10 @@
 #include "PositionConversions.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
+
+#ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
+#endif 
 
 namespace ECS
 {

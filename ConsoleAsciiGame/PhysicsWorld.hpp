@@ -31,8 +31,11 @@ namespace Physics
 		/// The max distance from another body that is still considered as a "collision"/ touching
 		/// </summary>
 		static constexpr float MAX_DISTANCE_FOR_COLLISION = 0.01;
+		static constexpr float BOUNCE_END_SPEED_THRESHOLD = 1;
 
 	private:
+		float CalculateImpulse(const PhysicsBodyData& targetObject, const PhysicsBodyData& collidedObject, const Vec2& collisionNormal);
+
 	public:
 		PhysicsWorld();
 

@@ -6,15 +6,17 @@
 #include <optional>
 
 PhysicsBodyData::PhysicsBodyData() : 
-	PhysicsBodyData({}, {}, 0, std::numeric_limits<float>::max()) {}
+	PhysicsBodyData(0, {}, {}, 0, std::numeric_limits<float>::max()) {}
 
-PhysicsBodyData::PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset) : 
-	PhysicsBodyData(boundingBoxSize, transformOffset, 0, 0) {}
+PhysicsBodyData::PhysicsBodyData(const float& mass, const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset) :
+	PhysicsBodyData(mass, boundingBoxSize, transformOffset, 0, 0) {}
 
-PhysicsBodyData::PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity)
-	: ComponentData(), m_aabb(CreateAABB(boundingBoxSize, transformOffset)), 
+PhysicsBodyData::PhysicsBodyData(const float& mass, const Utils::Point2D& boundingBoxSize, 
+	const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity)
+	: ComponentData(), m_mass(std::abs(mass)), m_aabb(CreateAABB(boundingBoxSize, transformOffset)), 
 	m_velocity(), m_acceleration(), m_transformOffset(transformOffset), m_collidingBodies(), 
-	m_gravity(-std::abs(gravity)), m_terminalYVelocity(-std::abs(terminalYVelocity))
+	m_gravity(-std::abs(gravity)), m_terminalYVelocity(-std::abs(terminalYVelocity)), 
+	m_profile(0, 1)
 {
 	//LogWarning(std::format("Created physics body of size: {} offset: {} that has min: {} max: {} size: {}",
 	//boundingBoxSize.ToString(), transformOffset.ToString(), m_AABB.m_MinPos.ToString(), 
@@ -94,6 +96,24 @@ const float& PhysicsBodyData::GetGravity() const
 bool PhysicsBodyData::IsExperiencingGravity() const
 {
 	return Utils::ApproximateEqualsF(m_acceleration.m_Y, m_gravity);
+}
+
+const float& PhysicsBodyData::GetMass() const
+{
+	return m_mass;
+}
+
+bool PhysicsBodyData::ConservesMomentum() const
+{
+	return m_mass > 0;
+}
+Vec2 PhysicsBodyData::GetMomentum() const
+{
+	return m_velocity * m_mass;
+}
+const Physics::PhysicsProfile& PhysicsBodyData::GetPhysicsProfile() const
+{
+	return m_profile;
 }
 
 const Physics::AABB& PhysicsBodyData::GetAABB() const

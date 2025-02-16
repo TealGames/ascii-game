@@ -5,7 +5,10 @@
 #include "AnimatorData.hpp"
 #include "HelperFunctions.hpp"
 #include "Engine.hpp"
+
+#ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
+#endif 
 
 namespace ECS
 {

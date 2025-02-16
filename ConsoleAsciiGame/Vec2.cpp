@@ -104,26 +104,33 @@ std::string Vec2::ToString(VectorForm form) const
 
 Vec2 Vec2::operator+(const Vec2& otherVec) const
 {
-	Vec2 resultant(m_X + otherVec.m_X, m_Y + otherVec.m_Y);
-	return resultant;
+	return {m_X + otherVec.m_X, m_Y + otherVec.m_Y};
 }
 
 Vec2 Vec2::operator-(const Vec2& otherVec) const
 {
-	Vec2 resultant(m_X - otherVec.m_X, m_Y - otherVec.m_Y);
-	return resultant;
+	return { m_X - otherVec.m_X, m_Y - otherVec.m_Y };
 }
 
 Vec2 Vec2::operator*(const Vec2& otherVec) const
 {
-	Vec2 resultant(m_X * otherVec.m_X, m_Y * otherVec.m_Y);
-	return resultant;
+	return { m_X * otherVec.m_X, m_Y * otherVec.m_Y };
 }
 
 Vec2 Vec2::operator*(const float& scalar) const
 {
-	Vec2 resultant(m_X * scalar, m_Y * scalar);
-	return resultant;
+	return { m_X * scalar, m_Y * scalar };
+}
+
+Vec2 Vec2::operator/(const float& scalar) const
+{
+	if (!Assert(this, scalar != 0,
+		std::format("Tried to divide a vector: {} by a 0 value scalar", ToString())))
+	{
+		return *this;
+	}
+
+	return { m_X / scalar, m_Y / scalar };
 }
 
 bool Vec2::operator==(const Vec2& otherVec) const
@@ -200,4 +207,9 @@ std::string ToString(const VectorForm& form)
 		LogError("Tried to convert undefined Vec2 form mode to string");
 		return "";
 	}
+}
+
+float DotProduct(const Vec2& vecA, const Vec2& vecB)
+{
+	return (vecA.m_X * vecB.m_X) + (vecA.m_Y * vecB.m_Y);
 }

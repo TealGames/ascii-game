@@ -2,7 +2,10 @@
 #include "TransformSystem.hpp"
 #include "Point2DInt.hpp"
 #include "TransformData.hpp"
+
+#ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
+#endif 
 
 namespace ECS
 {

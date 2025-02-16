@@ -1,37 +1,43 @@
 //NOT USED
 #include "pch.hpp"
 #include "InputData.hpp"	
+#include "Debug.hpp"
+#include "Entity.hpp"
+#include "Debug.hpp"
 
 InputData::InputData() : ComponentData(), 
-	m_currentFrameDirectionalInput(), m_lastFrameDirectionalInput() {}
+	m_actions() {}
 
-const Utils::Point2DInt& InputData::GetFrameInput() const
+void InputData::AddAction(const Input::InputAction& action)
 {
-	return m_currentFrameDirectionalInput;
+	if (!Assert(this, m_actions.find(action.m_Name) != m_actions.end(), std::format("Tried to add the input action: {}"
+		" to input data of entity: '{}', but that action already exists for this input data!",
+		action.m_Name, GetEntitySafe().m_Name)))
+		return;
+
+	m_actions.emplace(action.m_Name, action);
+}
+const Input::InputAction* InputData::TryGetAction(const std::string & name) const
+{
+	auto it = m_actions.find(name);
+	if (it != m_actions.end()) return &(it->second);
+
+	return nullptr;
+}
+const std::unordered_map<std::string, Input::InputAction>& InputData::GetActions() const
+{
+	return m_actions;
 }
 
-const Utils::Point2DInt& InputData::GetLastFrameInput() const
-{
-	return m_lastFrameDirectionalInput;
-}
-
-bool InputData::HasInputChanged() const
-{
-	return m_currentFrameDirectionalInput != m_lastFrameDirectionalInput;
-}
-
-void InputData::SetFrameInput(const Utils::Point2DInt& input)
-{
-	static bool updatingFrame = false;
-	if (updatingFrame) return;
-
-	updatingFrame = true;
-	m_lastFrameDirectionalInput = m_currentFrameDirectionalInput;
-	m_currentFrameDirectionalInput = input;
-	updatingFrame = false;
-}
-
-Utils::Point2DInt InputData::GetInputDelta() const
-{
-	return m_currentFrameDirectionalInput - m_lastFrameDirectionalInput;
-}
+//void InputData::SetInputManager(Input::InputManager& manager)
+//{
+//	m_inputManager = &manager;
+//}
+//const Input::InputManager& InputData::GetInputManager() const
+//{
+//	if (!Assert(this, m_inputManager != nullptr, std::format("Tried to get input manager from "
+//		"input data of entity: '{}' but it has not been set yet by input system", GetEntitySafe().m_Name)))
+//		throw std::invalid_argument("Invalid input manager state");
+//
+//	return *m_inputManager;
+//}

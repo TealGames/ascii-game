@@ -8,6 +8,7 @@
 #include "WorldPosition.hpp"
 #include "Direction.hpp"
 #include "NormalizedPosition.hpp"
+#include "PhysicsProfile.hpp"
 
 class PhysicsBodyData;
 struct CollidingObject
@@ -32,6 +33,13 @@ private:
 	/// The offset in world position which the bounding box (AABB) lies from the transform position
 	/// </summary>
 	WorldPosition m_transformOffset;
+
+	/// <summary>
+	/// The mass of the object in Kilograms. 
+	/// Guaranteed to be >=0 where 0 means momentum will not be considered for this object
+	/// Note: this is only useful for determining impulse/conservation of momentum
+	/// </summary>
+	float m_mass;
 	
 	Vec2 m_velocity;
 	/// <summary>
@@ -39,7 +47,11 @@ private:
 	/// </summary>
 	float m_terminalYVelocity;
 	Vec2 m_acceleration;
+
+	//TODO: maybe the physics sim should have its own gravity for all objects rather than each having their own?
 	float m_gravity;
+
+	Physics::PhysicsProfile m_profile;
 
 	CollidingBodiesCollection m_collidingBodies;
 
@@ -54,8 +66,8 @@ private:
 
 public:
 	PhysicsBodyData();
-	PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset);
-	PhysicsBodyData(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity);
+	PhysicsBodyData(const float& mass, const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset);
+	PhysicsBodyData(const float& mass, const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity);
 
 	void SetPhysicsWorld(const Physics::PhysicsWorld& world);
 	const Physics::PhysicsWorld& GetPhysicsWorldSafe();
@@ -66,6 +78,11 @@ public:
 	void SetVelocityYDelta(const float& yDelta);
 
 	void SetAcceleration(const Vec2& vel);
+
+	const float& GetMass() const;
+	Vec2 GetMomentum() const;
+	bool ConservesMomentum() const;
+	const Physics::PhysicsProfile& GetPhysicsProfile() const;
 
 	const Vec2& GetVelocity() const;
 	const Vec2& GetAcceleration() const;

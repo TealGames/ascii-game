@@ -7,110 +7,70 @@
 #include "Direction.hpp"
 #include "Vec2.hpp"
 #include "Point2DInt.hpp"
-
-enum class KeyState
-{
-	Neutral,
-	Cooldown,
-	Pressed,
-	Down,
-	Up,
-};
-std::string ToString(const KeyState& state);
-
-class InputState
-{
-private:
-	KeyState m_keyState;
-	float m_cooldownTime;
-	float m_currentCooldownTime;
-
-public:
-	/// <summary>
-	/// This is used on the cooldowmn time var to signify no cooldown
-	/// </summary>
-	static constexpr float NO_COOLDOWN_TIME = -1;
-
-private:
-	InputState(const KeyState& startState, const float& cooldownTime);
-public:
-	InputState();
-	InputState(const float& cooldown);
-	
-	bool HasCooldown() const;
-	bool InCooldown() const;
-	void ResetDefault();
-	const float& GetCooldownTime() const;
-	const float& GetCurrentCooldownTime() const;
-
-	void SetCooldownDelta(const float& delta);
-	
-	const KeyState& GetState() const;
-	void SetState(const KeyState& newState);
-	bool IsState(const KeyState& state) const;
-	
-	bool IsPressed() const;
-	bool IsDown() const;
-	bool IsUp() const;
-};
+#include "CompoundInput.hpp"
+#include "InputKey.hpp"
+#include <filesystem>
+#include "InputProfile.hpp"
 
 //TODO: predefined data like compounds should be mutated and set up to work with file loading
 //rather than force user to add all compounds themselves (should leave option, but mainly all should be 
 //loaded from memory, along with other input settings)
-using CompoundDirectionCollection = std::unordered_map<Direction, KeyboardKey>;
-class CompoundInput
+
+/// <summary>
+/// The hierarchy/description for the Input system is as follows:
+/// Input Manager-> manages Profiles, and updates input state for inputkeys
+/// InputState-> current state of Key
+/// InputKey-> holds key info as well as InputState for that key
+/// InputAction-> holds multiple inputKeys and other info about an action
+/// CompoundInput-> can hold multiple input actions and is most useful for directional inputs
+/// </summary>
+
+namespace Input
 {
-private:
-	CompoundDirectionCollection m_dirKeys;
-public:
+	class InputManager
+	{
+	private:
+		std::unordered_map<std::string, InputProfile> m_profiles;
 
-private:
-public:
-	CompoundInput(const CompoundDirectionCollection& keys);
+		std::unordered_map<KeyboardKey, InputKey> m_keyboardStates;
+		std::unordered_map<MouseButton, InputKey> m_mouseStates;
+		std::unordered_map<GamepadButton, InputKey> m_gamepadStates;
 
-	std::optional<KeyboardKey> TryGetDirection(const Direction& dir) const;
-	const CompoundDirectionCollection& GetEntries() const;
-	std::size_t GetEntriesCount() const;
-};
+	public:
+		static const std::string PROFILE_PREFIX;
 
-using KeyStateCollection = std::unordered_map<KeyboardKey, InputState>;
-using CompoundInputCollection = std::unordered_map<std::string, CompoundInput>;
-class InputManager
-{
-private:
-	KeyStateCollection m_keyStates;
-	CompoundInputCollection m_compoundInput;
+	private:
+		bool IsKeyDown(const DeviceType& device, const int& keyValue);
+		bool IsKeyPressed(const DeviceType& device, const int& keyValue);
+		bool IsKeyReleased(const DeviceType& device, const int& keyValue);
 
-public:
-	
+		void UpdateState(const DeviceType& device, const int& keyValue, 
+			InputState& inputState, const float& deltaTime);
 
-private:
-	bool IsKeyState(const KeyboardKey& key, const KeyState& state) const;
+	public:
+		InputManager(const std::filesystem::path& allInputProfilePath);
 
-	KeyStateCollection::iterator TryGetKeyIteratorMutable(const KeyboardKey& key);
-	KeyStateCollection::const_iterator TryGetKeyIterator(const KeyboardKey& key) const;
+		void SetInputCooldown(const std::map<KeyboardKey, float>& keyCooldownTime);
+		void SetInputCooldown(const float& allKeyCooldownTime);
+		void Update(const float& deltaTime);
 
-	CompoundInputCollection::iterator TryGetCompoundIteratorMutable(const std::string& name);
-	CompoundInputCollection::const_iterator TryGetCompoundIterator(const std::string& name) const;
+		void CreateProfile(const std::string& name, const std::filesystem::path& profilePath);
+		const InputProfile* TryGetProfile(const std::string& name) const;
 
-public:
-	InputManager();
-	InputManager(const std::map<KeyboardKey, float>& keyCooldownTime);
-	InputManager(const float& allKeyCooldownTime);
+		bool IsKeyState(const KeyboardKey& key, const KeyState& state);
 
-	std::vector<KeyboardKey> GetAllKeys() const;
+		std::vector<KeyboardKey> GetAllKeyboardKeys();
+		std::vector<MouseButton> GetAllMouseButtons();
+		std::vector<GamepadButton> GetAllGamepadButtons();
 
-	const KeyState& GetKeyState(const KeyboardKey& key) const;
-	bool IsKeyPressed(const KeyboardKey& key) const;
-	bool IsKeyDown(const KeyboardKey& key) const;
-	bool IsKeyUp(const KeyboardKey& key) const;
+		const KeyState& GetKeyState(const KeyboardKey& key);
+		bool IsKeyPressed(const KeyboardKey& key);
+		bool IsKeyDown(const KeyboardKey& key);
+		bool IsKeyReleased(const KeyboardKey& key);
 
-	bool TryAddCompoundInput(const std::string& name, const CompoundDirectionCollection& keys);
-	std::optional<KeyboardKey> TryGetCompoundDirection(const std::string& name, const Direction& dir) const;
-	std::optional<Utils::Point2DInt> TryGetCompoundInputDown(const std::string& name) const;
-	std::vector<KeyState> GetCompoundKeyStates(const std::string& name) const;
-	std::string GetCompoundToString(const std::string& name) const;
-
-	void Update(const float& deltaTime);
-};
+		const InputKey* GetInputKey(const KeyboardKey& key);
+		const InputKey* GetInputKey(const MouseButton& button);
+		const InputKey* GetInputKey(const GamepadButton& button);
+	};
+}
 

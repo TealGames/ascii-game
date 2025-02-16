@@ -12,6 +12,9 @@ private:
 	float m_initialJumpSpeed;
 	float m_maxJumpHeight;
 
+	Utils::Point2DInt m_currentFrameDirectionalInput;
+	Utils::Point2DInt m_lastFrameDirectionalInput;
+
 public:
 
 private:
@@ -31,5 +34,13 @@ public:
 	float GetVerticalDistanceToGround() const;
 
 	PhysicsBodyData& GetBodyMutableSafe();
+
+	const Utils::Point2DInt& GetFrameInput() const;
+	const Utils::Point2DInt& GetLastFrameInput() const;
+	Utils::Point2DInt GetInputDelta() const;
+	bool HasInputChanged() const;
+
+	void SetFrameInput(const Utils::Point2DInt& input);
+	void SetLastFrameInput(const Utils::Point2DInt& lastFrameInput);
 };
 

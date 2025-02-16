@@ -29,12 +29,20 @@ namespace Utils
 		return *this;
 	}
 
-	StringUtil& StringUtil::RemoveChar(const char& c)
+	StringUtil& StringUtil::RemoveChar(char c)
 	{
 		str.erase(std::remove(str.begin(), str.end(), c), str.end());
 		return *this;
 	}
 
+	StringUtil& StringUtil::RemoveSpaces()
+	{
+		//Note: we could call RemoveChar(' ') however it would NOT work the same because
+		//this erase considers tab spaces, but remove char would only consider single spaces 
+		//and would leave tab spaces
+		str.erase(std::remove_if(str.begin(), str.end(), isspace), str.end());
+		return *this;
+	}
 
 	std::string StringUtil::ToString()
 	{

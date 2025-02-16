@@ -234,13 +234,10 @@ namespace Utils
 			return "";
 		}
 
-		std::string line;
-		while (std::getline(file, line))
-		{
-			content += line;
-		}
+		std::stringstream stream;
+		stream << file.rdbuf();
 		file.close();
-		return content;
+		return stream.str();
 	}
 
 	void WriteFile(const std::filesystem::path& path, const std::string content)

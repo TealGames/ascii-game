@@ -1,5 +1,6 @@
 #pragma once
 #include "Vec2.hpp"
+#include <optional>
 
 enum class Direction
 {
@@ -10,3 +11,6 @@ enum class Direction
 };
 
 Vec2 GetVectorFromDirection(const Direction& dir);
+
+std::string ToString(const Direction& dir);
+std::optional<Direction> TryConvertStringToDirection(const std::string& str);

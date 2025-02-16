@@ -19,6 +19,7 @@
 #include "UIObjectSystem.hpp"
 #include "DebugInfo.hpp"
 #include "CommandConsole.hpp"
+#include "InputManager.hpp"
 #include "Debug.hpp"
 
 namespace Core
@@ -29,7 +30,7 @@ namespace Core
 	private:
 
 		SceneManagement::SceneManager m_sceneManager;
-		InputManager m_inputManager;
+		Input::InputManager m_inputManager;
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_currentTime;

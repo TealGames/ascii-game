@@ -8,6 +8,7 @@
 #include "Point4D.hpp"
 #include "Point3D.hpp"
 #include "Vec2.hpp"
+#include <optional>
 
 namespace RaylibUtils
 {
@@ -37,5 +38,17 @@ namespace RaylibUtils
 	bool IsValidFont(const Font& font);
 	void RemoveFontExtraSpacing(Font& font);
 	bool FontSupportsChar(const Font& font, const char& character);
+
+	std::optional<KeyboardKey> TryStringToKeyboardKey(const std::string& str);
+	std::optional<MouseButton> TryStringToMouseButton(const std::string& str);
+	std::optional<GamepadButton> TryStringToGamepadButton(const std::string& str);
+
+	KeyboardKey StringToKeyboardKey(const std::string& str);
+	MouseButton StringToMouseButton(const std::string& str);
+	GamepadButton StringToGamepadButton(const std::string& str);
+
+	std::string KeyboardKeyToString(const KeyboardKey& key);
+	std::string MouseButtonToString(const MouseButton& button);
+	std::string GamepadButtonToString(const GamepadButton& button);
 }
 

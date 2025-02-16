@@ -1,0 +1,89 @@
+#include "pch.hpp"
+#include "CompoundInput.hpp"
+#include "HelperFunctions.hpp"
+#include "InputManager.hpp"
+
+namespace Input
+{
+	CompoundInput::CompoundInput(const std::string& name) :
+		m_name(name), m_dirKeys() {}
+
+	CompoundInput::CompoundInput(const std::string& name, const CompoundDirectionCollection& keys) :
+		m_name(name), m_dirKeys(keys) {}
+
+	const std::string& CompoundInput::GetName() const
+	{
+		return m_name;
+	}
+
+	const InputAction* CompoundInput::TryGetDirectionAction(const Direction& dir) const
+	{
+		auto it = m_dirKeys.find(dir);
+		if (it != m_dirKeys.end()) return &(it->second);
+
+		return nullptr;
+	}
+	const CompoundDirectionCollection& CompoundInput::GetEntries() const
+	{
+		return m_dirKeys;
+	}
+	std::size_t CompoundInput::GetEntriesCount() const
+	{
+		return m_dirKeys.size();
+	}
+
+	bool CompoundInput::HasDirection(const Direction& dir) const
+	{
+		return m_dirKeys.find(dir) != m_dirKeys.end();
+	}
+
+	void CompoundInput::AddEntry(const Direction& dir, const InputAction& action)
+	{
+		if (!Assert(this, !HasDirection(dir), std::format("Tried to add compound input entry of action: {} "
+			"to dir: {} that already contains an input action", action.ToString(), ::ToString(dir))))
+			return;
+
+		m_dirKeys.emplace(dir, action);
+	}
+
+	Utils::Point2DInt CompoundInput::GetCompoundInputDown() const
+	{
+		Utils::Point2DInt dir = {};
+		for (const auto& entry : m_dirKeys)
+		{
+			/*LogError(this, std::format("Compound: {} key: {} STATE: {} (down: {})", name, std::to_string(entry.second),
+				ToString(GetKeyState(entry.second)), std::to_string(IsKeyDown(entry.second))));*/
+			if (!entry.second.IsDown()) continue;
+
+			if (entry.first == Direction::Up) dir.m_Y++;
+			else if (entry.first == Direction::Down) dir.m_Y--;
+			else if (entry.first == Direction::Right) dir.m_X++;
+			else if (entry.first == Direction::Left) dir.m_X--;
+		}
+		//LogError(this, std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
+		return dir;
+	}
+	/*std::vector<KeyState> CompoundInput::GetCompoundKeyStates()
+	{
+		std::vector<KeyState> result = {};
+		for (const auto& binding : m_dirKeys)
+		{
+			result.push_back(binding.second.);
+		}
+		return result;
+	}*/
+	std::string CompoundInput::ToString() const
+	{
+		std::string actionsStringified = "";
+		size_t index = 0;
+
+		for (const auto& action : m_dirKeys)
+		{
+			if (index != 0) actionsStringified += ",";
+			actionsStringified+=action.second.ToString();
+
+			index++;
+		}
+		return std::format("[{}-> {}]", m_name, actionsStringified);
+	}
+}

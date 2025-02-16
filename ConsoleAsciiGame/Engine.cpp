@@ -33,11 +33,10 @@ namespace Core
 	//meaning that for example a pos at the top left will maintain its distance from the top edge in the camera output but say something like size of a collider
 	//will keep its size from world pos to screen pos (making it inconcistent with sizing)
 	//TODO: there is a bug in phsycis system where if you jump and fall down holding one direction it can get stuck moving in that one way
-	//TODO: separate the helper functions log stuff into separate class and then also add option to maybe throw on errors to prevent them from getting missed sometimes
-	//TODO: make normalized screen position that is just a warapper for point 2d and then clamps x and y to be normalized in screen pos for [0,0] bottom left
-	//TODO: remove the cartesian grid and other unnecesssary position types
+	//TODO: bug happens where object gets stuck in body when colliding and does not get pushed out (happens when selecting pos to move or when falling)
 
 	static const std::string SCENES_PATH = "scenes";
+	static const std::string INPUT_PROFILES_PATH = "input";
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
@@ -82,7 +81,7 @@ namespace Core
 
 	Engine::Engine() :
 		m_sceneManager(SCENES_PATH),
-		m_inputManager(0.5),
+		m_inputManager(INPUT_PROFILES_PATH),
 		m_transformSystem(),
 		m_uiSystem(),
 		m_entityRendererSystem(),
@@ -91,7 +90,7 @@ namespace Core
 		m_spriteAnimatorSystem(m_entityRendererSystem),
 		m_animatorSystem(*this),
 		m_physicsBodySystem(),
-		m_playerSystem(),
+		m_playerSystem(m_inputManager),
 		m_cameraSystem(&(m_physicsBodySystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
 		m_currentTime(std::chrono::high_resolution_clock().now()),
 		m_lastTime(std::chrono::high_resolution_clock().now()),
@@ -112,7 +111,7 @@ namespace Core
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
 
 		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData({ 10, 5 }));
-		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY, 20));
+		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(1, Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY, 20));
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
 
 		InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
@@ -144,7 +143,7 @@ namespace Core
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
 		Log("CREATING OBSTACLE RB");
-		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(Utils::Point2D(10, 10), Utils::Point2D(0, 0)));
+		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(0, Utils::Point2D(10, 10), Utils::Point2D(0, 0)));
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 
 		ECS::Entity& uiIcon= m_sceneManager.GetActiveSceneMutable()->CreateEntity("icon", TransformData({ 0, 0 }));
@@ -169,6 +168,7 @@ namespace Core
 		Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
 
 		m_sceneManager.GetActiveSceneMutable()->InitScene();
+		m_inputManager.SetInputCooldown(0.3);
 		InitConsoleCommands();
 	}
 
@@ -330,7 +330,7 @@ namespace Core
 		m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<1>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
 		m_playerSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<0>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
-		if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<1>().GetFrameInput().ToString()));
+		if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<0>().GetFrameInput().ToString()));
 
 		activeScene->GetPhysicsWorldMutable().UpdateStart(m_deltaTime);
 		if (m_enableDebugInfo)
@@ -355,7 +355,7 @@ namespace Core
 			m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 			//TODO: this is technically wrong since we use transform pos as center for aabb global pos but it could be offset (just for testing when offset=0)
 			m_playerInfo.value().GetAt<2>().GetAABB().ToString(m_playerInfo.value().m_Entity->m_Transform.m_Pos),
-			m_playerInfo.value().GetAt<1>().GetFrameInput().ToString(),
+			m_playerInfo.value().GetAt<0>().GetFrameInput().ToString(),
 			m_playerInfo.value().GetAt<2>().GetVelocity().ToString(),
 			m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 			m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));

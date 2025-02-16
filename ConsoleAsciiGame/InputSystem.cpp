@@ -4,17 +4,18 @@
 #include "InputSystem.hpp"
 #include "raylib.h"
 #include "HelperFunctions.hpp"
+
+#ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
+#endif 
 
 namespace ECS
 {
     static const std::string MOVE_COMPOUND_NAME = "move";
 
-    InputSystem::InputSystem(InputManager& inputManager) : m_inputManager(inputManager)
+    InputSystem::InputSystem(Input::InputManager& inputManager) 
+        : m_inputManager(inputManager)
     {
-        inputManager.TryAddCompoundInput(MOVE_COMPOUND_NAME,
-            { {Direction::Up, KEY_UP}, {Direction::Down, KEY_DOWN},
-              {Direction::Left, KEY_LEFT} , {Direction::Right, KEY_RIGHT} });
     }
 
     void InputSystem::SystemUpdate(Scene& scene, InputData& data, ECS::Entity& entity, const float& deltaTime)
@@ -22,14 +23,21 @@ namespace ECS
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("InputSystem::SystemUpdate");
 #endif 
-        std::optional<Utils::Point2DInt> moveInput = m_inputManager.TryGetCompoundInputDown(MOVE_COMPOUND_NAME);
-        LogError(std::format("MOVE INPUT COMPOUND: {}", m_inputManager.GetCompoundToString(MOVE_COMPOUND_NAME)));
 
-        if (!Assert(this, moveInput.has_value(), std::format("Tried to update input system "
-            "but compound input: {} could not be found", MOVE_COMPOUND_NAME))) return;
+        //const Input::InputProfile* inputProfile = m_inputManager.TryGetProfile(MAIN_INPUT_PROFILE_NAME);
+        //if (!Assert(this, inputProfile != nullptr, std::format("Tried to update input for player "
+        //    "but the input profile: '{}' was not found", MAIN_INPUT_PROFILE_NAME)))
+        //    return;
 
-        if (UpdateData(data, moveInput.value())) scene.IncreaseFrameDirtyComponentCount();
-        /* Log(std::format("Update end PLAYER component dirty; {}", std::to_string(m_isDirty)));*/
+        //const Input::CompoundInput* moveCompound = inputProfile->TryGetCompoundInputAction(MAIN_INPUT_PROFILE_MOVE_ACTION);
+        //if (!Assert(this, moveCompound != nullptr, std::format("Tried to update input for player "
+        //    "but the move compound: '{}' was not found in input profile: {}",
+        //    MAIN_INPUT_PROFILE_MOVE_ACTION, MAIN_INPUT_PROFILE_NAME)))
+        //    return;
+
+        //Utils::Point2DInt moveInput = moveCompound->GetCompoundInputDown();
+        //if (UpdateData(data, moveInput)) scene.IncreaseFrameDirtyComponentCount();
+        ///* Log(std::format("Update end PLAYER component dirty; {}", std::to_string(m_isDirty)));*/
     }
 
     /// <summary>
@@ -39,11 +47,11 @@ namespace ECS
     /// <param name="entity"></param>
     /// <param name="moveDelta"></param>
     /// <returns></returns>
-    bool InputSystem::UpdateData(InputData& data, const Utils::Point2DInt& moveDelta)
-    {
-        //Log("Player move delta: {}", moveDelta.ToString());
-        data.SetFrameInput(moveDelta);
-        return moveDelta.m_X != 0 || moveDelta.m_Y != 0;
-    }
+    //bool InputSystem::UpdateData(InputData& data, const Utils::Point2DInt& moveDelta)
+    //{
+    //    //Log("Player move delta: {}", moveDelta.ToString());
+    //    data.SetFrameInput(moveDelta);
+    //    return moveDelta.m_X != 0 || moveDelta.m_Y != 0;
+    //}
 }
 

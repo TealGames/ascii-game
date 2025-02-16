@@ -47,3 +47,33 @@ PhysicsBodyData& PlayerData::GetBodyMutableSafe()
 
 	return *m_body;
 }
+
+const Utils::Point2DInt& PlayerData::GetFrameInput() const
+{
+	return m_currentFrameDirectionalInput;
+}
+
+const Utils::Point2DInt& PlayerData::GetLastFrameInput() const
+{
+	return m_lastFrameDirectionalInput;
+}
+
+bool PlayerData::HasInputChanged() const
+{
+	return m_currentFrameDirectionalInput != m_lastFrameDirectionalInput;
+}
+
+void PlayerData::SetFrameInput(const Utils::Point2DInt& input)
+{
+	SetLastFrameInput(m_currentFrameDirectionalInput);
+	m_currentFrameDirectionalInput = input;
+}
+void PlayerData::SetLastFrameInput(const Utils::Point2DInt& lastFrameInput)
+{
+	m_lastFrameDirectionalInput = lastFrameInput;
+}
+
+Utils::Point2DInt PlayerData::GetInputDelta() const
+{
+	return m_currentFrameDirectionalInput - m_lastFrameDirectionalInput;
+}

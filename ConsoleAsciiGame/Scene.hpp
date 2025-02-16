@@ -63,7 +63,7 @@ public:
 	const Utils::Point2DInt m_BoundingSize;
 	const GlobalEntityManager& m_GlobalEntities;
 
-	static const std::string m_SCENE_FILE_PREFIX;
+	static const std::string SCENE_FILE_PREFIX;
 
 private:
 	void ParseSceneFile(std::ifstream& stream, std::vector<std::vector<TextCharPosition>>& charPos) const;

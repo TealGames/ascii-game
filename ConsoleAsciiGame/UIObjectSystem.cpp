@@ -4,12 +4,19 @@
 #include "Debug.hpp"
 #include "PositionConversions.hpp"
 
+#ifdef ENABLE_PROFILER
+#include "ProfilerTimer.hpp"
+#endif 
+
 namespace ECS
 {
 	UIObjectSystem::UIObjectSystem() {}
 
 	void UIObjectSystem::SystemUpdate(Scene& scene, const float& deltaTime)
 	{
+#ifdef ENABLE_PROFILER
+		ProfilerTimer timer("UIObjectSystem::SystemUpdate");
+#endif 
 		CameraData* mainCamera = scene.TryGetMainCameraData();
 		if (!Assert(this, mainCamera != nullptr, 
 			std::format("Tried to run system update for UI but main camera is NULL")))

@@ -13,7 +13,7 @@
 #include "PhysicsBodyData.hpp"
 #include "TransformData.hpp"
 
-const std::string Scene::m_SCENE_FILE_PREFIX = "scene_";
+const std::string Scene::SCENE_FILE_PREFIX = "scene_";
 
 Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& globalEntities) :
 	m_Layers{}, m_sceneName(""),
@@ -34,7 +34,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 
 	std::vector<std::vector<TextCharPosition>> layerText = {};
 
-	m_sceneName = scenePath.stem().string().substr(m_SCENE_FILE_PREFIX.size() - 1);
+	m_sceneName = scenePath.stem().string().substr(SCENE_FILE_PREFIX.size() - 1);
 	std::replace(m_sceneName.begin(), m_sceneName.end(), '_', ' ');
 	std::ifstream fstream(scenePath);
 	
@@ -61,7 +61,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
 	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.m_Name, backgroundRenderer.m_Entity->m_Name));
 
-	PhysicsBodyData& physicsBody= backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(backgroundVisual.GetWorldSize(), {0,0}));
+	PhysicsBodyData& physicsBody= backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(5, backgroundVisual.GetWorldSize(), {0,0}));
 	LogWarning(std::format("Created Physics body: {} visual size: {}", 
 		physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), backgroundVisual.m_Text.GetSize().ToString()));
 
