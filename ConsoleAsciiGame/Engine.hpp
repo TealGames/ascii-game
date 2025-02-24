@@ -21,6 +21,7 @@
 #include "CommandConsole.hpp"
 #include "InputManager.hpp"
 #include "Debug.hpp"
+#include "EntityEditorGUI.hpp"
 
 namespace Core
 {
@@ -66,6 +67,8 @@ namespace Core
 
 		CommandConsole m_commandConsole;
 		bool m_enableCommandConsole;
+
+		EntityEditorGUI m_entityEditor;
 	public:
 
 	private:
@@ -95,7 +98,7 @@ namespace Core
 		{
 			if (type == ComponentType::LightSource)
 			{
-				LightSourceData* maybeData = entity.TryGetComponent<LightSourceData>();
+				LightSourceData* maybeData = entity.TryGetComponentMutable<LightSourceData>();
 				if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
 					"but it does not have that component", propertyName, entity.m_Name, ToString(type)))) return nullptr;
 

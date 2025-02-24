@@ -118,7 +118,7 @@ namespace ECS
     {
         //TODO: right now we use only the transform pos, but we should also use every pos on player too
         
-        EntityRendererData* renderData = entity.TryGetComponent<EntityRendererData>();
+        EntityRendererData* renderData = entity.TryGetComponentMutable<EntityRendererData>();
         if (!Assert(renderData != nullptr, std::format("Tried to render light for entity: {} "
             "but could not find its entity render component!", entity.m_Name))) return;
 

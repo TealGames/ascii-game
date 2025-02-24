@@ -3,7 +3,7 @@
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 
-ComponentData::ComponentData() : m_MutatedThisFrame(false), m_Entity(nullptr) {}
+ComponentData::ComponentData() : m_MutatedThisFrame(false), m_Entity(nullptr), m_Fields() {}
 
 ECS::Entity& ComponentData::GetEntitySafeMutable()
 {
@@ -21,4 +21,19 @@ const ECS::Entity& ComponentData::GetEntitySafe() const
 		throw std::invalid_argument("Tried to retrieve invalid entity with component");
 
 	return *m_Entity;
+}
+
+void ComponentData::InitFields()
+{
+	return;
+}
+
+std::vector<ComponentField>& ComponentData::GetFieldsMutable()
+{
+	return m_Fields;
+}
+
+const std::vector<ComponentField>& ComponentData::GetFields() const
+{
+	return m_Fields;
 }

@@ -14,7 +14,7 @@ namespace Physics
 		Vec2 m_Displacement = Vec2::ZERO;
 	};
 
-	using BodyCollectionType = std::vector<PhysicsBodyData*>;
+	using PhysicsBodyCollection = std::vector<PhysicsBodyData*>;
 	class PhysicsWorld
 	{
 	private:
@@ -25,7 +25,7 @@ namespace Physics
 		/// <summary>
 		/// All the bodies that will be used in the physics simulation
 		/// </summary>
-		BodyCollectionType m_bodies;
+		PhysicsBodyCollection m_bodies;
 	public:
 		/// <summary>
 		/// The max distance from another body that is still considered as a "collision"/ touching
@@ -39,8 +39,9 @@ namespace Physics
 	public:
 		PhysicsWorld();
 
-		const BodyCollectionType& GetBodies() const;
-		BodyCollectionType& GetBodiesMutable();
+		const PhysicsBodyCollection& GetBodies() const;
+		PhysicsBodyCollection& GetBodiesMutable();
+		PhysicsBodyCollection FindBodiesContainingPos(const WorldPosition& wordlPos) const;
 
 		void AddBody(PhysicsBodyData& body);
 

@@ -108,8 +108,9 @@ public:
 
 	bool HasMainCamera() const;
 	void SetMainCamera(ECS::Entity& cameraEntity);
-	ECS::Entity* TryGetMainCameraEntity();
-	CameraData* TryGetMainCameraData();
+	ECS::Entity* TryGetMainCameraEntityMutable();
+	CameraData* TryGetMainCameraMutable();
+	const CameraData* TryGetMainCamera() const;
 
 	const Physics::PhysicsWorld& GetPhysicsWorld() const;
 	Physics::PhysicsWorld& GetPhysicsWorldMutable();
@@ -121,6 +122,11 @@ public:
 	/// <returns></returns>
 	int GetEntityCount() const;
 	bool HasEntities() const;
+	/// <summary>
+	/// Will return all entities in the scene as immutable (including global and local entities)
+	/// </summary>
+	/// <returns></returns>
+	const std::vector<const ECS::Entity*> GetAllEntities() const;
 	
 	ECS::Entity& CreateEntity(const std::string& name, TransformData& transform);
 	ECS::Entity& CreateEntity(const std::string& name, TransformData&& transform);

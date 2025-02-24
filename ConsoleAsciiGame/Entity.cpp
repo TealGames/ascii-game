@@ -103,6 +103,13 @@ namespace ECS
 		return std::to_string(static_cast<uint32_t>(id));
 	}
 
+	bool Entity::operator==(const ECS::Entity& other) const
+	{
+		//Note: not fully guaranteed to be equal, but highlight likely
+		return m_name == other.m_name && m_Id == other.m_Id 
+			&& m_componentNames == other.m_componentNames;
+	}
+
 	//int Entity::GetComponentTypeCount(const ComponentType& type) const
 	//{
 	//	//TODO: optimization could be to batch group components of the same type

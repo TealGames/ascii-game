@@ -10,10 +10,10 @@ static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 
 static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
 static constexpr KeyboardKey DELETE_KEY = KEY_BACKSPACE;
-static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_LEFT_CONTROL;
+static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_COMMA;
 
-CommandConsole::CommandConsole() : 
-	m_prompts(), m_isEnabled(false), m_input(), m_outputMessages(), m_lastCommand()
+CommandConsole::CommandConsole(const Input::InputManager& input) :
+	m_inputManager(input), m_prompts(), m_input(), m_outputMessages(), m_lastCommand()
 {
 	OnMessageLogged.AddListener(
 		[this](const LogType& logType, const std::string& message, const bool& logToConsole)-> void
@@ -21,7 +21,7 @@ CommandConsole::CommandConsole() :
 			if (!logToConsole) return;
 
 			ConsoleOutputMessageType messageType = ConsoleOutputMessageType::Default;
-			if (logType == LogType::Error) messageType = ConsoleOutputMessageType::Error;
+			if ((logType & LogType::Error)!=LogType::None) messageType = ConsoleOutputMessageType::Error;
 
 			LogOutputMessage(message, messageType);
 		});
@@ -196,16 +196,7 @@ void CommandConsole::Update()
 		m_input = m_lastCommand;
 	}
 
-	int key = GetKeyPressed();
-	while (key > 0)
-	{
-		//8 is backspace, 32-126 is the range of numers/letters
-		if (key >= 32 && key <= 126)
-		{
-			m_input += static_cast<char>(key);
-		}
-		key = GetKeyPressed();
-	}
+	m_input += m_inputManager.GetLettersPressedSinceLastFrame();
 
 	if (m_outputMessages.empty()) return;
 

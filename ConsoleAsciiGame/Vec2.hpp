@@ -31,6 +31,15 @@ public:
 	static const Vec2 LEFT;
 	static const Vec2 RIGHT;
 
+	static const Vec2 NORTH;
+	static const Vec2 NORTHEAST;
+	static const Vec2 EAST;
+	static const Vec2 SOUTHEAST;
+	static const Vec2 SOUTH;
+	static const Vec2 SOUTHWEST;
+	static const Vec2 WEST;
+	static const Vec2 NORTHWEST;
+
 	static const Vec2 ZERO;
 	static const Vec2 ONE;
 

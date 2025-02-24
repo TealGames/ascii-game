@@ -30,7 +30,7 @@ namespace ECS
 #ifdef ALLOW_PLAYER_CHEATS
 		if (m_cheatsEnabled && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
 		{
-			CameraData* camera = scene.TryGetMainCameraData();
+			CameraData* camera = scene.TryGetMainCameraMutable();
 			if (!Assert(this, camera != nullptr, std::format("Tried to get camera to convert screen "
 				"to world point for mouse position cheat but it is null"))) return;
 
@@ -73,7 +73,7 @@ namespace ECS
 		//but to make sure we immediately jump back up, we ignore it and consider it anways) 
 		//TODO: maybe this explicit auto jump is not good and we should instead have input queueing
 		if (player.GetIsGrounded() && !m_lastFrameGrounded && 
-			moveCompound->TryGetDirectionAction(Direction::Up)->IsPressed())
+			moveCompound->TryGetDirectionAction(Input::InputDirection::Up)->IsPressed())
 		{
 			dirDelta.m_Y = 1;
 		}

@@ -9,14 +9,17 @@ namespace Input
 		m_name(name), m_dirKeys() {}
 
 	CompoundInput::CompoundInput(const std::string& name, const CompoundDirectionCollection& keys) :
-		m_name(name), m_dirKeys(keys) {}
+		m_name(name), m_dirKeys(keys) 
+	{
+		//for (const auto& dir : )
+	}
 
 	const std::string& CompoundInput::GetName() const
 	{
 		return m_name;
 	}
 
-	const InputAction* CompoundInput::TryGetDirectionAction(const Direction& dir) const
+	const InputAction* CompoundInput::TryGetDirectionAction(const InputDirection& dir) const
 	{
 		auto it = m_dirKeys.find(dir);
 		if (it != m_dirKeys.end()) return &(it->second);
@@ -32,15 +35,15 @@ namespace Input
 		return m_dirKeys.size();
 	}
 
-	bool CompoundInput::HasDirection(const Direction& dir) const
+	bool CompoundInput::HasDirection(const InputDirection& dir) const
 	{
 		return m_dirKeys.find(dir) != m_dirKeys.end();
 	}
 
-	void CompoundInput::AddEntry(const Direction& dir, const InputAction& action)
+	void CompoundInput::AddEntry(const InputDirection& dir, const InputAction& action)
 	{
 		if (!Assert(this, !HasDirection(dir), std::format("Tried to add compound input entry of action: {} "
-			"to dir: {} that already contains an input action", action.ToString(), ::ToString(dir))))
+			"to dir: {} that already contains an input action", action.ToString(), Input::ToString(dir))))
 			return;
 
 		m_dirKeys.emplace(dir, action);
@@ -55,10 +58,10 @@ namespace Input
 				ToString(GetKeyState(entry.second)), std::to_string(IsKeyDown(entry.second))));*/
 			if (!entry.second.IsDown()) continue;
 
-			if (entry.first == Direction::Up) dir.m_Y++;
-			else if (entry.first == Direction::Down) dir.m_Y--;
-			else if (entry.first == Direction::Right) dir.m_X++;
-			else if (entry.first == Direction::Left) dir.m_X--;
+			if (entry.first == InputDirection::Up) dir.m_Y++;
+			else if (entry.first == InputDirection::Down) dir.m_Y--;
+			else if (entry.first == InputDirection::Right) dir.m_X++;
+			else if (entry.first == InputDirection::Left) dir.m_X--;
 		}
 		//LogError(this, std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
 		return dir;

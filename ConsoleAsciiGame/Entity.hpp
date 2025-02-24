@@ -161,7 +161,14 @@ namespace ECS
 
 		template<typename T>
 		requires IsComponent<T>
-		T* TryGetComponent()
+		T* TryGetComponentMutable()
+		{
+			return m_entityMapper.try_get<T>(m_Id);
+		}
+
+		template<typename T>
+		requires IsComponent<T>
+		const T* TryGetComponent()
 		{
 			return m_entityMapper.try_get<T>(m_Id);
 		}
@@ -229,6 +236,8 @@ namespace ECS
 
 		std::string ToString() const;
 		static std::string ToString(const EntityID& id);
+
+		bool operator==(const ECS::Entity& other) const;
 	};
 }
 

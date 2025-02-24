@@ -63,8 +63,20 @@ namespace Physics
 	Utils::Point2D GetAABBMinDisplacement(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
 		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
 
-	std::optional<Direction> GetAABBDirection(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
+	/// <summary>
+	/// Will get the direction that is the second one in relation to first in normalized dir
+	/// NOTE: if collisions considered then it will use the entity1 CENTER as reference for dir whereas
+	/// no collisions considered will only count if the entity2 is FULLY outside of entity1 in that direction
+	/// Example: 'Background'(Entity1) is at x= 0 and 'Player'(entity2) is at x=1 then result is [1, 0] (RIGHT)
+	/// returns [0, 0] if body2 is inside body1
+	/// </summary>
+	/// <param name="entity1Pos"></param>
+	/// <param name="entity1Bounding"></param>
+	/// <param name="entity2Pos"></param>
+	/// <param name="entity2Bounding"></param>
+	/// <returns></returns>
+	Vec2 GetAABBDirection(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
+		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding, const bool& considerCollisions= true);
 }
 
 

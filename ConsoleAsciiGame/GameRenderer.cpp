@@ -89,7 +89,8 @@ namespace Rendering
     }
 
     void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer, 
-        const LineBuffer* lineBuffer, const DebugInfo* debugInfo, const CommandConsole* console)
+        const LineBuffer* lineBuffer, const DebugInfo* debugInfo, const CommandConsole* console, 
+        EntityEditorGUI* editor)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
@@ -215,6 +216,8 @@ namespace Rendering
                 currentPos.y -= currentMessageSize.y;
             }
         }
+
+        if (editor != nullptr) editor->TryRender();
 
         EndDrawing();
     }

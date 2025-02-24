@@ -157,7 +157,7 @@ void Scene::InitScene()
 
 	for (auto& entity : m_localEntities)
 	{
-		if (PhysicsBodyData* maybeBody = entity.TryGetComponent<PhysicsBodyData>())
+		if (PhysicsBodyData* maybeBody = entity.TryGetComponentMutable<PhysicsBodyData>())
 		{
 			m_PhysicsWorld.AddBody(*maybeBody);
 		}
@@ -165,7 +165,7 @@ void Scene::InitScene()
 
 	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
 	{
-		if (PhysicsBodyData* maybeBody = entity.TryGetComponent<PhysicsBodyData>())
+		if (PhysicsBodyData* maybeBody = entity.TryGetComponentMutable<PhysicsBodyData>())
 		{
 			m_PhysicsWorld.AddBody(*maybeBody);
 		}
@@ -301,12 +301,18 @@ bool Scene::HasMainCamera() const
 	return m_mainCamera != nullptr;
 }
 
-ECS::Entity* Scene::TryGetMainCameraEntity()
+ECS::Entity* Scene::TryGetMainCameraEntityMutable()
 {
 	return m_mainCamera;
 }
 
-CameraData* Scene::TryGetMainCameraData()
+CameraData* Scene::TryGetMainCameraMutable()
+{
+	if (!HasMainCamera()) return nullptr;
+	return m_mainCamera->TryGetComponentMutable<CameraData>();
+}
+
+const CameraData* Scene::TryGetMainCamera() const
 {
 	if (!HasMainCamera()) return nullptr;
 	return m_mainCamera->TryGetComponent<CameraData>();
@@ -321,6 +327,18 @@ int Scene::GetEntityCount() const
 bool Scene::HasEntities() const
 {
 	return GetEntityCount() > 0;
+}
+
+const std::vector<const ECS::Entity*> Scene::GetAllEntities() const
+{
+	std::vector<const ECS::Entity*> entities = {};
+	for (const auto& localEntity : m_localEntities) 
+		entities.push_back(&localEntity);
+
+	for (const auto& globalEntity : m_globalEntities.GetAllGlobalEntities())
+		entities.push_back(&globalEntity);
+	
+	return entities;
 }
 
 ECS::Entity& Scene::CreateEntity(const std::string& name, TransformData& transform)

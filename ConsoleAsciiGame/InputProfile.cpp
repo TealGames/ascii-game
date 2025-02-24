@@ -135,7 +135,7 @@ namespace Input
 						"tried to add input to compound but there is not compound set", line))) 
 					return;
 
-				std::optional<Direction> actionAsDir = TryConvertStringToDirection(inputName);
+				std::optional<InputDirection> actionAsDir = TryConvertStringToDirection(inputName);
 				if (!Assert(this, actionAsDir.has_value(), std::format("Tried to parse compound input action: '{}' as direction "
 					"for compound input: '{}' but it failed. All compound input actions must be valid directions",
 					inputName, currentCompoundIt->first)))

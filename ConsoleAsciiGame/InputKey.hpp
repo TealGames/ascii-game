@@ -42,6 +42,6 @@ namespace Input
 		const InputState& GetState() const;
 		InputState& GetStateMutable();
 
-		std::string ToString() const;
+		std::string ToString(const bool showDeviceName=true, const bool showState=true) const;
 	};
 }

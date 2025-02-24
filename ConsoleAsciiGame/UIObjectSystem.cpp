@@ -17,7 +17,7 @@ namespace ECS
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("UIObjectSystem::SystemUpdate");
 #endif 
-		CameraData* mainCamera = scene.TryGetMainCameraData();
+		CameraData* mainCamera = scene.TryGetMainCameraMutable();
 		if (!Assert(this, mainCamera != nullptr, 
 			std::format("Tried to run system update for UI but main camera is NULL")))
 			return;

@@ -160,6 +160,20 @@ namespace Input
 			UpdateState(DeviceType::Gamepad, static_cast<int>(inputState.first), 
 				inputState.second.GetStateMutable(), deltaTime);
 		}
+
+		m_capturedKeys.clear();
+		m_letterKeysPressed.clear();
+
+		//Since getkeypressed ia a queue and does not retain info after going through current frame's keys
+		//we must store them at the start of every update
+		int key = ::GetKeyPressed();
+		while (key > 0)
+		{
+			if (key >= 32 && key <= 126) m_letterKeysPressed += static_cast<char>(key);
+			m_capturedKeys.push_back(key);
+
+			key = ::GetKeyPressed();
+		}
 	}
 
 	void InputManager::CreateProfile(const std::string& name, const std::filesystem::path& profilePath)
@@ -214,14 +228,14 @@ namespace Input
 		return CompoundInput.find(name);
 	}*/
 
-	bool InputManager::IsKeyState(const KeyboardKey& key, const KeyState& state)
+	bool InputManager::IsKeyState(const KeyboardKey& key, const KeyState& state) const
 	{
 		auto it = m_keyboardStates.find(key);
 		if (it == m_keyboardStates.end()) return false;
 
 		return it->second.GetState().IsState(state);
 	}
-	const KeyState& InputManager::GetKeyState(const KeyboardKey& key)
+	const KeyState& InputManager::GetKeyState(const KeyboardKey& key) const
 	{
 		auto it = m_keyboardStates.find(key);
 		if (!Assert(it != m_keyboardStates.end(), std::format("InputManager: Tried to get key state in for key: {} "
@@ -230,34 +244,88 @@ namespace Input
 
 		return it->second.GetState().GetState();
 	}
-	bool InputManager::IsKeyPressed(const KeyboardKey& key)
+	bool InputManager::IsKeyPressed(const KeyboardKey& key) const
 	{
 		return IsKeyState(key, KeyState::Pressed);
 	}
-	bool InputManager::IsKeyDown(const KeyboardKey& key)
+	bool InputManager::IsKeyDown(const KeyboardKey& key) const
 	{
 		return IsKeyState(key, KeyState::Down);
 	}
-	bool InputManager::IsKeyReleased(const KeyboardKey& key)
+	bool InputManager::IsKeyReleased(const KeyboardKey& key) const
 	{
 		return IsKeyState(key, KeyState::Released);
 	}
 
-	const InputKey* InputManager::GetInputKey(const KeyboardKey& key)
+	std::vector<const InputKey*> InputManager::GetAllKeysWithState(const KeyState& state) const
+	{
+		std::vector<const InputKey*> keys = {};
+		for (const auto& keyboardKey : m_keyboardStates)
+		{
+			if (keyboardKey.second.GetState().IsState(state)) 
+				keys.push_back(&keyboardKey.second);
+		}
+		for (const auto& mouseButton : m_mouseStates)
+		{
+			if (mouseButton.second.GetState().IsState(state))
+				keys.push_back(&mouseButton.second);
+		}
+		for (const auto& gamepadButton : m_gamepadStates)
+		{
+			if (gamepadButton.second.GetState().IsState(state))
+				keys.push_back(&gamepadButton.second);
+		}
+
+		return keys;
+	}
+	std::vector<std::string> InputManager::GetAllKeysWithStateAsString(const KeyState& state) const
+	{
+		std::vector<std::string> keys = {};
+		for (const auto& keyboardKey : m_keyboardStates)
+		{
+			if (keyboardKey.second.GetState().IsState(state))
+				keys.push_back(keyboardKey.second.ToString(false, false));
+		}
+		for (const auto& mouseButton : m_mouseStates)
+		{
+			if (mouseButton.second.GetState().IsState(state))
+				keys.push_back(mouseButton.second.ToString(false, false));
+		}
+		for (const auto& gamepadButton : m_gamepadStates)
+		{
+			if (gamepadButton.second.GetState().IsState(state))
+				keys.push_back(gamepadButton.second.ToString(false, false));
+		}
+
+		return keys;
+	}
+
+	std::string InputManager::GetLettersPressedSinceLastFrame() const
+	{
+		return m_letterKeysPressed;
+	}
+
+	ScreenPosition InputManager::GetMousePosition() const
+	{
+		Vector2 mousePos= ::GetMousePosition();
+		return {static_cast<int>(mousePos.x), static_cast<int>(mousePos.y)};
+	}
+
+	const InputKey* InputManager::GetInputKey(const KeyboardKey& key) const
 	{
 		auto it = m_keyboardStates.find(key);
 		if (it != m_keyboardStates.end()) return &(it->second);
 		
 		return nullptr;
 	}
-	const InputKey* InputManager::GetInputKey(const MouseButton& button)
+	const InputKey* InputManager::GetInputKey(const MouseButton& button) const
 	{
 		auto it = m_mouseStates.find(button);
 		if (it != m_mouseStates.end()) return &(it->second);
 
 		return nullptr;
 	}
-	const InputKey* InputManager::GetInputKey(const GamepadButton& button)
+	const InputKey* InputManager::GetInputKey(const GamepadButton& button) const
 	{
 		auto it = m_gamepadStates.find(button);
 		if (it != m_gamepadStates.end()) return &(it->second);

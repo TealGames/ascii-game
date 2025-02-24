@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+#include "ComponentField.hpp"
 
 namespace ECS
 {
@@ -14,7 +16,15 @@ struct ComponentData
 	//not on construction without the need to have it as constructor arg
 	ECS::Entity* m_Entity;
 
+	std::vector<ComponentField> m_Fields;
+
 	ComponentData();
+	virtual ~ComponentData() = default;
 	ECS::Entity& GetEntitySafeMutable();
 	const ECS::Entity& GetEntitySafe() const;
+
+	std::vector<ComponentField>& GetFieldsMutable();
+
+	virtual void InitFields();
+	const std::vector<ComponentField>& GetFields() const;
 };

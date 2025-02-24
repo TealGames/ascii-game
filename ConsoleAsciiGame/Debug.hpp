@@ -38,6 +38,15 @@ constexpr LogType operator~(const LogType& op)
 {
 	return static_cast<LogType>(~static_cast<LogTypeIntegralType>(op));
 }
+constexpr bool operator==(const LogType first, const LogType other)
+{
+	return static_cast<LogTypeIntegralType>(first) == static_cast<LogTypeIntegralType>(other);
+}
+constexpr bool operator!=(const LogType first, const LogType other)
+{
+	return !(first == other);
+}
+
 std::optional<LogType> StringToLogType(const std::string& str);
 std::string LogTypeToString(const LogType& logType);
 
@@ -45,6 +54,8 @@ constexpr LogType LOG_TYPE_ALL = LogType::Log | LogType::Error | LogType::Warnin
 constexpr bool DEFAULT_LOG_TIME = true;
 constexpr bool DEFAULT_LOG_TO_GAME_CONSOLE= false;
 constexpr bool THROW_ON_FAILED_ASSERT = true;
+constexpr bool THROW_ON_ALL_ERROR = false;
+
 extern std::string MessageFilter;
 extern LogType LogTypeFilter;
 
@@ -97,6 +108,7 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 	std::string fullMessage = std::format("\n{}{}{}{}", logTypeMessage, objectName, message, ANSI_COLOR_CLEAR);
 	std::cout << fullMessage << std::endl;
 
+	if (THROW_ON_ALL_ERROR && (logType & LogType::Error) != LogType::None) throw std::invalid_argument(message);
 	OnMessageLogged.Invoke(logType, message, logToGameConsole);
 }
 

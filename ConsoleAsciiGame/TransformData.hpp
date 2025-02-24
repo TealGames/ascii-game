@@ -25,4 +25,6 @@ struct TransformData : public ComponentData
 	void SetPosDelta(const Utils::Point2D& moveDelta);
 
 	bool HasMovedThisFrame() const;
+
+	void InitFields() override;
 };

@@ -1,16 +1,24 @@
 #pragma once
 #include "Vec2.hpp"
 #include <optional>
+#include <string>
 
-enum class Direction
+enum class MoveDirection
 {
-	Up,
-	Down,
-	Left,
-	Right,
+	North,
+	Northeast,
+	East,
+	Southeast,
+	South,
+	Southwest,
+	West,
+	Northwest,
 };
 
-Vec2 GetVectorFromDirection(const Direction& dir);
+bool IsAngledDirection(const MoveDirection& dir);
 
-std::string ToString(const Direction& dir);
-std::optional<Direction> TryConvertStringToDirection(const std::string& str);
+Vec2 GetVectorFromDirection(const MoveDirection& dir);
+std::optional<MoveDirection> TryConvertVectorToDirection(const Vec2& vec, const bool& ignoreAngledDirs=false);
+
+std::string ToString(const MoveDirection& dir);
+std::optional<MoveDirection> TryConvertStringToDirection(const std::string& str, const bool& ignoreAngledDirs=false);

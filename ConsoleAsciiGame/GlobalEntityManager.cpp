@@ -140,6 +140,12 @@ const ECS::Entity* GlobalEntityManager::TryGetGlobalEntity(const std::string& na
 const std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntities() const
 {
 	return m_globalEntities;
+	/*std::vector<const ECS::Entity*> entities = {};
+	for (const auto& entity : m_globalEntities)
+	{
+		entities.push_back(&entity);
+	}
+	return entities;*/
 }
 
 std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntitiesMutable()

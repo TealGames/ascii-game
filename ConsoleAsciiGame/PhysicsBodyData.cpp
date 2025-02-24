@@ -4,6 +4,7 @@
 #include "Entity.hpp"
 #include <limits>
 #include <optional>
+#include "Debug.hpp"
 
 PhysicsBodyData::PhysicsBodyData() : 
 	PhysicsBodyData(0, {}, {}, 0, std::numeric_limits<float>::max()) {}
@@ -140,17 +141,32 @@ const WorldPosition PhysicsBodyData::GetAABBCenterWorldPos() const
 	return GetEntitySafe().m_Transform.m_Pos + m_transformOffset;
 }
 
+bool PhysicsBodyData::DoesAABBContainPos(const WorldPosition& pos) const
+{
+	WorldPosition minPos = m_aabb.GetGlobalMin(GetAABBCenterWorldPos());
+	WorldPosition maxPos = m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
+
+	return minPos.m_X <= pos.m_X && pos.m_X <= maxPos.m_X && 
+		   minPos.m_Y <= pos.m_Y && pos.m_Y <= maxPos.m_Y;
+}
+
 void PhysicsBodyData::AddCollidingBody(PhysicsBodyData& collidingBody)
 {
 	//Vec2 collidingDir = GetVector(GetEntitySafeMutable().m_Transform.m_Pos, collidingBody.GetEntitySafeMutable().m_Transform.m_Pos);
 	
 	//Note: although we are using current pos to get dir and pos may change, no matter what direction colliding body goes
 	//it should maintain its direction from this body OR it would not be considered a colliding body and should get removed
-	std::optional<Direction> collidingDir = Physics::GetAABBDirection(GetAABBCenterWorldPos(), GetAABB(),
-		collidingBody.GetAABBCenterWorldPos(), collidingBody.GetAABB());
-	if (!collidingDir.has_value()) return;
+	Vec2 collidingDir = Physics::GetAABBDirection(GetAABBCenterWorldPos(), GetAABB(),
+		collidingBody.GetAABBCenterWorldPos(), collidingBody.GetAABB(), true);
+	std::optional<MoveDirection> maybeDirType = TryConvertVectorToDirection(collidingDir);
+	if (!Assert(this, maybeDirType.has_value(), std::format("Tried to add colliding body named '{}' "
+		"to body: '{}' but could not deduce direction from vector: {} of body2 relative to body1", 
+		collidingBody.GetEntitySafe().m_Name, GetEntitySafe().m_Name, collidingDir.ToString())))
+	{
+		return;
+	}
 
-	m_collidingBodies.push_back(CollidingObject(&collidingBody, collidingDir.value()));
+	m_collidingBodies.push_back(CollidingObject(&collidingBody, maybeDirType.value()));
 }
 void PhysicsBodyData::RemoveCollidingBody(const CollidingBodiesCollection::iterator& removeBodyIterator)
 {
@@ -184,7 +200,7 @@ const bool& PhysicsBodyData::IsCollidingWithAnyBody() const
 {
 	return !m_collidingBodies.empty();
 }
-bool PhysicsBodyData::IsCollidingWithBodyInDir(const Direction& dir) const
+bool PhysicsBodyData::IsCollidingWithBodyInDirs(const std::vector<MoveDirection>& dirs) const
 {
 	if (!IsCollidingWithAnyBody()) return false;
 
@@ -195,7 +211,7 @@ bool PhysicsBodyData::IsCollidingWithBodyInDir(const Direction& dir) const
 		if (currentObj.m_Body == nullptr) continue;
 		//TODO: possible problem because globals and locals are stored separately so there could be 
 		//a local and global with same id
-		if (currentObj.m_Direction== dir)
+		if (std::find(dirs.begin(), dirs.end(), currentObj.m_Direction)!=dirs.end())
 		{
 			return true;
 		}

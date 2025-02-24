@@ -6,6 +6,8 @@
 #include <memory>
 #include <queue>
 #include <chrono> 
+#include "InputManager.hpp"
+#include "InputField.hpp"
 
 using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;
@@ -31,11 +33,12 @@ private:
 	/// The main prompt name with the prompt info
 	/// </summary>
 	PromptCollection m_prompts;
-	bool m_isEnabled;
 
 	std::string m_input;
 	std::string m_lastCommand;
 	std::vector<ConsoleOutputMessage> m_outputMessages;
+
+	const Input::InputManager& m_inputManager;
 
 public:
 	static constexpr char COMMAND_CHAR= '/';
@@ -50,7 +53,7 @@ private:
 	Color GetColorFromMessageType(const ConsoleOutputMessageType& message);
 	
 public:
-	CommandConsole();
+	CommandConsole(const Input::InputManager& input);
 
 	//void SetActiveConsole(CommandConsole& console);
 

@@ -1,16 +1,17 @@
 #pragma once
-#include "raylib.h"
 #include <unordered_map>
 #include <map>
 #include <string>
 #include <optional>
+#include <filesystem>
 #include "Direction.hpp"
+#include "raylib.h"
 #include "Vec2.hpp"
 #include "Point2DInt.hpp"
 #include "CompoundInput.hpp"
 #include "InputKey.hpp"
-#include <filesystem>
 #include "InputProfile.hpp"
+#include "ScreenPosition.hpp"
 
 //TODO: predefined data like compounds should be mutated and set up to work with file loading
 //rather than force user to add all compounds themselves (should leave option, but mainly all should be 
@@ -36,6 +37,9 @@ namespace Input
 		std::unordered_map<MouseButton, InputKey> m_mouseStates;
 		std::unordered_map<GamepadButton, InputKey> m_gamepadStates;
 
+		std::vector<int> m_capturedKeys;
+		std::string m_letterKeysPressed;
+
 	public:
 		static const std::string PROFILE_PREFIX;
 
@@ -57,20 +61,26 @@ namespace Input
 		void CreateProfile(const std::string& name, const std::filesystem::path& profilePath);
 		const InputProfile* TryGetProfile(const std::string& name) const;
 
-		bool IsKeyState(const KeyboardKey& key, const KeyState& state);
+		bool IsKeyState(const KeyboardKey& key, const KeyState& state) const;
 
 		std::vector<KeyboardKey> GetAllKeyboardKeys();
 		std::vector<MouseButton> GetAllMouseButtons();
 		std::vector<GamepadButton> GetAllGamepadButtons();
 
-		const KeyState& GetKeyState(const KeyboardKey& key);
-		bool IsKeyPressed(const KeyboardKey& key);
-		bool IsKeyDown(const KeyboardKey& key);
-		bool IsKeyReleased(const KeyboardKey& key);
+		const KeyState& GetKeyState(const KeyboardKey& key) const;
+		bool IsKeyPressed(const KeyboardKey& key) const;
+		bool IsKeyDown(const KeyboardKey& key) const;
+		bool IsKeyReleased(const KeyboardKey& key) const;
 
-		const InputKey* GetInputKey(const KeyboardKey& key);
-		const InputKey* GetInputKey(const MouseButton& button);
-		const InputKey* GetInputKey(const GamepadButton& button);
+		std::vector<const InputKey*> GetAllKeysWithState(const KeyState& state) const;
+		std::vector<std::string> GetAllKeysWithStateAsString(const KeyState& state) const;
+
+		std::string GetLettersPressedSinceLastFrame() const;
+		ScreenPosition GetMousePosition() const;
+
+		const InputKey* GetInputKey(const KeyboardKey& key) const;
+		const InputKey* GetInputKey(const MouseButton& button) const;
+		const InputKey* GetInputKey(const GamepadButton& button) const;
 	};
 }
 

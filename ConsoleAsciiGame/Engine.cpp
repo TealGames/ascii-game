@@ -32,8 +32,13 @@ namespace Core
 	//TODO: currentyl the camera maps world pos to its pos based on whole screen to accureately position it basewd on the viewport, but it does not manipulate the size 
 	//meaning that for example a pos at the top left will maintain its distance from the top edge in the camera output but say something like size of a collider
 	//will keep its size from world pos to screen pos (making it inconcistent with sizing)
-	//TODO: there is a bug in phsycis system where if you jump and fall down holding one direction it can get stuck moving in that one way
-	//TODO: bug happens where object gets stuck in body when colliding and does not get pushed out (happens when selecting pos to move or when falling)
+	//TODO: input component is basically useless now should it be removed?
+	//TODO: maybe combine all key,gamepad buttons into one enum and then separate check them based on its enum internal value within input manager
+	//to not need dependence on raylib for keyboardkey and other input stuff and to keep it an implementation detail
+	//TODO: change command prompt to use the new inputfield type
+	//TODO: guirect and aabb both require similar things and have similar features/functions/strucutre perhaps they should be merged into one general type
+	//or they should both contain a more general type and extend its features
+	//TODO: create a general selectable with selection rect, padding, select/deselect functions as well as a general selection profile with mouse key up,down select actions, etc
 
 	static const std::string SCENES_PATH = "scenes";
 	static const std::string INPUT_PROFILES_PATH = "input";
@@ -98,8 +103,9 @@ namespace Core
 		m_mainCameraInfo(std::nullopt),
 		m_debugInfo{}, 
 		m_enableDebugInfo(false),
-		m_commandConsole(),
-		m_enableCommandConsole(false)
+		m_commandConsole(m_inputManager),
+		m_enableCommandConsole(false),
+		m_entityEditor(m_inputManager, m_sceneManager)
 	{
 		Init();
 
@@ -170,6 +176,12 @@ namespace Core
 		m_sceneManager.GetActiveSceneMutable()->InitScene();
 		m_inputManager.SetInputCooldown(0.3);
 		InitConsoleCommands();
+
+		/*for (const auto& entity : m_sceneManager.GetActiveSceneMutable()->GetAllEntities())
+		{
+			LogError(this, std::format("Entity: {} has fields: {}", entity->m_Name,
+				Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(entity->m_Transform.GetFields())));
+		}*/
 	}
 
 	Engine::~Engine()
@@ -209,8 +221,8 @@ namespace Core
 				}
 
 				SetLogTypeFilter(maybeLogType.value());
-				LogError(std::format("The new log type: {} has log: {}", LogTypeToString(GetLogTypeFilter()), 
-					std::to_string(Utils::HasFlagAny(GetLogTypeFilter(), LogType::Log))));
+				/*LogError(std::format("The new log type: {} has log: {}", LogTypeToString(GetLogTypeFilter()), 
+					std::to_string(Utils::HasFlagAny(GetLogTypeFilter(), LogType::Log))));*/
 				//throw std::invalid_argument("POOP");
 			}));
 
@@ -293,8 +305,8 @@ namespace Core
 			"are no entities in the scene", activeScene->m_SceneName)))
 			return ERROR_CODE;
 		
-		CameraData* mainCamera = activeScene->TryGetMainCameraData();
-		ECS::Entity* mainCameraEntity = activeScene->TryGetMainCameraEntity();
+		CameraData* mainCamera = activeScene->TryGetMainCameraMutable();
+		ECS::Entity* mainCameraEntity = activeScene->TryGetMainCameraEntityMutable();
 
 		if (!Assert(this, mainCamera != nullptr && mainCameraEntity != nullptr,
 			std::format("Tried to update the active scene:{} but failed to retrieve "
@@ -327,6 +339,12 @@ namespace Core
 		m_uiSystem.SystemUpdate(*activeScene, m_deltaTime);
 
 		m_inputManager.Update(m_deltaTime);
+		if (m_enableDebugInfo)
+		{
+			m_debugInfo.AddProperty("KeysDown", Utils::ToStringIterable<std::vector<std::string>, 
+				std::string>(m_inputManager.GetAllKeysWithStateAsString(Input::KeyState::Down)));
+		}
+
 		m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<1>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
 		m_playerSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<0>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
@@ -376,12 +394,14 @@ namespace Core
 			m_debugInfo.SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X+15, mouseScreenPos.m_Y} });
 		}
 
+		m_entityEditor.Update();
+
 		//TODO: rendering buffer drops frames
 		if (!collapsedBuffer.empty())
 		{
 			Rendering::RenderBuffer(collapsedBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(), 
 				m_cameraSystem.GetCurrentLineBuffer(), m_enableDebugInfo? &m_debugInfo : nullptr, 
-				m_enableCommandConsole? &m_commandConsole : nullptr);
+				m_enableCommandConsole? &m_commandConsole : nullptr, &m_entityEditor);
 		}
 		//else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
 

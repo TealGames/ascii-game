@@ -15,14 +15,14 @@ namespace Physics
 	AABB::AABB(const WorldPosition& minPos, const WorldPosition& maxPos)
 		: m_MinPos(minPos), m_MaxPos(maxPos) {}
 
-	WorldPosition AABB::GetGlobalMin(const WorldPosition& transformPos) const
+	WorldPosition AABB::GetGlobalMin(const WorldPosition& centerWorldPos) const
 	{
-		return transformPos + m_MinPos;
+		return centerWorldPos + m_MinPos;
 	}
 
-	WorldPosition AABB::GetGlobalMax(const WorldPosition& transformPos) const
+	WorldPosition AABB::GetGlobalMax(const WorldPosition& centerWorldPos) const
 	{
-		return transformPos + m_MaxPos;
+		return centerWorldPos + m_MaxPos;
 	}
 
 	Utils::Point2D AABB::GetSize() const
@@ -62,10 +62,10 @@ namespace Physics
 		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding)
 	{
 		//TODO is enetiy pos center or what?
-		Utils::Point2D min1Global = Utils::Point2D(entity1Pos.m_X + entity1Bounding.m_MinPos.m_X, entity1Pos.m_Y + entity1Bounding.m_MinPos.m_Y);
-		Utils::Point2D max1Global = Utils::Point2D(entity1Pos.m_X + entity1Bounding.m_MaxPos.m_X, entity1Pos.m_Y + entity1Bounding.m_MaxPos.m_Y);
-		Utils::Point2D min2Global = Utils::Point2D(entity2Pos.m_X + entity2Bounding.m_MinPos.m_X, entity2Pos.m_Y + entity2Bounding.m_MinPos.m_Y);
-		Utils::Point2D max2Global = Utils::Point2D(entity2Pos.m_X + entity2Bounding.m_MaxPos.m_X, entity2Pos.m_Y + entity2Bounding.m_MaxPos.m_Y);
+		Utils::Point2D min1Global = entity1Bounding.GetGlobalMin(entity1Pos);
+		Utils::Point2D max1Global = entity1Bounding.GetGlobalMax(entity1Pos);
+		Utils::Point2D min2Global = entity2Bounding.GetGlobalMin(entity2Pos);
+		Utils::Point2D max2Global = entity2Bounding.GetGlobalMax(entity2Pos);
 
 		AABBIntersectionData result = {};
 		result.m_DoIntersect = (max1Global.m_X > min2Global.m_X && min1Global.m_X < max2Global.m_X &&
@@ -78,8 +78,8 @@ namespace Physics
 			result.m_Depth.m_X = Utils::MinAbs(min2Global.m_X - max1Global.m_X, max2Global.m_X - min1Global.m_X);
 			result.m_Depth.m_Y = Utils::MinAbs(min2Global.m_Y - max1Global.m_Y, max2Global.m_Y - min1Global.m_Y);
 
-			LogError(std::format("Calculating min abs X of {} and {} is: {} MIN DEPTH Y: {}", std::to_string(min2Global.m_X - min1Global.m_X), 
-				std::to_string(max2Global.m_X - max1Global.m_X), std::to_string(result.m_Depth.m_X), std::to_string(result.m_Depth.m_Y)));
+			/*LogError(std::format("Calculating min abs X of {} and {} is: {} MIN DEPTH Y: {}", std::to_string(min2Global.m_X - min1Global.m_X), 
+				std::to_string(max2Global.m_X - max1Global.m_X), std::to_string(result.m_Depth.m_X), std::to_string(result.m_Depth.m_Y)));*/
 			return result;
 		}
 
@@ -90,14 +90,11 @@ namespace Physics
 			if (max2Global.m_X > max1Global.m_X)
 			{
 				result.m_Depth.m_X = min2Global.m_X - max1Global.m_X;
-				LogError(std::format("CALCULATING OUTSIDE VAL RIGHT with AAABB 1:{} and 2:{} -> DEPTH: {}", 
-					entity1Bounding.ToString(entity1Pos), entity2Bounding.ToString(entity2Pos), std::to_string(result.m_Depth.m_X)));
 			}
 			//Coming from bottom side
 			else if (min2Global.m_X < min1Global.m_X)
 			{
 				result.m_Depth.m_X = max2Global.m_X - min1Global.m_X;
-				LogError("CALCULATING OUTSIDE VAL LEFT");
 			}
 
 			//Coming in from top
@@ -111,10 +108,10 @@ namespace Physics
 	Utils::Point2D GetAABBMinDisplacement(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
 		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding)
 	{
-		Utils::Point2D min1Global = Utils::Point2D(entity1Pos.m_X + entity1Bounding.m_MinPos.m_X, entity1Pos.m_Y + entity1Bounding.m_MinPos.m_Y);
-		Utils::Point2D max1Global = Utils::Point2D(entity1Pos.m_X + entity1Bounding.m_MaxPos.m_X, entity1Pos.m_Y + entity1Bounding.m_MaxPos.m_Y);
-		Utils::Point2D min2Global = Utils::Point2D(entity2Pos.m_X + entity2Bounding.m_MinPos.m_X, entity2Pos.m_Y + entity2Bounding.m_MinPos.m_Y);
-		Utils::Point2D max2Global = Utils::Point2D(entity2Pos.m_X + entity2Bounding.m_MaxPos.m_X, entity2Pos.m_Y + entity2Bounding.m_MaxPos.m_Y);
+		Utils::Point2D min1Global = entity1Bounding.GetGlobalMin(entity1Pos);
+		Utils::Point2D max1Global = entity1Bounding.GetGlobalMax(entity1Pos);
+		Utils::Point2D min2Global = entity2Bounding.GetGlobalMin(entity2Pos);
+		Utils::Point2D max2Global = entity2Bounding.GetGlobalMax(entity2Pos);
 
 		Utils::Point2D displacement = {};
 
@@ -134,22 +131,59 @@ namespace Physics
 		return displacement;
 	}
 
-	std::optional<Direction> GetAABBDirection(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding)
+	Vec2 GetAABBDirection(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
+		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding, const bool& considerCollisions)
 	{
-		Utils::Point2D min1Global = Utils::Point2D(entity1Pos.m_X + entity1Bounding.m_MinPos.m_X, entity1Pos.m_Y + entity1Bounding.m_MinPos.m_Y);
-		Utils::Point2D max1Global = Utils::Point2D(entity1Pos.m_X + entity1Bounding.m_MaxPos.m_X, entity1Pos.m_Y + entity1Bounding.m_MaxPos.m_Y);
-		Utils::Point2D min2Global = Utils::Point2D(entity2Pos.m_X + entity2Bounding.m_MinPos.m_X, entity2Pos.m_Y + entity2Bounding.m_MinPos.m_Y);
-		Utils::Point2D max2Global = Utils::Point2D(entity2Pos.m_X + entity2Bounding.m_MaxPos.m_X, entity2Pos.m_Y + entity2Bounding.m_MaxPos.m_Y);
+		Utils::Point2D min1Global = entity1Bounding.GetGlobalMin(entity1Pos);
+		Utils::Point2D max1Global = entity1Bounding.GetGlobalMax(entity1Pos);
+		Utils::Point2D min2Global = entity2Bounding.GetGlobalMin(entity2Pos);
+		Utils::Point2D max2Global = entity2Bounding.GetGlobalMax(entity2Pos);
 
-		if (max1Global.m_X < max2Global.m_X && max1Global.m_X <= min2Global.m_X) return Direction::Right;
+
+		Vec2 dir = Vec2::ZERO;
+		if (considerCollisions)
+		{
+			//If enttiy 2 is to the right of entity1 center x
+			if (entity1Pos.m_X < max2Global.m_X && entity1Pos.m_X <= min2Global.m_X) dir.m_X = 1;
+			//Entity 2 is to the left of entity1 center x
+			else if (min2Global.m_X < entity1Pos.m_X && max2Global.m_X <= entity1Pos.m_X) dir.m_X = -1;
+
+			//Entity2 is on top of entity1 center y
+			if (entity1Pos.m_Y < max2Global.m_Y && entity1Pos.m_Y <= min2Global.m_Y) dir.m_Y = 1;
+			//Entity2 is bottom of entity1 center y
+			else if (min2Global.m_Y < entity1Pos.m_Y && max2Global.m_Y <= entity1Pos.m_Y) dir.m_Y = -1;
+		}
+		else
+		{
+			//If enttiy 2 is to the right FULLY
+			if (max1Global.m_X < max2Global.m_X && max1Global.m_X < min2Global.m_X) dir.m_X = 1;
+			//Entity 2 is to the left of entity 1 FULLY
+			else if (min2Global.m_X < min1Global.m_X && max2Global.m_X < min1Global.m_X) dir.m_X = -1;
+
+			//Entity2 is on top of entity1 FULLY
+			if (max1Global.m_Y < max2Global.m_Y && max1Global.m_Y < min2Global.m_Y) dir.m_Y = 1;
+			//Entity2 is bottom of entity1 FULLY
+			else if (min2Global.m_Y < min1Global.m_Y && max2Global.m_Y < min1Global.m_Y) dir.m_Y = -1;
+		}
+		/*if (max1Global.m_X < max2Global.m_X && max1Global.m_X <= min2Global.m_X) return Direction::Right;
 		else if (min2Global.m_X < min1Global.m_X && max2Global.m_X <= min1Global.m_X) return Direction::Left;
 		else if (max1Global.m_Y < max2Global.m_Y && max1Global.m_Y <= min2Global.m_Y) return Direction::Up;
 		else if (min2Global.m_Y < min1Global.m_Y && max2Global.m_Y <= min1Global.m_Y) return Direction::Down;
 		else
 		{
-			LogError(std::format("Tried to get AABB direction but no directions match any of the criteria!"));
+			LogError(std::format("Tried to get AABB direction but no directions match any of the criteria! Entity 1:{} Entity2:{}", 
+				entity1Bounding.ToString(entity1Pos), entity2Bounding.ToString(entity2Pos)));
 			return std::nullopt;
+		}*/
+
+		if (Utils::ApproximateEqualsF(std::abs(dir.m_X), 1) && 
+			Utils::ApproximateEqualsF(std::abs(dir.m_Y), 1))
+		{
+			dir.m_X = Utils::GetSign(dir.m_X) * 0.5;
+			dir.m_Y = Utils::GetSign(dir.m_Y) * 0.5;
 		}
+
+		//Assert(false, std::format("aabb dir: {} normalized: {}", dir.ToString(), dir.GetNormalized().ToString()));
+		return dir;
 	}
 }

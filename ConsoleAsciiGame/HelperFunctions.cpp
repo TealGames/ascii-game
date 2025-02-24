@@ -46,6 +46,64 @@ namespace Utils
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	}
 
+	bool ContainsIntegralValues(const std::string& input)
+	{
+		for (const auto& c : input)
+		{
+			if (std::isdigit(c)) return true;
+		}
+		return false;
+	}
+
+	std::string TryExtractInt(const std::string& input)
+	{
+		if (!ContainsIntegralValues(input)) return "";
+
+		std::string result = "";
+		for (const auto& c : input)
+		{
+			if (std::isdigit(c))
+			{
+				result += c;
+			}
+		}
+
+		return result;
+	}
+	std::string TryExtractFloat(const std::string& input)
+	{
+		if (!ContainsIntegralValues(input)) return "";
+
+		std::string result = "";
+		bool foundDecimal = false;
+		for (const auto& c : input)
+		{
+			if (c == '.')
+			{
+				if (!foundDecimal) result += c;
+				foundDecimal = true;
+			}
+			else if (std::isdigit(c))
+			{
+				result += c;
+			}
+		}
+
+		return result;
+	}
+	std::string TryExtractNonIntegralValues(const std::string& input)
+	{
+		std::string result = "";
+		for (const auto& c : input)
+		{
+			if (!std::isdigit(c))
+			{
+				result += c;
+			}
+		}
+		return result;
+	}
+
 	std::vector<std::string> Split(const std::string& str, const char& separator)
 	{
 		std::vector<std::string> tokens;

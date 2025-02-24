@@ -1,15 +1,15 @@
 #pragma once
 #include "raylib.h"
-#include "Direction.hpp"
 #include <unordered_map>
 #include <vector>
 #include <string>
 #include <optional>
 #include "InputAction.hpp"
+#include "InputDirection.hpp"
 
 namespace Input
 {
-	using CompoundDirectionCollection = std::unordered_map<Direction, InputAction>;
+	using CompoundDirectionCollection = std::unordered_map<InputDirection, InputAction>;
 	class CompoundInput
 	{
 	private:
@@ -26,12 +26,12 @@ namespace Input
 		const CompoundDirectionCollection& GetEntries() const;
 		std::size_t GetEntriesCount() const;
 
-		const InputAction* TryGetDirectionAction(const Direction& dir) const;
+		const InputAction* TryGetDirectionAction(const InputDirection& dir) const;
 		Utils::Point2DInt GetCompoundInputDown() const;
 		/*std::vector<KeyState> GetCompoundKeyStates();*/
 
-		bool HasDirection(const Direction& dir) const;
-		void AddEntry(const Direction& dir, const InputAction& action);
+		bool HasDirection(const InputDirection& dir) const;
+		void AddEntry(const InputDirection& dir, const InputAction& action);
 
 		const std::string& GetName() const;
 

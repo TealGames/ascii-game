@@ -99,8 +99,9 @@ namespace Input
 		return m_state;
 	}
 
-	std::string InputKey::ToString() const
+	std::string InputKey::ToString(const bool showDeviceName, const bool showState) const
 	{
+		std::string resultString = "";
 		std::string deviceName = Input::ToString(m_deviceType);
 		std::string keybindName = "";
 
@@ -113,7 +114,12 @@ namespace Input
 				"{} failed to convert", deviceName));
 			return "";
 		}
+		resultString = "[" + keybindName;
 
-		return std::format("[{}({})->{}]", keybindName, deviceName, m_state.ToString());
+		if (showDeviceName) resultString += std::format("({})", deviceName);
+		if (showState) resultString += std::format("->{}", m_state.ToString());
+		resultString += "]";
+
+		return resultString;
 	}
 }

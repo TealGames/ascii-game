@@ -66,6 +66,18 @@ namespace Utils
 		static inline constexpr auto value = GetTypeNameArray<T>();
 	};
 
+	template <typename T, typename... Types>
+	concept MatchesAtLeastOneType = std::disjunction_v<std::is_same<T, Types>...>;
+
+	template <typename T, typename Variant, std::size_t... I>
+	constexpr bool IsInVariantImpl(std::index_sequence<I...>) 
+	{
+		return (std::is_same_v<T, typename std::variant_alternative<I, Variant>::type> || ...);
+	}
+
+	template <typename T, typename Variant>
+	concept InVariant = IsInVariantImpl<T, Variant>(std::make_index_sequence<std::variant_size_v<Variant>>{});
+
 	template <typename T>
 	constexpr std::string GetTypeName()
 	{
@@ -75,7 +87,6 @@ namespace Utils
 		std::string_view stringView= std::string_view{ value.data(), value.size() };
 		return std::string(stringView.data());
 	}
-
 
 	//This is the fallback in case we supply incorrect type args
 	template <typename, typename T>
@@ -329,6 +340,33 @@ namespace Utils
 
 	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits);
 	void ClearSTDCIN();
+
+	bool ContainsIntegralValues(const std::string& input);
+	/// <summary>
+	/// Will extract all of the integers in the input string as a string containing the int
+	/// Note: this behavior is NOT the same as std::stoi which would find the first integer 
+	/// (or throw if first char is a non-numeric value)
+	/// This function behavior Examples:
+	/// "1234" -> "1234"
+	/// "12Hello34" -> "1234"
+	/// "e1e2e3e4e" -> "1234"
+	/// </summary>
+	/// <param name="input"></param>
+	/// <returns></returns>
+	std::string TryExtractInt(const std::string& input);
+
+	/// <summary>
+	/// Will extract the float value in the input string as a string containing it
+	/// This function behavior Examples:
+	/// "12.34" -> "12.34"
+	/// "12.Hello34" -> "12.34"
+	/// "12.3.4"-> "12.34"
+	/// </summary>
+	/// <param name="input"></param>
+	/// <returns></returns>
+	std::string TryExtractFloat(const std::string& input);
+
+	std::string TryExtractNonIntegralValues(const std::string& input);
 
 	std::vector<std::string> Split(const std::string& str, const char& separator);
 

@@ -33,7 +33,7 @@ namespace ECS
 		m_colliderOutlineBuffer.ClearAll();
 		m_lineBuffer.clear();
 
-		CameraData* mainCamera = scene.TryGetMainCameraData();
+		CameraData* mainCamera = scene.TryGetMainCameraMutable();
 		scene.OperateOnComponents<PhysicsBodyData>(
 			[this, &scene, &deltaTime, &mainCamera](PhysicsBodyData& body, ECS::Entity& entity)-> void
 			{

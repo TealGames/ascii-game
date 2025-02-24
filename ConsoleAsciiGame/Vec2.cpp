@@ -13,6 +13,15 @@ const Vec2 Vec2::DOWN(0, -1);
 const Vec2 Vec2::LEFT(-1, 0);
 const Vec2 Vec2::RIGHT(1, 0);
 
+const Vec2 Vec2::NORTH =	UP;
+const Vec2 Vec2::NORTHEAST = { 0.5, 0.5 };
+const Vec2 Vec2::EAST =		RIGHT;
+const Vec2 Vec2::SOUTHEAST= { 0.5, -0.5 };
+const Vec2 Vec2::SOUTH =	DOWN;
+const Vec2 Vec2::SOUTHWEST= { -0.5, -0.5 };
+const Vec2 Vec2::WEST =		LEFT;
+const Vec2 Vec2::NORTHWEST= { -0.5, 0.5 };
+
 const Vec2 Vec2::ZERO(0, 0);
 const Vec2 Vec2::ONE(1, 1);
 

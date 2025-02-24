@@ -10,12 +10,12 @@ namespace Physics
 {
 	PhysicsWorld::PhysicsWorld() : m_bodies{} {}
 
-	const BodyCollectionType& PhysicsWorld::GetBodies() const
+	const PhysicsBodyCollection& PhysicsWorld::GetBodies() const
 	{
 		return m_bodies;
 	}
 
-	BodyCollectionType& PhysicsWorld::GetBodiesMutable()
+	PhysicsBodyCollection& PhysicsWorld::GetBodiesMutable()
 	{
 		return m_bodies;
 	}
@@ -25,6 +25,20 @@ namespace Physics
 		LogWarning(this, std::format("Adding body: {}", body.m_Entity->m_Name));
 		body.SetPhysicsWorld(*this);
 		m_bodies.push_back(&body);
+	}
+
+	PhysicsBodyCollection PhysicsWorld::FindBodiesContainingPos(const WorldPosition& worldPos) const
+	{
+		PhysicsBodyCollection bodiesFound = {};
+		for (const auto& body : m_bodies)
+		{
+			if (body->DoesAABBContainPos(worldPos))
+			{
+				bodiesFound.push_back(body);
+			}
+		}
+
+		return bodiesFound;
 	}
 
 	void PhysicsWorld::UpdateStart(const float& deltaTime)
@@ -137,7 +151,8 @@ namespace Physics
 				std::to_string(bodyA.GetVelocity().GetMagnitude()), bodyA.GetEntitySafe().m_Name, bodyA.ToStringCollidingBodies()));
 			*/
 
-			if (!bodyA.IsCollidingWithBodyInDir(Direction::Down) && !Utils::ApproximateEqualsF(bodyA.GetGravity(), 0))
+			if (!bodyA.IsCollidingWithBodyInDirs({MoveDirection::South, MoveDirection::Southeast, MoveDirection::Southwest}) 
+				&& !bodyA.IsExperiencingGravity())
 			{
 				bodyA.SetAcceleration({ bodyA.GetAcceleration().m_X, bodyA.GetGravity() });
 			}
@@ -168,7 +183,7 @@ namespace Physics
 
 		const Vec2 velA = targetObject.GetVelocity();
 		const Vec2 velB = collidedObject.GetVelocity();
-		LogError(std::format("Dot product for{} dot {} is: {}", velA.ToString(), velB.ToString(),std::to_string(DotProduct(velA, velB)) ));
+		//LogError(std::format("Dot product for{} dot {} is: {}", velA.ToString(), velB.ToString(),std::to_string(DotProduct(velA, velB)) ));
 		return ((1 + averageRestitution) * massA * massB) / (massA + massB) * 
 			   (DotProduct(velB, collisionNormal) - DotProduct(velA, collisionNormal));
 	}

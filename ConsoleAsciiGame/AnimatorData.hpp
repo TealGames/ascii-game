@@ -78,7 +78,6 @@ public:
 	AnimatorData(const std::vector<AnimationPropertyVariant>& properties,
 		const float& animationTime, const float& speed, const bool& loop);
 
-
 	const bool& GetDoLoop() const;
 	const std::vector<AnimationPropertyVariant>& GetProperties() const;
 	const float& GetAnimationSpeed() const;

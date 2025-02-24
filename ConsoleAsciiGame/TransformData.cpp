@@ -2,13 +2,15 @@
 #include "pch.hpp"
 
 #include "TransformData.hpp"
+#include "Debug.hpp"
+#include "Entity.hpp"
 
 TransformData::TransformData() : TransformData(Utils::Point2D{}) {}
 
 TransformData::TransformData(const Utils::Point2D& pos) :
 	ComponentData(), m_Pos(pos), m_LastPos(NULL_POS), m_LastFramePos(NULL_POS)
 {
-
+	
 }
 
 void TransformData::SetPos(const Utils::Point2D& newPos)
@@ -48,4 +50,14 @@ void TransformData::SetPosDelta(const Utils::Point2D& moveDelta)
 bool TransformData::HasMovedThisFrame() const
 {
 	return m_LastFramePos == NULL_POS || m_Pos != m_LastFramePos;
+}
+
+void TransformData::InitFields()
+{
+	m_Fields = { ComponentField("Pos", &m_Pos) };
+	/*Assert(false, std::format("Tried to create field AT TRANFOEMR for: {} but wtih value: {} ACTUAL{}",
+		GetEntitySafe().m_Name, std::get<Utils::Point2D*>(m_Fields[0].m_Value)->ToString(), m_Pos.ToString()));*/
+		/*Assert(false, std::format("Tried to create field AT TRANFOEMR for: {} but wtih value: {} ACTUAL{}",
+			GetEntitySafe().m_Name, std::get<Utils::Point2D*>(m_Fields[0].m_Value)->ToString(), m_Pos.ToString()));*/
+	//Assert(false, std::format("Created value: {}", std::get<Utils::Point2D*>(m_Fields[0].m_Value)->ToString()));
 }

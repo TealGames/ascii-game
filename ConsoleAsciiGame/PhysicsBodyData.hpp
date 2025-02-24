@@ -14,7 +14,7 @@ class PhysicsBodyData;
 struct CollidingObject
 {
 	PhysicsBodyData* m_Body = nullptr;
-	Direction m_Direction = Direction::Up;
+	MoveDirection m_Direction = MoveDirection::North;
 };
 
 namespace Physics
@@ -92,6 +92,7 @@ public:
 	const Physics::AABB& GetAABB() const;
 	const WorldPosition GetAABBCenterWorldPos() const;
 	const WorldPosition GetAABBTopLeftWorldPos() const;
+	bool DoesAABBContainPos(const WorldPosition& pos) const;
 	/// <summary>
 	/// Will get the AABB pos based on the relative pos of the AABB
 	/// where (0,0) is bottom left and (1, 1) is top right
@@ -102,7 +103,7 @@ public:
 
 	void AddCollidingBody(PhysicsBodyData& collidingBody);
 	void RemoveCollidingBody(const CollidingBodiesCollection::iterator& removeBodyIterator);
-	bool IsCollidingWithBodyInDir(const Direction& dir) const;
+	bool IsCollidingWithBodyInDirs(const std::vector<MoveDirection>& dirs) const;
 	const bool& IsCollidingWithAnyBody() const;
 
 	CollidingBodiesCollection::iterator GetCollidingBodyIterator(const PhysicsBodyData& physicsBody);
