@@ -27,9 +27,9 @@ std::string ToString(const InputFieldType& type)
 }
 
 InputField::InputField(const Input::InputManager* manager, const InputFieldType& type, const InputFieldFlag& flags,
-	const ScreenPosition& maxSize, const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
-	: m_inputManager(manager), m_type(type), m_input(), m_inputFlags(flags), m_submitAction(submitAction),
-	m_keyActions(keyPressActions), m_maxSize(maxSize), m_isSelected(false), m_lastRenderRect()
+	const GUISettings& settings, const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
+	: m_inputManager(manager), m_type(type), m_input(), m_lastInput(), m_inputFlags(flags), m_submitAction(submitAction),
+	m_keyActions(keyPressActions), m_settings(settings), m_isSelected(false), m_lastRenderRect()
 {
 	//LogError("Creating Input FIeld");
 	if (IsSelectedOnStart()) m_isSelected = true;
@@ -38,9 +38,9 @@ InputField::InputField(const Input::InputManager* manager, const InputFieldType&
 InputField::InputField() : InputField(nullptr, InputFieldType::Any, InputFieldFlag::None, {}, nullptr, {}) {}
 
 InputField::InputField(const Input::InputManager& manager, const InputFieldType& type, const InputFieldFlag& flags,
-	const ScreenPosition& maxSize,
+	const GUISettings& settings,
 	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
-	:InputField(&manager, type, flags, maxSize, submitAction, keyPressActions) {}
+	:InputField(&manager, type, flags, settings, submitAction, keyPressActions) {}
 
 InputField::~InputField()
 {
@@ -165,6 +165,7 @@ void InputField::ResetInput()
 
 void InputField::SetInput(const std::string& newInput, const bool isAttemptedInput)
 {
+	m_lastInput = m_input;
 	if (newInput == m_input) return;
 
 	std::string correctedInput = newInput;
@@ -192,10 +193,25 @@ const InputFieldType& InputField::GetFieldType() const
 	return m_type;
 }
 
-std::string InputField::GetInput() const
+std::string InputField::GetDisplayInput() const
 {
 	if (ShowCaret()) return m_input + "_";
 	return m_input;
+}
+std::string InputField::GetDisplayAttemptedInput() const
+{
+	if (ShowCaret()) return m_attemptedInput + "_";
+	return m_attemptedInput;
+}
+
+const std::string& InputField::GetInput() const
+{
+	return m_input;
+}
+
+const std::string& InputField::GetLastInput() const
+{
+	return m_lastInput;
 }
 
 int InputField::GetIntInput() const
@@ -229,18 +245,25 @@ void InputField::Deselect()
 
 ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 {
-	const int widthUsed = std::min(renderInfo.m_RenderSize.m_X, m_maxSize.m_X);
-	const int heightUsed = std::min(renderInfo.m_RenderSize.m_Y, m_maxSize.m_Y);
+	const int widthUsed = std::min(renderInfo.m_RenderSize.m_X, m_settings.m_Size.m_X);
+	const int heightUsed = std::min(renderInfo.m_RenderSize.m_Y, m_settings.m_Size.m_Y);
+	Utils::Point2DInt renderSize = { widthUsed, heightUsed };
 
-	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, widthUsed, heightUsed, GRAY);
-	std::string inputStr = m_isSelected ? m_attemptedInput : GetInput();
+	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, widthUsed, heightUsed, m_settings.m_BackgroundColor);
+	std::string inputStr = m_isSelected ? GetDisplayAttemptedInput() : GetDisplayInput();
 	//Assert(false, std::format("Found input: {}", inputStr));
 	//TODO: right now this deos not consider text overflow, or if the text is longer than input field
 	//TODO: add the render settigns like font, font size, spacing as constructor args
-	DrawTextEx(GetGlobalFont(), inputStr.c_str(), RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos),
-		FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, WHITE);
 
-	Utils::Point2DInt renderSize= { widthUsed, heightUsed };
+	Vector2 textStartPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
+	const float fontSize = m_settings.m_TextSettings.GetFontSize(renderSize);
+	/*if (m_settings.m_TextSettings.m_FontSizeType==TextGUIFontSize::ParentArea) 
+		Assert(false, std::format("Font size is: {} text factor: {}", std::to_string(fontSize), std::to_string(m_settings.m_TextSettings.m_FontSize)));*/
+
+	textStartPos.x += m_settings.m_TextSettings.m_RightIndent;
+	DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
+		fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
+
 	if (!m_isSelected)
 	{
 		Color disabledOverlay = BLACK;
@@ -250,8 +273,6 @@ ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 
 	m_lastRenderRect.SetSize(renderSize);
 	m_lastRenderRect.SetTopLeftPos(renderInfo.m_TopLeftPos);
-
-	
 	
 	//LogError(std::format("Updating input field rect to: {}", m_lastRenderRect.ToString()));
 	return renderSize;

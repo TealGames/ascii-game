@@ -8,6 +8,7 @@
 #include "Entity.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 10;
+constexpr static float FIELD_FONT_FACTOR = 0.8;
 constexpr static int MAX_WIDTH = 100;
 constexpr static int MAX_HEIGHT = 100;
 
@@ -25,23 +26,27 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, co
 	//Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Utils::Point2D*>(m_fieldInfo.m_Value)->ToString()));
 
 	InputFieldFlag fieldFlags = InputFieldFlag::None;
+	GUISettings guiSettings = GUISettings(MAX_INPUT_FIELD_SIZE, GRAY, TextGUISettings(WHITE, TextGUIFontSize::ParentArea, FIELD_FONT_FACTOR, 0));
+	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
+		std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
+
 	if (m_fieldInfo.IsCurrentType<int>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, InputFieldType::Integer, fieldFlags, MAX_INPUT_FIELD_SIZE));
+		m_inputFields.push_back(InputField(m_inputManager, InputFieldType::Integer, fieldFlags, guiSettings));
 	}
 	else if (m_fieldInfo.IsCurrentType<float>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, InputFieldType::Float, fieldFlags, MAX_INPUT_FIELD_SIZE));
+		m_inputFields.push_back(InputField(m_inputManager, InputFieldType::Float, fieldFlags, guiSettings));
 	}
 	else if (m_fieldInfo.IsCurrentType<std::string>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, InputFieldType::String, fieldFlags, MAX_INPUT_FIELD_SIZE));
+		m_inputFields.push_back(InputField(m_inputManager, InputFieldType::String, fieldFlags, guiSettings));
 	}
 	else if (m_fieldInfo.IsCurrentType<Utils::Point2D>())
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.push_back(InputField(m_inputManager, InputFieldType::Float, fieldFlags, MAX_INPUT_FIELD_SIZE));
+			m_inputFields.push_back(InputField(m_inputManager, InputFieldType::Float, fieldFlags, guiSettings));
 		}
 	}
 	else
@@ -89,15 +94,12 @@ void ComponentFieldGUI::SetFieldToInternal()
 	{
 		LogError(this, std::format("Tried to set field to internal value for property: '{}' "
 			"but could not find any actions for its type", m_fieldInfo.m_FieldName));
+		return;
 	}
-}
-void ComponentFieldGUI::SetInternalWithInput()
-{
-	LogError(std::format("Getting internal input and setting it. is point: {} field name: {} is point: {}", 
-		m_fieldInfo.GetCurrentType().name(), m_fieldInfo.m_FieldName, std::to_string(m_fieldInfo.IsCurrentType<Utils::Point2D>())));
 
 	for (auto& field : m_inputFields)
 	{
+		LogError("Set field submit action");
 		field.SetSubmitAction([this](std::string input) -> void
 			{
 				LogError(std::format("Setting internal input for field with str: {} type: {} is point: {}",
@@ -111,6 +113,11 @@ void ComponentFieldGUI::SetInternalWithInput()
 				SetInternalWithInput();
 			});
 	}
+}
+void ComponentFieldGUI::SetInternalWithInput()
+{
+	LogError(std::format("Getting internal input and setting it. is point: {} field name: {} is point: {}", 
+		m_fieldInfo.GetCurrentType().name(), m_fieldInfo.m_FieldName, std::to_string(m_fieldInfo.IsCurrentType<Utils::Point2D>())));
 
 	if (m_fieldInfo.IsCurrentType<int>())
 	{
@@ -131,8 +138,8 @@ void ComponentFieldGUI::SetInternalWithInput()
 	else if (m_fieldInfo.IsCurrentType<Utils::Point2D>())
 	{
 		//m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput()
-		Assert(false, "REAHCED POINT");
-		m_fieldInfo.TrySetValue<Utils::Point2D>({});
+		LogError("REAHCED POINT");
+		m_fieldInfo.TrySetValue<Utils::Point2D>({ m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput() });
 		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
 
 		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));

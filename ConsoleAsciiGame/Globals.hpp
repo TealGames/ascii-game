@@ -31,11 +31,6 @@ inline const Utils::Point2D GLOBAL_CHAR_SPACING = Utils::Point2D(1,1);
 inline const Color COLLIDER_OUTLINE_COLOR = GREEN;
 inline const Color LINE_COLOR = RED;
 
-constexpr float COMMAND_CONSOLE_HEIGHT = 25;
-constexpr float COMMAND_CONSOLE_FONT_SIZE = 25;
-constexpr float COMMAND_CONSOLE_SPACING = 3;
-constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
-
 inline const Color DEBUG_TEXT_COLOR = WHITE;
 inline const Color DEBUG_HIGHLIGHTED_TEXT_COLOR = YELLOW;
 

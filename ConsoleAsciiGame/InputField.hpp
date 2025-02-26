@@ -8,6 +8,7 @@
 #include "IRenderable.hpp"
 #include "GUIRect.hpp"
 #include "ISelectable.hpp"
+#include "GUISettings.hpp"
 
 enum class InputFieldType
 {
@@ -65,6 +66,7 @@ class InputField : IRenderable, ISelectable
 private:
 	InputFieldType m_type;
 	std::string m_input;
+	std::string m_lastInput;
 	std::string m_attemptedInput;
 	InputFieldFlag m_inputFlags;
 
@@ -74,28 +76,32 @@ private:
 	InputFieldAction m_submitAction;
 	InputFieldKeyActions m_keyActions;
 
-	ScreenPosition m_maxSize;
+	GUISettings m_settings;
 
 	const Input::InputManager* m_inputManager;
 
-public:
-
 private:
 	InputField(const Input::InputManager* manager, const InputFieldType& type, const InputFieldFlag& flags,
-		const ScreenPosition& maxSize, const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions);
+		const GUISettings& settings, const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions);
 
 	std::string CleanInput(const std::string& input) const;
-	void ResetInput();
+	
 	void SetAttemptedInputDelta(const std::string& input);
-
 	const Input::InputManager& GetInputManager() const;
 
+	/// <summary>
+	/// Will get input fit for display. Should not be used for normal purposes and
+	/// is only useful for rendering
+	/// </summary>
+	/// <returns></returns>
+	std::string GetDisplayInput() const;
+	std::string GetDisplayAttemptedInput() const;
 	void SetInput(const std::string& newInput, const bool isAttemptedInput);
 
 public:
 	InputField();
 	InputField(const Input::InputManager& manager, const InputFieldType& type, const InputFieldFlag& flags, 
-		const ScreenPosition& maxSize,
+		const GUISettings& settings,
 		const InputFieldAction& submitAction=nullptr, const InputFieldKeyActions& keyPressActions = {});
 	~InputField();
 
@@ -108,7 +114,10 @@ public:
 	void SetSubmitAction(const InputFieldAction& action);
 
 	void OverrideInput(const std::string& str);
-	std::string GetInput() const;
+	const std::string& GetInput() const;
+	const std::string& GetLastInput() const;
+	void ResetInput();
+
 	/// <summary>
 	/// Will return input as integer.
 	/// Note: only use unless you are sure the input is an integer (otherwise will throw)

@@ -89,7 +89,7 @@ namespace Rendering
     }
 
     void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer, 
-        const LineBuffer* lineBuffer, const DebugInfo* debugInfo, const CommandConsole* console, 
+        const LineBuffer* lineBuffer, const DebugInfo* debugInfo, CommandConsole* console, 
         EntityEditorGUI* editor)
     {
 #ifdef ENABLE_PROFILER
@@ -195,28 +195,7 @@ namespace Rendering
         const WorldPosition centerPos = {(float)SCREEN_WIDTH/2, (float)SCREEN_HEIGHT/2};
         DrawCircle(centerPos.m_X, centerPos.m_Y, CENTER_CIRCLE_RADIUS, circleColor);
 
-        if (console != nullptr)
-        {
-            float consoleIndent = 10;
-            Vector2 currentPos = {0, SCREEN_HEIGHT - COMMAND_CONSOLE_HEIGHT };
-            Color consoleColor = GRAY;
-            consoleColor.a = 100;
-            DrawRectangle(currentPos.x, currentPos.y, SCREEN_WIDTH, COMMAND_CONSOLE_HEIGHT, consoleColor);
-
-            DrawTextEx(GetGlobalFont(), console->GetInput().c_str(), {currentPos.x+consoleIndent, currentPos.y}, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, WHITE);
-            currentPos.y -= COMMAND_CONSOLE_HEIGHT;
-
-            const auto& outputMessages = console->GetOutputMessages();
-            Vector2 currentMessageSize = {};
-            for (int i = 0; i < outputMessages.size(); i++)
-            {
-                currentMessageSize = MeasureTextEx(GetGlobalFont(), outputMessages[i].m_Message.c_str(), COMMAND_CONSOLE_OUPUT_FONT_SIZE, COMMAND_CONSOLE_SPACING);
-                DrawTextEx(GetGlobalFont(), outputMessages[i].m_Message.c_str(), { currentPos.x + consoleIndent, currentPos.y }, 
-                    COMMAND_CONSOLE_OUPUT_FONT_SIZE, COMMAND_CONSOLE_SPACING, outputMessages[i].m_Color);
-                currentPos.y -= currentMessageSize.y;
-            }
-        }
-
+        if (console != nullptr) console->TryRender();
         if (editor != nullptr) editor->TryRender();
 
         EndDrawing();

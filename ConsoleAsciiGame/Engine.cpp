@@ -39,6 +39,7 @@ namespace Core
 	//TODO: guirect and aabb both require similar things and have similar features/functions/strucutre perhaps they should be merged into one general type
 	//or they should both contain a more general type and extend its features
 	//TODO: create a general selectable with selection rect, padding, select/deselect functions as well as a general selection profile with mouse key up,down select actions, etc
+	//TODO: sizing on all gui objeccts should be relative in case screen size changes
 
 	static const std::string SCENES_PATH = "scenes";
 	static const std::string INPUT_PROFILES_PATH = "input";

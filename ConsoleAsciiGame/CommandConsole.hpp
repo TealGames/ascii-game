@@ -8,6 +8,8 @@
 #include <chrono> 
 #include "InputManager.hpp"
 #include "InputField.hpp"
+#include "IRenderable.hpp"
+#include "InputField.hpp"
 
 using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;
@@ -26,7 +28,7 @@ enum class ConsoleOutputMessageType
 	Success,
 };
 
-class CommandConsole
+class CommandConsole : IRenderable
 {
 private:
 	/// <summary>
@@ -34,8 +36,10 @@ private:
 	/// </summary>
 	PromptCollection m_prompts;
 
-	std::string m_input;
-	std::string m_lastCommand;
+	InputField m_inputField;
+
+	/*std::string m_input;
+	std::string m_lastCommand;*/
 	std::vector<ConsoleOutputMessage> m_outputMessages;
 
 	const Input::InputManager& m_inputManager;
@@ -62,8 +66,11 @@ public:
 	void DeletePrompts();
 
 	void Update();
+	void TryRender();
+	ScreenPosition Render(const RenderInfo& renderInfo) override;
+
 	void ResetInput();
-	std::string GetInput() const;
+	//std::string GetInput() const;
 
 	std::vector<std::string> GetPromptDocumentation(const std::string& promptName);
 	std::vector<std::string> GetPromptDocumentationAll();

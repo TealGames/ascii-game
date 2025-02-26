@@ -4,6 +4,7 @@
 #include "HelperFunctions.hpp"
 #include "CommandPromptType.hpp"
 #include "Debug.hpp"
+#include "RaylibUtils.hpp"
 
 static constexpr int MAX_OUTPUT_MESSAGES = 10;
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
@@ -12,9 +13,27 @@ static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
 static constexpr KeyboardKey DELETE_KEY = KEY_BACKSPACE;
 static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_COMMA;
 
+static const Color CONSOLE_COLOR = { GRAY.r, GRAY.g, GRAY.b, 100 };
+
+static constexpr int COMMAND_CONSOLE_HEIGHT = 25;
+static constexpr int COMMAND_CONSOLE_WIDTH = SCREEN_WIDTH;
+static constexpr int COMMAND_CONSOLE_FONT_SIZE = 25;
+static constexpr int COMMAND_CONSOLE_SPACING = 3;
+static constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
+static constexpr int COMMAND_CONSOLE_TEXT_INDENT = 10;
+
 CommandConsole::CommandConsole(const Input::InputManager& input) :
-	m_inputManager(input), m_prompts(), m_input(), m_outputMessages(), m_lastCommand()
+	m_inputManager(input), m_prompts(), m_outputMessages(), m_inputField()
 {
+	GUISettings fieldSettings = GUISettings(ScreenPosition{ COMMAND_CONSOLE_WIDTH , COMMAND_CONSOLE_HEIGHT }, GRAY,
+		TextGUISettings(WHITE, TextGUIFontSize::Static, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_TEXT_INDENT));
+	m_inputField = InputField(m_inputManager, InputFieldType::Any, InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret, 
+		fieldSettings, [this](std::string input) -> void 
+		{
+			TryInvokePrompt();
+			ResetInput();
+		});
+
 	OnMessageLogged.AddListener(
 		[this](const LogType& logType, const std::string& message, const bool& logToConsole)-> void
 		{
@@ -75,7 +94,7 @@ void CommandConsole::DeletePrompts()
 
 bool CommandConsole::TryInvokePrompt()
 {
-	std::string formattedPrompt = FormatPromptName(m_input);
+	std::string formattedPrompt = FormatPromptName(m_inputField.GetInput());
 	std::vector<std::string> promptSegments = Utils::Split(formattedPrompt, ' ');
 
 	if (!Assert(this, !promptSegments.empty(), 
@@ -111,7 +130,7 @@ bool CommandConsole::TryInvokePrompt()
 	{
 		if (prompt->TryInvokeAction(promptReversed))
 		{
-			const std::string message = std::format("Console command: {} has been successfully executed", m_input);
+			const std::string message = std::format("Console command: {} has been successfully executed", m_inputField.GetInput());
 			LogOutputMessage(message, ConsoleOutputMessageType::Success);
 			Log(message);
 			return true;
@@ -127,7 +146,7 @@ bool CommandConsole::TryInvokePrompt()
 std::vector<std::string> CommandConsole::GetPromptDocumentation(const std::string& promptName)
 {
 	std::vector<std::string> docs = {};
-	std::string formattedPrompt = FormatPromptName(m_input);
+	std::string formattedPrompt = FormatPromptName(m_inputField.GetInput());
 	auto it = TryGetIteratorForPromptName(formattedPrompt);
 
 	for (const auto& promptOverload : it->second)
@@ -178,7 +197,7 @@ void CommandConsole::LogOutputMessagesUnrestricted(const std::vector<std::string
 
 void CommandConsole::Update()
 {
-	if (IsKeyPressed(SUBMIT_KEY))
+	/*if (IsKeyPressed(SUBMIT_KEY))
 	{
 		m_lastCommand = m_input;
 		TryInvokePrompt();
@@ -196,7 +215,8 @@ void CommandConsole::Update()
 		m_input = m_lastCommand;
 	}
 
-	m_input += m_inputManager.GetLettersPressedSinceLastFrame();
+	m_input += m_inputManager.GetLettersPressedSinceLastFrame();*/
+	m_inputField.Update();
 
 	if (m_outputMessages.empty()) return;
 
@@ -213,14 +233,48 @@ void CommandConsole::Update()
 	}
 }
 
+void CommandConsole::TryRender()
+{
+	Render(RenderInfo({ 0, SCREEN_HEIGHT - COMMAND_CONSOLE_HEIGHT }, { SCREEN_WIDTH, COMMAND_CONSOLE_HEIGHT }));
+}
+
+ScreenPosition CommandConsole::Render(const RenderInfo& renderInfo)
+{
+	//float consoleIndent = 10;
+	Vector2 currentPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos); //{ 0, SCREEN_HEIGHT - COMMAND_CONSOLE_HEIGHT };
+	ScreenPosition totalSize = {};
+	//Color consoleColor = ;
+	//consoleColor.a = 100;
+	//DrawRectangle(currentPos.x, currentPos.y, renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, consoleColor);
+
+	//DrawTextEx(GetGlobalFont(), GetInput().c_str(), { currentPos.x + consoleIndent, currentPos.y }, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, WHITE);
+	ScreenPosition fieldSize = m_inputField.Render(renderInfo);
+	currentPos.y -= fieldSize.m_Y;
+	totalSize = fieldSize;
+
+	const auto& outputMessages = GetOutputMessages();
+	Vector2 currentMessageSize = {};
+	for (int i = 0; i < outputMessages.size(); i++)
+	{
+		currentMessageSize = MeasureTextEx(GetGlobalFont(), outputMessages[i].m_Message.c_str(), COMMAND_CONSOLE_OUPUT_FONT_SIZE, COMMAND_CONSOLE_SPACING);
+		totalSize = totalSize+ ScreenPosition(static_cast<int>(currentMessageSize.x), static_cast<int>(currentMessageSize.y));
+
+		DrawTextEx(GetGlobalFont(), outputMessages[i].m_Message.c_str(), { currentPos.x + COMMAND_CONSOLE_TEXT_INDENT, currentPos.y },
+			COMMAND_CONSOLE_OUPUT_FONT_SIZE, COMMAND_CONSOLE_SPACING, outputMessages[i].m_Color);
+		currentPos.y -= currentMessageSize.y;
+	}
+
+	return totalSize;
+}
+
 void CommandConsole::ResetInput()
 {
-	m_input.clear();
+	m_inputField.ResetInput();
 }
-std::string CommandConsole::GetInput() const
-{
-	return m_input + "_";
-}
+//std::string CommandConsole::GetInput() const
+//{
+//	return m_input + "_";
+//}
 const std::vector<ConsoleOutputMessage>& CommandConsole::GetOutputMessages() const
 {
 	return m_outputMessages;
