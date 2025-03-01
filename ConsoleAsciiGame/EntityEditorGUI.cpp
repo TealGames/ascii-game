@@ -9,15 +9,16 @@
 
 static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = {0.8, 1};
 
-EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene)
-	: m_inputManager(input), m_sceneManager(scene), m_entityGUIs(), m_selectedEntity(m_entityGUIs.end()), m_currentRenderInfo() {}
+EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene, GUISelectorManager& selector)
+	: m_inputManager(input), m_sceneManager(scene), m_selectorManager(selector), 
+	m_entityGUIs(), m_selectedEntity(m_entityGUIs.end()), m_currentRenderInfo() {}
 
 void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 {
 	EntityGUICollection::iterator it = m_entityGUIs.find(entity.m_Name);
 	if (it == m_entityGUIs.end())
 	{
-		it = m_entityGUIs.emplace(entity.m_Name, EntityGUI(m_inputManager, entity)).first;
+		it = m_entityGUIs.emplace(entity.m_Name, EntityGUI(m_inputManager, m_selectorManager, entity)).first;
 	}
 
 	m_selectedEntity = it;

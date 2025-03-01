@@ -9,6 +9,7 @@
 #include "GUIRect.hpp"
 #include "ISelectable.hpp"
 #include "GUISettings.hpp"
+#include "SelectableGUI.hpp"
 
 enum class InputFieldType
 {
@@ -32,6 +33,10 @@ enum class InputFieldFlag : InputFieldFlagIntegralType
 	/// for accepting input
 	/// </summary>
 	SelectOnStart= 1<<2,
+	/// <summary>
+	/// If true will keep the field selected even on submit action
+	/// </summary>
+	KeepSelectedOnSubmit = 1<<3,
 };
 
 constexpr InputFieldFlag operator&(const InputFieldFlag& lhs, const InputFieldFlag& rhs)
@@ -61,7 +66,7 @@ constexpr InputFieldFlag operator~(const InputFieldFlag& op)
 
 using InputFieldAction = std::function<void(std::string input)>;
 using InputFieldKeyActions = std::unordered_map<KeyboardKey, InputFieldAction>;
-class InputField : IRenderable, ISelectable
+class InputField : SelectableGUI, IRenderable
 {
 private:
 	InputFieldType m_type;
@@ -70,7 +75,7 @@ private:
 	std::string m_attemptedInput;
 	InputFieldFlag m_inputFlags;
 
-	bool m_isSelected;
+	//bool m_isSelected;
 	GUIRect m_lastRenderRect;
 
 	InputFieldAction m_submitAction;
@@ -81,7 +86,7 @@ private:
 	const Input::InputManager* m_inputManager;
 
 private:
-	InputField(const Input::InputManager* manager, const InputFieldType& type, const InputFieldFlag& flags,
+	InputField(const Input::InputManager* manager, GUISelectorManager* selectorManager, const InputFieldType& type, const InputFieldFlag& flags,
 		const GUISettings& settings, const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions);
 
 	std::string CleanInput(const std::string& input) const;
@@ -100,15 +105,14 @@ private:
 
 public:
 	InputField();
-	InputField(const Input::InputManager& manager, const InputFieldType& type, const InputFieldFlag& flags, 
-		const GUISettings& settings,
+	InputField(const Input::InputManager& manager, GUISelectorManager& selectorManager, 
+		const InputFieldType& type, const InputFieldFlag& flags, const GUISettings& settings,
 		const InputFieldAction& submitAction=nullptr, const InputFieldKeyActions& keyPressActions = {});
 	~InputField();
 
 	void Update();
 
-	bool ShowCaret() const;
-	bool IsSelectedOnStart() const;
+	bool HasFlag(const InputFieldFlag& flag) const;
 	const InputFieldType& GetFieldType() const;
 
 	void SetSubmitAction(const InputFieldAction& action);
@@ -133,7 +137,6 @@ public:
 	float GetFloatInput() const;
 
 	ScreenPosition Render(const RenderInfo& renderInfo) override;
-	void Select() override;
-	void Deselect() override;
+	//const GUIRect& GetLastRenderRect() const;
 };
 

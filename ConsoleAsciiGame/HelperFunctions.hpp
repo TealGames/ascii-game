@@ -337,6 +337,17 @@ namespace Utils
 
 	std::string ToString(const char& c);
 	std::string ToStringDouble(const double& d, const std::streamsize& precision);
+	
+	template<typename T>
+	requires (!std::is_pointer_v<T>)
+	std::string ToStringPointerAddress(const T* pointer)
+	{
+		if (pointer == nullptr) return "[NULL PTR ADDRESS]";
+
+		std::ostringstream oss;
+		oss << static_cast<const void*>(pointer);
+		return oss.str();
+	}
 
 	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits);
 	void ClearSTDCIN();

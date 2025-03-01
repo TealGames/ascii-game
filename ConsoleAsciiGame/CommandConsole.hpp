@@ -28,6 +28,8 @@ enum class ConsoleOutputMessageType
 	Success,
 };
 
+class GUISelectorManager;
+
 class CommandConsole : IRenderable
 {
 private:
@@ -37,16 +39,12 @@ private:
 	PromptCollection m_prompts;
 
 	InputField m_inputField;
-
-	/*std::string m_input;
-	std::string m_lastCommand;*/
 	std::vector<ConsoleOutputMessage> m_outputMessages;
 
 	const Input::InputManager& m_inputManager;
 
 public:
 	static constexpr char COMMAND_CHAR= '/';
-	//static CommandConsole& ActiveConsole;
 
 private:
 	std::string FormatPromptName(const std::string& name);
@@ -57,7 +55,7 @@ private:
 	Color GetColorFromMessageType(const ConsoleOutputMessageType& message);
 	
 public:
-	CommandConsole(const Input::InputManager& input);
+	CommandConsole(const Input::InputManager& input, GUISelectorManager& selector);
 
 	//void SetActiveConsole(CommandConsole& console);
 

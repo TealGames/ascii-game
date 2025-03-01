@@ -22,6 +22,7 @@
 #include "InputManager.hpp"
 #include "Debug.hpp"
 #include "EntityEditorGUI.hpp"
+#include "GUISelectorManager.hpp"
 
 namespace Core
 {
@@ -32,6 +33,7 @@ namespace Core
 
 		SceneManagement::SceneManager m_sceneManager;
 		Input::InputManager m_inputManager;
+		GUISelectorManager m_guiSelectorManager;
 
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
 		std::chrono::time_point<std::chrono::high_resolution_clock> m_currentTime;

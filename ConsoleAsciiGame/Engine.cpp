@@ -40,6 +40,7 @@ namespace Core
 	//or they should both contain a more general type and extend its features
 	//TODO: create a general selectable with selection rect, padding, select/deselect functions as well as a general selection profile with mouse key up,down select actions, etc
 	//TODO: sizing on all gui objeccts should be relative in case screen size changes
+	//TODO: bug where player on start can be moved to the end of the ground rectangle (probably due to it being the min distance when considerign x and y moves)
 
 	static const std::string SCENES_PATH = "scenes";
 	static const std::string INPUT_PROFILES_PATH = "input";
@@ -88,6 +89,7 @@ namespace Core
 	Engine::Engine() :
 		m_sceneManager(SCENES_PATH),
 		m_inputManager(INPUT_PROFILES_PATH),
+		m_guiSelectorManager(m_inputManager),
 		m_transformSystem(),
 		m_uiSystem(),
 		m_entityRendererSystem(),
@@ -104,9 +106,9 @@ namespace Core
 		m_mainCameraInfo(std::nullopt),
 		m_debugInfo{}, 
 		m_enableDebugInfo(false),
-		m_commandConsole(m_inputManager),
+		m_commandConsole(m_inputManager, m_guiSelectorManager),
 		m_enableCommandConsole(false),
-		m_entityEditor(m_inputManager, m_sceneManager)
+		m_entityEditor(m_inputManager, m_sceneManager, m_guiSelectorManager)
 	{
 		Init();
 
@@ -178,6 +180,7 @@ namespace Core
 		m_inputManager.SetInputCooldown(0.3);
 		InitConsoleCommands();
 
+		//Assert(false, std::format("FOUND ACTIVE SELECTED: {}", m_guiSelectorManager.TryGetSelectableSelected()->GetLastFrameRect().ToString()));
 		/*for (const auto& entity : m_sceneManager.GetActiveSceneMutable()->GetAllEntities())
 		{
 			LogError(this, std::format("Entity: {} has fields: {}", entity->m_Name,
@@ -276,13 +279,13 @@ namespace Core
 		m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_currentTime - m_lastTime).count() / static_cast<float>(1000) * m_timeStep;
 		m_currentFPS = 1 / m_deltaTime;
 
-		if (FRAME_LIMIT != -1 || SHOW_FPS)
+		/*if (FRAME_LIMIT != -1 || SHOW_FPS)
 		{
 			std::cout<<std::format("[ENGINE]: FRAME: {}/{} DELTA_TIME: {} FPS:{} GraphicsFPS:{}\n--------------------------------------------\n",
 				std::to_string(m_currentFrameCounter + 1), std::to_string(FRAME_LIMIT), 
 				Utils::ToStringDouble(m_deltaTime, DOUBLE_LOG_PRECISION), 
 				Utils::ToStringDouble(m_currentFPS, DOUBLE_LOG_PRECISION), std::to_string(GetFPS()));
-		}
+		}*/
 		if (m_enableDebugInfo)
 		{
 			m_debugInfo.AddProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
@@ -396,6 +399,7 @@ namespace Core
 		}
 
 		m_entityEditor.Update();
+		m_guiSelectorManager.Update();
 
 		//TODO: rendering buffer drops frames
 		if (!collapsedBuffer.empty())

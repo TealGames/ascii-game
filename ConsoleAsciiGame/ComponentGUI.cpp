@@ -6,6 +6,7 @@
 #include "Debug.hpp"
 #include "Entity.hpp"
 #include "EntityGUI.hpp"
+#include "GUISelectorManager.hpp"
 
 constexpr static int MAX_PANEL_WIDTH = 100;
 constexpr static int MAX_PANEL_HEIGHT = 100;
@@ -13,7 +14,7 @@ constexpr static int MAX_PANEL_HEIGHT = 100;
 constexpr static float TITLE_FONT_SIZE = 10;
 constexpr static float TITLE_FONT_SPACING = 2;
 
-ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, const EntityGUI& entityGUI, ComponentData* component)
+ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, const EntityGUI& entityGUI, ComponentData* component)
 	: m_inputManager(&inputManager), m_component(component), m_fieldGUIs(), m_entityGUI(&entityGUI)
 {
 	if (component == nullptr) return;
@@ -32,7 +33,7 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, const Entity
 
 	for (auto& field : component->GetFieldsMutable())
 	{
-		m_fieldGUIs.push_back(ComponentFieldGUI(GetInputManager(), *this, field));
+		m_fieldGUIs.push_back(ComponentFieldGUI(GetInputManager(), selector, *this, field));
 	}
 
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(),

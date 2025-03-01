@@ -6,6 +6,7 @@
 #include "ComponentGUI.hpp"
 #include "EntityGUI.hpp"
 #include "Entity.hpp"
+#include "GUISelectorManager.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 10;
 constexpr static float FIELD_FONT_FACTOR = 0.8;
@@ -17,7 +18,8 @@ constexpr static float FONT_SPACING = 10;
 
 const static ScreenPosition MAX_INPUT_FIELD_SIZE = { 100, 100 };
 
-ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, const ComponentGUI& componentGUI, ComponentField& field)
+ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
+	const ComponentGUI& componentGUI, ComponentField& field)
 	: m_fieldInfo(field), m_inputFields(), m_inputManager(inputManager), m_componentGUI(&componentGUI)
 {
 	/*if (m_fieldInfo.IsCurrentType<Utils::Point2D>()) 
@@ -32,21 +34,21 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, co
 
 	if (m_fieldInfo.IsCurrentType<int>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, InputFieldType::Integer, fieldFlags, guiSettings));
+		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Integer, fieldFlags, guiSettings));
 	}
 	else if (m_fieldInfo.IsCurrentType<float>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, InputFieldType::Float, fieldFlags, guiSettings));
+		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, guiSettings));
 	}
 	else if (m_fieldInfo.IsCurrentType<std::string>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, InputFieldType::String, fieldFlags, guiSettings));
+		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::String, fieldFlags, guiSettings));
 	}
 	else if (m_fieldInfo.IsCurrentType<Utils::Point2D>())
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.push_back(InputField(m_inputManager, InputFieldType::Float, fieldFlags, guiSettings));
+			m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, guiSettings));
 		}
 	}
 	else
@@ -99,16 +101,16 @@ void ComponentFieldGUI::SetFieldToInternal()
 
 	for (auto& field : m_inputFields)
 	{
-		LogError("Set field submit action");
+		//LogError("Set field submit action");
 		field.SetSubmitAction([this](std::string input) -> void
 			{
-				LogError(std::format("Setting internal input for field with str: {} type: {} is point: {}",
-					input, m_fieldInfo.GetCurrentType().name(), std::to_string(m_fieldInfo.IsCurrentType<Utils::Point2D>())));
+				//LogError(std::format("Setting internal input for field with str: {} type: {} is point: {}",
+				//	input, m_fieldInfo.GetCurrentType().name(), std::to_string(m_fieldInfo.IsCurrentType<Utils::Point2D>())));
 
-				for (auto& inputField : m_inputFields)
-				{
-					LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
-				}
+				//for (auto& inputField : m_inputFields)
+				//{
+				//	LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
+				//}
 
 				SetInternalWithInput();
 			});

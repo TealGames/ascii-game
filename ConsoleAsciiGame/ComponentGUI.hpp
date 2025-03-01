@@ -7,6 +7,7 @@
 #include "InputManager.hpp"
 
 class EntityGUI;
+class GUISelectorManager;
 
 class ComponentGUI : IRenderable
 {
@@ -22,7 +23,7 @@ private:
 	const Input::InputManager& GetInputManager() const;
 
 public:
-	ComponentGUI(const Input::InputManager& inputManager, 
+	ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector,
 		const EntityGUI& entityGUI, ComponentData* component);
 	~ComponentGUI();
 	

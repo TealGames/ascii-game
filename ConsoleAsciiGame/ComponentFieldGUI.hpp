@@ -7,6 +7,8 @@
 #include "InputField.hpp"
 #include "InputManager.hpp"
 
+class GUISelectorManager;
+
 class ComponentGUI;
 
 class ComponentFieldGUI : IRenderable
@@ -22,7 +24,8 @@ public:
 
 private:
 public:
-	ComponentFieldGUI(const Input::InputManager& inputManager, const ComponentGUI& componentGUI, ComponentField& field);
+	ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
+		const ComponentGUI& componentGUI, ComponentField& field);
 	ComponentFieldGUI(const ComponentFieldGUI&) = default;
 	~ComponentFieldGUI();
 

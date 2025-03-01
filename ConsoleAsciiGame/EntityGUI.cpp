@@ -2,14 +2,15 @@
 #include "EntityGUI.hpp"
 #include "RaylibUtils.hpp"
 #include "HelperFunctions.hpp"
+#include "GUISelectorManager.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 20;
 
-EntityGUI::EntityGUI(const Input::InputManager& manager, ECS::Entity& entity) 
+EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, ECS::Entity& entity)
 	: m_inputManager(manager), m_entity(entity), m_componentGUIs() 
 {
 	//TODO: make sure to find a way to add/retrieve all components to then add here
-	m_componentGUIs.push_back(ComponentGUI(m_inputManager, *this, &entity.m_Transform));
+	m_componentGUIs.push_back(ComponentGUI(m_inputManager, selector, *this, &entity.m_Transform));
 
 	/*Assert(false, std::format("For entity: {} found fields: {}", entity.m_Name, 
 		Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(entity.m_Transform.GetFields())));*/

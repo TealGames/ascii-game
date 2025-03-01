@@ -8,7 +8,7 @@
 #include "RaylibUtils.hpp"
 
 static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
-static constexpr KeyboardKey ESCAPE_KEY = KEY_E;
+static constexpr KeyboardKey ESCAPE_KEY = KEY_COMMA;
 static constexpr KeyboardKey DELETE_KEY = KEY_BACKSPACE;
 static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
 static constexpr float FONT_SIZE = 10;
@@ -26,21 +26,26 @@ std::string ToString(const InputFieldType& type)
 	return "";
 }
 
-InputField::InputField(const Input::InputManager* manager, const InputFieldType& type, const InputFieldFlag& flags,
-	const GUISettings& settings, const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
-	: m_inputManager(manager), m_type(type), m_input(), m_lastInput(), m_inputFlags(flags), m_submitAction(submitAction),
-	m_keyActions(keyPressActions), m_settings(settings), m_isSelected(false), m_lastRenderRect()
+InputField::InputField(const Input::InputManager* manager, GUISelectorManager* selectorManager, 
+	const InputFieldType& type, const InputFieldFlag& flags, const GUISettings& settings, 
+	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
+	: SelectableGUI(selectorManager), m_inputManager(manager), m_type(type), m_input(), m_lastInput(), m_inputFlags(flags), m_submitAction(submitAction),
+	m_keyActions(keyPressActions), m_settings(settings), m_lastRenderRect()
 {
 	//LogError("Creating Input FIeld");
-	if (IsSelectedOnStart()) m_isSelected = true;
+	//Assert(false, std::format("Created  gui redct: {}", GetLastFrameRect().ToString()));
+	if (HasFlag(InputFieldFlag::SelectOnStart)) Select();
 }
 
-InputField::InputField() : InputField(nullptr, InputFieldType::Any, InputFieldFlag::None, {}, nullptr, {}) {}
+InputField::InputField() : InputField(nullptr, nullptr, InputFieldType::Any, InputFieldFlag::None, {}, nullptr, {}) 
+{
+	
+}
 
-InputField::InputField(const Input::InputManager& manager, const InputFieldType& type, const InputFieldFlag& flags,
-	const GUISettings& settings,
+InputField::InputField(const Input::InputManager& manager, GUISelectorManager& selectorManager, 
+	const InputFieldType& type, const InputFieldFlag& flags, const GUISettings& settings,
 	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
-	:InputField(&manager, type, flags, settings, submitAction, keyPressActions) {}
+	:InputField(&manager, &selectorManager, type, flags, settings, submitAction, keyPressActions) {}
 
 InputField::~InputField()
 {
@@ -68,13 +73,15 @@ void InputField::Update()
 	//TODO: add general key select and submits for a general profile so each selectable does not 
 	// need to have its own defined
 	
-	LogError(std::format("Is selected: {} attempted: {} real: {}", m_isSelected, m_attemptedInput, m_input));
+	//LogError(std::format("Is selected: {} attempted: {} real: {}", m_isSelected, m_attemptedInput, m_input));
 	//If we press select key inside this area we then select or deselect
-	bool isSelectReleased = GetInputManager().GetInputKey(SELECT_KEY)->GetState().IsReleased();
+	//bool isSelectReleased = GetInputManager().GetInputKey(SELECT_KEY)->GetState().IsReleased();
+
 	/*LogError(std::format("SELECTED FIELD. last render rect: {} mouse: {} CONTAINS: {}",
 		m_lastRenderRect.ToString(), m_inputManager->GetMousePosition().ToString(), 
 		std::to_string(m_lastRenderRect.ContainsPos(m_inputManager->GetMousePosition()))));*/
 
+	/*
 	if (isSelectReleased && m_lastRenderRect.ContainsPos(m_inputManager->GetMousePosition()))
 	{
 		if (m_isSelected)
@@ -87,8 +94,13 @@ void InputField::Update()
 			LogError("SELECTED");
 		}
 	}
+	*/
 
-	if (m_isSelected && GetInputManager().GetInputKey(ESCAPE_KEY)->GetState().IsReleased())
+	//TODO: this might bnot be the best way of doing this and having this bee called everytime on update
+	//instead this should be a function called by some general system on selectables on gui selector manager
+	if (!IsInit()) Init();
+
+	if (IsSelected() && GetInputManager().GetInputKey(ESCAPE_KEY)->GetState().IsReleased())
 	{
 		Deselect();
 		m_attemptedInput = "";
@@ -96,11 +108,12 @@ void InputField::Update()
 		return;
 	}
 
-	if (!m_isSelected) return;
+	if (!IsSelected()) return;
 
 	if (GetInputManager().IsKeyReleased(SUBMIT_KEY))
 	{
 		SetInput(m_attemptedInput, false);
+		//if (!HasFlag(InputFieldFlag::KeepSelectedOnSubmit)) Deselect();
 		Deselect();
 		m_attemptedInput = "";
 
@@ -195,12 +208,12 @@ const InputFieldType& InputField::GetFieldType() const
 
 std::string InputField::GetDisplayInput() const
 {
-	if (ShowCaret()) return m_input + "_";
+	if (HasFlag(InputFieldFlag::ShowCaret)) return m_input + "_";
 	return m_input;
 }
 std::string InputField::GetDisplayAttemptedInput() const
 {
-	if (ShowCaret()) return m_attemptedInput + "_";
+	if (HasFlag(InputFieldFlag::ShowCaret)) return m_attemptedInput + "_";
 	return m_attemptedInput;
 }
 
@@ -224,23 +237,9 @@ float InputField::GetFloatInput() const
 	return std::stof(m_input);
 }
 
-bool InputField::ShowCaret() const
+bool InputField::HasFlag(const InputFieldFlag& flag) const
 {
-	return Utils::HasFlagAll(m_inputFlags, InputFieldFlag::ShowCaret);
-}
-bool InputField::IsSelectedOnStart() const
-{
-	return Utils::HasFlagAll(m_inputFlags, InputFieldFlag::SelectOnStart);
-}
-
-void InputField::Select()
-{
-	m_isSelected = true;
-}
-
-void InputField::Deselect()
-{
-	m_isSelected = false;
+	return Utils::HasFlagAll(m_inputFlags, flag);
 }
 
 ScreenPosition InputField::Render(const RenderInfo& renderInfo)
@@ -250,7 +249,7 @@ ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 	Utils::Point2DInt renderSize = { widthUsed, heightUsed };
 
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, widthUsed, heightUsed, m_settings.m_BackgroundColor);
-	std::string inputStr = m_isSelected ? GetDisplayAttemptedInput() : GetDisplayInput();
+	std::string inputStr = IsSelected() ? GetDisplayAttemptedInput() : GetDisplayInput();
 	//Assert(false, std::format("Found input: {}", inputStr));
 	//TODO: right now this deos not consider text overflow, or if the text is longer than input field
 	//TODO: add the render settigns like font, font size, spacing as constructor args
@@ -264,16 +263,25 @@ ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 	DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
 		fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
 
-	if (!m_isSelected)
+	if (!IsSelected())
 	{
 		Color disabledOverlay = BLACK;
 		disabledOverlay.a = 155;
 		DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, renderSize.m_X, renderSize.m_Y, disabledOverlay);
 	}
 
-	m_lastRenderRect.SetSize(renderSize);
-	m_lastRenderRect.SetTopLeftPos(renderInfo.m_TopLeftPos);
+	GetLastRectMutable().SetSize(renderSize);
+	GetLastRectMutable().SetTopLeftPos(renderInfo.m_TopLeftPos);
+	//Assert(false, std::format("On render set last rect mutable; {}", GetLastFrameRect().ToString()));
+
+	/*m_lastRenderRect.SetSize(renderSize);
+	m_lastRenderRect.SetTopLeftPos(renderInfo.m_TopLeftPos);*/
 	
 	//LogError(std::format("Updating input field rect to: {}", m_lastRenderRect.ToString()));
 	return renderSize;
 }
+
+//const GUIRect& InputField::GetLastRenderRect() const
+//{
+//	return m_lastRenderRect;
+//}

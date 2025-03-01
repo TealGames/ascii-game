@@ -9,8 +9,6 @@
 static constexpr int MAX_OUTPUT_MESSAGES = 10;
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 
-static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
-static constexpr KeyboardKey DELETE_KEY = KEY_BACKSPACE;
 static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_COMMA;
 
 static const Color CONSOLE_COLOR = { GRAY.r, GRAY.g, GRAY.b, 100 };
@@ -22,17 +20,26 @@ static constexpr int COMMAND_CONSOLE_SPACING = 3;
 static constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
 static constexpr int COMMAND_CONSOLE_TEXT_INDENT = 10;
 
-CommandConsole::CommandConsole(const Input::InputManager& input) :
+CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorManager& selector) :
 	m_inputManager(input), m_prompts(), m_outputMessages(), m_inputField()
 {
 	GUISettings fieldSettings = GUISettings(ScreenPosition{ COMMAND_CONSOLE_WIDTH , COMMAND_CONSOLE_HEIGHT }, GRAY,
 		TextGUISettings(WHITE, TextGUIFontSize::Static, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_TEXT_INDENT));
-	m_inputField = InputField(m_inputManager, InputFieldType::Any, InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret, 
+	m_inputField = InputField(m_inputManager, selector, InputFieldType::Any, 
+		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit,
 		fieldSettings, [this](std::string input) -> void 
 		{
 			TryInvokePrompt();
 			ResetInput();
 		});
+
+	/*
+	InputFieldKeyActions{ {LAST_COMMAND_KEY, [this](std::string input) -> void
+			{
+				m_inputField.OverrideInput(m_inputField.GetLastInput());
+			}
+		} });
+		*/
 
 	OnMessageLogged.AddListener(
 		[this](const LogType& logType, const std::string& message, const bool& logToConsole)-> void
@@ -197,25 +204,6 @@ void CommandConsole::LogOutputMessagesUnrestricted(const std::vector<std::string
 
 void CommandConsole::Update()
 {
-	/*if (IsKeyPressed(SUBMIT_KEY))
-	{
-		m_lastCommand = m_input;
-		TryInvokePrompt();
-		ResetInput();
-		return;
-	}
-
-	if (IsKeyPressed(DELETE_KEY) && !m_input.empty())
-	{
-		m_input.pop_back();
-	}
-
-	if (IsKeyPressed(LAST_COMMAND_KEY))
-	{
-		m_input = m_lastCommand;
-	}
-
-	m_input += m_inputManager.GetLettersPressedSinceLastFrame();*/
 	m_inputField.Update();
 
 	if (m_outputMessages.empty()) return;

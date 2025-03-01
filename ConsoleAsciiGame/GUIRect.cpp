@@ -3,7 +3,7 @@
 #include "GUIRect.hpp"
 #include "Point2DInt.hpp"
 
-GUIRect::GUIRect() : GUIRect(ScreenPosition{}, Utils::Point2DInt{}) {}
+GUIRect::GUIRect() : GUIRect(ScreenPosition(), Utils::Point2DInt()) {}
 
 GUIRect::GUIRect(const ScreenPosition& topLeftPos, const Utils::Point2DInt& size) :
 	m_topLeftPos(topLeftPos), m_size(size), m_bottomRightPos(GetPosWithinRect({1, 0})) {}
@@ -21,7 +21,7 @@ bool GUIRect::ContainsPos(const ScreenPosition& pos) const
 
 	return m_topLeftPos.m_X <= pos.m_X && pos.m_X <= m_bottomRightPos.m_X && 
 			//Note: as y go down, y increases so top left has MIN Y and bottom right has MAX Y
-		   m_topLeftPos.m_Y <= pos.m_Y <= m_bottomRightPos.m_Y;
+		   m_topLeftPos.m_Y <= pos.m_Y && pos.m_Y <= m_bottomRightPos.m_Y;
 }
 
 const ScreenPosition& GUIRect::GetTopleftPos() const

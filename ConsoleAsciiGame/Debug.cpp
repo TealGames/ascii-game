@@ -3,7 +3,7 @@
 #include "StringUtil.hpp"
 
 std::string MessageFilter = "";
-LogType LogTypeFilter = LogType::Error; //LOG_TYPE_ALL;
+LogType LogTypeFilter = LOG_TYPE_ALL;
 
 /// <summary>
 /// Where args are return type, log type, is logged to game console

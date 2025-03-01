@@ -5,6 +5,8 @@
 #include "Entity.hpp"
 #include "ComponentGUI.hpp"
 
+class GUISelectorManager;
+
 class EntityGUI : IRenderable
 {
 private:
@@ -16,7 +18,7 @@ public:
 
 private:
 public:
-	EntityGUI(const Input::InputManager& manager, ECS::Entity& entity);
+	EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, ECS::Entity& entity);
 
 	void Update();
 	void SetComponentsToStored();
