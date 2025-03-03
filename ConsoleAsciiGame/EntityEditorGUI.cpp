@@ -15,7 +15,12 @@ static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = {0.8, 1};
 
 EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene, GUISelectorManager& selector)
 	: m_inputManager(input), m_sceneManager(scene), m_selectorManager(selector), 
-	m_entityGUIs(), m_selectedEntity(m_entityGUIs.end()), m_currentRenderInfo() {}
+	m_entityGUIs(), m_selectedEntity(m_entityGUIs.end()), m_defaultRenderInfo() 
+{
+	ScreenPosition topLeftPos = Conversions::NormalizedScreenToPosition(TOP_LEFT_POS_NORMALIZED);
+	ScreenPosition topRightPos = Conversions::NormalizedScreenToPosition({ 1, 1 });
+	m_defaultRenderInfo = RenderInfo(topLeftPos, ScreenPosition{ topRightPos.m_X - topLeftPos.m_X, SCREEN_HEIGHT });
+}
 
 void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 {
@@ -50,10 +55,6 @@ void EntityEditorGUI::Update()
 			{
 				SetEntityGUI(selectedEntity);
 				Log(std::format("Successfully selected entity: '{}'", m_selectedEntity->second.GetEntity().m_Name), false, true);
-
-				ScreenPosition topLeftPos = Conversions::NormalizedScreenToPosition(TOP_LEFT_POS_NORMALIZED);
-				ScreenPosition topRightPos= Conversions::NormalizedScreenToPosition({1, 1});
-				m_currentRenderInfo = RenderInfo(topLeftPos, ScreenPosition{ topRightPos.m_X - topLeftPos.m_X, SCREEN_HEIGHT });
 			}
 			//else Log(std::format("Failed to select any entity"), false, true);
 		}
@@ -66,7 +67,7 @@ void EntityEditorGUI::TryRender()
 {
 	if (m_selectedEntity == m_entityGUIs.end()) return;
 
-	Render(m_currentRenderInfo);
+	Render(m_defaultRenderInfo);
 }
 
 ScreenPosition EntityEditorGUI::Render(const RenderInfo& renderInfo)

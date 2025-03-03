@@ -15,7 +15,7 @@ private:
 	const SceneManagement::SceneManager& m_sceneManager;
 	GUISelectorManager& m_selectorManager;
 
-	RenderInfo m_currentRenderInfo;
+	RenderInfo m_defaultRenderInfo;
 	EntityGUICollection m_entityGUIs;
 	EntityGUICollection::iterator m_selectedEntity;
 

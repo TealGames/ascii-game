@@ -2,6 +2,7 @@
 #include "InputManager.hpp"
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
+#include <cctype>
 
 namespace Input
 {
@@ -167,9 +168,19 @@ namespace Input
 		//Since getkeypressed ia a queue and does not retain info after going through current frame's keys
 		//we must store them at the start of every update
 		int key = ::GetKeyPressed();
+		char keyPressed = '0';
 		while (key > 0)
 		{
-			if (key >= 32 && key <= 126) m_charKeysPressed += static_cast<char>(key);
+			if (key >= 32 && key <= 126)
+			{
+				keyPressed = static_cast<char>(key);
+				if (InputManager::IsKeyPressed(KeyboardKey::KEY_LEFT_SHIFT) || 
+					InputManager::IsKeyPressed(KeyboardKey::KEY_RIGHT_SHIFT))
+				{
+					keyPressed= std::toupper(keyPressed);
+				}
+				m_charKeysPressed += keyPressed;
+			}
 			m_capturedKeys.push_back(key);
 
 			key = ::GetKeyPressed();

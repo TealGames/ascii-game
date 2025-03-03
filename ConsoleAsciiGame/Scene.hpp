@@ -136,7 +136,7 @@ public:
 	/// </summary>
 	/// <param name="id"></param>
 	/// <returns></returns>
-	ECS::Entity* TryGetEntity(const ECS::EntityID& id);
+	ECS::Entity* TryGetEntityMutable(const ECS::EntityID& id);
 
 	/// <summary>
 	/// A overloaded version of the entity id function. 
@@ -144,7 +144,7 @@ public:
 	/// </summary>
 	/// <param name="name"></param>
 	/// <returns></returns>
-	ECS::Entity* TryGetEntity(const std::string& name);
+	ECS::Entity* TryGetEntityMutable(const std::string& name, const bool& ignoreCase= false);
 
 	template<typename T>
 	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)
@@ -152,7 +152,7 @@ public:
 		auto view = m_entityMapper.view<T>();
 		for (auto entityId : view)
 		{
-			ECS::Entity* entityPtr = TryGetEntity(entityId);
+			ECS::Entity* entityPtr = TryGetEntityMutable(entityId);
 			if (!Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
 				"but failed to retrieve entity with ID: (it probably does not exist in the scene)",
 				typeid(T).name()))) return;

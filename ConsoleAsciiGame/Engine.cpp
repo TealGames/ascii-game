@@ -146,7 +146,7 @@ namespace Core
 		m_playerInfo = ECS::EntityComponents<PlayerData, InputData, PhysicsBodyData>{ playerEntity, playerData, inputData, playerRB };
 
 		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData({ 20, 20 }));
-		Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntity(obstacle.m_Id)->ToString()));
+		Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(obstacle.m_Id)->ToString()));
 		
 		obstacle.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'B')) } },
@@ -199,10 +199,22 @@ namespace Core
 	{
 		m_commandConsole.AddPrompt(new CommandPrompt<std::string, float, float>("setpos", {"EntityName", "PosX", "PosY"},
 			[this](const std::string& entityName, const float& x, const float& y) -> void {
-				if (ECS::Entity* entity= m_sceneManager.GetActiveSceneMutable()->TryGetEntity(entityName))
+				if (ECS::Entity* entity= m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
 				{
 					entity->m_Transform.SetPos({ x, y });
 				}
+			}));
+
+		m_commandConsole.AddPrompt(new CommandPrompt<std::string>("editor", { "EntityName"},
+			[this](const std::string& entityName) -> void {
+				if (ECS::Entity* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
+				{
+					//Assert(false, std::format("Sending entity: {}", entity->m_Name));
+					m_entityEditor.SetEntityGUI(*entity);
+					return;
+				}
+				m_commandConsole.LogOutputMessage(std::format("Entity with name: '{}' could not be found", 
+					entityName), ConsoleOutputMessageType::Error);
 			}));
 
 		m_commandConsole.AddPrompt(new CommandPrompt<>("docs", std::vector<std::string>{},

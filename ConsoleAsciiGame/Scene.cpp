@@ -12,6 +12,7 @@
 #include "VisualData.hpp"
 #include "PhysicsBodyData.hpp"
 #include "TransformData.hpp"
+#include "StringUtil.hpp"
 
 const std::string Scene::SCENE_FILE_PREFIX = "scene_";
 
@@ -372,7 +373,7 @@ bool Scene::HasEntity(const ECS::EntityID& id)
 //and would probably be best if we create them on the heap probably to extend memory lifetime
 
 //TODO: also maybe consider managing what objects are required to be in a scene, like a camera
-ECS::Entity* Scene::TryGetEntity(const ECS::EntityID& id)
+ECS::Entity* Scene::TryGetEntityMutable(const ECS::EntityID& id)
 {
 	auto localIt = GetLocalEntityIterator(id);
 	if (localIt != m_localEntityLookup.end()) return localIt->second;
@@ -383,13 +384,27 @@ ECS::Entity* Scene::TryGetEntity(const ECS::EntityID& id)
 	return nullptr;
 }
 
-ECS::Entity* Scene::TryGetEntity(const std::string& name)
+ECS::Entity* Scene::TryGetEntityMutable(const std::string& name, const bool& ignoreCase)
 {
+	std::string targetName = ignoreCase ? Utils::StringUtil(name).ToLowerCase().ToString() : name;
+	std::string currentLowercaseName = "";
+	LogError(std::format("Trying to look for entity: {} -> {} ignorecase: {}", name, targetName, std::to_string(ignoreCase)));
 	for (auto& localEntity : m_localEntities)
 	{
-		if (localEntity.m_Name == name) return &localEntity;
+		if (ignoreCase)
+		{
+			currentLowercaseName = Utils::StringUtil(localEntity.m_Name).ToLowerCase().ToString();
+			LogError(std::format("Found local entity with name:{} when looking:{} ==: {}",
+				currentLowercaseName, targetName, std::to_string(currentLowercaseName== targetName)));
+			if (currentLowercaseName == targetName) return &localEntity;
+		}
+		else if (localEntity.m_Name == targetName) 
+			return &localEntity;
 	}
+	//Assert(false, std::format("Poop"));
 
+	//Note: we do NOT need to do ignore case for global entities since they already have unique
+	//names so their names already are cleaned to be as simple as possible
 	return m_globalEntities.TryGetGlobalEntityMutable(name);
 }
 
