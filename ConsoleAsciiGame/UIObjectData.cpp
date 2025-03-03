@@ -14,3 +14,7 @@ const NormalizedPosition& UIObjectData::GetNormalizedPos() const
 	return m_normalizedPos;
 }
 
+void UIObjectData::InitFields()
+{
+	m_Fields = {};
+}

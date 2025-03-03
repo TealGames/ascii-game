@@ -10,3 +10,8 @@ CameraData::CameraData() :
 
 CameraData::CameraData(const CameraSettings& cameraSettings) :
 	ComponentData(), m_CameraSettings(cameraSettings), m_LastFrameBuffer() {}
+
+void CameraData::InitFields()
+{
+	m_Fields= { ComponentField("LensSize", &m_CameraSettings.m_LensSize) };
+}

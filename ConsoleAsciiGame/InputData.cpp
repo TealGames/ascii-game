@@ -29,6 +29,11 @@ const std::unordered_map<std::string, Input::InputAction>& InputData::GetActions
 	return m_actions;
 }
 
+void InputData::InitFields()
+{
+	m_Fields= {};
+}
+
 //void InputData::SetInputManager(Input::InputManager& manager)
 //{
 //	m_inputManager = &manager;

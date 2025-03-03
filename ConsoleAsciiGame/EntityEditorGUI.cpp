@@ -7,6 +7,10 @@
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 
+const Color EntityEditorGUI::EDITOR_TEXT_COLOR = WHITE;
+const Color EntityEditorGUI::EDITOR_BACKGROUND_COLOR = { 30, 30, 30, 255 };
+const Color EntityEditorGUI::EDITOR_SECONDARY_COLOR = GRAY;
+
 static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = {0.8, 1};
 
 EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene, GUISelectorManager& selector)
@@ -49,7 +53,7 @@ void EntityEditorGUI::Update()
 
 				ScreenPosition topLeftPos = Conversions::NormalizedScreenToPosition(TOP_LEFT_POS_NORMALIZED);
 				ScreenPosition topRightPos= Conversions::NormalizedScreenToPosition({1, 1});
-				m_currentRenderInfo = RenderInfo(topLeftPos, topRightPos- topLeftPos);
+				m_currentRenderInfo = RenderInfo(topLeftPos, ScreenPosition{ topRightPos.m_X - topLeftPos.m_X, SCREEN_HEIGHT });
 			}
 			//else Log(std::format("Failed to select any entity"), false, true);
 		}

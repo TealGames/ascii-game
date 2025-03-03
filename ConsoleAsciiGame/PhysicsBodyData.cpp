@@ -26,6 +26,12 @@ PhysicsBodyData::PhysicsBodyData(const float& mass, const Utils::Point2D& boundi
 	ValidateAABB(m_aabb);
 }
 
+void PhysicsBodyData::InitFields()
+{
+	m_Fields = { ComponentField("Mass(KG)", &m_mass), ComponentField("TerminalYVelocity", &m_terminalYVelocity), 
+				 ComponentField("Gravity", &m_gravity)};
+}
+
 bool PhysicsBodyData::ValidateAABB(const Physics::AABB& bounding) const
 {
 	const Utils::Point2D size = bounding.GetSize();

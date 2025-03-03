@@ -3,6 +3,7 @@
 #include "RaylibUtils.hpp"
 #include "HelperFunctions.hpp"
 #include "GUISelectorManager.hpp"
+#include "EntityEditorGUI.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 20;
 
@@ -10,8 +11,13 @@ EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& sel
 	: m_inputManager(manager), m_entity(entity), m_componentGUIs() 
 {
 	//TODO: make sure to find a way to add/retrieve all components to then add here
-	m_componentGUIs.push_back(ComponentGUI(m_inputManager, selector, *this, &entity.m_Transform));
-
+	//Assert(false, std::format("When adding all comps, entity: {} has:{}", entity.m_Name, std::to_string(entity.GetAllComponentsMutable().size())));
+	for (auto& comp : entity.GetAllComponentsMutable())
+	{
+		m_componentGUIs.push_back(ComponentGUI(m_inputManager, selector, *this, comp));
+		//LogError(std::format("Found comp: {} for entity: {}", std::to_string(comp->GetFields().size()), entity.m_Name));
+	}
+	//Assert(false, "POOP");
 	/*Assert(false, std::format("For entity: {} found fields: {}", entity.m_Name, 
 		Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(entity.m_Transform.GetFields())));*/
 
@@ -56,19 +62,26 @@ ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 	//Assert(false, std::format("Text size: {}", RaylibUtils::ToString(textSize)));
 
 	DrawRectangle(currentPos.x, currentPos.y, renderInfo.m_RenderSize.m_X, textSize.y, DARKGRAY);
-	DrawTextEx(GetGlobalFont(), m_entity.m_Name.c_str(), currentPos, TITLE_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, WHITE);
+	DrawTextEx(GetGlobalFont(), m_entity.m_Name.c_str(), currentPos, TITLE_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_TEXT_COLOR);
 
 	currentPos.y += textSize.y;
 	//currentPos.y += MeasureTextEx(GetGlobalFont(), m_entity.m_Name.c_str(), GLOBAL_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X).y;
 
 	//Assert(false, std::format("Entity start pos: {}", RaylibUtils::ToString(startPos)));
 	ScreenPosition entityGUISize = {renderInfo.m_RenderSize.m_X, static_cast<int>(renderInfo.m_RenderSize.m_Y / m_componentGUIs.size())};
+	ScreenPosition componentSize = {};
+
+	/*if (m_entity.m_Name == "player")
+	{
+		Assert(false, std::format("size for each component: {} entity size: {}", std::to_string(entityGUISize.m_Y), std::to_string(renderInfo.m_RenderSize.m_Y)));
+	}*/
 
 	for (auto& componentGUI : m_componentGUIs)
 	{
 		/*Assert(false, std::format("Found comp: {} fields:{}", componentGUI.GetComponentName(), 
 					Utils::ToStringIterable<std::vector<std::string>, std::string>(componentGUI.GetFieldNames())));*/
-		componentGUI.Render(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y)}, entityGUISize));
+		componentSize= componentGUI.Render(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y)}, entityGUISize));
+		currentPos.y += componentSize.m_Y;
 	}
 	return renderInfo.m_RenderSize;
 }

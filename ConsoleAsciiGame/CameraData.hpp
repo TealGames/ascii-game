@@ -15,4 +15,6 @@ public:
 public:
 	CameraData();
 	CameraData(const CameraSettings& cameraSettings);
+
+	void InitFields() override;
 };

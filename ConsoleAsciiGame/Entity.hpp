@@ -66,7 +66,9 @@ namespace ECS
 		//ComponentCollectionType m_componentIDs;
 
 		std::string m_name;
-		std::vector<std::string> m_componentNames;
+		//TODO: perhaps we should also make a custom type that stores the actual type contained
+		//or maybe we can contain that data based on what index it is at?
+		std::vector<ComponentData*> m_components;
 
 	public:
 		const std::string& m_Name;
@@ -107,7 +109,9 @@ namespace ECS
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
 			T& result= m_entityMapper.emplace<T>(m_Id, std::forward<Args>(args)...);
-			static_cast<ComponentData&>(result).m_Entity = this;
+			ComponentData& componentData = static_cast<ComponentData&>(result);
+			componentData.m_Entity = this;
+			m_components.push_back(&componentData);
 			return result;
 		}
 
@@ -125,8 +129,9 @@ namespace ECS
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
 			T& result= m_entityMapper.emplace<T>(m_Id);
-			static_cast<ComponentData&>(result).m_Entity = this;
-			m_componentNames.push_back(typeid(T).name());
+			ComponentData& componentData = static_cast<ComponentData&>(result);
+			componentData.m_Entity = this;
+			m_components.push_back(&componentData);
 			return result;
 		}
 
@@ -145,8 +150,9 @@ namespace ECS
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
 			T& result = m_entityMapper.emplace_or_replace<T>(m_Id, component);
-			static_cast<ComponentData&>(result).m_Entity = this;
-			m_componentNames.push_back(typeid(T).name());
+			ComponentData& componentData = static_cast<ComponentData&>(result);
+			componentData.m_Entity = this;
+			m_components.push_back(&componentData);
 			return result;
 		}
 
@@ -174,65 +180,12 @@ namespace ECS
 		}
 
 		/// <summary>
-		/// Will add the specified type of component. To improve performance and prevent the need for
-		/// pointers/indirection and performance lost, the component data is moved.
-		/// Note: only rvalues are allowed since it helps performance since a component can not be added as a 
-		/// reference to the structure that stores componnents
+		/// Will return all components as base type for this entity. 
+		/// Note: even thoguh it is const, since each element is a pointer, the component
+		/// is modifiable, but no other components can be added/removed/changed
 		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="component"></param>
-		/// <param name="outComponent">Pointer to the component stored (since the actual componenent is moved) 
-		/// since there is no point of keeping copies. Note: this should be a pointer to a null pointer (and not just null)
-		/// if you want to retrieve the out value</param>
 		/// <returns></returns>
-		//template<typename T>
-		//requires std::is_rvalue_reference_v<T&&>
-		//bool TryAddComponent(T&& component, T** outComponent)
-		//{
-		//	if (!Assert(this, std::is_copy_assignable_v<T>, std::format("Tried to add component of type: {} "
-		//		"to entity id: {} via ENTITY but that type does not have a valid move assignment operator to move the componnent",
-		//		typeid(T).name(), m_Name))) return false;
-
-		//	const ComponentType type = GetComponentFromType<T>();
-		//	if (!Assert(this, !HasComponent(type), std::format("Tried to add the component type: {} to entity: {} "
-		//		"but it already exists on this entity! Components: {}", 
-		//		::ToString(type), m_Name, Utils::ToStringIterable(m_componentIDs)))) return false;
-
-		//	Log(std::format("After adding comp: {} to entity: {} first: {} second: {}", 
-		//		::ToString(type), m_Name, std::to_string(outComponent!=nullptr), std::to_string(outComponent? *outComponent!=nullptr : false)));
-
-		//	//Note: we forward it to preserve the rvalue reference (and not need for the function to deduce again)
-		//	std::optional<ComponentID> compID = m_entityMapper.TryAddComponent<T>(m_Id, std::forward<T>(component), type, outComponent);
-		//	if (!Assert(this, compID.has_value(), std::format("Tried to add the component type: {} to entity: {} "
-		//		"but the entity mapper failed to add it!", ::ToString(type), m_Name))) return false;
-
-		//	m_componentIDs.emplace(type, compID.value());
-		//	//outComponent = &(m_entityMapper.TryGetComponent<T>(m_Id, type));
-		//	return true;
-		//}
-
-		//template<typename T>
-		//requires std::is_rvalue_reference_v<T&&>
-		//T* TryAddComponent(T&& component)
-		//{
-		//	T* singleOutPtr = nullptr;
-		//	T** doubleOutPtr = &singleOutPtr;
-
-		//	TryAddComponent<T>(std::move(component), doubleOutPtr);
-
-		//	if (Utils::IsValidPointer(doubleOutPtr)) return *doubleOutPtr;
-		//	return nullptr;
-		//}
-
-		//template<typename T>
-		//T* TryGetComponent()
-		//{
-		//	const ComponentType type = GetComponentFromType<T>();
-		//	auto it = GetComponentIDIteratorMutable(type);
-		//	Log(std::format("Trying to get component: {} type: {} from entity: {}", typeid(T).name(), ::ToString(type), ToString()));
-
-		//	return m_entityMapper.TryGetComponent<T>(it->second);
-		//}
+		const std::vector<ComponentData*>& GetAllComponentsMutable() const;
 
 		std::string ToString() const;
 		static std::string ToString(const EntityID& id);

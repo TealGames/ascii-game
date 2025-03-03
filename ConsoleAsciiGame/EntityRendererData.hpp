@@ -28,4 +28,6 @@ public:
 	const VisualData& GetVisualData() const;
 
 	void SetVisualData(const VisualDataPositions& positions);
+
+	void InitFields() override;
 };

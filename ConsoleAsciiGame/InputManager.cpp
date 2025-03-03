@@ -162,14 +162,14 @@ namespace Input
 		}
 
 		m_capturedKeys.clear();
-		m_letterKeysPressed.clear();
+		m_charKeysPressed.clear();
 
 		//Since getkeypressed ia a queue and does not retain info after going through current frame's keys
 		//we must store them at the start of every update
 		int key = ::GetKeyPressed();
 		while (key > 0)
 		{
-			if (key >= 32 && key <= 126) m_letterKeysPressed += static_cast<char>(key);
+			if (key >= 32 && key <= 126) m_charKeysPressed += static_cast<char>(key);
 			m_capturedKeys.push_back(key);
 
 			key = ::GetKeyPressed();
@@ -300,9 +300,9 @@ namespace Input
 		return keys;
 	}
 
-	std::string InputManager::GetLettersPressedSinceLastFrame() const
+	std::string InputManager::GetCharsPressedSinceLastFrame() const
 	{
-		return m_letterKeysPressed;
+		return m_charKeysPressed;
 	}
 
 	ScreenPosition InputManager::GetMousePosition() const

@@ -10,7 +10,6 @@
 #include <filesystem>
 #include <random>
 #include "HelperFunctions.hpp"
-#include "StringUtil.hpp"
 
 namespace Utils
 {
@@ -41,30 +40,58 @@ namespace Utils
 		return timeString;
 	}
 
+	std::string FormatTypeName(const std::string& typeName)
+	{
+		const std::string STRUCT_NAME = "struct";
+		const std::string CLASS_NAME = "class";
+		std::string result = typeName;
+
+		if (typeName.substr(0, STRUCT_NAME.size()) == STRUCT_NAME)
+			result = result.substr(STRUCT_NAME.size());
+
+		if (typeName.substr(0, CLASS_NAME.size()) == CLASS_NAME)
+			result = result.substr(CLASS_NAME.size());
+
+		return StringUtil::StringUtil(result).Trim().ToString();
+	}
+
 	void ClearSTDCIN()
 	{
 		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 	}
 
-	bool ContainsIntegralValues(const std::string& input)
+	bool ContainsIntegralValues(const std::string& input, const bool includeNegativeSign)
 	{
 		for (const auto& c : input)
 		{
-			if (std::isdigit(c)) return true;
+			if (std::isdigit(c) || (includeNegativeSign && c == '-')) 
+				return true;
 		}
 		return false;
+	}
+	size_t GetFirstIngteralValueIndex(const std::string& input, const bool includeNegativeSign)
+	{
+		for (size_t i=0; i<input.size(); i++)
+		{
+			if (std::isdigit(input[i]) || (includeNegativeSign && input[i]== '-'))
+				return i;
+		}
+		return std::string::npos;
 	}
 
 	std::string TryExtractInt(const std::string& input)
 	{
-		if (!ContainsIntegralValues(input)) return "";
+		size_t firstIngegralIndex = GetFirstIngteralValueIndex(input, true);
+		if (firstIngegralIndex == std::string::npos) return "";
 
 		std::string result = "";
-		for (const auto& c : input)
+		char currentChar = '0';
+		for (size_t i= firstIngegralIndex; i<input.size(); i++)
 		{
-			if (std::isdigit(c))
+			currentChar = input[i];
+			if (std::isdigit(currentChar) || (result.empty() && currentChar == '-'))
 			{
-				result += c;
+				result += currentChar;
 			}
 		}
 
@@ -72,20 +99,23 @@ namespace Utils
 	}
 	std::string TryExtractFloat(const std::string& input)
 	{
-		if (!ContainsIntegralValues(input)) return "";
+		size_t firstIngegralIndex = GetFirstIngteralValueIndex(input, true);
+		if (firstIngegralIndex == std::string::npos) return "";
 
 		std::string result = "";
 		bool foundDecimal = false;
-		for (const auto& c : input)
+		char currentChar = '0';
+		for (size_t i = firstIngegralIndex; i < input.size(); i++)
 		{
-			if (c == '.')
+			currentChar = input[i];
+			if (currentChar == '.')
 			{
-				if (!foundDecimal) result += c;
+				if (!foundDecimal) result += currentChar;
 				foundDecimal = true;
 			}
-			else if (std::isdigit(c))
+			else if (std::isdigit(currentChar) || (result.empty() && currentChar == '-'))
 			{
-				result += c;
+				result += currentChar;
 			}
 		}
 

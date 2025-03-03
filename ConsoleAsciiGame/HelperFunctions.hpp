@@ -1,4 +1,5 @@
 #pragma once
+#include "StringUtil.hpp"
 #include <string>
 #include <format>
 #include <variant>
@@ -81,12 +82,15 @@ namespace Utils
 	template <typename T>
 	constexpr std::string GetTypeName()
 	{
+		//TODO: replace struct and class of type name
 		if (typeid(T) == typeid(std::string)) return "string";
 
 		constexpr auto& value = TypeNameHolder<T>::value;
-		std::string_view stringView= std::string_view{ value.data(), value.size() };
-		return std::string(stringView.data());
+		std::string_view stringView = std::string_view{ value.data(), value.size() };
+		return FormatTypeName(stringView.data());
 	}
+
+	std::string FormatTypeName(const std::string& typeName);
 
 	//This is the fallback in case we supply incorrect type args
 	template <typename, typename T>
@@ -352,7 +356,8 @@ namespace Utils
 	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits);
 	void ClearSTDCIN();
 
-	bool ContainsIntegralValues(const std::string& input);
+	bool ContainsIntegralValues(const std::string& input, const bool includeNegativeSign=false);
+	size_t GetFirstIngteralValueIndex(const std::string& input, const bool includeNegativeSign = false);
 	/// <summary>
 	/// Will extract all of the integers in the input string as a string containing the int
 	/// Note: this behavior is NOT the same as std::stoi which would find the first integer 

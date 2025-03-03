@@ -9,7 +9,7 @@
 static constexpr int MAX_OUTPUT_MESSAGES = 10;
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 
-static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_COMMA;
+static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_ONE;
 
 static const Color CONSOLE_COLOR = { GRAY.r, GRAY.g, GRAY.b, 100 };
 
@@ -31,15 +31,14 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorMana
 		{
 			TryInvokePrompt();
 			ResetInput();
-		});
-
-	/*
-	InputFieldKeyActions{ {LAST_COMMAND_KEY, [this](std::string input) -> void
+		},
+		InputFieldKeyActions{ {LAST_COMMAND_KEY, [this](std::string input) -> void
 			{
+				Assert(false, std::format("Triggering stuff last input: {}", m_inputField.GetLastInput()));
+				//TODO: this does not work because we override underlying input and not attempted input
 				m_inputField.OverrideInput(m_inputField.GetLastInput());
 			}
 		} });
-		*/
 
 	OnMessageLogged.AddListener(
 		[this](const LogType& logType, const std::string& message, const bool& logToConsole)-> void

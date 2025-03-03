@@ -45,3 +45,8 @@ SpriteAnimatorData::SpriteAnimatorData(const std::vector<SpriteAnimationFrame>& 
 		m_VisualDeltas.push_back(visualDelta);
 	}
 }
+
+void SpriteAnimatorData::InitFields()
+{
+	m_Fields = {ComponentField("Loop", &m_Loop)};
+}

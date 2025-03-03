@@ -20,6 +20,8 @@ public:
 	const Input::InputAction* TryGetAction(const std::string& name) const;
 	const std::unordered_map<std::string, Input::InputAction>& GetActions() const;
 
+	void InitFields() override;
+
 	/*void SetInputManager(Input::InputManager& manager);
 	const Input::InputManager& GetInputManager() const;*/
 };

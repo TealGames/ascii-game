@@ -33,7 +33,7 @@ void SelectableGUI::Init()
 	}
 }
 
-GUIRect& SelectableGUI::GetLastRectMutable()
+GUIRect& SelectableGUI::GetLastFrameRectMutable()
 {
 	return m_lastFrameRect;
 }
@@ -63,6 +63,14 @@ void SelectableGUI::Select()
 {
 	m_isSelected = true;
 	m_OnSelect.Invoke(this);
+}
+
+void SelectableGUI::DrawDisabledOverlay(const RenderInfo& renderInfo) const
+{
+	Color disabledOverlay = BLACK;
+	disabledOverlay.a = 155;
+	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, 
+		renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, disabledOverlay);
 }
 
 void SelectableGUI::Deselect()

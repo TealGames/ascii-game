@@ -18,5 +18,7 @@ public:
 	UIObjectData(const NormalizedPosition& normalizedPos);
 
 	const NormalizedPosition& GetNormalizedPos() const;
+
+	void InitFields() override;
 };
 

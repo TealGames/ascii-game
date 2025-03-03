@@ -20,6 +20,9 @@ private:
 	EntityGUICollection::iterator m_selectedEntity;
 
 public:
+	static const Color EDITOR_TEXT_COLOR;
+	static const Color EDITOR_BACKGROUND_COLOR;
+	static const Color EDITOR_SECONDARY_COLOR;
 
 private:
 public:

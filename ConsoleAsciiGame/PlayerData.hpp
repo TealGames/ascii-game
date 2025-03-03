@@ -42,5 +42,7 @@ public:
 
 	void SetFrameInput(const Utils::Point2DInt& input);
 	void SetLastFrameInput(const Utils::Point2DInt& lastFrameInput);
+
+	void InitFields() override;
 };
 

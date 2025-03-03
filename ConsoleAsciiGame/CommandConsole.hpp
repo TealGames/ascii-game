@@ -9,7 +9,6 @@
 #include "InputManager.hpp"
 #include "InputField.hpp"
 #include "IRenderable.hpp"
-#include "InputField.hpp"
 
 using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;

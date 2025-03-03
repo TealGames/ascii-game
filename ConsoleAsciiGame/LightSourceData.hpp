@@ -40,4 +40,6 @@ struct LightSourceData : ComponentData
 	LightSourceData();
 	LightSourceData(const std::uint8_t& lightRadius, const RenderLayerType& affectedLayers, const ColorGradient& colorFilter,
 		const std::uint8_t& intensity, const float& falloff);
+
+	void InitFields() override;
 };

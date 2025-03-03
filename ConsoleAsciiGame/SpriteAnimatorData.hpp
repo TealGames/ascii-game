@@ -42,5 +42,7 @@ struct SpriteAnimatorData : public ComponentData
 
 	SpriteAnimatorData(const std::vector<SpriteAnimationFrame>& frames,
 		const float& animationSpeed, const float& endTime, const bool& loop);
+
+	void InitFields() override;
 };
 

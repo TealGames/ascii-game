@@ -12,6 +12,8 @@ struct TransformData : public ComponentData
 	Utils::Point2D m_LastPos;
 	Utils::Point2D m_LastFramePos;
 
+	bool m_IsFat;
+
 	TransformData();
 	TransformData(const Utils::Point2D& pos);
 

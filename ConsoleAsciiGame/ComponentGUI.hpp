@@ -5,6 +5,7 @@
 #include "ComponentData.hpp"
 #include "ComponentFieldGUI.hpp"
 #include "InputManager.hpp"
+#include "CheckboxGUI.hpp"
 
 class EntityGUI;
 class GUISelectorManager;
@@ -15,6 +16,8 @@ private:
 	const Input::InputManager* m_inputManager;
 	ComponentData* m_component;
 	std::vector<ComponentFieldGUI> m_fieldGUIs;
+
+	CheckboxGUI m_dropdownCheckbox;
 
 	const EntityGUI* m_entityGUI;
 public:

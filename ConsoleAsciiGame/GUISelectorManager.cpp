@@ -6,13 +6,10 @@
 #include "Debug.hpp"
 
 //TODO: these should all be changed to be parsed or retrieved from ui layer of input profile from input manager
-static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
-static constexpr KeyboardKey ESCAPE_KEY = KEY_E;
-static constexpr KeyboardKey DELETE_KEY = KEY_BACKSPACE;
 static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
 
 GUISelectorManager::GUISelectorManager(const Input::InputManager& input) 
-	: m_inputManager(input), m_selectables(), m_currentSelected(nullptr) 
+	: m_inputManager(input), m_selectables(), m_currentSelected(nullptr), m_lastFrameClickedPosition()
 {
 
 }
@@ -45,18 +42,19 @@ void GUISelectorManager::Update()
 		//allRect += "HELLO";
 	}
 
+	m_lastFrameClickedPosition = std::nullopt;
 	if (!m_selectables.empty() && m_inputManager.GetInputKey(SELECT_KEY)->GetState().IsReleased())
 	{
-		ScreenPosition mousePos = m_inputManager.GetMousePosition();
+		m_lastFrameClickedPosition= m_inputManager.GetMousePosition();
 
 		for (auto& selectable : m_selectables)
 		{
 			//std::to_string(selectable->GetLastFrameRect().ContainsPos(mousePos))
 			if (selectable == nullptr) continue;
-			allRect += std::format("Mouse pos: {} selectable null: {} rect: {}", mousePos.ToString(),
+			allRect += std::format("Mouse pos: {} selectable null: {} rect: {}", m_lastFrameClickedPosition.value().ToString(),
 				std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL");
 			
-			if (selectable->GetLastFrameRect().ContainsPos(mousePos))
+			if (selectable->GetLastFrameRect().ContainsPos(m_lastFrameClickedPosition.value()))
 			{
 				SelectNewSelectable(selectable);
 				/*Assert(false, std::format("Mouse pos: {} selectable null: {} rect: {}", mousePos.ToString(),
@@ -118,4 +116,8 @@ bool GUISelectorManager::HasSelecatbleSelected() const
 const SelectableGUI* GUISelectorManager::TryGetSelectableSelected() const
 {
 	return m_currentSelected;
+}
+std::optional<ScreenPosition> GUISelectorManager::GetLastFrameClickedPosition() const
+{
+	return m_lastFrameClickedPosition;
 }

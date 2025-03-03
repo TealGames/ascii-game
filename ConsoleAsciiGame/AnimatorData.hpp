@@ -82,6 +82,8 @@ public:
 	const std::vector<AnimationPropertyVariant>& GetProperties() const;
 	const float& GetAnimationSpeed() const;
 	const float& GetEndTime() const;
+
+	void InitFields() override;
 };
 
 template<typename T>

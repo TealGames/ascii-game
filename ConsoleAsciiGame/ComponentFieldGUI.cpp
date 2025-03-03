@@ -7,20 +7,19 @@
 #include "EntityGUI.hpp"
 #include "Entity.hpp"
 #include "GUISelectorManager.hpp"
+#include "EntityEditorGUI.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 10;
 constexpr static float FIELD_FONT_FACTOR = 0.8;
-constexpr static int MAX_WIDTH = 100;
-constexpr static int MAX_HEIGHT = 100;
 
 constexpr static float FONT_SIZE = 10;
 constexpr static float FONT_SPACING = 10;
 
-const static ScreenPosition MAX_INPUT_FIELD_SIZE = { 100, 100 };
+const static ScreenPosition MAX_INPUT_FIELD_SIZE = { 100, 20 };
 
 ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
 	const ComponentGUI& componentGUI, ComponentField& field)
-	: m_fieldInfo(field), m_inputFields(), m_inputManager(inputManager), m_componentGUI(&componentGUI)
+	: m_fieldInfo(field), m_inputFields(),m_checkbox(), m_inputManager(inputManager), m_componentGUI(&componentGUI)
 {
 	/*if (m_fieldInfo.IsCurrentType<Utils::Point2D>()) 
 		Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Utils::Point2D*>(m_fieldInfo.m_Value)->ToString()));*/
@@ -28,7 +27,8 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	//Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Utils::Point2D*>(m_fieldInfo.m_Value)->ToString()));
 
 	InputFieldFlag fieldFlags = InputFieldFlag::None;
-	GUISettings guiSettings = GUISettings(MAX_INPUT_FIELD_SIZE, GRAY, TextGUISettings(WHITE, TextGUIFontSize::ParentArea, FIELD_FONT_FACTOR, 0));
+	GUISettings guiSettings = GUISettings(MAX_INPUT_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
+		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, TextGUIFontSize::ParentArea, FIELD_FONT_FACTOR, 0));
 	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
 		std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
 
@@ -39,6 +39,10 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	else if (m_fieldInfo.IsCurrentType<float>())
 	{
 		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, guiSettings));
+	}
+	else if (m_fieldInfo.IsCurrentType<bool>())
+	{
+		m_checkbox = CheckboxGUI(selector, false, guiSettings);
 	}
 	else if (m_fieldInfo.IsCurrentType<std::string>())
 	{
@@ -74,6 +78,10 @@ void ComponentFieldGUI::SetFieldToInternal()
 	{
 		m_inputFields[0].OverrideInput(std::to_string(*(m_fieldInfo.TryGetValue<float>())));
 	}
+	else if (m_fieldInfo.IsCurrentType<bool>())
+	{
+		m_checkbox.SetValue(*(m_fieldInfo.TryGetValue<bool>()));
+	}
 	else if (m_fieldInfo.IsCurrentType<std::string>())
 	{
 		//Assert(false, "POOP");
@@ -99,22 +107,30 @@ void ComponentFieldGUI::SetFieldToInternal()
 		return;
 	}
 
-	for (auto& field : m_inputFields)
+	//TODO: this should not be called on set field to internal since it gets called every frame
+	if (!m_inputFields.empty())
 	{
-		//LogError("Set field submit action");
-		field.SetSubmitAction([this](std::string input) -> void
-			{
-				//LogError(std::format("Setting internal input for field with str: {} type: {} is point: {}",
-				//	input, m_fieldInfo.GetCurrentType().name(), std::to_string(m_fieldInfo.IsCurrentType<Utils::Point2D>())));
+		for (auto& field : m_inputFields)
+		{
+			//LogError("Set field submit action");
+			field.SetSubmitAction([this](std::string input) -> void
+				{
+					//LogError(std::format("Setting internal input for field with str: {} type: {} is point: {}",
+					//	input, m_fieldInfo.GetCurrentType().name(), std::to_string(m_fieldInfo.IsCurrentType<Utils::Point2D>())));
 
-				//for (auto& inputField : m_inputFields)
-				//{
-				//	LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
-				//}
+					//for (auto& inputField : m_inputFields)
+					//{
+					//	LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
+					//}
 
-				SetInternalWithInput();
-			});
+					SetInternalWithInput();
+				});
+		}
 	}
+	else m_checkbox.SetValueSetAction([this](bool isChecked)-> void
+		{
+			SetInternalWithInput();
+		});
 }
 void ComponentFieldGUI::SetInternalWithInput()
 {
@@ -131,6 +147,10 @@ void ComponentFieldGUI::SetInternalWithInput()
 	{
 		LogError("REAHCED FLOAT");
 		m_fieldInfo.TrySetValue<float>(m_inputFields[0].GetFloatInput());
+	}
+	else if (m_fieldInfo.IsCurrentType<bool>())
+	{
+		m_fieldInfo.TrySetValue<bool>(m_checkbox.IsChecked());
 	}
 	else if (m_fieldInfo.IsCurrentType<std::string>())
 	{
@@ -157,14 +177,21 @@ void ComponentFieldGUI::SetInternalWithInput()
 
 void ComponentFieldGUI::Update()
 {
-	for (auto& inputField : m_inputFields)
+	if (!m_inputFields.empty())
 	{
-		inputField.Update();
-		LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
+		for (auto& inputField : m_inputFields)
+		{
+			inputField.Update();
+			LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
+		}
 	}
+	else m_checkbox.Update();
 	//TODO: internal should only be set when enter pressed on input
 	//SetInternalWithInput();
 
+	//NOTE: yes this might be bad to set to internal value every update, but
+	//we do not know when the value internally can change, so it must be updated
+	//every frame
 	SetFieldToInternal();
 	//TODO: update the values in the field
 }
@@ -176,20 +203,33 @@ ScreenPosition ComponentFieldGUI::Render(const RenderInfo& renderInfo)
 	//Assert(false, std::format("Field name: {}", m_fieldInfo.m_FieldName));
 	//return {(int)currentPos.x, (int)currentPos.y};
 
-	DrawTextEx(GetGlobalFont(), m_fieldInfo.m_FieldName.c_str(), currentPos, TITLE_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, WHITE);
-
+	DrawTextEx(GetGlobalFont(), m_fieldInfo.m_FieldName.c_str(), currentPos, TITLE_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_SECONDARY_COLOR);
 	currentPos.y += textSize.y;
 
-	ScreenPosition inputFieldSizeUsed = {};
-	ScreenPosition inputFieldSpace = { static_cast<int>(renderInfo.m_RenderSize.m_X / m_inputFields.size()), 
-									   static_cast<int>(renderInfo.m_RenderSize.m_Y-(renderInfo.m_TopLeftPos.m_Y- currentPos.y))};
-
-	for (auto& field : m_inputFields)
+	const int heightLeft = renderInfo.m_RenderSize.m_Y - (currentPos.y - renderInfo.m_TopLeftPos.m_Y);
+	if (!m_inputFields.empty())
 	{
-		inputFieldSizeUsed= field.Render(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y)}, inputFieldSpace));
-		currentPos.x += inputFieldSizeUsed.m_X;
+		ScreenPosition inputFieldSizeUsed = {};
+		ScreenPosition inputFieldSpace = { static_cast<int>(renderInfo.m_RenderSize.m_X / m_inputFields.size()),
+										   std::min(heightLeft, MAX_INPUT_FIELD_SIZE.m_Y) };
+
+		for (auto& field : m_inputFields)
+		{
+			inputFieldSizeUsed = field.Render(RenderInfo({ static_cast<int>(currentPos.x), 
+														   static_cast<int>(currentPos.y) }, inputFieldSpace));
+			currentPos.x += inputFieldSizeUsed.m_X;
+		}
+		currentPos.y += inputFieldSpace.m_Y;
 	}
-	return { renderInfo.m_RenderSize.m_X, static_cast<int>(renderInfo.m_TopLeftPos.m_Y- currentPos.y + inputFieldSpace.m_Y)};
+	else
+	{
+		//NOTE: unlike the fields which are big and need to be on new lines, we can render the name and checkbox on the same line
+		ScreenPosition checkboxSize = m_checkbox.Render(RenderInfo(renderInfo.m_TopLeftPos,
+															ScreenPosition{ renderInfo.m_RenderSize.m_X, heightLeft }));
+		currentPos.y += checkboxSize.m_Y;
+	}
+	
+	return { renderInfo.m_RenderSize.m_X, static_cast<int>(currentPos.y - renderInfo.m_TopLeftPos.m_Y) };
 }
 
 const ComponentField& ComponentFieldGUI::GetFieldInfo() const

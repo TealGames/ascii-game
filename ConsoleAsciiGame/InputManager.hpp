@@ -38,7 +38,7 @@ namespace Input
 		std::unordered_map<GamepadButton, InputKey> m_gamepadStates;
 
 		std::vector<int> m_capturedKeys;
-		std::string m_letterKeysPressed;
+		std::string m_charKeysPressed;
 
 	public:
 		static const std::string PROFILE_PREFIX;
@@ -75,7 +75,7 @@ namespace Input
 		std::vector<const InputKey*> GetAllKeysWithState(const KeyState& state) const;
 		std::vector<std::string> GetAllKeysWithStateAsString(const KeyState& state) const;
 
-		std::string GetLettersPressedSinceLastFrame() const;
+		std::string GetCharsPressedSinceLastFrame() const;
 		ScreenPosition GetMousePosition() const;
 
 		const InputKey* GetInputKey(const KeyboardKey& key) const;

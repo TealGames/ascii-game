@@ -8,7 +8,7 @@
 TransformData::TransformData() : TransformData(Utils::Point2D{}) {}
 
 TransformData::TransformData(const Utils::Point2D& pos) :
-	ComponentData(), m_Pos(pos), m_LastPos(NULL_POS), m_LastFramePos(NULL_POS)
+	ComponentData(), m_Pos(pos), m_LastPos(NULL_POS), m_LastFramePos(NULL_POS), m_IsFat()
 {
 	
 }
@@ -54,7 +54,7 @@ bool TransformData::HasMovedThisFrame() const
 
 void TransformData::InitFields()
 {
-	m_Fields = { ComponentField("Pos", &m_Pos) };
+	m_Fields = { ComponentField("Pos", [this](Utils::Point2D newPos)-> void { SetPos(newPos); } ,&m_Pos), ComponentField("IsFat", &m_IsFat) };
 	/*Assert(false, std::format("Tried to create field AT TRANFOEMR for: {} but wtih value: {} ACTUAL{}",
 		GetEntitySafe().m_Name, std::get<Utils::Point2D*>(m_Fields[0].m_Value)->ToString(), m_Pos.ToString()));*/
 		/*Assert(false, std::format("Tried to create field AT TRANFOEMR for: {} but wtih value: {} ACTUAL{}",

@@ -2,6 +2,7 @@
 #include "SelectableGUI.hpp"
 #include "InputManager.hpp"
 #include <vector>
+#include <optional>
 
 class GUISelectorManager
 {
@@ -9,6 +10,9 @@ private:
 	const Input::InputManager& m_inputManager;
 	std::vector<SelectableGUI*> m_selectables;
 	SelectableGUI* m_currentSelected;
+
+	std::optional<ScreenPosition> m_lastFrameClickedPosition;
+
 public:
 
 private:
@@ -23,5 +27,7 @@ public:
 	void AddSelectable(SelectableGUI* selectable);
 	bool HasSelecatbleSelected() const;
 	const SelectableGUI* TryGetSelectableSelected() const;
+
+	std::optional<ScreenPosition> GetLastFrameClickedPosition() const;
 };
 

@@ -39,3 +39,8 @@ const float& AnimatorData::GetEndTime() const
 {
 	return m_EndTime;
 }
+
+void AnimatorData::InitFields()
+{
+	m_Fields = { ComponentField("AnimSpeed", &m_AnimationSpeed) };
+}

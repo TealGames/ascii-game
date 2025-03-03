@@ -41,6 +41,8 @@ namespace Core
 	//TODO: create a general selectable with selection rect, padding, select/deselect functions as well as a general selection profile with mouse key up,down select actions, etc
 	//TODO: sizing on all gui objeccts should be relative in case screen size changes
 	//TODO: bug where player on start can be moved to the end of the ground rectangle (probably due to it being the min distance when considerign x and y moves)
+	//TODO: maybe remake the editor using entities and some other rendering
+	//TODO: replace all instances of point2d with vec2 and point2dint with vec2int
 
 	static const std::string SCENES_PATH = "scenes";
 	static const std::string INPUT_PROFILES_PATH = "input";

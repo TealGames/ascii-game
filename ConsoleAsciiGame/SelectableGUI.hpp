@@ -2,6 +2,7 @@
 #include "ISelectable.hpp"
 #include "GUIRect.hpp"
 #include "Event.hpp"
+#include "RenderInfo.hpp"
 
 class GUISelectorManager;
 class SelectableGUI;
@@ -21,11 +22,12 @@ public:
 	SelectableEvent m_OnSelect;
 	SelectableEvent m_OnDeselect;
 
-private:
-	GUISelectorManager& GetSelectorManager();
 protected:
+	GUISelectorManager& GetSelectorManager();
 	void SetLastFramneRect(const GUIRect& newRect);
-	GUIRect& GetLastRectMutable();
+	GUIRect& GetLastFrameRectMutable();
+
+	void DrawDisabledOverlay(const RenderInfo& renderInfo) const;
 
 public:
 	SelectableGUI();

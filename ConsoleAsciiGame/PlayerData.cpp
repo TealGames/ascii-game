@@ -14,6 +14,11 @@ PlayerData::PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const 
 	m_initialJumpSpeed = std::sqrt(2 * std::abs(GetBodyMutableSafe().GetGravity()) * maxJumpHeight);
 }
 
+void PlayerData::InitFields()
+{
+	m_Fields = {ComponentField("MoveXSpeed", &m_xMoveSpeed)};
+}
+
 const float& PlayerData::GetMoveSpeed() const
 {
 	return m_xMoveSpeed;

@@ -6,6 +6,7 @@
 #include "IRenderable.hpp"
 #include "InputField.hpp"
 #include "InputManager.hpp"
+#include "CheckboxGUI.hpp"
 
 class GUISelectorManager;
 
@@ -17,6 +18,7 @@ private:
 	const Input::InputManager& m_inputManager;
 	ComponentField& m_fieldInfo;
 	std::vector<InputField> m_inputFields;
+	CheckboxGUI m_checkbox;
 
 	const ComponentGUI* m_componentGUI;
 

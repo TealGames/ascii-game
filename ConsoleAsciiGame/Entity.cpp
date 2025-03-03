@@ -19,77 +19,18 @@ namespace ECS
 		//m_Id(m_entityMapper.ReserveAvailableEntityID()),
 		m_Id(m_entityMapper.create()),
 		m_Transform(AddComponent<TransformData>(transform)), 
-		m_componentNames() //m_componentIDs{}
+		m_components() //m_componentIDs{}
 	{
 	}
-
-	//Entity::Entity(const std::string& name, entt::registry& mapper, TransformData&& transform) :
-	//	m_name(name), m_Name(m_name), m_entityMapper(mapper),
-	//	//m_Id(m_entityMapper.ReserveAvailableEntityID()),
-	//	m_Id(m_entityMapper.create()),
-	//	m_Transform(std::move(transform)), m_componentIDs{}
-	//{
-
-	//}
-
-	/// <summary>
-	/// This will get the transform ref of the stored transform 
-	/// after making a copy of the argument first
-	/// </summary>
-	/// <param name="transform"></param>
-	/// <returns></returns>
-	/*TransformData& Entity::GetTransformRef(const TransformData& transform)
-	{
-		TransformData transformCopy = transform;
-		
-		TransformData* singleOutPtr = nullptr;
-		TransformData** doubleOutPtr = &singleOutPtr;
-		TryAddComponent<TransformData>(std::move(transformCopy), doubleOutPtr);
-
-		Assert(this, Utils::IsValidPointer(doubleOutPtr), std::format("Tried to bind transform data for entity: {} "
-			"using copy but failed to retrieve it after it has been added", m_Name));
-
-		return *(*doubleOutPtr);
-	}
-
-	/// <summary>
-	/// This will get the transform by directly moving the transform rvalue
-	/// </summary>
-	/// <param name="transform"></param>
-	/// <returns></returns>
-	TransformData& Entity::GetTransformRef(TransformData&& transform)
-	{
-		TransformData* singleOutPtr = nullptr;
-		TransformData** doubleOutPtr = &singleOutPtr;
-		TryAddComponent<TransformData>(std::move(transform), doubleOutPtr);
-
-		Assert(this, Utils::IsValidPointer(doubleOutPtr), std::format("Tried to bind transform data for entity: {} "
-			"using move but failed to retrieve it after it has been added", m_Name));
-
-		return *(*doubleOutPtr);
-	}*/
-
-	/*ComponentCollectionType::iterator Entity::GetComponentIDIteratorMutable(const ComponentType& type)
-	{
-		return m_componentIDs.find(type);
-	}
-
-	ComponentCollectionType::const_iterator Entity::GetComponentIDIterator(const ComponentType& type) const
-	{
-		return m_componentIDs.find(type);
-	}*/
-
-	/*bool Entity::HasComponent(const ComponentType& type) const
-	{
-		return GetComponentIDIterator(type) != m_componentIDs.end();
-	}*/
 
 	std::string Entity::ToString() const
 	{
 		std::string componentNames = "[COMPONENT FIND NOT IMPLEMENTED]";
-		if (!m_componentNames.empty())
+		if (!m_components.empty())
 		{
-			componentNames = Utils::ToStringIterable<std::vector<std::string>, std::string>(m_componentNames);
+			for (const auto& component : m_components) 
+				componentNames += (typeid(component).name() + ',');
+			//componentNames = Utils::ToStringIterable<std::vector<std::string>, std::string>(m_components);
 		}
 
 		return std::format("['{}'(ID: {})-> {}]", m_Name, Entity::ToString(m_Id), componentNames);
@@ -107,95 +48,13 @@ namespace ECS
 	{
 		//Note: not fully guaranteed to be equal, but highlight likely
 		return m_name == other.m_name && m_Id == other.m_Id 
-			&& m_componentNames == other.m_componentNames;
+			&& m_components == other.m_components;
 	}
 
-	//int Entity::GetComponentTypeCount(const ComponentType& type) const
-	//{
-	//	//TODO: optimization could be to batch group components of the same type
-	//	//if it is allowed in order to have O(1) lookup time
-	//	int count = 0;
-	//	for (const auto& component : m_components)
-	//	{
-	//		if (component.second->m_Type == type)count++;
-	//	}
-	//	return count;
-	//}
-
-	//bool Entity::HasComponentOfType(const ComponentType& type) const
-	//{
-	//	return GetComponentTypeCount(type) > 0;
-	//}
-
-	//ComponentMapType::iterator Entity::GetComponentIteratorWithIdMutable(const int& componentId)
-	//{
-	//	return std::find(m_components.begin(), m_components.end(), componentId);
-	//}
-
-	//ComponentMapType::const_iterator Entity::GetComponentIteratorWithId(const int& componentId) const
-	//{
-	//	return std::find(m_components.begin(), m_components.end(), componentId);
-	//}
-
-	//bool Entity::HasComponentWithId(const int& componentId) const
-	//{
-	//	return GetComponentIteratorWithId(componentId) != m_components.end();
-	//}
-
-	//const Component* Entity::TryGetComponentWithId(const int& componentId) const
-	//{
-	//	ComponentMapType::const_iterator componentIt = GetComponentIteratorWithId(componentId);
-	//	if (componentIt == m_components.end()) return nullptr;
-	//	return componentIt->second;
-	//}
-
-	//bool Entity::TryAddComponent(Component* component, const int& componentId = -1)
-	//{
-	//	if (GetComponentTypeCount(component->m_Type) >= component->GetMaxPerObject())
-	//	{
-	//		std::string error = std::format("Tried to place a component of type: {} "
-	//			"on gameObject {} but it already contains the max: {}",
-	//			ToString(component->m_Type), m_Name, std::to_string(component->GetMaxPerObject()));
-	//		Log(LogType::Error, error);
-	//		return false;
-	//	}
-	//	static int lastId = -1;
-
-	//	if (componentId != -1)
-	//	{
-	//		if (componentId < -1)
-	//		{
-	//			std::string error = std::format("Tried to add a component of {} to gameObject with name: {} "
-	//				"but the component id ({}) is not allowed!", ToString(component->m_Type), m_Name, std::to_string(componentId));
-	//			Log(LogType::Error, error);
-	//			return false;
-	//		}
-
-	//		if (HasComponentWithId(componentId))
-	//		{
-	//			std::string error = std::format("Tried to add a component of {} to gameObject with name: {} "
-	//				"but the component id ({}) is already taken!", ToString(component->m_Type), m_Name, std::to_string(componentId));
-	//			Log(LogType::Error, error);
-	//			return false;
-	//		}
-	//		m_components.emplace(componentId, component);
-	//		lastId = componentId;
-	//	}
-	//	else
-	//	{
-	//		m_id = ++lastId;
-	//		m_components.emplace(lastId, component);
-	//	}
-
-	//	return true;
-	//}
-
-	//bool Entity::TryRemoveComponent(const int& componentId)
-	//{
-	//	ComponentMapType::const_iterator componentIt = GetComponentIteratorWithId(componentId);
-	//	if (componentIt == m_components.end()) return false;
-	//	m_components.erase(componentIt);
-	//}
+	const std::vector<ComponentData*>& Entity::GetAllComponentsMutable() const
+	{
+		return m_components;
+	}
 }
 
 

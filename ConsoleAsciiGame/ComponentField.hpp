@@ -4,6 +4,8 @@
 #include "Vec2.hpp"
 #include <type_traits>
 #include <typeinfo>
+#include <functional>
+#include <optional>
 
 enum class ComponentFieldType
 {
@@ -15,17 +17,33 @@ enum class ComponentFieldType
 
 //TODO: ideally we would not use a direct value but rather a function to set those values to add some abstraction
 //and allow some clamping or other import actions to be taken if neccessary
-using ComponentFieldVariant = std::variant<std::string*, int*, float*, Utils::Point2D*>;
+using ComponentFieldVariant = std::variant<std::string*, int*, float*, bool*, Utils::Point2D*>;
+using ComponentFieldSetAction = std::variant<std::function<void(std::string)>, std::function<void(int)>,
+	std::function<void(float)>, std::function<void(bool)>, std::function<void(Utils::Point2D)>>;
+
 struct ComponentField
 {
 	std::string m_FieldName;
 	ComponentFieldVariant m_Value;
+	std::optional<ComponentFieldSetAction> m_MaybeSetFunction;
+
 	//ComponentFieldType m_Type;
 
 	ComponentField(const std::string& name, const ComponentFieldVariant& value);
+	ComponentField(const std::string& name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value);
 
 	const std::type_info& GetCurrentType() const;
 	std::string ToString() const;
+
+	bool HasSetFunction() const;
+
+	template<typename T>
+	requires (!std::is_pointer_v<T>)
+	bool IsSetFunctionofType() const
+	{
+		if (!HasSetFunction()) return false;
+		return std::holds_alternative<std::function<void(T)>>(m_MaybeSetFunction.value());
+	}
 
 	template<typename T>
 	requires (!std::is_pointer_v<T>)
@@ -48,7 +66,20 @@ struct ComponentField
 	{
 		if (IsCurrentType<T>())
 		{
-			*(std::get<T*>(m_Value)) = value;
+			if (HasSetFunction())
+			{
+				if (!Assert(this, IsSetFunctionofType<T>(), std::format("Tried to set value of field: '{}' of type: {} "
+					"with a set function but set function does not match that type", m_FieldName, GetCurrentType().name())))
+					throw std::invalid_argument("Invalid set function type");
+
+				/*if (!Assert(this, m_MaybeSetFunction.value()!=nullptr, std::format("Tried to set value of field: '{}' of type: {} "
+						"with a set function that is NULL", m_FieldName, GetCurrentType().name())))
+					throw std::invalid_argument("Invalid set function");*/
+
+				std::get<std::function<void(T)>>(m_MaybeSetFunction.value())(value);
+			}
+			else *(std::get<T*>(m_Value)) = value;
+			
 			return true;
 		}
 		return false;

@@ -112,11 +112,16 @@ void InputField::Update()
 
 	if (GetInputManager().IsKeyReleased(SUBMIT_KEY))
 	{
+		//If we have an integral field and we have only stored a negative (we need to do this to still allow negatives)
+		//we must clear it so that it does not cause any errors
+		if ((m_type == InputFieldType::Float || m_type == InputFieldType::Integer) 
+			&& m_attemptedInput == "-") m_attemptedInput = "";
+
 		SetInput(m_attemptedInput, false);
-		//if (!HasFlag(InputFieldFlag::KeepSelectedOnSubmit)) Deselect();
-		Deselect();
 		m_attemptedInput = "";
 
+		if (!HasFlag(InputFieldFlag::KeepSelectedOnSubmit)) Deselect();
+		
 		LogError(std::format("Before submit action input field type is: {}", ToString(GetFieldType())));
 		if (m_submitAction != nullptr) m_submitAction(GetInput());
 		
@@ -138,10 +143,11 @@ void InputField::Update()
 		}
 	}
 
-	std::string keysPressed = GetInputManager().GetLettersPressedSinceLastFrame();
+	std::string keysPressed = GetInputManager().GetCharsPressedSinceLastFrame();
 	//LogError(std::format("Setting input field input delta: {}", keysPressed));
 	if (keysPressed.empty()) return;
 
+	//Assert(false, std::format("Chars pressed since last frame: {}", keysPressed));
 	SetAttemptedInputDelta(keysPressed);
 }
 
@@ -163,6 +169,8 @@ void InputField::SetAttemptedInputDelta(const std::string& input)
 		//LogError(std::format("Extracting float from input: {} is: {}", input, Utils::TryExtractFloat(input)));
 		/*Assert(false, std::format("Extracting float from input: {} is: {} (OLD: {}) new: {}", 
 			input, Utils::TryExtractFloat(input), m_input, m_input + Utils::TryExtractFloat(input)));*/
+		//if (Utils::TryExtractFloat(input) == "-") Assert(false, std::format("Places neg"));
+		//Assert(false, std::format("Chars pressed since last frame: {} extracted: {}", input, Utils::TryExtractFloat(input)));
 		SetInput(m_attemptedInput + Utils::TryExtractFloat(input), true);
 	}
 	else if (m_type == InputFieldType::String)
@@ -178,7 +186,7 @@ void InputField::ResetInput()
 
 void InputField::SetInput(const std::string& newInput, const bool isAttemptedInput)
 {
-	m_lastInput = m_input;
+	if (newInput.empty()) return;
 	if (newInput == m_input) return;
 
 	std::string correctedInput = newInput;
@@ -189,10 +197,15 @@ void InputField::SetInput(const std::string& newInput, const bool isAttemptedInp
 		{
 			correctedInput = correctedInput.substr(0, decimalPos + 1 + MAX_DECIMAL_PLCES);
 		}
+		//if (newInput== "-") Assert(false, std::format("Corrected float input: {} to {}", newInput, correctedInput));
 	}
 	 
 	if (isAttemptedInput) m_attemptedInput = correctedInput;
-	else m_input = correctedInput;
+	else
+	{
+		m_input = correctedInput;
+		m_lastInput = m_input;
+	}
 	//Assert(false, std::format("Override input with; {} newinput: {}", m_input, newInput));
 }
 
@@ -263,15 +276,10 @@ ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 	DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
 		fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
 
-	if (!IsSelected())
-	{
-		Color disabledOverlay = BLACK;
-		disabledOverlay.a = 155;
-		DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, renderSize.m_X, renderSize.m_Y, disabledOverlay);
-	}
+	if (!IsSelected()) DrawDisabledOverlay({ renderInfo.m_TopLeftPos, renderSize });
 
-	GetLastRectMutable().SetSize(renderSize);
-	GetLastRectMutable().SetTopLeftPos(renderInfo.m_TopLeftPos);
+	GetLastFrameRectMutable().SetSize(renderSize);
+	GetLastFrameRectMutable().SetTopLeftPos(renderInfo.m_TopLeftPos);
 	//Assert(false, std::format("On render set last rect mutable; {}", GetLastFrameRect().ToString()));
 
 	/*m_lastRenderRect.SetSize(renderSize);

@@ -113,5 +113,7 @@ public:
 	int GetTotalBodyCollisions();
 
 	std::string ToStringCollidingBodies() const;
+
+	void InitFields() override;
 };
 

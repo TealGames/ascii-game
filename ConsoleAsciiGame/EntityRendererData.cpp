@@ -38,3 +38,8 @@ void EntityRendererData::SetVisualData(const VisualDataPositions& positions)
 		m_VisualData.m_Text.SetAt(pos.m_RowColPos, pos.m_Text);
 	}
 }
+
+void EntityRendererData::InitFields()
+{
+	m_Fields = {};
+}

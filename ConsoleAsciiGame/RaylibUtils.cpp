@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "RaylibUtils.hpp"
 #include "Debug.hpp"
+#include <limits>
 
 namespace RaylibUtils
 {
@@ -182,6 +183,16 @@ namespace RaylibUtils
 	bool IsValidFont(const Font& font)
 	{
 		return font.texture.id != 0;
+	}
+	float GetMaxFontSizeForSpace(const Font& font, const std::string& text, const Utils::Point2D& space, const float& spacing)
+	{
+		Vector2 currentSpace = {std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
+		float fontSize = space.m_Y;
+		while (currentSpace.x <= space.m_X && currentSpace.y <= space.m_Y)
+		{
+			currentSpace = MeasureTextEx(font, text.c_str(), fontSize, spacing);
+		}
+		return fontSize;
 	}
 
 	void RemoveFontExtraSpacing(Font& font)
