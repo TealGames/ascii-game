@@ -1,11 +1,10 @@
 #pragma once
-#include "Point2D.hpp"
 #include "WorldPosition.hpp"
 
 struct LineData
 {
-	Utils::Point2D m_StartPos;
-	Utils::Point2D m_EndPos;
+	Vec2 m_StartPos;
+	Vec2 m_EndPos;
 
 	LineData(const WorldPosition& startPos, const WorldPosition& endPos);
 };

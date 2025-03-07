@@ -340,7 +340,7 @@ namespace Utils
 	}
 
 	std::string ToString(const char& c);
-	std::string ToStringDouble(const double& d, const std::streamsize& precision);
+	std::string ToStringDouble(const double& d, const std::streamsize& precision, const bool& decimalPlacePrecision =true );
 	
 	template<typename T>
 	requires (!std::is_pointer_v<T>)
@@ -528,6 +528,29 @@ namespace Utils
 	/// <param name="places"></param>
 	/// <returns></returns>
 	float Roundf(const float& decimal, const std::uint8_t& places);
+	/// <summary>
+	/// Will get the number of places the signficiant digits of a decimal occupies
+	/// 1.2 -> 2
+	/// 0.3456 -> 5
+	/// </summary>
+	size_t GetDigitPlaces(const double& decimal);
+	/// <summary>
+	/// Will get ONLY the deciaml places for significant digits of decimal
+	/// 1.2 -> 1
+	/// 0.345 -> 3
+	/// 68 -> 0
+	/// </summary>
+	/// <param name="decimal"></param>
+	/// <returns></returns>
+	size_t GetDecimalPlaces(const double& decimal);
+
+	/// <summary>
+	/// Will display the float with all the significant digits 
+	/// (meaing all zeros after last sig fig will be cut)
+	/// </summary>
+	/// <param name=""></param>
+	/// <returns></returns>
+	std::string ToString(const double& decimal);
 
 	int GenerateRandomInt(int minInclusive, int maxInclusive);
 	double GenerateRandomDouble(double minInclusive, double maxExclusive);

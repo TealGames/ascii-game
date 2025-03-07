@@ -7,27 +7,27 @@
 #include "Debug.hpp"
 
 const float& VisualData::DEFAULT_FONT_SIZE = GLOBAL_FONT_SIZE;
-const Utils::Point2D& VisualData::DEFAULT_CHAR_SPACING = GLOBAL_CHAR_SPACING;
-const Utils::Point2D& VisualData::DEFAULT_PREDEFINED_CHAR_AREA = GLOBAL_CHAR_AREA;
+const Vec2& VisualData::DEFAULT_CHAR_SPACING = GLOBAL_CHAR_SPACING;
+const Vec2& VisualData::DEFAULT_PREDEFINED_CHAR_AREA = GLOBAL_CHAR_AREA;
 
-const Utils::Point2D VisualData::PIVOT_TOP_LEFT = {0, 1};
-const Utils::Point2D VisualData::PIVOT_TOP_RIGHT = {1, 1};
-const Utils::Point2D VisualData::PIVOT_BOTTOM_LEFT = {0, 0};
-const Utils::Point2D VisualData::PIVOT_BOTTOM_RIGHT = { 1, 0 };
-const Utils::Point2D VisualData::PIVOT_CENTER = {0.5, 0.5};
-const Utils::Point2D VisualData::PIVOT_BOTTOM_CENTER = {0.5, 0};
-const Utils::Point2D VisualData::PIVOT_TOP_CENTER = {0.5, 1};
+const Vec2 VisualData::PIVOT_TOP_LEFT = {0, 1};
+const Vec2 VisualData::PIVOT_TOP_RIGHT = {1, 1};
+const Vec2 VisualData::PIVOT_BOTTOM_LEFT = {0, 0};
+const Vec2 VisualData::PIVOT_BOTTOM_RIGHT = { 1, 0 };
+const Vec2 VisualData::PIVOT_CENTER = {0.5, 0.5};
+const Vec2 VisualData::PIVOT_BOTTOM_CENTER = {0.5, 0};
+const Vec2 VisualData::PIVOT_TOP_CENTER = {0.5, 1};
 
-const Utils::Point2D VisualData::DEFAULT_PIVOT = PIVOT_TOP_LEFT;
+const Vec2 VisualData::DEFAULT_PIVOT = PIVOT_TOP_LEFT;
 
-VisualDataPreset::VisualDataPreset(const Font& font, const float& fontSize, const Utils::Point2D& charSpacing,
-	const CharAreaType& charAreaType, const Utils::Point2D& predefinedCharArea, const NormalizedPosition& relativePivotPos) :
+VisualDataPreset::VisualDataPreset(const Font& font, const float& fontSize, const Vec2& charSpacing,
+	const CharAreaType& charAreaType, const Vec2& predefinedCharArea, const NormalizedPosition& relativePivotPos) :
 	m_Font(&font), m_FontSize(fontSize), m_CharSpacing(charSpacing), m_CharAreaType(charAreaType), 
 		m_PredefinedCharArea(predefinedCharArea), m_RelativePivotPos(relativePivotPos) {}
 
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize, 
-	const Utils::Point2D& charSpacing, const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
-	const Utils::Point2D& predefinedCharArea) :
+	const Vec2& charSpacing, const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
+	const Vec2& predefinedCharArea) :
 	m_Text(), m_font(&font), m_fontSize(fontSize), m_charSpacing(charSpacing), m_pivotRelative(relativePivotPos),
 	m_charAreaType(charAreaType), m_predefinedCharArea(predefinedCharArea)
 {
@@ -43,15 +43,15 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, co
 
 VisualData::VisualData() : VisualData(RawTextBufferBlock(), GetGlobalFont(), DEFAULT_FONT_SIZE, DEFAULT_CHAR_SPACING, DEFAULT_PIVOT) {}
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, 
-	const float& fontSize, const Utils::Point2D& charSpacing, const NormalizedPosition& relativePivotPos)
+	const float& fontSize, const Vec2& charSpacing, const NormalizedPosition& relativePivotPos)
 	: VisualData(rawBuffer, font, fontSize, charSpacing, relativePivotPos, CharAreaType::Adaptive, {})
 {
 	
 }
 
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
-	const float& fontSize, const Utils::Point2D& charSpacing,
-	const Utils::Point2D& predefinedCharArea, const NormalizedPosition& relativePivotPos)
+	const float& fontSize, const Vec2& charSpacing,
+	const Vec2& predefinedCharArea, const NormalizedPosition& relativePivotPos)
 	: VisualData(rawBuffer, font, fontSize, charSpacing, relativePivotPos, CharAreaType::Predefined, predefinedCharArea)
 {
 
@@ -177,7 +177,7 @@ std::optional<TextArray> VisualData::CreateSquaredBuffer(const RawTextBufferBloc
 	return result;
 }
 
-Utils::Point2D VisualData::GetWorldSize() const
+Vec2 VisualData::GetWorldSize() const
 {
 	if (!HasValidFont()) return {};
 
@@ -185,7 +185,7 @@ Utils::Point2D VisualData::GetWorldSize() const
 	{
 		int width = m_Text.GetWidth();
 		int height = m_Text.GetHeight();
-		Utils::Point2D size = { width* m_predefinedCharArea.m_X + (width - 1) * m_charSpacing.m_X,
+		Vec2 size = { width* m_predefinedCharArea.m_X + (width - 1) * m_charSpacing.m_X,
 				height* m_predefinedCharArea.m_Y+ (height - 1) * m_charSpacing.m_Y };
 
 		//Log(std::format("Getting bad world size: {} real size: {}", size.ToString(), ({size.m_X * })));
@@ -211,11 +211,11 @@ Utils::Point2D VisualData::GetWorldSize() const
 		textureHeight += currentRowTextSize.y;
 		if (r != 0) textureHeight += m_charSpacing.m_Y;
 	}
-	Log(std::format("World size for: {} is: {}", m_Text.ToString(), Utils::Point2D{ maxWidth, textureHeight }.ToString()));
+	Log(std::format("World size for: {} is: {}", m_Text.ToString(), Vec2{ maxWidth, textureHeight }.ToString()));
 	return { maxWidth, textureHeight };
 }
 
-WorldPosition VisualData::GetTopLeftPos(const WorldPosition& pivotWorldPos, const Utils::Point2D& totalSize) const
+WorldPosition VisualData::GetTopLeftPos(const WorldPosition& pivotWorldPos, const Vec2& totalSize) const
 {
 	return { pivotWorldPos.m_X - (m_pivotRelative.GetPos().m_X * totalSize.m_X),
 			 pivotWorldPos.m_Y + (1 - m_pivotRelative.GetPos().m_Y) * totalSize.m_Y };
@@ -229,11 +229,11 @@ void VisualData::AddTextPositionsToBufferPredefined(const WorldPosition& transfo
 			"but char area type does not have that setting!", transformPos.ToString()))) 
 		return;
 
-	Utils::Point2D totalSize = GetWorldSize();
+	Vec2 totalSize = GetWorldSize();
 	WorldPosition startTopLeft = GetTopLeftPos(transformPos, totalSize);
 	WorldPosition currentTopLeft = startTopLeft;
 
-	Utils::Point2DInt charArrSize = m_Text.GetSize();
+	Vec2Int charArrSize = m_Text.GetSize();
 	for (int r = 0; r < charArrSize.m_Y; r++)
 	{
 		currentTopLeft.m_X = startTopLeft.m_X;
@@ -256,7 +256,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 		"but char area type does not have that setting!", transformPos.ToString()))) 
 		return;
 
-	Utils::Point2D totalSize = {};
+	Vec2 totalSize = {};
 	float currentColsWidth = 0;
 	float previousRowsHeight = 0;
 	float currentRowMaxHeight = 0;
@@ -269,7 +269,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 	std::vector<TextBufferPosition> textBufferData = {};
 
 	//First pass will calculate distance from top left corner of the text using relative coords
-	Utils::Point2DInt charArrSize = m_Text.GetSize();
+	Vec2Int charArrSize = m_Text.GetSize();
 	for (int r = 0; r < charArrSize.m_Y; r++)
 	{
 		currentRowMaxHeight = 0;
@@ -293,7 +293,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 
 			if (c == 0)
 			{
-				textBufferData.push_back(TextBufferPosition{ Utils::Point2D{ 0, -previousRowsHeight },
+				textBufferData.push_back(TextBufferPosition{ Vec2{ 0, -previousRowsHeight },
 					m_Text.GetAtUnsafe({r, c}), *m_font, m_fontSize });
 			}
 
@@ -303,7 +303,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 			if (c < charArrSize.m_X - 1 && charArrSize.m_X >= 2)
 			{
 				//Note: we get plus one for col since positions is top left by calculating all previous width/height data
-				textBufferData.push_back(TextBufferPosition{ Utils::Point2D{ currentColsWidth, -previousRowsHeight},
+				textBufferData.push_back(TextBufferPosition{ Vec2{ currentColsWidth, -previousRowsHeight},
 				m_Text.GetAtUnsafe({r, c + 1}), *m_font, m_fontSize });
 			}
 		}
@@ -346,7 +346,7 @@ void VisualData::AddTextPositionsToBuffer(const WorldPosition& transformPos, Tex
 	}
 }
 
-const Utils::Point2D& VisualData::GetCharSpacing() const
+const Vec2& VisualData::GetCharSpacing() const
 {
 	return m_charSpacing;
 }
@@ -366,7 +366,7 @@ const float VisualData::GetFontSize() const
 	return m_fontSize;
 }
 
-const Utils::Point2D& VisualData::GetPivot() const
+const Vec2& VisualData::GetPivot() const
 {
 	return m_pivotRelative.GetPos();
 }

@@ -1,6 +1,5 @@
 #pragma once
-#include "Point2DInt.hpp" 
-#include "Point2D.hpp" 
+#include "Vec2Int.hpp" 
 #include "WorldPosition.hpp"
 #include "Vec2.hpp"
 #include "Direction.hpp"
@@ -35,13 +34,13 @@ namespace Physics
 		/// Gets the size in [WIDTH, HEIGHT]
 		/// </summary>
 		/// <returns></returns>
-		Utils::Point2D GetSize() const;
+		Vec2 GetSize() const;
 
 		/// <summary>
 		/// Gets the half size in [WIDTH/2, HEIGHT/2]
 		/// </summary>
 		/// <returns></returns>
-		Utils::Point2D GetHalfExtent() const;
+		Vec2 GetHalfExtent() const;
 
 		/// <summary>
 		/// Will get the AABB pos based on the relative pos of the AABB
@@ -54,14 +53,14 @@ namespace Physics
 		std::string ToString(const WorldPosition& transformPos) const;
 	};
 
-	bool DoAABBIntersect(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
+	bool DoAABBIntersect(const Vec2& entity1Pos, const AABB& entity1Bounding,
+		const Vec2& entity2Pos, const AABB& entity2Bounding);
 
-	AABBIntersectionData GetAABBIntersectionData(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
+	AABBIntersectionData GetAABBIntersectionData(const Vec2& entity1Pos, const AABB& entity1Bounding,
+		const Vec2& entity2Pos, const AABB& entity2Bounding);
 
-	Utils::Point2D GetAABBMinDisplacement(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding);
+	Vec2 GetAABBMinDisplacement(const Vec2& entity1Pos, const AABB& entity1Bounding,
+		const Vec2& entity2Pos, const AABB& entity2Bounding);
 
 	/// <summary>
 	/// Will get the direction that is the second one in relation to first in normalized dir
@@ -75,8 +74,8 @@ namespace Physics
 	/// <param name="entity2Pos"></param>
 	/// <param name="entity2Bounding"></param>
 	/// <returns></returns>
-	Vec2 GetAABBDirection(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding, const bool& considerCollisions= true);
+	Vec2 GetAABBDirection(const Vec2& entity1Pos, const AABB& entity1Bounding,
+		const Vec2& entity2Pos, const AABB& entity2Bounding, const bool& considerCollisions= true);
 }
 
 

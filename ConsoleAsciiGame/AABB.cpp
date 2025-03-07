@@ -25,23 +25,23 @@ namespace Physics
 		return centerWorldPos + m_MaxPos;
 	}
 
-	Utils::Point2D AABB::GetSize() const
+	Vec2 AABB::GetSize() const
 	{
 		return { m_MaxPos.m_X- m_MinPos.m_X, 
 				 m_MaxPos.m_Y- m_MinPos.m_Y };
 	}
 
-	Utils::Point2D AABB::GetHalfExtent() const
+	Vec2 AABB::GetHalfExtent() const
 	{
-		Utils::Point2D size = GetSize();
+		Vec2 size = GetSize();
 		return { size.m_X/2, size.m_Y/2 };
 	}
 
 	WorldPosition AABB::GetWorldPos(const WorldPosition& centerPos, const NormalizedPosition& relativePos) const
 	{
-		Utils::Point2D boundSize = GetSize();
+		Vec2 boundSize = GetSize();
 		WorldPosition bottomLeftPos = centerPos - WorldPosition(boundSize.m_X / 2, boundSize.m_Y/2);
-		if (relativePos.GetPos() == Utils::Point2D{0, 0}) return bottomLeftPos;
+		if (relativePos.GetPos() == Vec2{0, 0}) return bottomLeftPos;
 
 		return bottomLeftPos + WorldPosition(relativePos.GetPos().m_X * boundSize.m_X, relativePos.GetPos().m_Y * boundSize.m_Y);
 	}
@@ -52,20 +52,20 @@ namespace Physics
 			GetGlobalMax(transformPos).ToString(), GetSize().ToString());
 	}
 
-	bool DoAABBIntersect(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding)
+	bool DoAABBIntersect(const Vec2& entity1Pos, const AABB& entity1Bounding,
+		const Vec2& entity2Pos, const AABB& entity2Bounding)
 	{
 		return GetAABBIntersectionData(entity1Pos, entity1Bounding, entity2Pos, entity2Bounding).m_DoIntersect;
 	}
 
-	AABBIntersectionData GetAABBIntersectionData(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding)
+	AABBIntersectionData GetAABBIntersectionData(const Vec2& entity1Pos, const AABB& entity1Bounding,
+		const Vec2& entity2Pos, const AABB& entity2Bounding)
 	{
 		//TODO is enetiy pos center or what?
-		Utils::Point2D min1Global = entity1Bounding.GetGlobalMin(entity1Pos);
-		Utils::Point2D max1Global = entity1Bounding.GetGlobalMax(entity1Pos);
-		Utils::Point2D min2Global = entity2Bounding.GetGlobalMin(entity2Pos);
-		Utils::Point2D max2Global = entity2Bounding.GetGlobalMax(entity2Pos);
+		Vec2 min1Global = entity1Bounding.GetGlobalMin(entity1Pos);
+		Vec2 max1Global = entity1Bounding.GetGlobalMax(entity1Pos);
+		Vec2 min2Global = entity2Bounding.GetGlobalMin(entity2Pos);
+		Vec2 max2Global = entity2Bounding.GetGlobalMax(entity2Pos);
 
 		AABBIntersectionData result = {};
 		result.m_DoIntersect = (max1Global.m_X > min2Global.m_X && min1Global.m_X < max2Global.m_X &&
@@ -105,15 +105,15 @@ namespace Physics
 		return result;
 	}
 
-	Utils::Point2D GetAABBMinDisplacement(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding)
+	Vec2 GetAABBMinDisplacement(const Vec2& entity1Pos, const AABB& entity1Bounding,
+		const Vec2& entity2Pos, const AABB& entity2Bounding)
 	{
-		Utils::Point2D min1Global = entity1Bounding.GetGlobalMin(entity1Pos);
-		Utils::Point2D max1Global = entity1Bounding.GetGlobalMax(entity1Pos);
-		Utils::Point2D min2Global = entity2Bounding.GetGlobalMin(entity2Pos);
-		Utils::Point2D max2Global = entity2Bounding.GetGlobalMax(entity2Pos);
+		Vec2 min1Global = entity1Bounding.GetGlobalMin(entity1Pos);
+		Vec2 max1Global = entity1Bounding.GetGlobalMax(entity1Pos);
+		Vec2 min2Global = entity2Bounding.GetGlobalMin(entity2Pos);
+		Vec2 max2Global = entity2Bounding.GetGlobalMax(entity2Pos);
 
-		Utils::Point2D displacement = {};
+		Vec2 displacement = {};
 
 		//body 2 is fully to the RIGHT of body1
 		if (max1Global.m_X < max2Global.m_X && max1Global.m_X < min2Global.m_X) displacement.m_X = min2Global.m_X - max1Global.m_X;
@@ -131,13 +131,13 @@ namespace Physics
 		return displacement;
 	}
 
-	Vec2 GetAABBDirection(const Utils::Point2D& entity1Pos, const AABB& entity1Bounding,
-		const Utils::Point2D& entity2Pos, const AABB& entity2Bounding, const bool& considerCollisions)
+	Vec2 GetAABBDirection(const Vec2& entity1Pos, const AABB& entity1Bounding,
+		const Vec2& entity2Pos, const AABB& entity2Bounding, const bool& considerCollisions)
 	{
-		Utils::Point2D min1Global = entity1Bounding.GetGlobalMin(entity1Pos);
-		Utils::Point2D max1Global = entity1Bounding.GetGlobalMax(entity1Pos);
-		Utils::Point2D min2Global = entity2Bounding.GetGlobalMin(entity2Pos);
-		Utils::Point2D max2Global = entity2Bounding.GetGlobalMax(entity2Pos);
+		Vec2 min1Global = entity1Bounding.GetGlobalMin(entity1Pos);
+		Vec2 max1Global = entity1Bounding.GetGlobalMax(entity1Pos);
+		Vec2 min2Global = entity2Bounding.GetGlobalMin(entity2Pos);
+		Vec2 max2Global = entity2Bounding.GetGlobalMax(entity2Pos);
 
 
 		Vec2 dir = Vec2::ZERO;

@@ -53,12 +53,12 @@ PhysicsBodyData& PlayerData::GetBodyMutableSafe()
 	return *m_body;
 }
 
-const Utils::Point2DInt& PlayerData::GetFrameInput() const
+const Vec2Int& PlayerData::GetFrameInput() const
 {
 	return m_currentFrameDirectionalInput;
 }
 
-const Utils::Point2DInt& PlayerData::GetLastFrameInput() const
+const Vec2Int& PlayerData::GetLastFrameInput() const
 {
 	return m_lastFrameDirectionalInput;
 }
@@ -68,17 +68,17 @@ bool PlayerData::HasInputChanged() const
 	return m_currentFrameDirectionalInput != m_lastFrameDirectionalInput;
 }
 
-void PlayerData::SetFrameInput(const Utils::Point2DInt& input)
+void PlayerData::SetFrameInput(const Vec2Int& input)
 {
 	SetLastFrameInput(m_currentFrameDirectionalInput);
 	m_currentFrameDirectionalInput = input;
 }
-void PlayerData::SetLastFrameInput(const Utils::Point2DInt& lastFrameInput)
+void PlayerData::SetLastFrameInput(const Vec2Int& lastFrameInput)
 {
 	m_lastFrameDirectionalInput = lastFrameInput;
 }
 
-Utils::Point2DInt PlayerData::GetInputDelta() const
+Vec2Int PlayerData::GetInputDelta() const
 {
 	return m_currentFrameDirectionalInput - m_lastFrameDirectionalInput;
 }

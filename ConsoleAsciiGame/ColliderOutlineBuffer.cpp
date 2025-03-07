@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ColliderOutlineBuffer.hpp"
 
-RectangleOutlineData::RectangleOutlineData(const Utils::Point2D& size, const ScreenPosition& pos) :
+RectangleOutlineData::RectangleOutlineData(const Vec2& size, const ScreenPosition& pos) :
 	m_Size(size), m_Position(pos) {}
 
 ColliderOutlineBuffer::ColliderOutlineBuffer() : m_RectangleBuffer() {}

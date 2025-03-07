@@ -2,7 +2,7 @@
 #include <optional>
 #include <vector>
 #include "SingleBodySystem.hpp"
-#include "Point2DInt.hpp"
+#include "Vec2Int.hpp"
 #include "Entity.hpp"
 #include "Updateable.hpp"
 #include "Component.hpp"
@@ -43,7 +43,7 @@ namespace ECS
 		/// <param name="followTarget">The object that that camera attempts to follow</param>
 		/// <param name="viewportSize">THe amount of text vewied in WIDTH, HEIGHT</param>
 		CameraSystem(ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer);
-		//Camera(Transform& transform, const Utils::Point2DInt& viewportSize);
+		//Camera(Transform& transform, const Vec2Int& viewportSize);
 
 		void UpdateCameraPosition(CameraData& cameraData, ECS::Entity& entity);
 

@@ -8,12 +8,12 @@
 
 struct LightMapChar
 {
-	Utils::Point2DInt m_RelativePos;
+	Vec2Int m_RelativePos;
 	Utils::Point3D m_FractionalFilterColor;
 	float m_ColorFactor;
 
 	LightMapChar();
-	LightMapChar(const Utils::Point2DInt& relativePos,
+	LightMapChar(const Vec2Int& relativePos,
 		const Utils::Point3D& fractionalFilterColor, const float& colorFactor);
 	std::string ToString() const;
 };

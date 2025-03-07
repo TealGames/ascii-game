@@ -1,10 +1,8 @@
 #include "pch.hpp"
 #include "Entity.hpp"
 #include "CameraSystem.hpp"
-#include "Point2DInt.hpp"
 #include "Updateable.hpp"
 #include "Component.hpp"
-#include "Globals.hpp"
 #include "Globals.hpp"
 #include "SceneManager.hpp"
 #include "Array2DPosition.hpp"
@@ -106,7 +104,7 @@ namespace ECS
 
                 if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_FontSize *= scaleFactor;
                 newScreenPos = Conversions::WorldToScreenPosition(cameraData, textBufferPos.m_Pos);
-                m_currentFrameBuffer.back().m_Pos = Utils::Point2D(static_cast<float>(newScreenPos.m_X), static_cast<float>(newScreenPos.m_Y));
+                m_currentFrameBuffer.back().m_Pos = Vec2(static_cast<float>(newScreenPos.m_X), static_cast<float>(newScreenPos.m_Y));
             }
         }
 

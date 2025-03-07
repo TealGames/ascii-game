@@ -85,13 +85,8 @@ public:
 		return true;
 	}
 
-	const std::vector<const ListenerType> GetListeners() const
+	const std::vector<ListenerType>& GetListeners() const
 	{
-		std::vector<const ListenerType> listeners;
-		for (const ListenerType& listener : m_listeners)
-		{
-			listeners.push_back(listener);
-		}
-		return listeners;
+		return m_listeners;
 	}
 };

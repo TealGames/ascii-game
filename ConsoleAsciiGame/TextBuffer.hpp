@@ -3,7 +3,6 @@
 #include "raylib.h"
 #include "WorldPosition.hpp"
 #include "ScreenPosition.hpp"
-#include "Point2D.hpp"
 #include <cstdint>
 
 //using TextBuffer = TextArray;
@@ -19,14 +18,14 @@ struct FontData
 //so that we do not need to repeat the same data for mutliple entries
 struct TextBufferPosition
 {
-	Utils::Point2D m_Pos;
+	Vec2 m_Pos;
 	FontData m_FontData;
 	TextChar m_Text;
 
 	bool operator==(const TextBufferPosition& other) const = default;
 	std::string ToString() const;
 
-	TextBufferPosition(const Utils::Point2D& pos, const TextChar& textChar, 
+	TextBufferPosition(const Vec2& pos, const TextChar& textChar, 
 		const Font& font, const float& fontSize);
 };
 

@@ -1,6 +1,5 @@
 #pragma once
 #include <vector>
-#include "Point2DInt.hpp"
 #include "PhysicsBodyData.hpp"
 #include "Vec2.hpp"
 #include "WorldPosition.hpp"
@@ -69,7 +68,7 @@ namespace Physics
 	/// <returns></returns>
 	bool DoBodiesIntersect(const PhysicsBodyData& body1, const PhysicsBodyData& body2);
 
-	Utils::Point2D GetBodyMinDisplacement(const PhysicsBodyData& body1, const PhysicsBodyData& body2);
+	Vec2 GetBodyMinDisplacement(const PhysicsBodyData& body1, const PhysicsBodyData& body2);
 }
 
 

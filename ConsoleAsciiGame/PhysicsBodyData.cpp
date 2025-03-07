@@ -9,10 +9,10 @@
 PhysicsBodyData::PhysicsBodyData() : 
 	PhysicsBodyData(0, {}, {}, 0, std::numeric_limits<float>::max()) {}
 
-PhysicsBodyData::PhysicsBodyData(const float& mass, const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset) :
+PhysicsBodyData::PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, const WorldPosition& transformOffset) :
 	PhysicsBodyData(mass, boundingBoxSize, transformOffset, 0, 0) {}
 
-PhysicsBodyData::PhysicsBodyData(const float& mass, const Utils::Point2D& boundingBoxSize, 
+PhysicsBodyData::PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, 
 	const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity)
 	: ComponentData(), m_mass(std::abs(mass)), m_aabb(CreateAABB(boundingBoxSize, transformOffset)), 
 	m_velocity(), m_acceleration(), m_transformOffset(transformOffset), m_collidingBodies(), 
@@ -28,13 +28,17 @@ PhysicsBodyData::PhysicsBodyData(const float& mass, const Utils::Point2D& boundi
 
 void PhysicsBodyData::InitFields()
 {
-	m_Fields = { ComponentField("Mass(KG)", &m_mass), ComponentField("TerminalYVelocity", &m_terminalYVelocity), 
-				 ComponentField("Gravity", &m_gravity)};
+	m_Fields = 
+	{	
+		ComponentField("Mass(KG)", &m_mass), ComponentField("Gravity", &m_gravity),
+		ComponentField("TerminalYVelocity", &m_terminalYVelocity), ComponentField("Velocity(m/s)", [this](Vec2 vec)-> void {SetVelocity(vec);}, &m_velocity),
+		ComponentField("Accel(m/s2)", [this](Vec2 vec)-> void {SetAcceleration(vec); }, &m_acceleration),
+	};
 }
 
 bool PhysicsBodyData::ValidateAABB(const Physics::AABB& bounding) const
 {
-	const Utils::Point2D size = bounding.GetSize();
+	const Vec2 size = bounding.GetSize();
 	if (Assert(this, size.m_X!=0 && size.m_Y!=0, 
 		std::format("Tried to create a Physics Body but the AABB cannot have 0 x or y size: {}. "
 			"This could be due to bad bounding size or offset!", size.ToString()))) 
@@ -43,7 +47,7 @@ bool PhysicsBodyData::ValidateAABB(const Physics::AABB& bounding) const
 	return true;
 }
 
-Physics::AABB PhysicsBodyData::CreateAABB(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset)
+Physics::AABB PhysicsBodyData::CreateAABB(const Vec2& boundingBoxSize, const WorldPosition& transformOffset)
 {
 	return {transformOffset- (boundingBoxSize/2), transformOffset+ (boundingBoxSize / 2) };
 }
@@ -130,9 +134,9 @@ const Physics::AABB& PhysicsBodyData::GetAABB() const
 
 const WorldPosition PhysicsBodyData::GetAABBTopLeftWorldPos() const
 {
-	return GetAABBWorldPos(Utils::Point2D{ 0, 1 });	
+	return GetAABBWorldPos(Vec2{ 0, 1 });	
 	/*
-	const Utils::Point2D aabbHalfExtent = m_aabb.GetHalfExtent();
+	const Vec2 aabbHalfExtent = m_aabb.GetHalfExtent();
 	return GetEntitySafe().m_Transform.m_Pos + m_transformOffset + WorldPosition(-aabbHalfExtent.m_X, aabbHalfExtent.m_Y);
 	*/
 }

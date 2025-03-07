@@ -12,8 +12,8 @@ private:
 	float m_initialJumpSpeed;
 	float m_maxJumpHeight;
 
-	Utils::Point2DInt m_currentFrameDirectionalInput;
-	Utils::Point2DInt m_lastFrameDirectionalInput;
+	Vec2Int m_currentFrameDirectionalInput;
+	Vec2Int m_lastFrameDirectionalInput;
 
 public:
 
@@ -35,13 +35,13 @@ public:
 
 	PhysicsBodyData& GetBodyMutableSafe();
 
-	const Utils::Point2DInt& GetFrameInput() const;
-	const Utils::Point2DInt& GetLastFrameInput() const;
-	Utils::Point2DInt GetInputDelta() const;
+	const Vec2Int& GetFrameInput() const;
+	const Vec2Int& GetLastFrameInput() const;
+	Vec2Int GetInputDelta() const;
 	bool HasInputChanged() const;
 
-	void SetFrameInput(const Utils::Point2DInt& input);
-	void SetLastFrameInput(const Utils::Point2DInt& lastFrameInput);
+	void SetFrameInput(const Vec2Int& input);
+	void SetLastFrameInput(const Vec2Int& lastFrameInput);
 
 	void InitFields() override;
 };

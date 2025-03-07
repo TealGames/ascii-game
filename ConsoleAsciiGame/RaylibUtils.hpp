@@ -1,13 +1,12 @@
 #pragma once
 #include <string>
-#include <format>
 #include <cstdint>
-#include <limits>
 #include "raylib.h"
 #include "HelperFunctions.hpp"
 #include "Point4D.hpp"
 #include "Point3D.hpp"
 #include "Vec2.hpp"
+#include "Vec2Int.hpp"
 #include <optional>
 
 namespace RaylibUtils
@@ -32,11 +31,10 @@ namespace RaylibUtils
 
 	std::string ToString(const Vector2& vec);
 	Vector2 ToRaylibVector(const Vec2& vec);
-	Vector2 ToRaylibVector(const Utils::Point2D& point);
-	Vector2 ToRaylibVector(const Utils::Point2DInt& point);
+	Vector2 ToRaylibVector(const Vec2Int& point);
 
 	bool IsValidFont(const Font& font);
-	float GetMaxFontSizeForSpace(const Font& font, const std::string& text, const Utils::Point2D& space, const float& spacing);
+	float GetMaxFontSizeForSpace(const Font& font, const std::string& text, const Vec2& space, const float& spacing);
 	void RemoveFontExtraSpacing(Font& font);
 	bool FontSupportsChar(const Font& font, const char& character);
 

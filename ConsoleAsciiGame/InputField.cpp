@@ -5,6 +5,7 @@
 #include "Debug.hpp"
 #include "StringUtil.hpp"
 #include "Globals.hpp"
+#include "Vec2Int.hpp"
 #include "RaylibUtils.hpp"
 
 static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
@@ -259,7 +260,7 @@ ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 {
 	const int widthUsed = std::min(renderInfo.m_RenderSize.m_X, m_settings.m_Size.m_X);
 	const int heightUsed = std::min(renderInfo.m_RenderSize.m_Y, m_settings.m_Size.m_Y);
-	Utils::Point2DInt renderSize = { widthUsed, heightUsed };
+	Vec2Int renderSize = { widthUsed, heightUsed };
 
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, widthUsed, heightUsed, m_settings.m_BackgroundColor);
 	std::string inputStr = IsSelected() ? GetDisplayAttemptedInput() : GetDisplayInput();

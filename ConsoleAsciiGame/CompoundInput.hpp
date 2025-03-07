@@ -6,6 +6,7 @@
 #include <optional>
 #include "InputAction.hpp"
 #include "InputDirection.hpp"
+#include "Vec2Int.hpp"
 
 namespace Input
 {
@@ -27,7 +28,7 @@ namespace Input
 		std::size_t GetEntriesCount() const;
 
 		const InputAction* TryGetDirectionAction(const InputDirection& dir) const;
-		Utils::Point2DInt GetCompoundInputDown() const;
+		Vec2Int GetCompoundInputDown() const;
 		/*std::vector<KeyState> GetCompoundKeyStates();*/
 
 		bool HasDirection(const InputDirection& dir) const;

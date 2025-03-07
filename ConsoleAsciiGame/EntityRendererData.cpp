@@ -14,14 +14,14 @@ EntityRendererData::EntityRendererData(const VisualData& visualData, const Rende
 	{
 		if (row.size() > maxWidth) maxWidth = row.size();
 	}
-	m_visualBoundsSize = Utils::Point2DInt(maxWidth, m_VisualData.m_Text.GetHeight());
+	m_visualBoundsSize = Vec2Int(maxWidth, m_VisualData.m_Text.GetHeight());
 }
 
 const RenderLayerType& EntityRendererData::GetRenderLayers() const
 {
 	return m_renderLayers;
 }
-const Utils::Point2DInt& EntityRendererData::GetVisualBoundsSize() const
+const Vec2Int& EntityRendererData::GetVisualBoundsSize() const
 {
 	return m_visualBoundsSize;
 }

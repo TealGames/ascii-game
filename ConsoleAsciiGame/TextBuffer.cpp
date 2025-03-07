@@ -5,7 +5,7 @@
 FontData::FontData(const float& fontSize, const Font& font) :
 	m_Font(&font), m_FontSize(fontSize) {}
 
-TextBufferPosition::TextBufferPosition(const Utils::Point2D& pos, const TextChar& textChar,
+TextBufferPosition::TextBufferPosition(const Vec2& pos, const TextChar& textChar,
 	const Font& font, const float& fontSize)
 	: m_Pos(pos), m_FontData(fontSize, font), m_Text(textChar)
 {

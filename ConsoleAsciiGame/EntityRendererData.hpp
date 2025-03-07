@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include "Point2DInt.hpp"
+#include "Vec2Int.hpp"
 #include "RenderLayer.hpp"
 #include "ComponentData.hpp"
 #include "VisualData.hpp"
@@ -13,7 +13,7 @@ private:
 	RenderLayerType m_renderLayers;
 
 	//The bounding box's size for this visual in (WIDTH, HEIGHT)
-	Utils::Point2DInt m_visualBoundsSize;
+	Vec2Int m_visualBoundsSize;
 
 public:
 	VisualData m_VisualData;
@@ -24,7 +24,7 @@ public:
 	EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers);
 
 	const RenderLayerType& GetRenderLayers() const;
-	const Utils::Point2DInt& GetVisualBoundsSize() const;
+	const Vec2Int& GetVisualBoundsSize() const;
 	const VisualData& GetVisualData() const;
 
 	void SetVisualData(const VisualDataPositions& positions);

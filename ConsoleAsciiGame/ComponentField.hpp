@@ -2,6 +2,7 @@
 #include <string>
 #include <variant>
 #include "Vec2.hpp"
+#include "Vec2Int.hpp"
 #include <type_traits>
 #include <typeinfo>
 #include <functional>
@@ -17,9 +18,9 @@ enum class ComponentFieldType
 
 //TODO: ideally we would not use a direct value but rather a function to set those values to add some abstraction
 //and allow some clamping or other import actions to be taken if neccessary
-using ComponentFieldVariant = std::variant<std::string*, int*, float*, bool*, Utils::Point2D*>;
+using ComponentFieldVariant = std::variant<std::string*, int*, float*, bool*, Vec2*, Vec2Int*>;
 using ComponentFieldSetAction = std::variant<std::function<void(std::string)>, std::function<void(int)>,
-	std::function<void(float)>, std::function<void(bool)>, std::function<void(Utils::Point2D)>>;
+	std::function<void(float)>, std::function<void(bool)>, std::function<void(Vec2)>, std::function<void(Vec2Int)>>;
 
 struct ComponentField
 {

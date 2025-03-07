@@ -74,7 +74,7 @@ public:
 
 	int GetWidth() const;
 	int GetHeight() const;
-	Utils::Point2DInt GetSize() const;
+	Vec2Int GetSize() const;
 
 	bool IsValidRow(const int& rowPos) const;
 	bool IsValidCol(const int& colPos) const;
@@ -95,7 +95,7 @@ public:
 	/// <param name="size"></param>
 	/// <param name="chars"></param>
 	/// <returns></returns>
-	bool TrySetRegion(const Array2DPosition& rowColStartPos, const Utils::Point2DInt& size,
+	bool TrySetRegion(const Array2DPosition& rowColStartPos, const Vec2Int& size,
 		const std::vector<std::vector<TextChar>>& chars);
 
 	const TextChar* GetAt(const Array2DPosition& rowColPos) const;

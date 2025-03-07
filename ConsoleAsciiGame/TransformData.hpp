@@ -1,30 +1,27 @@
 #pragma once
-#include "Point2DInt.hpp"
-#include "Point2D.hpp"
+#include "Vec2.hpp"
 #include "ComponentData.hpp"
 
 //Since negative positions are not allowed
-const Utils::Point2D NULL_POS = Utils::Point2D{ -1, -1 };
+const Vec2 NULL_POS = Vec2{ -1, -1 };
 
 struct TransformData : public ComponentData
 {
-	Utils::Point2D m_Pos;
-	Utils::Point2D m_LastPos;
-	Utils::Point2D m_LastFramePos;
-
-	bool m_IsFat;
+	Vec2 m_Pos;
+	Vec2 m_LastPos;
+	Vec2 m_LastFramePos;
 
 	TransformData();
-	TransformData(const Utils::Point2D& pos);
+	TransformData(const Vec2& pos);
 
 	//TODO: these position setting functions should get moved into transform
-	void SetPos(const Utils::Point2D& newPos);
+	void SetPos(const Vec2& newPos);
 	void SetPosX(const float& newX);
 	void SetPosY(const float& newY);
 
 	void SetPosDeltaX(const float& xDelta);
 	void SetPosDeltaY(const float& yDelta);
-	void SetPosDelta(const Utils::Point2D& moveDelta);
+	void SetPosDelta(const Vec2& moveDelta);
 
 	bool HasMovedThisFrame() const;
 

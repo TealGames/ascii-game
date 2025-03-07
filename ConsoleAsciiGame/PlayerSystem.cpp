@@ -1,9 +1,7 @@
 #include "pch.hpp"
 #include "PlayerSystem.hpp"
-#include "HelperFunctions.hpp"
 #include "PhysicsBodyData.hpp"
 #include "CameraData.hpp"
-#include "InputData.hpp"
 #include "Vec2.hpp"
 #include "raylib.h"
 #include "PositionConversions.hpp"
@@ -57,16 +55,17 @@ namespace ECS
 		//velocity with zero EVEN WHEN WE HAD INPUT (meaning that input was canceled)
 		//we need to update the last frame input so the input system does not think
 		//the last input was successful (otherwise we could get bad input delta)
-		if (player.GetLastFrameInput() != Utils::Point2DInt::ZERO &&
+		if (player.GetLastFrameInput() != Vec2Int::ZERO &&
 			player.GetBodyMutableSafe().GetVelocity() == Vec2::ZERO)
 		{
-			player.SetFrameInput(Utils::Point2DInt::ZERO);
+			player.SetFrameInput(Vec2Int::ZERO);
 		}
 
 		//TODO: Player moves faster on diagonals
 		if (!player.HasInputChanged()) return;
 
-		Vec2 dirDelta = GetVector(player.GetInputDelta());
+		Vec2Int inputDelta = player.GetInputDelta();
+		Vec2 dirDelta = Vec2(inputDelta.m_X, inputDelta.m_Y);
 		if (dirDelta == Vec2::ZERO) return;
 
 		//Auto jumping occurs when we are grounded but the input is held (meaning we might not have been changed since last frame

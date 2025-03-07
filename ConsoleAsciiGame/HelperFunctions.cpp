@@ -218,6 +218,28 @@ namespace Utils
 		return std::round(decimal * factor) / factor;
 	}
 
+	std::string ToString(const double& decimal)
+	{
+		//This trick will esssnetially display only sig fits when used without std::to_string
+		return std::format("{}", decimal);
+	}
+
+	size_t GetDigitPlaces(const double& decimal)
+	{
+		std::string sigFigStr = ToString(decimal);
+		if (sigFigStr.find(".") != std::string::npos) return sigFigStr.size() - 1;
+		return sigFigStr.size();
+	}
+
+	size_t GetDecimalPlaces(const double& decimal)
+	{
+		std::string sigFigStr = ToString(decimal);
+		size_t decimalPos = sigFigStr.find(".");
+
+		if (decimalPos == std::string::npos) return 0;
+		return sigFigStr.size() - decimalPos - 1;
+	}
+
 	int GenerateRandomInt(int minInclusive, int maxInclusive)
 	{
 		std::random_device rd;
@@ -250,9 +272,17 @@ namespace Utils
 		return std::string(1, c);
 	}
 
-	std::string ToStringDouble(const double& d, const std::streamsize& precision)
+	std::string ToStringDouble(const double& d, const std::streamsize& precision, const bool& decimalPlacePrecision)
 	{
 		std::ostringstream oss;
+		std::streamsize finalPrecision = precision;
+		//If we do deciaml precision we must add the non-decimal places since by default
+		//string stream precision meants total number of sig figs
+		if (decimalPlacePrecision)
+		{
+			finalPrecision += (GetDigitPlaces(d) - GetDecimalPlaces(d));
+		}
+		
 		oss.precision(precision);
 		oss << d;
 		return oss.str();

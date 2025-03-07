@@ -1,20 +1,10 @@
-#include <numbers>
-#include <limits>
-#include <cmath>
-
 #include "pch.hpp"
+#include <cmath>
 #include "LightSourceSystem.hpp"
-#include "Component.hpp"
-#include "Point2D.hpp"
-#include "Array2DPosition.hpp"
-#include "PositionConversions.hpp"
-#include "Point4D.hpp"
+#include "Vec2.hpp"
 #include "Scene.hpp"
 #include "EntityRendererSystem.hpp"
-#include "TransformSystem.hpp"
 #include "TextBuffer.hpp"
-#include "HelperFunctions.hpp"
-#include "RaylibUtils.hpp"
 #include "ColorGradient.hpp"
 
 #ifdef ENABLE_PROFILER
@@ -146,14 +136,14 @@ namespace ECS
         std::sort(buffer.begin(), buffer.end(), 
             [&centerPos](const TextBufferPosition& first, const TextBufferPosition& second) -> bool
             {
-                return Utils::GetDistance(centerPos, first.m_Pos) < Utils::GetDistance(centerPos, second.m_Pos);
+                return GetDistance(centerPos, first.m_Pos) < GetDistance(centerPos, second.m_Pos);
                 
             });
 
         float centerDistance = 0;
         for (auto& bufferPos : buffer)
         {
-            centerDistance = Utils::GetDistance(centerPos, bufferPos.m_Pos);
+            centerDistance = GetDistance(centerPos, bufferPos.m_Pos);
             if (centerDistance > data.m_LightRadius) break;
 
             bufferPos.m_Text.m_Color = CalculateNewColor(data, entity, bufferPos, centerDistance, nullptr, nullptr);

@@ -43,6 +43,21 @@ Vec2 Vec2::GetYAsVector() const
 	return {0, m_Y};
 }
 
+Vec2 Vec2::GetFlipped() const
+{
+	return {m_Y, m_X};
+}
+
+int Vec2::XAsInt() const
+{
+	return static_cast<int>(m_X);
+}
+
+int Vec2::YAsInt() const
+{
+	return static_cast<int>(m_Y);
+}
+
 float Vec2::GetAngle(const AngleMode& angleMode) const
 {
 	//Just in case to prevent implementations returning undefined
@@ -85,27 +100,30 @@ bool Vec2::IsUnitVector() const
 	return Utils::ApproximateEqualsF(GetMagnitude(), 1);
 }
 
-std::string Vec2::ToString(VectorForm form) const
+std::string Vec2::ToString(const std::uint8_t& decimalPlaces, VectorForm form) const
 {
 	std::string str;
+	std::string xRounded = Utils::ToStringDouble(Utils::Roundf(m_X, decimalPlaces), decimalPlaces);
+	std::string yRounded = Utils::ToStringDouble(Utils::Roundf(m_Y, decimalPlaces), decimalPlaces);
 	switch (form)
 	{
 	case VectorForm::Component:
-		str = std::format("({},{})", std::to_string(m_X), std::to_string(m_Y));
+		str = std::format("({},{})", xRounded, yRounded);
 		break;
 
 	case VectorForm::Unit:
 		//Double braces needed on the outside to escape format {}
-		str = std::format("{{ {}i+{}j }}", std::to_string(m_X), std::to_string(m_Y));
+		str = std::format("{{ {}i+{}j }}", xRounded, yRounded);
 		break;
 
 	case VectorForm::MagnitudeDirection:
-		str = std::format("{}@ {}°", std::to_string(GetMagnitude()), std::to_string(GetAngle(AngleMode::Degrees)));
+		str = std::format("{}@ {}°", std::to_string(Utils::Roundf(m_X, GetMagnitude())), 
+			std::to_string(Utils::Roundf(GetAngle(AngleMode::Degrees), decimalPlaces)));
 		break;
 
 	default:
 		LogError(this, std::format("Tried to convert vector ({},{}) to string "
-			"with undefined form {}", m_X, m_Y, ToString(form)));
+			"with undefined form {}", m_X, m_Y, ::ToString(form)));
 		break;
 	}
 	return str;
@@ -166,19 +184,15 @@ Vec2& Vec2::operator=(Vec2&& other) noexcept
 	return *this;
 }
 
-Vec2 GetVector(const Utils::Point2D& startPos, const Utils::Point2D& endPos)
+float GetDistance(const Vec2& vec1, const Vec2& vec2)
+{
+	return std::sqrt(std::pow(vec1.m_X - vec2.m_X, 2) + std::pow(vec1.m_Y - vec2.m_Y, 2));
+}
+
+Vec2 GetVector(const Vec2& startPos, const Vec2& endPos)
 {
 	Vec2 result(endPos.m_X - startPos.m_X, endPos.m_Y - startPos.m_Y);
 	return result;
-}
-Vec2 GetVector(const Utils::Point2DInt& startPos, const Utils::Point2DInt& endPos)
-{
-	Vec2 result(static_cast<double>(endPos.m_X - startPos.m_X), endPos.m_Y - startPos.m_Y);
-	return result;
-}
-Vec2 GetVector(const Utils::Point2DInt& intVec)
-{
-	return { static_cast<float>(intVec.m_X), static_cast<float>(intVec.m_Y) };
 }
 Vec2 GetVector(const Vec2& unitVector, const float& magnitude)
 {
@@ -186,36 +200,9 @@ Vec2 GetVector(const Vec2& unitVector, const float& magnitude)
 	return { unitVectorConverted.m_X * magnitude, unitVectorConverted.m_Y * magnitude};
 }
 
-Utils::Point2D GetVectorEndPoint(const Utils::Point2D& startPos, const Vec2& vector)
+Vec2 GetVectorEndPoint(const Vec2& startPos, const Vec2& vector)
 {
 	return { startPos.m_X + vector.m_X, startPos.m_Y + vector.m_Y };
-}
-Utils::Point2DInt GetVectorEndPoint(const Utils::Point2DInt& startPos, const Vec2& vector)
-{
-	return { static_cast<int>(startPos.m_X + vector.m_X), static_cast<int>(startPos.m_Y + vector.m_Y) };
-}
-
-std::string ToString(const AngleMode& mode)
-{
-	if (mode == AngleMode::Degrees) return "Degrees";
-	else if (mode == AngleMode::Radians) return "Radians";
-	else
-	{
-		LogError("Tried to convert undefined Vector2 angle mode to string");
-		return "";
-	}
-}
-
-std::string ToString(const VectorForm& form)
-{
-	if (form == VectorForm::Component) return "Component";
-	else if (form == VectorForm::MagnitudeDirection) return "Magnitude@Direction";
-	else if (form == VectorForm::Unit) return "Unit";
-	else
-	{
-		LogError("Tried to convert undefined Vec2 form mode to string");
-		return "";
-	}
 }
 
 float DotProduct(const Vec2& vecA, const Vec2& vecB)

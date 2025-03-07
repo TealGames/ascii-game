@@ -7,6 +7,7 @@
 #include <optional>
 #include "Globals.hpp"
 #include "TextBuffer.hpp"
+#include "Vec2.hpp"
 #include "NormalizedPosition.hpp"
 
 
@@ -14,8 +15,8 @@
 ////so the entity renderer does not have to guess where top left pos is
 //struct VisualSizeInfo
 //{
-//	Utils::Point2D m_TextSize;
-//	Utils::Point2D m_TotalSize;
+//	Vec2 m_TextSize;
+//	Vec2 m_TotalSize;
 //};
 
 /// <summary>
@@ -37,13 +38,13 @@ struct VisualDataPreset
 {
 	const Font* m_Font = nullptr;
 	float m_FontSize = 0;
-	Utils::Point2D m_CharSpacing = {};
+	Vec2 m_CharSpacing = {};
 	CharAreaType m_CharAreaType = CharAreaType::Adaptive;
-	Utils::Point2D m_PredefinedCharArea = {};
+	Vec2 m_PredefinedCharArea = {};
 	NormalizedPosition m_RelativePivotPos = {};
 
-	VisualDataPreset(const Font& font, const float& fontSize, const Utils::Point2D& charSpacing,
-		const CharAreaType& charAreaType, const Utils::Point2D& predefinedCharArea, 
+	VisualDataPreset(const Font& font, const float& fontSize, const Vec2& charSpacing,
+		const CharAreaType& charAreaType, const Vec2& predefinedCharArea, 
 		const NormalizedPosition& relativePivotPos);
 };
 
@@ -52,27 +53,27 @@ class VisualData
 {
 public:
 	static const float& DEFAULT_FONT_SIZE;
-	static const Utils::Point2D& DEFAULT_CHAR_SPACING;
-	static const Utils::Point2D& DEFAULT_PREDEFINED_CHAR_AREA;
+	static const Vec2& DEFAULT_CHAR_SPACING;
+	static const Vec2& DEFAULT_PREDEFINED_CHAR_AREA;
 
-	static const Utils::Point2D PIVOT_TOP_LEFT;
-	static const Utils::Point2D PIVOT_TOP_RIGHT;
-	static const Utils::Point2D PIVOT_BOTTOM_LEFT;
-	static const Utils::Point2D PIVOT_BOTTOM_RIGHT;
-	static const Utils::Point2D PIVOT_CENTER;
-	static const Utils::Point2D PIVOT_BOTTOM_CENTER;
-	static const Utils::Point2D PIVOT_TOP_CENTER;
+	static const Vec2 PIVOT_TOP_LEFT;
+	static const Vec2 PIVOT_TOP_RIGHT;
+	static const Vec2 PIVOT_BOTTOM_LEFT;
+	static const Vec2 PIVOT_BOTTOM_RIGHT;
+	static const Vec2 PIVOT_CENTER;
+	static const Vec2 PIVOT_BOTTOM_CENTER;
+	static const Vec2 PIVOT_TOP_CENTER;
 
-	static const Utils::Point2D DEFAULT_PIVOT;
+	static const Vec2 DEFAULT_PIVOT;
 
 private:
 	/// <summary>
 	/// The spacing between characters in the visual in [WIDTH, HEIGHT]
 	/// </summary>
-	Utils::Point2D m_charSpacing;
+	Vec2 m_charSpacing;
 
 	CharAreaType m_charAreaType;
-	Utils::Point2D m_predefinedCharArea;
+	Vec2 m_predefinedCharArea;
 
 	/// <summary>
 	/// The position relative to the visual that corresponds to the transform position.
@@ -89,15 +90,15 @@ public:
 private:
 	bool HasValidFont() const;
 
-	WorldPosition GetTopLeftPos(const WorldPosition& pivotWorldPos, const Utils::Point2D& totalSize) const;
+	WorldPosition GetTopLeftPos(const WorldPosition& pivotWorldPos, const Vec2& totalSize) const;
 	void AddTextPositionsToBufferPredefined(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
 	void AddTextPositionsToBufferAdaptive(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
 
 private:
 	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
-		const float& fontSize, const Utils::Point2D& charSpacing,
+		const float& fontSize, const Vec2& charSpacing,
 		const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
-		const Utils::Point2D& predefinedCharArea);
+		const Vec2& predefinedCharArea);
 
 public:
 	VisualData();
@@ -110,7 +111,7 @@ public:
 	/// <param name="charSpacing"></param>
 	/// <param name="relativePivotPos"></param>
 	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, 
-		const float& fontSize, const Utils::Point2D& charSpacing, 
+		const float& fontSize, const Vec2& charSpacing, 
 		const NormalizedPosition& relativePivotPos);
 
 	/// <summary>
@@ -123,8 +124,8 @@ public:
 	/// <param name="predefinedCharArea"></param>
 	/// <param name="relativePivotPos"></param>
 	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
-		const float& fontSize, const Utils::Point2D& charSpacing,
-		const Utils::Point2D& predefinedCharArea,
+		const float& fontSize, const Vec2& charSpacing,
+		const Vec2& predefinedCharArea,
 		const NormalizedPosition& relativePivotPos);
 
 	VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPreset& preset);
@@ -132,7 +133,7 @@ public:
 	std::optional<TextArray> CreateSquaredBuffer(const RawTextBufferBlock& rawBuffer) const;
 	std::string ToStringRawBuffer(const RawTextBufferBlock& block);
 
-	Utils::Point2D GetWorldSize() const;
+	Vec2 GetWorldSize() const;
 	/// <summary>
 	/// Pivot position is relative to origin of bottom left [0,0] and top right [1, 1]
 	/// </summary>
@@ -141,21 +142,13 @@ public:
 	/// <returns></returns>
 	void AddTextPositionsToBuffer(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
 
-	const Utils::Point2D& GetCharSpacing() const;
+	const Vec2& GetCharSpacing() const;
 	const Font& GetFont() const;
 	const float GetFontSize() const;
 
-	const Utils::Point2D& GetPivot() const;
+	const Vec2& GetPivot() const;
 };
 
-//using VisualDataPositions = FragmentedTextArray;
-
-//struct VisualData
-//{
-//	//TODO: should sprites have emptyu char for locations not covered or should they store the position?
-//	std::vector<std::vector<TextChar>> m_Data = {};
-//};
-//
 struct VisualDataPositions
 {
 	//TODO: should sprites have emptyu char for locations not covered or should they store the position?

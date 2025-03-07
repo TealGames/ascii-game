@@ -1,6 +1,5 @@
 #include "pch.hpp"
 #include "Array2DPosition.hpp"
-#include "Point2DInt.hpp"
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 
@@ -124,12 +123,12 @@ Array2DPosition& Array2DPosition::operator=(Array2DPosition&& other) noexcept
 	return *this;
 }
 
-Array2DPosition::operator Utils::Point2DInt() const
+Array2DPosition::operator Vec2Int() const
 {
 	return m_Pos;
 }
 
-Array2DPosition GetAsArray2DPos(const Utils::Point2DInt& pos)
+Array2DPosition GetAsArray2DPos(const Vec2Int& pos)
 {
 	return { pos.m_X, pos.m_Y };
 }

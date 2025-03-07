@@ -3,6 +3,7 @@
 #include "RaylibUtils.hpp"
 #include "Debug.hpp"
 #include <limits>
+#include "Vec2Int.hpp"
 
 namespace RaylibUtils
 {
@@ -170,12 +171,7 @@ namespace RaylibUtils
 	{
 		return { vec.m_X, vec.m_Y };
 	}
-
-	Vector2 ToRaylibVector(const Utils::Point2D& point)
-	{
-		return { point.m_X, point.m_Y };
-	}
-	Vector2 ToRaylibVector(const Utils::Point2DInt& point)
+	Vector2 ToRaylibVector(const Vec2Int& point)
 	{
 		return { static_cast<float>(point.m_X), static_cast<float>(point.m_Y )};
 	}
@@ -184,7 +180,7 @@ namespace RaylibUtils
 	{
 		return font.texture.id != 0;
 	}
-	float GetMaxFontSizeForSpace(const Font& font, const std::string& text, const Utils::Point2D& space, const float& spacing)
+	float GetMaxFontSizeForSpace(const Font& font, const std::string& text, const Vec2& space, const float& spacing)
 	{
 		Vector2 currentSpace = {std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
 		float fontSize = space.m_Y;

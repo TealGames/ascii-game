@@ -1,4 +1,5 @@
 #pragma once
-#include "Point2D.hpp"
+#include "Vec2.hpp"
 
-using WorldPosition = Utils::Point2D;
+//using WorldPosition = Utils::Point2D;
+using WorldPosition = Vec2;

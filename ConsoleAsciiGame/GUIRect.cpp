@@ -1,11 +1,10 @@
 #include "pch.hpp"
 
 #include "GUIRect.hpp"
-#include "Point2DInt.hpp"
 
-GUIRect::GUIRect() : GUIRect(ScreenPosition(), Utils::Point2DInt()) {}
+GUIRect::GUIRect() : GUIRect(ScreenPosition(), Vec2Int()) {}
 
-GUIRect::GUIRect(const ScreenPosition& topLeftPos, const Utils::Point2DInt& size) :
+GUIRect::GUIRect(const ScreenPosition& topLeftPos, const Vec2Int& size) :
 	m_topLeftPos(topLeftPos), m_size(size), m_bottomRightPos(GetPosWithinRect({1, 0})) {}
 
 ScreenPosition GUIRect::GetPosWithinRect(const NormalizedPosition& normalizedPos) const
@@ -32,7 +31,7 @@ const ScreenPosition& GUIRect::GetBottomRightPos() const
 {
 	return m_bottomRightPos;
 }
-const Utils::Point2DInt& GUIRect::GetSize() const
+const Vec2Int& GUIRect::GetSize() const
 {
 	return m_size;
 }
@@ -42,7 +41,7 @@ void GUIRect::SetTopLeftPos(const ScreenPosition& pos)
 	m_topLeftPos = pos;
 	m_bottomRightPos = GetPosWithinRect({ 1, 0 });
 }
-void GUIRect::SetSize(const Utils::Point2DInt& size)
+void GUIRect::SetSize(const Vec2Int& size)
 {
 	m_size = size;
 	m_bottomRightPos = GetPosWithinRect({ 1, 0 });

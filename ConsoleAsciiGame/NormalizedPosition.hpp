@@ -1,5 +1,5 @@
 #pragma once
-#include "Point2D.hpp"
+#include "Vec2.hpp"
 
 /// <summary>
 /// Represents a normalized position of a rectangle where [0,0] would represent 
@@ -8,16 +8,16 @@
 class NormalizedPosition
 {
 private:
-	Utils::Point2D m_pos;
+	Vec2 m_pos;
 public:
 
 private:
 public:
 	NormalizedPosition();
 	NormalizedPosition(const float& x, const float& y);
-	NormalizedPosition(const Utils::Point2D& pos);
+	NormalizedPosition(const Vec2& pos);
 
-	const Utils::Point2D& GetPos() const;
-	void SetPos(const Utils::Point2D& relativePos);
+	const Vec2& GetPos() const;
+	void SetPos(const Vec2& relativePos);
 };
 

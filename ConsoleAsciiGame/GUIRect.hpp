@@ -1,5 +1,5 @@
 #pragma once
-#include "Point2DInt.hpp"
+#include "Vec2Int.hpp"
 #include "ScreenPosition.hpp"
 #include "NormalizedPosition.hpp"
 
@@ -7,22 +7,22 @@ class GUIRect
 {
 private:
 	ScreenPosition m_topLeftPos;
-	Utils::Point2DInt m_size;
+	Vec2Int m_size;
 	ScreenPosition m_bottomRightPos;
 
 public:
 	GUIRect();
-	GUIRect(const ScreenPosition& topLeftPos, const Utils::Point2DInt& size);
+	GUIRect(const ScreenPosition& topLeftPos, const Vec2Int& size);
 
 	ScreenPosition GetPosWithinRect(const NormalizedPosition& normalizedPos) const;
 	bool ContainsPos(const ScreenPosition& pos) const;
 
 	const ScreenPosition& GetTopleftPos() const;
 	const ScreenPosition& GetBottomRightPos() const;
-	const Utils::Point2DInt& GetSize() const;
+	const Vec2Int& GetSize() const;
 
 	void SetTopLeftPos(const ScreenPosition& pos);
-	void SetSize(const Utils::Point2DInt& size);
+	void SetSize(const Vec2Int& size);
 
 	std::string ToString() const;
 };

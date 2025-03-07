@@ -4,7 +4,7 @@
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 #include "Array2DPosition.hpp"
-#include "Point2DInt.hpp"
+#include "Vec2Int.hpp"
 #include "Debug.hpp"
 
 TextChar::TextChar() :
@@ -134,9 +134,9 @@ int TextArray::GetHeight() const
 	return m_height;
 }
 
-Utils::Point2DInt TextArray::GetSize() const
+Vec2Int TextArray::GetSize() const
 {
-	return Utils::Point2DInt(GetWidth(), GetHeight());
+	return Vec2Int(GetWidth(), GetHeight());
 }
 
 bool TextArray::IsValidRow(const int& rowPos) const
@@ -206,7 +206,7 @@ void TextArray::SetAt(const std::vector<ColorPosition>& updateColorsAtPos)
 	}
 }
 
-bool TextArray::TrySetRegion(const Array2DPosition& rowColStartPos, const Utils::Point2DInt& size,
+bool TextArray::TrySetRegion(const Array2DPosition& rowColStartPos, const Vec2Int& size,
 	const std::vector<std::vector<TextChar>>& chars)
 {
 	//Subtract one from width and col since start pos is inclusive

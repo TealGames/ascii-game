@@ -33,6 +33,7 @@ public:
 	void Update();
 	void SetFieldsToStored();
 	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	//ScreenPosition SetupRender(const RenderInfo& renderInfo, Event<void>& renderActions) override;
 
 	std::string GetComponentName() const;
 	std::vector<std::string> GetFieldNames() const;

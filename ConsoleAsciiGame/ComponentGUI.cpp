@@ -25,10 +25,10 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorM
 	if (component == nullptr) return;
 
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(), 
-		std::get<Utils::Point2D*>(component->GetFieldsMutable()[0].m_Value)->ToString()));*/
+		std::get<Vec2*>(component->GetFieldsMutable()[0].m_Value)->ToString()));*/
 
 	/*if (component->GetEntitySafe().m_Name=="player") Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(),
-		std::get<Utils::Point2D*>(component->GetFieldsMutable()[0].m_Value)->ToString())); */
+		std::get<Vec2*>(component->GetFieldsMutable()[0].m_Value)->ToString())); */
 
 	component->InitFields();
 
@@ -42,7 +42,7 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorM
 	}
 
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(),
-		std::get<Utils::Point2D*>(m_fieldGUIs[0].GetFieldInfo().m_Value)->ToString()));*/
+		std::get<Vec2*>(m_fieldGUIs[0].GetFieldInfo().m_Value)->ToString()));*/
 
 	//Assert(false, std::format("Created compiennt gui for comp: {} with fields: {}", GetComponentName(), component->GetFields()[0].m_FieldName));
 }
@@ -110,16 +110,14 @@ ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 
 	Vector2 currentPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
 	//Assert(false, std::format("Drawing rect at pos: {}", RaylibUtils::ToString(currentPos)));
-	float componentHeight = MAX_PANEL_HEIGHT;
+	//float componentHeight = MAX_PANEL_HEIGHT;
 
-	if (!m_dropdownCheckbox.IsChecked())
-	{
-		componentHeight = MeasureTextEx(GetGlobalFont(), componentName.c_str(), TITLE_FONT_SIZE, TITLE_FONT_SPACING).y;
-	}
+	//The first rectangle drawn is for the header ONLY
+	float componentHeight = MeasureTextEx(GetGlobalFont(), componentName.c_str(), TITLE_FONT_SIZE, TITLE_FONT_SPACING).y;
 	DrawRectangle(currentPos.x, currentPos.y, renderInfo.m_RenderSize.m_X, componentHeight, EntityEditorGUI::EDITOR_BACKGROUND_COLOR);
-
+	
 	ScreenPosition checkboxArea= m_dropdownCheckbox.Render(RenderInfo(ScreenPosition(currentPos.x, currentPos.y), ScreenPosition(TITLE_FONT_SIZE, TITLE_FONT_SIZE)));
-	Utils::Point2D remainingTitleSpace = Utils::Point2D(renderInfo.m_RenderSize.m_X - checkboxArea.m_X, TITLE_FONT_SIZE);
+	const Vec2 remainingTitleSpace = Vec2(renderInfo.m_RenderSize.m_X - checkboxArea.m_X, TITLE_FONT_SIZE);
 	const float componentNameFont = RaylibUtils::GetMaxFontSizeForSpace(GetGlobalFont(), componentName.c_str(), remainingTitleSpace, TITLE_FONT_SPACING);
 	//Assert(false, std::format("max font for area: {} is: {}", remainingTitleSpace.ToString(), std::to_string(componentNameFont)));
 	DrawTextEx(GetGlobalFont(), componentName.c_str(), {currentPos.x+ checkboxArea.m_X, currentPos.y}, componentNameFont, TITLE_FONT_SPACING, EntityEditorGUI::EDITOR_TEXT_COLOR);
@@ -130,26 +128,40 @@ ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 		return ScreenPosition(MAX_PANEL_WIDTH, componentHeight);
 	}
 
+	const Vector2 expandedComponentStartPos = currentPos;
 	int fieldHeight = 0;
 	if (DIVIDE_FIELDS_BY_AMOUNT) 
 		fieldHeight = (renderInfo.m_RenderSize.m_Y - (currentPos.y - renderInfo.m_TopLeftPos.m_Y)) / m_fieldGUIs.size();
 
 	ScreenPosition fieldSize = {};
+	std::vector<Event<void>> renderActions = {};
 	for (auto& fieldGUI : m_fieldGUIs)
 	{
 		//We subtract from current pos since as we go down y value increases
 		if (!DIVIDE_FIELDS_BY_AMOUNT) fieldHeight = renderInfo.m_RenderSize.m_Y - (currentPos.y- renderInfo.m_TopLeftPos.m_Y);
-		fieldSize = fieldGUI.Render(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y) },
-												{ renderInfo.m_RenderSize.m_X, fieldHeight }));
+		renderActions.push_back({});
+		fieldSize = fieldGUI.SetupRender(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y) },
+												{ renderInfo.m_RenderSize.m_X, fieldHeight }), renderActions.back());
 		/*if (m_fieldGUIs.size() == 3)
 		{
 			LogError(std::format("found field of name: {} with size: {} one hegiht: {} total space: {}",
 				fieldGUI.GetFieldInfo().m_FieldName, std::to_string(fieldSize.m_Y), std::to_string(oneFieldHeight), std::to_string(renderInfo.m_RenderSize.m_Y)));
 		}*/
 		currentPos.y += fieldSize.m_Y;
+		componentHeight += fieldSize.m_Y;
+	}
+
+	//Here we draw the expanded part. We had to get the full area first before we knew how much we could draw for the background
+	const float expandedComponentHeight = currentPos.y - expandedComponentStartPos.y;
+	DrawRectangle(expandedComponentStartPos.x, expandedComponentStartPos.y, renderInfo.m_RenderSize.m_X, expandedComponentHeight, EntityEditorGUI::EDITOR_BACKGROUND_COLOR);
+	for (auto& renderAction : renderActions)
+	{
+		renderAction.Invoke();
+		//Assert(false, std::format("Invoking action: {}", std::to_string(renderAction.GetListeners().size())));
 	}
 	//if (m_fieldGUIs.size() == 3) Assert(false, std::format("Poop"));
 
+	//Assert(false, std::format("height: {} size used: {}", std::to_string(fieldHeight), fieldSize.ToString()));
 	return ScreenPosition(MAX_PANEL_WIDTH, componentHeight);
 }
 

@@ -2,52 +2,45 @@
 #include <string>
 #include "VectorEnums.hpp"
 
-class Vec2
+class Vec2Int
 {
 private:
 public:
-	float m_X;
-	float m_Y;
+	int m_X;
+	int m_Y;
 
-	static const Vec2 UP;
-	static const Vec2 DOWN;
-	static const Vec2 LEFT;
-	static const Vec2 RIGHT;
+	static const Vec2Int UP;
+	static const Vec2Int DOWN;
+	static const Vec2Int LEFT;
+	static const Vec2Int RIGHT;
 
-	static const Vec2 NORTH;
-	static const Vec2 NORTHEAST;
-	static const Vec2 EAST;
-	static const Vec2 SOUTHEAST;
-	static const Vec2 SOUTH;
-	static const Vec2 SOUTHWEST;
-	static const Vec2 WEST;
-	static const Vec2 NORTHWEST;
+	static const Vec2Int NORTH;
+	static const Vec2Int EAST;
+	static const Vec2Int SOUTH;
+	static const Vec2Int WEST;
 
-	static const Vec2 ZERO;
-	static const Vec2 ONE;
+	static const Vec2Int ZERO;
+	static const Vec2Int ONE;
 
 public:
-	Vec2();
-	Vec2(const float&, const float&);
-	Vec2(const Vec2&) = default;
-	Vec2(Vec2&&) noexcept = default;
+	Vec2Int();
+	Vec2Int(const int&, const int&);
+	Vec2Int(const Vec2Int&) = default;
+	Vec2Int(Vec2Int&&) noexcept = default;
 
 	/// <summary>
 	/// Will get the x value as its own vector
 	/// </summary>
 	/// <returns></returns>
-	Vec2 GetXAsVector() const;
+	Vec2Int GetXAsVector() const;
 
 	/// <summary>
 	/// Will get the x value as its own vector
 	/// </summary>
 	/// <returns></returns>
-	Vec2 GetYAsVector() const;
+	Vec2Int GetYAsVector() const;
 
-	int XAsInt() const;
-	int YAsInt() const;
-
-	Vec2 GetFlipped() const;
+	Vec2Int GetFlipped() const;
 
 	/// <summary>
 	/// Returns the angle of the vector by default in radians (or degrees)
@@ -57,28 +50,27 @@ public:
 	/// <returns></returns>
 	float GetAngle(const AngleMode& mode = AngleMode::Radians) const;
 	float GetMagnitude() const;
-	Vec2 GetNormalized() const;
-	Vec2 GetNormal() const;
-	Vec2 GetOppositeDirection() const;
+	Vec2Int GetNormalized() const;
+	Vec2Int GetNormal() const;
+	Vec2Int GetOppositeDirection() const;
 
 	bool IsUnitVector() const;
 
-	std::string ToString(const std::uint8_t& decimalPlaces = 5, 
-		const VectorForm form = VectorForm::Component) const;
+	std::string ToString(const VectorForm form = VectorForm::Component) const;
 
-	Vec2 operator+(const Vec2& other) const;
-	Vec2 operator-(const Vec2& other) const;
-	Vec2 operator*(const Vec2& other) const;
-	Vec2 operator*(const float& scalar) const;
-	Vec2 operator/(const float& scalar) const;
+	Vec2Int operator+(const Vec2Int& other) const;
+	Vec2Int operator-(const Vec2Int& other) const;
+	Vec2Int operator*(const Vec2Int& other) const;
+	Vec2Int operator*(const float& scalar) const;
+	Vec2Int operator/(const float& scalar) const;
 
-	bool operator==(const Vec2& other) const;
+	bool operator==(const Vec2Int& other) const;
 
-	Vec2& operator=(const Vec2& other);
-	Vec2& operator=(Vec2&& other) noexcept;
+	Vec2Int& operator=(const Vec2Int& other);
+	Vec2Int& operator=(Vec2Int&& other) noexcept;
 };
 
-float GetDistance(const Vec2& vec1, const Vec2& vec2);
+float GetDistance(const Vec2Int& vec1, const Vec2Int& vec2);
 
 /// <summary>
 /// Will get the vector formed by the 2 points
@@ -86,10 +78,10 @@ float GetDistance(const Vec2& vec1, const Vec2& vec2);
 /// <param name="startPos"></param>
 /// <param name="endPos"></param>
 /// <returns></returns>
-Vec2 GetVector(const Vec2& startPos, const Vec2& endPos);
-Vec2 GetVector(const Vec2& unitVector, const float& magnitude);
+Vec2Int GetVector(const Vec2Int& startPos, const Vec2Int& endPos);
+Vec2Int GetVector(const Vec2Int& unitVector, const float& magnitude);
 
-Vec2 GetVectorEndPoint(const Vec2& startPos, const Vec2& vector);
+Vec2Int GetVectorEndPoint(const Vec2Int& startPos, const Vec2Int& vector);
 
 /// <summary>
 /// Returns the scalar dot product. 
@@ -101,5 +93,4 @@ Vec2 GetVectorEndPoint(const Vec2& startPos, const Vec2& vector);
 /// <param name="vecA"></param>
 /// <param name="vecB"></param>
 /// <returns></returns>
-float DotProduct(const Vec2& vecA, const Vec2& vecB);
-
+float DotProduct(const Vec2Int& vecA, const Vec2Int& vecB);

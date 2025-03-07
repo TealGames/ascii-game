@@ -1,11 +1,11 @@
 #pragma once
-#include "Point2DInt.hpp"
+#include "Vec2Int.hpp"
 
 constexpr int NULL_INDEX = -1;
 class Array2DPosition final
 {
 private:
-	Utils::Point2DInt m_Pos;
+	Vec2Int m_Pos;
 
 private:
 public:
@@ -40,7 +40,7 @@ public:
 	Array2DPosition& operator=(const Array2DPosition&);
 	Array2DPosition& operator=(Array2DPosition&& other) noexcept;
 
-	explicit operator Utils::Point2DInt() const;
+	explicit operator Vec2Int() const;
 };
 
-Array2DPosition GetAsArray2DPos(const Utils::Point2DInt& pos);
+Array2DPosition GetAsArray2DPos(const Vec2Int& pos);

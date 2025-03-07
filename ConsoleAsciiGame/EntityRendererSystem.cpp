@@ -2,7 +2,6 @@
 #include "raylib.h"
 #include "EntityRendererSystem.hpp"
 #include "TextBuffer.hpp"
-#include "Point2DInt.hpp"
 #include "Array2DPosition.hpp"
 #include "Component.hpp"
 #include "TransformSystem.hpp"

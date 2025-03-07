@@ -9,7 +9,6 @@
 #include "EntityRendererSystem.hpp"
 #include "TransformSystem.hpp"
 #include "LightSourceSystem.hpp"
-#include "Point2DInt.hpp"
 #include "Point4D.hpp"
 #include "TextBuffer.hpp"
 #include "ColorGradient.hpp"

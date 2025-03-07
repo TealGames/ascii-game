@@ -2,16 +2,16 @@
 #include <vector>
 #include "ShapeType.hpp"
 #include "ScreenPosition.hpp"
-#include "Point2D.hpp"
+#include "Vec2.hpp"
 #include "raylib.h"
 
 struct RectangleOutlineData
 {
 	//Size in [WIDTH, HEIGHT]
-	Utils::Point2D m_Size;
+	Vec2 m_Size;
 	ScreenPosition m_Position;
 
-	RectangleOutlineData(const Utils::Point2D& size, const ScreenPosition& pos);
+	RectangleOutlineData(const Vec2& size, const ScreenPosition& pos);
 };
 
 struct ColliderOutlineBuffer

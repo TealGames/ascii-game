@@ -28,7 +28,8 @@ const std::type_info& ComponentField::GetCurrentType() const
 	else if (IsCurrentType<float>()) return typeid(float);
 	else if (IsCurrentType<bool>()) return typeid(bool);
 	else if (IsCurrentType<std::string>()) return typeid(std::string);
-	else if (IsCurrentType<Utils::Point2D>()) return typeid(Utils::Point2D);
+	else if (IsCurrentType<Vec2>()) return typeid(Vec2);
+	else if (IsCurrentType<Vec2Int>()) return typeid(Vec2Int);
 
 	LogError(this, std::format("Tried to retrieve current type for component field but no type was defined for it"));
 	throw std::invalid_argument("Invalid type actions");
@@ -49,8 +50,11 @@ std::string ComponentField::ToString() const
 	else if (IsCurrentType<std::string>())
 		valueText = *(TryGetValue<std::string>());
 
-	else if (IsCurrentType<Utils::Point2D>())
-		valueText = (TryGetValue<Utils::Point2D>())->ToString();
+	else if (IsCurrentType<Vec2>())
+		valueText = (TryGetValue<Vec2>())->ToString();
+
+	else if (IsCurrentType<Vec2Int>())
+		valueText = (TryGetValue<Vec2Int>())->ToString();
 
 	return std::format("[Field:{}, Value:{}", m_FieldName, valueText);
 }

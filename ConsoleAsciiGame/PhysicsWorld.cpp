@@ -48,7 +48,7 @@ namespace Physics
 #endif 
 
 		AABBIntersectionData collision = {};
-		Utils::Point2D minBodyDisplacement = {};
+		Vec2 minBodyDisplacement = {};
 		Vec2 minBodyDisplacementVec = {};
 		for (int i = 0; i< m_bodies.size(); i++)
 		{
@@ -166,7 +166,7 @@ namespace Physics
 			float yVelocity = bodyA.GetVelocity().m_Y * deltaTime;;
 
 			//LogWarning(std::format("ENTITY SETTING POS: {}", std::to_string(xVelocity), std::to_string(yVelocity)));
-			bodyAEntity.m_Transform.SetPosDelta(Utils::Point2D(xVelocity, yVelocity));
+			bodyAEntity.m_Transform.SetPosDelta(Vec2(xVelocity, yVelocity));
 		}
 	}
 	void PhysicsWorld::UpdateEnd()
@@ -194,7 +194,7 @@ namespace Physics
 							   body2.m_Entity->m_Transform.m_Pos, body2.GetAABB());
 	}
 
-	Utils::Point2D GetBodyMinDisplacement(const PhysicsBodyData& body1, const PhysicsBodyData& body2)
+	Vec2 GetBodyMinDisplacement(const PhysicsBodyData& body1, const PhysicsBodyData& body2)
 	{
 		return GetAABBMinDisplacement(body1.m_Entity->m_Transform.m_Pos, body1.GetAABB(),
 			body2.m_Entity->m_Transform.m_Pos, body2.GetAABB());
@@ -271,7 +271,7 @@ namespace Physics
 			//Note: when reaching this point tMin is the intersecction distance from origin
 			result.m_BodyHit = body;
 			result.m_Displacement = {rayDir.m_X * tMin, rayDir.m_Y * tMin};
-			result.m_HitPos = origin + Utils::Point2D(result.m_Displacement.m_X, result.m_Displacement.m_Y);
+			result.m_HitPos = origin + Vec2(result.m_Displacement.m_X, result.m_Displacement.m_Y);
 
 			/*LogError(std::format("REACHED LINE END origin {} ray; {} body: {} (body pos: {}) body min: {} max: {} displacement; {}",
 				origin.ToString(), ray.ToString(), body->m_Entity->m_Name, body->GetEntitySafe().m_Transform.m_Pos.ToString(),

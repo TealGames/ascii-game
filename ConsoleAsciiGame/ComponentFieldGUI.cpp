@@ -8,6 +8,7 @@
 #include "Entity.hpp"
 #include "GUISelectorManager.hpp"
 #include "EntityEditorGUI.hpp"
+#include "Vec2.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 10;
 constexpr static float FIELD_FONT_FACTOR = 0.8;
@@ -21,10 +22,10 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	const ComponentGUI& componentGUI, ComponentField& field)
 	: m_fieldInfo(field), m_inputFields(),m_checkbox(), m_inputManager(inputManager), m_componentGUI(&componentGUI)
 {
-	/*if (m_fieldInfo.IsCurrentType<Utils::Point2D>()) 
-		Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Utils::Point2D*>(m_fieldInfo.m_Value)->ToString()));*/
-	/*if (m_fieldInfo.IsCurrentType<Utils::Point2D>() && GetComponentGUISafe().GetEntityGUISafe().GetEntity().m_Name== "player")*/
-	//Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Utils::Point2D*>(m_fieldInfo.m_Value)->ToString()));
+	/*if (m_fieldInfo.IsCurrentType<Vec2>()) 
+		Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Vec2*>(m_fieldInfo.m_Value)->ToString()));*/
+	/*if (m_fieldInfo.IsCurrentType<Vec2>() && GetComponentGUISafe().GetEntityGUISafe().GetEntity().m_Name== "player")*/
+	//Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Vec2*>(m_fieldInfo.m_Value)->ToString()));
 
 	InputFieldFlag fieldFlags = InputFieldFlag::None;
 	GUISettings guiSettings = GUISettings(MAX_INPUT_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
@@ -48,11 +49,18 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	{
 		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::String, fieldFlags, guiSettings));
 	}
-	else if (m_fieldInfo.IsCurrentType<Utils::Point2D>())
+	else if (m_fieldInfo.IsCurrentType<Vec2>())
 	{
 		for (int i = 0; i < 2; i++)
 		{
 			m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, guiSettings));
+		}
+	}
+	else if (m_fieldInfo.IsCurrentType<Vec2Int>())
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Integer, fieldFlags, guiSettings));
 		}
 	}
 	else
@@ -89,9 +97,9 @@ void ComponentFieldGUI::SetFieldToInternal()
 		//Assert(false, std::format("String FOR COMPOENNT FIELD IS: {}", str == nullptr ? "NULL" : *str));
 		m_inputFields[0].OverrideInput(*str);
 	}
-	else if (m_fieldInfo.IsCurrentType<Utils::Point2D>())
+	else if (m_fieldInfo.IsCurrentType<Vec2>())
 	{
-		const Utils::Point2D* point = m_fieldInfo.TryGetValue<Utils::Point2D>();
+		const Vec2* point = m_fieldInfo.TryGetValue<Vec2>();
 		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
 
 		m_inputFields[0].OverrideInput(std::to_string(point->m_X));
@@ -99,6 +107,12 @@ void ComponentFieldGUI::SetFieldToInternal()
 
 		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
 		//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
+	}
+	else if (m_fieldInfo.IsCurrentType<Vec2Int>())
+	{
+		const Vec2Int* point = m_fieldInfo.TryGetValue<Vec2Int>();
+		m_inputFields[0].OverrideInput(std::to_string(point->m_X));
+		m_inputFields[1].OverrideInput(std::to_string(point->m_Y));
 	}
 	else
 	{
@@ -116,7 +130,7 @@ void ComponentFieldGUI::SetFieldToInternal()
 			field.SetSubmitAction([this](std::string input) -> void
 				{
 					//LogError(std::format("Setting internal input for field with str: {} type: {} is point: {}",
-					//	input, m_fieldInfo.GetCurrentType().name(), std::to_string(m_fieldInfo.IsCurrentType<Utils::Point2D>())));
+					//	input, m_fieldInfo.GetCurrentType().name(), std::to_string(m_fieldInfo.IsCurrentType<Vec2>())));
 
 					//for (auto& inputField : m_inputFields)
 					//{
@@ -135,7 +149,7 @@ void ComponentFieldGUI::SetFieldToInternal()
 void ComponentFieldGUI::SetInternalWithInput()
 {
 	LogError(std::format("Getting internal input and setting it. is point: {} field name: {} is point: {}", 
-		m_fieldInfo.GetCurrentType().name(), m_fieldInfo.m_FieldName, std::to_string(m_fieldInfo.IsCurrentType<Utils::Point2D>())));
+		m_fieldInfo.GetCurrentType().name(), m_fieldInfo.m_FieldName, std::to_string(m_fieldInfo.IsCurrentType<Vec2>())));
 
 	if (m_fieldInfo.IsCurrentType<int>())
 	{
@@ -157,11 +171,21 @@ void ComponentFieldGUI::SetInternalWithInput()
 		LogError("REAHCED STRINGF");
 		m_fieldInfo.TrySetValue<std::string>(m_inputFields[0].GetInput());
 	}
-	else if (m_fieldInfo.IsCurrentType<Utils::Point2D>())
+	else if (m_fieldInfo.IsCurrentType<Vec2>())
 	{
 		//m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput()
 		LogError("REAHCED POINT");
-		m_fieldInfo.TrySetValue<Utils::Point2D>({ m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput() });
+		m_fieldInfo.TrySetValue<Vec2>({ m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput() });
+		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
+
+		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
+		//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
+	}
+	else if (m_fieldInfo.IsCurrentType<Vec2Int>())
+	{
+		//m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput()
+		LogError("REAHCED POINT");
+		m_fieldInfo.TrySetValue<Vec2Int>({ m_inputFields[0].GetIntInput(), m_inputFields[1].GetIntInput() });
 		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
 
 		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
@@ -196,6 +220,7 @@ void ComponentFieldGUI::Update()
 	//TODO: update the values in the field
 }
 
+/*
 ScreenPosition ComponentFieldGUI::Render(const RenderInfo& renderInfo)
 {
 	Vector2 currentPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
@@ -229,6 +254,49 @@ ScreenPosition ComponentFieldGUI::Render(const RenderInfo& renderInfo)
 		currentPos.y += checkboxSize.m_Y;
 	}
 	
+	return { renderInfo.m_RenderSize.m_X, static_cast<int>(currentPos.y - renderInfo.m_TopLeftPos.m_Y) };
+}
+*/
+
+ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Event<void>& renderActions)
+{
+	Vector2 currentPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
+	const Vector2 textSize = MeasureTextEx(GetGlobalFont(), m_fieldInfo.m_FieldName.c_str(), TITLE_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X);
+
+	renderActions.AddListener([this, currentPos]() -> void 
+		{
+			DrawTextEx(GetGlobalFont(), m_fieldInfo.m_FieldName.c_str(), currentPos, 
+				TITLE_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_SECONDARY_COLOR); 
+		});
+	currentPos.y += textSize.y;
+
+	const int heightLeft = renderInfo.m_RenderSize.m_Y - (currentPos.y - renderInfo.m_TopLeftPos.m_Y);
+	if (!m_inputFields.empty())
+	{
+		//ScreenPosition inputFieldSizeUsed = {};
+		ScreenPosition inputFieldSpace = { static_cast<int>(renderInfo.m_RenderSize.m_X / m_inputFields.size()),
+										   std::min(heightLeft, MAX_INPUT_FIELD_SIZE.m_Y) };
+
+		for (auto& field : m_inputFields)
+		{
+			renderActions.AddListener([currentPos, &inputFieldSpace, &field]() -> void
+				{
+					ScreenPosition size= field.Render(RenderInfo({ static_cast<int>(currentPos.x),
+														   static_cast<int>(currentPos.y) }, inputFieldSpace)); 
+					LogError(std::format("Input field has size: {}", size.ToString()));
+				});
+			currentPos.x += inputFieldSpace.m_X;
+		}
+		currentPos.y += inputFieldSpace.m_Y;
+	}
+	else
+	{
+		//NOTE: unlike the fields which are big and need to be on new lines, we can render the name and checkbox on the same line
+		renderActions.AddListener([&]() -> void {ScreenPosition checkboxSize = m_checkbox.Render(RenderInfo(renderInfo.m_TopLeftPos,
+			ScreenPosition{ renderInfo.m_RenderSize.m_X, heightLeft })); });
+		currentPos.y += heightLeft;
+	}
+
 	return { renderInfo.m_RenderSize.m_X, static_cast<int>(currentPos.y - renderInfo.m_TopLeftPos.m_Y) };
 }
 

@@ -122,7 +122,7 @@ namespace Core
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
 
 		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData({ 10, 5 }));
-		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(1, Utils::Point2D(2, 2), Utils::Point2D(0, 0), GRAVITY, 20));
+		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(1, Vec2(2, 2), Vec2(0, 0), GRAVITY, 20));
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
 
 		InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
@@ -154,7 +154,7 @@ namespace Core
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
 		Log("CREATING OBSTACLE RB");
-		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(0, Utils::Point2D(10, 10), Utils::Point2D(0, 0)));
+		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(0, Vec2(10, 10), Vec2(0, 0)));
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 
 		ECS::Entity& uiIcon= m_sceneManager.GetActiveSceneMutable()->CreateEntity("icon", TransformData({ 0, 0 }));
@@ -372,8 +372,8 @@ namespace Core
 		if (m_enableDebugInfo)
 		{
 			m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
-			m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<2>().GetVelocity().ToString(VectorForm::Component)));
-			m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<2>().GetAcceleration().ToString(VectorForm::Component)));
+			m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<2>().GetVelocity().ToString(3, VectorForm::Component)));
+			m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<2>().GetAcceleration().ToString(3, VectorForm::Component)));
 			m_debugInfo.AddProperty("Grounded:", std::format("{}", std::to_string(m_playerInfo.value().GetAt<0>().GetIsGrounded())));
 			m_debugInfo.AddProperty("GroundDist:", std::format("{} m", std::to_string(m_playerInfo.value().GetAt<0>().GetVerticalDistanceToGround())));
 		}

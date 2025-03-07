@@ -49,9 +49,9 @@ namespace Input
 		m_dirKeys.emplace(dir, action);
 	}
 
-	Utils::Point2DInt CompoundInput::GetCompoundInputDown() const
+	Vec2Int CompoundInput::GetCompoundInputDown() const
 	{
-		Utils::Point2DInt dir = {};
+		Vec2Int dir = {};
 		for (const auto& entry : m_dirKeys)
 		{
 			/*LogError(this, std::format("Compound: {} key: {} STATE: {} (down: {})", name, std::to_string(entry.second),

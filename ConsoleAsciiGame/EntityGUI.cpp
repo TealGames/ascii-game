@@ -68,7 +68,8 @@ ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 	//currentPos.y += MeasureTextEx(GetGlobalFont(), m_entity.m_Name.c_str(), GLOBAL_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X).y;
 
 	//Assert(false, std::format("Entity start pos: {}", RaylibUtils::ToString(startPos)));
-	ScreenPosition entityGUISize = {renderInfo.m_RenderSize.m_X, static_cast<int>(renderInfo.m_RenderSize.m_Y / m_componentGUIs.size())};
+	//ScreenPosition entityGUISize = {renderInfo.m_RenderSize.m_X, static_cast<int>(renderInfo.m_RenderSize.m_Y / m_componentGUIs.size())};
+	ScreenPosition componentSpaceLeft = {};
 	ScreenPosition componentSize = {};
 
 	/*if (m_entity.m_Name == "player")
@@ -80,9 +81,12 @@ ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 	{
 		/*Assert(false, std::format("Found comp: {} fields:{}", componentGUI.GetComponentName(), 
 					Utils::ToStringIterable<std::vector<std::string>, std::string>(componentGUI.GetFieldNames())));*/
-		componentSize= componentGUI.Render(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y)}, entityGUISize));
+		componentSpaceLeft = ScreenPosition(renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y- (currentPos.y - renderInfo.m_TopLeftPos.m_Y));
+		LogError(std::format("Space left:{}", componentSpaceLeft.ToString()));
+		componentSize= componentGUI.Render(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y)}, componentSpaceLeft));
 		currentPos.y += componentSize.m_Y;
 	}
+	//Assert(false, std::format("END OF THE ROAD"));
 	return renderInfo.m_RenderSize;
 }
 

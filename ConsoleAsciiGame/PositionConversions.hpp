@@ -1,6 +1,6 @@
 #pragma once
 #include "Array2DPosition.hpp"
-#include "Point2D.hpp"
+#include "Vec2.hpp"
 #include "CameraData.hpp"
 #include "NormalizedPosition.hpp"
 
@@ -9,8 +9,8 @@ namespace Conversions
 	/*CartesianGridPosition ArrayToGrid(const Array2DPosition& pos);
 	Array2DPosition GridToArray(const CartesianGridPosition& pos);
 
-	CartesianGridPosition CartesianToGrid(const Utils::Point2D& pos);
-	Array2DPosition CartesianToArray(const Utils::Point2D& pos);*/
+	CartesianGridPosition CartesianToGrid(const Vec2& pos);
+	Array2DPosition CartesianToArray(const Vec2& pos);*/
 
 	ScreenPosition WorldToScreenPosition(const CameraData& camera, const WorldPosition& pos);
 	WorldPosition ScreenToWorldPosition(const CameraData& camera, const ScreenPosition& pos);

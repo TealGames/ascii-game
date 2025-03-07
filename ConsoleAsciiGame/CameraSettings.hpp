@@ -13,7 +13,7 @@ struct CameraSettings
 	bool m_HasFixedPosition;
 
 	//Aspect ratio of the viewport in [WIDTH, HEIGHT]
-	Utils::Point2D m_AspectRatio;
+	Vec2Int m_AspectRatio;
 	/// <summary>
 	/// Controls the width of the camera viewport (where height is calculated from aspect ratio)
 	/// </summary>
@@ -23,6 +23,6 @@ struct CameraSettings
 	WorldPosition m_WorldViewportSize;
 
 	CameraSettings();
-	CameraSettings(const Utils::Point2D& aspectRatio, const float& lensSize, const ECS::Entity* followTarget=nullptr);
+	CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const ECS::Entity* followTarget=nullptr);
 };
 

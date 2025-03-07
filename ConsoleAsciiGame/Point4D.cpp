@@ -103,7 +103,7 @@ namespace Utils
 			m_Z = newPos.m_Z;
 			m_W = newPos.m_W;
 		}
-		else return *this;
+		return *this;
 	}
 
 	Point4D& Point4D::operator=(Point4D&& other) noexcept

@@ -3,7 +3,7 @@
 #include <string>
 #include "ScreenPosition.hpp"
 #include "ComponentField.hpp"
-#include "IRenderable.hpp"
+#include "IDelayedRenderable.hpp"
 #include "InputField.hpp"
 #include "InputManager.hpp"
 #include "CheckboxGUI.hpp"
@@ -12,7 +12,7 @@ class GUISelectorManager;
 
 class ComponentGUI;
 
-class ComponentFieldGUI : IRenderable
+class ComponentFieldGUI : IDelayedRenderable
 {
 private:
 	const Input::InputManager& m_inputManager;
@@ -34,7 +34,8 @@ public:
 	void Update();
 	void SetFieldToInternal();
 	void SetInternalWithInput();
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	//ScreenPosition Render(const RenderInfo& renderInfo) override;
+	ScreenPosition SetupRender(const RenderInfo& renderInfo, Event<void>& renderActions) override;
 
 	const ComponentField& GetFieldInfo() const;
 

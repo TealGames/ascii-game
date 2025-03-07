@@ -2,7 +2,6 @@
 #include <vector>
 #include <string>
 #include "ComponentData.hpp"
-#include "Point2D.hpp"
 #include "Vec2.hpp"
 #include "AABB.hpp"
 #include "WorldPosition.hpp"
@@ -62,12 +61,12 @@ public:
 
 private:
 	bool ValidateAABB(const Physics::AABB& boundingBox) const;
-	Physics::AABB CreateAABB(const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset);
+	Physics::AABB CreateAABB(const Vec2& boundingBoxSize, const WorldPosition& transformOffset);
 
 public:
 	PhysicsBodyData();
-	PhysicsBodyData(const float& mass, const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset);
-	PhysicsBodyData(const float& mass, const Utils::Point2D& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity);
+	PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, const WorldPosition& transformOffset);
+	PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity);
 
 	void SetPhysicsWorld(const Physics::PhysicsWorld& world);
 	const Physics::PhysicsWorld& GetPhysicsWorldSafe();
