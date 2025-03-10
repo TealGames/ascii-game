@@ -14,6 +14,19 @@
 #include "TransformData.hpp"
 #include "StringUtil.hpp"
 
+#include "nlohmann/json.hpp"
+#include "JsonUtils.hpp"
+using Json = nlohmann::json;
+
+#include "AnimatorData.hpp"
+#include "CameraData.hpp"
+#include "EntityRendererData.hpp"
+#include "LightSourceData.hpp"
+#include "PhysicsBodyData.hpp"
+#include "PlayerData.hpp"
+#include "SpriteAnimatorData.hpp"
+#include "UIObjectData.hpp"
+
 const std::string Scene::SCENE_FILE_PREFIX = "scene_";
 
 Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& globalEntities) :
@@ -50,6 +63,8 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 
 	m_localEntities.reserve(MAX_ENTITIES);
 	m_localEntityLookup.reserve(MAX_ENTITIES);
+	//TODO: make it so that layers are not specific to a scene meaning the names are created in a spearate manager or elsewhere
+	//and then during this constructor they are passed and craeted so each scene has the same layers, but their own instances
 	m_Layers.emplace(RenderLayerType::Background, RenderLayer{});
 	m_Layers.emplace(RenderLayerType::Player, RenderLayer{});
 	m_Layers.emplace(RenderLayerType::UI, RenderLayer{});
@@ -57,7 +72,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	//Log("Creating new layer in scene");
 	const VisualData backgroundVisual = VisualData(layerText, GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE,
 										VisualData::DEFAULT_CHAR_SPACING, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::PIVOT_CENTER);
-	ECS::Entity& backgroundEntity = CreateEntity("Background", TransformData({ 0,0 }));
+	ECS::Entity& backgroundEntity = CreateEntity("Background", TransformData(Vec2{ 0,0 }));
 	EntityRendererData& backgroundRenderer= backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
 	LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
 	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.m_Name, backgroundRenderer.m_Entity->m_Name));
@@ -74,7 +89,7 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	//Note: right now we make two layers one for background and one for player, but this should
 	//get abstracted more with ids and text file parsing of scene data
 }
-
+/*
 void Scene::ParseSceneFile(std::ifstream& fstream,  
 	std::vector<std::vector<TextCharPosition>>& layerText) const
 {
@@ -108,7 +123,7 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 				"unparsable hex: '{}' at line: {}", m_SceneName, hexString, std::to_string(lineIndex)))) continue;
 
 			Color convertedColor = RaylibUtils::GetColorFromHex(maybeConvertedHex.value());
-			/*Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));*/
+			//Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));
 			colorAliases.emplace(colorAlias, convertedColor);
 		}
 		else
@@ -151,6 +166,105 @@ void Scene::ParseSceneFile(std::ifstream& fstream,
 			r++;
 		}
 	}
+}
+*/
+void Scene::ParseSceneFile(std::ifstream& fstream,
+	std::vector<std::vector<TextCharPosition>>& layerText)
+{
+	std::string currentLine = "";
+	std::string fullJson = "";
+	while (std::getline(fstream, currentLine))
+	{
+		fullJson += currentLine;
+	}
+
+	Json parsedJson = Json::parse(fullJson);
+	LogError(std::format("Full json:{}", JsonUtils::ToStringProperties(parsedJson)));
+	Json entityComponentsJson = {};
+	Json currentComponentJson = {};
+	std::string componentName = "";
+	std::string entityName = "";
+	bool isTransformComponent = false;
+	ECS::Entity* currentEntity = nullptr;
+
+	//NOTE: all entities extracted will be local (since globals are not associated with any single scene)
+	Json entitiesJson = parsedJson.at("Entities");
+	//TODO: maybe parsing entity should be extracted into a separate function in entity?
+	m_localEntities.reserve(entitiesJson.size());
+	for (Json& entityJson : entitiesJson)
+	{
+		entityName = entityJson.at("Name");
+		entityComponentsJson = entityJson.at("Components");
+		LogError(std::format("Found compoinents: {}", std::to_string(entityComponentsJson.size())));
+		//TODO: maybe components should have to implement a parsing function for json?
+		for (size_t i=0; i< entityComponentsJson.size(); i++)
+		{
+			currentComponentJson = entityComponentsJson[i]; 
+			componentName = currentComponentJson.at("Type").get<std::string>();
+			isTransformComponent = componentName == Utils::GetTypeName<TransformData>();
+			if (i==0 && !Assert(isTransformComponent, std::format("Tried to parse scene file at path: '{}' "
+				"but found entity component that does not begin with Transform!", m_ScenePath.string()))) 
+				return;
+
+			if (isTransformComponent)
+			{
+				currentEntity = &(CreateEntity(entityName, TransformData(currentComponentJson)));
+				/*LogError(std::format("Found component json; {} for entoty; {} entity json: {}", 
+					JsonUtils::ToStringProperties(currentComponentJson), JsonUtils::ToStringProperties(entityComponentsJson), entityName));*/
+
+				//currentEntity->TryGetComponentMutable<TransformData>()->Deserialize(currentComponentJson);
+				LogError(std::format("Found transform for: {}", currentEntity->TryGetComponent<TransformData>()->ToString()));
+				continue;
+			}
+
+			if (!Assert(this, currentEntity != nullptr, std::format("Tried to parse scene file at path: '{}' "
+				"for component: {} but current entity: {} is null", m_ScenePath.string(), componentName, entityName)))
+				return;
+
+			if (componentName == Utils::GetTypeName<AnimatorData>())
+			{
+				currentEntity->AddComponent<AnimatorData>(currentComponentJson);
+			}
+			else if (componentName == Utils::GetTypeName<CameraData>())
+			{
+				currentEntity->AddComponent<CameraData>(currentComponentJson);
+			}
+			else if (componentName == Utils::GetTypeName<EntityRendererData>())
+			{
+				currentEntity->AddComponent<EntityRendererData>(currentComponentJson);
+				LogError(std::format("Deserialized entity renderer: {} to: {}", JsonUtils::ToStringProperties(currentComponentJson), 
+					currentEntity->TryGetComponent<EntityRendererData>()->ToString()));
+			}
+			else if (componentName == Utils::GetTypeName<LightSourceData>())
+			{
+				currentEntity->AddComponent<LightSourceData>(currentComponentJson);
+			}
+			else if (componentName == Utils::GetTypeName<PhysicsBodyData>())
+			{
+				currentEntity->AddComponent<PhysicsBodyData>(currentComponentJson);
+			}
+			else if (componentName == Utils::GetTypeName<PlayerData>())
+			{
+				currentEntity->AddComponent<PlayerData>(currentComponentJson);
+			}
+			else if (componentName == Utils::GetTypeName<SpriteAnimatorData>())
+			{
+				currentEntity->AddComponent<SpriteAnimatorData>(currentComponentJson);
+			}
+			else if (componentName == Utils::GetTypeName<UIObjectData>())
+			{
+				currentEntity->AddComponent<UIObjectData>(currentComponentJson);
+			}
+			else
+			{
+				Assert(false, std::format("Tried to parse component:'{}' of entity:'{} 'to scene file at path: '{}', "
+					"but no component by that name exists!", componentName, entityName, m_ScenePath.string()));
+				return;
+			}
+		}
+	}
+	
+	Assert(false, std::format("Found transform"));
 }
 
 void Scene::InitScene()

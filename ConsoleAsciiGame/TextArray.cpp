@@ -24,10 +24,25 @@ std::string TextChar::ToString() const
 		RaylibUtils::ToString(m_Color), Utils::ToString(m_Char));
 }
 
+TextCharPosition::TextCharPosition() : TextCharPosition({}, {}) {}
 TextCharPosition::TextCharPosition(const Array2DPosition& pos, const TextChar& textChar)
 	: m_RowColPos(pos), m_Text(textChar)
 {
 
+}
+
+bool TextCharPosition::operator==(const TextCharPosition& other) const
+{
+	return m_RowColPos == other.m_RowColPos && m_Text == other.m_Text;
+}
+
+TextCharPosition& TextCharPosition::operator=(const TextCharPosition& other)
+{
+	if (*this == other) return *this;
+
+	m_RowColPos = other.m_RowColPos;
+	m_Text = other.m_Text;
+	return *this;
 }
 
 std::string TextCharPosition::ToString() const

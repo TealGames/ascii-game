@@ -10,7 +10,6 @@ namespace ECS
 struct CameraSettings
 {
 	const ECS::Entity* m_FollowTarget;
-	bool m_HasFixedPosition;
 
 	//Aspect ratio of the viewport in [WIDTH, HEIGHT]
 	Vec2Int m_AspectRatio;
@@ -24,5 +23,14 @@ struct CameraSettings
 
 	CameraSettings();
 	CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const ECS::Entity* followTarget=nullptr);
+
+	bool HasFixedPosition() const;
+	WorldPosition CalculateViewportSize() const;
+	void UpdateViewportSize();
+
+	void SetFollowNoTarget();
+	void SetFollowTarget(const ECS::Entity& entity);
+
+	std::string ToString() const;
 };
 

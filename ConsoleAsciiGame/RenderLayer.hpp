@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 #include <optional>
 #include <cstdint>
 #include "TextBuffer.hpp"
@@ -12,6 +13,9 @@ enum class RenderLayerType : RenderLayerNumericType
     Player= 1 << 1,
     UI= 1 << 2,
 };
+std::string ToString(const RenderLayerType& layer);
+std::vector<std::string> GetLayersAsStrings(const RenderLayerType& layers);
+RenderLayerType GetLayersFromStrings(const std::vector<std::string> strings);
 
 RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs);
 RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs);

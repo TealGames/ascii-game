@@ -1,4 +1,5 @@
 #include "pch.hpp"
+#include "Entity.hpp"
 #include "ComponentData.hpp"
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
@@ -36,4 +37,9 @@ std::vector<ComponentField>& ComponentData::GetFieldsMutable()
 const std::vector<ComponentField>& ComponentData::GetFields() const
 {
 	return m_Fields;
+}
+
+std::string ComponentData::ToString() const
+{
+	return std::format("[BaseComp Entity:{}]", GetEntitySafe().m_Name);
 }

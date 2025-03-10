@@ -2,8 +2,9 @@
 #include "ComponentData.hpp"
 #include "PhysicsBodyData.hpp"
 #include "Vec2.hpp"
+#include "IJsonSerializable.hpp"
 
-class PlayerData : public ComponentData
+class PlayerData : public ComponentData, public IJsonSerializable<PlayerData>
 {
 private:
 	PhysicsBodyData* m_body;
@@ -18,8 +19,11 @@ private:
 public:
 
 private:
+	float CalculateInitialJumpSpeed() const;
+
 public:
 	PlayerData();
+	PlayerData(const Json& json);
 	PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const float& maxJumpHeight);
 
 	const float& GetMoveSpeed() const;
@@ -34,6 +38,7 @@ public:
 	float GetVerticalDistanceToGround() const;
 
 	PhysicsBodyData& GetBodyMutableSafe();
+	const PhysicsBodyData& GetBodySafe() const;
 
 	const Vec2Int& GetFrameInput() const;
 	const Vec2Int& GetLastFrameInput() const;
@@ -44,5 +49,10 @@ public:
 	void SetLastFrameInput(const Vec2Int& lastFrameInput);
 
 	void InitFields() override;
+
+	std::string ToString() const override;
+
+	PlayerData& Deserialize(const Json& json) override;
+	Json Serialize(const PlayerData& component) override;
 };
 

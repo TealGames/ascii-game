@@ -82,12 +82,9 @@ namespace Utils
 	template <typename T>
 	constexpr std::string GetTypeName()
 	{
-		//TODO: replace struct and class of type name
 		if (typeid(T) == typeid(std::string)) return "string";
 
-		constexpr auto& value = TypeNameHolder<T>::value;
-		std::string_view stringView = std::string_view{ value.data(), value.size() };
-		return FormatTypeName(stringView.data());
+		return FormatTypeName(std::string(typeid(T).name()));
 	}
 
 	std::string FormatTypeName(const std::string& typeName);

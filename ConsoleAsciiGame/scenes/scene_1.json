@@ -1,0 +1,75 @@
+{
+	"Entities": [
+		{
+			"Name": "Test1",
+			"Components": [
+				{
+					"Type": "TransformData",
+					"Pos": {
+						"X": 5,
+						"Y": 6
+					},
+					"LastPos": {
+						"X": 55,
+						"Y": 66
+					},
+					"LastFramePos": {
+						"X": 100,
+						"Y": 89
+					}
+				},
+				{
+					"Type": "EntityRendererData",
+					"Layers": [
+						"Player"
+					],
+					"VisualData": {
+						"Buffer": [
+							[
+								{
+									"Pos": {
+										"Row": 0,
+										"Col": 0
+									},
+									"Char": "A",
+									"Color": {
+										"R": 255,
+										"G": 255,
+										"B": 255
+									}
+								}
+							]
+						],
+						"Font": "Default",
+						"FontSize": "Default",
+						"Pivot": "Center",
+						"CharSpacing": {
+							"X": 1,
+							"Y": 1
+						}
+					}
+				}
+			]
+		},
+		{
+			"Name": "Test2",
+			"Components": [
+				{
+					"Type": "TransformData",
+					"Pos": {
+						"X": 0,
+						"Y": 0
+					},
+					"LastPos": {
+						"X": 5,
+						"Y": 6
+					},
+					"LastFramePos": {
+						"X": 1,
+						"Y": 8
+					}
+				}
+			]
+		}
+	]
+}

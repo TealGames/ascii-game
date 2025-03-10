@@ -4,8 +4,9 @@
 #include "RenderLayer.hpp"
 #include "ComponentData.hpp"
 #include "VisualData.hpp"
+#include "IJsonSerializable.hpp"
 
-class EntityRendererData : public ComponentData
+class EntityRendererData : public ComponentData, public IJsonSerializable<EntityRendererData>
 {
 private:
 	//Stores every entity's visual from top row to bottom row
@@ -13,6 +14,7 @@ private:
 	RenderLayerType m_renderLayers;
 
 	//The bounding box's size for this visual in (WIDTH, HEIGHT)
+	//TODO: this is unused
 	Vec2Int m_visualBoundsSize;
 
 public:
@@ -21,6 +23,7 @@ public:
 	
 public:
 	EntityRendererData();
+	EntityRendererData(const Json& json);
 	EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers);
 
 	const RenderLayerType& GetRenderLayers() const;
@@ -30,4 +33,9 @@ public:
 	void SetVisualData(const VisualDataPositions& positions);
 
 	void InitFields() override;
+
+	std::string ToString() const override;
+
+	EntityRendererData& Deserialize(const Json& json) override;
+	Json Serialize(const EntityRendererData& component) override;
 };

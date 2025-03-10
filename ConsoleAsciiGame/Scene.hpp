@@ -66,7 +66,7 @@ public:
 	static const std::string SCENE_FILE_PREFIX;
 
 private:
-	void ParseSceneFile(std::ifstream& stream, std::vector<std::vector<TextCharPosition>>& charPos) const;
+	void ParseSceneFile(std::ifstream& stream, std::vector<std::vector<TextCharPosition>>& charPos);
 
 	/*/// <summary>
 	/// Will return the iterator to the entity, whether global or local to the scene

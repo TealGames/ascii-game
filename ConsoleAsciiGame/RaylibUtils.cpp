@@ -176,6 +176,12 @@ namespace RaylibUtils
 		return { static_cast<float>(point.m_X), static_cast<float>(point.m_Y )};
 	}
 
+	bool FontEqual(const Font& font1, const Font& font2)
+	{
+		if (!IsValidFont(font1) || !IsValidFont(font2)) return false;
+		return font1.baseSize == font2.baseSize && font1.glyphCount == font2.glyphCount && font1.recs == font2.recs
+			&& font1.glyphPadding == font2.glyphPadding && font1.glyphs == font2.glyphs;
+	}
 	bool IsValidFont(const Font& font)
 	{
 		return font.texture.id != 0;

@@ -28,10 +28,13 @@ struct TextCharPosition
 	Array2DPosition m_RowColPos;
 	TextChar m_Text;
 
-	bool operator==(const TextCharPosition& other) const = default;
-	std::string ToString() const;
-
+	TextCharPosition();
 	TextCharPosition(const Array2DPosition& pos, const TextChar& textChar);
+	TextCharPosition(const TextCharPosition&) = default;
+
+	bool operator==(const TextCharPosition& other) const;
+	TextCharPosition& operator=(const TextCharPosition& other);
+	std::string ToString() const;
 };
 
 struct ColorPosition

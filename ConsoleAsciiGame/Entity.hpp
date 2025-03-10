@@ -9,7 +9,6 @@
 #include <algorithm>
 #include <entt/entt.hpp>
 #include <tuple>
-//#include "EntityMapper.hpp"
 #include "HelperFunctions.hpp"
 #include "TransformData.hpp"
 #include "ComponentType.hpp"
@@ -191,6 +190,10 @@ namespace ECS
 		static std::string ToString(const EntityID& id);
 
 		bool operator==(const ECS::Entity& other) const;
+
+#ifdef ENABLE_JSON_LIB
+		friend void from_json(const Json& json, Entity& entity);
+#endif
 	};
 }
 

@@ -20,13 +20,13 @@ namespace ECS
 		scene.OperateOnComponents<SpriteAnimatorData>(
 			[this, &scene, &deltaTime](SpriteAnimatorData& data, ECS::Entity& entity)-> void
 			{
-				if (data.m_NormalizedTime >= data.m_EndTime && !data.m_Loop) return;
+				if (data.m_NormalizedTime >= data.m_SingleLoopLength && !data.m_Loop) return;
 
 				data.m_NormalizedTime += deltaTime;
 				if (data.m_NormalizedTime > data.m_VisualDeltas[data.m_VisualDeltaIndex].m_Time && data.m_Loop)
 				{
 					data.m_VisualDeltaIndex = (data.m_VisualDeltaIndex + 1) % data.m_VisualDeltas.size();
-					if (data.m_VisualDeltaIndex==0) data.m_NormalizedTime -= data.m_EndTime;
+					if (data.m_VisualDeltaIndex==0) data.m_NormalizedTime -= data.m_SingleLoopLength;
 					SetVisual(entity, data.m_VisualDeltas[data.m_VisualDeltaIndex].m_VisualDelta);
 				}
 			});

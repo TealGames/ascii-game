@@ -28,7 +28,7 @@ VisualDataPreset::VisualDataPreset(const Font& font, const float& fontSize, cons
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize, 
 	const Vec2& charSpacing, const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
 	const Vec2& predefinedCharArea) :
-	m_Text(), m_font(&font), m_fontSize(fontSize), m_charSpacing(charSpacing), m_pivotRelative(relativePivotPos),
+	m_Text(), m_rawTextBlock(rawBuffer), m_font(font), m_fontSize(fontSize), m_charSpacing(charSpacing), m_pivotRelative(relativePivotPos),
 	m_charAreaType(charAreaType), m_predefinedCharArea(predefinedCharArea)
 {
 	if (rawBuffer.empty()) return;
@@ -69,63 +69,6 @@ bool VisualData::HasValidFont() const
 	return Assert(this, RaylibUtils::IsValidFont(GetFont()), std::format("Tried to retrieve font for visual data: {} "
 		"but the font is not valid (could be due to not being loaded properly)", m_Text.ToString()));
 }
-
-////TODO: this function handles the scale in the final camera viewport which makes no sense
-////it should intead just 
-//void VisualData::TryUpdateTexture()
-//{
-//	if (!m_doesTextureNeedUpdating) return;
-//
-//	//TOOD: we do not set this to true when we update the text since that is a puplic member
-//
-//	Log("Trying to create texture");
-//	m_textureSize = {m_charSpacing.m_X * m_Text.GetWidth()+1, m_charSpacing.m_Y * m_Text.GetHeight() +1};
-//	int textureWidth = 2 * m_charSpacing.m_X;
-//	int textureHeight = 0;
-//	Vector2 currentRowSize = {};
-//	for (int r = 0; r < m_Text.GetWidth(); r++)
-//	{
-//		currentRowSize= MeasureTextEx(m_font, m_Text.GetStringAt(r).c_str(), m_fontSize, m_charSpacing.m_X);
-//		textureWidth += currentRowSize.x;
-//		textureHeight += currentRowSize.y + m_charSpacing.m_Y;
-//	}
-//	textureHeight += m_charSpacing.m_Y;;
-//
-//	RenderTexture2D frameBuffer = LoadRenderTexture(textureWidth, textureHeight);
-//
-//	BeginTextureMode(frameBuffer);
-//	ClearBackground(WHITE);
-//
-//	char drawStr[2] = { '1', '\0' };
-//	Array2DPosition bufferPos = {};
-//
-//	//TODO: maybe the initial offset should not be just the regular char spacing?
-//	Vector2 drawPos = {m_charSpacing.m_X, m_charSpacing.m_Y};
-//
-//	for (int r = 0; r < m_Text.GetHeight(); r++)
-//	{
-//		bufferPos.SetRow(r);
-//		
-//		for (int c = 0; c < m_Text.GetWidth(); c++)
-//		{
-//			bufferPos.SetCol(c);
-//			const TextChar& text = m_Text.GetAtUnsafe(bufferPos);
-//			drawStr[0] = text.m_Char;
-//
-//			//TODO: speed up could be to instead draw whole row at a time and then use spacing between chars
-//			DrawTextEx(m_font, drawStr, drawPos, m_fontSize, 0, text.m_Color);
-//		}
-//	}
-//	
-//	// End drawing to the render target
-//	EndTextureMode();
-//}
-
-//const Texture2D& VisualData::GetTexture()
-//{
-//	if (m_doesTextureNeedUpdating) TryUpdateTexture();
-//	return m_texture;
-//}
 
 std::optional<TextArray> VisualData::CreateSquaredBuffer(const RawTextBufferBlock& rawBuffer) const
 {
@@ -175,6 +118,11 @@ std::optional<TextArray> VisualData::CreateSquaredBuffer(const RawTextBufferBloc
 	/*Log(std::format("Size: {}x{} result: {}",
 		std::to_string(filledSpaces.size()), std::to_string(filledSpaces[0].size()), result.ToString()));*/
 	return result;
+}
+
+const RawTextBufferBlock& VisualData::GetRawBuffer() const
+{
+	return m_rawTextBlock;
 }
 
 Vec2 VisualData::GetWorldSize() const
@@ -240,7 +188,7 @@ void VisualData::AddTextPositionsToBufferPredefined(const WorldPosition& transfo
 		for (int c = 0; c < charArrSize.m_X; c++)
 		{
 			const TextChar& textChar = m_Text.GetAtUnsafe({ r, c });
-			buffer.emplace_back(currentTopLeft, textChar, *m_font, m_fontSize);
+			buffer.emplace_back(currentTopLeft, textChar, m_font, m_fontSize);
 			currentTopLeft.m_X += (m_predefinedCharArea.m_X + m_charSpacing.m_X);
 		}
 
@@ -294,7 +242,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 			if (c == 0)
 			{
 				textBufferData.push_back(TextBufferPosition{ Vec2{ 0, -previousRowsHeight },
-					m_Text.GetAtUnsafe({r, c}), *m_font, m_fontSize });
+					m_Text.GetAtUnsafe({r, c}), m_font, m_fontSize });
 			}
 
 			//We do this here even for when c == width-1 so we can use be added towards total
@@ -304,7 +252,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 			{
 				//Note: we get plus one for col since positions is top left by calculating all previous width/height data
 				textBufferData.push_back(TextBufferPosition{ Vec2{ currentColsWidth, -previousRowsHeight},
-				m_Text.GetAtUnsafe({r, c + 1}), *m_font, m_fontSize });
+				m_Text.GetAtUnsafe({r, c + 1}), m_font, m_fontSize });
 			}
 		}
 
@@ -353,13 +301,7 @@ const Vec2& VisualData::GetCharSpacing() const
 
 const Font& VisualData::GetFont() const
 {
-	if (!Assert(this, m_font != nullptr,
-		std::format("Tried to get font for visual but the font is NULL")))
-	{
-		throw new std::invalid_argument("Invalid font member on VisualData");
-	}
-		
-	return *m_font;
+	return m_font;
 }
 const float VisualData::GetFontSize() const
 {
@@ -369,6 +311,26 @@ const float VisualData::GetFontSize() const
 const Vec2& VisualData::GetPivot() const
 {
 	return m_pivotRelative.GetPos();
+}
+
+void VisualData::SetPredefinedCharArea(const Vec2& area)
+{
+	m_charAreaType = CharAreaType::Predefined;
+	m_predefinedCharArea = area;
+}
+void VisualData::SetAdpativeCharArea()
+{
+	m_charAreaType = CharAreaType::Adaptive;
+}
+
+bool VisualData::HasPredefinedCharArea() const
+{
+	return m_charAreaType == CharAreaType::Predefined;
+}
+const Vec2& VisualData::GetPredefinedCharArea() const
+{
+	if (HasPredefinedCharArea()) return m_predefinedCharArea;
+	return {};
 }
 
 std::string VisualData::ToStringRawBuffer(const RawTextBufferBlock& block)
@@ -383,4 +345,10 @@ std::string VisualData::ToStringRawBuffer(const RawTextBufferBlock& block)
 		result += "\n";
 	}
 	return result;
+}
+
+std::string VisualData::ToString() const
+{
+	return std::format("[Visual CharSpacing:{} FontSize:{} Pivot:{} Text:{}]",
+		m_charSpacing.ToString(), std::to_string(m_fontSize), m_pivotRelative.GetPos().ToString(), m_Text.ToString());
 }

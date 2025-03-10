@@ -4,11 +4,16 @@
 #include "Entity.hpp"
 #include <limits>
 #include <optional>
+#include "JsonSerializers.hpp"
 #include "Debug.hpp"
 
 PhysicsBodyData::PhysicsBodyData() : 
 	PhysicsBodyData(0, {}, {}, 0, std::numeric_limits<float>::max()) {}
 
+PhysicsBodyData::PhysicsBodyData(const Json& json) : PhysicsBodyData()
+{
+	Deserialize(json);
+}
 PhysicsBodyData::PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, const WorldPosition& transformOffset) :
 	PhysicsBodyData(mass, boundingBoxSize, transformOffset, 0, 0) {}
 
@@ -33,6 +38,10 @@ void PhysicsBodyData::InitFields()
 		ComponentField("Mass(KG)", &m_mass), ComponentField("Gravity", &m_gravity),
 		ComponentField("TerminalYVelocity", &m_terminalYVelocity), ComponentField("Velocity(m/s)", [this](Vec2 vec)-> void {SetVelocity(vec);}, &m_velocity),
 		ComponentField("Accel(m/s2)", [this](Vec2 vec)-> void {SetAcceleration(vec); }, &m_acceleration),
+		ComponentField("Restitution", (std::function<void(float)>)[this](float restitution)-> void 
+						{m_profile.SetRestitution(restitution); }, &(m_profile.GetRestitutionMutable())),
+		ComponentField("Friction", (std::function<void(float)>)[this](float friction)-> void 
+						{m_profile.SetFriction(friction); }, &(m_profile.GetFrictionMutable())),
 	};
 }
 
@@ -255,4 +264,30 @@ std::string PhysicsBodyData::ToStringCollidingBodies() const
 	}
 	bodiesStr += "]";
 	return bodiesStr;
+}
+
+std::string PhysicsBodyData::ToString() const
+{
+	return std::format("[PhysicsBody M:{}, G:{}, Vel:{} Accel:{}]", std::to_string(m_mass), 
+		std::to_string(m_gravity), m_velocity.ToString(), m_acceleration.ToString());
+}
+
+PhysicsBodyData& PhysicsBodyData::Deserialize(const Json& json)
+{
+	m_mass = json.at("Mass").get<float>();
+	m_gravity = json.at("Gravity").get<float>();
+	m_profile.SetRestitution(json.at("Restitution").get<float>());
+	m_profile.SetFriction(json.at("Friction").get<float>());
+
+	SetVelocity(json.at("Velocity").get<Vec2>());
+	m_terminalYVelocity= json.at("TerminalVelocity").get<float>();
+	SetAcceleration(json.at("Acceleration").get<Vec2>());
+
+	return *this;
+}
+Json PhysicsBodyData::Serialize(const PhysicsBodyData& component)
+{
+	return { {"Mass", m_mass}, {"Gravity", m_gravity}, {"Restitution", m_profile.GetRestitution()}, 
+		{"Friction", m_profile.GetFriction()}, {"Velocity", m_velocity}, 
+		{"TerminalVelocity", m_terminalYVelocity}, {"Acceleration", m_acceleration}};
 }

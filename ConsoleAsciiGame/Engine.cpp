@@ -42,7 +42,12 @@ namespace Core
 	//TODO: sizing on all gui objeccts should be relative in case screen size changes
 	//TODO: bug where player on start can be moved to the end of the ground rectangle (probably due to it being the min distance when considerign x and y moves)
 	//TODO: maybe remake the editor using entities and some other rendering
-	//TODO: replace all instances of point2d with vec2 and point2dint with vec2int
+	//TODO: animator and sprite animator have not implemented animation speed of data
+	//TODO: make it so that render layers are not specific to a scene meaning the names are created in a spearate manager or elsewhere
+	//and then during this constructor they are passed and craeted so each scene has the same layers, but their own instances
+	//TODO: make an asset manager that can store custom fonts, images and other stuff so we do not have to make copies or use Globals file
+	//TODO: optimize raw text block ,text array and other similar large data structures for holding chars to use less memory
+	//TODO: in json serializers there should be a way to match each type to potnetial name sfor properties so we do not have to repeat them multiple times and make mistakes
 
 	static const std::string SCENES_PATH = "scenes";
 	static const std::string INPUT_PROFILES_PATH = "input";
@@ -121,7 +126,7 @@ namespace Core
 		VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
 
-		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData({ 10, 5 }));
+		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData(Vec2{ 10, 5 }));
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(1, Vec2(2, 2), Vec2(0, 0), GRAVITY, 20));
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
 
@@ -145,7 +150,7 @@ namespace Core
 
 		m_playerInfo = ECS::EntityComponents<PlayerData, InputData, PhysicsBodyData>{ playerEntity, playerData, inputData, playerRB };
 
-		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData({ 20, 20 }));
+		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData(Vec2{ 20, 20 }));
 		Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(obstacle.m_Id)->ToString()));
 		
 		obstacle.AddComponent<EntityRendererData>(EntityRendererData{
@@ -157,14 +162,14 @@ namespace Core
 		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(0, Vec2(10, 10), Vec2(0, 0)));
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 
-		ECS::Entity& uiIcon= m_sceneManager.GetActiveSceneMutable()->CreateEntity("icon", TransformData({ 0, 0 }));
+		ECS::Entity& uiIcon= m_sceneManager.GetActiveSceneMutable()->CreateEntity("icon", TransformData(Vec2{ 0, 0 }));
 		uiIcon.AddComponent<UIObjectData>(NormalizedPosition(0.1, 0.9));
 		uiIcon.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(ORANGE, '*')) } },
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::UI });
 		
-		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData({ 0, 0 }));
+		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
 		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
 		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
 		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };

@@ -9,6 +9,7 @@
 #include <type_traits>
 #include "HelperFunctions.hpp"
 #include "ComponentData.hpp"
+#include "IJsonSerializable.hpp"
 
 template<typename T>
 class AnimationPropertyKeyframe
@@ -58,7 +59,7 @@ struct AnimationProperty
 //
 //using AnimationPropertyVariant = GeneratedVariant<int, float, std::uint8_t>;
 using AnimationPropertyVariant = std::variant<AnimationProperty<int>, AnimationProperty<float>, AnimationProperty<std::uint8_t>>;
-class AnimatorData : public ComponentData
+class AnimatorData : public ComponentData, public IJsonSerializable<AnimatorData>
 {
 private:
 	bool m_Loop;
@@ -75,6 +76,7 @@ public:
 
 public:
 	AnimatorData();
+	AnimatorData(const Json& json);
 	AnimatorData(const std::vector<AnimationPropertyVariant>& properties,
 		const float& animationTime, const float& speed, const bool& loop);
 
@@ -84,6 +86,11 @@ public:
 	const float& GetEndTime() const;
 
 	void InitFields() override;
+
+	std::string ToString() const override;
+
+	AnimatorData& Deserialize(const Json& json) override;
+	Json Serialize(const AnimatorData& component) override;
 };
 
 template<typename T>

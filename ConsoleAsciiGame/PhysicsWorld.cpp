@@ -175,8 +175,8 @@ namespace Physics
 
 	float PhysicsWorld::CalculateImpulse(const PhysicsBodyData& targetObject, const PhysicsBodyData& collidedObject, const Vec2& collisionNormal)
 	{
-		float averageRestitution = (targetObject.GetPhysicsProfile().m_RestitutionCoefficient + 
-									collidedObject.GetPhysicsProfile().m_RestitutionCoefficient) / 2;
+		float averageRestitution = (targetObject.GetPhysicsProfile().GetRestitution() +
+									collidedObject.GetPhysicsProfile().GetRestitution()) / 2;
 
 		const float& massA = targetObject.GetMass();
 		const float& massB = collidedObject.GetMass();

@@ -68,6 +68,12 @@ public:
 
 private:
 	/// <summary>
+	/// The raw text block that was then transformed into the rectangular text array 
+	/// (by filling in skipped positions with empty spaces)
+	/// </summary>
+	RawTextBufferBlock m_rawTextBlock;
+
+	/// <summary>
 	/// The spacing between characters in the visual in [WIDTH, HEIGHT]
 	/// </summary>
 	Vec2 m_charSpacing;
@@ -81,7 +87,7 @@ private:
 	/// </summary>
 	NormalizedPosition m_pivotRelative;
 
-	const Font* m_font;
+	Font m_font;
 	float m_fontSize;
 
 public:
@@ -133,6 +139,8 @@ public:
 	std::optional<TextArray> CreateSquaredBuffer(const RawTextBufferBlock& rawBuffer) const;
 	std::string ToStringRawBuffer(const RawTextBufferBlock& block);
 
+	const RawTextBufferBlock& GetRawBuffer() const;
+
 	Vec2 GetWorldSize() const;
 	/// <summary>
 	/// Pivot position is relative to origin of bottom left [0,0] and top right [1, 1]
@@ -147,6 +155,13 @@ public:
 	const float GetFontSize() const;
 
 	const Vec2& GetPivot() const;
+
+	void SetPredefinedCharArea(const Vec2& area);
+	void SetAdpativeCharArea();
+	bool HasPredefinedCharArea() const;
+	const Vec2& GetPredefinedCharArea() const;
+
+	std::string ToString() const;
 };
 
 struct VisualDataPositions

@@ -46,7 +46,7 @@ namespace ECS
         }
 
         scene.IncreaseFrameDirtyComponentCount();
-        if (!data.m_CameraSettings.m_HasFixedPosition) UpdateCameraPosition(data, mainCamera);
+        if (!data.m_CameraSettings.HasFixedPosition()) UpdateCameraPosition(data, mainCamera);
        /* Rendering::RenderBuffer(TextBuffer(5, 5, TextChar(BLUE, 'V')));
         data.m_LastFrameBuffer = TextBuffer(5, 5, TextChar(BLUE, 'V'));
         data.m_LastFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);*/

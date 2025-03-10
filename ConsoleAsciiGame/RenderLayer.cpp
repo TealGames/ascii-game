@@ -3,6 +3,36 @@
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 #include "Array2DPosition.hpp"
+#include "Debug.hpp"
+
+std::string ToString(const RenderLayerType& layers)
+{
+	return Utils::ToStringIterable<std::vector<std::string>, std::string>(GetLayersAsStrings(layers));
+}
+std::vector<std::string> GetLayersAsStrings(const RenderLayerType& layers)
+{
+	std::vector<std::string> stringLayers = {};
+	if (Utils::HasFlagAll<RenderLayerType>(layers, RenderLayerType::Background)) stringLayers.push_back("Background");
+	if (Utils::HasFlagAll<RenderLayerType>(layers, RenderLayerType::Player)) stringLayers.push_back("Player");
+	if (Utils::HasFlagAll<RenderLayerType>(layers, RenderLayerType::UI)) stringLayers.push_back("UI");
+	return stringLayers;
+}
+RenderLayerType GetLayersFromStrings(const std::vector<std::string> layerStrs)
+{
+	RenderLayerType layers = RenderLayerType::None;
+	for (const auto& layerStr : layerStrs)
+	{
+		if (layerStr == "Background") layers |= RenderLayerType::Background;
+		else if (layerStr == "Player") layers |= RenderLayerType::Player;
+		else if (layerStr == "UI") layers |= RenderLayerType::UI;
+		else
+		{
+			Assert(false, std::format("Tried to get layers from strings: {} but encountered layer name that could not be parsed: '{}'",
+				Utils::ToStringIterable < std::vector<std::string>, std::string>(layerStrs), layerStr));
+		}
+	}
+	return layers;
+}
 
 RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs)
 {

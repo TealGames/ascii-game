@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "ComponentField.hpp"
+#include "nlohmann/json.hpp"
 
 namespace ECS
 {
@@ -27,4 +28,6 @@ struct ComponentData
 
 	virtual void InitFields();
 	const std::vector<ComponentField>& GetFields() const;
+
+	virtual std::string ToString() const;
 };

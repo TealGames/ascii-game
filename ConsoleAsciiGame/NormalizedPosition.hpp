@@ -12,12 +12,19 @@ private:
 public:
 
 private:
+	bool IsValidPos() const;
 public:
 	NormalizedPosition();
 	NormalizedPosition(const float& x, const float& y);
 	NormalizedPosition(const Vec2& pos);
 
 	const Vec2& GetPos() const;
+	/// <summary>
+	/// Note: this should rarely be used since it can bypass the position
+	/// setting from the public set function
+	/// </summary>
+	/// <returns></returns>
+	Vec2& GetPosMutable();
 	void SetPos(const Vec2& relativePos);
 };
 

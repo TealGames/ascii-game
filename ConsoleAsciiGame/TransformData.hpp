@@ -1,17 +1,19 @@
 #pragma once
 #include "Vec2.hpp"
 #include "ComponentData.hpp"
+#include "IJsonSerializable.hpp"
 
 //Since negative positions are not allowed
 const Vec2 NULL_POS = Vec2{ -1, -1 };
 
-struct TransformData : public ComponentData
+struct TransformData : public ComponentData, public IJsonSerializable<TransformData>
 {
 	Vec2 m_Pos;
 	Vec2 m_LastPos;
 	Vec2 m_LastFramePos;
 
 	TransformData();
+	TransformData(const Json& json);
 	TransformData(const Vec2& pos);
 
 	//TODO: these position setting functions should get moved into transform
@@ -26,4 +28,8 @@ struct TransformData : public ComponentData
 	bool HasMovedThisFrame() const;
 
 	void InitFields() override;
+	std::string ToString() const override;
+
+	TransformData& Deserialize(const Json& json) override;
+	Json Serialize(const TransformData& component) override;
 };

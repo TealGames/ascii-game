@@ -34,6 +34,7 @@ namespace RaylibUtils
 	Vector2 ToRaylibVector(const Vec2Int& point);
 
 	bool IsValidFont(const Font& font);
+	bool FontEqual(const Font& font1, const Font& font2);
 	float GetMaxFontSizeForSpace(const Font& font, const std::string& text, const Vec2& space, const float& spacing);
 	void RemoveFontExtraSpacing(Font& font);
 	bool FontSupportsChar(const Font& font, const char& character);
