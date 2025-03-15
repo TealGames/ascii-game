@@ -1,8 +1,10 @@
 #include "pch.hpp"
 #include "JsonSerializers.hpp"
 #include "EntityRendererData.hpp"
+#include "JsonUtils.hpp"
+#include "Debug.hpp"
 
-EntityRendererData::EntityRendererData() : EntityRendererData(VisualData{}, RenderLayerType::None) {}
+EntityRendererData::EntityRendererData() : EntityRendererData(VisualData(), RenderLayerType::None) {}
 
 EntityRendererData::EntityRendererData(const Json& json) : EntityRendererData()
 {
@@ -10,8 +12,8 @@ EntityRendererData::EntityRendererData(const Json& json) : EntityRendererData()
 }
 
 EntityRendererData::EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers) :
-	ComponentData(), m_VisualData(visualData), 
-	m_LastFrameVisualData(), m_visualBoundsSize(), m_renderLayers(renderLayers)
+	ComponentData(HighestDependecyLevel::None),
+	m_VisualData(visualData), m_LastFrameVisualData(), m_visualBoundsSize(), m_renderLayers(renderLayers)
 {
 	int maxWidth = 0;
 	for (const auto& row : m_VisualData.m_Text.GetFull())
@@ -21,7 +23,7 @@ EntityRendererData::EntityRendererData(const VisualData& visualData, const Rende
 	m_visualBoundsSize = Vec2Int(maxWidth, m_VisualData.m_Text.GetHeight());
 }
 
-const RenderLayerType& EntityRendererData::GetRenderLayers() const
+RenderLayerType EntityRendererData::GetRenderLayers() const
 {
 	return m_renderLayers;
 }
@@ -54,13 +56,14 @@ std::string EntityRendererData::ToString() const
 		::ToString(m_renderLayers), m_VisualData.ToString());
 }
 
-EntityRendererData& EntityRendererData::Deserialize(const Json& json)
+void EntityRendererData::Deserialize(const Json& json)
 {
 	m_renderLayers = json.at("Layers").get<RenderLayerType>();
+	/*Assert(false, std::format("Deserialiazed layers: {} to: {} json:{} TOSTZRING: {}", ::ToString(json.at("Layers").get<RenderLayerType>()), 
+		::ToString(m_renderLayers), JsonUtils::ToStringProperties(json), ToString()));*/
 	m_VisualData = json.at("VisualData").get<VisualData>();
-	return *this;
 }
-Json EntityRendererData::Serialize(const EntityRendererData& component)
+Json EntityRendererData::Serialize()
 {
 	return { {"Layers", m_renderLayers}, {"VisualData", m_VisualData}};
 }

@@ -19,7 +19,7 @@ void CameraSettings::SetFollowTarget(const ECS::Entity& entity)
     m_FollowTarget = &entity;
 }
 
-bool CameraSettings::HasFixedPosition() const
+bool CameraSettings::HasNoFollowTarget() const
 {
     return m_FollowTarget == nullptr;
 }
@@ -37,5 +37,5 @@ void CameraSettings::UpdateViewportSize()
 std::string CameraSettings::ToString() const
 {
     return std::format("[Apsect:{} LensSize:{} ViewSize:{} Follow:{}]", m_AspectRatio.ToString(), std::to_string(m_LensSize), 
-        m_WorldViewportSize.ToString(), m_FollowTarget!=nullptr? m_FollowTarget->m_Name : "NONE");
+        m_WorldViewportSize.ToString(), m_FollowTarget!=nullptr? m_FollowTarget->ToString() : "NONE");
 }

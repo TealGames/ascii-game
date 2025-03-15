@@ -19,7 +19,8 @@ PhysicsBodyData::PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize,
 
 PhysicsBodyData::PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, 
 	const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity)
-	: ComponentData(), m_mass(std::abs(mass)), m_aabb(CreateAABB(boundingBoxSize, transformOffset)), 
+	: ComponentData(HighestDependecyLevel::None),
+	m_mass(std::abs(mass)), m_aabb(CreateAABB(boundingBoxSize, transformOffset)),
 	m_velocity(), m_acceleration(), m_transformOffset(transformOffset), m_collidingBodies(), 
 	m_gravity(-std::abs(gravity)), m_terminalYVelocity(-std::abs(terminalYVelocity)), 
 	m_profile(0, 1)
@@ -69,7 +70,7 @@ const Physics::PhysicsWorld& PhysicsBodyData::GetPhysicsWorldSafe()
 {
 	if (!Assert(this, m_physicsSimulation != nullptr,
 		std::format("Tried to get physics world of body: '{}' "
-			"but it is NULL", m_Entity->m_Name)))
+			"but it is NULL", m_Entity->GetName())))
 		throw std::invalid_argument("Failed to retrieve physics world");
 
 	return *m_physicsSimulation;
@@ -180,7 +181,7 @@ void PhysicsBodyData::AddCollidingBody(PhysicsBodyData& collidingBody)
 	std::optional<MoveDirection> maybeDirType = TryConvertVectorToDirection(collidingDir);
 	if (!Assert(this, maybeDirType.has_value(), std::format("Tried to add colliding body named '{}' "
 		"to body: '{}' but could not deduce direction from vector: {} of body2 relative to body1", 
-		collidingBody.GetEntitySafe().m_Name, GetEntitySafe().m_Name, collidingDir.ToString())))
+		collidingBody.GetEntitySafe().GetName(), GetEntitySafe().GetName(), collidingDir.ToString())))
 	{
 		return;
 	}
@@ -208,7 +209,7 @@ CollidingBodiesCollection::iterator PhysicsBodyData::GetCollidingBodyIterator(co
 		//TODO: possible problem because globals and locals are stored separately so there could be 
 		//a local and global with same id
 		if (currentObj.m_Body->GetEntitySafeMutable().m_Id == physicsBody.GetEntitySafe().m_Id &&
-			currentObj.m_Body->GetEntitySafeMutable().m_Name == physicsBody.GetEntitySafe().m_Name)
+			currentObj.m_Body->GetEntitySafeMutable().GetName() == physicsBody.GetEntitySafe().GetName())
 		{
 			return m_collidingBodies.begin() + i;
 		}
@@ -272,7 +273,7 @@ std::string PhysicsBodyData::ToString() const
 		std::to_string(m_gravity), m_velocity.ToString(), m_acceleration.ToString());
 }
 
-PhysicsBodyData& PhysicsBodyData::Deserialize(const Json& json)
+void PhysicsBodyData::Deserialize(const Json& json)
 {
 	m_mass = json.at("Mass").get<float>();
 	m_gravity = json.at("Gravity").get<float>();
@@ -282,10 +283,8 @@ PhysicsBodyData& PhysicsBodyData::Deserialize(const Json& json)
 	SetVelocity(json.at("Velocity").get<Vec2>());
 	m_terminalYVelocity= json.at("TerminalVelocity").get<float>();
 	SetAcceleration(json.at("Acceleration").get<Vec2>());
-
-	return *this;
 }
-Json PhysicsBodyData::Serialize(const PhysicsBodyData& component)
+Json PhysicsBodyData::Serialize()
 {
 	return { {"Mass", m_mass}, {"Gravity", m_gravity}, {"Restitution", m_profile.GetRestitution()}, 
 		{"Friction", m_profile.GetFriction()}, {"Velocity", m_velocity}, 

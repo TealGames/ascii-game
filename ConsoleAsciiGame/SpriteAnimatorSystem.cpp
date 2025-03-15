@@ -37,7 +37,7 @@ namespace ECS
 		//TODO: this should maybe be abstracted into the system?
 		EntityRendererData* renderer = entity.TryGetComponentMutable<EntityRendererData>();
 		if (!Assert(this, renderer != nullptr, std::format("Tried to set the visual on sprite animator for entity: {} "
-			"but it does not have entity renderer component", entity.m_Name))) return;
+			"but it does not have entity renderer component", entity.GetName()))) return;
 
 		renderer->SetVisualData(positions);
 		renderer->m_MutatedThisFrame = true;

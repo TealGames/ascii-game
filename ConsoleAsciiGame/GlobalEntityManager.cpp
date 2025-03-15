@@ -87,12 +87,12 @@ ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, co
 		std::format("Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
 		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName));
 
-	m_globalEntities.emplace_back(name, m_globalEntityMapper, transform);
-	m_globalEntityIds.emplace(m_globalEntities.back().m_Id, &(m_globalEntities.back()));
-	m_globalEntityNames.emplace(cleanedName, &(m_globalEntities.back()));
-	m_globalEntities.back().m_Transform.m_Entity = &(m_globalEntities.back());
+	ECS::Entity& createdEntity= m_globalEntities.emplace_back(name, m_globalEntityMapper, transform);
+	createdEntity.SetScene(ECS::Entity::GLOBAL_SCENE_NAME);
+	m_globalEntityIds.emplace(createdEntity.m_Id, &(createdEntity));
+	m_globalEntityNames.emplace(cleanedName, &(createdEntity));
 
-	return m_globalEntities.back();
+	return createdEntity;
 }
 
 ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, TransformData&& transform)
@@ -103,12 +103,12 @@ ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, Tr
 		std::format("Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
 		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName));
 
-	m_globalEntities.emplace_back(name, m_globalEntityMapper, std::move(transform));
-	m_globalEntityIds.emplace(m_globalEntities.back().m_Id, &(m_globalEntities.back()));
-	m_globalEntityNames.emplace(cleanedName, &(m_globalEntities.back()));
-	m_globalEntities.back().m_Transform.m_Entity = &(m_globalEntities.back());
+	ECS::Entity& createdEntity= m_globalEntities.emplace_back(name, m_globalEntityMapper, std::move(transform));
+	createdEntity.SetScene(ECS::Entity::GLOBAL_SCENE_NAME);
+	m_globalEntityIds.emplace(createdEntity.m_Id, &(createdEntity));
+	m_globalEntityNames.emplace(cleanedName, &(createdEntity));
 
-	return m_globalEntities.back();
+	return createdEntity;
 }
 
 ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const ECS::EntityID& id)

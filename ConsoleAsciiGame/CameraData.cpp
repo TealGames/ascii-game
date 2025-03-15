@@ -7,8 +7,7 @@
 #include "JsonSerializers.hpp"
 #include "Entity.hpp"
 
-CameraData::CameraData() :
-	ComponentData(), m_CameraSettings(), m_LastFrameBuffer(){}
+CameraData::CameraData() : CameraData(CameraSettings()) {}
 
 CameraData::CameraData(const Json& json) : CameraData()
 {
@@ -16,7 +15,7 @@ CameraData::CameraData(const Json& json) : CameraData()
 }
 
 CameraData::CameraData(const CameraSettings& cameraSettings) :
-	ComponentData(), m_CameraSettings(cameraSettings), m_LastFrameBuffer() {}
+	ComponentData(HighestDependecyLevel::Entity), m_CameraSettings(cameraSettings), m_LastFrameBuffer() {}
 
 void CameraData::InitFields()
 {
@@ -29,20 +28,25 @@ std::string CameraData::ToString() const
 		m_CameraSettings.ToString());
 }
 
-CameraData& CameraData::Deserialize(const Json& json)
+void CameraData::Deserialize(const Json& json)
 {
 	m_CameraSettings.m_AspectRatio = json.at("AspectRatio").get<Vec2Int>();
 	m_CameraSettings.m_LensSize = json.at("LensSize").get<float>();
 	m_CameraSettings.UpdateViewportSize();
 
-	//TODO: there is not really any way to get the follow target if we do not know 
-	//all the entities considering we can only store string name
-	m_CameraSettings.SetFollowNoTarget();
-	return *this;
+	ECS::Entity* maybeFollowTarget = TryDeserializeEntity(json.at("FollowTarget"));
+	if (maybeFollowTarget != nullptr) m_CameraSettings.SetFollowTarget(*maybeFollowTarget);
+	else m_CameraSettings.SetFollowNoTarget();
 }
-Json CameraData::Serialize(const CameraData& component)
+Json CameraData::Serialize()
 {
-	return { {"AspectRatio", m_CameraSettings.m_AspectRatio}, 
-			 {"LensSize", m_CameraSettings.m_LensSize},
-			 {"FollowTarget", m_CameraSettings.m_FollowTarget!=nullptr? m_CameraSettings.m_FollowTarget->m_Name : ""}};
+	//TODO: we need to serailize the entity follow target
+	Json json= { {"AspectRatio", m_CameraSettings.m_AspectRatio}, 
+				 {"LensSize", m_CameraSettings.m_LensSize} };
+
+	if (m_CameraSettings.HasNoFollowTarget()) json["FollowTarget"] = OPTIONAL_NULL_VALUE;
+	else json["FollowTarget"] = SerializableEntity{m_CameraSettings.m_FollowTarget->GetName(), 
+												   m_CameraSettings.m_FollowTarget->GetSceneName()};
+
+	return json;
 }

@@ -5,6 +5,7 @@
 
 namespace ECS
 {
+	const char* ECS::Entity::GLOBAL_SCENE_NAME = "Global";
 	//TODO: add a reserved entity name ssytem and not allowing those names to be used
 
 	/// <summary>
@@ -15,7 +16,7 @@ namespace ECS
 	/// <param name="mapper"></param>
 	/// <param name="transform"></param>
 	Entity::Entity(const std::string& name, entt::registry& mapper, const TransformData& transform) :
-		m_name(name), m_Name(m_name), m_entityMapper(mapper),
+		m_name(name), m_entityMapper(mapper),
 		//m_Id(m_entityMapper.ReserveAvailableEntityID()),
 		m_Id(m_entityMapper.create()),
 		m_Transform(AddComponent<TransformData>(transform)), 
@@ -23,17 +24,38 @@ namespace ECS
 	{
 	}
 
+	std::string Entity::GetName() const
+	{
+		return m_name;
+	}
+
+	void Entity::SetScene(const std::string& sceneName)
+	{
+		m_sceneName = sceneName;
+	}
+	std::string Entity::GetSceneName() const
+	{
+		return m_sceneName;
+	}
+	bool Entity::IsGlobal() const
+	{
+		return m_sceneName == GLOBAL_SCENE_NAME;
+	}
+
 	std::string Entity::ToString() const
 	{
-		std::string componentNames = "[COMPONENT FIND NOT IMPLEMENTED]";
+		std::string componentNames = "Components: ";
 		if (!m_components.empty())
 		{
-			for (const auto& component : m_components) 
-				componentNames += (typeid(component).name() + ',');
+			for (size_t i=0; i<m_components.size(); i++)
+			{
+				if (i != 0) componentNames += ", ";
+				componentNames += Utils::FormatTypeName(typeid(*m_components[i]).name());
+			}
 			//componentNames = Utils::ToStringIterable<std::vector<std::string>, std::string>(m_components);
 		}
 
-		return std::format("['{}'(ID: {})-> {}]", m_Name, Entity::ToString(m_Id), componentNames);
+		return std::format("['{}'(ID: {})-> {}]", GetName(), Entity::ToString(m_Id), componentNames);
 		/*auto components= Utils::GetKeysFromMap<ComponentType, ComponentID>(m_componentIDs.begin(), m_componentIDs.end());
 		std::string componentsStr = ::ToString(MergeComponents(components));*/
 		//return std::format("['{}' c:{}]", m_Name, componentsStr);

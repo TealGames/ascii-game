@@ -5,7 +5,6 @@
 #include "RenderLayer.hpp"
 #include "Point3D.hpp"
 #include "ComponentData.hpp"
-#include "IJsonSerializable.hpp"
 
 struct LightMapChar
 {
@@ -19,7 +18,7 @@ struct LightMapChar
 	std::string ToString() const;
 };
 
-struct LightSourceData : public ComponentData, public IJsonSerializable<LightSourceData>
+struct LightSourceData : public ComponentData
 {
 	std::uint8_t m_LightRadius;
 	//The layers which the light will apply its effect to
@@ -47,6 +46,6 @@ struct LightSourceData : public ComponentData, public IJsonSerializable<LightSou
 
 	std::string ToString() const override;
 
-	LightSourceData& Deserialize(const Json& json) override;
-	Json Serialize(const LightSourceData& component) override;
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };

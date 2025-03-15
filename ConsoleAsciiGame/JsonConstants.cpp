@@ -13,7 +13,9 @@ namespace JsonConstants
 																	 {"TopLeft",VisualData::PIVOT_TOP_LEFT}, {"TopRight",VisualData::PIVOT_TOP_RIGHT}};
 	static const std::unordered_map<std::string, Vec2> DIR_CONSTANTS = { {"N", Vec2::NORTH}, { "NE", Vec2::NORTHEAST}, { "E", Vec2::EAST}, { "SE", Vec2::SOUTHEAST}, 
 																   { "S", Vec2::SOUTH}, {"SW", Vec2::SOUTHWEST}, {"W", Vec2::WEST}, {"NW", Vec2::NORTHWEST}};
-	static const std::unordered_map<std::string, Font> FONT_CONSTANTS = { {"Default", GetFontDefault()}};
+	//static const std::unordered_map<std::string, Font> FONT_CONSTANTS = { {"Default", GetFontDefault()}};
+	//Note: we cant just store a reference to font because this occurs on init before raylib gets set up
+	static const std::string DEFAULT_FONT_NAME = "Default";
 	static const std::unordered_map<std::string, float> FONT_SIZE_CONSTANTS = { {"Default", GLOBAL_FONT_SIZE}};
 
 	template<typename Value>
@@ -74,12 +76,16 @@ namespace JsonConstants
 
 	std::optional<Font> TryGetConstantFont(const std::string& constant)
 	{
-		return TryGetConstantValue<Font>(FONT_CONSTANTS, constant);
+		if (constant == DEFAULT_FONT_NAME) return GetFontDefault();
+		return std::nullopt;
+		//return TryGetConstantValue<Font>(FONT_CONSTANTS, constant);
 	}
 	std::optional<std::string> TryGetFontConstant(const Font& font)
 	{
-		return TryGetValueConstant<Font>(FONT_CONSTANTS, font,
-			[](const Font& font1, const Font& font2)-> bool { return RaylibUtils::FontEqual(font1, font2); });
+		if (RaylibUtils::FontEqual(font, GetFontDefault())) return DEFAULT_FONT_NAME;
+		return std::nullopt;
+		/*return TryGetValueConstant<Font>(FONT_CONSTANTS, font,
+			[](const Font& font1, const Font& font2)-> bool { return RaylibUtils::FontEqual(font1, font2); });*/
 	}
 
 	std::optional<float> TryGetConstantFontSize(const std::string& constant)

@@ -5,17 +5,21 @@
 #include "PhysicsWorld.hpp"
 
 PlayerData::PlayerData() :
-	m_body(nullptr), m_xMoveSpeed(), m_maxJumpHeight(), m_initialJumpSpeed() {}
+	PlayerData(nullptr, 0, 0) {}
 
 PlayerData::PlayerData(const Json& json) : PlayerData()
 {
 	Deserialize(json);
 }
-PlayerData::PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const float& maxJumpHeight) :
-	m_body(&bodyData), m_xMoveSpeed(std::abs(moveSpeed)), m_maxJumpHeight(maxJumpHeight), m_initialJumpSpeed()
+PlayerData::PlayerData(PhysicsBodyData* body, const float& moveSpeed, const float& maxJumpHeight) : 
+	ComponentData(HighestDependecyLevel::SiblingComponent),
+	m_body(body), m_xMoveSpeed(std::abs(moveSpeed)), m_maxJumpHeight(maxJumpHeight), m_initialJumpSpeed()
 {
-	m_initialJumpSpeed = CalculateInitialJumpSpeed();
+	if (m_maxJumpHeight>0) m_initialJumpSpeed = CalculateInitialJumpSpeed();
 }
+
+PlayerData::PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const float& maxJumpHeight) :
+	PlayerData(&bodyData, moveSpeed, maxJumpHeight) {}
 
 void PlayerData::InitFields()
 {
@@ -98,14 +102,13 @@ Vec2Int PlayerData::GetInputDelta() const
 	return m_currentFrameDirectionalInput - m_lastFrameDirectionalInput;
 }
 
-PlayerData& PlayerData::Deserialize(const Json& json)
+void PlayerData::Deserialize(const Json& json)
 {
 	m_xMoveSpeed = json.at("MoveSpeed").get<float>();
 	m_maxJumpHeight = json.at("JumpHeight").get<float>();
 	m_initialJumpSpeed = CalculateInitialJumpSpeed();
-	return *this;
 }
-Json PlayerData::Serialize(const PlayerData& component)
+Json PlayerData::Serialize()
 {
 	return { {"MoveSpeed", m_xMoveSpeed}, {"JumpHeight", m_maxJumpHeight}};
 }

@@ -9,7 +9,6 @@
 #include <type_traits>
 #include "HelperFunctions.hpp"
 #include "ComponentData.hpp"
-#include "IJsonSerializable.hpp"
 
 template<typename T>
 class AnimationPropertyKeyframe
@@ -59,13 +58,16 @@ struct AnimationProperty
 //
 //using AnimationPropertyVariant = GeneratedVariant<int, float, std::uint8_t>;
 using AnimationPropertyVariant = std::variant<AnimationProperty<int>, AnimationProperty<float>, AnimationProperty<std::uint8_t>>;
-class AnimatorData : public ComponentData, public IJsonSerializable<AnimatorData>
+class AnimatorData : public ComponentData
 {
 private:
 	bool m_Loop;
 	
 	float m_AnimationSpeed;
-	float m_EndTime;
+	/// <summary>
+	/// The time in takes in seconds on speed of 1 to finish one loop of the animation
+	/// </summary>
+	float m_AnimationLength;
 
 public:
 	//All properties for the animator for this entity. 
@@ -74,6 +76,7 @@ public:
 	float m_NormalizedTime;
 	size_t m_KeyframeIndex;
 
+private:
 public:
 	AnimatorData();
 	AnimatorData(const Json& json);
@@ -83,14 +86,16 @@ public:
 	const bool& GetDoLoop() const;
 	const std::vector<AnimationPropertyVariant>& GetProperties() const;
 	const float& GetAnimationSpeed() const;
-	const float& GetEndTime() const;
+	void SetAnimationSpeed(const float& speed);
+
+	const float& GetTimeLength() const;
 
 	void InitFields() override;
 
 	std::string ToString() const override;
 
-	AnimatorData& Deserialize(const Json& json) override;
-	Json Serialize(const AnimatorData& component) override;
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };
 
 template<typename T>
@@ -101,4 +106,7 @@ struct AnimationPropertyType<AnimationProperty<T>>
 {
 	using Type = T;
 };
+
+void from_json(const Json& json, AnimationPropertyVariant& var);
+void to_json(Json& json, const AnimationPropertyVariant& var);
 

@@ -22,7 +22,7 @@ const Vec2 VisualData::DEFAULT_PIVOT = PIVOT_TOP_LEFT;
 
 VisualDataPreset::VisualDataPreset(const Font& font, const float& fontSize, const Vec2& charSpacing,
 	const CharAreaType& charAreaType, const Vec2& predefinedCharArea, const NormalizedPosition& relativePivotPos) :
-	m_Font(&font), m_FontSize(fontSize), m_CharSpacing(charSpacing), m_CharAreaType(charAreaType), 
+	m_Font(font), m_FontSize(fontSize), m_CharSpacing(charSpacing), m_CharAreaType(charAreaType), 
 		m_PredefinedCharArea(predefinedCharArea), m_RelativePivotPos(relativePivotPos) {}
 
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize, 
@@ -32,6 +32,8 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, co
 	m_charAreaType(charAreaType), m_predefinedCharArea(predefinedCharArea)
 {
 	if (rawBuffer.empty()) return;
+	if (!Assert(this, HasValidFont(false), std::format("Tried to create visual data: {} "
+		"but the font argument in constructor is INVALID", ToString()))) return;
 
 	std::optional<TextArray> squaredBuffer = CreateSquaredBuffer(rawBuffer);
 	if (!Assert(squaredBuffer.has_value(), std::format("Tried to create a Visual data with raw buffer: {}, "
@@ -58,16 +60,22 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
 }
 
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPreset& preset) : 
-	VisualData(rawBuffer, *preset.m_Font, preset.m_FontSize, preset.m_CharSpacing, 
+	VisualData(rawBuffer, preset.m_Font, preset.m_FontSize, preset.m_CharSpacing, 
 		preset.m_RelativePivotPos, preset.m_CharAreaType, preset.m_PredefinedCharArea)
 {
 
 }
 
-bool VisualData::HasValidFont() const
+bool VisualData::HasValidFont(const bool assertMessage, const std::string& extraMessage) const
 {
-	return Assert(this, RaylibUtils::IsValidFont(GetFont()), std::format("Tried to retrieve font for visual data: {} "
-		"but the font is not valid (could be due to not being loaded properly)", m_Text.ToString()));
+	std::string fullMessage = std::format("Tried to retrieve font for visual data: {} "
+		"but the font is not valid (could be due to not being loaded properly)", m_Text.ToString(), extraMessage);
+	if (!extraMessage.empty())fullMessage += std::format("Info: {}", extraMessage);
+
+	bool isFontValid = RaylibUtils::IsValidFont(GetFont());
+	if (!assertMessage) return isFontValid;
+
+	return Assert(this, isFontValid, fullMessage);
 }
 
 std::optional<TextArray> VisualData::CreateSquaredBuffer(const RawTextBufferBlock& rawBuffer) const
@@ -127,7 +135,7 @@ const RawTextBufferBlock& VisualData::GetRawBuffer() const
 
 Vec2 VisualData::GetWorldSize() const
 {
-	if (!HasValidFont()) return {};
+	if (!HasValidFont("Attempted to get world size")) return {};
 
 	if (m_charAreaType == CharAreaType::Predefined)
 	{
@@ -171,7 +179,7 @@ WorldPosition VisualData::GetTopLeftPos(const WorldPosition& pivotWorldPos, cons
 
 void VisualData::AddTextPositionsToBufferPredefined(const WorldPosition& transformPos, TextBufferMixed& buffer) const
 {
-	if (!HasValidFont()) return;
+	if (!HasValidFont("Attempted to add text positions to buffer in predefined mode")) return;
 	if (!Assert(this, m_charAreaType == CharAreaType::Predefined,
 		std::format("Tried to add text positions to buffer at transform: {} PREDEFINED "
 			"but char area type does not have that setting!", transformPos.ToString()))) 
@@ -198,7 +206,7 @@ void VisualData::AddTextPositionsToBufferPredefined(const WorldPosition& transfo
 
 void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transformPos, TextBufferMixed& buffer) const
 {
-	if (!HasValidFont()) return;
+	if (!HasValidFont("Attempted to add text positions to buffer in adaptive mode")) return;
 	if (!Assert(this, m_charAreaType == CharAreaType::Adaptive, 
 		std::format("Tried to add text positions to buffer at transform: {} ADPATIVE "
 		"but char area type does not have that setting!", transformPos.ToString()))) 

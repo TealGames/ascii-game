@@ -9,6 +9,7 @@
 #include <fstream>
 #include <filesystem>
 #include <random>
+#include <stacktrace>
 #include "HelperFunctions.hpp"
 
 namespace Utils
@@ -53,6 +54,13 @@ namespace Utils
 			result = result.substr(CLASS_NAME.size());
 
 		return StringUtil::StringUtil(result).Trim().ToString();
+	}
+
+	std::string GetCurrentStackTrace() 
+	{
+		std::ostringstream stream;
+		stream << std::stacktrace::current();
+		return stream.str();
 	}
 
 	void ClearSTDCIN()

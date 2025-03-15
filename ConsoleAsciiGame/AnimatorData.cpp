@@ -3,8 +3,7 @@
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 
-AnimatorData::AnimatorData() : 
-	ComponentData(), m_Properties{}, m_AnimationSpeed(), m_NormalizedTime(0), m_KeyframeIndex(0), m_EndTime(0), m_Loop(false) {}
+AnimatorData::AnimatorData() : AnimatorData({}, 0, 1, false) {}
 
 AnimatorData::AnimatorData(const Json& json) : AnimatorData()
 {
@@ -12,7 +11,8 @@ AnimatorData::AnimatorData(const Json& json) : AnimatorData()
 }
 
 AnimatorData::AnimatorData(const std::vector<AnimationPropertyVariant>& properties, const float& animationTime, const float& speed, const bool& loop) :
-	ComponentData(), m_Properties(properties), m_AnimationSpeed(speed), m_NormalizedTime(0), m_KeyframeIndex(0), m_EndTime(animationTime), m_Loop(loop)
+	ComponentData(HighestDependecyLevel::None),
+	m_Properties(properties), m_AnimationSpeed(speed), m_NormalizedTime(0), m_KeyframeIndex(0), m_AnimationLength(animationTime), m_Loop(loop)
 {
 	if (!Assert(this, !Utils::ApproximateEqualsF(m_AnimationSpeed, 0),
 		std::format("Tried to set animator data:{} with animation speed of zero!", 
@@ -40,29 +40,43 @@ const float& AnimatorData::GetAnimationSpeed() const
 	return m_AnimationSpeed;
 }
 
-const float& AnimatorData::GetEndTime() const
+void AnimatorData::SetAnimationSpeed(const float& speed)
 {
-	return m_EndTime;
+	m_AnimationSpeed = std::abs(speed);
+}
+
+const float& AnimatorData::GetTimeLength() const
+{
+	return m_AnimationLength;
 }
 
 void AnimatorData::InitFields()
 {
-	m_Fields = { ComponentField("Loop", &m_Loop), ComponentField("Speed", &m_AnimationSpeed) };
+	m_Fields = { ComponentField("Loop", &m_Loop), ComponentField("Speed", 
+		(std::function<void(float)>)[this](float speed)->void {SetAnimationSpeed(speed); }, &m_AnimationSpeed) };
 }
 
-AnimatorData& AnimatorData::Deserialize(const Json& json)
+void AnimatorData::Deserialize(const Json& json)
 {
 	m_Loop = json.at("Loop").get<bool>();
-	m_AnimationSpeed = json.at("Speed").get<float>();
-	return *this;
+	SetAnimationSpeed(json.at("Speed").get<float>());
 }
-Json AnimatorData::Serialize(const AnimatorData& component)
+Json AnimatorData::Serialize()
 {
-	return { {"Loop", m_Loop}, {"Speed", m_AnimationSpeed}};
+	return { {"Loop", m_Loop}, {"Speed", m_AnimationSpeed}, {"Length", m_AnimationLength}};
 }
 
 std::string AnimatorData::ToString() const
 {
 	return std::format("[Animator Loop:{} Speed:{}]", 
 		std::to_string(m_Loop), std::to_string(m_AnimationSpeed));
+}
+
+void from_json(const Json& json, AnimationPropertyVariant& var)
+{
+
+}
+void to_json(Json& json, const AnimationPropertyVariant& var)
+{
+
 }

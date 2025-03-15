@@ -24,7 +24,7 @@ struct CameraSettings
 	CameraSettings();
 	CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const ECS::Entity* followTarget=nullptr);
 
-	bool HasFixedPosition() const;
+	bool HasNoFollowTarget() const;
 	WorldPosition CalculateViewportSize() const;
 	void UpdateViewportSize();
 

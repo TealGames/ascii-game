@@ -1,12 +1,11 @@
 #pragma once
 #include "Vec2.hpp"
 #include "ComponentData.hpp"
-#include "IJsonSerializable.hpp"
 
 //Since negative positions are not allowed
 const Vec2 NULL_POS = Vec2{ -1, -1 };
 
-struct TransformData : public ComponentData, public IJsonSerializable<TransformData>
+struct TransformData : public ComponentData
 {
 	Vec2 m_Pos;
 	Vec2 m_LastPos;
@@ -30,6 +29,6 @@ struct TransformData : public ComponentData, public IJsonSerializable<TransformD
 	void InitFields() override;
 	std::string ToString() const override;
 
-	TransformData& Deserialize(const Json& json) override;
-	Json Serialize(const TransformData& component) override;
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };

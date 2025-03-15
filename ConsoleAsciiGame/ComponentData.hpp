@@ -1,15 +1,40 @@
 #pragma once
 #include <vector>
 #include "ComponentField.hpp"
-#include "nlohmann/json.hpp"
+#include "IJsonSerializable.hpp"
+#include "IValidateable.hpp"
+
+enum class HighestDependecyLevel
+{
+	/// <summary>
+	/// This means the component does not depend on any other outside data
+	/// </summary>
+	None,
+	/// <summary>
+	/// This means the component requires another SIBLING component 
+	/// (a component on the same entity as this component)
+	/// </summary>
+	SiblingComponent,
+	/// <summary>
+	/// This means the component requires ether a component on ANOTHER entity
+	/// or the full entity object
+	/// </summary>
+	Entity,
+};
 
 namespace ECS
 {
 	class Entity;
 }
 
-struct ComponentData
+class ComponentData: public IJsonSerializable, public IValidateable
 {
+private:
+	HighestDependecyLevel m_dependencyLevel;
+public:
+
+private:
+public:
 	//TODOL: also add a static flag so we can optimize some components
 	bool m_MutatedThisFrame;
 
@@ -19,7 +44,7 @@ struct ComponentData
 
 	std::vector<ComponentField> m_Fields;
 
-	ComponentData();
+	ComponentData(const HighestDependecyLevel& dependency);
 	virtual ~ComponentData() = default;
 	ECS::Entity& GetEntitySafeMutable();
 	const ECS::Entity& GetEntitySafe() const;
@@ -29,5 +54,13 @@ struct ComponentData
 	virtual void InitFields();
 	const std::vector<ComponentField>& GetFields() const;
 
+	HighestDependecyLevel GetDependencyLevel() const;
+
+	virtual void Deserialize(const Json& json) = 0;
+	virtual Json Serialize() = 0;
+
+	virtual bool Validate() override;
+
 	virtual std::string ToString() const;
 };
+	

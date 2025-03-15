@@ -5,9 +5,8 @@
 #include "TextBuffer.hpp"
 #include "WorldPosition.hpp"
 #include <vector>
-#include "IJsonSerializable.hpp"
 
-class CameraData : public ComponentData, public IJsonSerializable<CameraData>
+class CameraData : public ComponentData
 {
 public:
 	CameraSettings m_CameraSettings;
@@ -22,6 +21,6 @@ public:
 
 	std::string ToString() const override;
 
-	CameraData& Deserialize(const Json& json) override;
-	Json Serialize(const CameraData& component) override;
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };

@@ -19,11 +19,16 @@ std::vector<std::string> GetLayersAsStrings(const RenderLayerType& layers)
 }
 RenderLayerType GetLayersFromStrings(const std::vector<std::string> layerStrs)
 {
+	//Assert(false, std::format("Trying to get layers from strings; {}", Utils::ToStringIterable<std::vector<std::string>, std::string>(layerStrs)));
 	RenderLayerType layers = RenderLayerType::None;
 	for (const auto& layerStr : layerStrs)
 	{
 		if (layerStr == "Background") layers |= RenderLayerType::Background;
-		else if (layerStr == "Player") layers |= RenderLayerType::Player;
+		else if (layerStr == "Player")
+		{
+			layers |= RenderLayerType::Player;
+			//Assert(false, std::format("Adding player layer ZTO stirng yeah. result: {}", ToString(layers)));
+		}
 		else if (layerStr == "UI") layers |= RenderLayerType::UI;
 		else
 		{

@@ -38,8 +38,8 @@ namespace ECS
 			if (time < firstTime) return std::nullopt;
 			if (Utils::ApproximateEqualsF(time, firstTime)) return 0;
 
-			if (time > data.GetEndTime()) return std::nullopt;
-			if (Utils::ApproximateEqualsF(data.GetEndTime(), firstTime)) return property.m_Keyframes.size() - 1;
+			if (time > data.GetTimeLength()) return std::nullopt;
+			if (Utils::ApproximateEqualsF(data.GetTimeLength(), firstTime)) return property.m_Keyframes.size() - 1;
 
 			int left = 1;
 			int right = property.m_Keyframes.size() - 1;
@@ -90,7 +90,7 @@ namespace ECS
 				std::optional<size_t> newIndex = TryGetKeyFrameAtTime<T>(data, property, data.m_NormalizedTime);
 				if (!Assert(this, newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
 					"and end time: {} on entity: {} but failed!", std::to_string(data.m_NormalizedTime),
-					std::to_string(data.m_EndTime), entity.m_Name)))
+					std::to_string(data.m_AnimationLength), entity.GetName())))
 					return;
 
 				property.m_KeyframeIndex = newIndex.value();
@@ -110,7 +110,7 @@ namespace ECS
 			else
 			{
 				LogError(this, std::format("Tried to update property in animator for entity:{} "
-					"but could not find any Type specific actions to take for it (probably due to not defining actions for this type)", entity.m_Name));
+					"but could not find any Type specific actions to take for it (probably due to not defining actions for this type)", entity.GetName()));
 			}
 		}
 

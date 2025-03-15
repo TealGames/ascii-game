@@ -53,6 +53,7 @@ std::string LogTypeToString(const LogType& logType);
 constexpr LogType LOG_TYPE_ALL = LogType::Log | LogType::Error | LogType::Warning;
 constexpr bool DEFAULT_LOG_TIME = true;
 constexpr bool DEFAULT_LOG_TO_GAME_CONSOLE= false;
+constexpr bool DEFAULT_SHOW_STACK_TRACE= false;
 constexpr bool THROW_ON_FAILED_ASSERT = true;
 constexpr bool THROW_ON_ALL_ERROR = false;
 
@@ -70,7 +71,7 @@ extern Event<void, LogType, std::string, bool> OnMessageLogged;
 /// <param name="str"></param>
 template<typename T>
 void LogMessage(const T* const objPtr, const LogType& logType, const std::string& message, 
-	 const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
+	const bool& showStackTrace, const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
 {
 	//Log(logType, std::format("{}: {}", objPtr != nullptr ? typeid(T).name() : "", str), logTime);
 
@@ -80,6 +81,9 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 
 	if (!MessageFilter.empty() &&
 		message.substr(0, MessageFilter.size()) != MessageFilter) return;
+
+	std::string stackTraceMessage = message;
+	if (showStackTrace) stackTraceMessage += std::format("\n-------> STACK TRACE: {}", Utils::GetCurrentStackTrace());
 
 	std::string logTypeMessage;
 	std::string timeFormatted = "";
@@ -98,6 +102,7 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 		break;
 	case LogType::Log:
 		logTypeMessage = std::format("{} {}LOG:", timeFormatted, ANSI_COLOR_WHITE);
+
 		break;
 	default:
 		std::string errMessage = "Tried to log message of message type "
@@ -105,7 +110,8 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 		throw std::invalid_argument(errMessage);
 	}
 	std::string objectName = objPtr != nullptr ? std::format("{}:", typeid(T).name())  : "";
-	std::string fullMessage = std::format("\n{}{}{}{}", logTypeMessage, objectName, message, ANSI_COLOR_CLEAR);
+	std::string fullMessage = std::format("\n{}{}{}{}", logTypeMessage, objectName, stackTraceMessage, ANSI_COLOR_CLEAR);
+	
 	std::cout << fullMessage << std::endl;
 
 	if (THROW_ON_ALL_ERROR && (logType & LogType::Error) != LogType::None) throw std::invalid_argument(message);
@@ -123,7 +129,7 @@ template<typename T>
 void Log(const T* const objPtr, const std::string& str, 
 	const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
 {
-	LogMessage<T>(objPtr, LogType::Log, str, logTime, logToGameConsole);
+	LogMessage<T>(objPtr, LogType::Log, str, false, logTime, logToGameConsole);
 }
 /// <summary>
 /// Logs a message as a default LOG type
@@ -144,7 +150,7 @@ template<typename T>
 void LogWarning(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
 	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
 {
-	LogMessage<T>(objPtr, LogType::Warning, str, logTime, logToGameConsole);
+	LogMessage<T>(objPtr, LogType::Warning, str, false, logTime, logToGameConsole);
 }
 /// <summary>
 /// Logs a message as a WARNING type
@@ -161,9 +167,9 @@ void LogWarning(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME,
 /// <param name="logTime"></param>
 template<typename T>
 void LogError(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE)
 {
-	LogMessage<T>(objPtr, LogType::Error, str, logTime, logToGameConsole);
+	LogMessage<T>(objPtr, LogType::Error, str, showStackTrace, logTime, logToGameConsole);
 }
 /// <summary>
 /// Logs a message as an ERROR type
@@ -171,19 +177,20 @@ void LogError(const T* const objPtr, const std::string& str, const bool& logTime
 /// <param name="str"></param>
 /// <param name="logTime"></param>
 void LogError(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE);
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE);
 
 /// <summary>
 /// If condition is false will log error and return false, othersise return true and does nothing
 /// </summary>
-bool Assert(const bool condition, const std::string& errMessage);
+bool Assert(const bool condition, const std::string& errMessage, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE);
 
 template<typename T>
-bool Assert(const T* const objPtr, const bool condition, const std::string& errMessage)
+bool Assert(const T* const objPtr, const bool condition, const std::string& errMessage, 
+	const bool& showStackTrace = DEFAULT_SHOW_STACK_TRACE)
 {
 	if (!condition)
 	{
-		LogError<T>(objPtr, errMessage, DEFAULT_LOG_TIME, true);
+		LogError<T>(objPtr, errMessage, DEFAULT_LOG_TIME, true, showStackTrace);
 		if (THROW_ON_FAILED_ASSERT) throw std::invalid_argument(errMessage);
 	}
 	return condition;

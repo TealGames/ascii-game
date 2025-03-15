@@ -8,7 +8,6 @@
 #include "Direction.hpp"
 #include "NormalizedPosition.hpp"
 #include "PhysicsProfile.hpp"
-#include "IJsonSerializable.hpp"
 
 class PhysicsBodyData;
 struct CollidingObject
@@ -23,7 +22,7 @@ namespace Physics
 }
 
 using CollidingBodiesCollection = std::vector<CollidingObject>;
-class PhysicsBodyData : public ComponentData, public IJsonSerializable<PhysicsBodyData>
+class PhysicsBodyData : public ComponentData
 {
 private:
 	//The bounding box of the rigidbody that is used for collisions
@@ -119,7 +118,7 @@ public:
 
 	std::string ToString() const override;
 
-	PhysicsBodyData& Deserialize(const Json& json) override;
-	Json Serialize(const PhysicsBodyData& component) override;
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };
 

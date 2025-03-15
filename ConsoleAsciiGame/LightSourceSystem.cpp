@@ -110,7 +110,7 @@ namespace ECS
         
         EntityRendererData* renderData = entity.TryGetComponentMutable<EntityRendererData>();
         if (!Assert(renderData != nullptr, std::format("Tried to render light for entity: {} "
-            "but could not find its entity render component!", entity.m_Name))) return;
+            "but could not find its entity render component!", entity.GetName()))) return;
 
         //TODO: it might not make sense for all lighting to just use the renderer to determine lighting start pos,
         //so perhaps this needs to be more customizable to allow for this and other behavior

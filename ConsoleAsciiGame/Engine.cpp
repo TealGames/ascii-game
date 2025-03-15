@@ -48,6 +48,10 @@ namespace Core
 	//TODO: make an asset manager that can store custom fonts, images and other stuff so we do not have to make copies or use Globals file
 	//TODO: optimize raw text block ,text array and other similar large data structures for holding chars to use less memory
 	//TODO: in json serializers there should be a way to match each type to potnetial name sfor properties so we do not have to repeat them multiple times and make mistakes
+	//TODO: consolidate the entity searching/retrieval of collection for the global entity manager and that in the scene class
+	//TODO: change the scene create entity function to not need to set the newly created transform to that entity 
+	// (instead it should be done in entity class by having the class itself set itself for the component)
+	//TODO: rather than each scene having its own physics world pheraps there should only be one main one that is stored here and it can manage adding and removing entities
 
 	static const std::string SCENES_PATH = "scenes";
 	static const std::string INPUT_PROFILES_PATH = "input";
@@ -83,7 +87,6 @@ namespace Core
 	{
 		InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME.c_str());
 		SetTargetFPS(TARGET_FPS);
-		m_sceneManager.LoadAllScenes();
 
 		std::cout << "\n\n[ENGINE]: INITIALIZED RAYLIB WINDOW" << std::endl;
 	}
@@ -101,7 +104,7 @@ namespace Core
 		m_uiSystem(),
 		m_entityRendererSystem(),
 		m_lightSystem(m_entityRendererSystem),
-		m_inputSystem(m_inputManager),
+		//m_inputSystem(m_inputManager),
 		m_spriteAnimatorSystem(m_entityRendererSystem),
 		m_animatorSystem(*this),
 		m_physicsBodySystem(),
@@ -117,11 +120,8 @@ namespace Core
 		m_enableCommandConsole(false),
 		m_entityEditor(m_inputManager, m_sceneManager, m_guiSelectorManager)
 	{
-		Init();
-
-		if (!Assert(this, m_sceneManager.TrySetActiveScene(0), 
-			std::format("Tried to set the active scene to the first one, but failed!"))) 
-			return;
+		Init(); 
+		InitJsonSerializers(m_sceneManager);
 
 		VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
@@ -130,7 +130,7 @@ namespace Core
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(1, Vec2(2, 2), Vec2(0, 0), GRAVITY, 20));
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
 
-		InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
+		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
 		LightSourceData& lightSource= playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
@@ -148,10 +148,27 @@ namespace Core
 			{ SpriteAnimationFrame(0, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, 'O'))}}, visualPreset)),
 			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));*/
 
-		m_playerInfo = ECS::EntityComponents<PlayerData, InputData, PhysicsBodyData>{ playerEntity, playerData, inputData, playerRB };
+		m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
+
+		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
+		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
+		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
+
+		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
+		//if it is necessary for them (and to prevent misses and potential problems down the line)
+		m_sceneManager.LoadAllScenes();
+
+		if (!Assert(this, m_sceneManager.TrySetActiveScene(0),
+			std::format("Tried to set the active scene to the first one, but failed!")))
+			return;
+
+		m_sceneManager.GetActiveSceneMutable()->InitScene();
+		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
+		LogError(std::format("Scene active: {}", m_sceneManager.GetActiveScene()->ToString()));
+
 
 		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData(Vec2{ 20, 20 }));
-		Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(obstacle.m_Id)->ToString()));
+		//Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(obstacle.m_Id)->ToString()));
 		
 		obstacle.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'B')) } },
@@ -168,22 +185,16 @@ namespace Core
 			VisualData({ {TextCharPosition({0,0}, TextChar(ORANGE, '*')) } },
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::UI });
-		
-		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
-		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
-		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
-		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
 
 		std::cout << "\n\n[ENGINE]: INITIALIZED GLOBALS" << std::endl;
 		std::cout << std::format("[ENGINE]: LOADED LAYERS FOR SCENE '{}': {}", 
-			m_sceneManager.GetActiveScene()->m_SceneName,
+			m_sceneManager.GetActiveScene()->GetName(),
 			m_sceneManager.GetActiveScene()->ToStringLayers()) << std::endl;
 
 		Log(this, std::format("OBSACLE ID: {}", obstacle.ToString()));
 		Log(this, std::format("CAMERA ID: {}", mainCameraEntity.ToString()));
 		Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
 
-		m_sceneManager.GetActiveSceneMutable()->InitScene();
 		m_inputManager.SetInputCooldown(0.3);
 		InitConsoleCommands();
 
@@ -317,15 +328,15 @@ namespace Core
 
 		Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
 		if (!Assert(this, activeScene != nullptr, std::format("Tried to update the active scene but there "
-			"are none set as active right now", activeScene->m_SceneName)))
+			"are none set as active right now", activeScene->GetName())))
 			return ERROR_CODE;
 
 		if (!Assert(this, activeScene->HasMainCamera(), std::format("Tried to update the active scene: {}, "
-			"but it has no main camera", activeScene->m_SceneName)))
+			"but it has no main camera", activeScene->GetName())))
 			return ERROR_CODE;
 
 		if (!Assert(this, activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
-			"are no entities in the scene", activeScene->m_SceneName)))
+			"are no entities in the scene", activeScene->GetName())))
 			return ERROR_CODE;
 		
 		CameraData* mainCamera = activeScene->TryGetMainCameraMutable();
@@ -333,13 +344,13 @@ namespace Core
 
 		if (!Assert(this, mainCamera != nullptr && mainCameraEntity != nullptr,
 			std::format("Tried to update the active scene:{} but failed to retrieve "
-				"main camera(found:{}) and/or its entity(found:{})", activeScene->m_SceneName,
+				"main camera(found:{}) and/or its entity(found:{})", activeScene->GetName(),
 				std::to_string(mainCamera != nullptr), std::to_string(mainCameraEntity != nullptr))))
 			return ERROR_CODE;
 
 		if (!Assert(this, m_playerInfo.has_value(),
 			std::format("Tried to update the active scene:{} but failed to get "
-				"player info in a valid state", activeScene->m_SceneName)))
+				"player info in a valid state", activeScene->GetName())))
 			return ERROR_CODE;
 
 		//We need to reset to default since previous changes were baked into the buffer
@@ -368,7 +379,7 @@ namespace Core
 				std::string>(m_inputManager.GetAllKeysWithStateAsString(Input::KeyState::Down)));
 		}
 
-		m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<1>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
+		//m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<2>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
 		m_playerSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<0>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 		if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<0>().GetFrameInput().ToString()));
@@ -377,8 +388,8 @@ namespace Core
 		if (m_enableDebugInfo)
 		{
 			m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
-			m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<2>().GetVelocity().ToString(3, VectorForm::Component)));
-			m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<2>().GetAcceleration().ToString(3, VectorForm::Component)));
+			m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<1>().GetVelocity().ToString(3, VectorForm::Component)));
+			m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<1>().GetAcceleration().ToString(3, VectorForm::Component)));
 			m_debugInfo.AddProperty("Grounded:", std::format("{}", std::to_string(m_playerInfo.value().GetAt<0>().GetIsGrounded())));
 			m_debugInfo.AddProperty("GroundDist:", std::format("{} m", std::to_string(m_playerInfo.value().GetAt<0>().GetVerticalDistanceToGround())));
 		}
@@ -389,15 +400,23 @@ namespace Core
 		
 		m_animatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_spriteAnimatorSystem.SystemUpdate(*activeScene, m_deltaTime);
+		
+
+		LogError(this, std::format("Player visual: {} scene entities: {}", m_playerInfo.value().m_Entity->TryGetComponent<EntityRendererData>()->GetVisualData().ToString(), 
+			std::to_string(activeScene->GetEntityCount())));
+		LogError(this, std::format("Scene entities: {}", activeScene->ToString()));
+		//LogError(activeScene->GetAllEntities()[0]->GetName());
+		
+		//TODO: it seems enttiy system is causing a stirng to long exception
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
-	
+		
 		LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
-			std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<2>(), *(m_obstacleInfo.value().m_Data))),
+			std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<1>(), *(m_obstacleInfo.value().m_Data))),
 			m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 			//TODO: this is technically wrong since we use transform pos as center for aabb global pos but it could be offset (just for testing when offset=0)
-			m_playerInfo.value().GetAt<2>().GetAABB().ToString(m_playerInfo.value().m_Entity->m_Transform.m_Pos),
+			m_playerInfo.value().GetAt<1>().GetAABB().ToString(m_playerInfo.value().m_Entity->m_Transform.m_Pos),
 			m_playerInfo.value().GetAt<0>().GetFrameInput().ToString(),
-			m_playerInfo.value().GetAt<2>().GetVelocity().ToString(),
+			m_playerInfo.value().GetAt<1>().GetVelocity().ToString(),
 			m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 			m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));
 		//TODO: light system without any other problems drop frames to ~20 fps
@@ -471,7 +490,7 @@ namespace Core
 			}
 			catch (const std::exception& e)
 			{
-				LogError(this, std::format("Update loop terminated due to exception: {}", e.what()));
+				LogError(this, std::format("Update loop terminated due to exception: {}", e.what()), true, false, true);
 				return;
 			}
 
@@ -483,10 +502,10 @@ namespace Core
 			if (FRAME_LIMIT != NO_FRAME_LIMIT && m_currentFrameCounter < FRAME_LIMIT) continue;
 
 			if (!Assert(this, currentCode != ERROR_CODE, 
-				std::format("Update loop terminated due to error"))) return;
+				std::format("Update loop terminated due to error"), true)) return;
 
 			if (!Assert(this, currentCode != END_CODE,
-				std::format("Update loop terminated due to loop end triggered"))) return;
+				std::format("Update loop terminated due to loop end triggered"), true)) return;
 		}
 	}
 }

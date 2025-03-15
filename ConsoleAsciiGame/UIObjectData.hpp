@@ -1,9 +1,8 @@
 #pragma once
 #include "ComponentData.hpp"
 #include "NormalizedPosition.hpp"
-#include "IJsonSerializable.hpp"
 
-class UIObjectData : public ComponentData, public IJsonSerializable<UIObjectData>
+class UIObjectData : public ComponentData
 {
 private:
 	/// <summary>
@@ -25,7 +24,7 @@ public:
 
 	std::string ToString() const override;
 
-	UIObjectData& Deserialize(const Json& json) override;
-	Json Serialize(const UIObjectData& component) override;
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };
 

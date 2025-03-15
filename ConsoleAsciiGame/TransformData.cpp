@@ -14,7 +14,8 @@ TransformData::TransformData(const Json& json) : TransformData()
 }
 
 TransformData::TransformData(const Vec2& pos) :
-	ComponentData(), m_Pos(pos), m_LastPos(NULL_POS), m_LastFramePos(NULL_POS)
+	ComponentData(HighestDependecyLevel::None),
+	m_Pos(pos), m_LastPos(NULL_POS), m_LastFramePos(NULL_POS)
 {
 	
 }
@@ -68,14 +69,13 @@ void TransformData::InitFields()
 	//Assert(false, std::format("Created value: {}", std::get<Vec2*>(m_Fields[0].m_Value)->ToString()));
 }
 
-TransformData& TransformData::Deserialize(const Json& json)
+void TransformData::Deserialize(const Json& json)
 {
 	m_Pos = json.at("Pos").get<Vec2>();
 	m_LastPos = json.at("LastPos").get<Vec2>();
 	m_LastFramePos = json.at("LastFramePos").get<Vec2>();
-	return *this;
 }
-Json TransformData::Serialize(const TransformData& component)
+Json TransformData::Serialize()
 {
 	return { {"Pos", m_Pos}, {"LastPos", m_LastPos}, {"LastFramePos", m_LastFramePos}};
 }

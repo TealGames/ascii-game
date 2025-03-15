@@ -168,7 +168,7 @@ ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 const EntityGUI& ComponentGUI::GetEntityGUISafe() const
 {
 	if (!Assert(this, m_entityGUI != nullptr, std::format("Tried to get entity GUI from cmponent: '{}' for entity: '{}'",
-		GetComponentName(), m_component->GetEntitySafe().m_Name)))
+		GetComponentName(), m_component->GetEntitySafe().GetName())))
 	{
 		throw std::invalid_argument("Failed to retrieve entity gui");
 	}

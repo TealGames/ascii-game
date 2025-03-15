@@ -22,7 +22,7 @@ namespace Physics
 
 	void PhysicsWorld::AddBody(PhysicsBodyData& body)
 	{
-		LogWarning(this, std::format("Adding body: {}", body.m_Entity->m_Name));
+		LogWarning(this, std::format("Adding body: {}", body.m_Entity->GetName()));
 		body.SetPhysicsWorld(*this);
 		m_bodies.push_back(&body);
 	}
@@ -113,7 +113,7 @@ namespace Physics
 							bodyAEntity.m_Transform.SetPosDelta({ moveDelta.m_X, moveDelta.m_Y });
 
 							Log(this, std::format("COSNERVING for {} MASS A: {} MASS B: {} DEPTH: {} in norma: {} old p: {} j delta;{} new: {} vel: {}",
-								bodyA.GetEntitySafe().m_Name, std::to_string(bodyA.GetMass()), std::to_string(bodyB.GetMass()),
+								bodyA.GetEntitySafe().GetName(), std::to_string(bodyA.GetMass()), std::to_string(bodyB.GetMass()),
 								moveDelta.ToString(),
 								collsionNormal.ToString(), oldMomenumn.ToString(), std::to_string(CalculateImpulse(bodyA, bodyB, collsionNormal)),
 								newMomentum.ToString(), (newMomentum / bodyA.GetMass()).ToString()));

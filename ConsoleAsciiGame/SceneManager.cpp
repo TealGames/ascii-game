@@ -26,27 +26,43 @@ namespace SceneManagement
 
 				//const Scene scene = Scene();
 				m_allScenes.emplace_back(file.path(), m_GlobalEntityManager);
+				//LogError(std::format("Added scene:{}", m_allScenes.back().GetName()));
 				//Log(std::format("Adding scene to scene manager constricutor: {}", scene.ToStringLayers()));
+			}
+
+			//We first want to make sure all scenes are found, then we load the data from the json at their respective path
+			//NOTE: this is mainly to ensure that we can access all scenes when we are loading any scene (even if it has no data)
+			//since there may be some scenes that have dependencies
+		
+			for (auto& scene : m_allScenes)
+			{
+				scene.LoadData();
+				Log(std::format("Loaded scene: {}", scene.GetName()));
 			}
 		}
 		catch (const std::exception& e)
 		{
-			LogError(this, std::format("Tried to get all scenes at path: {} "
+			Assert(this, false, std::format("Tried to get all scenes at path: {} "
 				"but ran into error: {}", m_allScenePath.string(), e.what()));
 		}
 	}
 
-	Scene* SceneManager::TryGetSceneWithName(const std::string& sceneName)
+	int SceneManager::GetSceneCount() const
+	{
+		return m_allScenes.size();
+	}
+
+	Scene* SceneManager::TryGetSceneWithNameMutable(const std::string& sceneName)
 	{
 		for (auto& scene : m_allScenes)
 		{
-			if (scene.m_SceneName == sceneName) 
+			if (scene.GetName() == sceneName)
 				return &scene;
 		}
 		return nullptr;
 	}
 
-	Scene* SceneManager::TryGetSceneWithIndex(const int& sceneIndex)
+	Scene* SceneManager::TryGetSceneWithIndexMutable(const int& sceneIndex)
 	{
 		if (sceneIndex < 0 || sceneIndex >= m_allScenes.size()) return nullptr;
 		/*Log(std::format("Attempting to get valid index scene {}/{}. scene valid: {}",
@@ -62,7 +78,7 @@ namespace SceneManagement
 
 	bool SceneManager::TrySetActiveScene(const std::string& sceneName)
 	{
-		Scene* scene = TryGetSceneWithName(sceneName);
+		Scene* scene = TryGetSceneWithNameMutable(sceneName);
 		if (!Assert(scene != nullptr, std::format("Tried to load a scene with name: {} "
 			"but that scene does not exist", sceneName))) return false;
 
@@ -72,7 +88,7 @@ namespace SceneManagement
 
 	bool SceneManager::TrySetActiveScene(const int& sceneIndex)
 	{
-		Scene* scene = TryGetSceneWithIndex(sceneIndex);
+		Scene* scene = TryGetSceneWithIndexMutable(sceneIndex);
 		//Log(std::format("Active scene: {}", scene!=nullptr? scene->ToStringLayers() : "NULL"));
 
 		if (!Assert(scene != nullptr, std::format("Tried to load a scene with index: {} "

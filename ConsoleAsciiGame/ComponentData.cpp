@@ -4,7 +4,13 @@
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 
-ComponentData::ComponentData() : m_MutatedThisFrame(false), m_Entity(nullptr), m_Fields() {}
+ComponentData::ComponentData(const HighestDependecyLevel& dependency) 
+	: m_dependencyLevel(dependency), m_MutatedThisFrame(false), m_Entity(nullptr), m_Fields() {}
+
+HighestDependecyLevel ComponentData::GetDependencyLevel() const
+{
+	return m_dependencyLevel;
+}
 
 ECS::Entity& ComponentData::GetEntitySafeMutable()
 {
@@ -39,7 +45,12 @@ const std::vector<ComponentField>& ComponentData::GetFields() const
 	return m_Fields;
 }
 
+bool ComponentData::Validate()
+{
+	return true;
+}
+
 std::string ComponentData::ToString() const
 {
-	return std::format("[BaseComp Entity:{}]", GetEntitySafe().m_Name);
+	return std::format("[BaseComp Entity:{}]", GetEntitySafe().GetName());
 }

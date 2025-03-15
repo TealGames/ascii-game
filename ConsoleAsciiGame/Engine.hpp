@@ -19,10 +19,11 @@
 #include "UIObjectSystem.hpp"
 #include "DebugInfo.hpp"
 #include "CommandConsole.hpp"
-#include "InputManager.hpp"
+//#include "InputManager.hpp"
 #include "Debug.hpp"
 #include "EntityEditorGUI.hpp"
 #include "GUISelectorManager.hpp"
+#include "JsonSerializers.hpp"
 
 namespace Core
 {
@@ -50,15 +51,14 @@ namespace Core
 		ECS::CameraSystem m_cameraSystem;
 		ECS::UIObjectSystem m_uiSystem;
 		ECS::LightSourceSystem m_lightSystem;
-		ECS::InputSystem m_inputSystem;
+		//ECS::InputSystem m_inputSystem;
 		ECS::EntityRendererSystem m_entityRendererSystem;
 		ECS::AnimatorSystem m_animatorSystem;
 		ECS::SpriteAnimatorSystem m_spriteAnimatorSystem;
 		ECS::PhysicsBodySystem m_physicsBodySystem;
-
 		ECS::PlayerSystem m_playerSystem;
 
-		std::optional<ECS::EntityComponents<PlayerData, InputData, PhysicsBodyData>> m_playerInfo;
+		std::optional<ECS::EntityComponents<PlayerData, PhysicsBodyData>> m_playerInfo;
 		std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;
 		std::optional<ECS::EntityComponentPair<PhysicsBodyData>> m_obstacleInfo;
 
@@ -102,7 +102,7 @@ namespace Core
 			{
 				LightSourceData* maybeData = entity.TryGetComponentMutable<LightSourceData>();
 				if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
-					"but it does not have that component", propertyName, entity.m_Name, ToString(type)))) return nullptr;
+					"but it does not have that component", propertyName, entity.GetName(), ToString(type)))) return nullptr;
 
 				if (propertyName == "LightRadius" && std::is_same_v<PropertyType, decltype(maybeData->m_LightRadius)>)
 					//reinterpret cast is dangerous but we have to do it here since we know for sure if the condition of the same
@@ -114,13 +114,13 @@ namespace Core
 				{
 					if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
 						"but it did not match any names and/or their types with type: {}!", propertyName, 
-						entity.m_Name, ToString(type), typeid(PropertyType).name()))) return nullptr;
+						entity.GetName(), ToString(type), typeid(PropertyType).name()))) return nullptr;
 				}
 			}
 			else
 			{
 				LogError(this, std::format("Tried to get property: {} from "
-					"engine for entity: {} of an undefined type: {}", propertyName, entity.m_Name, ToString(type)));
+					"engine for entity: {} of an undefined type: {}", propertyName, entity.GetName(), ToString(type)));
 			}
 			return nullptr;
 		}

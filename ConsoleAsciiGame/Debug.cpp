@@ -40,12 +40,12 @@ void LogWarning(const std::string& str, const bool& logTime, const bool& logToGa
 {
 	LogWarning<int>(nullptr, str, logTime, logToGameConsole);
 }
-void LogError(const std::string& str, const bool& logTime, const bool& logToGameConsole)
+void LogError(const std::string& str, const bool& logTime, const bool& logToGameConsole, const bool& showStackTrace)
 {
-	LogError<int>(nullptr, str, logTime, logToGameConsole);
+	LogError<int>(nullptr, str, logTime, logToGameConsole, showStackTrace);
 }
 
-bool Assert(const bool condition, const std::string& errMessage)
+bool Assert(const bool condition, const std::string& errMessage, const bool& showStackTrace)
 {
-	return Assert<int>(nullptr, condition, errMessage);
+	return Assert<int>(nullptr, condition, errMessage, showStackTrace);
 }

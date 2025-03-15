@@ -16,7 +16,8 @@ SpriteAnimatorData::SpriteAnimatorData(const Json& json) : SpriteAnimatorData()
 }
 
 SpriteAnimatorData::SpriteAnimatorData(const std::vector<SpriteAnimationFrame>& frames, const float& animationSpeed, const float& loopTime, const bool& loop) :
-	ComponentData(), m_VisualDeltas{}, m_VisualDeltaIndex(0), m_SingleLoopLength(loopTime), m_NormalizedTime(0), m_AnimationSpeed(animationSpeed), m_Loop(loop)
+	ComponentData(HighestDependecyLevel::None),
+	m_VisualDeltas{}, m_VisualDeltaIndex(0), m_SingleLoopLength(loopTime), m_NormalizedTime(0), m_AnimationSpeed(animationSpeed), m_Loop(loop)
 {
 	SpriteAnimationDelta visualDelta;
 
@@ -57,13 +58,12 @@ void SpriteAnimatorData::InitFields()
 	m_Fields = {ComponentField("Loop", &m_Loop), ComponentField("Speed", &m_AnimationSpeed)};
 }
 
-SpriteAnimatorData& SpriteAnimatorData::Deserialize(const Json& json)
+void SpriteAnimatorData::Deserialize(const Json& json)
 {
 	m_Loop = json.at("Loop").get<bool>();
 	m_AnimationSpeed = json.at("Speed").get<float>();
-	return *this;
 }
-Json SpriteAnimatorData::Serialize(const SpriteAnimatorData& component)
+Json SpriteAnimatorData::Serialize()
 {
 	return { {"Loop", m_Loop}, {"Speed", m_AnimationSpeed} };
 }

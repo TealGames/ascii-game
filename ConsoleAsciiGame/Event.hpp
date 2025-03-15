@@ -84,9 +84,22 @@ public:
 		m_listeners.erase(foundIt);
 		return true;
 	}
+	void RemoveAllListeners()
+	{
+		m_listeners.clear();
+	}
 
 	const std::vector<ListenerType>& GetListeners() const
 	{
 		return m_listeners;
+	}
+
+	size_t GetListenerCount() const
+	{
+		return m_listeners.size();
+	}
+	bool HasListeners() const
+	{
+		return GetListenerCount() > 0;
 	}
 };

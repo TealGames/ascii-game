@@ -48,6 +48,18 @@
 							"Y": 1
 						}
 					}
+				},
+				{
+					"Type": "CameraData",
+					"AspectRatio": {
+						"X": 3,
+						"Y": 6
+					},
+					"LensSize": 10,
+					"FollowTarget": {
+						"Entity": "Test2",
+						"Scene": "_1"
+					}
 				}
 			]
 		},

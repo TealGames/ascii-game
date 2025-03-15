@@ -69,19 +69,17 @@ namespace ECS
 		//or maybe we can contain that data based on what index it is at?
 		std::vector<ComponentData*> m_components;
 
+		std::string m_sceneName;
 	public:
-		const std::string& m_Name;
-		//TODO: maybe replace id with GUID (UIUD is available in boost library)
+		//TODO: maybe replace id with GUID (UIUD is available in boost library)k
 		//const EntityID m_Id;
 		const EntityID m_Id;
 		TransformData& m_Transform;
 
-	private:
-		/*TransformData& GetTransformRef(const TransformData& data);
-		TransformData& GetTransformRef(TransformData&& data);*/
+		//TODO: is this really the best location for something like this?
+		static const char* GLOBAL_SCENE_NAME;
 
-		/*ComponentCollectionType::iterator GetComponentIDIteratorMutable(const ComponentType& type);
-		ComponentCollectionType::const_iterator GetComponentIDIterator(const ComponentType& type) const;*/
+	private:
 
 	public:
 		/// <summary>
@@ -90,14 +88,17 @@ namespace ECS
 		/// <param name="name"></param>
 		/// <param name="objectId"></param>
 		Entity(const std::string& name, entt::registry& mapper, const TransformData& transform);
-		//Entity(const std::string& name, entt::registry& mapper, TransformData&& transform);
 
-		//We do not allow copying since the component data is stored in the entity mapper
-		//and copying would delete obj and not data since deleting/removing data is not implemented
-		//in the entity mapper yet
-		//Entity(Entity&& entity) = delete;
+		std::string GetName() const;
 
-		//bool HasComponent(const ComponentType& type) const;
+		/// <summary>
+		/// Will set the scene name as the name specified. Note: since it has no reference to a scene,
+		/// this name is not checked so make sure it is written correctly
+		/// </summary>
+		/// <param name="sceneName"></param>
+		void SetScene(const std::string& sceneName);
+		std::string GetSceneName() const;
+		bool IsGlobal() const;
 
 		template<typename T, typename... Args>
 		requires IsComponent<T>

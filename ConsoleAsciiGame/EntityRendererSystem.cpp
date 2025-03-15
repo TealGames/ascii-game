@@ -34,13 +34,18 @@ namespace ECS
 			[this, &scene, &affectedLayerBuffers](EntityRendererData& data, ECS::Entity& entity)-> void
 			{
 				//Log(std::format("Player is at pos: {}", entity.m_Transform.m_Pos.ToString()));
-				affectedLayerBuffers = scene.GetLayerBufferMutable(data.GetRenderLayers());
+				affectedLayerBuffers = scene.GetLayerBufferMutable(data.GetRenderLayers()); 
 				//Log(std::format("RENDER LAYERS: {}", std::to_string(affectedLayerBuffers.size())));
 
 				//Log(std::format("Moved this frame: {}", std::to_string(m_transformSystem.HasMovedThisFrame(entity.m_Transform))));
+				//LogError(this, std::format("render system update entity: {} SCENE:{}", entity.ToString(), scene.ToString()));
+				//Assert(false, std::format("BALLS"));
+				//return;
+				//LogError(std::format("Trying to render obkect: {}", entity.GetName()));
+				//return;
 
 				if (!Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
-					"but entity's render data: {} has no render layers", entity.m_Name))) return;
+					"but entity's render data: {} has no render layers", entity.GetName()))) return;
 
 				if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !entity.m_Transform.HasMovedThisFrame() &&
 					!data.m_LastFrameVisualData.empty())
@@ -64,7 +69,7 @@ namespace ECS
 				for (auto& buffer : affectedLayerBuffers)
 				{
 					if (!Assert(buffer != nullptr, std::format("Tried to update render system "
-						"but entity's render data: {} found a NULL render layer buffer", entity.m_Name))) return;
+						"but entity's render data: {} found a NULL render layer buffer", entity.GetName()))) return;
 
 					AddTextToBuffer(*buffer, data, entity);
 					//LogWarning(std::format("Entity: {} has been added to buffer. new buffer: {}", entity.m_Name, ToString(*buffer)));

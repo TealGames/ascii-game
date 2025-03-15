@@ -27,9 +27,6 @@ namespace SceneManagement
 		GlobalEntityManager m_GlobalEntityManager;
 
 	private:
-		Scene* TryGetSceneWithName(const std::string& sceneName);
-		Scene* TryGetSceneWithIndex(const int& sceneIndex);
-
 		void SetActiveScene(Scene* activeScene);
 
 	public:
@@ -42,11 +39,16 @@ namespace SceneManagement
 		/// </summary>
 		void LoadAllScenes();
 
+		int GetSceneCount() const;
+
 		Scene* GetActiveSceneMutable();
 		const Scene* GetActiveScene() const;
 
 		bool TrySetActiveScene(const std::string& sceneName);
 		bool TrySetActiveScene(const int& sceneIndex);
+
+		Scene* TryGetSceneWithNameMutable(const std::string& sceneName);
+		Scene* TryGetSceneWithIndexMutable(const int& sceneIndex);
 	};
 }
 

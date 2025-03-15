@@ -36,7 +36,7 @@ enum class CharAreaType
 
 struct VisualDataPreset
 {
-	const Font* m_Font = nullptr;
+	Font m_Font = {};
 	float m_FontSize = 0;
 	Vec2 m_CharSpacing = {};
 	CharAreaType m_CharAreaType = CharAreaType::Adaptive;
@@ -94,7 +94,7 @@ public:
 	TextArray m_Text;
 
 private:
-	bool HasValidFont() const;
+	bool HasValidFont(const bool assertMessage= true, const std::string& extraMessage="") const;
 
 	WorldPosition GetTopLeftPos(const WorldPosition& pivotWorldPos, const Vec2& totalSize) const;
 	void AddTextPositionsToBufferPredefined(const WorldPosition& transformPos, TextBufferMixed& buffer) const;

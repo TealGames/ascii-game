@@ -2,7 +2,6 @@
 #include <vector>
 #include "VisualData.hpp"
 #include "ComponentData.hpp"
-#include "IJsonSerializable.hpp"
 
 /// <summary>
 /// Stores the whole entire visual frame. This is meant for the user interface for 
@@ -32,7 +31,7 @@ struct SpriteAnimationDelta
 };
 
 
-struct SpriteAnimatorData : public ComponentData, public IJsonSerializable<SpriteAnimatorData>
+struct SpriteAnimatorData : public ComponentData
 {
 	std::vector<SpriteAnimationDelta> m_VisualDeltas;
 	size_t m_VisualDeltaIndex;
@@ -56,7 +55,7 @@ struct SpriteAnimatorData : public ComponentData, public IJsonSerializable<Sprit
 
 	std::string ToString() const override;
 
-	SpriteAnimatorData& Deserialize(const Json& json) override;
-	Json Serialize(const SpriteAnimatorData& component) override;
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };
 

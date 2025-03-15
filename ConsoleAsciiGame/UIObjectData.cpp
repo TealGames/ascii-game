@@ -9,7 +9,8 @@ UIObjectData::UIObjectData(const Json& json) : UIObjectData()
 	Deserialize(json);
 }
 UIObjectData::UIObjectData(const NormalizedPosition& normalizedPos) :
-	m_normalizedPos(normalizedPos) 
+	ComponentData(HighestDependecyLevel::None),
+	m_normalizedPos(normalizedPos)
 {
 
 }
@@ -25,12 +26,11 @@ void UIObjectData::InitFields()
 		{ m_normalizedPos.SetPos(newPos); }, &m_normalizedPos.GetPosMutable()) };
 }
 
-UIObjectData& UIObjectData::Deserialize(const Json& json)
+void UIObjectData::Deserialize(const Json& json)
 {
 	m_normalizedPos.SetPos(json.at("Pos").get<Vec2>());
-	return *this;
 }
-Json UIObjectData::Serialize(const UIObjectData & component)
+Json UIObjectData::Serialize()
 {
 	return { {"Pos", m_normalizedPos.GetPos()}};
 }

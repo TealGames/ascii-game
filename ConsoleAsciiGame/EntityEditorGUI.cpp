@@ -24,10 +24,10 @@ EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneMa
 
 void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 {
-	EntityGUICollection::iterator it = m_entityGUIs.find(entity.m_Name);
+	EntityGUICollection::iterator it = m_entityGUIs.find(entity.GetName());
 	if (it == m_entityGUIs.end())
 	{
-		it = m_entityGUIs.emplace(entity.m_Name, EntityGUI(m_inputManager, m_selectorManager, entity)).first;
+		it = m_entityGUIs.emplace(entity.GetName(), EntityGUI(m_inputManager, m_selectorManager, entity)).first;
 	}
 
 	m_selectedEntity = it;
@@ -54,7 +54,7 @@ void EntityEditorGUI::Update()
 			if (m_selectedEntity == m_entityGUIs.end() || selectedEntity != m_selectedEntity->second.GetEntity())
 			{
 				SetEntityGUI(selectedEntity);
-				Log(std::format("Successfully selected entity: '{}'", m_selectedEntity->second.GetEntity().m_Name), false, true);
+				Log(std::format("Successfully selected entity: '{}'", m_selectedEntity->second.GetEntity().GetName()), false, true);
 			}
 			//else Log(std::format("Failed to select any entity"), false, true);
 		}

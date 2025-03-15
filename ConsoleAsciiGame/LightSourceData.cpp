@@ -22,7 +22,8 @@ LightSourceData::LightSourceData(const Json& json) : LightSourceData()
 }
 LightSourceData::LightSourceData(const std::uint8_t& lightRadius, const RenderLayerType& affectedLayers, const ColorGradient& colorFilter,
 	const std::uint8_t& intensity, const float& falloff) :
-	ComponentData(), m_LightRadius(lightRadius), m_GradientFilter(colorFilter), m_AffectedLayers(affectedLayers),
+	ComponentData(HighestDependecyLevel::None), 
+	m_LightRadius(lightRadius), m_GradientFilter(colorFilter), m_AffectedLayers(affectedLayers),
 	m_Intensity(intensity), m_FalloffStrength(falloff), m_LastFrameData{}
 {
 
@@ -39,14 +40,13 @@ std::string LightSourceData::ToString() const
 		std::to_string(m_LightRadius), std::to_string(m_Intensity), std::to_string(m_FalloffStrength));
 }
 
-LightSourceData& LightSourceData::Deserialize(const Json& json)
+void LightSourceData::Deserialize(const Json& json)
 {
 	m_LightRadius = json.at("Radius").get<std::uint8_t>();
 	m_Intensity = json.at("Intensity").get<std::uint8_t>();
 	m_FalloffStrength = json.at("Falloff").get<float>();
-	return *this;
 }
-Json LightSourceData::Serialize(const LightSourceData& component)
+Json LightSourceData::Serialize()
 {
 	return { {"Radius", m_LightRadius}, {"Intensity", m_Intensity}, {"Falloff", m_FalloffStrength}};
 }

@@ -13,6 +13,7 @@
 #include "RenderLayer.hpp"
 #include "Updateable.hpp"
 #include "Entity.hpp"
+#include "IJsonSerializable.hpp"
 //#include "EntityMapper.hpp"
 #include "CameraData.hpp"
 #include "TransformData.hpp"
@@ -20,9 +21,12 @@
 #include "HelperFunctions.hpp"
 #include "PhysicsWorld.hpp"
 
-using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
+//using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
+//TODO: perhaps we should consolidate the string and local entity collection into one to not take up as much memory
+using EntityNameCollection = std::unordered_map<std::string, ECS::Entity*>;
+using EntityIDCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
 constexpr std::uint8_t MAX_ENTITIES = 100;
-class Scene 
+class Scene : public IJsonSerializable
 {
 private:
 	std::string m_sceneName;
@@ -33,7 +37,8 @@ private:
 	// (ones that exist solely within this scene)
 	std::vector<ECS::Entity> m_localEntities;
 	//This is for fast entity lookup by id for local entities
-	EntityCollection m_localEntityLookup;
+	EntityNameCollection m_localEntityNameLookup;
+	EntityIDCollection m_localEntityIdLookup;
 
 	//TODO: check if just removing this abstract and having the scene receive
 	//the global entities directly might increase performance
@@ -54,19 +59,16 @@ private:
 	//of data for physics simulations to really be useful
 	Physics::PhysicsWorld m_PhysicsWorld;
 
-public:
-	const std::string& m_SceneName;
-	//const std::vector<RenderLayer>& m_Layers;
+	const std::filesystem::path m_scenePath;
 
-	const std::filesystem::path m_ScenePath;
+public:
+	//const std::vector<RenderLayer>& m_Layers;
 	//The size in WIDTH, HEIGHT
-	const Utils::Point2DInt m_BoundingSize;
-	const GlobalEntityManager& m_GlobalEntities;
 
 	static const std::string SCENE_FILE_PREFIX;
 
 private:
-	void ParseSceneFile(std::ifstream& stream, std::vector<std::vector<TextCharPosition>>& charPos);
+	//void ParseSceneFile(std::ifstream& stream, std::vector<std::vector<TextCharPosition>>& charPos);
 
 	/*/// <summary>
 	/// Will return the iterator to the entity, whether global or local to the scene
@@ -75,17 +77,23 @@ private:
 	/// <param name="id"></param>
 	/// <returns></returns>
 	EntityCollection::iterator GetEntityIterator(const EntityID& id);*/
-	EntityCollection::iterator GetLocalEntityIterator(const ECS::EntityID& id);
+	EntityIDCollection::iterator GetLocalEntityIterator(const ECS::EntityID& id);
+	EntityNameCollection::iterator GetLocalEntityIterator(const std::string& name);
 
 	/*bool IsGlobalEntity(const EntityID& id) const;*/
 
 public:
 	Scene(const std::filesystem::path& scenePath, GlobalEntityManager& globalEntities);
 
+	static std::string ExtractSceneName(const std::filesystem::path& path);
+
 	/// <summary>
 	/// Will initialize the scene with deserialized entities and will initialize physics simulation
 	/// </summary>
 	void InitScene();
+
+	std::string GetName() const;
+	GlobalEntityManager& GetGlobalEntityManager();
 
 	std::vector<RenderLayer*> GetLayersMutable();
 	std::vector<const RenderLayer*> GetLayers(const RenderLayerType& renderLayers) const;
@@ -127,6 +135,7 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	const std::vector<const ECS::Entity*> GetAllEntities() const;
+	const std::vector<const ECS::Entity*> GetLocalEntities() const;
 	
 	ECS::Entity& CreateEntity(const std::string& name, TransformData& transform);
 	ECS::Entity& CreateEntity(const std::string& name, TransformData&& transform);
@@ -161,4 +170,11 @@ public:
 		}
 		m_globalEntities.OperateOnComponents<T>(action);
 	}
+
+	void Deserialize(const Json& json) override;
+	void LoadData();
+
+	Json Serialize() override;
+
+	std::string ToString() const;
 };

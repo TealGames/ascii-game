@@ -89,6 +89,8 @@ namespace Utils
 
 	std::string FormatTypeName(const std::string& typeName);
 
+	std::string GetCurrentStackTrace();
+
 	//This is the fallback in case we supply incorrect type args
 	template <typename, typename T>
 	struct HasFunction

@@ -2,9 +2,8 @@
 #include "ComponentData.hpp"
 #include "PhysicsBodyData.hpp"
 #include "Vec2.hpp"
-#include "IJsonSerializable.hpp"
 
-class PlayerData : public ComponentData, public IJsonSerializable<PlayerData>
+class PlayerData : public ComponentData
 {
 private:
 	PhysicsBodyData* m_body;
@@ -21,9 +20,12 @@ public:
 private:
 	float CalculateInitialJumpSpeed() const;
 
+private:
+	PlayerData(PhysicsBodyData* body, const float& moveSpeed, const float& maxJumpHeight);
 public:
 	PlayerData();
 	PlayerData(const Json& json);
+	//TODO: what if the wrong boddy is provided meaning one that does not share the same entity as this
 	PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const float& maxJumpHeight);
 
 	const float& GetMoveSpeed() const;
@@ -52,7 +54,7 @@ public:
 
 	std::string ToString() const override;
 
-	PlayerData& Deserialize(const Json& json) override;
-	Json Serialize(const PlayerData& component) override;
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };
 

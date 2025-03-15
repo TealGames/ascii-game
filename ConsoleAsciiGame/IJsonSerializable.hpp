@@ -2,7 +2,6 @@
 #include "nlohmann/json.hpp"
 using Json = nlohmann::json;
 
-template<typename T>
 struct IJsonSerializable
 {
 	virtual ~IJsonSerializable() = default;
@@ -13,7 +12,10 @@ struct IJsonSerializable
 	/// </summary>
 	/// <param name="json"></param>
 	/// <returns></returns>
-	virtual T& Deserialize(const Json& json) = 0;
-	virtual Json Serialize(const T& component) = 0;
+	/*virtual T& Deserialize(const Json& json) = 0;
+	virtual Json Serialize(const T& component) = 0;*/
+
+	virtual void Deserialize(const Json& json) = 0;
+	virtual Json Serialize() = 0;
 };
 

@@ -5,14 +5,14 @@
 #include "Entity.hpp"
 #include "Debug.hpp"
 
-InputData::InputData() : ComponentData(), 
+InputData::InputData() : ComponentData(HighestDependecyLevel::None),
 	m_actions() {}
 
 void InputData::AddAction(const Input::InputAction& action)
 {
 	if (!Assert(this, m_actions.find(action.m_Name) != m_actions.end(), std::format("Tried to add the input action: {}"
 		" to input data of entity: '{}', but that action already exists for this input data!",
-		action.m_Name, GetEntitySafe().m_Name)))
+		action.m_Name, GetEntitySafe().GetName())))
 		return;
 
 	m_actions.emplace(action.m_Name, action);

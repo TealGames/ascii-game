@@ -3,6 +3,14 @@
 #include "JsonConstants.hpp"
 #include "JsonUtils.hpp"
 #include "Debug.hpp"
+#include "SceneManager.hpp"
+
+static SceneManagement::SceneManager* SceneManager = nullptr;
+
+void InitJsonSerializers(SceneManagement::SceneManager& manager)
+{
+	SceneManager = &manager;
+}
 
 static bool HasRequiredProperties(const Json& json, const std::vector<std::string>& propertyNames)
 {
@@ -50,6 +58,7 @@ void to_json(Json& json, const Array2DPosition& pos)
 void from_json(const Json& json, RenderLayerType& layer)
 {
 	layer = GetLayersFromStrings(json.get<std::vector<std::string>>());
+	//Assert(false, std::format("Layer updating to; {}", ToString(layer)));
 }
 void to_json(Json& json, const RenderLayerType& layer)
 {
@@ -136,7 +145,6 @@ void from_json(const Json& json, VisualData& visualData)
 		"could not be deduced from '{}' property", JsonUtils::ToStringProperties(json), FONT_PROEPRTY)))
 		return;
 
-	
 	float fontSize = 0;
 	Json fontJson = json.at(FONT_SIZE_PROPERTY);
 	if (fontJson.is_string())
@@ -189,4 +197,69 @@ void to_json(Json& json, const VisualData& visualData)
 
 	json["CharSpacing"] = visualData.GetCharSpacing();
 	if (visualData.HasPredefinedCharArea()) json["CharArea"] = visualData.GetPredefinedCharArea();
+}
+
+void from_json(const Json& json, SerializableEntity& serializableEntity)
+{
+	serializableEntity.m_EntityName = json.at("Entity").get<std::string>();
+	serializableEntity.m_SceneName = json.at("Scene").get<std::string>();
+}
+void to_json(Json& json, const SerializableEntity& serializableEntity)
+{
+	json = { {"Entity", serializableEntity.m_EntityName}, {"Scene", serializableEntity.m_SceneName} };
+}
+
+ECS::Entity* TryDeserializeEntity(const Json& json)
+{
+	std::optional<ECS::Entity*> maybeEntity = TryDeserializeOptional<ECS::Entity*>(json, 
+		//We try to find entity based on its scene name (or whether it is global)
+		[](const Json& json)-> std::optional<ECS::Entity*>
+		{
+			SerializableEntity serializedEntity = json.get<SerializableEntity>();
+			if (!Assert(SceneManager != nullptr, std::format("Tried to parse entity from serialized entity "
+				"but parser does not contain valid scene manager")))
+				return nullptr;
+
+			if (serializedEntity.m_SceneName == ECS::Entity::GLOBAL_SCENE_NAME)
+			{
+				return SceneManager->m_GlobalEntityManager.TryGetGlobalEntityMutable(serializedEntity.m_EntityName);
+			}
+
+			Scene* maybeScene = SceneManager->TryGetSceneWithNameMutable(serializedEntity.m_SceneName);
+			if (!Assert(maybeScene !=nullptr, std::format("Tried to deserialize entity with non global scene: '{}', "
+				"but no scene matches that name", serializedEntity.m_SceneName))) 
+				return nullptr;
+
+			ECS::Entity* maybeEntity= maybeScene->TryGetEntityMutable(serializedEntity.m_EntityName);
+			if (maybeEntity == nullptr)
+			{
+				if (!Assert(maybeScene->GetEntityCount() > 0, std::format("Tried to deserialize entity with non glboal scene:'{}', "
+					"but no entities exist in that scene. It could be because that scene was no loaded yet "
+					"(and another scene tried to create a reference to an entity)", serializedEntity.m_SceneName)))
+					return nullptr;
+
+				Assert(false, std::format("Tried to deserialize entity with non glboal scene:'{}', "
+					"but no entities with that name exist!", serializedEntity.m_SceneName));
+				return nullptr;
+			}
+			
+			return maybeEntity;
+		});
+
+	if (!maybeEntity.has_value() || (maybeEntity.has_value() && maybeEntity.value() == nullptr)) 
+		return nullptr;
+
+	//LogError(std::format("Deserialized json: {} to entity: {}", JsonUtils::ToStringProperties(json), maybeEntity.value()->ToString()));
+	return maybeEntity.value();
+}
+Json TrySerializeEntity(const ECS::Entity* entity, const Scene* entityScene)
+{
+	return TrySerializeOptional<const ECS::Entity*>(entity == nullptr ? std::nullopt : std::make_optional(entity), 
+		[&entityScene](const ECS::Entity* entity)->Json 
+		{
+			SerializableEntity serializedEntity= { entity->GetName(), 
+			entityScene != nullptr ? entityScene->GetName() : ECS::Entity::GLOBAL_SCENE_NAME};
+			
+			return { serializedEntity };
+		});
 }

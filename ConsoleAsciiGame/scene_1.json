@@ -10,14 +10,23 @@
 					"LastFramePos": {"X":100, "Y": 89}
 				},
 				{
-					"Type": "EntityRenderData",
-					"Layer": [ "Player" ],
+					"Type": "EntityRendererData",
+					"Layers": [ "Player" ],
 					"VisualData": {
 						"Buffer": [ [ { "Pos": {"Row":0, "Col":0}, "Char":"A", "Color": {"R":255, "G":255, "B": 255}} ] ],
 						"Font": "Default",
 						"FontSize": "Default",
 						"Pivot": "Center",
 						"CharSpacing": {"X":1, "Y": 1}
+					}
+				},
+				{
+					"Type": "CameraData",
+					"AspectRatio": {"X":3, "Y":6},
+					"LensSize": 10,
+					"FollowTarget": {
+						"Entity": "Player",
+						"Scene":  "Global"
 					}
 				}
 			]
