@@ -43,6 +43,7 @@ namespace Physics
 		PhysicsBodyCollection FindBodiesContainingPos(const WorldPosition& wordlPos) const;
 
 		void AddBody(PhysicsBodyData& body);
+		void ClearAllBodies();
 
 		void UpdateStart(const float& deltaTime);
 		void UpdateEnd();

@@ -1,0 +1,25 @@
+#pragma once
+#include "PhysicsWorld.hpp"
+
+namespace SceneManagement
+{
+	class SceneManager;
+};
+
+namespace Physics
+{
+	class PhysicsManager
+	{
+	private:
+		SceneManagement::SceneManager& m_sceneManager;
+		Physics::PhysicsWorld m_physics;
+	public:
+
+	private:
+	public:
+		PhysicsManager(SceneManagement::SceneManager& sceneManager);
+
+		const Physics::PhysicsWorld& GetPhysicsWorld() const;
+		Physics::PhysicsWorld& GetPhysicsWorldMutable();
+	};
+}

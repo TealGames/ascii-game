@@ -31,12 +31,12 @@ using Json = nlohmann::json;
 const std::string Scene::SCENE_FILE_PREFIX = "scene_";
 
 Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& globalEntities) :
-	m_Layers{}, m_sceneName(""), m_scenePath(scenePath),
+	m_layers{}, m_sceneName(""), m_scenePath(scenePath),
 	m_localEntities(), m_localEntityIdLookup(), m_localEntityNameLookup(),//m_globalEntityLookup(globalEntities),
 	m_currentFrameDirtyComponents(0), m_entityMapper(),
 	m_mainCamera(nullptr), 
-	m_globalEntities(globalEntities),
-	m_PhysicsWorld()
+	m_globalEntities(globalEntities)
+	//m_physicsWorld()
 {
 	if (!Assert(std::filesystem::exists(scenePath), std::format("Tried to create a scene at path: {} "
 		"but that path does not exist", scenePath.string()))) 
@@ -54,9 +54,9 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 
 	//TODO: make it so that layers are not specific to a scene meaning the names are created in a spearate manager or elsewhere
 	//and then during this constructor they are passed and craeted so each scene has the same layers, but their own instances
-	m_Layers.emplace(RenderLayerType::Background, RenderLayer{});
-	m_Layers.emplace(RenderLayerType::Player, RenderLayer{});
-	m_Layers.emplace(RenderLayerType::UI, RenderLayer{});
+	m_layers.emplace(RenderLayerType::Background, RenderLayer{});
+	m_layers.emplace(RenderLayerType::Player, RenderLayer{});
+	m_layers.emplace(RenderLayerType::UI, RenderLayer{});
 	//LoadData();
 
 	//Log(std::format("New layer w: {} h: {}", std::to_string(newLayerW), std::to_string(newLayerH)));
@@ -288,7 +288,7 @@ void Scene::Deserialize(const Json& json)
 	if (delayedEntityDependencies.HasListeners()) delayedEntityDependencies.Invoke();
 	//Assert(false, std::format("After scene: {} was created: found: {}", m_sceneName, ToString()));
 }
-void Scene::LoadData()
+void Scene::Load()
 {
 	std::string currentLine = "";
 	std::string fullJson = "";
@@ -318,46 +318,59 @@ void Scene::LoadData()
 	//Assert(false, "ENDED LAODING SCENE");
 }
 
+void Scene::Unload()
+{
+	m_mainCamera = nullptr;
+	//m_physicsWorld.ClearAllBodies();
+
+	m_localEntityIdLookup = {};
+	m_localEntityNameLookup = {};
+	m_localEntities.clear();
+	m_localEntities.shrink_to_fit();
+
+	m_entityMapper.clear();
+}
+
 Json Scene::Serialize()
 {
 	//TODO: implmenet
 	return {};
 }
 
-void Scene::InitScene()
-{
-	for (auto& entity : m_localEntities)
-	{
-		if (PhysicsBodyData* maybeBody = entity.TryGetComponentMutable<PhysicsBodyData>())
-		{
-			m_PhysicsWorld.AddBody(*maybeBody);
-		}
-	}
-
-	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
-	{
-		if (PhysicsBodyData* maybeBody = entity.TryGetComponentMutable<PhysicsBodyData>())
-		{
-			m_PhysicsWorld.AddBody(*maybeBody);
-		}
-	}
-}
+//void Scene::InitScene()
+//{
+//	for (auto& entity : m_localEntities)
+//	{
+//		if (PhysicsBodyData* maybeBody = entity.TryGetComponentMutable<PhysicsBodyData>())
+//		{
+//			m_physicsWorld.AddBody(*maybeBody);
+//		}
+//	}
+//
+//	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
+//	{
+//		if (PhysicsBodyData* maybeBody = entity.TryGetComponentMutable<PhysicsBodyData>())
+//		{
+//			m_physicsWorld.AddBody(*maybeBody);
+//		}
+//	}
+//}
 
 std::vector<RenderLayer*> Scene::GetLayersMutable()
 {
-	if (m_Layers.empty()) return {};
+	if (m_layers.empty()) return {};
 
 	std::vector<RenderLayer*> layers = {};
-	for (auto& layer : m_Layers) layers.push_back(&(layer.second));
+	for (auto& layer : m_layers) layers.push_back(&(layer.second));
 	return layers;
 }
 
 std::vector<const RenderLayer*> Scene::GetLayers(const RenderLayerType& renderLayers) const
 {
-	if (m_Layers.empty()) return {};
+	if (m_layers.empty()) return {};
 
 	std::vector<const RenderLayer*> layers = {};
-	for (const auto& layer : m_Layers)
+	for (const auto& layer : m_layers)
 	{
 		if ((layer.first & renderLayers)!=0) layers.push_back(&(layer.second));
 	}
@@ -366,10 +379,10 @@ std::vector<const RenderLayer*> Scene::GetLayers(const RenderLayerType& renderLa
 
 std::vector<const RenderLayer*> Scene::GetAllLayers() const
 {
-	if (m_Layers.empty()) return {};
+	if (m_layers.empty()) return {};
 
 	std::vector<const RenderLayer*> layers = {};
-	for (const auto& layer : m_Layers)
+	for (const auto& layer : m_layers)
 	{
 		layers.push_back(&(layer.second));
 	}
@@ -380,7 +393,7 @@ void Scene::AddToLayer(const RenderLayerType& layers, TextBufferPosition& textBu
 {
 	if (layers == RenderLayerType::None) return;
 
-	for (auto& layer : m_Layers)
+	for (auto& layer : m_layers)
 	{
 		if ((layer.first & layers) == 0) continue;
 		layer.second.AddText(textBufferPos);
@@ -393,7 +406,7 @@ std::vector<TextBufferMixed*> Scene::GetLayerBufferMutable(const RenderLayerType
 	std::vector<TextBufferMixed*> buffers = {};
 	if (renderLayers == RenderLayerType::None) return buffers;
 
-	for (auto& layer : m_Layers)
+	for (auto& layer : m_layers)
 	{
 		if ((layer.first & renderLayers) == 0) continue;
 		buffers.push_back(&layer.second.GetBufferMutable());
@@ -403,7 +416,7 @@ std::vector<TextBufferMixed*> Scene::GetLayerBufferMutable(const RenderLayerType
 
 void Scene::ResetAllLayers()
 {
-	for (auto& layer : m_Layers) layer.second.ResetToDefault();
+	for (auto& layer : m_layers) layer.second.ResetToDefault();
 }
 
 EntityIDCollection::iterator Scene::GetLocalEntityIterator(const ECS::EntityID& id)
@@ -474,6 +487,21 @@ const std::vector<const ECS::Entity*> Scene::GetLocalEntities() const
 	for (const auto& localEntity : m_localEntities)
 		entities.push_back(&localEntity);
 
+	return entities;
+}
+
+std::vector<ECS::Entity*> Scene::GetAllEntitiesMutable()
+{
+	std::vector<ECS::Entity*> entities = {};
+	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
+	{
+		entities.push_back(&entity);
+	}
+
+	for (auto& entity : m_localEntities)
+	{
+		entities.push_back(&entity);
+	}
 	return entities;
 }
 
@@ -554,7 +582,7 @@ std::string Scene::ToStringLayers() const
 	//Log(std::format("Began to stirng alyers fro scene. first layer: {}", m_Layers[0].m_SquaredTextBuffer.GetSize().ToString()));
 	std::string result = "\n" + m_sceneName + ":\n";
 
-	for (const auto& layer : m_Layers)
+	for (const auto& layer : m_layers)
 	{
 		result += "\nLAYER: ";
 		Log(std::format("Display all scene layers at layer: {}", layer.second.ToString()));
@@ -590,14 +618,30 @@ bool Scene::HasDirtyComponents() const
 	return GetDirtyComponentCount() > 0;
 }
 
-const Physics::PhysicsWorld& Scene::GetPhysicsWorld() const
-{
-	return m_PhysicsWorld;
-}
+//const Physics::PhysicsWorld& Scene::GetPhysicsWorld() const
+//{
+//	return m_physicsWorld;
+//}
+//
+//Physics::PhysicsWorld& Scene::GetPhysicsWorldMutable()
+//{
+//	return m_physicsWorld;
+//}
 
-Physics::PhysicsWorld& Scene::GetPhysicsWorldMutable()
+bool Scene::Validate()
 {
-	return m_PhysicsWorld;
+	bool passesValidation = true;
+	for (auto& entity : m_localEntities)
+	{
+		if (!entity.Validate()) passesValidation = false;
+	}
+
+	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
+	{
+		if (!entity.Validate()) passesValidation = false;
+	}
+
+	return passesValidation;
 }
 
 std::string Scene::ToString() const
@@ -605,11 +649,10 @@ std::string Scene::ToString() const
 	std::vector<std::string> currentEntitiesStr = {};
 	for (const auto& entity : GetLocalEntities())
 	{
-		if (entity != nullptr)
-		{
-			currentEntitiesStr.push_back(entity->ToString());
-			//LogError(this, std::format("Found entity str: {}", entitiesStringified.back()));
-		}
+		if (entity == nullptr) continue;
+
+		currentEntitiesStr.push_back(entity->ToString());
+		//LogError(this, std::format("Found entity str: {}", entitiesStringified.back()));
 	}
 	std::string localEntitiesStr = Utils::ToStringIterable<std::vector<std::string>, std::string>(currentEntitiesStr);
 	

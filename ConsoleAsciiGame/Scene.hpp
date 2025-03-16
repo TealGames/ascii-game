@@ -14,6 +14,7 @@
 #include "Updateable.hpp"
 #include "Entity.hpp"
 #include "IJsonSerializable.hpp"
+#include "ILoadable.hpp"
 //#include "EntityMapper.hpp"
 #include "CameraData.hpp"
 #include "TransformData.hpp"
@@ -26,11 +27,11 @@
 using EntityNameCollection = std::unordered_map<std::string, ECS::Entity*>;
 using EntityIDCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
 constexpr std::uint8_t MAX_ENTITIES = 100;
-class Scene : public IJsonSerializable
+class Scene : public IJsonSerializable, public IValidateable, public ILoadable
 {
 private:
 	std::string m_sceneName;
-	std::unordered_map<RenderLayerType, RenderLayer> m_Layers;
+	std::unordered_map<RenderLayerType, RenderLayer> m_layers;
 
 	entt::registry m_entityMapper;
 	//This is where all the LOCAL entities are stored 
@@ -54,10 +55,7 @@ private:
 
 	int m_currentFrameDirtyComponents;
 
-	//TODO: right now the physics world does not really help us since it just stores physics bodies
-	//which we can retrieve from scene. This should be used to provide an effective and efficient traversal
-	//of data for physics simulations to really be useful
-	Physics::PhysicsWorld m_PhysicsWorld;
+	//Physics::PhysicsWorld m_physicsWorld;
 
 	const std::filesystem::path m_scenePath;
 
@@ -90,7 +88,7 @@ public:
 	/// <summary>
 	/// Will initialize the scene with deserialized entities and will initialize physics simulation
 	/// </summary>
-	void InitScene();
+	//void InitScene();
 
 	std::string GetName() const;
 	GlobalEntityManager& GetGlobalEntityManager();
@@ -120,8 +118,8 @@ public:
 	CameraData* TryGetMainCameraMutable();
 	const CameraData* TryGetMainCamera() const;
 
-	const Physics::PhysicsWorld& GetPhysicsWorld() const;
-	Physics::PhysicsWorld& GetPhysicsWorldMutable();
+	//const Physics::PhysicsWorld& GetPhysicsWorld() const;
+	//Physics::PhysicsWorld& GetPhysicsWorldMutable();
 
 	/// <summary>
 	/// Will return the total number of entities in the scene, including local and 
@@ -135,6 +133,7 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	const std::vector<const ECS::Entity*> GetAllEntities() const;
+	std::vector<ECS::Entity*> GetAllEntitiesMutable();
 	const std::vector<const ECS::Entity*> GetLocalEntities() const;
 	
 	ECS::Entity& CreateEntity(const std::string& name, TransformData& transform);
@@ -172,9 +171,13 @@ public:
 	}
 
 	void Deserialize(const Json& json) override;
-	void LoadData();
 
 	Json Serialize() override;
+
+	bool Validate() override;
+
+	void Load() override;
+	void Unload() override;
 
 	std::string ToString() const;
 };

@@ -27,6 +27,11 @@ namespace Physics
 		m_bodies.push_back(&body);
 	}
 
+	void PhysicsWorld::ClearAllBodies()
+	{
+		m_bodies = {};
+	}
+
 	PhysicsBodyCollection PhysicsWorld::FindBodiesContainingPos(const WorldPosition& worldPos) const
 	{
 		PhysicsBodyCollection bodiesFound = {};

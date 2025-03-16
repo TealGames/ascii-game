@@ -13,6 +13,7 @@
 #include "TransformData.hpp"
 #include "ComponentType.hpp"
 #include "Debug.hpp"
+#include "IValidateable.hpp"
 
 namespace ECS
 {
@@ -57,7 +58,7 @@ namespace ECS
 
 	//using ComponentCollectionType = std::unordered_map<ComponentType, ComponentID>;
 	using EntityID = entt::entity;
-	class Entity
+	class Entity : public IValidateable
 	{
 	private:
 		//EntityMapper& m_entityMapper;
@@ -187,14 +188,12 @@ namespace ECS
 		/// <returns></returns>
 		const std::vector<ComponentData*>& GetAllComponentsMutable() const;
 
+		bool Validate() override;
+
 		std::string ToString() const;
 		static std::string ToString(const EntityID& id);
 
 		bool operator==(const ECS::Entity& other) const;
-
-#ifdef ENABLE_JSON_LIB
-		friend void from_json(const Json& json, Entity& entity);
-#endif
 	};
 }
 

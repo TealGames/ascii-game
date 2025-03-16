@@ -2,6 +2,7 @@
 #include "MultiBodySystem.hpp"
 #include "ColliderOutlineBuffer.hpp"
 #include "LineBuffer.hpp"
+#include "PhysicsManager.hpp"
 
 namespace ECS
 {
@@ -10,12 +11,13 @@ namespace ECS
 	private:
 		ColliderOutlineBuffer m_colliderOutlineBuffer;
 		LineBuffer m_lineBuffer;
+		Physics::PhysicsManager& m_physicsManager;
 
 	public:
 
 	private:
 	public:
-		PhysicsBodySystem();
+		PhysicsBodySystem(Physics::PhysicsManager& physicsManager);
 		void SystemUpdate(Scene& scene, const float& deltaTime) override;
 
 		const ColliderOutlineBuffer& GetColliderBuffer() const;

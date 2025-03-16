@@ -13,6 +13,7 @@
 #include "AnimatorSystem.hpp"
 #include "SpriteAnimatorSystem.hpp"
 #include "PhysicsBodySystem.hpp"
+#include "PhysicsManager.hpp"
 #include "InputSystem.hpp"
 #include "InputManager.hpp"
 #include "PlayerSystem.hpp"
@@ -33,6 +34,7 @@ namespace Core
 	private:
 
 		SceneManagement::SceneManager m_sceneManager;
+		Physics::PhysicsManager m_physicsManager;
 		Input::InputManager m_inputManager;
 		GUISelectorManager m_guiSelectorManager;
 
@@ -75,6 +77,7 @@ namespace Core
 
 	private:
 		void Init();
+		void ValidateAll();
 		void Destroy();
 
 		/// <summary>

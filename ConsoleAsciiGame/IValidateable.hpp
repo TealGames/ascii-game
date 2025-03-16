@@ -1,7 +1,7 @@
 #pragma once
 struct IValidateable
 {
-	virtual ~IValidateable() = 0;
+	virtual ~IValidateable() = default;
 
 	/// <summary>
 	/// Returns true if was success and false if something went wrong

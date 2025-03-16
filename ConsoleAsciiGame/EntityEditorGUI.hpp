@@ -4,6 +4,7 @@
 #include "EntityGUI.hpp"
 #include "InputManager.hpp"
 #include "SceneManager.hpp"
+#include "PhysicsManager.hpp"
 
 class GUISelectorManager;
 
@@ -12,6 +13,7 @@ class EntityEditorGUI : IRenderable
 {
 private:
 	const Input::InputManager& m_inputManager;
+	Physics::PhysicsManager& m_physicsManager;
 	const SceneManagement::SceneManager& m_sceneManager;
 	GUISelectorManager& m_selectorManager;
 
@@ -26,7 +28,8 @@ public:
 
 private:
 public:
-	EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene, GUISelectorManager& selector);
+	EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene, 
+		Physics::PhysicsManager& manager, GUISelectorManager& selector);
 
 	void SetEntityGUI(ECS::Entity& entity);
 

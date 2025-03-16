@@ -7,7 +7,8 @@
 namespace SceneManagement
 {
 	SceneManager::SceneManager(const std::filesystem::path& allScenesDir) : 
-		m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager(), m_allScenePath(allScenesDir)
+		m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager(), m_allScenePath(allScenesDir), 
+		m_OnLoad(), m_OnSceneChange()
 		/*m_globalEntities{}, m_globalEntitiesLookup{}, m_globalEntityMapper()*/
 	{
 		
@@ -36,7 +37,8 @@ namespace SceneManagement
 		
 			for (auto& scene : m_allScenes)
 			{
-				scene.LoadData();
+				scene.Load();
+				m_OnLoad.Invoke(&scene);
 				Log(std::format("Loaded scene: {}", scene.GetName()));
 			}
 		}
@@ -72,7 +74,11 @@ namespace SceneManagement
 
 	void SceneManager::SetActiveScene(Scene* activeScene)
 	{
+		//TODO: this should unload the old active scene and then load the new one
+		//to allow for better memory usage and not having all of scenes loaded at once
+		//if (m_activeScene != nullptr) m_activeScene->Unload();
 		m_activeScene = activeScene;
+		m_OnSceneChange.Invoke(m_activeScene);
 		//Log(std::format("Set active scene to; {}", activeScene->ToStringLayers()));
 	}
 
@@ -113,6 +119,16 @@ namespace SceneManagement
 		if (!Assert(m_activeScene != nullptr,
 			"Tried to get active scene (immutable) but there is no active scene set")) return nullptr;
 		return m_activeScene;
+	}
+
+	bool SceneManager::ValidateAllScenes()
+	{
+		bool passesValidation = true;
+		for (auto& scene : m_allScenes)
+		{
+			if (!scene.Validate()) passesValidation = false;
+		}
+		return passesValidation;
 	}
 }
 

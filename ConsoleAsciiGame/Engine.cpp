@@ -52,6 +52,8 @@ namespace Core
 	//TODO: change the scene create entity function to not need to set the newly created transform to that entity 
 	// (instead it should be done in entity class by having the class itself set itself for the component)
 	//TODO: rather than each scene having its own physics world pheraps there should only be one main one that is stored here and it can manage adding and removing entities
+	//TODO: remove the scene name member from entity and instead try to find a way to group entities with scenes for validateing entities to be in the same scene/entity serialization
+	//TODO: main camera should not be set from scenes, but should be based on global camera system/manager
 
 	static const std::string SCENES_PATH = "scenes";
 	static const std::string INPUT_PROFILES_PATH = "input";
@@ -99,6 +101,7 @@ namespace Core
 	Engine::Engine() :
 		m_sceneManager(SCENES_PATH),
 		m_inputManager(INPUT_PROFILES_PATH),
+		m_physicsManager(m_sceneManager),
 		m_guiSelectorManager(m_inputManager),
 		m_transformSystem(),
 		m_uiSystem(),
@@ -107,7 +110,7 @@ namespace Core
 		//m_inputSystem(m_inputManager),
 		m_spriteAnimatorSystem(m_entityRendererSystem),
 		m_animatorSystem(*this),
-		m_physicsBodySystem(),
+		m_physicsBodySystem(m_physicsManager),
 		m_playerSystem(m_inputManager),
 		m_cameraSystem(&(m_physicsBodySystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
 		m_currentTime(std::chrono::high_resolution_clock().now()),
@@ -118,7 +121,7 @@ namespace Core
 		m_enableDebugInfo(false),
 		m_commandConsole(m_inputManager, m_guiSelectorManager),
 		m_enableCommandConsole(false),
-		m_entityEditor(m_inputManager, m_sceneManager, m_guiSelectorManager)
+		m_entityEditor(m_inputManager, m_sceneManager, m_physicsManager, m_guiSelectorManager)
 	{
 		Init(); 
 		InitJsonSerializers(m_sceneManager);
@@ -162,7 +165,7 @@ namespace Core
 			std::format("Tried to set the active scene to the first one, but failed!")))
 			return;
 
-		m_sceneManager.GetActiveSceneMutable()->InitScene();
+		//m_sceneManager.GetActiveSceneMutable()->InitScene();
 		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
 		LogError(std::format("Scene active: {}", m_sceneManager.GetActiveScene()->ToString()));
 
@@ -204,11 +207,18 @@ namespace Core
 			LogError(this, std::format("Entity: {} has fields: {}", entity->m_Name,
 				Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(entity->m_Transform.GetFields())));
 		}*/
+
+		ValidateAll();
 	}
 
 	Engine::~Engine()
 	{
 		m_commandConsole.DeletePrompts();
+	}
+
+	void Engine::ValidateAll()
+	{
+		m_sceneManager.ValidateAllScenes();
 	}
 
 	void Engine::InitConsoleCommands()
@@ -384,7 +394,7 @@ namespace Core
 		m_playerSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<0>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 		if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<0>().GetFrameInput().ToString()));
 
-		activeScene->GetPhysicsWorldMutable().UpdateStart(m_deltaTime);
+		m_physicsManager.GetPhysicsWorldMutable().UpdateStart(m_deltaTime);
 		if (m_enableDebugInfo)
 		{
 			m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
@@ -449,7 +459,7 @@ namespace Core
 		//else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
 
 		m_transformSystem.UpdateLastFramePos(*activeScene);
-		activeScene->GetPhysicsWorldMutable().UpdateEnd();
+		m_physicsManager.GetPhysicsWorldMutable().UpdateEnd();
 		if (m_enableDebugInfo) m_debugInfo.ClearProperties();
 
 		//Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));

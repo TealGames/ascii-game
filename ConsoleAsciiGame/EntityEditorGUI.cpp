@@ -13,8 +13,9 @@ const Color EntityEditorGUI::EDITOR_SECONDARY_COLOR = GRAY;
 
 static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = {0.8, 1};
 
-EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene, GUISelectorManager& selector)
-	: m_inputManager(input), m_sceneManager(scene), m_selectorManager(selector), 
+EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene, 
+	Physics::PhysicsManager& physics, GUISelectorManager& selector)
+	: m_inputManager(input), m_sceneManager(scene), m_physicsManager(physics), m_selectorManager(selector),
 	m_entityGUIs(), m_selectedEntity(m_entityGUIs.end()), m_defaultRenderInfo() 
 {
 	ScreenPosition topLeftPos = Conversions::NormalizedScreenToPosition(TOP_LEFT_POS_NORMALIZED);
@@ -47,7 +48,7 @@ void EntityEditorGUI::Update()
 
 		WorldPosition worldClickedPos = Conversions::ScreenToWorldPosition(*maybeCamera, mouseClickedPos);
 
-		auto entitiesWithinPos = m_sceneManager.GetActiveScene()->GetPhysicsWorld().FindBodiesContainingPos(worldClickedPos);
+		auto entitiesWithinPos = m_physicsManager.GetPhysicsWorld().FindBodiesContainingPos(worldClickedPos);
 		if (!entitiesWithinPos.empty())
 		{
 			ECS::Entity& selectedEntity = entitiesWithinPos[0]->GetEntitySafeMutable();

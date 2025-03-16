@@ -47,11 +47,11 @@ public:
 	/// Returns true if it successfully invoked 1+ listeners
 	/// </summary>
 	/// <returns></returns>
-	bool Invoke(const TArgs&... args)
+	bool Invoke(TArgs... args)
 	{
 		if (m_listeners.empty()) return false;
 
-		for (const ListenerType& listener : m_listeners)
+		for (ListenerType& listener : m_listeners)
 		{
 			listener(args...);
 		}

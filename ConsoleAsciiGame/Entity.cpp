@@ -61,6 +61,16 @@ namespace ECS
 		//return std::format("['{}' c:{}]", m_Name, componentsStr);
 	}
 
+	bool Entity::Validate()
+	{
+		bool passesValidation = true;
+		for (const auto& component : m_components)
+		{
+			if (!component->Validate()) passesValidation = false;
+		}
+		return passesValidation;
+	}
+
 	std::string Entity::ToString(const EntityID& id)
 	{
 		return std::to_string(static_cast<uint32_t>(id));

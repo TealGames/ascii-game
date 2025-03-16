@@ -9,6 +9,7 @@
 #include "EntityMapper.hpp"
 #include "TransformData.hpp"
 #include "GlobalEntityManager.hpp"
+#include "Event.hpp"
 
 namespace SceneManagement
 {
@@ -25,6 +26,9 @@ namespace SceneManagement
 		
 	public:
 		GlobalEntityManager m_GlobalEntityManager;
+
+		Event<void, Scene*> m_OnLoad;
+		Event<void, Scene*> m_OnSceneChange;
 
 	private:
 		void SetActiveScene(Scene* activeScene);
@@ -49,6 +53,8 @@ namespace SceneManagement
 
 		Scene* TryGetSceneWithNameMutable(const std::string& sceneName);
 		Scene* TryGetSceneWithIndexMutable(const int& sceneIndex);
+
+		bool ValidateAllScenes();
 	};
 }
 

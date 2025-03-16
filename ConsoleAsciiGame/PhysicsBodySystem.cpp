@@ -15,7 +15,8 @@ namespace ECS
 	static constexpr bool RENDER_COLLIDER_OUTLINES = true;
 	static constexpr bool DRAW_BODY_VELOCITY_VECTORS = true;
 
-	PhysicsBodySystem::PhysicsBodySystem() : m_colliderOutlineBuffer() {}
+	PhysicsBodySystem::PhysicsBodySystem(Physics::PhysicsManager& physicsManager) 
+		: m_colliderOutlineBuffer(), m_lineBuffer(), m_physicsManager(physicsManager) {}
 
 	void PhysicsBodySystem::SystemUpdate(Scene& scene, const float& deltaTime)
 	{
@@ -24,39 +25,39 @@ namespace ECS
 #endif 
 
 		//TODO: when physics world provides optimization then use it
-		Physics::PhysicsWorld& world = scene.GetPhysicsWorldMutable();
-		auto& bodies = world.GetBodiesMutable();
-
-		//TODO: this could probably be optimized to not clear static objects (ones that do not move)
 		if (!RENDER_COLLIDER_OUTLINES) return;
 		m_colliderOutlineBuffer.ClearAll();
 		m_lineBuffer.clear();
 
 		CameraData* mainCamera = scene.TryGetMainCameraMutable();
-		scene.OperateOnComponents<PhysicsBodyData>(
-			[this, &scene, &deltaTime, &mainCamera](PhysicsBodyData& body, ECS::Entity& entity)-> void
+		auto& bodies = m_physicsManager.GetPhysicsWorldMutable().GetBodiesMutable();
+		ECS::Entity* entity = nullptr;
+		for (auto& body : bodies)
+		{
+			if (body == nullptr) continue;
+
+			entity = &(body->GetEntitySafeMutable());
+			if (RENDER_COLLIDER_OUTLINES)
 			{
-				if (RENDER_COLLIDER_OUTLINES)
-				{
-					if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
-						"but the scene:{} has no active camera!", entity.GetName(), scene.GetName()))) return;
+				if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
+					"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;
 
-					WorldPosition topLeftColliderPos = body.GetAABBTopLeftWorldPos();
-					//TODO: the camera should convert to screen pos not here
-					ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(*mainCamera, topLeftColliderPos);
-					/*LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}", 
-						entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
+				WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
+				//TODO: the camera should convert to screen pos not here
+				ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(*mainCamera, topLeftColliderPos);
+				/*LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}",
+					entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
 
-					m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body.GetAABB().GetSize(), topLeftScreenPos));
-				}
+				m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body->GetAABB().GetSize(), topLeftScreenPos));
+			}
 
-				float velocityMagnitude = body.GetVelocity().GetMagnitude();
-				if (DRAW_BODY_VELOCITY_VECTORS && !Utils::ApproximateEqualsF(velocityMagnitude, 0))
-				{
-					m_lineBuffer.emplace_back(entity.m_Transform.m_Pos, 
-						GetVectorEndPoint(entity.m_Transform.m_Pos, body.GetVelocity()));
-				}
-			});
+			float velocityMagnitude = body->GetVelocity().GetMagnitude();
+			if (DRAW_BODY_VELOCITY_VECTORS && !Utils::ApproximateEqualsF(velocityMagnitude, 0))
+			{
+				m_lineBuffer.emplace_back(entity->m_Transform.m_Pos,
+					GetVectorEndPoint(entity->m_Transform.m_Pos, body->GetVelocity()));
+			}
+		}
 	}
 
 	const ColliderOutlineBuffer& PhysicsBodySystem::GetColliderBuffer() const
