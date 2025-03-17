@@ -2,6 +2,7 @@
 #include "AnimatorData.hpp"
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
+#include "JsonSerializers.hpp"
 
 AnimatorData::AnimatorData() : AnimatorData({}, 0, 1, false) {}
 
@@ -60,23 +61,16 @@ void AnimatorData::Deserialize(const Json& json)
 {
 	m_Loop = json.at("Loop").get<bool>();
 	SetAnimationSpeed(json.at("Speed").get<float>());
+	m_AnimationLength = json.at("Time").get<float>();
+	m_Properties = json.at("Properties").get<std::vector<AnimationPropertyVariant>>();
 }
 Json AnimatorData::Serialize()
 {
-	return { {"Loop", m_Loop}, {"Speed", m_AnimationSpeed}, {"Length", m_AnimationLength}};
+	return { {"Loop", m_Loop}, {"Speed", m_AnimationSpeed}, {"Time", m_AnimationLength}, {"Properties", m_Properties}};
 }
 
 std::string AnimatorData::ToString() const
 {
 	return std::format("[Animator Loop:{} Speed:{}]", 
 		std::to_string(m_Loop), std::to_string(m_AnimationSpeed));
-}
-
-void from_json(const Json& json, AnimationPropertyVariant& var)
-{
-
-}
-void to_json(Json& json, const AnimationPropertyVariant& var)
-{
-
 }

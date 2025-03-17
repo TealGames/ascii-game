@@ -8,6 +8,9 @@
 #include "SerializableEntity.hpp"
 #include "Entity.hpp"
 #include "Scene.hpp"
+#include "AnimatorData.hpp"
+#include "ComponentFieldReference.hpp"
+#include "SerializableField.hpp"
 #include <functional>
 #include <type_traits>
 
@@ -49,7 +52,42 @@ void from_json(const Json& json, SerializableEntity& serializableEntity);
 void to_json(Json& json, const SerializableEntity& serializableEntity);
 
 ECS::Entity* TryDeserializeEntity(const Json& json);
-Json TrySerializeEntity(const ECS::Entity* entity, const Scene* entityScene);
+Json TrySerializeEntity(const ECS::Entity* entity);
+
+void from_json(const Json& json, SerializableField& serializableField);
+void to_json(Json& json, const SerializableField& serializableField);
+
+void from_json(const Json& json, ComponentFieldReference& fieldReference);
+void to_json(Json& json, const ComponentFieldReference& fieldReference);
+
+void from_json(const Json& json, AnimationPropertyVariant& var);
+void to_json(Json& json, const AnimationPropertyVariant& var);
+
+template<typename T>
+void from_json(const Json& json, AnimationPropertyKeyframe<T>& var)
+{
+	float time = json.at("Time").get<float>();
+	T value = json.at("Value").get<T>();
+
+	var = AnimationPropertyKeyframe<T>(value, time);
+}
+template<typename T>
+void to_json(Json& json, const AnimationPropertyKeyframe<T>& var)
+{
+	json = { {"Time", var.GetTime()}, {"Value", var.GetValue()}};
+}
+
+template<typename T>
+void from_json(const Json& json, AnimationProperty<T>& property)
+{
+	std::vector<AnimationPropertyKeyframe<T>> keyframes = json.at("Keyframes").get< std::vector<AnimationPropertyKeyframe<T>>>();
+	property = AnimationProperty<T>(json.at("FieldRef").at<ComponentFieldReference>(), keyframes);
+}
+template<typename T>
+void to_json(Json& json, const AnimationProperty<T>& property)
+{
+	json = { {"Keyframes", property.m_Keyframes}, {"FieldRef", property.m_ComponentFieldRef}};
+}
 
 template<typename T>
 std::optional<T> TryDeserializeOptional(const Json& json, 

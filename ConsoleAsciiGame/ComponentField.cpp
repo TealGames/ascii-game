@@ -26,6 +26,7 @@ const std::type_info& ComponentField::GetCurrentType() const
 {
 	if (IsCurrentType<int>()) return typeid(int);
 	else if (IsCurrentType<float>()) return typeid(float);
+	else if (IsCurrentType<std::uint8_t>()) return typeid(std::uint8_t);
 	else if (IsCurrentType<bool>()) return typeid(bool);
 	else if (IsCurrentType<std::string>()) return typeid(std::string);
 	else if (IsCurrentType<Vec2>()) return typeid(Vec2);
@@ -44,6 +45,9 @@ std::string ComponentField::ToString() const
 	else if (IsCurrentType<float>())
 		valueText = std::to_string(*(TryGetValue<float>()));
 
+	else if (IsCurrentType<std::uint8_t>())
+		valueText = std::to_string(*(TryGetValue<std::uint8_t>()));
+
 	else if (IsCurrentType<bool>())
 		valueText = std::to_string(*(TryGetValue<bool>()));
 
@@ -56,5 +60,5 @@ std::string ComponentField::ToString() const
 	else if (IsCurrentType<Vec2Int>())
 		valueText = (TryGetValue<Vec2Int>())->ToString();
 
-	return std::format("[Field:{}, Value:{}", m_FieldName, valueText);
+	return std::format("[Field:{}, Value:{}]", m_FieldName, valueText);
 }

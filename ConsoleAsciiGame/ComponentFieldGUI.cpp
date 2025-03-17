@@ -33,7 +33,7 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
 		std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
 
-	if (m_fieldInfo.IsCurrentType<int>())
+	if (m_fieldInfo.IsCurrentType<int>() || m_fieldInfo.IsCurrentType<std::uint8_t>())
 	{
 		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Integer, fieldFlags, guiSettings));
 	}
@@ -81,6 +81,10 @@ void ComponentFieldGUI::SetFieldToInternal()
 	if (m_fieldInfo.IsCurrentType<int>())
 	{
 		m_inputFields[0].OverrideInput(std::to_string(*(m_fieldInfo.TryGetValue<int>())));
+	}
+	else if (m_fieldInfo.IsCurrentType<std::uint8_t>())
+	{
+		m_inputFields[0].OverrideInput(std::to_string(*(m_fieldInfo.TryGetValue<std::uint8_t>())));
 	}
 	else if (m_fieldInfo.IsCurrentType<float>())
 	{
@@ -156,6 +160,13 @@ void ComponentFieldGUI::SetInternalWithInput()
 		LogError("REAHCED INT");
 		//LogError(std::format("Setting internal value with: {}", std::to_string(m_inputFields[0].GetIntInput())));
 		m_fieldInfo.TrySetValue<int>(m_inputFields[0].GetIntInput());
+	}
+	else if (m_fieldInfo.IsCurrentType<std::uint8_t>())
+	{
+		LogError("REAHCED UNISGNED INT");
+		//LogError(std::format("Setting internal value with: {}", std::to_string(m_inputFields[0].GetIntInput())));
+		std::uint8_t convertedValue = static_cast<std::uint8_t>(std::abs(m_inputFields[0].GetIntInput()));
+		m_fieldInfo.TrySetValue<std::uint8_t>(convertedValue);
 	}
 	else if (m_fieldInfo.IsCurrentType<float>())
 	{

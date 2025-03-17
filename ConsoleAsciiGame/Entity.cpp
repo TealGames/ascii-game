@@ -42,6 +42,33 @@ namespace ECS
 		return m_sceneName == GLOBAL_SCENE_NAME;
 	}
 
+	const ComponentData* Entity::TryGetComponentAtIndex(const size_t& index) const
+	{
+		if (index < 0 || index >= m_components.size()) 
+			return nullptr;
+
+		return m_components[index];
+	}
+	ComponentData* Entity::TryGetComponentAtIndexMutable(const size_t& index)
+	{
+		if (index < 0 || index >= m_components.size()) 
+			return nullptr;
+
+		return m_components[index];
+	}
+	size_t Entity::TryGetIndexOfComponent(const ComponentData* targetComponent) const
+	{
+		size_t index = 0;
+		for (const auto& component : m_components)
+		{
+			if (component == targetComponent) 
+				return index;
+
+			index++;
+		}
+		return -1;
+	}
+
 	std::string Entity::ToString() const
 	{
 		std::string componentNames = "Components: ";

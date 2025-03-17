@@ -37,8 +37,8 @@ namespace ECS
 						{
 							using PropertyConvertedType = std::remove_reference_t<decltype(value)>;
 							using ExtractedType = AnimationPropertyType<PropertyConvertedType>::Type;
-							/*Log(LogType::Warning, std::format("Trying to run animator with property variant value; {} integral: {}", 
-								typeid(PropertyConvertedType).name(), typeid(ExtractedType).name()));*/
+							LogError(std::format("Trying to run animator with property variant value; {} integral: {}", 
+								typeid(PropertyConvertedType).name(), typeid(ExtractedType).name()));
 
 							AnimationProperty<ExtractedType>* maybeProperty = std::get_if<AnimationProperty<ExtractedType>>(&property);
 							if (!Assert(this, maybeProperty != nullptr, std::format("Tried to get the current type in variant as: {} "
@@ -65,9 +65,10 @@ namespace ECS
 
 							if (std::is_same_v<ExtractedType, int> || std::is_same_v<ExtractedType, float> || std::is_same_v<ExtractedType, std::uint8_t>)
 							{
-								maybeProperty->m_ComponentPropertyRef = static_cast<ExtractedType>(std::lerp(static_cast<double>(currentFrame.GetValue()),
+								ExtractedType convertedLerpedValue = static_cast<ExtractedType>(std::lerp(static_cast<double>(currentFrame.GetValue()),
 									static_cast<double>(nextFrame.GetValue()), lerpVal));
-								maybeProperty->m_ComponentDataMutationFlagRef = true;
+								maybeProperty->TrySetValue(convertedLerpedValue);
+								maybeProperty->m_ComponentFieldRef.GetComponentDataMutable()->m_MutatedThisFrame = true;
 							}
 							else
 							{

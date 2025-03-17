@@ -5,9 +5,6 @@
 #include <optional>
 #include <string>
 #include "Scene.hpp"
-#include "Entity.hpp"
-#include "EntityMapper.hpp"
-#include "TransformData.hpp"
 #include "GlobalEntityManager.hpp"
 #include "Event.hpp"
 
@@ -17,6 +14,7 @@ namespace SceneManagement
 	{
 	private:
 		Scene* m_activeScene;
+		//TODO: sicne we may reach a poitner with many scenes, maybe we should make this a map with scene names
 		std::vector<Scene> m_allScenes;
 		std::filesystem::path m_allScenePath;
 
@@ -52,7 +50,11 @@ namespace SceneManagement
 		bool TrySetActiveScene(const int& sceneIndex);
 
 		Scene* TryGetSceneWithNameMutable(const std::string& sceneName);
+		const Scene* TryGetSceneWithName(const std::string& sceneName) const;
 		Scene* TryGetSceneWithIndexMutable(const int& sceneIndex);
+
+		const ECS::Entity* TryGetEntity(const std::string& sceneName, const std::string& entityName) const;
+		ECS::Entity* TryGetEntityMutable(const std::string& sceneName, const std::string& entityName);
 
 		bool ValidateAllScenes();
 	};

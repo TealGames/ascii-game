@@ -31,7 +31,8 @@ LightSourceData::LightSourceData(const std::uint8_t& lightRadius, const RenderLa
 
 void LightSourceData::InitFields()
 {
-	m_Fields = {ComponentField("FalloffStrength", &m_FalloffStrength)};
+	m_Fields = {ComponentField("FalloffStrength", &m_FalloffStrength), 
+		ComponentField("Radius", &m_LightRadius), ComponentField("Intensity", &m_Intensity)};
 }
 
 std::string LightSourceData::ToString() const

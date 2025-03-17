@@ -30,7 +30,7 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorM
 	/*if (component->GetEntitySafe().m_Name=="player") Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(),
 		std::get<Vec2*>(component->GetFieldsMutable()[0].m_Value)->ToString())); */
 
-	component->InitFields();
+	//component->InitFields();
 
 	/*Assert(false, std::format("Init fields of comp: {} for entity: {} with; {}",
 			GetComponentName(), GetEntityGUISafe().GetEntity().m_Name, 

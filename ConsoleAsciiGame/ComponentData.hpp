@@ -35,7 +35,13 @@ public:
 
 private:
 public:
-	//TODOL: also add a static flag so we can optimize some components
+	
+	/// <summary>
+	///	If true, it signifies that this component data has been mutatated this frame. 
+	/// This flag is useful for component systems that may use last frame buffers for
+	/// optimization and can be checked to make sure we do not use last frame data if it has changed 
+	/// this past frame
+	/// </summary>
 	bool m_MutatedThisFrame;
 
 	//Guaranteed to not be nullptr (but cant be a ref to allow it to be set
@@ -51,8 +57,17 @@ public:
 
 	std::vector<ComponentField>& GetFieldsMutable();
 
+	/// <summary>
+	/// A function that creates the fields that can be used by outside sources.
+	/// Note: this must be separate from constructor because base class constructor defaults initializes them
+	/// (to prevent derived setting it and being reverted by base class constructor) and because polymorphism
+	/// is not established until AFTER constructors are done (therefore base class cannot invoke it)
+	/// </summary>
 	virtual void InitFields();
 	const std::vector<ComponentField>& GetFields() const;
+	ComponentField* TryGetFieldMutable(const std::string& name);
+	const ComponentField* TryGetField(const std::string& name) const;
+	std::string ToStringFields() const;
 
 	HighestDependecyLevel GetDependencyLevel() const;
 

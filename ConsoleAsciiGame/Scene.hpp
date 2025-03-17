@@ -154,6 +154,8 @@ public:
 	/// <returns></returns>
 	ECS::Entity* TryGetEntityMutable(const std::string& name, const bool& ignoreCase= false);
 
+	const ECS::Entity* TryGetEntity(const std::string& name, const bool& ignoreCase = false) const;
+
 	template<typename T>
 	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)
 	{

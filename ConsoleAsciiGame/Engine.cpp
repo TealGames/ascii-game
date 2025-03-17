@@ -131,6 +131,7 @@ namespace Core
 
 		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData(Vec2{ 10, 5 }));
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(1, Vec2(2, 2), Vec2(0, 0), GRAVITY, 20));
+
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
 
 		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
@@ -138,18 +139,26 @@ namespace Core
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
 		//Log("CREATING PLAYER RB");
-		
+		//ComponentData* ptr = &lightSource;
+		//Assert(false, std::format("Light source: {}", typeid(*ptr).name()));
+		//Assert(false, std::format("Light source fields: {}", lightSource.ToStringFields()));
+
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },visualPreset), RenderLayerType::Player});
 
-		/*playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
-				AnimationProperty<std::uint8_t>(lightSource.m_LightRadius, lightSource.m_MutatedThisFrame, {
+		ComponentFieldReference lightRadiusref = ComponentFieldReference(&lightSource, "Radius");
+		//Assert(false, std::format("Entity light radius: {}", lightRadiusref.m_Entity->ToString()));
+		ComponentField& field= lightRadiusref.GetComponentFieldSafeMutable();
+		//Assert(false, std::format("Light source ref field: {}", field.ToString()));
+
+		playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
+				AnimationProperty<std::uint8_t>(lightRadiusref, {
 				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(8), 0),
 				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1)})}, 1, 1, true));
 
 		playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData(
 			{ SpriteAnimationFrame(0, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, 'O'))}}, visualPreset)),
-			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));*/
+			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));
 
 		m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
 

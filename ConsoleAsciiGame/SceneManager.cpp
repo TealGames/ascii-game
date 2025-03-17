@@ -64,6 +64,16 @@ namespace SceneManagement
 		return nullptr;
 	}
 
+	const Scene* SceneManager::TryGetSceneWithName(const std::string& sceneName) const
+	{
+		for (const auto& scene : m_allScenes)
+		{
+			if (scene.GetName() == sceneName)
+				return &scene;
+		}
+		return nullptr;
+	}
+
 	Scene* SceneManager::TryGetSceneWithIndexMutable(const int& sceneIndex)
 	{
 		if (sceneIndex < 0 || sceneIndex >= m_allScenes.size()) return nullptr;
@@ -119,6 +129,21 @@ namespace SceneManagement
 		if (!Assert(m_activeScene != nullptr,
 			"Tried to get active scene (immutable) but there is no active scene set")) return nullptr;
 		return m_activeScene;
+	}
+
+	const ECS::Entity* SceneManager::TryGetEntity(const std::string& sceneName, const std::string& entityName) const
+	{
+		const Scene* maybeScene = TryGetSceneWithName(sceneName);
+		if (maybeScene == nullptr) return nullptr;
+
+		return maybeScene->TryGetEntity(entityName);
+	}
+	ECS::Entity* SceneManager::TryGetEntityMutable(const std::string& sceneName, const std::string& entityName)
+	{
+		Scene* maybeScene = TryGetSceneWithNameMutable(sceneName);
+		if (maybeScene == nullptr) return nullptr;
+
+		return maybeScene->TryGetEntityMutable(entityName);
 	}
 
 	bool SceneManager::ValidateAllScenes()

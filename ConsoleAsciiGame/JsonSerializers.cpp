@@ -252,14 +252,84 @@ ECS::Entity* TryDeserializeEntity(const Json& json)
 	//LogError(std::format("Deserialized json: {} to entity: {}", JsonUtils::ToStringProperties(json), maybeEntity.value()->ToString()));
 	return maybeEntity.value();
 }
-Json TrySerializeEntity(const ECS::Entity* entity, const Scene* entityScene)
+Json TrySerializeEntity(const ECS::Entity* entity)
 {
 	return TrySerializeOptional<const ECS::Entity*>(entity == nullptr ? std::nullopt : std::make_optional(entity), 
-		[&entityScene](const ECS::Entity* entity)->Json 
+		[](const ECS::Entity* entity)->Json 
 		{
-			SerializableEntity serializedEntity= { entity->GetName(), 
-			entityScene != nullptr ? entityScene->GetName() : ECS::Entity::GLOBAL_SCENE_NAME};
-			
+			SerializableEntity serializedEntity= { entity->GetName(), entity->GetSceneName()};
 			return { serializedEntity };
 		});
+}
+
+void from_json(const Json& json, SerializableField& serializableField)
+{
+	serializableField = SerializableField(json.at("Scene").get<std::string>(), json.at("Entity").get<std::string>(), 
+						json.at("ComponentIndex").get<std::uint8_t>(), json.at("Field").get<std::string>());
+}
+void to_json(Json& json, const SerializableField& serializableField)
+{
+	json = { {"Scene", serializableField.m_SerializedEntity.m_SceneName}, {"Entity", serializableField.m_SerializedEntity.m_SceneName}, 
+			{"ComponentIndex", serializableField.m_ComponentIndex}, {"Field", serializableField.m_FieldName}};
+}
+
+void from_json(const Json& json, ComponentFieldReference& fieldReference)
+{
+	SerializableField field = json.get<SerializableField>();
+	ECS::Entity* maybeEntity = SceneManager->TryGetEntityMutable(field.m_SerializedEntity.m_SceneName, field.m_SerializedEntity.m_EntityName);
+	if (maybeEntity == nullptr) return;
+
+	fieldReference = ComponentFieldReference(*maybeEntity, field.m_ComponentIndex, field.m_FieldName);
+}	
+void to_json(Json& json, const ComponentFieldReference& fieldReference)
+{
+	const ECS::Entity& entity = fieldReference.GetEntitySafe();
+	SerializableField field = SerializableField(entity.GetSceneName(), entity.GetName(), fieldReference.m_ComponentIndex, fieldReference.GetFieldName());
+	json = { field };
+}
+
+void from_json(const Json& json, AnimationPropertyVariant& variant)
+{
+	std::string propertyType = json.at("Type").get<std::string>();
+	if (propertyType == Utils::GetTypeName<int>())
+	{
+		variant = json.at("Property").get<AnimationProperty<int>>();
+	}
+	else if (propertyType == Utils::GetTypeName<float>())
+	{
+		variant = json.at("Property").get<AnimationProperty<float>>();
+	}
+	else if (propertyType == Utils::GetTypeName<std::uint8_t>())
+	{
+		variant = json.at("Property").get<AnimationProperty<std::uint8_t>>();
+	}
+	else
+	{
+		Assert(false, std::format("Tried to deserialize json:{} to animtion property variant, "
+			"but could not find actions for type:{}", JsonUtils::ToStringProperties(json), propertyType));
+	}
+}
+void to_json(Json& json, const AnimationPropertyVariant& var)
+{
+	if (std::holds_alternative<AnimationProperty<int>>(var))
+	{
+		json = { {"Type", Utils::GetTypeName<int>() }, 
+			{"Property", std::any_cast<AnimationProperty<int>>(var)}};
+	}
+	else if (std::holds_alternative<AnimationProperty<float>>(var))
+	{
+		json = { {"Type", Utils::GetTypeName<float>() },
+			   {"Property", std::any_cast<AnimationProperty<float>>(var)} };
+
+	}
+	else if (std::holds_alternative<AnimationProperty<std::uint8_t>>(var))
+	{
+		json = { {"Type", Utils::GetTypeName<std::uint8_t>() },
+			{"Property", std::any_cast<AnimationProperty<std::uint8_t>>(var)} };
+	}
+	else
+	{
+		Assert(false, std::format("Tried to serialize animation property variatn to json, "
+			"but could not find actions for its type"));
+	}
 }

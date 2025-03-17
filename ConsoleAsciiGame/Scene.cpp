@@ -557,24 +557,41 @@ ECS::Entity* Scene::TryGetEntityMutable(const std::string& name, const bool& ign
 {
 	std::string targetName = ignoreCase ? Utils::StringUtil(name).ToLowerCase().ToString() : name;
 	std::string currentLowercaseName = "";
-	LogError(std::format("Trying to look for entity: {} -> {} ignorecase: {}", name, targetName, std::to_string(ignoreCase)));
+	//LogError(std::format("Trying to look for entity: {} -> {} ignorecase: {}", name, targetName, std::to_string(ignoreCase)));
 	for (auto& localEntity : m_localEntities)
 	{
 		if (ignoreCase)
 		{
 			currentLowercaseName = Utils::StringUtil(localEntity.GetName()).ToLowerCase().ToString();
-			LogError(std::format("Found local entity with name:{} when looking:{} ==: {}",
-				currentLowercaseName, targetName, std::to_string(currentLowercaseName== targetName)));
+			/*LogError(std::format("Found local entity with name:{} when looking:{} ==: {}",
+				currentLowercaseName, targetName, std::to_string(currentLowercaseName== targetName)));*/
 			if (currentLowercaseName == targetName) return &localEntity;
 		}
 		else if (localEntity.GetName() == targetName)
 			return &localEntity;
 	}
-	//Assert(false, std::format("Poop"));
-
 	//Note: we do NOT need to do ignore case for global entities since they already have unique
 	//names so their names already are cleaned to be as simple as possible
 	return m_globalEntities.TryGetGlobalEntityMutable(name);
+}
+
+const ECS::Entity* Scene::TryGetEntity(const std::string& name, const bool& ignoreCase) const
+{
+	std::string targetName = ignoreCase ? Utils::StringUtil(name).ToLowerCase().ToString() : name;
+	std::string currentLowercaseName = "";
+	for (auto& localEntity : m_localEntities)
+	{
+		if (ignoreCase)
+		{
+			currentLowercaseName = Utils::StringUtil(localEntity.GetName()).ToLowerCase().ToString();
+			if (currentLowercaseName == targetName) return &localEntity;
+		}
+		else if (localEntity.GetName() == targetName)
+			return &localEntity;
+	}
+	//Note: we do NOT need to do ignore case for global entities since they already have unique
+	//names so their names already are cleaned to be as simple as possible
+	return m_globalEntities.TryGetGlobalEntity(name);
 }
 
 std::string Scene::ToStringLayers() const

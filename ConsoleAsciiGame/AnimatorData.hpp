@@ -9,6 +9,7 @@
 #include <type_traits>
 #include "HelperFunctions.hpp"
 #include "ComponentData.hpp"
+#include "ComponentFieldReference.hpp"
 
 template<typename T>
 class AnimationPropertyKeyframe
@@ -38,11 +39,27 @@ struct AnimationProperty
 {
 	std::vector<AnimationPropertyKeyframe<T>> m_Keyframes;
 	size_t m_KeyframeIndex;
-	T& m_ComponentPropertyRef;
-	bool& m_ComponentDataMutationFlagRef;
+	ComponentFieldReference m_ComponentFieldRef;
+	//T& m_ComponentPropertyRef;
+	//bool& m_ComponentDataMutationFlagRef;
 
-	AnimationProperty(T& compoenentPropertyRef, bool& componentDataMutationRef, const std::vector<AnimationPropertyKeyframe<T>> keyframes) :
-		m_ComponentPropertyRef(compoenentPropertyRef), m_ComponentDataMutationFlagRef(componentDataMutationRef), m_Keyframes(keyframes), m_KeyframeIndex(0) {}
+
+	/*AnimationProperty(T& compoenentPropertyRef, bool& componentDataMutationRef, const std::vector<AnimationPropertyKeyframe<T>> keyframes) :
+		m_ComponentPropertyRef(compoenentPropertyRef), m_ComponentDataMutationFlagRef(componentDataMutationRef), m_Keyframes(keyframes), m_KeyframeIndex(0) {}*/
+
+	AnimationProperty() : AnimationProperty({}, {}) {}
+
+	AnimationProperty(const ComponentFieldReference& fieldRef, const std::vector<AnimationPropertyKeyframe<T>>& keyframes) :
+		m_ComponentFieldRef(fieldRef), m_Keyframes(keyframes), m_KeyframeIndex(0) 
+	{
+		//TODO: make sure the field reference type is the same as the t type
+	}
+
+	bool TrySetValue(T value)
+	{
+		ComponentField& field = m_ComponentFieldRef.GetComponentFieldSafeMutable();
+		return field.TrySetValue<T>(value);
+	}
 
 	std::string ToString() const
 	{
@@ -106,7 +123,4 @@ struct AnimationPropertyType<AnimationProperty<T>>
 {
 	using Type = T;
 };
-
-void from_json(const Json& json, AnimationPropertyVariant& var);
-void to_json(Json& json, const AnimationPropertyVariant& var);
 

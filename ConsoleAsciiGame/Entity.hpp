@@ -110,9 +110,11 @@ namespace ECS
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
 			T& result= m_entityMapper.emplace<T>(m_Id, std::forward<Args>(args)...);
-			ComponentData& componentData = static_cast<ComponentData&>(result);
-			componentData.m_Entity = this;
-			m_components.push_back(&componentData);
+			ComponentData* componentData = &result;
+			componentData->m_Entity = this;
+			componentData->InitFields();
+
+			m_components.push_back(componentData);
 			return result;
 		}
 
@@ -130,9 +132,11 @@ namespace ECS
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
 			T& result= m_entityMapper.emplace<T>(m_Id);
-			ComponentData& componentData = static_cast<ComponentData&>(result);
-			componentData.m_Entity = this;
-			m_components.push_back(&componentData);
+			ComponentData* componentData = &result;
+			componentData->m_Entity = this;
+			componentData->InitFields();
+
+			m_components.push_back(componentData);
 			return result;
 		}
 
@@ -150,10 +154,19 @@ namespace ECS
 				"but it already has this type (and duplicates are not allowed)", typeid(T).name(),
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
-			T& result = m_entityMapper.emplace_or_replace<T>(m_Id, component);
+			/*
+			T& result = m_entityMapper.emplace<T>(m_Id);
 			ComponentData& componentData = static_cast<ComponentData&>(result);
 			componentData.m_Entity = this;
 			m_components.push_back(&componentData);
+			*/
+
+			T& result = m_entityMapper.emplace_or_replace<T>(m_Id, component);
+			ComponentData* componentData = &result;
+			componentData->m_Entity = this;
+			componentData->InitFields();
+
+			m_components.push_back(componentData);
 			return result;
 		}
 
@@ -179,6 +192,10 @@ namespace ECS
 		{
 			return m_entityMapper.try_get<T>(m_Id);
 		}
+
+		const ComponentData* TryGetComponentAtIndex(const size_t& index) const;
+		ComponentData* TryGetComponentAtIndexMutable(const size_t& index);
+		size_t TryGetIndexOfComponent(const ComponentData* component) const;
 
 		/// <summary>
 		/// Will return all components as base type for this entity. 

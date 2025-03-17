@@ -7,6 +7,7 @@
 #include <typeinfo>
 #include <functional>
 #include <optional>
+#include <cstdint>
 
 enum class ComponentFieldType
 {
@@ -18,9 +19,9 @@ enum class ComponentFieldType
 
 //TODO: ideally we would not use a direct value but rather a function to set those values to add some abstraction
 //and allow some clamping or other import actions to be taken if neccessary
-using ComponentFieldVariant = std::variant<std::string*, int*, float*, bool*, Vec2*, Vec2Int*>;
+using ComponentFieldVariant = std::variant<std::string*, int*, float*, std::uint8_t*, bool*, Vec2*, Vec2Int*>;
 using ComponentFieldSetAction = std::variant<std::function<void(std::string)>, std::function<void(int)>,
-	std::function<void(float)>, std::function<void(bool)>, std::function<void(Vec2)>, std::function<void(Vec2Int)>>;
+	std::function<void(float)>, std::function<void(std::uint8_t)>, std::function<void(bool)>, std::function<void(Vec2)>, std::function<void(Vec2Int)>>;
 
 struct ComponentField
 {
