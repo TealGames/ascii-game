@@ -99,6 +99,30 @@ void to_json(Json& json, const Color& color)
 	json= { {"R", color.r}, {"G", color.g}, {"B", color.b}, {"A", color.a}};
 }
 
+void from_json(const Json& json, ColorGradientKeyFrame& gradientFrame)
+{
+	const char* COLOR_PROPERTY = "Color";
+	const char* LOCATION_PROPERTY = "Location";
+	if (!HasRequiredProperties(json, { COLOR_PROPERTY , LOCATION_PROPERTY })) 
+		return;
+
+	gradientFrame = ColorGradientKeyFrame(json.at(COLOR_PROPERTY).get<Color>(), 
+										  json.at(LOCATION_PROPERTY).get<float>());
+}
+void to_json(Json& json, const ColorGradientKeyFrame& gradientFrame)
+{
+	json = { {"Color", gradientFrame.m_Color}, {"Location", gradientFrame.m_Location}};
+}
+
+void from_json(const Json& json, ColorGradient& gradient)
+{
+	gradient = ColorGradient(json.get<std::vector<ColorGradientKeyFrame>>());
+}
+void to_json(Json& json, const ColorGradient& gradient)
+{
+	json = {gradient.GetKeyframes()};
+}
+
 void from_json(const Json& json, TextChar& textChar)
 {
 	const char* COLOR_PROPERTY = "Color";

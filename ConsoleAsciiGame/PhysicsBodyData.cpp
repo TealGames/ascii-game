@@ -275,6 +275,7 @@ std::string PhysicsBodyData::ToString() const
 
 void PhysicsBodyData::Deserialize(const Json& json)
 {
+	//TODO: add deserialize for transform offset and aabb
 	m_mass = json.at("Mass").get<float>();
 	m_gravity = json.at("Gravity").get<float>();
 	m_profile.SetRestitution(json.at("Restitution").get<float>());

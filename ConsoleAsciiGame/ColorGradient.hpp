@@ -10,6 +10,9 @@ struct ColorGradientKeyFrame
 	Color m_Color;
 	float m_Location;
 
+	ColorGradientKeyFrame();
+	ColorGradientKeyFrame(const Color& color, const float& location);
+
 	bool operator<(const ColorGradientKeyFrame& other) const;
 	bool operator>(const ColorGradientKeyFrame& other) const;
 
@@ -34,6 +37,7 @@ public:
 	ColorGradient(const std::vector<ColorGradientKeyFrame>& frames);
 
 	Color GetColorAt(float location, const bool& includeAlpha) const;
+	const std::vector<ColorGradientKeyFrame>& GetKeyframes() const;
 
 	std::string ToString() const;
 };

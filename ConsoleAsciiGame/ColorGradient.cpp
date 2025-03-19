@@ -7,6 +7,10 @@
 #include "RaylibUtils.hpp"
 #include "Debug.hpp"
 
+ColorGradientKeyFrame::ColorGradientKeyFrame() : ColorGradientKeyFrame({}, 0) {}
+ColorGradientKeyFrame::ColorGradientKeyFrame(const Color& color, const float& location) 
+	: m_Color(color), m_Location(location) {}
+
 bool ColorGradientKeyFrame::operator<(const ColorGradientKeyFrame& other) const
 {
 	return m_Location < other.m_Location;
@@ -110,6 +114,11 @@ Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 	/*Log(std::format("Color at {} is: {} FULL:{}", std::to_string(location), 
 		RaylibUtils::ToString(Color{ newR, newG, newB, newA }), ToString()));*/
 	return {newR, newG, newB, newA};
+}
+
+const std::vector<ColorGradientKeyFrame>& ColorGradient::GetKeyframes() const
+{
+	return m_colorFrames;
 }
 
 std::string ColorGradient::ToString() const

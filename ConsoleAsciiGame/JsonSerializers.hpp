@@ -11,6 +11,7 @@
 #include "AnimatorData.hpp"
 #include "ComponentFieldReference.hpp"
 #include "SerializableField.hpp"
+#include "ColorGradient.hpp"
 #include <functional>
 #include <type_traits>
 #include <cstdint>
@@ -42,6 +43,12 @@ void to_json(Json& json, const RenderLayerType& layer);
 
 void from_json(const Json& json, Color& color);
 void to_json(Json& json, const Color& color);
+
+void from_json(const Json& json, ColorGradientKeyFrame& gradientFrame);
+void to_json(Json& json, const ColorGradientKeyFrame& gradientFrame);
+
+void from_json(const Json& json, ColorGradient& gradient);
+void to_json(Json& json, const ColorGradient& gradient);
 
 void from_json(const Json& json, TextChar& textChar);
 void to_json(Json& json, const TextChar& textChar);
