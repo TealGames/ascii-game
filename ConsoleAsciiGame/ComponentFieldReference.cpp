@@ -3,6 +3,9 @@
 #include "Debug.hpp"
 #include "HelperFunctions.hpp"
 
+ComponentFieldReference::ComponentFieldReference() 
+	: m_Entity(nullptr), m_ComponentIndex(-1), m_FieldRef(nullptr) {}
+
 ComponentFieldReference::ComponentFieldReference(ComponentData* componentData, const std::string& fieldName)
 	: m_Entity(&(componentData->GetEntitySafeMutable())), m_FieldRef(nullptr), m_ComponentIndex(-1)
 {

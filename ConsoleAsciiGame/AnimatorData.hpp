@@ -6,31 +6,42 @@
 #include <unordered_map>
 #include <string>
 #include <variant>
+#include <optional>
 #include <type_traits>
 #include "HelperFunctions.hpp"
 #include "ComponentData.hpp"
 #include "ComponentFieldReference.hpp"
+#include "Debug.hpp"
 
 template<typename T>
 class AnimationPropertyKeyframe
 {
 private:
 	float m_time;
-	T m_value;
+	std::optional<T> m_value;
 public:
 
 private:
 public:
+	AnimationPropertyKeyframe() : m_value(std::nullopt), m_time(0) {}
 	AnimationPropertyKeyframe(const T& value, const float& time) : 
 		m_value(value), m_time(time) {}
 
 	const float& GetTime() const { return m_time; }
-	const T& GetValue() const { return m_value; }
+	const T& GetValue() const 
+	{
+		if (!Assert(this, m_value != std::nullopt, 
+			std::format("Tried to get value from animation property key frame but value is NULL")))
+			throw std::invalid_argument("Invalid value state");
+
+		return m_value.value();
+	}
 
 	std::string ToString() const
 	{
 		return std::format("[Time: {} Value: {}]", 
-			std::to_string(m_time), Utils::TryToString<T>(m_value));
+			std::to_string(m_time), Utils::TryToString<T>(GetValue()).value_or(
+				std::format("PARSE FAILED: {}", Utils::GetTypeName<T>())));
 	}
 };
 
@@ -47,7 +58,7 @@ struct AnimationProperty
 	/*AnimationProperty(T& compoenentPropertyRef, bool& componentDataMutationRef, const std::vector<AnimationPropertyKeyframe<T>> keyframes) :
 		m_ComponentPropertyRef(compoenentPropertyRef), m_ComponentDataMutationFlagRef(componentDataMutationRef), m_Keyframes(keyframes), m_KeyframeIndex(0) {}*/
 
-	AnimationProperty() : AnimationProperty({}, {}) {}
+	AnimationProperty() : AnimationProperty(ComponentFieldReference(), {}) {}
 
 	AnimationProperty(const ComponentFieldReference& fieldRef, const std::vector<AnimationPropertyKeyframe<T>>& keyframes) :
 		m_ComponentFieldRef(fieldRef), m_Keyframes(keyframes), m_KeyframeIndex(0) 

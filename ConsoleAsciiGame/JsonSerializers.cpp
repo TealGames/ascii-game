@@ -12,7 +12,7 @@ void InitJsonSerializers(SceneManagement::SceneManager& manager)
 	SceneManager = &manager;
 }
 
-static bool HasRequiredProperties(const Json& json, const std::vector<std::string>& propertyNames)
+bool HasRequiredProperties(const Json& json, const std::vector<std::string>& propertyNames)
 {
 	bool hasAllProperties = true;
 	for (const auto& propertyName : propertyNames)
@@ -264,8 +264,15 @@ Json TrySerializeEntity(const ECS::Entity* entity)
 
 void from_json(const Json& json, SerializableField& serializableField)
 {
-	serializableField = SerializableField(json.at("Scene").get<std::string>(), json.at("Entity").get<std::string>(), 
-						json.at("ComponentIndex").get<std::uint8_t>(), json.at("Field").get<std::string>());
+	const char* SCENE_PROPERTY = "Scene";
+	const char* ENTITY_PROPERTY = "Entity";
+	const char* COMPONENT_INDEX_PROPERTY = "ComponentIndex";
+	const char* FIELD_PROPERTY = "Field";
+	if (!HasRequiredProperties(json, { SCENE_PROPERTY, ENTITY_PROPERTY, COMPONENT_INDEX_PROPERTY, FIELD_PROPERTY }))
+		return;
+
+	serializableField = SerializableField(json.at(SCENE_PROPERTY).get<std::string>(), json.at(ENTITY_PROPERTY).get<std::string>(),
+						json.at(COMPONENT_INDEX_PROPERTY).get<std::uint8_t>(), json.at(FIELD_PROPERTY).get<std::string>());
 }
 void to_json(Json& json, const SerializableField& serializableField)
 {
@@ -290,18 +297,23 @@ void to_json(Json& json, const ComponentFieldReference& fieldReference)
 
 void from_json(const Json& json, AnimationPropertyVariant& variant)
 {
-	std::string propertyType = json.at("Type").get<std::string>();
+	const char* TYPE_PROPERTY = "Type";
+	const char* PROPERTY_PROPERTY = "Property";
+	if (!HasRequiredProperties(json, { TYPE_PROPERTY,  PROPERTY_PROPERTY }))
+		return;
+
+	std::string propertyType = json.at(TYPE_PROPERTY).get<std::string>();
 	if (propertyType == Utils::GetTypeName<int>())
 	{
-		variant = json.at("Property").get<AnimationProperty<int>>();
+		variant = AnimationPropertyVariant(json.at(PROPERTY_PROPERTY).get<AnimationProperty<int>>());
 	}
 	else if (propertyType == Utils::GetTypeName<float>())
 	{
-		variant = json.at("Property").get<AnimationProperty<float>>();
+		variant = json.at(PROPERTY_PROPERTY).get<AnimationProperty<float>>();
 	}
 	else if (propertyType == Utils::GetTypeName<std::uint8_t>())
 	{
-		variant = json.at("Property").get<AnimationProperty<std::uint8_t>>();
+		variant = json.at(PROPERTY_PROPERTY).get<AnimationProperty<std::uint8_t>>();
 	}
 	else
 	{

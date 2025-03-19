@@ -13,6 +13,8 @@
 #include "SerializableField.hpp"
 #include <functional>
 #include <type_traits>
+#include <cstdint>
+#include <vector>
 
 using Json = nlohmann::json;
 namespace SceneManagement
@@ -23,6 +25,8 @@ namespace SceneManagement
 inline const char* OPTIONAL_NULL_VALUE = "null";
 
 void InitJsonSerializers(SceneManagement::SceneManager& manager);
+
+bool HasRequiredProperties(const Json& json, const std::vector<std::string>& propertyNames);
 
 void from_json(const Json& json, Vec2& vec);
 void to_json(Json& json, const Vec2& vec);
@@ -80,8 +84,13 @@ void to_json(Json& json, const AnimationPropertyKeyframe<T>& var)
 template<typename T>
 void from_json(const Json& json, AnimationProperty<T>& property)
 {
-	std::vector<AnimationPropertyKeyframe<T>> keyframes = json.at("Keyframes").get< std::vector<AnimationPropertyKeyframe<T>>>();
-	property = AnimationProperty<T>(json.at("FieldRef").at<ComponentFieldReference>(), keyframes);
+	const char* KEYFRAMES_PROPERTY = "Keyframes";
+	const char* FIELD_REF_PROPERTY = "FieldRef";
+	if (!HasRequiredProperties(json, { KEYFRAMES_PROPERTY,  FIELD_REF_PROPERTY }))
+		return;
+
+	std::vector<AnimationPropertyKeyframe<T>> keyframes = json.at(KEYFRAMES_PROPERTY).get<std::vector<AnimationPropertyKeyframe<T>>>();
+	property = AnimationProperty<T>(json.at(FIELD_REF_PROPERTY).get<ComponentFieldReference>(), keyframes);
 }
 template<typename T>
 void to_json(Json& json, const AnimationProperty<T>& property)

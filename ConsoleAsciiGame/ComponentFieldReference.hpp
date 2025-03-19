@@ -8,6 +8,7 @@ struct ComponentFieldReference
 	size_t m_ComponentIndex;
 	ComponentField* m_FieldRef;
 
+	ComponentFieldReference();
 	ComponentFieldReference(ComponentData* componentData, const std::string& fieldName);
 	ComponentFieldReference(ECS::Entity& entity, const size_t& componentIndex, const std::string& fieldName);
 

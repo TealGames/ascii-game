@@ -80,6 +80,35 @@
 						"X": 1,
 						"Y": 8
 					}
+				},
+				{
+					"Type": "AnimatorData",
+					"Loop": true,
+					"Speed": 1,
+					"Time": 3.5,
+					"Properties": [
+						{
+							"Type": "float",
+							"Property": {
+								"Keyframes": [
+									{
+										"Time": 0,
+										"Value": 2
+									},
+									{
+										"Time": 1,
+										"Value": 5
+									}
+								],
+								"FieldRef": {
+									"Scene": "_1",
+									"Entity": "Test1",
+									"ComponentIndex": 2,
+									"Field": "LensSize"
+								}
+							}
+						}
+					]
 				}
 			]
 		}

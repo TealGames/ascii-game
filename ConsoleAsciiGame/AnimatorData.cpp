@@ -17,11 +17,13 @@ AnimatorData::AnimatorData(const std::vector<AnimationPropertyVariant>& properti
 {
 	if (!Assert(this, !Utils::ApproximateEqualsF(m_AnimationSpeed, 0),
 		std::format("Tried to set animator data:{} with animation speed of zero!", 
-		Utils::ToStringIterable<std::vector<AnimationPropertyVariant>, AnimationPropertyVariant>(m_Properties)))) return;
+		Utils::ToStringIterable<std::vector<AnimationPropertyVariant>, AnimationPropertyVariant>(m_Properties)))) 
+		return;
 
-	if (!Assert(this, !m_Properties.empty(),
-		std::format("Tried to set animator data:{} but there are no key frames", 
-		Utils::ToStringIterable<std::vector<AnimationPropertyVariant>, AnimationPropertyVariant>(m_Properties)))) return;
+	//if (!Assert(this, !m_Properties.empty(),
+	//	std::format("Tried to set animator data:{} but there are no key frames", 
+	//	Utils::ToStringIterable<std::vector<AnimationPropertyVariant>, AnimationPropertyVariant>(m_Properties)))) 
+	//	return;
 
 	//TODO: we need to check for some other conditions such as 
 }
@@ -71,6 +73,20 @@ Json AnimatorData::Serialize()
 
 std::string AnimatorData::ToString() const
 {
-	return std::format("[Animator Loop:{} Speed:{}]", 
-		std::to_string(m_Loop), std::to_string(m_AnimationSpeed));
+	std::vector<std::string> propertyStrs = {};
+	for (auto& property : m_Properties)
+	{
+		std::visit([&property, &propertyStrs](auto&& value) -> void
+			{
+				using PropertyConvertedType = std::remove_const_t<std::remove_reference_t<decltype(value)>>;
+				using ExtractedType = AnimationPropertyType<PropertyConvertedType>::Type;
+
+				propertyStrs.push_back(std::get<PropertyConvertedType>(property).ToString());
+
+			}, property);
+		
+	}
+	return std::format("[Animator Loop:{} Speed:{} Properties:{}]", 
+		std::to_string(m_Loop), std::to_string(m_AnimationSpeed), 
+		Utils::ToStringIterable<std::vector<std::string>, std::string>(propertyStrs));
 }

@@ -286,7 +286,7 @@ void Scene::Deserialize(const Json& json)
 	}
 
 	if (delayedEntityDependencies.HasListeners()) delayedEntityDependencies.Invoke();
-	//Assert(false, std::format("After scene: {} was created: found: {}", m_sceneName, ToString()));
+	Assert(false, std::format("After scene: {} was created: found: {}", m_sceneName, ToString()));
 }
 void Scene::Load()
 {
