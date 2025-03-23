@@ -23,12 +23,17 @@ namespace Physics
 	void PhysicsWorld::AddBody(PhysicsBodyData& body)
 	{
 		LogWarning(this, std::format("Adding body: {}", body.m_Entity->GetName()));
-		body.SetPhysicsWorld(*this);
+		body.SetPhysicsWorldRef(*this);
 		m_bodies.push_back(&body);
 	}
 
 	void PhysicsWorld::ClearAllBodies()
 	{
+		for (auto& body : m_bodies)
+		{
+			if (body == nullptr) continue;
+			body->RemovePhysicsWorldRef();
+		}
 		m_bodies = {};
 	}
 

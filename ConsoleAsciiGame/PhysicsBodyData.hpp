@@ -69,7 +69,8 @@ public:
 	PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, const WorldPosition& transformOffset);
 	PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity);
 
-	void SetPhysicsWorld(const Physics::PhysicsWorld& world);
+	void SetPhysicsWorldRef(const Physics::PhysicsWorld& world);
+	void RemovePhysicsWorldRef();
 	const Physics::PhysicsWorld& GetPhysicsWorldSafe();
 
 	void SetVelocity(const Vec2& vel);

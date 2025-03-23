@@ -56,17 +56,58 @@ namespace ECS
 
 		return m_components[index];
 	}
+
+	const ComponentData* Entity::TryGetComponentWithName(const std::string& name) const
+	{
+		for (const auto& component : m_components)
+		{
+			if (component == nullptr) continue;
+			if (Utils::FormatTypeName(typeid(*component).name()) == name)
+				return component;
+		}
+		return nullptr;
+	}
+	ComponentData* Entity::TryGetComponentWithNameMutable(const std::string& name)
+	{
+		for (auto& component : m_components)
+		{
+			if (component == nullptr) continue;
+			if (Utils::FormatTypeName(typeid(*component).name()) == name)
+				return component;
+		}
+		return nullptr;
+	}
+
 	size_t Entity::TryGetIndexOfComponent(const ComponentData* targetComponent) const
 	{
 		size_t index = 0;
 		for (const auto& component : m_components)
 		{
+			if (component == nullptr) continue;
 			if (component == targetComponent) 
 				return index;
 
 			index++;
 		}
 		return -1;
+	}
+	size_t Entity::TryGetIndexOfComponent(const std::string& componentName) const
+	{
+		size_t index = 0;
+		for (const auto& component : m_components)
+		{
+			if (component == nullptr) continue;
+			if (Utils::FormatTypeName(typeid(*component).name()) == componentName)
+				return index;
+
+			index++;
+		}
+		return -1;
+	}
+
+	std::string Entity::TryGetComponentName(const ComponentData* component) const
+	{
+		return Utils::FormatTypeName(typeid(*component).name());
 	}
 
 	std::string Entity::ToString() const

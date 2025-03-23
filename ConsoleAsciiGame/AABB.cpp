@@ -11,9 +11,11 @@ namespace Physics
 	AABBIntersectionData::AABBIntersectionData(const bool& intersect, const Vec2& depth) :
 		m_DoIntersect(intersect), m_Depth(depth) {}
 
-	AABB::AABB() : AABB({}, {}) {}
+	AABB::AABB() : AABB(WorldPosition{}, WorldPosition{}) {}
 	AABB::AABB(const WorldPosition& minPos, const WorldPosition& maxPos)
 		: m_MinPos(minPos), m_MaxPos(maxPos) {}
+
+	AABB::AABB(const Vec2& size) : m_MinPos(size/2 * -1), m_MaxPos(size/2) {}
 
 	WorldPosition AABB::GetGlobalMin(const WorldPosition& centerWorldPos) const
 	{

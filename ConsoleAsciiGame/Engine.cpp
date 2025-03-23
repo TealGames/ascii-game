@@ -138,8 +138,11 @@ namespace Core
 		LightSourceData& lightSource= playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
+		//Assert(false, std::format("player light source:{}", playerEntity.TryGetComponentWithName("LightSourceData")->ToString()));
+		
 		//Log("CREATING PLAYER RB");
 		//ComponentData* ptr = &lightSource;
+		//Assert(false, std::format("LIGHT SOURCE PTR:{}", typeid(*ptr).name()));
 		//Assert(false, std::format("Light source: {}", typeid(*ptr).name()));
 		//Assert(false, std::format("Light source fields: {}", lightSource.ToStringFields()));
 

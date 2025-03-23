@@ -16,7 +16,6 @@ struct SpriteAnimationFrame
 	SpriteAnimationFrame(const float& time, const VisualData& frame);
 };
 
-
 /// <summary>
 /// Stores a delta from the past frame. This is meant for internal storage of the 
 /// frames and provides optimization
@@ -28,8 +27,9 @@ struct SpriteAnimationDelta
 
 	SpriteAnimationDelta();
 	SpriteAnimationDelta(const float& time, const VisualDataPositions& data);
-};
 
+	std::string ToString() const;
+};
 
 struct SpriteAnimatorData : public ComponentData
 {

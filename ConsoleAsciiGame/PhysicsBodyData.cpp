@@ -8,7 +8,7 @@
 #include "Debug.hpp"
 
 PhysicsBodyData::PhysicsBodyData() : 
-	PhysicsBodyData(0, {}, {}, 0, std::numeric_limits<float>::max()) {}
+	PhysicsBodyData(0, {1, 1}, {}, 0, std::numeric_limits<float>::max()) {}
 
 PhysicsBodyData::PhysicsBodyData(const Json& json) : PhysicsBodyData()
 {
@@ -62,9 +62,13 @@ Physics::AABB PhysicsBodyData::CreateAABB(const Vec2& boundingBoxSize, const Wor
 	return {transformOffset- (boundingBoxSize/2), transformOffset+ (boundingBoxSize / 2) };
 }
 
-void PhysicsBodyData::SetPhysicsWorld(const Physics::PhysicsWorld& world)
+void PhysicsBodyData::SetPhysicsWorldRef(const Physics::PhysicsWorld& world)
 {
 	m_physicsSimulation = &world;
+}
+void PhysicsBodyData::RemovePhysicsWorldRef()
+{
+	m_physicsSimulation = nullptr;
 }
 const Physics::PhysicsWorld& PhysicsBodyData::GetPhysicsWorldSafe()
 {
@@ -269,13 +273,19 @@ std::string PhysicsBodyData::ToStringCollidingBodies() const
 
 std::string PhysicsBodyData::ToString() const
 {
-	return std::format("[PhysicsBody M:{}, G:{}, Vel:{} Accel:{}]", std::to_string(m_mass), 
+	return std::format("[PhysicsBody AABB:{} offset:{} M:{}, G:{}, Vel:{} Accel:{}]", 
+		m_aabb.ToString(GetAABBCenterWorldPos()), m_transformOffset.ToString(), std::to_string(m_mass),
 		std::to_string(m_gravity), m_velocity.ToString(), m_acceleration.ToString());
 }
 
 void PhysicsBodyData::Deserialize(const Json& json)
 {
 	//TODO: add deserialize for transform offset and aabb
+
+	m_aabb= json.at("AABB").get<Physics::AABB>();
+	ValidateAABB(m_aabb);
+	m_transformOffset = json.at("Offset").get<Vec2>();
+
 	m_mass = json.at("Mass").get<float>();
 	m_gravity = json.at("Gravity").get<float>();
 	m_profile.SetRestitution(json.at("Restitution").get<float>());
@@ -287,7 +297,7 @@ void PhysicsBodyData::Deserialize(const Json& json)
 }
 Json PhysicsBodyData::Serialize()
 {
-	return { {"Mass", m_mass}, {"Gravity", m_gravity}, {"Restitution", m_profile.GetRestitution()}, 
+	return { {"AABB", m_aabb}, {"Offset", m_transformOffset}, { "Mass", m_mass }, {"Gravity", m_gravity}, {"Restitution", m_profile.GetRestitution()},
 		{"Friction", m_profile.GetFriction()}, {"Velocity", m_velocity}, 
 		{"TerminalVelocity", m_terminalYVelocity}, {"Acceleration", m_acceleration}};
 }

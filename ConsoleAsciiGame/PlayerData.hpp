@@ -22,6 +22,9 @@ private:
 
 private:
 	PlayerData(PhysicsBodyData* body, const float& moveSpeed, const float& maxJumpHeight);
+
+	void TrySetInitialJumpSpeed();
+
 public:
 	PlayerData();
 	PlayerData(const Json& json);

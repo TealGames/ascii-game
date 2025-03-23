@@ -3,6 +3,7 @@
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 #include "PhysicsWorld.hpp"
+#include "JsonSerializers.hpp"
 
 PlayerData::PlayerData() :
 	PlayerData(nullptr, 0, 0) {}
@@ -15,7 +16,8 @@ PlayerData::PlayerData(PhysicsBodyData* body, const float& moveSpeed, const floa
 	ComponentData(HighestDependecyLevel::SiblingComponent),
 	m_body(body), m_xMoveSpeed(std::abs(moveSpeed)), m_maxJumpHeight(maxJumpHeight), m_initialJumpSpeed()
 {
-	if (m_maxJumpHeight>0) m_initialJumpSpeed = CalculateInitialJumpSpeed();
+	//if (m_maxJumpHeight>0) m_initialJumpSpeed = CalculateInitialJumpSpeed();
+	TrySetInitialJumpSpeed();
 }
 
 PlayerData::PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const float& maxJumpHeight) :
@@ -24,6 +26,13 @@ PlayerData::PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const 
 void PlayerData::InitFields()
 {
 	m_Fields = {ComponentField("MoveXSpeed", &m_xMoveSpeed)};
+}
+
+void PlayerData::TrySetInitialJumpSpeed()
+{
+	if (m_body == nullptr || m_maxJumpHeight < 0) return;
+
+	m_initialJumpSpeed = CalculateInitialJumpSpeed();
 }
 
 const float& PlayerData::GetMoveSpeed() const
@@ -106,15 +115,17 @@ void PlayerData::Deserialize(const Json& json)
 {
 	m_xMoveSpeed = json.at("MoveSpeed").get<float>();
 	m_maxJumpHeight = json.at("JumpHeight").get<float>();
-	m_initialJumpSpeed = CalculateInitialJumpSpeed();
+
+	m_body = TryDeserializeComponent<PhysicsBodyData>(json.at("Body"));
+	TrySetInitialJumpSpeed();
 }
 Json PlayerData::Serialize()
 {
-	return { {"MoveSpeed", m_xMoveSpeed}, {"JumpHeight", m_maxJumpHeight}};
+	return { {"MoveSpeed", m_xMoveSpeed}, {"JumpHeight", m_maxJumpHeight}, {"Body", TrySerializeComponent<PhysicsBodyData>(m_body)}};
 }
 
 std::string PlayerData::ToString() const
 {
-	return std::format("[PlayerData MoveSpeed:{} JumpHeight:{}]", 
-		std::to_string(m_xMoveSpeed), std::to_string(m_maxJumpHeight));
+	return std::format("[PlayerData MoveSpeed:{} JumpHeight:{} Body:{}]", 
+		std::to_string(m_xMoveSpeed), std::to_string(m_maxJumpHeight), m_body!=nullptr? m_body->ToString(): "NULL");
 }

@@ -195,7 +195,14 @@ namespace ECS
 
 		const ComponentData* TryGetComponentAtIndex(const size_t& index) const;
 		ComponentData* TryGetComponentAtIndexMutable(const size_t& index);
+
+		const ComponentData* TryGetComponentWithName(const std::string& name) const;
+		ComponentData* TryGetComponentWithNameMutable(const std::string& name);
+
 		size_t TryGetIndexOfComponent(const ComponentData* component) const;
+		size_t TryGetIndexOfComponent(const std::string& componentName) const;
+
+		std::string TryGetComponentName(const ComponentData* component) const;
 
 		/// <summary>
 		/// Will return all components as base type for this entity. 

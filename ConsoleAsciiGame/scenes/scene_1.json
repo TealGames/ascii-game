@@ -60,6 +60,42 @@
 						"Entity": "Test2",
 						"Scene": "_1"
 					}
+				},
+				{
+					"Type": "PhysicsBodyData",
+					"AABB": {
+						"Size": {
+							"X": 4,
+							"Y": 10
+						}
+					},
+					"Offset": {
+						"X": 2,
+						"Y": 5
+					},
+					"Mass": 5,
+					"Gravity": 9.8,
+					"Restitution": 2,
+					"Friction": 5.6,
+					"Velocity": {
+						"X": 2,
+						"Y": 7
+					},
+					"TerminalVelocity": 67,
+					"Acceleration": {
+						"X": 56,
+						"Y": 9
+					}
+				},
+				{
+					"Type": "PlayerData",
+					"MoveSpeed": 5,
+					"JumpHeight": 2,
+					"Body": {
+						"Scene": "_1",
+						"Entity": "Test1",
+						"Component": "PhysicsBodyData"
+					}
 				}
 			]
 		},
@@ -103,7 +139,7 @@
 								"FieldRef": {
 									"Scene": "_1",
 									"Entity": "Test1",
-									"ComponentIndex": 2,
+									"Component": "CameraData",
 									"Field": "LensSize"
 								}
 							}

@@ -164,8 +164,5 @@ public:
 	std::string ToString() const;
 };
 
-struct VisualDataPositions
-{
-	//TODO: should sprites have emptyu char for locations not covered or should they store the position?
-	std::vector<TextCharPosition> m_Data = {};
-};
+//TODO: should sprites have emptyu char for locations not covered or should they store the position?
+using VisualDataPositions = std::vector<TextCharPosition>;

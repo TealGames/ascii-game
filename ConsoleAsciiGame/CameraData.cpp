@@ -34,7 +34,7 @@ void CameraData::Deserialize(const Json& json)
 	m_CameraSettings.m_LensSize = json.at("LensSize").get<float>();
 	m_CameraSettings.UpdateViewportSize();
 
-	ECS::Entity* maybeFollowTarget = TryDeserializeEntity(json.at("FollowTarget"));
+	ECS::Entity* maybeFollowTarget = TryDeserializeEntity(json.at("FollowTarget"), true);
 	if (maybeFollowTarget != nullptr) m_CameraSettings.SetFollowTarget(*maybeFollowTarget);
 	else m_CameraSettings.SetFollowNoTarget();
 }
@@ -42,11 +42,8 @@ Json CameraData::Serialize()
 {
 	//TODO: we need to serailize the entity follow target
 	Json json= { {"AspectRatio", m_CameraSettings.m_AspectRatio}, 
-				 {"LensSize", m_CameraSettings.m_LensSize} };
-
-	if (m_CameraSettings.HasNoFollowTarget()) json["FollowTarget"] = OPTIONAL_NULL_VALUE;
-	else json["FollowTarget"] = SerializableEntity{m_CameraSettings.m_FollowTarget->GetName(), 
-												   m_CameraSettings.m_FollowTarget->GetSceneName()};
+				 {"LensSize", m_CameraSettings.m_LensSize},
+				 {"FollowTarget", TrySerializeEntity(m_CameraSettings.m_FollowTarget, true) }};
 
 	return json;
 }

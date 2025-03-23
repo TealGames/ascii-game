@@ -39,7 +39,7 @@ const VisualData& EntityRendererData::GetVisualData() const
 
 void EntityRendererData::SetVisualData(const VisualDataPositions& positions)
 {
-	for (const auto& pos : positions.m_Data)
+	for (const auto& pos : positions)
 	{
 		m_VisualData.m_Text.SetAt(pos.m_RowColPos, pos.m_Text);
 	}

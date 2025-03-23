@@ -186,7 +186,7 @@ void Scene::Deserialize(const Json& json)
 		entityComponentsJson = entityJson.at("Components");
 		delayedSiblingDependencies.RemoveAllListeners();
 
-		LogError(std::format("Found compoinents: {}", std::to_string(entityComponentsJson.size())));
+		//LogError(std::format("Found compoinents: {}", std::to_string(entityComponentsJson.size())));
 		//TODO: maybe components should have to implement a parsing function for json?
 		for (size_t i = 0; i < entityComponentsJson.size(); i++)
 		{

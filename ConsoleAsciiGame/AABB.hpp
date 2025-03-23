@@ -25,6 +25,7 @@ namespace Physics
 		WorldPosition m_MaxPos;
 
 		AABB();
+		AABB(const Vec2& size);
 		AABB(const WorldPosition& minPos, const WorldPosition& maxPos);
 
 		WorldPosition GetGlobalMin(const WorldPosition& centerWorldPos) const;

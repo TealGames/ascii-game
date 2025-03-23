@@ -1,11 +1,10 @@
 #include "pch.hpp"
 #include "JsonSerializers.hpp"
 #include "JsonConstants.hpp"
-#include "JsonUtils.hpp"
 #include "Debug.hpp"
 #include "SceneManager.hpp"
 
-static SceneManagement::SceneManager* SceneManager = nullptr;
+SceneManagement::SceneManager* SceneManager = nullptr;
 
 void InitJsonSerializers(SceneManagement::SceneManager& manager)
 {
@@ -127,7 +126,8 @@ void from_json(const Json& json, TextChar& textChar)
 {
 	const char* COLOR_PROPERTY = "Color";
 	const char* CHAR_PROPERTY = "Char";
-	if (!HasRequiredProperties(json, { COLOR_PROPERTY, CHAR_PROPERTY })) return;
+	if (!HasRequiredProperties(json, { COLOR_PROPERTY, CHAR_PROPERTY })) 
+		return;
 
 	textChar = TextChar(json.at(COLOR_PROPERTY).get<Color>(), json.at(CHAR_PROPERTY).get<char>());
 }
@@ -141,7 +141,8 @@ void from_json(const Json& json, TextCharPosition& textChar)
 	const char* COLOR_PROPERTY = "Color";
 	const char* CHAR_PROPERTY = "Char";
 	const char* POS_PROPERTY = "Pos";
-	if (!HasRequiredProperties(json, { COLOR_PROPERTY, CHAR_PROPERTY, POS_PROPERTY })) return;
+	if (!HasRequiredProperties(json, { COLOR_PROPERTY, CHAR_PROPERTY, POS_PROPERTY })) 
+		return;
 
 	textChar = TextCharPosition(json.at(POS_PROPERTY).get<Array2DPosition>(),
 		TextChar(json.at(COLOR_PROPERTY).get<Color>(), json.at(CHAR_PROPERTY).get<std::string>()[0]));
@@ -149,6 +150,22 @@ void from_json(const Json& json, TextCharPosition& textChar)
 void to_json(Json& json, const TextCharPosition& textChar)
 {
 	json = { {"Pos", textChar.m_RowColPos}, {"Char", textChar.m_Text.m_Char}, {"Color", textChar.m_Text.m_Color}};
+}
+
+namespace Physics
+{
+	void from_json(const Json& json, Physics::AABB& aabb)
+	{
+		const char* SIZE_PROPERTY = "Size";
+		if (!HasRequiredProperties(json, { SIZE_PROPERTY }))
+			return;
+
+		aabb = Physics::AABB(json.at(SIZE_PROPERTY).get<Vec2>());
+	}
+	void to_json(Json& json, const Physics::AABB& aabb)
+	{
+		json = { {"Size", aabb.GetSize()}};
+	}
 }
 
 void from_json(const Json& json, VisualData& visualData)
@@ -223,6 +240,20 @@ void to_json(Json& json, const VisualData& visualData)
 	if (visualData.HasPredefinedCharArea()) json["CharArea"] = visualData.GetPredefinedCharArea();
 }
 
+void from_json(const Json& json, SpriteAnimationDelta& delta)
+{
+	const char* TIME_PROPERTY = "Time";
+	const char* DELTA_PROPERTY = "Delta";
+	if (!HasRequiredProperties(json, { TIME_PROPERTY, DELTA_PROPERTY })) 
+		return;
+
+	delta = SpriteAnimationDelta(json.at(TIME_PROPERTY).get<float>(), json.at(DELTA_PROPERTY).get<VisualDataPositions>());
+}
+void to_json(Json& json, const SpriteAnimationDelta& delta)
+{
+	json = { {"Time", delta.m_Time}, {"Delta", delta.m_VisualDelta}};
+}
+
 void from_json(const Json& json, SerializableEntity& serializableEntity)
 {
 	serializableEntity.m_EntityName = json.at("Entity").get<std::string>();
@@ -233,11 +264,9 @@ void to_json(Json& json, const SerializableEntity& serializableEntity)
 	json = { {"Entity", serializableEntity.m_EntityName}, {"Scene", serializableEntity.m_SceneName} };
 }
 
-ECS::Entity* TryDeserializeEntity(const Json& json)
+ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)
 {
-	std::optional<ECS::Entity*> maybeEntity = TryDeserializeOptional<ECS::Entity*>(json, 
-		//We try to find entity based on its scene name (or whether it is global)
-		[](const Json& json)-> std::optional<ECS::Entity*>
+	std::function<ECS::Entity*(const Json&)> deserializationAction = [](const Json& json)-> ECS::Entity*
 		{
 			SerializableEntity serializedEntity = json.get<SerializableEntity>();
 			if (!Assert(SceneManager != nullptr, std::format("Tried to parse entity from serialized entity "
@@ -250,11 +279,11 @@ ECS::Entity* TryDeserializeEntity(const Json& json)
 			}
 
 			Scene* maybeScene = SceneManager->TryGetSceneWithNameMutable(serializedEntity.m_SceneName);
-			if (!Assert(maybeScene !=nullptr, std::format("Tried to deserialize entity with non global scene: '{}', "
-				"but no scene matches that name", serializedEntity.m_SceneName))) 
+			if (!Assert(maybeScene != nullptr, std::format("Tried to deserialize entity with non global scene: '{}', "
+				"but no scene matches that name", serializedEntity.m_SceneName)))
 				return nullptr;
 
-			ECS::Entity* maybeEntity= maybeScene->TryGetEntityMutable(serializedEntity.m_EntityName);
+			ECS::Entity* maybeEntity = maybeScene->TryGetEntityMutable(serializedEntity.m_EntityName);
 			if (maybeEntity == nullptr)
 			{
 				if (!Assert(maybeScene->GetEntityCount() > 0, std::format("Tried to deserialize entity with non glboal scene:'{}', "
@@ -266,56 +295,123 @@ ECS::Entity* TryDeserializeEntity(const Json& json)
 					"but no entities with that name exist!", serializedEntity.m_SceneName));
 				return nullptr;
 			}
-			
-			return maybeEntity;
-		});
 
-	if (!maybeEntity.has_value() || (maybeEntity.has_value() && maybeEntity.value() == nullptr)) 
+			return maybeEntity;
+		};
+
+	if (isOptional)
+	{
+		std::optional<ECS::Entity*> maybeEntity = TryDeserializeOptional<ECS::Entity*>(json,
+			//We try to find entity based on its scene name (or whether it is global)
+			[&deserializationAction](const Json& json)-> std::optional<ECS::Entity*>
+			{
+				return deserializationAction(json);
+			});
+
+		if (!maybeEntity.has_value() || (maybeEntity.has_value() && maybeEntity.value() == nullptr))
+			return nullptr;
+
+		//LogError(std::format("Deserialized json: {} to entity: {}", JsonUtils::ToStringProperties(json), maybeEntity.value()->ToString()));
+		return maybeEntity.value();
+	}
+
+	ECS::Entity* entityPtr = deserializationAction(json);
+	if (!Assert(entityPtr != nullptr, std::format("Tried to deserialize entity for json:{} "
+		"but the resulting entity is NULLPTR which is not allowed since it was called as NON OPTIONAL",
+		JsonUtils::ToStringProperties(json))))
 		return nullptr;
 
-	//LogError(std::format("Deserialized json: {} to entity: {}", JsonUtils::ToStringProperties(json), maybeEntity.value()->ToString()));
-	return maybeEntity.value();
+	return entityPtr;
 }
-Json TrySerializeEntity(const ECS::Entity* entity)
+Json TrySerializeEntity(const ECS::Entity* entity, const bool& isOptional)
 {
-	return TrySerializeOptional<const ECS::Entity*>(entity == nullptr ? std::nullopt : std::make_optional(entity), 
-		[](const ECS::Entity* entity)->Json 
-		{
-			SerializableEntity serializedEntity= { entity->GetName(), entity->GetSceneName()};
-			return { serializedEntity };
-		});
+	if (isOptional)
+	{
+		return TrySerializeOptional<const ECS::Entity*>(entity == nullptr ? std::nullopt : std::make_optional(entity),
+			[](const ECS::Entity* entity)->Json
+			{
+				SerializableEntity serializedEntity = { entity->GetName(), entity->GetSceneName() };
+				return { serializedEntity };
+			});
+	}
+
+	if (!Assert(entity != nullptr, std::format("Tried to serialize entity to json but entity is "
+		"NULL even with a NON OPTIOANL functional call")))
+		return {};
+
+	return SerializableEntity{entity->GetName(), entity->GetSceneName()};
+}
+
+void from_json(const Json& json, SerializableComponent& serializableComponent)
+{
+	const char* SCENE_PROPERTY = "Scene";
+	const char* ENTITY_PROPERTY = "Entity";
+	const char* COMPONENT_NAME_PROPERTY = "Component";
+	if (!HasRequiredProperties(json, { SCENE_PROPERTY, ENTITY_PROPERTY, COMPONENT_NAME_PROPERTY }))
+		return;
+
+	serializableComponent = SerializableComponent(json.at(SCENE_PROPERTY).get<std::string>(), json.at(ENTITY_PROPERTY).get<std::string>(),
+		json.at(COMPONENT_NAME_PROPERTY).get<std::string>());
+}
+void to_json(Json& json, const SerializableComponent& serializableComponent)
+{
+	json = { {"Scene", serializableComponent.m_SerializedEntity.m_SceneName},
+			 {"Entity", serializableComponent.m_SerializedEntity.m_SceneName},
+			 {"Component", serializableComponent.m_ComponentName} 
+		   };
+}
+
+void from_json(const Json& json, ComponentReference& fieldReference)
+{
+	SerializableComponent field = json.get<SerializableComponent>();
+	ECS::Entity* maybeEntity = SceneManager->TryGetEntityMutable(field.m_SerializedEntity.m_SceneName, 
+																 field.m_SerializedEntity.m_EntityName);
+	if (maybeEntity == nullptr) return;
+
+	fieldReference = ComponentReference(*maybeEntity, field.m_ComponentName);
+}
+void to_json(Json& json, const ComponentReference& fieldReference)
+{
+	const ECS::Entity& entity = fieldReference.GetEntitySafe();
+	SerializableComponent component = SerializableComponent(entity.GetSceneName(), entity.GetName(),
+		fieldReference.GetComponentName());
+	json = { component };
 }
 
 void from_json(const Json& json, SerializableField& serializableField)
 {
 	const char* SCENE_PROPERTY = "Scene";
 	const char* ENTITY_PROPERTY = "Entity";
-	const char* COMPONENT_INDEX_PROPERTY = "ComponentIndex";
+	const char* COMPONENT_NAME_PROPERTY = "Component";
 	const char* FIELD_PROPERTY = "Field";
-	if (!HasRequiredProperties(json, { SCENE_PROPERTY, ENTITY_PROPERTY, COMPONENT_INDEX_PROPERTY, FIELD_PROPERTY }))
+	if (!HasRequiredProperties(json, { SCENE_PROPERTY, ENTITY_PROPERTY, COMPONENT_NAME_PROPERTY, FIELD_PROPERTY }))
 		return;
 
 	serializableField = SerializableField(json.at(SCENE_PROPERTY).get<std::string>(), json.at(ENTITY_PROPERTY).get<std::string>(),
-						json.at(COMPONENT_INDEX_PROPERTY).get<std::uint8_t>(), json.at(FIELD_PROPERTY).get<std::string>());
+						json.at(COMPONENT_NAME_PROPERTY).get<std::string>(), json.at(FIELD_PROPERTY).get<std::string>());
 }
 void to_json(Json& json, const SerializableField& serializableField)
 {
-	json = { {"Scene", serializableField.m_SerializedEntity.m_SceneName}, {"Entity", serializableField.m_SerializedEntity.m_SceneName}, 
-			{"ComponentIndex", serializableField.m_ComponentIndex}, {"Field", serializableField.m_FieldName}};
+	json = { {"Scene", serializableField.m_SerializedComponent.m_SerializedEntity.m_SceneName}, 
+			 {"Entity", serializableField.m_SerializedComponent.m_SerializedEntity.m_SceneName},
+			 {"Component", serializableField.m_SerializedComponent.m_ComponentName}, 
+			 {"Field", serializableField.m_FieldName}};
 }
 
 void from_json(const Json& json, ComponentFieldReference& fieldReference)
 {
 	SerializableField field = json.get<SerializableField>();
-	ECS::Entity* maybeEntity = SceneManager->TryGetEntityMutable(field.m_SerializedEntity.m_SceneName, field.m_SerializedEntity.m_EntityName);
+	ECS::Entity* maybeEntity = SceneManager->TryGetEntityMutable(field.m_SerializedComponent.m_SerializedEntity.m_SceneName, 
+																 field.m_SerializedComponent.m_SerializedEntity.m_EntityName);
 	if (maybeEntity == nullptr) return;
 
-	fieldReference = ComponentFieldReference(*maybeEntity, field.m_ComponentIndex, field.m_FieldName);
+	fieldReference = ComponentFieldReference(*maybeEntity, field.m_SerializedComponent.m_ComponentName, field.m_FieldName);
 }	
 void to_json(Json& json, const ComponentFieldReference& fieldReference)
 {
 	const ECS::Entity& entity = fieldReference.GetEntitySafe();
-	SerializableField field = SerializableField(entity.GetSceneName(), entity.GetName(), fieldReference.m_ComponentIndex, fieldReference.GetFieldName());
+	SerializableField field = SerializableField(entity.GetSceneName(), entity.GetName(), 
+		fieldReference.m_ComponentRef.GetComponentName(), fieldReference.GetFieldName());
 	json = { field };
 }
 
