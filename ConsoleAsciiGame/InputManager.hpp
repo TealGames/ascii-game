@@ -12,6 +12,8 @@
 #include "InputKey.hpp"
 #include "InputProfile.hpp"
 #include "ScreenPosition.hpp"
+#include "AssetManager.hpp"
+#include "InputProfileAsset.hpp"
 
 //TODO: predefined data like compounds should be mutated and set up to work with file loading
 //rather than force user to add all compounds themselves (should leave option, but mainly all should be 
@@ -31,7 +33,10 @@ namespace Input
 	class InputManager
 	{
 	private:
-		std::unordered_map<std::string, InputProfile> m_profiles;
+		static const std::filesystem::path INPUT_PROFILES_FOLDER;
+
+		AssetManager& m_assetManager;
+		std::unordered_map<std::string, InputProfileAsset*> m_profiles;
 
 		std::unordered_map<KeyboardKey, InputKey> m_keyboardStates;
 		std::unordered_map<MouseButton, InputKey> m_mouseStates;
@@ -52,13 +57,13 @@ namespace Input
 			InputState& inputState, const float& deltaTime);
 
 	public:
-		InputManager(const std::filesystem::path& allInputProfilePath);
+		InputManager(AssetManager& assetManager);
 
 		void SetInputCooldown(const std::map<KeyboardKey, float>& keyCooldownTime);
 		void SetInputCooldown(const float& allKeyCooldownTime);
 		void Update(const float& deltaTime);
 
-		void CreateProfile(const std::string& name, const std::filesystem::path& profilePath);
+		//void AddProfile(const std::string& name, const std::filesystem::path& profilePath);
 		const InputProfile* TryGetProfile(const std::string& name) const;
 
 		bool IsKeyState(const KeyboardKey& key, const KeyState& state) const;

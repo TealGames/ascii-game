@@ -6,8 +6,10 @@
 
 namespace SceneManagement
 {
-	SceneManager::SceneManager(const std::filesystem::path& allScenesDir) : 
-		m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager(), m_allScenePath(allScenesDir), 
+	const std::filesystem::path SceneManager::SCENES_FOLDER = "scenes";
+
+	SceneManager::SceneManager(AssetManager& assetmanager) :
+		m_assetManager(assetmanager), m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager(),
 		m_OnLoad(), m_OnSceneChange()
 		/*m_globalEntities{}, m_globalEntitiesLookup{}, m_globalEntityMapper()*/
 	{
@@ -16,7 +18,34 @@ namespace SceneManagement
 
 	void SceneManager::LoadAllScenes()
 	{
-		std::string fileName = "";
+		auto sceneAssets = m_assetManager.GetAssetsOfTypeMutable<SceneAsset>(SCENES_FOLDER);
+		if (!Assert(this, sceneAssets.size() > 0, std::format("Tried to laod all scenes in scene manager "
+			"but could not find any scenes at path: '{}'", SCENES_FOLDER.string())))
+			return;
+
+		//Note: by this point the asset should be valid and can be used in any way that we like
+		for (auto& sceneAsset : sceneAssets)
+		{
+			//fileName = file.path().filename().string();
+			//if (!file.is_regular_file() || fileName.size() < Scene::SCENE_FILE_PREFIX.size()) continue;
+			//if (fileName.substr(0, Scene::SCENE_FILE_PREFIX.size()) != Scene::SCENE_FILE_PREFIX) continue;
+
+			//const Scene scene = Scene();
+
+			m_allScenes.push_back(sceneAsset);
+		}
+
+		//We need to load the scenes only after they are added in order for deserialization
+		//to be able to find the scene when retrieving it from scene manager
+		for (auto& scene : m_allScenes)
+		{
+			scene->Load();
+			m_OnLoad.Invoke(&(scene->GetSceneMutable()));
+			Log(std::format("Loaded scene: {}", scene->GetName()));
+		}
+		//LogError("Finsihed scene manager");
+
+		/*		std::string fileName = "";
 		try
 		{
 			for (const auto& file : std::filesystem::directory_iterator(m_allScenePath))
@@ -26,7 +55,9 @@ namespace SceneManagement
 				if (fileName.substr(0, Scene::SCENE_FILE_PREFIX.size()) != Scene::SCENE_FILE_PREFIX) continue;
 
 				//const Scene scene = Scene();
-				m_allScenes.emplace_back(file.path(), m_GlobalEntityManager);
+				
+				m_allScenes.emplace_back(file.path());
+				m_allScenes.back()->GetSceneMutable().SetGlobalEntityManager(m_GlobalEntityManager);
 				//LogError(std::format("Added scene:{}", m_allScenes.back().GetName()));
 				//Log(std::format("Adding scene to scene manager constricutor: {}", scene.ToStringLayers()));
 			}
@@ -37,8 +68,8 @@ namespace SceneManagement
 		
 			for (auto& scene : m_allScenes)
 			{
-				scene.Load();
-				m_OnLoad.Invoke(&scene);
+				scene->Load();
+				m_OnLoad.Invoke(&(scene.GetSceneMutable()));
 				Log(std::format("Loaded scene: {}", scene.GetName()));
 			}
 		}
@@ -47,6 +78,7 @@ namespace SceneManagement
 			Assert(this, false, std::format("Tried to get all scenes at path: {} "
 				"but ran into error: {}", m_allScenePath.string(), e.what()));
 		}
+		*/
 	}
 
 	int SceneManager::GetSceneCount() const
@@ -58,8 +90,9 @@ namespace SceneManagement
 	{
 		for (auto& scene : m_allScenes)
 		{
-			if (scene.GetName() == sceneName)
-				return &scene;
+			if (scene == nullptr) continue;
+			if (scene->GetName() == sceneName)
+				return &(scene->GetSceneMutable());
 		}
 		return nullptr;
 	}
@@ -68,8 +101,8 @@ namespace SceneManagement
 	{
 		for (const auto& scene : m_allScenes)
 		{
-			if (scene.GetName() == sceneName)
-				return &scene;
+			if (scene->GetName() == sceneName)
+				return &(scene->GetScene());
 		}
 		return nullptr;
 	}
@@ -77,9 +110,11 @@ namespace SceneManagement
 	Scene* SceneManager::TryGetSceneWithIndexMutable(const int& sceneIndex)
 	{
 		if (sceneIndex < 0 || sceneIndex >= m_allScenes.size()) return nullptr;
+		if (m_allScenes[sceneIndex] == nullptr) return nullptr;
+
 		/*Log(std::format("Attempting to get valid index scene {}/{}. scene valid: {}",
 			std::to_string(sceneIndex), std::to_string(m_allScenes.size()), m_allScenes[sceneIndex].m_SceneName));*/
-		return &(m_allScenes[sceneIndex]);
+		return &(m_allScenes[sceneIndex]->GetSceneMutable());
 	}
 
 	void SceneManager::SetActiveScene(Scene* activeScene)
@@ -105,10 +140,12 @@ namespace SceneManagement
 	bool SceneManager::TrySetActiveScene(const int& sceneIndex)
 	{
 		Scene* scene = TryGetSceneWithIndexMutable(sceneIndex);
-		//Log(std::format("Active scene: {}", scene!=nullptr? scene->ToStringLayers() : "NULL"));
+		//LogError(std::format("Active scene: {}", scene!=nullptr? scene->ToString() : "NULL"));
+		LogError(std::format("Active scene: {}", scene != nullptr ? "SCENE" : "NULL"));
 
 		if (!Assert(scene != nullptr, std::format("Tried to load a scene with index: {} "
-			"but that scene does not exist", std::to_string(sceneIndex)))) return false;
+			"but that scene does not exist", std::to_string(sceneIndex)))) 
+			return false;
 
 		SetActiveScene(scene);
 		return true;
@@ -151,7 +188,8 @@ namespace SceneManagement
 		bool passesValidation = true;
 		for (auto& scene : m_allScenes)
 		{
-			if (!scene.Validate()) passesValidation = false;
+			if (!scene->GetSceneMutable().Validate()) 
+				passesValidation = false;
 		}
 		return passesValidation;
 	}

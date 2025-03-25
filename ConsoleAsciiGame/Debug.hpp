@@ -71,7 +71,8 @@ extern Event<void, LogType, std::string, bool> OnMessageLogged;
 /// <param name="str"></param>
 template<typename T>
 void LogMessage(const T* const objPtr, const LogType& logType, const std::string& message, 
-	const bool& showStackTrace, const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
+	const bool& showStackTrace, const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, 
+	const char* overrideANSIColor= nullptr)
 {
 	//Log(logType, std::format("{}: {}", objPtr != nullptr ? typeid(T).name() : "", str), logTime);
 
@@ -90,20 +91,26 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 	if (logTime) timeFormatted = std::format("{}[{}{}{}]{}", ANSI_COLOR_WHITE, ANSI_COLOR_GRAY,
 		Utils::FormatTime(Utils::GetCurrentTime()), ANSI_COLOR_WHITE, ANSI_COLOR_CLEAR);
 
+	const char* mainTextAnsiColor = nullptr;
 	switch (logType)
 	{
 	case LogType::Error:
+		mainTextAnsiColor = overrideANSIColor != nullptr ? overrideANSIColor : ANSI_COLOR_RED;
 		logTypeMessage = std::format("{}[{}!{}] {} {}ERROR:", ANSI_COLOR_WHITE,
-			ANSI_COLOR_RED, ANSI_COLOR_WHITE, timeFormatted, ANSI_COLOR_RED);
+			mainTextAnsiColor, ANSI_COLOR_WHITE, timeFormatted, mainTextAnsiColor);
 		break;
-	case LogType::Warning:
-		logTypeMessage = std::format("{}[{}!{}] {} {}WARNING:", ANSI_COLOR_WHITE,
-			ANSI_COLOR_YELLOW, ANSI_COLOR_WHITE, timeFormatted, ANSI_COLOR_YELLOW);
-		break;
-	case LogType::Log:
-		logTypeMessage = std::format("{} {}LOG:", timeFormatted, ANSI_COLOR_WHITE);
 
+	case LogType::Warning:
+		mainTextAnsiColor = overrideANSIColor != nullptr ? overrideANSIColor : ANSI_COLOR_YELLOW;
+		logTypeMessage = std::format("{}[{}!{}] {} {}WARNING:", ANSI_COLOR_WHITE,
+			mainTextAnsiColor, ANSI_COLOR_WHITE, timeFormatted, mainTextAnsiColor);
 		break;
+
+	case LogType::Log:
+		mainTextAnsiColor = overrideANSIColor != nullptr ? overrideANSIColor : ANSI_COLOR_WHITE;
+		logTypeMessage = std::format("{} {}LOG:", timeFormatted, mainTextAnsiColor);
+		break;
+
 	default:
 		std::string errMessage = "Tried to log message of message type "
 			"that is not defined: ";
@@ -127,9 +134,10 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 /// <param name="logTime"></param>
 template<typename T>
 void Log(const T* const objPtr, const std::string& str, 
-	const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
+	const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, 
+	const char* overrideAnsiColor=nullptr)
 {
-	LogMessage<T>(objPtr, LogType::Log, str, false, logTime, logToGameConsole);
+	LogMessage<T>(objPtr, LogType::Log, str, false, logTime, logToGameConsole, overrideAnsiColor);
 }
 /// <summary>
 /// Logs a message as a default LOG type
@@ -137,7 +145,8 @@ void Log(const T* const objPtr, const std::string& str,
 /// <param name="str"></param>
 /// <param name="logTime"></param>
 void Log(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE);
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, 
+	const char* overrideAnsiColor = nullptr);
 
 /// <summary>
 /// Logs a message as a WARNING type

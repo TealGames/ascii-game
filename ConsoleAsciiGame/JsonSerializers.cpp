@@ -6,7 +6,7 @@
 
 SceneManagement::SceneManager* SceneManager = nullptr;
 
-void InitJsonSerializers(SceneManagement::SceneManager& manager)
+void InitJsonSerializationDependencies(SceneManagement::SceneManager& manager)
 {
 	SceneManager = &manager;
 }
@@ -190,7 +190,7 @@ void from_json(const Json& json, VisualData& visualData)
 	Json fontJson = json.at(FONT_SIZE_PROPERTY);
 	if (fontJson.is_string())
 	{
-		LogError("Reached font json string");
+		//LogError("Reached font json string");
 		std::optional<float> maybeFontSize = JsonConstants::TryGetConstantFontSize(fontJson.get<std::string>());
 		if (!Assert(maybeFontSize.has_value(), std::format("Tried to convert json: {} to visual data but font "
 			"size could not be deduced from '{}' property", JsonUtils::ToStringProperties(json), FONT_SIZE_PROPERTY)))

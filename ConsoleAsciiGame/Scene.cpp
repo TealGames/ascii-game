@@ -19,34 +19,33 @@
 #include "JsonUtils.hpp"
 using Json = nlohmann::json;
 
-#include "AnimatorData.hpp"
-#include "CameraData.hpp"
-#include "EntityRendererData.hpp"
-#include "LightSourceData.hpp"
-#include "PhysicsBodyData.hpp"
-#include "PlayerData.hpp"
-#include "SpriteAnimatorData.hpp"
-#include "UIObjectData.hpp"
+//#include "AnimatorData.hpp"
+//#include "CameraData.hpp"
+//#include "EntityRendererData.hpp"
+//#include "LightSourceData.hpp"
+//#include "PhysicsBodyData.hpp"
+//#include "PlayerData.hpp"
+//#include "SpriteAnimatorData.hpp"
+//#include "UIObjectData.hpp"
 
 const std::string Scene::SCENE_FILE_PREFIX = "scene_";
 
-Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& globalEntities) :
-	m_layers{}, m_sceneName(""), m_scenePath(scenePath),
+Scene::Scene(const std::string& sceneName, GlobalEntityManager* manager) :
+	m_layers{}, m_sceneName(sceneName), //m_scenePath(scenePath),
 	m_localEntities(), m_localEntityIdLookup(), m_localEntityNameLookup(),//m_globalEntityLookup(globalEntities),
 	m_currentFrameDirtyComponents(0), m_entityMapper(),
-	m_mainCamera(nullptr), 
-	m_globalEntities(globalEntities)
-	//m_physicsWorld()
+	m_mainCamera(nullptr),
+	m_globalEntities(manager)
 {
-	if (!Assert(std::filesystem::exists(scenePath), std::format("Tried to create a scene at path: {} "
-		"but that path does not exist", scenePath.string()))) 
+	/*if (!Assert(std::filesystem::exists(scenePath), std::format("Tried to create a scene at path: {} "
+		"but that path does not exist", scenePath.string())))
 		return;
 
 	if (!Assert(scenePath.has_filename(), std::format("Tried to create a scene at path: {} "
-		"but that path does not lead to a file", scenePath.string()))) 
-		return;
+		"but that path does not lead to a file", scenePath.string())))
+		return;*/
 
-	m_sceneName = ExtractSceneName(scenePath);
+		//m_sceneName = ExtractSceneName(scenePath);
 
 	m_localEntities.reserve(MAX_ENTITIES);
 	m_localEntityNameLookup.reserve(MAX_ENTITIES);
@@ -67,6 +66,9 @@ Scene::Scene(const std::filesystem::path& scenePath, GlobalEntityManager& global
 	//Note: right now we make two layers one for background and one for player, but this should
 	//get abstracted more with ids and text file parsing of scene data
 }
+
+Scene::Scene(const std::string& sceneName, GlobalEntityManager& globalEntities) 
+	: Scene(sceneName, &globalEntities) {}
 
 std::string Scene::ExtractSceneName(const std::filesystem::path& path)
 {
@@ -158,11 +160,24 @@ std::string Scene::GetName() const
 {
 	return m_sceneName;
 }
-GlobalEntityManager& Scene::GetGlobalEntityManager()
+GlobalEntityManager& Scene::TryGetGlobalEntityManagerMutable()
 {
-	return m_globalEntities;
+	if (!Assert(this, m_globalEntities != nullptr, std::format("Tired to get global entities manager MUTABLE from scene: {} but global entities manager "
+		"is not set up (could be due to creating scene using constructor that does not include dependency", GetName())))
+		throw std::invalid_argument("Invalid global entity manager");
+
+	return *m_globalEntities;
+}
+const GlobalEntityManager& Scene::TryGetGlobalEntityManager() const
+{
+	if (!Assert(this, m_globalEntities != nullptr, std::format("Tired to get global entities manager from scene: {} but global entities manager "
+		"is not set up (could be due to creating scene using constructor that does not include dependency", GetName())))
+		throw std::invalid_argument("Invalid global entity manager");
+
+	return *m_globalEntities;
 }
 
+/*
 void Scene::Deserialize(const Json& json)
 {
 	Json entityComponentsJson = {};
@@ -288,6 +303,8 @@ void Scene::Deserialize(const Json& json)
 	if (delayedEntityDependencies.HasListeners()) delayedEntityDependencies.Invoke();
 	Assert(false, std::format("After scene: {} was created: found: {}", m_sceneName, ToString()));
 }
+*/
+/*
 void Scene::Load()
 {
 	std::string currentLine = "";
@@ -330,12 +347,15 @@ void Scene::Unload()
 
 	m_entityMapper.clear();
 }
+*/
 
+/*
 Json Scene::Serialize()
 {
 	//TODO: implmenet
 	return {};
 }
+*/
 
 //void Scene::InitScene()
 //{
@@ -462,7 +482,7 @@ const CameraData* Scene::TryGetMainCamera() const
 
 int Scene::GetEntityCount() const
 {
-	return m_localEntities.size() + m_globalEntities.GetCount();
+	return m_localEntities.size() + TryGetGlobalEntityManager().GetCount();
 	/*return m_entityMapper.va + m_globalEntities.GetCount();*/
 }
 
@@ -475,7 +495,7 @@ const std::vector<const ECS::Entity*> Scene::GetAllEntities() const
 {
 	std::vector<const ECS::Entity*> entities = GetLocalEntities();
 
-	for (const auto& globalEntity : m_globalEntities.GetAllGlobalEntities())
+	for (const auto& globalEntity : TryGetGlobalEntityManager().GetAllGlobalEntities())
 		entities.push_back(&globalEntity);
 	
 	return entities;
@@ -493,7 +513,7 @@ const std::vector<const ECS::Entity*> Scene::GetLocalEntities() const
 std::vector<ECS::Entity*> Scene::GetAllEntitiesMutable()
 {
 	std::vector<ECS::Entity*> entities = {};
-	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
+	for (auto& entity : TryGetGlobalEntityManagerMutable().GetAllGlobalEntitiesMutable())
 	{
 		entities.push_back(&entity);
 	}
@@ -531,7 +551,7 @@ ECS::Entity& Scene::CreateEntity(const std::string& name, TransformData&& transf
 
 bool Scene::HasEntity(const ECS::EntityID& id)
 {
-	return m_entityMapper.valid(id) || m_globalEntities.HasGlobalEntity(id);
+	return m_entityMapper.valid(id) || TryGetGlobalEntityManager().HasGlobalEntity(id);
 	//bool isLocal = GetLocalEntityIterator(id) != m_localEntityLookup.end();
 	//if (isLocal) return true;
 
@@ -547,8 +567,8 @@ ECS::Entity* Scene::TryGetEntityMutable(const ECS::EntityID& id)
 	auto localIt = GetLocalEntityIterator(id);
 	if (localIt != m_localEntityIdLookup.end()) return localIt->second;
 
-	auto globalIt = m_globalEntities.GetGlobalEntityIteratorMutable(id);
-	if (m_globalEntities.IsValidIterator(globalIt)) return globalIt->second;
+	auto globalIt = TryGetGlobalEntityManagerMutable().GetGlobalEntityIteratorMutable(id);
+	if (TryGetGlobalEntityManagerMutable().IsValidIterator(globalIt)) return globalIt->second;
 
 	return nullptr;
 }
@@ -572,7 +592,7 @@ ECS::Entity* Scene::TryGetEntityMutable(const std::string& name, const bool& ign
 	}
 	//Note: we do NOT need to do ignore case for global entities since they already have unique
 	//names so their names already are cleaned to be as simple as possible
-	return m_globalEntities.TryGetGlobalEntityMutable(name);
+	return  TryGetGlobalEntityManagerMutable().TryGetGlobalEntityMutable(name);
 }
 
 const ECS::Entity* Scene::TryGetEntity(const std::string& name, const bool& ignoreCase) const
@@ -591,7 +611,7 @@ const ECS::Entity* Scene::TryGetEntity(const std::string& name, const bool& igno
 	}
 	//Note: we do NOT need to do ignore case for global entities since they already have unique
 	//names so their names already are cleaned to be as simple as possible
-	return m_globalEntities.TryGetGlobalEntity(name);
+	return  TryGetGlobalEntityManager().TryGetGlobalEntity(name);
 }
 
 std::string Scene::ToStringLayers() const
@@ -653,7 +673,7 @@ bool Scene::Validate()
 		if (!entity.Validate()) passesValidation = false;
 	}
 
-	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
+	for (auto& entity : TryGetGlobalEntityManagerMutable().GetAllGlobalEntitiesMutable())
 	{
 		if (!entity.Validate()) passesValidation = false;
 	}
@@ -674,7 +694,7 @@ std::string Scene::ToString() const
 	std::string localEntitiesStr = Utils::ToStringIterable<std::vector<std::string>, std::string>(currentEntitiesStr);
 	
 	currentEntitiesStr.clear();
-	for (const auto& entity : m_globalEntities.GetAllGlobalEntities())
+	for (const auto& entity : TryGetGlobalEntityManager().GetAllGlobalEntities())
 	{
 		currentEntitiesStr.push_back(entity.ToString());
 	}

@@ -4,18 +4,24 @@
 #include <unordered_map>
 #include <optional>
 #include <string>
+#include "SceneAsset.hpp"
 #include "Scene.hpp"
 #include "GlobalEntityManager.hpp"
 #include "Event.hpp"
+#include "AssetManager.hpp"
 
 namespace SceneManagement
 {
 	class SceneManager
 	{
 	private:
+		static const std::filesystem::path SCENES_FOLDER;
+
+		AssetManager& m_assetManager;
+
 		Scene* m_activeScene;
 		//TODO: sicne we may reach a poitner with many scenes, maybe we should make this a map with scene names
-		std::vector<Scene> m_allScenes;
+		std::vector<SceneAsset*> m_allScenes;
 		std::filesystem::path m_allScenePath;
 
 		/*EntityMapper m_globalEntityMapper;
@@ -32,7 +38,7 @@ namespace SceneManagement
 		void SetActiveScene(Scene* activeScene);
 
 	public:
-		SceneManager(const std::filesystem::path& allScenesDir);
+		SceneManager(AssetManager& assetmanager);
 
 		/// <summary>
 		/// Although this could be handled with RAII (constructor) but 

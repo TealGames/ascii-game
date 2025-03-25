@@ -3,13 +3,15 @@
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 #include <cctype>
+#include "InputProfileAsset.hpp"
 
 namespace Input
 {
-	const std::string InputManager::PROFILE_PREFIX = "profile_";
+	const std::filesystem::path InputManager::INPUT_PROFILES_FOLDER = "input";
+	//const std::string InputManager::PROFILE_PREFIX = "profile_";
 
-	InputManager::InputManager(const std::filesystem::path& allInputProfilePath) 
-		: m_keyboardStates(), m_mouseStates(), m_gamepadStates(), m_profiles()
+	InputManager::InputManager(AssetManager& assetManager)
+		: m_assetManager(assetManager), m_keyboardStates(), m_mouseStates(), m_gamepadStates(), m_profiles{}
 	{
 		for (const auto& key : GetAllKeyboardKeys())
 		{
@@ -24,26 +26,37 @@ namespace Input
 			m_gamepadStates.emplace(key, InputKey(key, InputState()));
 		}
 
-		if (allInputProfilePath.empty()) return;
+		//if (allInputProfilePath.empty()) return;
+		auto profiles = m_assetManager.GetAssetsOfTypeMutable<InputProfileAsset>(INPUT_PROFILES_FOLDER);
+		if (!Assert(this, profiles.size() > 0, std::format("Tried to laod all input profiles in input manager "
+			"but could not find any input profile at path: '{}'", INPUT_PROFILES_FOLDER.string())))
+			return;
 
-		std::string fileName = "";
-		try
+		for (auto& profile : profiles)
 		{
-			for (const auto& file : std::filesystem::directory_iterator(allInputProfilePath))
-			{
-				fileName = file.path().stem().string();
-				if (!file.is_regular_file() || fileName.size() < PROFILE_PREFIX.size()) continue;
-				if (fileName.substr(0, PROFILE_PREFIX.size()) != PROFILE_PREFIX) continue;
+			if (profile == nullptr) continue;
+			m_profiles.emplace(profile->GetName(), profile);
+		}
+		LogError("Finished input manager");
 
-				//NOTE: we use the segment of the profile file after prefix for profile name
-				CreateProfile(fileName.substr(PROFILE_PREFIX.size()), file.path());
-			}
-		}
-		catch (const std::exception& e)
-		{
-			LogError(std::format("Tried to add all profiles at path: {} "
-				"but ran into error: {}", allInputProfilePath.string(), e.what()));
-		}
+		//std::string fileName = "";
+		//try
+		//{
+		//	for (const auto& file : std::filesystem::directory_iterator(allInputProfilePath))
+		//	{
+		//		fileName = file.path().stem().string();
+		//		if (!file.is_regular_file() || fileName.size() < PROFILE_PREFIX.size()) continue;
+		//		if (fileName.substr(0, PROFILE_PREFIX.size()) != PROFILE_PREFIX) continue;
+
+		//		//NOTE: we use the segment of the profile file after prefix for profile name
+		//		AddProfile(fileName.substr(PROFILE_PREFIX.size()), file.path());
+		//	}
+		//}
+		//catch (const std::exception& e)
+		//{
+		//	LogError(std::format("Tried to add all profiles at path: {} "
+		//		"but ran into error: {}", allInputProfilePath.string(), e.what()));
+		//}
 	}
 
 	void InputManager::SetInputCooldown(const float& allKeyCooldownTime)
@@ -187,16 +200,17 @@ namespace Input
 		}
 	}
 
-	void InputManager::CreateProfile(const std::string& name, const std::filesystem::path& profilePath)
+	/*void InputManager::AddProfile(const std::string& name, const std::filesystem::path& profilePath)
 	{
 		m_profiles.emplace(name, InputProfile(*this, name, profilePath));
-	}
+	}*/
+
 	const InputProfile* InputManager::TryGetProfile(const std::string& name) const
 	{
 		auto it = m_profiles.find(name);
 		if (it == m_profiles.end()) return nullptr;
 
-		return &(it->second);
+		return &(it->second->GetProfile());
 	}
 
 	std::vector<KeyboardKey> InputManager::GetAllKeyboardKeys()

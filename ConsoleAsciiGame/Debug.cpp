@@ -32,9 +32,9 @@ std::string LogTypeToString(const LogType& logType)
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(elementBits);
 }
 
-void Log(const std::string& str, const bool& logTime, const bool& logToGameConsole)
+void Log(const std::string& str, const bool& logTime, const bool& logToGameConsole, const char* overrideAnsiColor)
 {
-	Log<int>(nullptr, str, logTime, logToGameConsole);
+	Log<int>(nullptr, str, logTime, logToGameConsole, overrideAnsiColor);
 }
 void LogWarning(const std::string& str, const bool& logTime, const bool& logToGameConsole)
 {

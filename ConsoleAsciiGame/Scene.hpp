@@ -15,19 +15,17 @@
 #include "Entity.hpp"
 #include "IJsonSerializable.hpp"
 #include "ILoadable.hpp"
+#include "GlobalEntityManager.hpp"
 //#include "EntityMapper.hpp"
 #include "CameraData.hpp"
 #include "TransformData.hpp"
-#include "GlobalEntityManager.hpp"
-#include "HelperFunctions.hpp"
-#include "PhysicsWorld.hpp"
 
 //using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
 //TODO: perhaps we should consolidate the string and local entity collection into one to not take up as much memory
 using EntityNameCollection = std::unordered_map<std::string, ECS::Entity*>;
 using EntityIDCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
 constexpr std::uint8_t MAX_ENTITIES = 100;
-class Scene : public IJsonSerializable, public IValidateable, public ILoadable
+class Scene : public IValidateable
 {
 private:
 	std::string m_sceneName;
@@ -43,7 +41,7 @@ private:
 
 	//TODO: check if just removing this abstract and having the scene receive
 	//the global entities directly might increase performance
-	GlobalEntityManager& m_globalEntities;
+	GlobalEntityManager* m_globalEntities;
 	
 	ECS::Entity* m_mainCamera;
 	//These are entities that are not located here, but are managed
@@ -57,7 +55,7 @@ private:
 
 	//Physics::PhysicsWorld m_physicsWorld;
 
-	const std::filesystem::path m_scenePath;
+	//const std::filesystem::path m_scenePath;
 
 public:
 	//const std::vector<RenderLayer>& m_Layers;
@@ -80,8 +78,10 @@ private:
 
 	/*bool IsGlobalEntity(const EntityID& id) const;*/
 
+	Scene(const std::string& sceneName, GlobalEntityManager* manager);
+
 public:
-	Scene(const std::filesystem::path& scenePath, GlobalEntityManager& globalEntities);
+	Scene(const std::string& sceneName, GlobalEntityManager& globalEntities);
 
 	static std::string ExtractSceneName(const std::filesystem::path& path);
 
@@ -91,7 +91,8 @@ public:
 	//void InitScene();
 
 	std::string GetName() const;
-	GlobalEntityManager& GetGlobalEntityManager();
+	GlobalEntityManager& TryGetGlobalEntityManagerMutable();
+	const GlobalEntityManager& TryGetGlobalEntityManager() const;
 
 	std::vector<RenderLayer*> GetLayersMutable();
 	std::vector<const RenderLayer*> GetLayers(const RenderLayerType& renderLayers) const;
@@ -169,17 +170,10 @@ public:
 
 			action(view.get<T>(entityId), *entityPtr);
 		}
-		m_globalEntities.OperateOnComponents<T>(action);
+		TryGetGlobalEntityManagerMutable().OperateOnComponents<T>(action);
 	}
 
-	void Deserialize(const Json& json) override;
-
-	Json Serialize() override;
-
 	bool Validate() override;
-
-	void Load() override;
-	void Unload() override;
 
 	std::string ToString() const;
 };

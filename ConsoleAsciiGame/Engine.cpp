@@ -19,6 +19,7 @@
 #include "ProfilerTimer.hpp"
 #include "PositionConversions.hpp"
 #include "DebugInfo.hpp"
+#include "InputProfileAsset.hpp"
 
 namespace Core
 {
@@ -55,13 +56,12 @@ namespace Core
 	//TODO: remove the scene name member from entity and instead try to find a way to group entities with scenes for validateing entities to be in the same scene/entity serialization
 	//TODO: main camera should not be set from scenes, but should be based on global camera system/manager
 
-	static const std::string SCENES_PATH = "scenes";
-	static const std::string INPUT_PROFILES_PATH = "input";
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
 	constexpr bool SHOW_FPS = true;
+	constexpr bool DO_ENGINE_LOGS = true;
 
 	constexpr std::streamsize DOUBLE_LOG_PRECISION = 8;
 
@@ -85,22 +85,22 @@ namespace Core
 	constexpr LoopCode END_CODE = 1;
 	constexpr LoopCode ERROR_CODE = 2;
 
-	void Engine::Init()
+	void Engine::InitEngine()
 	{
 		InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME.c_str());
 		SetTargetFPS(TARGET_FPS);
-
-		std::cout << "\n\n[ENGINE]: INITIALIZED RAYLIB WINDOW" << std::endl;
 	}
 
 	void Engine::Destroy()
 	{
 		CloseWindow();
+		EngineLog("DESTROYED ENGINE");
 	}
 
 	Engine::Engine() :
-		m_sceneManager(SCENES_PATH),
-		m_inputManager(INPUT_PROFILES_PATH),
+		m_assetManager(),
+		m_sceneManager(m_assetManager),
+		m_inputManager(m_assetManager),
 		m_physicsManager(m_sceneManager),
 		m_guiSelectorManager(m_inputManager),
 		m_transformSystem(),
@@ -123,8 +123,16 @@ namespace Core
 		m_enableCommandConsole(false),
 		m_entityEditor(m_inputManager, m_sceneManager, m_physicsManager, m_guiSelectorManager)
 	{
-		Init(); 
-		InitJsonSerializers(m_sceneManager);
+		EngineLog("FINISHED SYSTEM MANAGERS INIT");
+
+		InitEngine(); 
+		EngineLog("FINISHED RAYLIB WINDOW CREATION");
+
+		InitJsonSerializationDependencies(m_sceneManager);
+
+		m_assetManager.InitDependencoes<SceneAsset, GlobalEntityManager>(m_sceneManager.m_GlobalEntityManager);
+		m_assetManager.InitDependencoes<InputProfileAsset, Input::InputManager>(m_inputManager);
+		EngineLog("FINISHED ASSET MANAGER DEPENDENCY INIT");
 
 		VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
@@ -172,15 +180,17 @@ namespace Core
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
 		m_sceneManager.LoadAllScenes();
+		EngineLog("LOADED ALL SCENES");
 
 		if (!Assert(this, m_sceneManager.TrySetActiveScene(0),
 			std::format("Tried to set the active scene to the first one, but failed!")))
 			return;
 
+		EngineLog(std::format("SET FIRST SCENE:{}", m_sceneManager.GetActiveScene()->ToString()));
 		//m_sceneManager.GetActiveSceneMutable()->InitScene();
 		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
 		LogError(std::format("Scene active: {}", m_sceneManager.GetActiveScene()->ToString()));
-
+		EngineLog("SET FIRST SCENE CAMERA");
 
 		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData(Vec2{ 20, 20 }));
 		//Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(obstacle.m_Id)->ToString()));
@@ -190,7 +200,7 @@ namespace Core
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
-		Log("CREATING OBSTACLE RB");
+		//Log("CREATING OBSTACLE RB");
 		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(0, Vec2(10, 10), Vec2(0, 0)));
 		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 
@@ -201,17 +211,17 @@ namespace Core
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::UI });
 
-		std::cout << "\n\n[ENGINE]: INITIALIZED GLOBALS" << std::endl;
-		std::cout << std::format("[ENGINE]: LOADED LAYERS FOR SCENE '{}': {}", 
+		EngineLog(std::format("LOADED LAYERS FOR SCENE '{}': {}",
 			m_sceneManager.GetActiveScene()->GetName(),
-			m_sceneManager.GetActiveScene()->ToStringLayers()) << std::endl;
+			m_sceneManager.GetActiveScene()->ToStringLayers()));
 
-		Log(this, std::format("OBSACLE ID: {}", obstacle.ToString()));
-		Log(this, std::format("CAMERA ID: {}", mainCameraEntity.ToString()));
-		Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
+		//Log(this, std::format("OBSACLE ID: {}", obstacle.ToString()));
+		//Log(this, std::format("CAMERA ID: {}", mainCameraEntity.ToString()));
+		//Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
 
 		m_inputManager.SetInputCooldown(0.3);
 		InitConsoleCommands();
+		EngineLog("ADDED ALL CONSOLE COMMANDS");
 
 		//Assert(false, std::format("FOUND ACTIVE SELECTED: {}", m_guiSelectorManager.TryGetSelectableSelected()->GetLastFrameRect().ToString()));
 		/*for (const auto& entity : m_sceneManager.GetActiveSceneMutable()->GetAllEntities())
@@ -219,6 +229,7 @@ namespace Core
 			LogError(this, std::format("Entity: {} has fields: {}", entity->m_Name,
 				Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(entity->m_Transform.GetFields())));
 		}*/
+		EngineLog("FINISHED GAME INIT");
 
 		ValidateAll();
 	}
@@ -230,7 +241,9 @@ namespace Core
 
 	void Engine::ValidateAll()
 	{
+		m_assetManager.Validate();
 		m_sceneManager.ValidateAllScenes();
+		EngineLog("FINISHED VALIDATION");
 	}
 
 	void Engine::InitConsoleCommands()
@@ -319,6 +332,12 @@ namespace Core
 			[this](const bool& enableCheats) -> void {
 				m_playerSystem.SetCheatStatus(enableCheats);
 			}));
+	}
+
+	void Engine::EngineLog(const std::string& log) const
+	{
+		if (!DO_ENGINE_LOGS) return;
+		Log(this, log, true, false, ANSI_COLOR_BLUE);
 	}
 
 	LoopCode Engine::Update()

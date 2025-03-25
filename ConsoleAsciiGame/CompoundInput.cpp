@@ -5,6 +5,8 @@
 
 namespace Input
 {
+	CompoundInput::CompoundInput() : CompoundInput("") {}
+
 	CompoundInput::CompoundInput(const std::string& name) :
 		m_name(name), m_dirKeys() {}
 

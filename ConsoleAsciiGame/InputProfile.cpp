@@ -8,27 +8,29 @@
 
 namespace Input
 {
-	constexpr char HEADER_CHAR = '@';
-	const std::string GENERAL_HEADER = "General";
-	const std::string INPUT_HEADER = "Input";
-
-	constexpr char COMPOUND_INPUT_IDENTIFIER = '>';
-
-	InputProfile::InputProfile(InputManager& manager,const std::string& name, const std::filesystem::path& filePath) :
-		m_name(name), m_actions(), m_compoundInputs(), m_inputManager(manager)
+	InputProfile::InputProfile(InputManager& manager,const std::string& name) :
+		m_name(name), m_actions(), m_compoundInputs(), m_inputManager(&manager)
 	{
-		if (!Assert(this, std::filesystem::exists(filePath), std::format("Tried to create input profile from path: '{}' "
+		/*if (!Assert(this, std::filesystem::exists(filePath), std::format("Tried to create input profile from path: '{}' "
 			"but that path is not valid", filePath.string()))) return;
 
 		if (!Assert(this, filePath.has_filename(), std::format("Tried to create input profile from path: '{}' "
-			"but that path does not lead to a file", filePath.string()))) return;
+			"but that path does not lead to a file", filePath.string()))) return;*/
 
-		std::ifstream stream(filePath);
-		ParseFile(stream);
-
-		Log(this, std::format("Successfully created profile: {}", ToString()));
+		//std::ifstream stream(filePath);
+		//ParseFile(stream);
 	}
 
+	InputManager& InputProfile::GetInputManagerMutable()
+	{
+		if (!Assert(this, m_inputManager != nullptr, std::format("Tried to get input manager MUTABLE "
+			"in input profile:{} but it is null", GetName())))
+			throw std::invalid_argument("Invalid input manager state");
+
+		return *m_inputManager;
+	}
+
+	/*
 	void InputProfile::ParseFile(std::ifstream& stream)
 	{
 		std::string line = "";
@@ -145,10 +147,13 @@ namespace Input
 			}
 			else
 			{
-				m_actions.emplace(inputName, InputAction(inputName, keybinds));
+				//TryAddAction(InputAction(inputName, ))
+				TryAddAction(inputName, keybinds);
+				//m_actions.emplace(inputName, InputAction(inputName, keybinds));
 			}
 		}
 	}
+	*/
 
 	const std::string& InputProfile::GetName() const
 	{
@@ -168,6 +173,16 @@ namespace Input
 
 		return &(it->second);
 	}
+	bool InputProfile::TryAddAction(const InputAction& action)
+	{
+		m_actions.emplace(action.m_Name, action);
+		return true;
+	}
+	bool InputProfile::TryAddAction(const std::string& inputName, const std::vector<const InputKey*>& keybinds)
+	{
+		m_actions.emplace(inputName, InputAction(inputName, keybinds));
+		return true;
+	}
 
 	const std::vector<const CompoundInput*> InputProfile::GetCompoundActions() const
 	{
@@ -181,6 +196,11 @@ namespace Input
 		if (it == m_compoundInputs.end()) return nullptr;
 
 		return &(it->second);
+	}
+	bool InputProfile::TryAddCompoundAction(const CompoundInput& compound)
+	{
+		m_compoundInputs.emplace(compound.GetName(), compound);
+		return true;
 	}
 
 	const std::vector<InputAction*> InputProfile::GetActionsMutable()

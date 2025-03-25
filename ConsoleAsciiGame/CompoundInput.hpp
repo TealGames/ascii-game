@@ -21,6 +21,7 @@ namespace Input
 
 	private:
 	public:
+		CompoundInput();
 		CompoundInput(const std::string& name);
 		CompoundInput(const std::string& name, const CompoundDirectionCollection& keys);
 

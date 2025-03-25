@@ -30,7 +30,7 @@ namespace SceneManagement
 inline const char* OPTIONAL_NULL_VALUE = "null";
 extern SceneManagement::SceneManager* SceneManager;
 
-void InitJsonSerializers(SceneManagement::SceneManager& manager);
+void InitJsonSerializationDependencies(SceneManagement::SceneManager& manager);
 
 bool HasRequiredProperties(const Json& json, const std::vector<std::string>& propertyNames);
 

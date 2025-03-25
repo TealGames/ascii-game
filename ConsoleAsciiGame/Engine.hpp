@@ -14,6 +14,7 @@
 #include "SpriteAnimatorSystem.hpp"
 #include "PhysicsBodySystem.hpp"
 #include "PhysicsManager.hpp"
+#include "AssetManager.hpp"
 #include "InputSystem.hpp"
 #include "InputManager.hpp"
 #include "PlayerSystem.hpp"
@@ -33,6 +34,7 @@ namespace Core
 	{
 	private:
 
+		AssetManager m_assetManager;
 		SceneManagement::SceneManager m_sceneManager;
 		Physics::PhysicsManager m_physicsManager;
 		Input::InputManager m_inputManager;
@@ -76,7 +78,7 @@ namespace Core
 	public:
 
 	private:
-		void Init();
+		void InitEngine();
 		void ValidateAll();
 		void Destroy();
 
@@ -89,6 +91,7 @@ namespace Core
 		LoopCode Update();
 
 		void InitConsoleCommands();
+		void EngineLog(const std::string& log) const;
 
 	public:
 		Engine();
@@ -96,37 +99,37 @@ namespace Core
 
 		void BeginUpdateLoop();
 
-		//TODO: this should probably get abstracted out into a reflection manager that stores type sand their properties
-		//and all systems would submit their properties and types/other metadata to it on init of engine
-		template<typename PropertyType>
-		PropertyType* TryGetPropertyFromSystem(ECS::Entity& entity, const ComponentType& type, const std::string& propertyName)
-		{
-			if (type == ComponentType::LightSource)
-			{
-				LightSourceData* maybeData = entity.TryGetComponentMutable<LightSourceData>();
-				if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
-					"but it does not have that component", propertyName, entity.GetName(), ToString(type)))) return nullptr;
+		////TODO: this should probably get abstracted out into a reflection manager that stores type sand their properties
+		////and all systems would submit their properties and types/other metadata to it on init of engine
+		//template<typename PropertyType>
+		//PropertyType* TryGetPropertyFromSystem(ECS::Entity& entity, const ComponentType& type, const std::string& propertyName)
+		//{
+		//	if (type == ComponentType::LightSource)
+		//	{
+		//		LightSourceData* maybeData = entity.TryGetComponentMutable<LightSourceData>();
+		//		if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
+		//			"but it does not have that component", propertyName, entity.GetName(), ToString(type)))) return nullptr;
 
-				if (propertyName == "LightRadius" && std::is_same_v<PropertyType, decltype(maybeData->m_LightRadius)>)
-					//reinterpret cast is dangerous but we have to do it here since we know for sure if the condition of the same
-					//type sxecutes we can be sure we can convert to this type since we cant just return normally since compiler is not sure whether types match
-					return reinterpret_cast<PropertyType*>(&(maybeData->m_LightRadius));
-				if (propertyName == "LightIntensity" && std::is_same_v<PropertyType, decltype(maybeData->m_Intensity)>)
-					return reinterpret_cast<PropertyType*>(&(maybeData->m_Intensity));
-				else
-				{
-					if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
-						"but it did not match any names and/or their types with type: {}!", propertyName, 
-						entity.GetName(), ToString(type), typeid(PropertyType).name()))) return nullptr;
-				}
-			}
-			else
-			{
-				LogError(this, std::format("Tried to get property: {} from "
-					"engine for entity: {} of an undefined type: {}", propertyName, entity.GetName(), ToString(type)));
-			}
-			return nullptr;
-		}
+		//		if (propertyName == "LightRadius" && std::is_same_v<PropertyType, decltype(maybeData->m_LightRadius)>)
+		//			//reinterpret cast is dangerous but we have to do it here since we know for sure if the condition of the same
+		//			//type sxecutes we can be sure we can convert to this type since we cant just return normally since compiler is not sure whether types match
+		//			return reinterpret_cast<PropertyType*>(&(maybeData->m_LightRadius));
+		//		if (propertyName == "LightIntensity" && std::is_same_v<PropertyType, decltype(maybeData->m_Intensity)>)
+		//			return reinterpret_cast<PropertyType*>(&(maybeData->m_Intensity));
+		//		else
+		//		{
+		//			if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
+		//				"but it did not match any names and/or their types with type: {}!", propertyName, 
+		//				entity.GetName(), ToString(type), typeid(PropertyType).name()))) return nullptr;
+		//		}
+		//	}
+		//	else
+		//	{
+		//		LogError(this, std::format("Tried to get property: {} from "
+		//			"engine for entity: {} of an undefined type: {}", propertyName, entity.GetName(), ToString(type)));
+		//	}
+		//	return nullptr;
+		//}
 	};
 }
 

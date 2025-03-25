@@ -58,7 +58,7 @@
 					"LensSize": 10,
 					"FollowTarget": {
 						"Entity": "Test2",
-						"Scene": "_1"
+						"Scene": "scene1"
 					}
 				},
 				{
@@ -92,7 +92,7 @@
 					"MoveSpeed": 5,
 					"JumpHeight": 2,
 					"Body": {
-						"Scene": "_1",
+						"Scene": "scene1",
 						"Entity": "Test1",
 						"Component": "PhysicsBodyData"
 					}
@@ -137,7 +137,7 @@
 									}
 								],
 								"FieldRef": {
-									"Scene": "_1",
+									"Scene": "scene1",
 									"Entity": "Test1",
 									"Component": "CameraData",
 									"Field": "LensSize"
