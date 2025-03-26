@@ -55,6 +55,7 @@ namespace Core
 	//TODO: rather than each scene having its own physics world pheraps there should only be one main one that is stored here and it can manage adding and removing entities
 	//TODO: remove the scene name member from entity and instead try to find a way to group entities with scenes for validateing entities to be in the same scene/entity serialization
 	//TODO: main camera should not be set from scenes, but should be based on global camera system/manager
+	//TODO: if the level background (or any object) is inside or contains the player at the start, then the gamne crashes usually with a direction not found of colliding body from physics system
 
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
@@ -130,7 +131,7 @@ namespace Core
 
 		InitJsonSerializationDependencies(m_sceneManager);
 
-		m_assetManager.InitDependencoes<SceneAsset, GlobalEntityManager>(m_sceneManager.m_GlobalEntityManager);
+		m_assetManager.InitDependencoes<SceneAsset, GlobalEntityManager, AssetManager>(m_sceneManager.m_GlobalEntityManager, m_assetManager);
 		m_assetManager.InitDependencoes<InputProfileAsset, Input::InputManager>(m_inputManager);
 		EngineLog("FINISHED ASSET MANAGER DEPENDENCY INIT");
  
@@ -173,9 +174,9 @@ namespace Core
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::UI });
 
-		EngineLog(std::format("LOADED LAYERS FOR SCENE '{}': {}",
+		/*EngineLog(std::format("LOADED LAYERS FOR SCENE '{}': {}",
 			m_sceneManager.GetActiveScene()->GetName(),
-			m_sceneManager.GetActiveScene()->ToStringLayers()));
+			m_sceneManager.GetActiveScene()->ToStringLayers()));*/
 
 		//Log(this, std::format("OBSACLE ID: {}", obstacle.ToString()));
 		//Log(this, std::format("CAMERA ID: {}", mainCameraEntity.ToString()));

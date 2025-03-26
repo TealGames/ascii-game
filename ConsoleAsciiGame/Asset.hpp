@@ -19,6 +19,8 @@ public:
 	Asset(const std::filesystem::path& path);
 	~Asset() = default;
 
+	static std::string ExtractNameFromFile(const std::filesystem::path& path);
+
 	std::string GetName() const;
 	std::filesystem::path GetPath() const;
 	bool AreDependenciesSet() const;

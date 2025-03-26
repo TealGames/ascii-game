@@ -18,10 +18,14 @@ private:
 	static std::filesystem::path ASSET_PATH;
 
 	/// <summary>
-	//Note: these are all heap allocated
+	// This stores all the assets that have been identified with [asset name, asset]
+	// Note: this is heap allocated
 	/// </summary>
 	std::unordered_map<std::string, Asset*> m_assets;
-
+	/// <summary>
+	/// This stores all of the files in the asset folder with all the paths with the extension
+	/// </summary>
+	std::unordered_map<std::string, std::vector<std::filesystem::path>> m_allFiles;
 public:
 
 private:
@@ -31,6 +35,11 @@ public:
 
 	bool Validate() override;
 
+	/// <summary>
+	/// Combines the directory file within the asset folder
+	/// </summary>
+	/// <param name="directoryFile"></param>
+	/// <returns></returns>
 	std::filesystem::path GetAssetPath(const std::filesystem::path& directoryFile) const;
 
 	template<typename T>
@@ -39,10 +48,25 @@ public:
 	{
 		//TODO: make sure we create an asset based on the type so we can use polymorphism
 		//TODO: check for duplicates 
+		std::string newAssetName = Asset::ExtractNameFromFile(assetPath);
+		auto sameNameAssetIt = m_assets.find(newAssetName);
+		if (!Assert(this, sameNameAssetIt == m_assets.end(), std::format("Tried to add asset at path:{} "
+			"to asset manager but an asset with namne:{} already exists", assetPath.string(), newAssetName)))
+			return false;
+
 		Asset* newAsset = new T(assetPath);
 		m_assets.emplace(newAsset->GetName(), newAsset);
 		return true;
 	}
+
+	/// <summary>
+	/// This is most used for assets that do not have an asset type associated with them
+	/// </summary>
+	/// <param name="name"></param>
+	/// <param name="extension"></param>
+	/// <returns></returns>
+	std::filesystem::path TryGetAssetPath(const std::filesystem::path& fullFileName);
+	std::filesystem::path TryGetAssetPath(const std::string& fileName, const std::string& extension);
 
 	Asset* TryGetAssetMutable(const std::string& name);
 	const Asset* TryGetAsset(const std::string& name) const;

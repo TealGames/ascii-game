@@ -12,7 +12,12 @@ Asset::Asset(const std::filesystem::path& path) : m_name(), m_path(path)
 		"but that path does not lead to a file", m_path.string())))
 		return;
 
-	m_name = m_path.stem().string();
+	m_name = ExtractNameFromFile(m_path);
+}
+
+std::string Asset::ExtractNameFromFile(const std::filesystem::path& path)
+{
+	return path.stem().string();
 }
 
 std::string Asset::GetName() const

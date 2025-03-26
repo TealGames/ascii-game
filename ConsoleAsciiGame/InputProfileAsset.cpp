@@ -19,6 +19,7 @@ void InputProfileAsset::SetDependencies(Input::InputManager& input)
 {
 	m_profile = Input::InputProfile(input, GetName());
 	DeserializeFile(input);
+	MarkDependenciesSet();
 }
 
 void InputProfileAsset::DeserializeFile(Input::InputManager& inputManager)
@@ -39,17 +40,17 @@ void InputProfileAsset::DeserializeFile(Input::InputManager& inputManager)
 		//std::string lineBefore = line;
 		line = Utils::StringUtil(line).RemoveSpaces().ToString();
 		//LogWarning(this, std::format("COnverted line: {} -> {}", lineBefore, line));
-		LogError(std::format("Current line:'{}' header+genrall:'{}'", line, HEADER_CHAR + GENERAL_HEADER));
+		//LogError(std::format("Current line:'{}' header+genrall:'{}'", line, HEADER_CHAR + GENERAL_HEADER));
 
 		if (line == HEADER_CHAR + GENERAL_HEADER)
 		{
-			LogError("Found general");
+			//LogError("Found general");
 			isReadingMainHeader = true;
 			continue;
 		}
 		else if (line == HEADER_CHAR + INPUT_HEADER)
 		{
-			LogError("Found input");
+			//LogError("Found input");
 			isReadingMainHeader = false;
 			continue;
 		}

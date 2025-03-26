@@ -184,8 +184,9 @@ void PhysicsBodyData::AddCollidingBody(PhysicsBodyData& collidingBody)
 		collidingBody.GetAABBCenterWorldPos(), collidingBody.GetAABB(), true);
 	std::optional<MoveDirection> maybeDirType = TryConvertVectorToDirection(collidingDir);
 	if (!Assert(this, maybeDirType.has_value(), std::format("Tried to add colliding body named '{}' "
-		"to body: '{}' but could not deduce direction from vector: {} of body2 relative to body1", 
-		collidingBody.GetEntitySafe().GetName(), GetEntitySafe().GetName(), collidingDir.ToString())))
+		"to body: '{}' but could not deduce direction from vector: {} of colliding body (Pos:{}) relative to this body(Pos:{})", 
+		collidingBody.GetEntitySafe().GetName(), GetEntitySafe().GetName(), collidingDir.ToString(), 
+		collidingBody.GetEntitySafe().m_Transform.ToString(), GetEntitySafe().m_Transform.ToString())))
 	{
 		return;
 	}

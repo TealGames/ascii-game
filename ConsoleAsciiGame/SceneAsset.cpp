@@ -2,6 +2,7 @@
 #include "SceneAsset.hpp"
 #include "JsonUtils.hpp"
 #include "JsonSerializers.hpp"
+#include "RaylibUtils.hpp"
 
 #include "AnimatorData.hpp"
 #include "CameraData.hpp"
@@ -12,10 +13,24 @@
 #include "SpriteAnimatorData.hpp"
 #include "UIObjectData.hpp"
 
-const std::string SceneAsset::EXTENSION = ".json";
+
+const std::string SceneAsset::SCENE_EXTENSION = ".json";
+const std::string SceneAsset::LEVEL_EXTENSION = ".level";
 
 SceneAsset::SceneAsset(const std::filesystem::path& path) : 
-	Asset(path), m_scene(std::nullopt) {}
+	Asset(path), m_assetManager(nullptr), m_scene(std::nullopt) {}
+
+AssetManager& SceneAsset::GetAssetManagerMutable()
+{
+	if (!Assert(this, m_assetManager!=nullptr, std::format("Tried to retrieve asset manager MUTABLE from scene asset:{} "
+		"but the asset manager has no reference yet due to dependencies for this asset not initialized", ToString())))
+	{
+		throw std::invalid_argument("Invalid asset manager scene asset dependency");
+	}
+
+	//LogError(std::format("Scene has value:{}", m_scene.value().ToString()));
+	return *m_assetManager;
+}
 
 Scene& SceneAsset::GetSceneMutable()
 {
@@ -40,9 +55,11 @@ const Scene& SceneAsset::GetScene() const
 	return m_scene.value();
 }
 
-void SceneAsset::SetDependencies(GlobalEntityManager& globalManager)
+void SceneAsset::SetDependencies(GlobalEntityManager& globalManager, AssetManager& assetManager)
 {
+	m_assetManager = &assetManager;
 	m_scene = Scene(GetName(), globalManager);
+	MarkDependenciesSet();
 	//LogError(std::format("Set scene dependencies: {}", m_scene.value().ToString()));
 }
 
@@ -301,21 +318,112 @@ void SceneAsset::Load()
 
 	Deserialize(parsedJson);
 	LogError(std::format("DESERIALIZE SCENE:{}", GetScene().ToString()));
+	TryLoadLevelBackground();
 
 	//Log("Creating new layer in scene");
-	const VisualData backgroundVisual = VisualData({}, GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE,
+
+	LogError(std::format("SCENE LOADED:{}", GetScene().ToString()));
+	//Assert(false, "ENDED LAODING SCENE");
+}
+
+bool SceneAsset::TryLoadLevelBackground()
+{
+	//TODO: right now we expect the level to have the same name but with different extension
+	std::filesystem::path maybePath = GetAssetManagerMutable().TryGetAssetPath(GetName(), LEVEL_EXTENSION);
+	if (!Assert(this, !maybePath.empty(), std::format("Attempted to load level background for scene asset:{} "
+		"but could not find level from asset manager using name:{} extension:{}", ToString(), GetName(), LEVEL_EXTENSION)))
+		return false;
+
+	std::ifstream fstream(maybePath);
+	std::vector<std::vector<TextCharPosition>> visualPositions = {};
+
+	int r = 0;
+	std::string currentLine = "";
+	std::unordered_map<std::string, Color> colorAliases = {};
+	const std::string keyHeader = "key:";
+	const std::string sceneHeader = "level:";
+	const char charColorAliasStart = '[';
+	const char charColorAliasEnd = ']';
+	bool isParsingKey = false;
+
+	int lineIndex = -1;
+	const Color defaultColor = BLACK;
+	Color currentColor = defaultColor;
+	while (std::getline(fstream, currentLine))
+	{
+		lineIndex++;
+		if (currentLine.empty()) continue;
+
+		if (currentLine == keyHeader) isParsingKey = true;
+		else if (currentLine == sceneHeader) isParsingKey = false;
+
+		else if (isParsingKey)
+		{
+			std::size_t equalsSignIndex = currentLine.find('=');
+			std::string colorAlias = currentLine.substr(0, equalsSignIndex);
+			std::string hexString = currentLine.substr(equalsSignIndex + 1);
+			std::optional<uint32_t> maybeConvertedHex = Utils::TryParseHex<uint32_t>(hexString);
+			if (!Assert(maybeConvertedHex.has_value(), std::format("Tried to parse level background fro scene asset: {}, but encountered "
+				"unparsable hex: '{}' at line: {}", ToString(), hexString, std::to_string(lineIndex)))) continue;
+
+			Color convertedColor = RaylibUtils::GetColorFromHex(maybeConvertedHex.value());
+			//Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));
+			colorAliases.emplace(colorAlias, convertedColor);
+		}
+		else
+		{
+			visualPositions.push_back({});
+			//std::cout << "ALLOC with line: "<<currentLine<< std::endl;
+			//if (currentLine.size() > maxLineChars) maxLineChars = currentLine.size();
+
+			for (int i = 0; i < currentLine.size(); i++)
+			{
+				if (currentLine[i] == '\t' || currentLine[i]==' ') continue;
+				//We need to make sure there is at least 2 chars in front for at least one for alias and one for ending symbol
+				if (currentLine[i] == charColorAliasStart && i< currentLine.size()-2)
+				{
+					int colorAliasEndIndex = currentLine.find(charColorAliasEnd, i + 1);
+					if (!Assert(colorAliasEndIndex != std::string::npos, std::format("Tried to parse a color alias for level background for scene asset: {} at line: {} "
+						"but did not find color alias end at color alias start at index: {}",
+						ToString(), std::to_string(lineIndex), std::to_string(i)))) continue;
+
+					std::string colorAlias = currentLine.substr(i + 1, colorAliasEndIndex - (i + 1));
+					if (!Assert(colorAliases.find(colorAlias) != colorAliases.end(), std::format("Tried to parse a color alias for level background "
+						"for scene asset : {} at line : {} but color alias: {} starting at index:{} has no color data defined in KEY section",
+						ToString(), std::to_string(lineIndex), colorAlias, std::to_string(i + 1))))
+					{
+						i = colorAliasEndIndex;
+						continue;
+					}
+
+					//Log(std::format("Found good color alias: {}", colorAlias));
+					currentColor = colorAliases[colorAlias];
+					i = colorAliasEndIndex;
+					continue;
+				}
+
+				//TODO: what is the best way of doing this? putting in text chars and putting empty chars
+				//which would work fine for init but hard to create collision bound
+				//OR do we leave empty spots and put them in with positions?
+				visualPositions.back().push_back(TextCharPosition{ Array2DPosition(r, i), TextChar(currentColor, currentLine[i])});
+			}
+			r++;
+		}
+	}
+
+	//We then create the background entity based off the the visual positions in the asset
+	const VisualData backgroundVisual = VisualData(visualPositions, GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE,
 		VisualData::DEFAULT_CHAR_SPACING, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::PIVOT_CENTER);
-	ECS::Entity& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformData(Vec2{0,0}));
+
+	ECS::Entity& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformData(Vec2{ 0,-10 }));
 	EntityRendererData& backgroundRenderer = backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
+
 	LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
 	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));
 
 	PhysicsBodyData& physicsBody = backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(5, backgroundVisual.GetWorldSize(), { 0,0 }));
-	LogWarning(std::format("Created Physics body: {} visual size: {}",
-		physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), backgroundVisual.m_Text.GetSize().ToString()));
-
-	LogError(std::format("SCENE LOADED:{}", GetScene().ToString()));
-	//Assert(false, "ENDED LAODING SCENE");
+	LogWarning(std::format("Created Physics body: {} visual size: {}", physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), 
+		backgroundVisual.m_Text.GetSize().ToString()));
 }
 
 void SceneAsset::Unload()
