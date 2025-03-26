@@ -115,8 +115,8 @@ namespace Core
 		m_cameraSystem(&(m_physicsBodySystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
 		m_currentTime(std::chrono::high_resolution_clock().now()),
 		m_lastTime(std::chrono::high_resolution_clock().now()),
-		m_playerInfo(std::nullopt),
-		m_mainCameraInfo(std::nullopt),
+		//m_playerInfo(std::nullopt),
+		//m_mainCameraInfo(std::nullopt),
 		m_debugInfo{}, 
 		m_enableDebugInfo(false),
 		m_commandConsole(m_inputManager, m_guiSelectorManager),
@@ -133,49 +133,10 @@ namespace Core
 		m_assetManager.InitDependencoes<SceneAsset, GlobalEntityManager>(m_sceneManager.m_GlobalEntityManager);
 		m_assetManager.InitDependencoes<InputProfileAsset, Input::InputManager>(m_inputManager);
 		EngineLog("FINISHED ASSET MANAGER DEPENDENCY INIT");
-
-		VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
-				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
-
-		ECS::Entity& playerEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("player", TransformData(Vec2{ 10, 5 }));
-		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(1, Vec2(2, 2), Vec2(0, 0), GRAVITY, 20));
-
-		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
-
-		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
-		LightSourceData& lightSource= playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
-			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
-
-		//Assert(false, std::format("player light source:{}", playerEntity.TryGetComponentWithName("LightSourceData")->ToString()));
-		
-		//Log("CREATING PLAYER RB");
-		//ComponentData* ptr = &lightSource;
-		//Assert(false, std::format("LIGHT SOURCE PTR:{}", typeid(*ptr).name()));
-		//Assert(false, std::format("Light source: {}", typeid(*ptr).name()));
-		//Assert(false, std::format("Light source fields: {}", lightSource.ToStringFields()));
-
-		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },visualPreset), RenderLayerType::Player});
-
-		ComponentFieldReference lightRadiusref = ComponentFieldReference(&lightSource, "Radius");
-		//Assert(false, std::format("Entity light radius: {}", lightRadiusref.m_Entity->ToString()));
-		ComponentField& field= lightRadiusref.GetComponentFieldSafeMutable();
-		//Assert(false, std::format("Light source ref field: {}", field.ToString()));
-
-		playerEntity.AddComponent<AnimatorData>(AnimatorData(std::vector<AnimationPropertyVariant>{
-				AnimationProperty<std::uint8_t>(lightRadiusref, {
-				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(8), 0),
-				AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1)})}, 1, 1, true));
-
-		playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData(
-			{ SpriteAnimationFrame(0, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, 'O'))}}, visualPreset)),
-			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));
-
-		m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
-
-		ECS::Entity& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
-		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
-		m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
+ 
+		//Note: globals create main menu camera that then adds itself to each scene when scene is loaded
+		//TODO: change this weird and akward way of setting camera that feels hidden
+		m_sceneManager.m_GlobalEntityManager.CraeteGlobals(m_sceneManager);
 
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
@@ -188,21 +149,22 @@ namespace Core
 
 		EngineLog(std::format("SET FIRST SCENE:{}", m_sceneManager.GetActiveScene()->ToString()));
 		//m_sceneManager.GetActiveSceneMutable()->InitScene();
-		m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
+		//m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
 		LogError(std::format("Scene active: {}", m_sceneManager.GetActiveScene()->ToString()));
 		EngineLog("SET FIRST SCENE CAMERA");
 
+		/*
 		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData(Vec2{ 20, 20 }));
-		//Log(std::format("Has entity with id: {}", m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(obstacle.m_Id)->ToString()));
 		
 		obstacle.AddComponent<EntityRendererData>(EntityRendererData{
 			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'B')) } },
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
+				*/
 
 		//Log("CREATING OBSTACLE RB");
-		PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(0, Vec2(10, 10), Vec2(0, 0)));
-		m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
+		//PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(0, Vec2(10, 10), Vec2(0, 0)));
+		//m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 
 		ECS::Entity& uiIcon= m_sceneManager.GetActiveSceneMutable()->CreateEntity("icon", TransformData(Vec2{ 0, 0 }));
 		uiIcon.AddComponent<UIObjectData>(NormalizedPosition(0.1, 0.9));
@@ -357,12 +319,15 @@ namespace Core
 				Utils::ToStringDouble(m_deltaTime, DOUBLE_LOG_PRECISION), 
 				Utils::ToStringDouble(m_currentFPS, DOUBLE_LOG_PRECISION), std::to_string(GetFPS()));
 		}*/
+
+		/*
 		if (m_enableDebugInfo)
 		{
 			m_debugInfo.AddProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
 			m_debugInfo.AddProperty("DeltaTime", std::format("{} s", std::to_string(m_deltaTime)));
 			m_debugInfo.AddProperty("TimeStep", std::format("{} s", std::to_string(m_timeStep)));
 		}
+		*/
 
 		/*m_lastTime = m_currentTime;
 		return SUCCESS_CODE;*/
@@ -389,10 +354,10 @@ namespace Core
 				std::to_string(mainCamera != nullptr), std::to_string(mainCameraEntity != nullptr))))
 			return ERROR_CODE;
 
-		if (!Assert(this, m_playerInfo.has_value(),
+		/*if (!Assert(this, m_playerInfo.has_value(),
 			std::format("Tried to update the active scene:{} but failed to get "
 				"player info in a valid state", activeScene->GetName())))
-			return ERROR_CODE;
+			return ERROR_CODE;*/
 
 		//We need to reset to default since previous changes were baked into the buffer
 		//so we need to clear it for a fresh update
@@ -414,52 +379,52 @@ namespace Core
 		m_uiSystem.SystemUpdate(*activeScene, m_deltaTime);
 
 		m_inputManager.Update(m_deltaTime);
-		if (m_enableDebugInfo)
-		{
-			m_debugInfo.AddProperty("KeysDown", Utils::ToStringIterable<std::vector<std::string>, 
-				std::string>(m_inputManager.GetAllKeysWithStateAsString(Input::KeyState::Down)));
-		}
+		//if (m_enableDebugInfo)
+		//{
+		//	m_debugInfo.AddProperty("KeysDown", Utils::ToStringIterable<std::vector<std::string>, 
+		//		std::string>(m_inputManager.GetAllKeysWithStateAsString(Input::KeyState::Down)));
+		//}
 
 		//m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<2>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
-		m_playerSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<0>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
-		if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<0>().GetFrameInput().ToString()));
+		m_playerSystem.SystemUpdate(*activeScene, m_deltaTime);
+		//if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<0>().GetFrameInput().ToString()));
 
 		m_physicsManager.GetPhysicsWorldMutable().UpdateStart(m_deltaTime);
-		if (m_enableDebugInfo)
+		/*if (m_enableDebugInfo)
 		{
 			m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
 			m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<1>().GetVelocity().ToString(3, VectorForm::Component)));
 			m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<1>().GetAcceleration().ToString(3, VectorForm::Component)));
 			m_debugInfo.AddProperty("Grounded:", std::format("{}", std::to_string(m_playerInfo.value().GetAt<0>().GetIsGrounded())));
 			m_debugInfo.AddProperty("GroundDist:", std::format("{} m", std::to_string(m_playerInfo.value().GetAt<0>().GetVerticalDistanceToGround())));
-		}
+		}*/
 
 		m_physicsBodySystem.SystemUpdate(*activeScene, m_deltaTime);
-		Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
-			Conversions::WorldToScreenPosition(*mainCamera, m_playerInfo.value().m_Entity->m_Transform.m_Pos).ToString()));
+	/*	Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
+			Conversions::WorldToScreenPosition(*mainCamera, m_playerInfo.value().m_Entity->m_Transform.m_Pos).ToString()));*/
 		
 		m_animatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		m_spriteAnimatorSystem.SystemUpdate(*activeScene, m_deltaTime);
 		
 
-		LogError(this, std::format("Player visual: {} scene entities: {}", m_playerInfo.value().m_Entity->TryGetComponent<EntityRendererData>()->GetVisualData().ToString(), 
-			std::to_string(activeScene->GetEntityCount())));
+		/*LogError(this, std::format("Player visual: {} scene entities: {}", m_playerInfo.value().m_Entity->TryGetComponent<EntityRendererData>()->GetVisualData().ToString(), 
+			std::to_string(activeScene->GetEntityCount())));*/
 		LogError(this, std::format("Scene entities: {}", activeScene->ToString()));
 		//LogError(activeScene->GetAllEntities()[0]->GetName());
 		
 		//TODO: it seems enttiy system is causing a stirng to long exception
 		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
 		
-		LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
-			std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<1>(), *(m_obstacleInfo.value().m_Data))),
-			m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
-			//TODO: this is technically wrong since we use transform pos as center for aabb global pos but it could be offset (just for testing when offset=0)
-			m_playerInfo.value().GetAt<1>().GetAABB().ToString(m_playerInfo.value().m_Entity->m_Transform.m_Pos),
-			m_playerInfo.value().GetAt<0>().GetFrameInput().ToString(),
-			m_playerInfo.value().GetAt<1>().GetVelocity().ToString(),
-			m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
-			m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));
+		//LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
+		//	std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<1>(), *(m_obstacleInfo.value().m_Data))),
+		//	m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
+		//	//TODO: this is technically wrong since we use transform pos as center for aabb global pos but it could be offset (just for testing when offset=0)
+		//	m_playerInfo.value().GetAt<1>().GetAABB().ToString(m_playerInfo.value().m_Entity->m_Transform.m_Pos),
+		//	m_playerInfo.value().GetAt<0>().GetFrameInput().ToString(),
+		//	m_playerInfo.value().GetAt<1>().GetVelocity().ToString(),
+		//	m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
+		//	m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));
 		//TODO: light system without any other problems drop frames to ~20 fps
 		m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
 
@@ -469,16 +434,17 @@ namespace Core
 
 		if (m_enableCommandConsole) m_commandConsole.Update();
 
-		if (m_enableDebugInfo)
+		/*if (m_enableDebugInfo)
 		{
 			Vector2 mousePos = GetMousePosition();
 			ScreenPosition mouseScreenPos = { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y)};
 			WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(*m_mainCameraInfo.value().m_Data, mouseScreenPos);
 			m_debugInfo.SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X+15, mouseScreenPos.m_Y} });
-		}
+		}*/
 
 		m_entityEditor.Update();
 		m_guiSelectorManager.Update();
+		if (m_enableDebugInfo) m_debugInfo.UpdateProperties(m_deltaTime, m_timeStep, *activeScene, m_inputManager);
 
 		//TODO: rendering buffer drops frames
 		if (!collapsedBuffer.empty())

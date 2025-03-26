@@ -19,7 +19,7 @@ namespace SceneManagement
 
 		AssetManager& m_assetManager;
 
-		Scene* m_activeScene;
+		SceneAsset* m_activeScene;
 		//TODO: sicne we may reach a poitner with many scenes, maybe we should make this a map with scene names
 		std::vector<SceneAsset*> m_allScenes;
 		std::filesystem::path m_allScenePath;
@@ -35,10 +35,15 @@ namespace SceneManagement
 		Event<void, Scene*> m_OnSceneChange;
 
 	private:
-		void SetActiveScene(Scene* activeScene);
+		SceneAsset* TryGetSceneAssetMutable(const std::string& sceneName);
+		SceneAsset* TryGetSceneAssetMutable(const size_t& index);
 
+		void SetActiveScene(SceneAsset& activeScene);
+
+		void SaveCurrentScene();
 	public:
 		SceneManager(AssetManager& assetmanager);
+		~SceneManager();
 
 		/// <summary>
 		/// Although this could be handled with RAII (constructor) but 
@@ -53,11 +58,11 @@ namespace SceneManagement
 		const Scene* GetActiveScene() const;
 
 		bool TrySetActiveScene(const std::string& sceneName);
-		bool TrySetActiveScene(const int& sceneIndex);
+		bool TrySetActiveScene(const size_t& sceneIndex);
 
-		Scene* TryGetSceneWithNameMutable(const std::string& sceneName);
-		const Scene* TryGetSceneWithName(const std::string& sceneName) const;
-		Scene* TryGetSceneWithIndexMutable(const int& sceneIndex);
+		Scene* TryGetSceneMutable(const std::string& sceneName);
+		const Scene* TryGetScene(const std::string& sceneName) const;
+		Scene* TryGetSceneMutable(const size_t& sceneIndex);
 
 		const ECS::Entity* TryGetEntity(const std::string& sceneName, const std::string& entityName) const;
 		ECS::Entity* TryGetEntityMutable(const std::string& sceneName, const std::string& entityName);

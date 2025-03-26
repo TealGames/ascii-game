@@ -224,16 +224,15 @@ void to_json(Json& json, const VisualData& visualData)
 		"could not be deduced from font", visualData.ToString())))
 		return;
 
-	json.clear();
+	json["Font"] = maybeFontConstant.value();
 	json["Buffer"] = visualData.GetRawBuffer();
-	json["Font"] = maybeFontConstant.value(); 
 
 	std::optional<std::string> maybeFontSizeConstant = JsonConstants::TryGetFontSizeConstant(visualData.GetFontSize());
 	if (maybeFontSizeConstant.has_value()) json["FontSize"] = maybeFontSizeConstant.value();
 	else json["FontSize"] = visualData.GetFontSize();
 
 	std::optional<std::string> maybePivotConstant = JsonConstants::TryGetPivotConstant(visualData.GetPivot());
-	if (maybeFontSizeConstant.has_value()) json["Pivot"] = maybePivotConstant.value();
+	if (maybePivotConstant.has_value()) json["Pivot"] = maybePivotConstant.value();
 	else json["Pivot"] = visualData.GetPivot();
 
 	json["CharSpacing"] = visualData.GetCharSpacing();
@@ -278,7 +277,7 @@ ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)
 				return SceneManager->m_GlobalEntityManager.TryGetGlobalEntityMutable(serializedEntity.m_EntityName);
 			}
 
-			Scene* maybeScene = SceneManager->TryGetSceneWithNameMutable(serializedEntity.m_SceneName);
+			Scene* maybeScene = SceneManager->TryGetSceneMutable(serializedEntity.m_SceneName);
 			if (!Assert(maybeScene != nullptr, std::format("Tried to deserialize entity with non global scene: '{}', "
 				"but no scene matches that name", serializedEntity.m_SceneName)))
 				return nullptr;
@@ -307,6 +306,8 @@ ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)
 			{
 				return deserializationAction(json);
 			});
+		/*Assert(false, std::format("Deserialized entity jsoN:{} to has value:{} entity value:{}", JsonUtils::ToStringProperties(json), std::to_string(maybeEntity.has_value()), 
+			maybeEntity.has_value()? (maybeEntity.value()!=nullptr? maybeEntity.value()->ToString() : "NULL") : "NO VALUE"));*/
 
 		if (!maybeEntity.has_value() || (maybeEntity.has_value() && maybeEntity.value() == nullptr))
 			return nullptr;
@@ -327,12 +328,15 @@ Json TrySerializeEntity(const ECS::Entity* entity, const bool& isOptional)
 {
 	if (isOptional)
 	{
-		return TrySerializeOptional<const ECS::Entity*>(entity == nullptr ? std::nullopt : std::make_optional(entity),
+		Json json= TrySerializeOptional<const ECS::Entity*>(entity == nullptr ? std::nullopt : std::make_optional(entity),
 			[](const ECS::Entity* entity)->Json
 			{
 				SerializableEntity serializedEntity = { entity->GetName(), entity->GetSceneName() };
 				return { serializedEntity };
 			});
+
+		//Assert(false, std::format("Serialized optioan entity: {} is:{}", entity!=nullptr? entity->ToString() : "NULL", JsonUtils::ToStringProperties(json)));
+		return json;
 	}
 
 	if (!Assert(entity != nullptr, std::format("Tried to serialize entity to json but entity is "

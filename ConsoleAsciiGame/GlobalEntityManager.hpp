@@ -10,12 +10,21 @@
 #include "Entity.hpp"
 #include "Scene.hpp"
 #include "HelperFunctions.hpp"
+//#include "AssetManager.hpp"
+#include "GlobalCreator.hpp"
+
+namespace SceneManagement
+{
+	class SceneManager;
+}
 
 using EntityIDCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
 using EntityNameCollection = std::unordered_map<std::string, ECS::Entity*>;
 class GlobalEntityManager
 {
 private:
+	//AssetManager& m_assetManager;
+
 	//EntityMapper m_globalEntityMapper;
 	entt::registry m_globalEntityMapper;
 	std::vector<ECS::Entity> m_globalEntities;
@@ -23,6 +32,7 @@ private:
 	EntityNameCollection m_globalEntityNames;
 
 public:
+	static const char* GLOBAL_SCENE_NAME;
 
 private:
 	/// <summary>
@@ -62,6 +72,8 @@ public:
 
 	const std::vector<ECS::Entity>& GetAllGlobalEntities() const;
 	std::vector<ECS::Entity>& GetAllGlobalEntitiesMutable();
+
+	void CraeteGlobals(SceneManagement::SceneManager& sceneManager);
 
 	/*template<typename T>
 	std::vector<T*> TryGetComponentsOfType(const ComponentType& type, 

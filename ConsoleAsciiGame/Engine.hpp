@@ -62,9 +62,9 @@ namespace Core
 		ECS::PhysicsBodySystem m_physicsBodySystem;
 		ECS::PlayerSystem m_playerSystem;
 
-		std::optional<ECS::EntityComponents<PlayerData, PhysicsBodyData>> m_playerInfo;
-		std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;
-		std::optional<ECS::EntityComponentPair<PhysicsBodyData>> m_obstacleInfo;
+		//std::optional<ECS::EntityComponents<PlayerData, PhysicsBodyData>> m_playerInfo;
+		//std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;
+		//std::optional<ECS::EntityComponentPair<PhysicsBodyData>> m_obstacleInfo;
 
 		std::uint8_t m_currentFrameCounter = 0;
 

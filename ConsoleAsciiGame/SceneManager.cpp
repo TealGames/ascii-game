@@ -8,12 +8,29 @@ namespace SceneManagement
 {
 	const std::filesystem::path SceneManager::SCENES_FOLDER = "scenes";
 
+	static constexpr bool DO_SCENE_SAVING = true;
+	//If empty then will write to original scene. Otherwise will write to this path,
+	//which can be helpful for testing
+	static const std::filesystem::path SCENE_SAVE_OUTPUT_PATH = "assets/fart.json";
+
 	SceneManager::SceneManager(AssetManager& assetmanager) :
 		m_assetManager(assetmanager), m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager(),
 		m_OnLoad(), m_OnSceneChange()
 		/*m_globalEntities{}, m_globalEntitiesLookup{}, m_globalEntityMapper()*/
 	{
 		
+	}
+	SceneManager::~SceneManager()
+	{
+		SaveCurrentScene();
+	}
+
+	void SceneManager::SaveCurrentScene()
+	{
+		if (m_activeScene == nullptr || !DO_SCENE_SAVING) return;
+
+		if (SCENE_SAVE_OUTPUT_PATH.empty()) m_activeScene->SerializeToSelf();
+		else m_activeScene->SerializeToPath(SCENE_SAVE_OUTPUT_PATH);
 	}
 
 	void SceneManager::LoadAllScenes()
@@ -86,18 +103,15 @@ namespace SceneManagement
 		return m_allScenes.size();
 	}
 
-	Scene* SceneManager::TryGetSceneWithNameMutable(const std::string& sceneName)
+	Scene* SceneManager::TryGetSceneMutable(const std::string& sceneName)
 	{
-		for (auto& scene : m_allScenes)
-		{
-			if (scene == nullptr) continue;
-			if (scene->GetName() == sceneName)
-				return &(scene->GetSceneMutable());
-		}
-		return nullptr;
+		SceneAsset* assetPtr = TryGetSceneAssetMutable(sceneName);
+		if (assetPtr == nullptr) return nullptr;
+
+		return &(assetPtr->GetSceneMutable());
 	}
 
-	const Scene* SceneManager::TryGetSceneWithName(const std::string& sceneName) const
+	const Scene* SceneManager::TryGetScene(const std::string& sceneName) const
 	{
 		for (const auto& scene : m_allScenes)
 		{
@@ -107,55 +121,77 @@ namespace SceneManagement
 		return nullptr;
 	}
 
-	Scene* SceneManager::TryGetSceneWithIndexMutable(const int& sceneIndex)
+	Scene* SceneManager::TryGetSceneMutable(const size_t& sceneIndex)
 	{
-		if (sceneIndex < 0 || sceneIndex >= m_allScenes.size()) return nullptr;
-		if (m_allScenes[sceneIndex] == nullptr) return nullptr;
+		SceneAsset* assetPtr = TryGetSceneAssetMutable(sceneIndex);
+		if (assetPtr == nullptr) return nullptr;
 
-		/*Log(std::format("Attempting to get valid index scene {}/{}. scene valid: {}",
-			std::to_string(sceneIndex), std::to_string(m_allScenes.size()), m_allScenes[sceneIndex].m_SceneName));*/
-		return &(m_allScenes[sceneIndex]->GetSceneMutable());
+		return &(assetPtr->GetSceneMutable());
 	}
 
-	void SceneManager::SetActiveScene(Scene* activeScene)
+	SceneAsset* SceneManager::TryGetSceneAssetMutable(const std::string& sceneName)
+	{
+		for (const auto& scene : m_allScenes)
+		{
+			if (scene->GetName() == sceneName)
+				return scene;
+		}
+		return nullptr;
+	}
+	SceneAsset* SceneManager::TryGetSceneAssetMutable(const size_t& sceneIndex)
+	{
+		if (sceneIndex < 0 || sceneIndex >= m_allScenes.size()) 
+			return nullptr;
+
+		return m_allScenes[sceneIndex];
+	}
+
+	void SceneManager::SetActiveScene(SceneAsset& activeScene)
 	{
 		//TODO: this should unload the old active scene and then load the new one
 		//to allow for better memory usage and not having all of scenes loaded at once
 		//if (m_activeScene != nullptr) m_activeScene->Unload();
-		m_activeScene = activeScene;
-		m_OnSceneChange.Invoke(m_activeScene);
+
+		//We save the past scene if there was one
+		SaveCurrentScene();
+
+		m_activeScene = &activeScene;
+		//TODO: the scene change event should proably be a reference?
+		m_OnSceneChange.Invoke(&(m_activeScene->GetSceneMutable()));
 		//Log(std::format("Set active scene to; {}", activeScene->ToStringLayers()));
 	}
 
 	bool SceneManager::TrySetActiveScene(const std::string& sceneName)
 	{
-		Scene* scene = TryGetSceneWithNameMutable(sceneName);
-		if (!Assert(scene != nullptr, std::format("Tried to load a scene with name: {} "
+		SceneAsset* asset = TryGetSceneAssetMutable(sceneName);
+		if (!Assert(asset != nullptr, std::format("Tried to load a scene with name: {} "
 			"but that scene does not exist", sceneName))) return false;
 
-		SetActiveScene(scene);
+		SetActiveScene(*asset);
 		return true;
 	}
 
-	bool SceneManager::TrySetActiveScene(const int& sceneIndex)
+	bool SceneManager::TrySetActiveScene(const size_t& sceneIndex)
 	{
-		Scene* scene = TryGetSceneWithIndexMutable(sceneIndex);
+		SceneAsset* asset = TryGetSceneAssetMutable(sceneIndex);
 		//LogError(std::format("Active scene: {}", scene!=nullptr? scene->ToString() : "NULL"));
-		LogError(std::format("Active scene: {}", scene != nullptr ? "SCENE" : "NULL"));
+		//LogError(std::format("Active scene: {}", asset != nullptr ? "SCENE" : "NULL"));
 
-		if (!Assert(scene != nullptr, std::format("Tried to load a scene with index: {} "
+		if (!Assert(asset != nullptr, std::format("Tried to load a scene with index: {} "
 			"but that scene does not exist", std::to_string(sceneIndex)))) 
 			return false;
 
-		SetActiveScene(scene);
+		SetActiveScene(*asset);
 		return true;
 	}
 
 	Scene* SceneManager::GetActiveSceneMutable()
 	{
 		if (!Assert(m_activeScene != nullptr,
-			"Tried to get active scene (mutable) but there is no active scene set")) return nullptr;
-		return m_activeScene;
+			"Tried to get active scene (mutable) but there is no active scene set")) 
+			return nullptr;
+
+		return &(m_activeScene->GetSceneMutable());
 	}
 
 	const Scene* SceneManager::GetActiveScene() const
@@ -165,19 +201,19 @@ namespace SceneManagement
 
 		if (!Assert(m_activeScene != nullptr,
 			"Tried to get active scene (immutable) but there is no active scene set")) return nullptr;
-		return m_activeScene;
+		return &(m_activeScene->GetSceneMutable());
 	}
 
 	const ECS::Entity* SceneManager::TryGetEntity(const std::string& sceneName, const std::string& entityName) const
 	{
-		const Scene* maybeScene = TryGetSceneWithName(sceneName);
+		const Scene* maybeScene = TryGetScene(sceneName);
 		if (maybeScene == nullptr) return nullptr;
 
 		return maybeScene->TryGetEntity(entityName);
 	}
 	ECS::Entity* SceneManager::TryGetEntityMutable(const std::string& sceneName, const std::string& entityName)
 	{
-		Scene* maybeScene = TryGetSceneWithNameMutable(sceneName);
+		Scene* maybeScene = TryGetSceneMutable(sceneName);
 		if (maybeScene == nullptr) return nullptr;
 
 		return maybeScene->TryGetEntityMutable(entityName);

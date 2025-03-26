@@ -48,6 +48,31 @@ public:
 	const Asset* TryGetAsset(const std::string& name) const;
 
 	template<typename T>
+	T* TryGetAssetMutable(const std::string& name)
+	{
+		Asset* maybeAsset = TryGetAssetMutable(name);
+		if (maybeAsset == nullptr) return nullptr;
+
+		const std::string tTypeName = Utils::GetTypeName<T>();
+		const std::string realTypename = Utils::FormatTypeName(typeid(*(maybeAsset)).name());
+		if (!Assert(this, tTypeName == tTypeName, std::format("Tried to get asset of type:{} "
+			"by name:{} MUTABLE but asset type is actually:{}", tTypeName, name, realTypename)))
+			return nullptr;
+
+		try
+		{
+			return dynamic_cast<T*>(maybeAsset);
+		}
+		catch (const std::exception& e)
+		{
+			LogError(this, std::format("Tried to get asset of type:{} by name:{} "
+				"but an asset by that name could not be converted to the type. Error:{}", tTypeName, maybeAsset.GetName(), e.what()));
+			return nullptr;
+		}
+		return nullptr;
+	}
+
+	template<typename T>
 	requires IsAssetType<T>
 	bool IsAssetOfType(const Asset* asset)
 	{
@@ -96,7 +121,7 @@ public:
 		return GetAssetsOfTypeMutable<T>([&targetAssetPath](const Asset& asset)->bool
 			{ 
 				std::string assetpath = asset.GetPath().string();
-				LogError(std::format("Checking path of asset: {} to {}", asset.ToString(), targetAssetPath));
+				//LogError(std::format("Checking path of asset: {} to {}", asset.ToString(), targetAssetPath));
 				if (assetpath.size() < targetAssetPath.size()) return false;
 				return assetpath.substr(0, targetAssetPath.size()) == targetAssetPath;
 			});

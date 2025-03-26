@@ -56,6 +56,7 @@ Scene::Scene(const std::string& sceneName, GlobalEntityManager* manager) :
 	m_layers.emplace(RenderLayerType::Background, RenderLayer{});
 	m_layers.emplace(RenderLayerType::Player, RenderLayer{});
 	m_layers.emplace(RenderLayerType::UI, RenderLayer{});
+
 	//LoadData();
 
 	//Log(std::format("New layer w: {} h: {}", std::to_string(newLayerW), std::to_string(newLayerH)));
@@ -505,6 +506,14 @@ const std::vector<const ECS::Entity*> Scene::GetLocalEntities() const
 {
 	std::vector<const ECS::Entity*> entities = {};
 	for (const auto& localEntity : m_localEntities)
+		entities.push_back(&localEntity);
+
+	return entities;
+}
+const std::vector<ECS::Entity*> Scene::GetLocalEntitiesMutable()
+{
+	std::vector<ECS::Entity*> entities = {};
+	for (auto& localEntity : m_localEntities)
 		entities.push_back(&localEntity);
 
 	return entities;

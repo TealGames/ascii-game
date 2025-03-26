@@ -5,6 +5,8 @@
 #include "GlobalEntityManager.hpp"
 #include "StringUtil.hpp"
 #include "HelperFunctions.hpp"
+#include "SceneAsset.hpp"
+
 
 GlobalEntityManager::GlobalEntityManager() :
 	m_globalEntities{}, m_globalEntityIds{}, m_globalEntityMapper()
@@ -151,5 +153,10 @@ const std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntities() cons
 std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntitiesMutable()
 {
 	return m_globalEntities;
+}
+
+void GlobalEntityManager::CraeteGlobals(SceneManagement::SceneManager& sceneManager)
+{
+	GlobalCreator::CreateGlobals(*this, sceneManager);
 }
 

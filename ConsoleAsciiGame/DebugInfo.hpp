@@ -6,6 +6,12 @@
 #include "WorldPosition.hpp"
 #include "ScreenPosition.hpp"
 
+class Scene;
+namespace Input
+{
+	class InputManager;
+}
+
 struct DebugMousePosition
 {
 	WorldPosition m_MouseWorldPos = {};
@@ -27,6 +33,7 @@ public:
 	DebugInfo();
 
 	void ClearProperties();
+	void UpdateProperties(const float& deltaTime, const float& timeStep, Scene& activeScene, Input::InputManager& input);
 	void AddProperty(const std::string& name, const std::string& value);
 	const std::vector<std::string>& GetText() const;
 

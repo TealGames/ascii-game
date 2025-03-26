@@ -136,6 +136,7 @@ public:
 	const std::vector<const ECS::Entity*> GetAllEntities() const;
 	std::vector<ECS::Entity*> GetAllEntitiesMutable();
 	const std::vector<const ECS::Entity*> GetLocalEntities() const;
+	const std::vector<ECS::Entity*> GetLocalEntitiesMutable();
 	
 	ECS::Entity& CreateEntity(const std::string& name, TransformData& transform);
 	ECS::Entity& CreateEntity(const std::string& name, TransformData&& transform);

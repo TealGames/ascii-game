@@ -1,5 +1,5 @@
 #pragma once
-#include "SingleBodySystem.hpp"
+#include "MultiBodySystem.hpp"
 #include "PlayerData.hpp"
 #include "InputManager.hpp"
 
@@ -7,7 +7,7 @@
 
 namespace ECS
 {
-	class PlayerSystem : public SingleBodySystem<PlayerData>
+	class PlayerSystem : MultiBodySystem
 	{
 	private:
 		bool m_lastFrameGrounded;
@@ -21,8 +21,7 @@ namespace ECS
 	public:
 		PlayerSystem(Input::InputManager& input);
 
-		void SystemUpdate(Scene& scene, PlayerData& component, 
-			ECS::Entity& entity, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, const float& deltaTime) override;
 
 		void SetCheatStatus(const bool& enableCheats);
 	};

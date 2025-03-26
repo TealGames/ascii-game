@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "SceneAsset.hpp"
 #include "JsonUtils.hpp"
+#include "JsonSerializers.hpp"
 
 #include "AnimatorData.hpp"
 #include "CameraData.hpp"
@@ -132,7 +133,7 @@ void SceneAsset::Deserialize(const Json& json)
 			}
 			else
 			{
-				Assert(false, std::format("Tried to parse component:'{}' of entity:'{} 'to scene file at path: '{}', "
+				Assert(this, false, std::format("Tried to DESERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
 					"but no component by that name exists!", componentName, entityName, GetPath().string()));
 				return;
 			}
@@ -146,7 +147,7 @@ void SceneAsset::Deserialize(const Json& json)
 			if (componentDependencies == HighestDependecyLevel::None)
 			{
 				componentCreated->Deserialize(currentComponentJson);
-				LogError(std::format("Created component: {}", componentCreated->ToString()));
+				LogError(std::format("Created {} component: {}", Utils::FormatTypeName(typeid(*componentCreated).name()), componentCreated->ToString()));
 			}
 			else
 			{
@@ -154,7 +155,7 @@ void SceneAsset::Deserialize(const Json& json)
 					{
 						LogError("Deserializing delayed component");
 						componentCreated->Deserialize(currentComponentJson);
-						LogError(std::format("Created component: {}", componentCreated->ToString()));
+						LogError(std::format("Created {} component: {}", Utils::FormatTypeName(typeid(*componentCreated).name()), componentCreated->ToString()));
 					};
 
 				if (componentDependencies == HighestDependecyLevel::SiblingComponent) delayedSiblingDependencies.AddListener(delayedAction);
@@ -166,12 +167,123 @@ void SceneAsset::Deserialize(const Json& json)
 		//we wait until all other non-dependent components are deserialized then we do the others
 		if (delayedSiblingDependencies.HasListeners()) delayedSiblingDependencies.Invoke();
 	}
+
+	if (delayedEntityDependencies.HasListeners()) delayedEntityDependencies.Invoke();
+	//Assert(false, std::format("ENDED DESERIALIZATION"));
 }
 
 Json SceneAsset::Serialize()
 {
-	//TODO: implement
-	return {};
+	//TODO: floats should not be fully serialized and should be partially cut off
+
+	Json json = {};
+	Json currentEntityJson = {};
+	//NOTE: by making these ordered, we can keep the the order the properties are added,
+	//whcih is especially useful for bwing consistent if editing is necesssary
+	JsonOrdered currentComponentJson = {};
+	JsonOrdered serializedComponentJson = {};
+	//json["Entities"] = {};
+
+	Scene& scene = GetSceneMutable();
+	std::string componentName = "";
+
+	for (auto& entity : scene.GetLocalEntitiesMutable())
+	{
+		if (entity == nullptr) continue;
+		currentEntityJson = {};
+		currentEntityJson["Name"] = entity->GetName();
+
+		for (auto& component : entity->GetAllComponentsMutable())
+		{
+			if (component == nullptr) continue;
+
+			currentComponentJson = {};
+			serializedComponentJson = {};
+			componentName = Utils::FormatTypeName(typeid(*component).name());
+			currentComponentJson["Name"] = componentName;
+
+			try
+			{
+				if (componentName == Utils::GetTypeName<TransformData>())
+				{
+					serializedComponentJson = dynamic_cast<TransformData*>(component)->Serialize();
+				}
+				else if (componentName == Utils::GetTypeName<AnimatorData>())
+				{
+					serializedComponentJson = dynamic_cast<AnimatorData*>(component)->Serialize();
+				}
+				else if (componentName == Utils::GetTypeName<CameraData>())
+				{
+					serializedComponentJson = dynamic_cast<CameraData*>(component)->Serialize();
+				}
+				else if (componentName == Utils::GetTypeName<EntityRendererData>())
+				{
+					serializedComponentJson = dynamic_cast<EntityRendererData*>(component)->Serialize();
+					/*LogError(std::format("Serialized component entity renderer:{} converted:{} serialize:{}", 
+						JsonUtils::ToStringProperties(serializedComponentJson), converted->ToString(), JsonUtils::ToStringProperties(serialized)));*/
+				}
+				else if (componentName == Utils::GetTypeName<LightSourceData>())
+				{
+					serializedComponentJson = dynamic_cast<LightSourceData*>(component)->Serialize();
+				}
+				else if (componentName == Utils::GetTypeName<PhysicsBodyData>())
+				{
+					serializedComponentJson = dynamic_cast<PhysicsBodyData*>(component)->Serialize();
+				}
+				else if (componentName == Utils::GetTypeName<PlayerData>())
+				{
+					serializedComponentJson = dynamic_cast<PlayerData*>(component)->Serialize();
+				}
+				else if (componentName == Utils::GetTypeName<SpriteAnimatorData>())
+				{
+					serializedComponentJson = dynamic_cast<SpriteAnimatorData*>(component)->Serialize();
+				}
+				else if (componentName == Utils::GetTypeName<UIObjectData>())
+				{
+					serializedComponentJson = dynamic_cast<UIObjectData*>(component)->Serialize();
+				}
+				else
+				{
+					Assert(false, std::format("Tried to SERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
+						"but no component by that name exists!", componentName, entity->GetName(), GetPath().string()));
+					return {};
+				}
+			}
+			catch (const std::exception& e)
+			{
+				LogError(this, std::format("Tried to serialize scene asset but ran into error while converting component"
+					"of type : {} for entity : {}. Error : {}", componentName, entity->ToString(), e.what()));
+				return {};
+			}
+			LogError(std::format("Created component json:{}", JsonUtils::ToStringProperties(serializedComponentJson)));
+
+			if (!Assert(this, !serializedComponentJson.empty(), std::format("Tried to deserialize scene asset for entity:{} "
+				"at component:{} but its component json is empty!", entity->ToString(), componentName)))
+				return {};
+
+			currentComponentJson.insert(serializedComponentJson.begin(), serializedComponentJson.end());
+			currentEntityJson["Components"].push_back(currentComponentJson);
+		}
+		json["Entities"].push_back(currentEntityJson);
+	}
+	LogError(std::format("Resulting json : {}", JsonUtils::ToStringProperties(json)));
+	return json;
+}
+
+void SceneAsset::SerializeToPath(const std::filesystem::path& path)
+{
+	std::ofstream stream(path);
+	if (!Assert(this, !!stream, std::format("Tried to serialzie scene asset to path:{}"
+		"but file could not be opened", path.string())))
+		return;
+
+	Json serializedJson = Serialize();
+	stream << serializedJson;
+	LogError(std::format("Serialized json:{}", JsonUtils::ToStringProperties(serializedJson)));
+}
+void SceneAsset::SerializeToSelf()
+{
+	SerializeToPath(GetPath());
 }
 
 void SceneAsset::Load()

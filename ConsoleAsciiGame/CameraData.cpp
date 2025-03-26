@@ -35,6 +35,7 @@ void CameraData::Deserialize(const Json& json)
 	m_CameraSettings.UpdateViewportSize();
 
 	ECS::Entity* maybeFollowTarget = TryDeserializeEntity(json.at("FollowTarget"), true);
+
 	if (maybeFollowTarget != nullptr) m_CameraSettings.SetFollowTarget(*maybeFollowTarget);
 	else m_CameraSettings.SetFollowNoTarget();
 }

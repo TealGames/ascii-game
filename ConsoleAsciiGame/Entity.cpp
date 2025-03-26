@@ -5,8 +5,8 @@
 
 namespace ECS
 {
-	const char* ECS::Entity::GLOBAL_SCENE_NAME = "Global";
 	//TODO: add a reserved entity name ssytem and not allowing those names to be used
+	const char* Entity::GLOBAL_SCENE_NAME = "global";
 
 	/// <summary>
 	/// This will create the entity with name and mapper.

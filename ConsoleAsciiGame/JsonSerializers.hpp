@@ -22,6 +22,7 @@
 #include <vector>
 
 using Json = nlohmann::json;
+using JsonOrdered = nlohmann::ordered_json;
 namespace SceneManagement
 {
 	class SceneManager;
