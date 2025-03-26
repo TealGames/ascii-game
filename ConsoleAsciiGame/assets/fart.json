@@ -1,1 +1,258 @@
-{"Entities":[{"Components":[{"LastFramePos":{"X":650.0466918945313,"Y":421.24188232421875},"LastPos":{"X":650.0466918945313,"Y":419.4730529785156},"Name":"TransformData","Pos":{"X":650.0466918945313,"Y":421.24188232421875}},{"Layers":["Player"],"Name":"EntityRendererData","VisualData":{"Buffer":[[{"Char":65,"Color":["White"],"Pos":{"Col":0,"Row":0}}]],"CharSpacing":{"X":1.0,"Y":1.0},"Font":"Default","FontSize":"Default","Pivot":"BottomLeft"}},{"AspectRatio":{"X":3,"Y":6},"FollowTarget":[{"Entity":"scene1","Scene":"Test2"}],"LensSize":10.0,"Name":"CameraData"},{"AABB":{"Size":{"X":4.0,"Y":10.0}},"Acceleration":{"X":56.0,"Y":9.800000190734863},"Friction":5.599999904632568,"Gravity":9.800000190734863,"Mass":5.0,"Name":"PhysicsBodyData","Offset":{"X":2.0,"Y":5.0},"Restitution":1.0,"TerminalVelocity":67.0,"Velocity":{"X":267.8876647949219,"Y":110.55113220214844}},{"Body":{"Component":"PhysicsBodyData","Entity":"scene1","Scene":"scene1"},"JumpHeight":2.0,"MoveSpeed":5.0,"Name":"PlayerData"}],"Name":"Test1"},{"Components":[{"LastFramePos":{"X":0.0,"Y":0.0},"LastPos":{"X":5.0,"Y":6.0},"Name":"TransformData","Pos":{"X":0.0,"Y":0.0}}],"Name":"Test2"},{"Components":[{"LastFramePos":{"X":0.0,"Y":0.0},"LastPos":{"X":0.0,"Y":0.0},"Name":"TransformData","Pos":{"X":0.0,"Y":0.0}},{"Layers":["Background"],"Name":"EntityRendererData","VisualData":{"Buffer":[],"CharArea":{"X":2.0,"Y":2.0},"CharSpacing":{"X":1.0,"Y":1.0},"Font":"Default","FontSize":"Default","Pivot":{"X":0.5,"Y":0.5}}},{"AABB":{"Size":{"X":-1.0,"Y":-1.0}},"Acceleration":{"X":0.0,"Y":0.0},"Friction":1.0,"Gravity":-0.0,"Mass":5.0,"Name":"PhysicsBodyData","Offset":{"X":0.0,"Y":0.0},"Restitution":0.0,"TerminalVelocity":-0.0,"Velocity":{"X":0.0,"Y":0.0}}],"Name":"Background"},{"Components":[{"LastFramePos":{"X":-38.28499984741211,"Y":-37.66459655761719},"LastPos":{"X":-38.28499984741211,"Y":-37.32460021972656},"Name":"TransformData","Pos":{"X":-38.28499984741211,"Y":-37.66459655761719}},{"Name":"UIObjectData","Pos":{"X":0.10000000149011612,"Y":0.8999999761581421}},{"Layers":["UI"],"Name":"EntityRendererData","VisualData":{"Buffer":[[{"Char":42,"Color":{"A":255,"B":0,"G":161,"R":255},"Pos":{"Col":0,"Row":0}}]],"CharArea":{"X":2.0,"Y":2.0},"CharSpacing":{"X":1.0,"Y":1.0},"Font":"Default","FontSize":"Default","Pivot":{"X":0.0,"Y":1.0}}}],"Name":"icon"}]}
+{
+    "Entities": [
+        {
+            "Components": [
+                {
+                    "LastFramePos": {
+                        "X": 284.2408447265625,
+                        "Y": 250.962890625
+                    },
+                    "LastPos": {
+                        "X": 284.2408447265625,
+                        "Y": 249.45858764648438
+                    },
+                    "Pos": {
+                        "X": 284.2408447265625,
+                        "Y": 250.962890625
+                    },
+                    "Type": "TransformData"
+                },
+                {
+                    "Layers": [
+                        "Player"
+                    ],
+                    "Type": "EntityRendererData",
+                    "VisualData": {
+                        "Buffer": [
+                            [
+                                {
+                                    "Char": 65,
+                                    "Color": [
+                                        "White"
+                                    ],
+                                    "Pos": {
+                                        "Col": 0,
+                                        "Row": 0
+                                    }
+                                }
+                            ]
+                        ],
+                        "CharSpacing": {
+                            "X": 1.0,
+                            "Y": 1.0
+                        },
+                        "Font": "Default",
+                        "FontSize": "Default",
+                        "Pivot": "BottomLeft"
+                    }
+                },
+                {
+                    "AspectRatio": {
+                        "X": 3,
+                        "Y": 6
+                    },
+                    "FollowTarget": [
+                        {
+                            "Entity": "scene1",
+                            "Scene": "Test2"
+                        }
+                    ],
+                    "LensSize": 10.0,
+                    "Type": "CameraData"
+                },
+                {
+                    "AABB": {
+                        "Size": {
+                            "X": 4.0,
+                            "Y": 10.0
+                        }
+                    },
+                    "Acceleration": {
+                        "X": 56.0,
+                        "Y": 9.800000190734863
+                    },
+                    "Friction": 5.599999904632568,
+                    "Gravity": 9.800000190734863,
+                    "Mass": 5.0,
+                    "Offset": {
+                        "X": 2.0,
+                        "Y": 5.0
+                    },
+                    "Restitution": 1.0,
+                    "TerminalVelocity": 67.0,
+                    "Type": "PhysicsBodyData",
+                    "Velocity": {
+                        "X": 175.4320526123047,
+                        "Y": 94.01856231689453
+                    }
+                },
+                {
+                    "Body": {
+                        "Component": "PhysicsBodyData",
+                        "Entity": "scene1",
+                        "Scene": "scene1"
+                    },
+                    "JumpHeight": 2.0,
+                    "MoveSpeed": 5.0,
+                    "Type": "PlayerData"
+                }
+            ],
+            "Name": "Test1"
+        },
+        {
+            "Components": [
+                {
+                    "LastFramePos": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    },
+                    "LastPos": {
+                        "X": 5.0,
+                        "Y": 6.0
+                    },
+                    "Pos": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    },
+                    "Type": "TransformData"
+                }
+            ],
+            "Name": "Test2"
+        },
+        {
+            "Components": [
+                {
+                    "LastFramePos": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    },
+                    "LastPos": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    },
+                    "Pos": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    },
+                    "Type": "TransformData"
+                },
+                {
+                    "Layers": [
+                        "Background"
+                    ],
+                    "Type": "EntityRendererData",
+                    "VisualData": {
+                        "Buffer": [],
+                        "CharArea": {
+                            "X": 2.0,
+                            "Y": 2.0
+                        },
+                        "CharSpacing": {
+                            "X": 1.0,
+                            "Y": 1.0
+                        },
+                        "Font": "Default",
+                        "FontSize": "Default",
+                        "Pivot": {
+                            "X": 0.5,
+                            "Y": 0.5
+                        }
+                    }
+                },
+                {
+                    "AABB": {
+                        "Size": {
+                            "X": -1.0,
+                            "Y": -1.0
+                        }
+                    },
+                    "Acceleration": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    },
+                    "Friction": 1.0,
+                    "Gravity": -0.0,
+                    "Mass": 5.0,
+                    "Offset": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    },
+                    "Restitution": 0.0,
+                    "TerminalVelocity": -0.0,
+                    "Type": "PhysicsBodyData",
+                    "Velocity": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    }
+                }
+            ],
+            "Name": "Background"
+        },
+        {
+            "Components": [
+                {
+                    "LastFramePos": {
+                        "X": -38.0,
+                        "Y": -4.7747802734375
+                    },
+                    "LastPos": {
+                        "X": -38.0,
+                        "Y": -4.4547882080078125
+                    },
+                    "Pos": {
+                        "X": -38.0,
+                        "Y": -4.7747802734375
+                    },
+                    "Type": "TransformData"
+                },
+                {
+                    "Pos": {
+                        "X": 0.10000000149011612,
+                        "Y": 0.8999999761581421
+                    },
+                    "Type": "UIObjectData"
+                },
+                {
+                    "Layers": [
+                        "UI"
+                    ],
+                    "Type": "EntityRendererData",
+                    "VisualData": {
+                        "Buffer": [
+                            [
+                                {
+                                    "Char": 42,
+                                    "Color": {
+                                        "A": 255,
+                                        "B": 0,
+                                        "G": 161,
+                                        "R": 255
+                                    },
+                                    "Pos": {
+                                        "Col": 0,
+                                        "Row": 0
+                                    }
+                                }
+                            ]
+                        ],
+                        "CharArea": {
+                            "X": 2.0,
+                            "Y": 2.0
+                        },
+                        "CharSpacing": {
+                            "X": 1.0,
+                            "Y": 1.0
+                        },
+                        "Font": "Default",
+                        "FontSize": "Default",
+                        "Pivot": {
+                            "X": 0.0,
+                            "Y": 1.0
+                        }
+                    }
+                }
+            ],
+            "Name": "icon"
+        }
+    ]
+}

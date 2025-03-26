@@ -200,7 +200,7 @@ Json SceneAsset::Serialize()
 			currentComponentJson = {};
 			serializedComponentJson = {};
 			componentName = Utils::FormatTypeName(typeid(*component).name());
-			currentComponentJson["Name"] = componentName;
+			currentComponentJson["Type"] = componentName;
 
 			try
 			{
