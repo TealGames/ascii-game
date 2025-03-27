@@ -9,6 +9,7 @@
 #include "PositionConversions.hpp"
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
+#include "Scene.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"

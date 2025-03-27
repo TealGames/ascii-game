@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include "MultiBodySystem.hpp"
 #include <optional>
 #include <functional>
 #include <format>
@@ -11,12 +12,6 @@
 #include "Scene.hpp"
 #include "HelperFunctions.hpp"
 //#include "AssetManager.hpp"
-#include "GlobalCreator.hpp"
-
-namespace SceneManagement
-{
-	class SceneManager;
-}
 
 using EntityIDCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
 using EntityNameCollection = std::unordered_map<std::string, ECS::Entity*>;
@@ -73,8 +68,6 @@ public:
 	const std::vector<ECS::Entity>& GetAllGlobalEntities() const;
 	std::vector<ECS::Entity>& GetAllGlobalEntitiesMutable();
 
-	void CraeteGlobals(SceneManagement::SceneManager& sceneManager);
-
 	/*template<typename T>
 	std::vector<T*> TryGetComponentsOfType(const ComponentType& type, 
 		const std::function<void(T*, const EntityID&)>& action = nullptr)
@@ -111,18 +104,34 @@ public:
 	}*/
 
 	template<typename T>
+	requires ECS::IsComponent<T>
 	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)
 	{
+		ECS::OperateOnActiveComponents<T>(m_globalEntityMapper,
+			[this](const ECS::EntityID id)->ECS::Entity*
+			{
+				return TryGetGlobalEntityMutable(id);
+			}, action);
+
+		/*
 		auto view = m_globalEntityMapper.view<T>();
 		for (auto entityId : view)
 		{
 			ECS::Entity* entityPtr = TryGetGlobalEntityMutable(entityId);
 			if (!Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
 				"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
-				typeid(T).name(), ECS::Entity::ToString(entityId)))) return;
+				typeid(T).name(), ECS::Entity::ToString(entityId)))) 
+				return;
 
-			action(view.get<T>(entityId), *entityPtr);
+			if (!entityPtr->m_Active) continue;
+
+			T* component = &(view.get<T>(entityId));
+			ComponentData* componentBase = static_cast<ComponentData*>(component);
+			if (!componentBase->m_IsEnabled) continue;
+
+			action(*component, *entityPtr);
 		}
+		*/
 		/*const ComponentType type = GetComponentFromType<T>();
 		if (!Assert(type != ComponentType::None, std::format("Tried to operate on component type: {} "
 			"but failed to retrieve its enum value", typeid(T).name()))) return;

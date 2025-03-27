@@ -44,6 +44,13 @@ public:
 	/// </summary>
 	bool m_MutatedThisFrame;
 
+	/// <summary>
+	/// If true, component is enabled, otherwise it is disabled. 
+	/// Note: this does not change anything directly as components need to check this 
+	/// flag themselves
+	/// </summary>
+	bool m_IsEnabled;
+
 	//Guaranteed to not be nullptr (but cant be a ref to allow it to be set
 	//not on construction without the need to have it as constructor arg
 	ECS::Entity* m_Entity;

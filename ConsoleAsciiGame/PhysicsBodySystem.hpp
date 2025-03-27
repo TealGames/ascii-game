@@ -18,7 +18,7 @@ namespace ECS
 	private:
 	public:
 		PhysicsBodySystem(Physics::PhysicsManager& physicsManager);
-		void SystemUpdate(Scene& scene, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
 
 		const ColliderOutlineBuffer& GetColliderBuffer() const;
 		ColliderOutlineBuffer& GetColliderBufferMutable();

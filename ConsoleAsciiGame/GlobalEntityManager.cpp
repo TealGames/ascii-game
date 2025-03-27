@@ -155,8 +155,8 @@ std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntitiesMutable()
 	return m_globalEntities;
 }
 
-void GlobalEntityManager::CraeteGlobals(SceneManagement::SceneManager& sceneManager)
-{
-	GlobalCreator::CreateGlobals(*this, sceneManager);
-}
+//void GlobalEntityManager::CraeteGlobals(SceneManagement::SceneManager& sceneManager)
+//{
+//	GlobalCreator::CreateGlobals(*this, sceneManager);
+//}
 

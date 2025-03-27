@@ -80,7 +80,7 @@ namespace ECS
 		//=1 creates linear and >1 creates exponential decay</param>
 		LightSourceSystem(const EntityRendererSystem& renderer);
 
-		void SystemUpdate(Scene& scene, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
 	};
 
 }

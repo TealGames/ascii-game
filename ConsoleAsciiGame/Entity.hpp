@@ -77,6 +77,8 @@ namespace ECS
 		const EntityID m_Id;
 		TransformData& m_Transform;
 
+		bool m_Active;
+
 		//TODO: is this really the best location for something like this?
 		static const char* GLOBAL_SCENE_NAME;
 

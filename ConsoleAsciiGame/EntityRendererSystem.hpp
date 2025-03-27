@@ -26,7 +26,7 @@ namespace ECS
 
 		std::string GetVisualString(const EntityRendererData& data) const;
 
-		void SystemUpdate(Scene& scene, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
 	};
 }
 

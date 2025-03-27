@@ -5,7 +5,7 @@
 #include "Debug.hpp"
 
 ComponentData::ComponentData(const HighestDependecyLevel& dependency) 
-	: m_dependencyLevel(dependency), m_MutatedThisFrame(false), m_Entity(nullptr), m_Fields() 
+	: m_dependencyLevel(dependency), m_MutatedThisFrame(false), m_IsEnabled(true), m_Entity(nullptr), m_Fields() 
 {
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 class GlobalEntityManager;
+class CameraController;
 namespace SceneManagement
 {
 	class SceneManager;
@@ -8,6 +9,6 @@ namespace SceneManagement
 
 namespace GlobalCreator
 {
-	void CreateGlobals(GlobalEntityManager& manager, SceneManagement::SceneManager& sceneManager);
+	void CreateGlobals(GlobalEntityManager& manager, SceneManagement::SceneManager& sceneManager, CameraController& cameraController);
 }
 

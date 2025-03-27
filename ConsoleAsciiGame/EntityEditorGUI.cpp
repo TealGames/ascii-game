@@ -35,18 +35,18 @@ void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 	m_selectedEntity->second.SetComponentsToStored();
 }
 
-void EntityEditorGUI::Update()
+void EntityEditorGUI::Update(CameraData& mainCamera)
 {
 	if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsDown())
 	{
 		ScreenPosition mouseClickedPos = m_inputManager.GetMousePosition();
 
-		const CameraData* maybeCamera = m_sceneManager.GetActiveScene()->TryGetMainCamera();
+		/*const CameraData* maybeCamera = m_sceneManager.GetActiveScene()->TryGetMainCamera();
 		if (!Assert(this, maybeCamera != nullptr, std::format("Tried to update entity editor GUI "
 			"with new entity clicked, but could not retreive camera!")))
-			return;
+			return;*/
 
-		WorldPosition worldClickedPos = Conversions::ScreenToWorldPosition(*maybeCamera, mouseClickedPos);
+		WorldPosition worldClickedPos = Conversions::ScreenToWorldPosition(mainCamera, mouseClickedPos);
 
 		auto entitiesWithinPos = m_physicsManager.GetPhysicsWorld().FindBodiesContainingPos(worldClickedPos);
 		if (!entitiesWithinPos.empty())

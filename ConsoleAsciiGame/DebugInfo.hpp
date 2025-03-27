@@ -11,6 +11,7 @@ namespace Input
 {
 	class InputManager;
 }
+class CameraData;
 
 struct DebugMousePosition
 {
@@ -33,7 +34,7 @@ public:
 	DebugInfo();
 
 	void ClearProperties();
-	void UpdateProperties(const float& deltaTime, const float& timeStep, Scene& activeScene, Input::InputManager& input);
+	void UpdateProperties(const float& deltaTime, const float& timeStep, Scene& activeScene, Input::InputManager& input, const CameraData& mainCamera);
 	void AddProperty(const std::string& name, const std::string& value);
 	const std::vector<std::string>& GetText() const;
 

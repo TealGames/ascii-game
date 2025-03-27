@@ -5,6 +5,7 @@
 #include "Vec2.hpp"
 #include "raylib.h"
 #include "PositionConversions.hpp"
+#include "Scene.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -18,24 +19,24 @@ namespace ECS
 		m_inputManager(input), m_cheatsEnabled(CHEATS_ENABLED_DEFAULT), m_lastFrameGrounded(false)
 	{}
 
-	void PlayerSystem::SystemUpdate(Scene& scene, const float& deltaTime)
+	void PlayerSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("PlayerSystem::SystemUpdate");
 #endif 
 
 		scene.OperateOnComponents<PlayerData>(
-			[this, &scene, &deltaTime](PlayerData& player, ECS::Entity& entity)-> void
+			[this, &scene, &deltaTime, &mainCamera](PlayerData& player, ECS::Entity& entity)-> void
 			{
 #ifdef ALLOW_PLAYER_CHEATS
 				if (m_cheatsEnabled && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
 				{
-					CameraData* camera = scene.TryGetMainCameraMutable();
+					/*CameraData* camera = scene.TryGetMainCameraMutable();
 					if (!Assert(this, camera != nullptr, std::format("Tried to get camera to convert screen "
-						"to world point for mouse position cheat but it is null"))) return;
+						"to world point for mouse position cheat but it is null"))) return;*/
 
 					Vector2 mousePos = GetMousePosition();
-					WorldPosition worldPos = Conversions::ScreenToWorldPosition(*camera, { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y) });
+					WorldPosition worldPos = Conversions::ScreenToWorldPosition(mainCamera, { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y) });
 					player.GetEntitySafeMutable().m_Transform.SetPos(worldPos);
 				}
 #endif

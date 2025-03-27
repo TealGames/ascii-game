@@ -10,10 +10,11 @@
 #include "PhysicsBodyData.hpp"
 #include "PlayerData.hpp"
 #include "SceneManager.hpp"
+#include "CameraController.hpp"
 
 namespace GlobalCreator
 {
-	void CreateGlobals(GlobalEntityManager& globalsManager, SceneManagement::SceneManager& sceneManager)
+	void CreateGlobals(GlobalEntityManager& globalsManager, SceneManagement::SceneManager& sceneManager, CameraController& cameraController)
 	{
 		//ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData(Vec2{ 20, 20 }));
 
@@ -58,14 +59,15 @@ namespace GlobalCreator
 
 		ECS::Entity& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
 		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
+		cameraController.TryRegisterCamera(cameraData);
 
-		//This is to make sure they all have the main camera set as this global
-		sceneManager.m_OnLoad.AddListener([&mainCameraEntity](Scene* scene)-> void
-			{
-				if (scene == nullptr) return;
-				scene->SetMainCamera(mainCameraEntity);
-			});
-		//m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
+		////This is to make sure they all have the main camera set as this global
+		//sceneManager.m_OnLoad.AddListener([&mainCameraEntity](Scene* scene)-> void
+		//	{
+		//		if (scene == nullptr) return;
+		//		scene->SetMainCamera(mainCameraEntity);
+		//	});
+		////m_mainCameraInfo = ECS::EntityComponentPair<CameraData>{ mainCameraEntity, cameraData };
 	}
 }
 

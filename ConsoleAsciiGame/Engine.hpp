@@ -21,6 +21,7 @@
 #include "UIObjectSystem.hpp"
 #include "DebugInfo.hpp"
 #include "CommandConsole.hpp"
+#include "CameraController.hpp"
 //#include "InputManager.hpp"
 #include "Debug.hpp"
 #include "EntityEditorGUI.hpp"
@@ -37,6 +38,7 @@ namespace Core
 		AssetManager m_assetManager;
 		SceneManagement::SceneManager m_sceneManager;
 		Physics::PhysicsManager m_physicsManager;
+		CameraController m_cameraController;
 		Input::InputManager m_inputManager;
 		GUISelectorManager m_guiSelectorManager;
 

@@ -7,6 +7,7 @@
 #include "PhysicsManager.hpp"
 
 class GUISelectorManager;
+class CameraData;
 
 using EntityGUICollection = std::unordered_map<std::string, EntityGUI>;
 class EntityEditorGUI : IRenderable
@@ -33,7 +34,7 @@ public:
 
 	void SetEntityGUI(ECS::Entity& entity);
 
-	void Update();
+	void Update(CameraData& mainCamera);
 	void TryRender();
 	ScreenPosition Render(const RenderInfo& renderInfo) override;
 };

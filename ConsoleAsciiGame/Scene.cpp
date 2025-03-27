@@ -34,7 +34,7 @@ Scene::Scene(const std::string& sceneName, GlobalEntityManager* manager) :
 	m_layers{}, m_sceneName(sceneName), //m_scenePath(scenePath),
 	m_localEntities(), m_localEntityIdLookup(), m_localEntityNameLookup(),//m_globalEntityLookup(globalEntities),
 	m_currentFrameDirtyComponents(0), m_entityMapper(),
-	m_mainCamera(nullptr),
+	//m_mainCamera(nullptr),
 	m_globalEntities(manager)
 {
 	/*if (!Assert(std::filesystem::exists(scenePath), std::format("Tried to create a scene at path: {} "
@@ -449,37 +449,37 @@ EntityNameCollection::iterator Scene::GetLocalEntityIterator(const std::string& 
 	return m_localEntityNameLookup.find(name);
 }
 
-class CameraData;
-void Scene::SetMainCamera(ECS::Entity& cameraEntity)
-{
-	if (!Assert(cameraEntity.HasComponent<CameraData>(), 
-		std::format("Tried to set the non-camera entity: {} as the main camera for scene: {}",
-			cameraEntity.GetName(), m_sceneName))) return;
-
-	m_mainCamera = &cameraEntity;
-}
-
-bool Scene::HasMainCamera() const
-{
-	return m_mainCamera != nullptr;
-}
-
-ECS::Entity* Scene::TryGetMainCameraEntityMutable()
-{
-	return m_mainCamera;
-}
-
-CameraData* Scene::TryGetMainCameraMutable()
-{
-	if (!HasMainCamera()) return nullptr;
-	return m_mainCamera->TryGetComponentMutable<CameraData>();
-}
-
-const CameraData* Scene::TryGetMainCamera() const
-{
-	if (!HasMainCamera()) return nullptr;
-	return m_mainCamera->TryGetComponent<CameraData>();
-}
+//class CameraData;
+//void Scene::SetMainCamera(ECS::Entity& cameraEntity)
+//{
+//	if (!Assert(cameraEntity.HasComponent<CameraData>(), 
+//		std::format("Tried to set the non-camera entity: {} as the main camera for scene: {}",
+//			cameraEntity.GetName(), m_sceneName))) return;
+//
+//	m_mainCamera = &cameraEntity;
+//}
+//
+//bool Scene::HasMainCamera() const
+//{
+//	return m_mainCamera != nullptr;
+//}
+//
+//ECS::Entity* Scene::TryGetMainCameraEntityMutable()
+//{
+//	return m_mainCamera;
+//}
+//
+//CameraData* Scene::TryGetMainCameraMutable()
+//{
+//	if (!HasMainCamera()) return nullptr;
+//	return m_mainCamera->TryGetComponentMutable<CameraData>();
+//}
+//
+//const CameraData* Scene::TryGetMainCamera() const
+//{
+//	if (!HasMainCamera()) return nullptr;
+//	return m_mainCamera->TryGetComponent<CameraData>();
+//}
 
 int Scene::GetEntityCount() const
 {

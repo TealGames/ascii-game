@@ -7,6 +7,7 @@
 #include "TransformSystem.hpp"
 #include "HelperFunctions.hpp"
 #include "PositionConversions.hpp"
+#include "Scene.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -23,7 +24,7 @@ namespace ECS
 		
 	}
 
-	void EntityRendererSystem::SystemUpdate(Scene& scene, const float& deltaTime)
+	void EntityRendererSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("EntityRendererSystem::SystemUpdate");

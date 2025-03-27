@@ -20,6 +20,7 @@
 #include "PositionConversions.hpp"
 #include "DebugInfo.hpp"
 #include "InputProfileAsset.hpp"
+#include "GlobalCreator.hpp"
 
 namespace Core
 {
@@ -28,15 +29,12 @@ namespace Core
 	//-------------------------------------------------------------------
 	//TODO: maybe make an array version for text buffer (actually this time)
 	//TODO: for performance make all members, function params that are const std::string that do not need to be vars (like are just direct times) as const char* (const char[])
-	//TODO: add vector class instead of point (can just rename
-	//TODO: perhaps vec2 (my own vector) should be merged with point2d since vec2 point can be interpreted from a vec2 data
 	//TODO: currentyl the camera maps world pos to its pos based on whole screen to accureately position it basewd on the viewport, but it does not manipulate the size 
 	//meaning that for example a pos at the top left will maintain its distance from the top edge in the camera output but say something like size of a collider
 	//will keep its size from world pos to screen pos (making it inconcistent with sizing)
 	//TODO: input component is basically useless now should it be removed?
 	//TODO: maybe combine all key,gamepad buttons into one enum and then separate check them based on its enum internal value within input manager
 	//to not need dependence on raylib for keyboardkey and other input stuff and to keep it an implementation detail
-	//TODO: change command prompt to use the new inputfield type
 	//TODO: guirect and aabb both require similar things and have similar features/functions/strucutre perhaps they should be merged into one general type
 	//or they should both contain a more general type and extend its features
 	//TODO: create a general selectable with selection rect, padding, select/deselect functions as well as a general selection profile with mouse key up,down select actions, etc
@@ -52,10 +50,10 @@ namespace Core
 	//TODO: consolidate the entity searching/retrieval of collection for the global entity manager and that in the scene class
 	//TODO: change the scene create entity function to not need to set the newly created transform to that entity 
 	// (instead it should be done in entity class by having the class itself set itself for the component)
-	//TODO: rather than each scene having its own physics world pheraps there should only be one main one that is stored here and it can manage adding and removing entities
 	//TODO: remove the scene name member from entity and instead try to find a way to group entities with scenes for validateing entities to be in the same scene/entity serialization
 	//TODO: main camera should not be set from scenes, but should be based on global camera system/manager
 	//TODO: if the level background (or any object) is inside or contains the player at the start, then the gamne crashes usually with a direction not found of colliding body from physics system
+	//TODO: since a lot of places need current camera data just for position conversions, maybe conversions should get camera controller as dependency
 
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
@@ -102,6 +100,7 @@ namespace Core
 		m_assetManager(),
 		m_sceneManager(m_assetManager),
 		m_inputManager(m_assetManager),
+		m_cameraController(),
 		m_physicsManager(m_sceneManager),
 		m_guiSelectorManager(m_inputManager),
 		m_transformSystem(),
@@ -137,7 +136,7 @@ namespace Core
  
 		//Note: globals create main menu camera that then adds itself to each scene when scene is loaded
 		//TODO: change this weird and akward way of setting camera that feels hidden
-		m_sceneManager.m_GlobalEntityManager.CraeteGlobals(m_sceneManager);
+		GlobalCreator::CreateGlobals(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController);
 
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
@@ -206,6 +205,7 @@ namespace Core
 	{
 		m_assetManager.Validate();
 		m_sceneManager.ValidateAllScenes();
+		m_cameraController.Validate();
 		EngineLog("FINISHED VALIDATION");
 	}
 
@@ -338,12 +338,22 @@ namespace Core
 			"are none set as active right now", activeScene->GetName())))
 			return ERROR_CODE;
 
-		if (!Assert(this, activeScene->HasMainCamera(), std::format("Tried to update the active scene: {}, "
-			"but it has no main camera", activeScene->GetName())))
-			return ERROR_CODE;
-
 		if (!Assert(this, activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
 			"are no entities in the scene", activeScene->GetName())))
+			return ERROR_CODE;
+
+		m_cameraController.UpdateActiveCamera();
+		CameraData& mainCamera = m_cameraController.GetActiveCameraMutable();
+
+		std::string cameraSceneName = mainCamera.GetEntitySafe().GetSceneName();
+		if (!Assert(this, cameraSceneName== ECS::Entity::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(), 
+			std::format("Tried to get active camera:{} during update loop, "
+			"but that camera is not in the active scene OR global storage (main camera scene:{}, active scene:{})", mainCamera.ToString(),
+			cameraSceneName, activeScene->GetName())))
+			return ERROR_CODE;
+
+		/*if (!Assert(this, activeScene->HasMainCamera(), std::format("Tried to update the active scene: {}, "
+			"but it has no main camera", activeScene->GetName())))
 			return ERROR_CODE;
 		
 		CameraData* mainCamera = activeScene->TryGetMainCameraMutable();
@@ -353,7 +363,8 @@ namespace Core
 			std::format("Tried to update the active scene:{} but failed to retrieve "
 				"main camera(found:{}) and/or its entity(found:{})", activeScene->GetName(),
 				std::to_string(mainCamera != nullptr), std::to_string(mainCameraEntity != nullptr))))
-			return ERROR_CODE;
+			return ERROR_CODE;*/
+
 
 		/*if (!Assert(this, m_playerInfo.has_value(),
 			std::format("Tried to update the active scene:{} but failed to get "
@@ -376,8 +387,8 @@ namespace Core
 		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
 
-		m_transformSystem.SystemUpdate(*activeScene, m_deltaTime);
-		m_uiSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_transformSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
+		m_uiSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
 
 		m_inputManager.Update(m_deltaTime);
 		//if (m_enableDebugInfo)
@@ -388,7 +399,7 @@ namespace Core
 
 		//m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<2>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
-		m_playerSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_playerSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
 		//if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<0>().GetFrameInput().ToString()));
 
 		m_physicsManager.GetPhysicsWorldMutable().UpdateStart(m_deltaTime);
@@ -401,12 +412,12 @@ namespace Core
 			m_debugInfo.AddProperty("GroundDist:", std::format("{} m", std::to_string(m_playerInfo.value().GetAt<0>().GetVerticalDistanceToGround())));
 		}*/
 
-		m_physicsBodySystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_physicsBodySystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
 	/*	Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
 			Conversions::WorldToScreenPosition(*mainCamera, m_playerInfo.value().m_Entity->m_Transform.m_Pos).ToString()));*/
 		
-		m_animatorSystem.SystemUpdate(*activeScene, m_deltaTime);
-		m_spriteAnimatorSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_animatorSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
+		m_spriteAnimatorSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
 		
 
 		/*LogError(this, std::format("Player visual: {} scene entities: {}", m_playerInfo.value().m_Entity->TryGetComponent<EntityRendererData>()->GetVisualData().ToString(), 
@@ -415,7 +426,7 @@ namespace Core
 		//LogError(activeScene->GetAllEntities()[0]->GetName());
 		
 		//TODO: it seems enttiy system is causing a stirng to long exception
-		m_entityRendererSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
 		
 		//LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
 		//	std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<1>(), *(m_obstacleInfo.value().m_Data))),
@@ -427,9 +438,9 @@ namespace Core
 		//	m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 		//	m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));
 		//TODO: light system without any other problems drop frames to ~20 fps
-		m_lightSystem.SystemUpdate(*activeScene, m_deltaTime);
+		m_lightSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
 
-		m_cameraSystem.SystemUpdate(*activeScene, *mainCamera, *mainCameraEntity, m_deltaTime);
+		m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), m_deltaTime);
 		const TextBufferMixed& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
@@ -443,9 +454,9 @@ namespace Core
 			m_debugInfo.SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X+15, mouseScreenPos.m_Y} });
 		}*/
 
-		m_entityEditor.Update();
+		m_entityEditor.Update(mainCamera);
 		m_guiSelectorManager.Update();
-		if (m_enableDebugInfo) m_debugInfo.UpdateProperties(m_deltaTime, m_timeStep, *activeScene, m_inputManager);
+		if (m_enableDebugInfo) m_debugInfo.UpdateProperties(m_deltaTime, m_timeStep, *activeScene, m_inputManager, mainCamera);
 
 		//TODO: rendering buffer drops frames
 		if (!collapsedBuffer.empty())

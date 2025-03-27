@@ -21,7 +21,7 @@ namespace ECS
 	public:
 		PlayerSystem(Input::InputManager& input);
 
-		void SystemUpdate(Scene& scene, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
 
 		void SetCheatStatus(const bool& enableCheats);
 	};

@@ -5,6 +5,7 @@
 #include "PositionConversions.hpp"
 #include "HelperFunctions.hpp"
 #include "CameraData.hpp"
+#include "Scene.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -18,7 +19,7 @@ namespace ECS
 	PhysicsBodySystem::PhysicsBodySystem(Physics::PhysicsManager& physicsManager) 
 		: m_colliderOutlineBuffer(), m_lineBuffer(), m_physicsManager(physicsManager) {}
 
-	void PhysicsBodySystem::SystemUpdate(Scene& scene, const float& deltaTime)
+	void PhysicsBodySystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("PhysicsBodySystem::SystemUpdate");
@@ -29,7 +30,6 @@ namespace ECS
 		m_colliderOutlineBuffer.ClearAll();
 		m_lineBuffer.clear();
 
-		CameraData* mainCamera = scene.TryGetMainCameraMutable();
 		auto& bodies = m_physicsManager.GetPhysicsWorldMutable().GetBodiesMutable();
 		ECS::Entity* entity = nullptr;
 		for (auto& body : bodies)
@@ -39,12 +39,12 @@ namespace ECS
 			entity = &(body->GetEntitySafeMutable());
 			if (RENDER_COLLIDER_OUTLINES)
 			{
-				if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
-					"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;
+				/*if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
+					"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;*/
 
 				WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
 				//TODO: the camera should convert to screen pos not here
-				ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(*mainCamera, topLeftColliderPos);
+				ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(mainCamera, topLeftColliderPos);
 				/*LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}",
 					entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
 

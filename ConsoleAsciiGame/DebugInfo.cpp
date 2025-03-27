@@ -62,7 +62,7 @@ const std::optional<DebugMousePosition>& DebugInfo::GetMouseDebugData() const
 	return m_mouseDebugData;
 }
 
-void DebugInfo::UpdateProperties(const float& deltaTime, const float& timeStep, Scene& activeScene, Input::InputManager& input)
+void DebugInfo::UpdateProperties(const float& deltaTime, const float& timeStep, Scene& activeScene, Input::InputManager& input, const CameraData& mainCamera)
 {
 	ClearProperties();
 
@@ -87,9 +87,8 @@ void DebugInfo::UpdateProperties(const float& deltaTime, const float& timeStep, 
 	AddProperty("Grounded:", std::format("{}", std::to_string(maybePlayer->GetIsGrounded())));
 	AddProperty("GroundDist:", std::format("{} m", std::to_string(maybePlayer->GetVerticalDistanceToGround())));
 
-	const CameraData* maybeCamera = activeScene.TryGetMainCamera();
 	Vector2 mousePos = GetMousePosition();
 	ScreenPosition mouseScreenPos = { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y) };
-	WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(*maybeCamera, mouseScreenPos);
+	WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(mainCamera, mouseScreenPos);
 	SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X + 15, mouseScreenPos.m_Y} });
 }

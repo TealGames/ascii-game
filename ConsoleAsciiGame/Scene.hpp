@@ -17,7 +17,7 @@
 #include "ILoadable.hpp"
 #include "GlobalEntityManager.hpp"
 //#include "EntityMapper.hpp"
-#include "CameraData.hpp"
+//#include "CameraData.hpp"
 #include "TransformData.hpp"
 
 //using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
@@ -43,7 +43,8 @@ private:
 	//the global entities directly might increase performance
 	GlobalEntityManager* m_globalEntities;
 	
-	ECS::Entity* m_mainCamera;
+	//ECS::Entity* m_mainCamera;
+	// 
 	//These are entities that are not located here, but are managed
 	//by the scene manager and persist across scenes. Changes
 	//to those entities can only be made throguh the scene manager
@@ -113,11 +114,11 @@ public:
 	int GetDirtyComponentCount() const;
 	bool HasDirtyComponents() const;
 
-	bool HasMainCamera() const;
+	/*bool HasMainCamera() const;
 	void SetMainCamera(ECS::Entity& cameraEntity);
 	ECS::Entity* TryGetMainCameraEntityMutable();
 	CameraData* TryGetMainCameraMutable();
-	const CameraData* TryGetMainCamera() const;
+	const CameraData* TryGetMainCamera() const;*/
 
 	//const Physics::PhysicsWorld& GetPhysicsWorld() const;
 	//Physics::PhysicsWorld& GetPhysicsWorldMutable();
@@ -161,7 +162,7 @@ public:
 	template<typename T>
 	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)
 	{
-		auto view = m_entityMapper.view<T>();
+		/*auto view = m_entityMapper.view<T>();
 		for (auto entityId : view)
 		{
 			ECS::Entity* entityPtr = TryGetEntityMutable(entityId);
@@ -170,7 +171,13 @@ public:
 				typeid(T).name()))) return;
 
 			action(view.get<T>(entityId), *entityPtr);
-		}
+		}*/
+		ECS::OperateOnActiveComponents<T>(m_entityMapper,
+			[this](const ECS::EntityID id)->ECS::Entity*
+			{
+				return TryGetEntityMutable(id);
+			}, action);
+
 		TryGetGlobalEntityManagerMutable().OperateOnComponents<T>(action);
 	}
 

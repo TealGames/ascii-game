@@ -11,7 +11,7 @@ namespace ECS
 	SpriteAnimatorSystem::SpriteAnimatorSystem(EntityRendererSystem& entityRenderer) 
 		: m_EntityRenderer(entityRenderer) {}
 
-	void SpriteAnimatorSystem::SystemUpdate(Scene& scene, const float& deltaTime)
+	void SpriteAnimatorSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("SpriteAnimatorSystem::SystemUpdate");

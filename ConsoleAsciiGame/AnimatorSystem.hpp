@@ -116,7 +116,7 @@ namespace ECS
 
 	public:
 		AnimatorSystem(Core::Engine& engine);
-		void SystemUpdate(Scene& scene, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
 	};
 }
 
