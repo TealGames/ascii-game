@@ -111,6 +111,18 @@ void InputField::Update()
 
 	if (!IsSelected()) return;
 
+	if (!m_keyActions.empty())
+	{
+		for (const auto& key : m_keyActions)
+		{
+			if (GetInputManager().IsKeyReleased(key.first))
+				key.second(GetInput());
+		}
+	}
+
+	if (HasFlag(InputFieldFlag::UserUIReadonly)) return;
+
+	//THE FOLLOWING LOGIC IS FOR SELECTING/WRITING TO SELECTABLE FROM UI BASED ON PLAYER INPUT:
 	if (GetInputManager().IsKeyReleased(SUBMIT_KEY))
 	{
 		//If we have an integral field and we have only stored a negative (we need to do this to still allow negatives)
@@ -129,19 +141,9 @@ void InputField::Update()
 		LogError(std::format("AFTER submit action input field type is: {}", ToString(GetFieldType())));
 		return;
 	}
-
-	if (GetInputManager().IsKeyReleased(DELETE_KEY) && !m_attemptedInput.empty())
+	else if (GetInputManager().IsKeyReleased(DELETE_KEY) && !m_attemptedInput.empty())
 	{
 		m_attemptedInput.pop_back();
-	}
-
-	if (!m_keyActions.empty())
-	{
-		for (const auto& key : m_keyActions)
-		{
-			if (GetInputManager().IsKeyReleased(key.first))
-				key.second(GetInput());
-		}
 	}
 
 	std::string keysPressed = GetInputManager().GetCharsPressedSinceLastFrame();
@@ -263,7 +265,7 @@ ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 	Vec2Int renderSize = { widthUsed, heightUsed };
 
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, widthUsed, heightUsed, m_settings.m_BackgroundColor);
-	std::string inputStr = IsSelected() ? GetDisplayAttemptedInput() : GetDisplayInput();
+	std::string inputStr = IsSelected() && !HasFlag(InputFieldFlag::UserUIReadonly) ? GetDisplayAttemptedInput() : GetDisplayInput();
 	//Assert(false, std::format("Found input: {}", inputStr));
 	//TODO: right now this deos not consider text overflow, or if the text is longer than input field
 	//TODO: add the render settigns like font, font size, spacing as constructor args
@@ -277,7 +279,7 @@ ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 	DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
 		fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
 
-	if (!IsSelected()) DrawDisabledOverlay({ renderInfo.m_TopLeftPos, renderSize });
+	if (!IsSelected() || HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay({ renderInfo.m_TopLeftPos, renderSize });
 
 	GetLastFrameRectMutable().SetSize(renderSize);
 	GetLastFrameRectMutable().SetTopLeftPos(renderInfo.m_TopLeftPos);

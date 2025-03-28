@@ -96,6 +96,7 @@ public:
 	const GlobalEntityManager& TryGetGlobalEntityManager() const;
 
 	std::vector<RenderLayer*> GetLayersMutable();
+	std::vector<RenderLayer*> GetLayersMutable(const RenderLayerType& renderLayers);
 	std::vector<const RenderLayer*> GetLayers(const RenderLayerType& renderLayers) const;
 	std::vector<const RenderLayer*> GetAllLayers() const;
 

@@ -152,6 +152,51 @@ void to_json(Json& json, const TextCharPosition& textChar)
 	json = { {"Pos", textChar.m_RowColPos}, {"Char", textChar.m_Text.m_Char}, {"Color", textChar.m_Text.m_Color}};
 }
 
+void from_json(const Json& json, TextBufferPosition& textChar)
+{
+	const char* TEXT_CHAR_PROPERTY = "Text";
+	const char* FONT_PROEPRTY = "Font";
+	const char* FONT_SIZE_PROPERTY = "FontSize";
+	const char* POS_PROPERTY = "Pos";
+	if (!HasRequiredProperties(json, { TEXT_CHAR_PROPERTY, FONT_PROEPRTY, FONT_SIZE_PROPERTY, POS_PROPERTY })) return;
+
+	std::optional<Font> maybeFont = JsonConstants::TryGetConstantFont(json.at(FONT_PROEPRTY).get<std::string>());
+	if (!Assert(maybeFont.has_value(), std::format("Tried to convert json: {} to text buffer position data but font "
+		"could not be deduced from '{}' property", JsonUtils::ToStringProperties(json), FONT_PROEPRTY)))
+		return;
+
+	float fontSize = 0;
+	Json fontJson = json.at(FONT_SIZE_PROPERTY);
+	if (fontJson.is_string())
+	{
+		//LogError("Reached font json string");
+		std::optional<float> maybeFontSize = JsonConstants::TryGetConstantFontSize(fontJson.get<std::string>());
+		if (!Assert(maybeFontSize.has_value(), std::format("Tried to convert json: {} to text buffer position but font "
+			"size could not be deduced from '{}' property", JsonUtils::ToStringProperties(json), FONT_SIZE_PROPERTY)))
+			return;
+		fontSize = maybeFontSize.value();
+	}
+	else fontSize = fontJson.get<float>();
+	
+	textChar = TextBufferPosition(json.at(POS_PROPERTY).get<Vec2>(),json.at(TEXT_CHAR_PROPERTY).get<TextChar>(), maybeFont.value(), fontSize);
+}
+void to_json(Json& json, const TextBufferPosition& textChar)
+{
+	std::optional<std::string> maybeFontConstant = JsonConstants::TryGetFontConstant(*textChar.m_FontData.m_Font);
+	if (!Assert(maybeFontConstant.has_value(), std::format("Tried to convert text buffer position: {} to json but font constant"
+		"could not be deduced from font", textChar.ToString())))
+		return;
+
+	json["Font"] = maybeFontConstant.value();
+
+	std::optional<std::string> maybeFontSizeConstant = JsonConstants::TryGetFontSizeConstant(textChar.m_FontData.m_FontSize);
+	if (maybeFontSizeConstant.has_value()) json["FontSize"] = maybeFontSizeConstant.value();
+	else json["FontSize"] = textChar.m_FontData.m_FontSize;
+
+	json["Text"] = textChar.m_Text;
+	json["Pos"] = textChar.m_Pos;
+}
+
 namespace Physics
 {
 	void from_json(const Json& json, Physics::AABB& aabb)

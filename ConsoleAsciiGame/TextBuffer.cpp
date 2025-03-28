@@ -12,6 +12,11 @@ TextBufferPosition::TextBufferPosition(const Vec2& pos, const TextChar& textChar
 
 }
 
+TextBufferPosition::TextBufferPosition(const Vec2& pos, const TextChar& textChar,
+	const FontData& fontData)
+	: m_Pos(pos), m_FontData(fontData), m_Text(textChar)
+{}
+
 std::string TextBufferPosition::ToString() const
 {
 	return std::format("[Pos:{}, Data:{}]",

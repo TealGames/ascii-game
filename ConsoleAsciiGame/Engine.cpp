@@ -54,6 +54,7 @@ namespace Core
 	//TODO: main camera should not be set from scenes, but should be based on global camera system/manager
 	//TODO: if the level background (or any object) is inside or contains the player at the start, then the gamne crashes usually with a direction not found of colliding body from physics system
 	//TODO: since a lot of places need current camera data just for position conversions, maybe conversions should get camera controller as dependency
+	//TODO: json serializer should not contain so many duplicate entries (such as font code similar in many places) and should get fonts and other stuff from asset manager
 
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
@@ -109,10 +110,11 @@ namespace Core
 		m_lightSystem(m_entityRendererSystem),
 		//m_inputSystem(m_inputManager),
 		m_spriteAnimatorSystem(m_entityRendererSystem),
-		m_animatorSystem(*this),
+		m_animatorSystem(),
 		m_physicsBodySystem(m_physicsManager),
 		m_playerSystem(m_inputManager),
 		m_cameraSystem(&(m_physicsBodySystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
+		m_particleEmitterSystem(),
 		m_currentTime(std::chrono::high_resolution_clock().now()),
 		m_lastTime(std::chrono::high_resolution_clock().now()),
 		//m_playerInfo(std::nullopt),
@@ -418,7 +420,7 @@ namespace Core
 		
 		m_animatorSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
 		m_spriteAnimatorSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
-		
+		m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
 
 		/*LogError(this, std::format("Player visual: {} scene entities: {}", m_playerInfo.value().m_Entity->TryGetComponent<EntityRendererData>()->GetVisualData().ToString(), 
 			std::to_string(activeScene->GetEntityCount())));*/

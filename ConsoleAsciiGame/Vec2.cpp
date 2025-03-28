@@ -189,6 +189,17 @@ float GetDistance(const Vec2& vec1, const Vec2& vec2)
 	return std::sqrt(std::pow(vec1.m_X - vec2.m_X, 2) + std::pow(vec1.m_Y - vec2.m_Y, 2));
 }
 
+float GetXComponent(const float& speed, const float& angle, const AngleMode& mode)
+{
+	const float angleRad = mode == AngleMode::Degrees ? static_cast<float>(Utils::ToRadians(angle)) : angle;
+	return speed * std::cosf(angleRad);
+}
+float GetYComponent(const float& speed, const float& angle, const AngleMode& mode)
+{
+	const float angleRad = mode == AngleMode::Degrees ? static_cast<float>(Utils::ToRadians(angle)) : angle;
+	return speed * std::sinf(angleRad);
+}
+
 Vec2 GetVector(const Vec2& startPos, const Vec2& endPos)
 {
 	Vec2 result(endPos.m_X - startPos.m_X, endPos.m_Y - startPos.m_Y);
@@ -199,6 +210,10 @@ Vec2 GetVector(const Vec2& unitVector, const float& magnitude)
 	Vec2 unitVectorConverted = unitVector.IsUnitVector() ? unitVector : unitVector.GetNormalized();
 	return { unitVectorConverted.m_X * magnitude, unitVectorConverted.m_Y * magnitude};
 }
+Vec2 GetVector(const float& speed, const float& angle, const AngleMode& mode)
+{
+	return { GetXComponent(speed, angle, mode), GetYComponent(speed, angle, mode)};
+}
 
 Vec2 GetVectorEndPoint(const Vec2& startPos, const Vec2& vector)
 {
@@ -208,4 +223,22 @@ Vec2 GetVectorEndPoint(const Vec2& startPos, const Vec2& vector)
 float DotProduct(const Vec2& vecA, const Vec2& vecB)
 {
 	return (vecA.m_X * vecB.m_X) + (vecA.m_Y * vecB.m_Y);
+}
+
+Vec2 GenerateRandomVec2(const Vec2& minVec, const Vec2 maxVec)
+{
+	if (!Assert(minVec.m_X <= maxVec.m_X, std::format("Tried to generate random vec between:{} "
+		"and {} but min x is greater than max x", minVec.ToString(), maxVec.ToString())))
+		return {};
+
+	if (!Assert(minVec.m_Y <= maxVec.m_Y, std::format("Tried to generate random vec between:{} "
+		"and {} but min y is greater than max y", minVec.ToString(), maxVec.ToString())))
+		return {};
+
+	return Vec2{ static_cast<float>(Utils::GenerateRandomDouble(minVec.m_X, maxVec.m_X)),
+			static_cast<float>(Utils::GenerateRandomDouble(minVec.m_Y, maxVec.m_Y)) };
+}
+Vec2 GenerateRandomDir()
+{
+	return GenerateRandomVec2({-1, -1}, {1, 1});
 }

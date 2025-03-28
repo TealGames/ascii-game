@@ -2,14 +2,14 @@
 #include "ComponentField.hpp"
 #include "Debug.hpp"
 
-ComponentField::ComponentField(const std::string& name, const ComponentFieldVariant& value)
-	: m_FieldName(name), m_Value(value), m_MaybeSetFunction(std::nullopt)
+ComponentField::ComponentField(const std::string& name, const ComponentFieldVariant& value, const bool& isWritable)
+	: m_FieldName(name), m_Value(value), m_MaybeSetFunction(std::nullopt), m_isReadonly(!isWritable)
 {
 	//Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Utils::Point2D*>(value)->ToString()));
 }
 
 ComponentField::ComponentField(const std::string& name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value)
-	: m_FieldName(name), m_Value(value), m_MaybeSetFunction(setAction)
+	: m_FieldName(name), m_Value(value), m_MaybeSetFunction(setAction), m_isReadonly(false)
 {
 	if (!Assert(this, setAction.index() == m_Value.index(), std::format("Tried to create a component field named: '{}' with set action, "
 		"but that action does not acceot the same type of argument as the internal reference to field: {}!", 
@@ -17,8 +17,14 @@ ComponentField::ComponentField(const std::string& name, const ComponentFieldSetA
 		throw std::invalid_argument("Invalid set action");
 }
 
+bool ComponentField::IsReadonly() const
+{
+	return m_isReadonly;
+}
+
 bool ComponentField::HasSetFunction() const
 {
+	if (m_isReadonly) return false;
 	return m_MaybeSetFunction != std::nullopt;
 }
 

@@ -11,6 +11,7 @@
 #include "PlayerData.hpp"
 #include "SceneManager.hpp"
 #include "CameraController.hpp"
+#include "ParticleEmitterData.hpp"
 
 namespace GlobalCreator
 {
@@ -54,6 +55,10 @@ namespace GlobalCreator
 		playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData(
 			{ SpriteAnimationFrame(0, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, 'O'))}}, visualPreset)),
 			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));
+
+		ColorGradient particleGradient = ColorGradient(RED, BLUE);
+		playerEntity.AddComponent<ParticleEmitterData>(ParticleEmitterData('W', FloatRange(1, 11), particleGradient, FontData(5, GetGlobalFont()),
+			RenderLayerType::Player, WorldPosition(), FloatRange(5, 16), float(5)));
 
 		//m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
 

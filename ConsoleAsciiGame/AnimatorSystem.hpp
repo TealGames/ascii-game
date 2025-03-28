@@ -5,16 +5,11 @@
 #include "AnimatorData.hpp"
 #include "Debug.hpp"
 
-namespace Core
-{
-	class Engine;
-}
 namespace ECS
 {
 	class AnimatorSystem : MultiBodySystem
 	{
 	private:
-		Core::Engine& m_Engine;
 
 	public:
 
@@ -115,7 +110,7 @@ namespace ECS
 		//}
 
 	public:
-		AnimatorSystem(Core::Engine& engine);
+		AnimatorSystem();
 		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
 	};
 }

@@ -28,6 +28,8 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	//Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Vec2*>(m_fieldInfo.m_Value)->ToString()));
 
 	InputFieldFlag fieldFlags = InputFieldFlag::None;
+	if (m_fieldInfo.IsReadonly()) fieldFlags |= InputFieldFlag::UserUIReadonly;
+
 	GUISettings guiSettings = GUISettings(MAX_INPUT_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
 		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, TextGUIFontSize::ParentArea, FIELD_FONT_FACTOR, 0));
 	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
@@ -152,6 +154,8 @@ void ComponentFieldGUI::SetFieldToInternal()
 }
 void ComponentFieldGUI::SetInternalWithInput()
 {
+	if (m_fieldInfo.IsReadonly()) return;
+
 	LogError(std::format("Getting internal input and setting it. is point: {} field name: {} is point: {}", 
 		m_fieldInfo.GetCurrentType().name(), m_fieldInfo.m_FieldName, std::to_string(m_fieldInfo.IsCurrentType<Vec2>())));
 

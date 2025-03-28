@@ -191,4 +191,17 @@ float DotProduct(const Vec2Int& vecA, const Vec2Int& vecB)
 	return (vecA.m_X * vecB.m_X) + (vecA.m_Y * vecB.m_Y);
 }
 
+Vec2Int GenerateRandomVec2Int(const Vec2Int& minVec, const Vec2Int maxVec)
+{
+	if (!Assert(minVec.m_X <= maxVec.m_X, std::format("Tried to generate random vec2int between:{} "
+		"and {} but min x is greater than max x", minVec.ToString(), maxVec.ToString())))
+		return {};
+
+	if (!Assert(minVec.m_Y <= maxVec.m_Y, std::format("Tried to generate random vec2int between:{} "
+		"and {} but min y is greater than max y", minVec.ToString(), maxVec.ToString())))
+		return {};
+
+	return Vec2Int{ Utils::GenerateRandomInt(minVec.m_X, maxVec.m_X),
+				    Utils::GenerateRandomInt(minVec.m_Y, maxVec.m_Y) };
+}
 

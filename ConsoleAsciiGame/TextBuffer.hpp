@@ -27,6 +27,9 @@ struct TextBufferPosition
 
 	TextBufferPosition(const Vec2& pos, const TextChar& textChar, 
 		const Font& font, const float& fontSize);
+
+	TextBufferPosition(const Vec2& pos, const TextChar& textChar,
+		const FontData& fontData);
 };
 
 using TextBufferMixed = std::vector<TextBufferPosition>;

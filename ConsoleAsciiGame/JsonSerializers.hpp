@@ -62,6 +62,9 @@ void to_json(Json& json, const TextChar& textChar);
 void from_json(const Json& json, TextCharPosition& textChar);
 void to_json(Json& json, const TextCharPosition& textChar);
 
+void from_json(const Json& json, TextBufferPosition& textChar);
+void to_json(Json& json, const TextBufferPosition& textChar);
+
 void from_json(const Json& json, VisualData& visualData);
 void to_json(Json& json, const VisualData& visualData);
 

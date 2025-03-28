@@ -25,18 +25,24 @@ using ComponentFieldSetAction = std::variant<std::function<void(std::string)>, s
 
 struct ComponentField
 {
+private:
+	bool m_isReadonly;
+
+public:
 	std::string m_FieldName;
 	ComponentFieldVariant m_Value;
 	std::optional<ComponentFieldSetAction> m_MaybeSetFunction;
 
 	//ComponentFieldType m_Type;
-
-	ComponentField(const std::string& name, const ComponentFieldVariant& value);
+private:
+public:
+	ComponentField(const std::string& name, const ComponentFieldVariant& value, const bool& isWritable=true);
 	ComponentField(const std::string& name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value);
 
 	const std::type_info& GetCurrentType() const;
 	std::string ToString() const;
 
+	bool IsReadonly() const;
 	bool HasSetFunction() const;
 
 	template<typename T>

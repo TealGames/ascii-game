@@ -18,6 +18,7 @@
 #include "InputSystem.hpp"
 #include "InputManager.hpp"
 #include "PlayerSystem.hpp"
+#include "ParticleEmitterSystem.hpp"
 #include "UIObjectSystem.hpp"
 #include "DebugInfo.hpp"
 #include "CommandConsole.hpp"
@@ -63,6 +64,7 @@ namespace Core
 		ECS::SpriteAnimatorSystem m_spriteAnimatorSystem;
 		ECS::PhysicsBodySystem m_physicsBodySystem;
 		ECS::PlayerSystem m_playerSystem;
+		ECS::ParticleEmitterSystem m_particleEmitterSystem;
 
 		//std::optional<ECS::EntityComponents<PlayerData, PhysicsBodyData>> m_playerInfo;
 		//std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;

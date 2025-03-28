@@ -37,6 +37,12 @@ enum class InputFieldFlag : InputFieldFlagIntegralType
 	/// If true will keep the field selected even on submit action
 	/// </summary>
 	KeepSelectedOnSubmit = 1<<3,
+	/// <summary>
+	/// If true, this input field CAN still be selected, but 
+	/// values CAN NOT be changed BY THE USER (functions still work but 
+	/// clicking on it can not be changed from UI)
+	/// </summary>
+	UserUIReadonly= 1<<4
 };
 
 constexpr InputFieldFlag operator&(const InputFieldFlag& lhs, const InputFieldFlag& rhs)

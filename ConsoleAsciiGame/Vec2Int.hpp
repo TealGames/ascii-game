@@ -94,3 +94,5 @@ Vec2Int GetVectorEndPoint(const Vec2Int& startPos, const Vec2Int& vector);
 /// <param name="vecB"></param>
 /// <returns></returns>
 float DotProduct(const Vec2Int& vecA, const Vec2Int& vecB);
+
+Vec2Int GenerateRandomVec2Int(const Vec2Int& minVec, const Vec2Int maxVec);

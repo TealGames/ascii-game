@@ -116,6 +116,15 @@ Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 	return {newR, newG, newB, newA};
 }
 
+Color ColorGradient::GetFirstColor(const bool& includeAlpha) const
+{
+	return GetColorAt(MIN_LOCATION, includeAlpha);
+}
+Color ColorGradient::GetLastColor(const bool& includeAlpha) const
+{
+	return GetColorAt(MAX_LOCATION, includeAlpha);
+}
+
 const std::vector<ColorGradientKeyFrame>& ColorGradient::GetKeyframes() const
 {
 	return m_colorFrames;

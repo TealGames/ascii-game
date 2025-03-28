@@ -37,6 +37,9 @@ public:
 	ColorGradient(const std::vector<ColorGradientKeyFrame>& frames);
 
 	Color GetColorAt(float location, const bool& includeAlpha) const;
+	Color GetFirstColor(const bool& includeAlpha) const;
+	Color GetLastColor(const bool& includeAlpha) const;
+
 	const std::vector<ColorGradientKeyFrame>& GetKeyframes() const;
 
 	std::string ToString() const;

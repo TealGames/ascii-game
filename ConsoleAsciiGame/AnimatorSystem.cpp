@@ -4,7 +4,6 @@
 #include "AnimatorSystem.hpp"
 #include "AnimatorData.hpp"
 #include "HelperFunctions.hpp"
-#include "Engine.hpp"
 #include "Scene.hpp"
 
 #ifdef ENABLE_PROFILER
@@ -13,7 +12,7 @@
 
 namespace ECS
 {
-	AnimatorSystem::AnimatorSystem(Core::Engine& engine) : m_Engine(engine) {}
+	AnimatorSystem::AnimatorSystem() {}
 
 	void AnimatorSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
 	{

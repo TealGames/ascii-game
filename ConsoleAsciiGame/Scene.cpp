@@ -385,6 +385,17 @@ std::vector<RenderLayer*> Scene::GetLayersMutable()
 	for (auto& layer : m_layers) layers.push_back(&(layer.second));
 	return layers;
 }
+std::vector<RenderLayer*> Scene::GetLayersMutable(const RenderLayerType& renderLayers)
+{
+	if (m_layers.empty()) return {};
+
+	std::vector<RenderLayer*> layers = {};
+	for (auto& layer : m_layers)
+	{
+		if ((layer.first & renderLayers) != 0) layers.push_back(&(layer.second));
+	}
+	return layers;
+}
 
 std::vector<const RenderLayer*> Scene::GetLayers(const RenderLayerType& renderLayers) const
 {
