@@ -2,7 +2,6 @@
 #include "RenderLayer.hpp"
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
-#include "Array2DPosition.hpp"
 #include "Debug.hpp"
 
 std::string ToString(const RenderLayerType& layers)

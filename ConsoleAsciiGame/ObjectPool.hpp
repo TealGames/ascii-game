@@ -32,6 +32,16 @@ public:
 		m_pool.reserve(maxSize);
 	}
 
+	bool TryReserveNewSize(const size_t& newSize)
+	{
+		if (!Assert(this, m_pool.empty(), std::format("Tried to reserve a new size for object pool:{} after initial construction "
+			"of size:{} but elements are already added so no new size can be set", std::to_string(newSize), std::to_string(GetMaxCapacity()))))
+			return false;
+
+		m_pool.reserve(newSize);
+		return true;
+	}
+
 	T* TryAdd(const T& element)
 	{
 		if (!Assert(this, !IsAtCapacity(), std::format("Tried to add a new object of type:{} to pool but "

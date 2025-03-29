@@ -9,6 +9,7 @@
 #include "TextBuffer.hpp"
 #include "Vec2.hpp"
 #include "NormalizedPosition.hpp"
+#include "WorldPosition.hpp"
 
 
 ////TODO: the data from get world size of visual data should be abstracted
@@ -87,8 +88,7 @@ private:
 	/// </summary>
 	NormalizedPosition m_pivotRelative;
 
-	Font m_font;
-	float m_fontSize;
+	FontData m_fontData;
 
 public:
 	TextArray m_Text;
@@ -101,8 +101,7 @@ private:
 	void AddTextPositionsToBufferAdaptive(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
 
 private:
-	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font,
-		const float& fontSize, const Vec2& charSpacing,
+	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize, const Vec2& charSpacing,
 		const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
 		const Vec2& predefinedCharArea);
 
@@ -152,7 +151,8 @@ public:
 
 	const Vec2& GetCharSpacing() const;
 	const Font& GetFont() const;
-	const float GetFontSize() const;
+	float GetFontSize() const;
+	const FontData& GetFontData() const;
 
 	const Vec2& GetPivot() const;
 

@@ -14,6 +14,7 @@ private:
 	ECS::Entity& m_entity;
 
 	std::vector<ComponentGUI> m_componentGUIs;
+	TextGUI m_entityNameText;
 public:
 
 private:

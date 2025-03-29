@@ -8,7 +8,9 @@
 constexpr static float TITLE_FONT_SIZE = 20;
 
 EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, ECS::Entity& entity)
-	: m_inputManager(manager), m_entity(entity), m_componentGUIs() 
+	: m_inputManager(manager), m_entity(entity), m_componentGUIs(), 
+	m_entityNameText(m_entity.GetName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
+		EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center))
 {
 	//TODO: make sure to find a way to add/retrieve all components to then add here
 	//Assert(false, std::format("When adding all comps, entity: {} has:{}", entity.m_Name, std::to_string(entity.GetAllComponentsMutable().size())));
@@ -58,11 +60,13 @@ void EntityGUI::Update()
 ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 {
 	Vector2 currentPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
-	Vector2 textSize = MeasureTextEx(GetGlobalFont(), m_entity.GetName().c_str(), TITLE_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X);
+	//Vector2 textSize = MeasureTextEx(GetGlobalFont(), m_entity.GetName().c_str(), TITLE_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X);
+	Vector2 textSize = RaylibUtils::ToRaylibVector(m_entityNameText.CalculateSize(renderInfo));
 	//Assert(false, std::format("Text size: {}", RaylibUtils::ToString(textSize)));
 
 	DrawRectangle(currentPos.x, currentPos.y, renderInfo.m_RenderSize.m_X, textSize.y, DARKGRAY);
-	DrawTextEx(GetGlobalFont(), m_entity.GetName().c_str(), currentPos, TITLE_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_TEXT_COLOR);
+	//DrawTextEx(GetGlobalFont(), m_entity.GetName().c_str(), currentPos, TITLE_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_TEXT_COLOR);
+	m_entityNameText.Render(RenderInfo(renderInfo.m_TopLeftPos, {static_cast<int>(textSize.x), static_cast<int>(textSize.y)}));
 
 	currentPos.y += textSize.y;
 	//currentPos.y += MeasureTextEx(GetGlobalFont(), m_entity.m_Name.c_str(), GLOBAL_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X).y;

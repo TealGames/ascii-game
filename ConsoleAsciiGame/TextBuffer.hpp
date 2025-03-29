@@ -1,18 +1,9 @@
 #pragma once
 #include "TextArray.hpp"
-#include "raylib.h"
-#include "WorldPosition.hpp"
-#include "ScreenPosition.hpp"
-#include <cstdint>
+#include "Vec2.hpp"
+#include "FontData.hpp"
 
 //using TextBuffer = TextArray;
-struct FontData
-{
-	float m_FontSize;
-	const Font* m_Font;
-
-	FontData(const float& fontSize, const Font& font);
-};
 
 //TODO: perhaps the camera or something should group together into a new structure with the same font and font size
 //so that we do not need to repeat the same data for mutliple entries

@@ -36,7 +36,8 @@ struct ParticleEmitterData : ComponentData
 	WorldPosition m_originTransformOffset;
 
 	FontData m_FontData;
-	ColorGradient m_colorOverTime;
+	//The color of any particle over the course of its lifetime
+	ColorGradient m_lifetimeColor;
 	char m_Char;
 	RenderLayerType m_renderLayers;
 
@@ -58,12 +59,19 @@ struct ParticleEmitterData : ComponentData
 	//at any time which is changed based on how many are spawned in one second
 	std::uint8_t m_activeParticles;
 
+	ParticleEmitterData();
 	ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
 		const FontData& fontData, const RenderLayerType& renderLayers, 
 		const WorldPosition& transformOffset, const FloatRange& speedRange, const float& spawnRate);
 
 	WorldPosition GetOriginWorldPos() const;
 	void SetSpawnRate(const float& value);
+	/// <summary>
+	/// Gives an approximation for active particles at any time
+	/// </summary>
+	/// <returns></returns>
+	int ApproximateAverageParticles() const;
+	int CalculateMaxParticles() const;
 
 	void InitFields() override;
 

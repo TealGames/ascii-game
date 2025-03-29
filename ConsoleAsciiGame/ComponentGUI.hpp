@@ -18,6 +18,7 @@ private:
 	std::vector<ComponentFieldGUI> m_fieldGUIs;
 
 	CheckboxGUI m_dropdownCheckbox;
+	TextGUI m_componentNameText;
 
 	const EntityGUI* m_entityGUI;
 public:

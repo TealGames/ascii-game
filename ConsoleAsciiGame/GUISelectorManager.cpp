@@ -17,9 +17,14 @@ GUISelectorManager::GUISelectorManager(const Input::InputManager& input)
 void GUISelectorManager::SelectNewSelectable(SelectableGUI* selectable)
 {
 	if (selectable == nullptr) return;
-
 	selectable->Select();
 	//Assert(false, std::format("SHOULD SELECTE NEW ONE AT: {}", selectable->GetLastFrameRect().ToString()));
+}
+
+void GUISelectorManager::ClickSelectable(SelectableGUI* selectable)
+{
+	if (selectable == nullptr) return;
+	selectable->Click();
 }
 
 void GUISelectorManager::DeselectCurrentSelectable()
@@ -54,8 +59,10 @@ void GUISelectorManager::Update()
 			allRect += std::format("Mouse pos: {} selectable null: {} rect: {}", m_lastFrameClickedPosition.value().ToString(),
 				std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL");
 			
+			//When we find the mouse has clicked on a new position within a selectable, we both register a selection and a click event
 			if (selectable->GetLastFrameRect().ContainsPos(m_lastFrameClickedPosition.value()))
 			{
+				ClickSelectable(selectable);
 				SelectNewSelectable(selectable);
 				/*Assert(false, std::format("Mouse pos: {} selectable null: {} rect: {}", mousePos.ToString(),
 					std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL"));*/
@@ -81,8 +88,8 @@ void GUISelectorManager::AddSelectable(SelectableGUI* selectable)
 
 	m_selectables.push_back(selectable);
 
-	//TODO: there is a recursive problem here where if we select/deselct in this class it will invoke event, then 
-	//cause the same function to be called then event again, etc.
+	//Since we need callback from select and deselect (since it may be called outside of this class)
+	//in order to control selection flow, but must prevent recursive calls
 	selectable->m_OnSelect.AddListener([this](SelectableGUI* selected)-> void 
 		{
 			//SelectNewSelectable(gui); 

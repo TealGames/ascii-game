@@ -1,9 +1,7 @@
 #pragma once
 #include <vector>
-#include "ShapeType.hpp"
 #include "ScreenPosition.hpp"
 #include "Vec2.hpp"
-#include "raylib.h"
 
 struct RectangleOutlineData
 {

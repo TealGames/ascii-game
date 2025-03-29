@@ -25,10 +25,10 @@ VisualDataPreset::VisualDataPreset(const Font& font, const float& fontSize, cons
 	m_Font(font), m_FontSize(fontSize), m_CharSpacing(charSpacing), m_CharAreaType(charAreaType), 
 		m_PredefinedCharArea(predefinedCharArea), m_RelativePivotPos(relativePivotPos) {}
 
-VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize, 
+VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize,
 	const Vec2& charSpacing, const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
 	const Vec2& predefinedCharArea) :
-	m_Text(), m_rawTextBlock(rawBuffer), m_font(font), m_fontSize(fontSize), m_charSpacing(charSpacing), m_pivotRelative(relativePivotPos),
+	m_Text(), m_rawTextBlock(rawBuffer),m_fontData(fontSize, font), m_charSpacing(charSpacing), m_pivotRelative(relativePivotPos),
 	m_charAreaType(charAreaType), m_predefinedCharArea(predefinedCharArea)
 {
 	if (rawBuffer.empty()) return;
@@ -43,7 +43,7 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, co
 	m_Text = squaredBuffer.value();
 }
 
-VisualData::VisualData() : VisualData(RawTextBufferBlock(), GetGlobalFont(), DEFAULT_FONT_SIZE, DEFAULT_CHAR_SPACING, DEFAULT_PIVOT) {}
+VisualData::VisualData() : VisualData(RawTextBufferBlock(), GetGlobalFont(), DEFAULT_FONT_SIZE, DEFAULT_CHAR_SPACING, DEFAULT_PIVOT) { }
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, 
 	const float& fontSize, const Vec2& charSpacing, const NormalizedPosition& relativePivotPos)
 	: VisualData(rawBuffer, font, fontSize, charSpacing, relativePivotPos, CharAreaType::Adaptive, {})
@@ -158,7 +158,7 @@ Vec2 VisualData::GetWorldSize() const
 		currentRowText = m_Text.GetStringAt(r);
 		if (currentRowText.size() == 1) currentRowText += " ";
 
-		currentRowTextSize= MeasureTextEx(GetFont(), currentRowText.c_str(), m_fontSize, 0);
+		currentRowTextSize= MeasureTextEx(GetFont(), currentRowText.c_str(), GetFontSize(), 0);
 		currentWidth = currentRowTextSize.x + (m_Text.GetWidth() - 1) * m_charSpacing.m_X;
 		Log(std::format("Current width for: {} at: {} ({}) is: {} text sixe: {}", 
 			m_Text.ToString(), std::to_string(r), currentRowText, std::to_string(currentWidth), std::to_string(currentRowTextSize.x)));
@@ -196,7 +196,7 @@ void VisualData::AddTextPositionsToBufferPredefined(const WorldPosition& transfo
 		for (int c = 0; c < charArrSize.m_X; c++)
 		{
 			const TextChar& textChar = m_Text.GetAtUnsafe({ r, c });
-			buffer.emplace_back(currentTopLeft, textChar, m_font, m_fontSize);
+			buffer.emplace_back(currentTopLeft, textChar, m_fontData);
 			currentTopLeft.m_X += (m_predefinedCharArea.m_X + m_charSpacing.m_X);
 		}
 
@@ -236,9 +236,9 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 		for (int c = 0; c < charArrSize.m_X; c++)
 		{
 			currentTextChar[0] = m_Text.GetAtUnsafe({ r, c }).m_Char;
-			currentSize = MeasureTextEx(GetFont(), currentTextChar, m_fontSize, 0);
+			currentSize = MeasureTextEx(GetFont(), currentTextChar, GetFontSize(), 0);
 			Log(std::format("TEXT CHAR SIZE Char: {} of font size: {} at r: {} c: {} has size: {}", Utils::ToString(currentTextChar[0]),
-				std::to_string(m_fontSize), std::to_string(r), std::to_string(c), RaylibUtils::ToString(currentSize)));
+				std::to_string(GetFontSize()), std::to_string(r), std::to_string(c), RaylibUtils::ToString(currentSize)));
 			//currentSize.y = m_font->baseSize;
 			if (currentSize.y > currentRowMaxHeight)
 			{
@@ -250,7 +250,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 			if (c == 0)
 			{
 				textBufferData.push_back(TextBufferPosition{ Vec2{ 0, -previousRowsHeight },
-					m_Text.GetAtUnsafe({r, c}), m_font, m_fontSize });
+					m_Text.GetAtUnsafe({r, c}), m_fontData });
 			}
 
 			//We do this here even for when c == width-1 so we can use be added towards total
@@ -260,7 +260,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 			{
 				//Note: we get plus one for col since positions is top left by calculating all previous width/height data
 				textBufferData.push_back(TextBufferPosition{ Vec2{ currentColsWidth, -previousRowsHeight},
-				m_Text.GetAtUnsafe({r, c + 1}), m_font, m_fontSize });
+				m_Text.GetAtUnsafe({r, c + 1}), m_fontData});
 			}
 		}
 
@@ -309,11 +309,15 @@ const Vec2& VisualData::GetCharSpacing() const
 
 const Font& VisualData::GetFont() const
 {
-	return m_font;
+	return m_fontData.m_Font;
 }
-const float VisualData::GetFontSize() const
+float VisualData::GetFontSize() const
 {
-	return m_fontSize;
+	return m_fontData.m_FontSize;
+}
+const FontData& VisualData::GetFontData() const
+{
+	return m_fontData;
 }
 
 const Vec2& VisualData::GetPivot() const
@@ -358,5 +362,5 @@ std::string VisualData::ToStringRawBuffer(const RawTextBufferBlock& block)
 std::string VisualData::ToString() const
 {
 	return std::format("[Visual CharSpacing:{} FontSize:{} Pivot:{} Text:{}]",
-		m_charSpacing.ToString(), std::to_string(m_fontSize), m_pivotRelative.GetPos().ToString(), m_Text.ToString());
+		m_charSpacing.ToString(), std::to_string(GetFontSize()), m_pivotRelative.GetPos().ToString(), m_Text.ToString());
 }

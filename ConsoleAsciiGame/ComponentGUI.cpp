@@ -20,7 +20,9 @@ static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
 
 ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, const EntityGUI& entityGUI, ComponentData* component)
 	: m_inputManager(&inputManager), m_component(component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
-	m_dropdownCheckbox(selector, false, GUISettings({}, EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUISettings()))
+	m_dropdownCheckbox(selector, false, GUISettings({}, EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUISettings())), 
+	m_componentNameText(component!=nullptr? GetComponentName() : "NULL COMPONENT", TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(TITLE_FONT_SIZE, GetGlobalFont()),
+		TITLE_FONT_SPACING, TextAlignment::CenterLeft))
 {
 	if (component == nullptr) return;
 
@@ -106,23 +108,28 @@ std::vector<std::string> ComponentGUI::GetFieldNames() const
 ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 {
 	//Assert(false, std::format("REDNER field: {}", m_fieldGUIs[0].GetFieldInfo().m_FieldName));
-	std::string componentName = GetComponentName();
+	//std::string componentName = GetComponentName();
 
 	Vector2 currentPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
-	//Assert(false, std::format("Drawing rect at pos: {}", RaylibUtils::ToString(currentPos)));
-	//float componentHeight = MAX_PANEL_HEIGHT;
 
 	//The first rectangle drawn is for the header ONLY
-	float componentHeight = MeasureTextEx(GetGlobalFont(), componentName.c_str(), TITLE_FONT_SIZE, TITLE_FONT_SPACING).y;
+	//float componentHeight = MeasureTextEx(GetGlobalFont(), componentName.c_str(), TITLE_FONT_SIZE, TITLE_FONT_SPACING).y;
+	const ScreenPosition componentNameTextSize = m_componentNameText.CalculateSize(renderInfo);
+	float componentHeight = componentNameTextSize.m_Y;
 	DrawRectangle(currentPos.x, currentPos.y, renderInfo.m_RenderSize.m_X, componentHeight, EntityEditorGUI::EDITOR_BACKGROUND_COLOR);
 	
 	ScreenPosition checkboxArea= m_dropdownCheckbox.Render(RenderInfo(ScreenPosition(currentPos.x, currentPos.y), ScreenPosition(TITLE_FONT_SIZE, TITLE_FONT_SIZE)));
 	const Vec2 remainingTitleSpace = Vec2(renderInfo.m_RenderSize.m_X - checkboxArea.m_X, TITLE_FONT_SIZE);
-	const float componentNameFont = RaylibUtils::GetMaxFontSizeForSpace(GetGlobalFont(), componentName.c_str(), remainingTitleSpace, TITLE_FONT_SPACING);
+	//const float componentNameFont = RaylibUtils::GetMaxFontSizeForSpace(GetGlobalFont(), componentName.c_str(), remainingTitleSpace, TITLE_FONT_SPACING);
 	//Assert(false, std::format("max font for area: {} is: {}", remainingTitleSpace.ToString(), std::to_string(componentNameFont)));
-	DrawTextEx(GetGlobalFont(), componentName.c_str(), {currentPos.x+ checkboxArea.m_X, currentPos.y}, componentNameFont, TITLE_FONT_SPACING, EntityEditorGUI::EDITOR_TEXT_COLOR);
 	
-	currentPos.y += MeasureTextEx(GetFontDefault(), componentName.c_str(), TITLE_FONT_SIZE, TITLE_FONT_SPACING).y;
+	//DrawTextEx(GetGlobalFont(), componentName.c_str(), {currentPos.x+ checkboxArea.m_X, currentPos.y}, componentNameFont, TITLE_FONT_SPACING, EntityEditorGUI::EDITOR_TEXT_COLOR);
+
+	m_componentNameText.Render(RenderInfo(ScreenPosition(currentPos.x + checkboxArea.m_X, currentPos.y), 
+		ScreenPosition(remainingTitleSpace.m_X, remainingTitleSpace.m_Y)));
+	
+	//currentPos.y += MeasureTextEx(GetFontDefault(), componentName.c_str(), TITLE_FONT_SIZE, TITLE_FONT_SPACING).y;
+	currentPos.y += componentNameTextSize.m_Y;
 	if (!m_dropdownCheckbox.IsChecked())
 	{
 		return ScreenPosition(MAX_PANEL_WIDTH, componentHeight);

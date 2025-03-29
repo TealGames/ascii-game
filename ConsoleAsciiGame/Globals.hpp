@@ -29,7 +29,7 @@ inline const Color DEBUG_HIGHLIGHTED_TEXT_COLOR = YELLOW;
 inline const std::string MAIN_INPUT_PROFILE_NAME = "main";
 inline const std::string MAIN_INPUT_PROFILE_MOVE_ACTION = "Move";
 
-Font& GetGlobalFont();
+Font GetGlobalFont();
 
 inline const char* ANSI_COLOR_RED = "\033[1;31m";
 inline const char* ANSI_COLOR_YELLOW = "\033[1;33m";

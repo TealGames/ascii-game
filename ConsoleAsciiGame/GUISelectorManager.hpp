@@ -12,12 +12,13 @@ private:
 	SelectableGUI* m_currentSelected;
 
 	std::optional<ScreenPosition> m_lastFrameClickedPosition;
-
+	
 public:
 
 private:
 	void SelectNewSelectable(SelectableGUI* selectable);
 	void DeselectCurrentSelectable();
+	void ClickSelectable(SelectableGUI* selectable);
 
 public:
 	GUISelectorManager(const Input::InputManager& input);

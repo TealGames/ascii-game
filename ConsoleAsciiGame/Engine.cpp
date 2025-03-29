@@ -55,6 +55,8 @@ namespace Core
 	//TODO: if the level background (or any object) is inside or contains the player at the start, then the gamne crashes usually with a direction not found of colliding body from physics system
 	//TODO: since a lot of places need current camera data just for position conversions, maybe conversions should get camera controller as dependency
 	//TODO: json serializer should not contain so many duplicate entries (such as font code similar in many places) and should get fonts and other stuff from asset manager
+	//TODO: add serialization/deserializetion for particle emitter
+	//TODO: if necessary add color gradient GUI and color picker editor GUI
 
 	static constexpr std::uint8_t TARGET_FPS = 60;
 

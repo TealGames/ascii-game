@@ -20,9 +20,12 @@ const static ScreenPosition MAX_INPUT_FIELD_SIZE = { 100, 20 };
 
 ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
 	const ComponentGUI& componentGUI, ComponentField& field)
-	: m_fieldInfo(field), m_inputFields(),m_checkbox(), m_inputManager(inputManager), m_componentGUI(&componentGUI)
+	: m_fieldInfo(field), m_inputFields(),m_checkbox(), m_inputManager(inputManager), m_componentGUI(&componentGUI), 
+	m_fieldNameText(m_fieldInfo.m_FieldName, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
+		EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_SECONDARY_COLOR)
 {
 	/*if (m_fieldInfo.IsCurrentType<Vec2>()) 
+
 		Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Vec2*>(m_fieldInfo.m_Value)->ToString()));*/
 	/*if (m_fieldInfo.IsCurrentType<Vec2>() && GetComponentGUISafe().GetEntityGUISafe().GetEntity().m_Name== "player")*/
 	//Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Vec2*>(m_fieldInfo.m_Value)->ToString()));
@@ -30,39 +33,39 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	InputFieldFlag fieldFlags = InputFieldFlag::None;
 	if (m_fieldInfo.IsReadonly()) fieldFlags |= InputFieldFlag::UserUIReadonly;
 
-	GUISettings guiSettings = GUISettings(MAX_INPUT_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
-		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, TextGUIFontSize::ParentArea, FIELD_FONT_FACTOR, 0));
+	GUISettings fieldSettings = GUISettings(MAX_INPUT_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
+		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(0, GetGlobalFont()), EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center, FIELD_FONT_FACTOR));
 	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
 		std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
 
 	if (m_fieldInfo.IsCurrentType<int>() || m_fieldInfo.IsCurrentType<std::uint8_t>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Integer, fieldFlags, guiSettings));
+		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Integer, fieldFlags, fieldSettings));
 	}
 	else if (m_fieldInfo.IsCurrentType<float>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, guiSettings));
+		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, fieldSettings));
 	}
 	else if (m_fieldInfo.IsCurrentType<bool>())
 	{
-		m_checkbox = CheckboxGUI(selector, false, guiSettings);
+		m_checkbox = CheckboxGUI(selector, false, fieldSettings);
 	}
 	else if (m_fieldInfo.IsCurrentType<std::string>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::String, fieldFlags, guiSettings));
+		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::String, fieldFlags, fieldSettings));
 	}
 	else if (m_fieldInfo.IsCurrentType<Vec2>())
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, guiSettings));
+			m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, fieldSettings));
 		}
 	}
 	else if (m_fieldInfo.IsCurrentType<Vec2Int>())
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Integer, fieldFlags, guiSettings));
+			m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Integer, fieldFlags, fieldSettings));
 		}
 	}
 	else
@@ -276,12 +279,16 @@ ScreenPosition ComponentFieldGUI::Render(const RenderInfo& renderInfo)
 ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Event<void>& renderActions)
 {
 	Vector2 currentPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
-	const Vector2 textSize = MeasureTextEx(GetGlobalFont(), m_fieldInfo.m_FieldName.c_str(), TITLE_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X);
+	const Vector2 textSize = RaylibUtils::ToRaylibVector(m_fieldNameText.CalculateSize(renderInfo)); 
+	/*if (m_fieldInfo.m_FieldName=="Pos") Assert(false, std::format("Rendering field:{} top left:{} rendersize:{} text size:{} ({})", m_fieldInfo.m_FieldName, renderInfo.m_TopLeftPos.ToString(),
+		renderInfo.m_RenderSize.ToString(), m_fieldNameText.CalculateSize(renderInfo).ToString(), RaylibUtils::ToString(textSize)));*/
+	//const Vector2 textSize= MeasureTextEx(GetGlobalFont(), m_fieldInfo.m_FieldName.c_str(), TITLE_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X);
 
-	renderActions.AddListener([this, currentPos]() -> void 
+	renderActions.AddListener([this, textSize, renderInfo]() -> void
 		{
-			DrawTextEx(GetGlobalFont(), m_fieldInfo.m_FieldName.c_str(), currentPos, 
-				TITLE_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_SECONDARY_COLOR); 
+			m_fieldNameText.Render(RenderInfo(renderInfo.m_TopLeftPos, {static_cast<int>(textSize.x), static_cast<int>(textSize.y)}));
+			/*DrawTextEx(GetGlobalFont(), m_fieldInfo.m_FieldName.c_str(), currentPos, 
+				TITLE_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_SECONDARY_COLOR); */
 		});
 	currentPos.y += textSize.y;
 

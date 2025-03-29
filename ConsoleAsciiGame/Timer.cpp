@@ -1,8 +1,6 @@
 #include "pch.hpp"
 #include "Timer.hpp"
 #include "HelperFunctions.hpp"
-#include <chrono>
-#include "StringUtil.hpp"
 #include "Debug.hpp"
 
 TimerResult::TimerResult() : TimerResult({}, {}, 0) {}

@@ -12,6 +12,7 @@
 #include "SceneManager.hpp"
 #include "CameraController.hpp"
 #include "ParticleEmitterData.hpp"
+#include "RaylibUtils.hpp"
 
 namespace GlobalCreator
 {
@@ -19,8 +20,10 @@ namespace GlobalCreator
 	{
 		//ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData(Vec2{ 20, 20 }));
 
-		VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
+		//Font* fontptr = &(GetGlobalFont());
+		VisualDataPreset visualPreset = {GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
+		LogError(std::format("Is valid preset font:{}", std::to_string(RaylibUtils::IsValidFont(visualPreset.m_Font))));
 
 		ECS::Entity& playerEntity = globalsManager.CreateGlobalEntity("player", TransformData(Vec2{ 10, 5 }));
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(1, Vec2(2, 2), Vec2(0, 0), GRAVITY, 20));

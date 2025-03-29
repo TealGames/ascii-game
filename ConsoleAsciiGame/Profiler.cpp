@@ -3,8 +3,6 @@
 #include "HelperFunctions.hpp"
 #include <filesystem>
 #include <fstream>
-#include "StringUtil.hpp"
-#include <cmath>
 #include "plplot/plstream.h"
 #include "plplot/plplot.h"
 #include "Debug.hpp"

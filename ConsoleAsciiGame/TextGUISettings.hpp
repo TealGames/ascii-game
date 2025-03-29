@@ -1,31 +1,25 @@
 #pragma once
 #include "raylib.h"
-#include "ScreenPosition.hpp"
-
-enum class TextGUIFontSize
-{
-	Static,
-	ParentArea,
-};
+#include "FontData.hpp"
+#include "TextGUI.hpp"
+#include "GUIPadding.hpp"
 
 class TextGUISettings
 {
 public:
 	Color m_TextColor;
-	float m_FontSize;
-	float m_FontSizeParentAreaFactor;
-	TextGUIFontSize m_FontSizeType;
-
-	int m_RightIndent;
-
-private:
-	TextGUISettings(const Color& color, const float& fontSize, const float& factor, const TextGUIFontSize& sizeType, const int& rightIndent);
+	TextAlignment m_TextAlignment;
+	FontData m_FontData;
+	GUIPadding m_Padding;
+	float m_CharSpacing;
+	float m_FontSizeFactor;
+	bool m_FitToArea;
 
 public:
 	TextGUISettings();
-	TextGUISettings(const Color& textColor, const TextGUIFontSize& fontSizeType, const float& fontSize, const int& rightIndent);
-
-	float GetFontSizeFromArea(const ScreenPosition& parentArea) const;
-	float GetFontSize(const ScreenPosition& parentArea) const;
+	TextGUISettings(const Color& textColor, const FontData& fontData, const float& spacing, 
+		const TextAlignment& alignment=TextGUI::DEFAULT_ALIGNMENT, const float& factor= TextGUI::NULL_FONT_FACTOR, 
+		const bool& fitToArea= TextGUI::DEFAULT_FIT_TO_AREA);
 };
 
+ 

@@ -20,6 +20,7 @@
 #include <type_traits>
 #include <cstdint>
 #include <vector>
+#include "FloatRange.hpp"
 
 using Json = nlohmann::json;
 using JsonOrdered = nlohmann::ordered_json;
@@ -41,6 +42,9 @@ void to_json(Json& json, const Vec2& vec);
 void from_json(const Json& json, Vec2Int& vec);
 void to_json(Json& json, const Vec2Int& vec);
 
+void from_json(const Json& json, FloatRange& range);
+void to_json(Json& json, const FloatRange& range);
+
 void from_json(const Json& json, Array2DPosition& pos);
 void to_json(Json& json, const Array2DPosition& pos);
 
@@ -61,6 +65,12 @@ void to_json(Json& json, const TextChar& textChar);
 
 void from_json(const Json& json, TextCharPosition& textChar);
 void to_json(Json& json, const TextCharPosition& textChar);
+
+std::optional<Font> TryDeserializeFont(const Json& json);
+Json TrySerializeFont(const Font& font);
+
+void from_json(const Json& json, FontData& font);
+void to_json(Json& json, const FontData& font);
 
 void from_json(const Json& json, TextBufferPosition& textChar);
 void to_json(Json& json, const TextBufferPosition& textChar);

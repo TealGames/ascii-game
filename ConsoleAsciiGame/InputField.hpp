@@ -10,6 +10,7 @@
 #include "ISelectable.hpp"
 #include "GUISettings.hpp"
 #include "SelectableGUI.hpp"
+#include "TextGUI.hpp"
 
 enum class InputFieldType
 {
@@ -72,13 +73,15 @@ constexpr InputFieldFlag operator~(const InputFieldFlag& op)
 
 using InputFieldAction = std::function<void(std::string input)>;
 using InputFieldKeyActions = std::unordered_map<KeyboardKey, InputFieldAction>;
-class InputField : SelectableGUI, IRenderable
+class InputField : public SelectableGUI, public IRenderable
 {
 private:
 	InputFieldType m_type;
+
 	std::string m_input;
 	std::string m_lastInput;
 	std::string m_attemptedInput;
+	TextGUI m_textGUI;
 	InputFieldFlag m_inputFlags;
 
 	//bool m_isSelected;

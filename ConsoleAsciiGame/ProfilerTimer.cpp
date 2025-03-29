@@ -2,7 +2,6 @@
 #include "ProfilerTimer.hpp"
 #include "Profiler.hpp"
 #include "Timer.hpp"
-#include "HelperFunctions.hpp"
 #include <string>
 
 Profiler ProfilerTimer::m_Profiler = Profiler();

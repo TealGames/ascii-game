@@ -27,6 +27,8 @@ public:
 	static const Color EDITOR_BACKGROUND_COLOR;
 	static const Color EDITOR_SECONDARY_COLOR;
 
+	static const Vec2 EDITOR_CHAR_SPACING;
+
 private:
 public:
 	EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene, 

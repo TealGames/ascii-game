@@ -42,7 +42,7 @@ namespace ECS
 						{
 							particle.m_Pos = particle.m_Pos + particle.m_Velocity * deltaTime;
 							particle.m_AliveTime += deltaTime;
-							particle.SetColorFromAliveTime(data.m_colorOverTime);
+							particle.SetColorFromAliveTime(data.m_lifetimeColor);
 
 							//TODO: maybe try to opimize this better since if tehre are multiple particles to be removed
 							//we have to shift the elements in the vector (especially if there are many elements)
@@ -67,7 +67,7 @@ namespace ECS
 				Vec2 randomDir = {};
 				Vec2 randomVel = {};
 				float randomLifeTime = 0;
-				const Color initialColor = data.m_colorOverTime.GetFirstColor(true);
+				const Color initialColor = data.m_lifetimeColor.GetFirstColor(true);
 				for (int i = 0; i < wholeParticlesToSpawn; i++)
 				{
 					randomDir = GenerateRandomDir();

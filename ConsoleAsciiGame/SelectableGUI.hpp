@@ -21,6 +21,7 @@ private:
 public:
 	SelectableEvent m_OnSelect;
 	SelectableEvent m_OnDeselect;
+	SelectableEvent m_OnClick;
 
 protected:
 	GUISelectorManager& GetSelectorManager();
@@ -38,6 +39,7 @@ public:
 
 	virtual void Select();
 	virtual void Deselect();
+	virtual void Click();
 	bool IsSelected() const;
 
 	const GUIRect GetLastFrameRect() const;

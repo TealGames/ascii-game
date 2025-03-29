@@ -2,9 +2,9 @@
 #include "Globals.hpp"
 #include "RaylibUtils.hpp"
 
-Font& GetGlobalFont()
+Font GetGlobalFont()
 {
-	static Font font = GetFontDefault();
+	return GetFontDefault();
 	/*static bool removedSpacing = false;
 	if (!removedSpacing)
 	{
@@ -12,5 +12,5 @@ Font& GetGlobalFont()
 		removedSpacing = true;
 	}*/
 
-	return font;
+	//return font;
 }

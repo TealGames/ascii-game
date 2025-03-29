@@ -9,13 +9,13 @@
 #include <optional>
 #include <cstdint>
 
-enum class ComponentFieldType
-{
-	String,
-	Integer,
-	Float,
-	Vector2
-};
+//enum class ComponentFieldType
+//{
+//	String,
+//	Integer,
+//	Float,
+//	Vector2
+//};
 
 //TODO: ideally we would not use a direct value but rather a function to set those values to add some abstraction
 //and allow some clamping or other import actions to be taken if neccessary

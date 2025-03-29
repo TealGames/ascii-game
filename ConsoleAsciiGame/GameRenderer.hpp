@@ -1,12 +1,14 @@
 #pragma once
 #include <optional>
-#include "TextBuffer.hpp"
+#include <cstdint>
 #include "Point2DInt.hpp"
-#include "ColliderOutlineBuffer.hpp"
+#include "TextBuffer.hpp"
 #include "LineBuffer.hpp"
-#include "DebugInfo.hpp"
-#include "CommandConsole.hpp"
-#include "EntityEditorGUI.hpp"
+#include "ColliderOutlineBuffer.hpp"
+
+class DebugInfo;
+class CommandConsole;
+class EntityEditorGUI;
 
 namespace Rendering
 {

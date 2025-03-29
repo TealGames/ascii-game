@@ -30,7 +30,8 @@ std::string ToString(const InputFieldType& type)
 InputField::InputField(const Input::InputManager* manager, GUISelectorManager* selectorManager, 
 	const InputFieldType& type, const InputFieldFlag& flags, const GUISettings& settings, 
 	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
-	: SelectableGUI(selectorManager), m_inputManager(manager), m_type(type), m_input(), m_lastInput(), m_inputFlags(flags), m_submitAction(submitAction),
+	: SelectableGUI(selectorManager), m_inputManager(manager), m_type(type), m_input(), m_lastInput(), 
+	m_textGUI("", settings.m_TextSettings), m_inputFlags(flags), m_submitAction(submitAction),
 	m_keyActions(keyPressActions), m_settings(settings), m_lastRenderRect()
 {
 	//LogError("Creating Input FIeld");
@@ -267,17 +268,18 @@ ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, widthUsed, heightUsed, m_settings.m_BackgroundColor);
 	std::string inputStr = IsSelected() && !HasFlag(InputFieldFlag::UserUIReadonly) ? GetDisplayAttemptedInput() : GetDisplayInput();
 	//Assert(false, std::format("Found input: {}", inputStr));
-	//TODO: right now this deos not consider text overflow, or if the text is longer than input field
-	//TODO: add the render settigns like font, font size, spacing as constructor args
+	
+	m_textGUI.SetText(inputStr);
+	m_textGUI.Render(RenderInfo(renderInfo.m_TopLeftPos, renderSize));
 
-	Vector2 textStartPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
-	const float fontSize = m_settings.m_TextSettings.GetFontSize(renderSize);
-	/*if (m_settings.m_TextSettings.m_FontSizeType==TextGUIFontSize::ParentArea) 
-		Assert(false, std::format("Font size is: {} text factor: {}", std::to_string(fontSize), std::to_string(m_settings.m_TextSettings.m_FontSize)));*/
+	//Vector2 textStartPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
+	//const float fontSize = m_settings.m_TextSettings.GetFontSize(renderSize);
+	////if (m_settings.m_TextSettings.m_FontSizeType==TextGUIFontSize::ParentArea) 
+	////Assert(false, std::format("Font size is: {} text factor: {}", std::to_string(fontSize), std::to_string(m_settings.m_TextSettings.m_FontSize)));*/
 
-	textStartPos.x += m_settings.m_TextSettings.m_RightIndent;
-	DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
-		fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
+	//textStartPos.x += m_settings.m_TextSettings.m_RightIndent;
+	//DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
+	//	fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
 
 	if (!IsSelected() || HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay({ renderInfo.m_TopLeftPos, renderSize });
 

@@ -21,7 +21,7 @@ private:
 	CheckboxGUI m_checkbox;
 
 	const ComponentGUI* m_componentGUI;
-
+	TextGUI m_fieldNameText;
 public:
 
 private:

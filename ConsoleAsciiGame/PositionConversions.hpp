@@ -1,6 +1,5 @@
 #pragma once
 #include "Array2DPosition.hpp"
-#include "Vec2.hpp"
 #include "CameraData.hpp"
 #include "NormalizedPosition.hpp"
 

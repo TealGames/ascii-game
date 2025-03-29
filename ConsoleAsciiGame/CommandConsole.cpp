@@ -24,7 +24,7 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorMana
 	m_inputManager(input), m_prompts(), m_outputMessages(), m_inputField()
 {
 	GUISettings fieldSettings = GUISettings(ScreenPosition{ COMMAND_CONSOLE_WIDTH , COMMAND_CONSOLE_HEIGHT }, GRAY,
-		TextGUISettings(WHITE, TextGUIFontSize::Static, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_TEXT_INDENT));
+		TextGUISettings(WHITE, FontData(COMMAND_CONSOLE_FONT_SIZE, GetGlobalFont()), COMMAND_CONSOLE_SPACING));
 	m_inputField = InputField(m_inputManager, selector, InputFieldType::Any, 
 		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit,
 		fieldSettings, [this](std::string input) -> void 
