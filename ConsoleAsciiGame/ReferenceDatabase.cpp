@@ -1,9 +1,9 @@
 #include "pch.hpp"
 #include "ReferenceDatabase.hpp"
 
-namespace ReferenceDatabase
+namespace ReferenceRegistry
 {
-	DatabaseCollection Database;
+	DatabaseCollection Registry;
 
 	std::string ToString(const ReferenceType& type)
 	{
@@ -16,13 +16,13 @@ namespace ReferenceDatabase
 		return "";
 	}
 
-	DatabaseCollection::iterator ReferenceDatabase::TryGetReferenceMutable(const std::string& name)
+	DatabaseCollection::iterator ReferenceRegistry::TryGetReferenceMutable(const std::string& name)
 	{
-		return Database.find(name);
+		return Registry.find(name);
 	}
 
-	bool ReferenceDatabase::HasReference(const std::string& name)
+	bool ReferenceRegistry::HasReference(const std::string& name)
 	{
-		return Database.find(name) != Database.end();
+		return Registry.find(name) != Registry.end();
 	}
 }

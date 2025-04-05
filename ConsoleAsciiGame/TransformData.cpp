@@ -14,7 +14,7 @@ TransformData::TransformData(const Json& json) : TransformData()
 }
 
 TransformData::TransformData(const Vec2& pos) :
-	ComponentData(HighestDependecyLevel::None),
+	ComponentData(),
 	m_Pos(pos), m_LastPos(NULL_POS), m_LastFramePos(NULL_POS)
 {
 	
@@ -67,6 +67,10 @@ void TransformData::InitFields()
 		/*Assert(false, std::format("Tried to create field AT TRANFOEMR for: {} but wtih value: {} ACTUAL{}",
 			GetEntitySafe().m_Name, std::get<Vec2*>(m_Fields[0].m_Value)->ToString(), m_Pos.ToString()));*/
 	//Assert(false, std::format("Created value: {}", std::get<Vec2*>(m_Fields[0].m_Value)->ToString()));
+}
+std::vector<std::string> TransformData::GetDependencyFlags() const
+{
+	return {};
 }
 
 void TransformData::Deserialize(const Json& json)

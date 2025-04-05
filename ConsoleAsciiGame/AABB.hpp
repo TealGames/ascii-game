@@ -9,15 +9,6 @@
 
 namespace Physics
 {
-	struct AABBIntersectionData
-	{
-		bool m_DoIntersect = false;
-		Vec2 m_Depth = {};
-
-		AABBIntersectionData();
-		AABBIntersectionData(const bool& intersect, const Vec2& depth);
-	};
-
 	//Axis aligned bounding box
 	struct AABB
 	{
@@ -54,6 +45,7 @@ namespace Physics
 		std::string ToString(const WorldPosition& transformPos) const;
 	};
 
+	/*
 	bool DoAABBIntersect(const Vec2& entity1Pos, const AABB& entity1Bounding,
 		const Vec2& entity2Pos, const AABB& entity2Bounding);
 
@@ -77,6 +69,7 @@ namespace Physics
 	/// <returns></returns>
 	Vec2 GetAABBDirection(const Vec2& entity1Pos, const AABB& entity1Bounding,
 		const Vec2& entity2Pos, const AABB& entity2Bounding, const bool& considerCollisions= true);
+		*/
 }
 
 

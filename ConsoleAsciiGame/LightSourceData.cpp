@@ -23,7 +23,7 @@ LightSourceData::LightSourceData(const Json& json) : LightSourceData()
 }
 LightSourceData::LightSourceData(const std::uint8_t& lightRadius, const RenderLayerType& affectedLayers, const ColorGradient& colorFilter,
 	const std::uint8_t& intensity, const float& falloff) :
-	ComponentData(HighestDependecyLevel::None), 
+	ComponentData(), 
 	m_LightRadius(lightRadius), m_GradientFilter(colorFilter), m_AffectedLayers(affectedLayers),
 	m_Intensity(intensity), m_FalloffStrength(falloff), m_LastFrameData{}
 {
@@ -34,6 +34,10 @@ void LightSourceData::InitFields()
 {
 	m_Fields = {ComponentField("FalloffStrength", &m_FalloffStrength), 
 		ComponentField("Radius", &m_LightRadius), ComponentField("Intensity", &m_Intensity)};
+}
+std::vector<std::string> LightSourceData::GetDependencyFlags() const
+{
+	return {};
 }
 
 std::string LightSourceData::ToString() const

@@ -8,9 +8,10 @@
 #include "CameraData.hpp"
 #include "PositionConversions.hpp"
 #include "InputManager.hpp"
+#include "RaylibUtils.hpp"
 
 DebugInfo::DebugInfo() : 
-	m_text(), m_highlightedIndices(), m_mouseDebugData(std::nullopt) {}
+	m_text(), m_highlightedIndices(), m_mouseDebugData(std::nullopt), m_isEnabled(false) {}
 
 void DebugInfo::ClearProperties()
 {
@@ -62,15 +63,21 @@ const std::optional<DebugMousePosition>& DebugInfo::GetMouseDebugData() const
 	return m_mouseDebugData;
 }
 
-void DebugInfo::UpdateProperties(const float& deltaTime, const float& timeStep, Scene& activeScene, Input::InputManager& input, const CameraData& mainCamera)
+void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera)
 {
+	if (input.IsKeyDown(TOGGLE_DEBUG_INFO_KEY))
+	{
+		m_isEnabled = !m_isEnabled;
+	}
+	if (!m_isEnabled) return;
+
 	ClearProperties();
 
 	AddProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
 	AddProperty("DeltaTime", std::format("{} s", std::to_string(deltaTime)));
 	AddProperty("TimeStep", std::format("{} s", std::to_string(timeStep)));
 
-	ECS::Entity* playerEntity = activeScene.TryGetEntityMutable("player", true);
+	const ECS::Entity* playerEntity = activeScene.TryGetEntity("player", true);
 	if (!Assert(this, playerEntity != nullptr, std::format("Tried to update properties"
 		"for debug info but player could not be in active scene")))
 		return;
@@ -91,4 +98,51 @@ void DebugInfo::UpdateProperties(const float& deltaTime, const float& timeStep, 
 	ScreenPosition mouseScreenPos = { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y) };
 	WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(mainCamera, mouseScreenPos);
 	SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X + 15, mouseScreenPos.m_Y} });
+}
+
+bool DebugInfo::TryRender()
+{
+	Vector2 startPos = { 5, 5 };
+	Vector2 currentPos = startPos;
+	Vector2 currentSize = {};
+
+	Color defaultColor = DEBUG_TEXT_COLOR;
+	Color currentColor = defaultColor;
+
+	const auto& highlightedIndices = GetHighlightedIndicesSorted();
+	if (!highlightedIndices.empty()) defaultColor.a = 100;
+
+	size_t currentIndex = 0;
+	size_t currentCollectionIndex = 0;
+	size_t nextHighlightedIndex = !highlightedIndices.empty() ? highlightedIndices[currentCollectionIndex] : -1;
+
+	for (const auto& text : GetText())
+	{
+		if (!highlightedIndices.empty() && currentIndex == nextHighlightedIndex)
+		{
+			currentColor = DEBUG_HIGHLIGHTED_TEXT_COLOR;
+			currentCollectionIndex++;
+			if (currentCollectionIndex < highlightedIndices.size())
+			{
+				nextHighlightedIndex = highlightedIndices[currentCollectionIndex];
+			}
+		}
+		else currentColor = defaultColor;
+
+		currentSize = MeasureTextEx(GetGlobalFont(), text.c_str(), DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X);
+		DrawTextEx(GetGlobalFont(), text.c_str(), currentPos, DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, currentColor);
+
+		currentPos.y += currentSize.y + DEBUG_INFO_CHAR_SPACING.m_Y;
+		currentIndex++;
+	}
+
+	auto maybeMouseData = GetMouseDebugData();
+	if (maybeMouseData.has_value())
+	{
+		std::string textAsStr = std::format("{}", maybeMouseData.value().m_MouseWorldPos.ToString(2));
+		const char* text = textAsStr.c_str();
+		DrawTextEx(GetGlobalFont(), text, RaylibUtils::ToRaylibVector(maybeMouseData.value().m_MouseTextScreenPos),
+			DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, WHITE);
+	}
+	return true;
 }

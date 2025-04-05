@@ -5,6 +5,7 @@
 #include "TextBuffer.hpp"
 #include "LineBuffer.hpp"
 #include "ColliderOutlineBuffer.hpp"
+#include "IBasicRenderable.hpp"
 
 class DebugInfo;
 class CommandConsole;
@@ -23,6 +24,5 @@ namespace Rendering
 
     void RenderBuffer(const TextBufferMixed& buffer, const RenderInfo& renderInfo);
     void RenderBuffer(const TextBufferMixed& layerBuffers, const ColliderOutlineBuffer* outlineBuffer= nullptr, 
-        const LineBuffer* lineBuffer=nullptr, const DebugInfo* debugInfo=nullptr, CommandConsole* console=nullptr, 
-        EntityEditorGUI* editor=nullptr);
+        const LineBuffer* lineBuffer = nullptr, const std::vector<IBasicRenderable*>& renderables = {});
 }

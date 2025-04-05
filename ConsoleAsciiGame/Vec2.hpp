@@ -57,6 +57,10 @@ public:
 	/// <returns></returns>
 	float GetAngle(const AngleMode& mode = AngleMode::Radians) const;
 	float GetMagnitude() const;
+	/// <summary>
+	/// Returns only the direction of the vector
+	/// </summary>
+	/// <returns></returns>
 	Vec2 GetNormalized() const;
 	Vec2 GetNormal() const;
 	Vec2 GetOppositeDirection() const;
@@ -94,16 +98,11 @@ Vec2 GetVector(const float& speed, const float& angle, const AngleMode& mode = A
 
 Vec2 GetVectorEndPoint(const Vec2& startPos, const Vec2& vector);
 
-/// <summary>
-/// Returns the scalar dot product. 
-/// -> This essentially finds how much one vector is aligned in terms of the other (where order does NOT matter and produces the same result)
-/// -> If one vector is a unit vector, it essnetially then can find how much of a vector is in the same direction as the unit vector
-/// -> THIS IS MOST USEFUL FOR GETTING THE SCALAR FOR VECTORS IN PARALLEL DIRECTIONS (and extracting the parts in that direction)
-/// -> Note: <0 result means they are in opposite directions, >0 means they are <90 degrees from each other and =0 means they are at 90 degrees
-/// </summary>
-/// <param name="vecA"></param>
-/// <param name="vecB"></param>
-/// <returns></returns>
+//	Returns the scalar dot product. 
+// -> This essentially finds how much one vector is aligned in terms of the other (where order does NOT matter and produces the same result)
+// -> If one vector is a unit vector, it essnetially then can find how much of a vector is in the same direction as the unit vector
+// -> THIS IS MOST USEFUL FOR GETTING THE SCALAR FOR VECTORS IN PARALLEL DIRECTIONS (and extracting the parts in that direction)
+// -> Note: <0 result means they are in opposite directions, >0 means they are <90 degrees from each other and =0 means they are at 90 degrees
 float DotProduct(const Vec2& vecA, const Vec2& vecB);
 
 Vec2 GenerateRandomVec2(const Vec2& minVec, const Vec2 maxVec);

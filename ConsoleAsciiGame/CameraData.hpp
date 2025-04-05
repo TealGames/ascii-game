@@ -17,6 +17,7 @@ public:
 	CameraData(const Json& json);
 	CameraData(const CameraSettings& cameraSettings);
 
+	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 
 	std::string ToString() const override;

@@ -13,7 +13,7 @@ PlayerData::PlayerData(const Json& json) : PlayerData()
 	Deserialize(json);
 }
 PlayerData::PlayerData(PhysicsBodyData* body, const float& moveSpeed, const float& maxJumpHeight) : 
-	ComponentData(HighestDependecyLevel::SiblingComponent),
+	ComponentData(),
 	m_body(body), m_xMoveSpeed(std::abs(moveSpeed)), m_maxJumpHeight(maxJumpHeight), m_initialJumpSpeed()
 {
 	//if (m_maxJumpHeight>0) m_initialJumpSpeed = CalculateInitialJumpSpeed();
@@ -26,6 +26,10 @@ PlayerData::PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const 
 void PlayerData::InitFields()
 {
 	m_Fields = {ComponentField("MoveXSpeed", &m_xMoveSpeed)};
+}
+std::vector<std::string> PlayerData::GetDependencyFlags() const
+{
+	return {Utils::GetTypeName<PhysicsBodyData>()};
 }
 
 void PlayerData::TrySetInitialJumpSpeed()
@@ -54,7 +58,8 @@ const bool& PlayerData::GetIsGrounded() const
 
 float PlayerData::GetVerticalDistanceToGround() const
 {
-	WorldPosition bottomCenter = m_body->GetAABBWorldPos({ 0.5, 0 });
+	//WorldPosition bottomCenter = m_body->GetAABBWorldPos({ 0.5, 0 });
+	WorldPosition bottomCenter = m_body->GetCollisionBox().GetAABBWorldPos({ 0.5, 0 });
 	bottomCenter.m_Y -= 0.01;
 	float distance= m_body->GetPhysicsWorldSafe().Raycast(bottomCenter, { 0, -100 }).m_Displacement.m_Y;
 
@@ -116,11 +121,12 @@ void PlayerData::Deserialize(const Json& json)
 	m_xMoveSpeed = json.at("MoveSpeed").get<float>();
 	m_maxJumpHeight = json.at("JumpHeight").get<float>();
 
-	m_body = TryDeserializeComponent<PhysicsBodyData>(json.at("Body"));
+	m_body = TryDeserializeComponent<PhysicsBodyData>(json.at("Body"), GetEntitySafeMutable());
 	TrySetInitialJumpSpeed();
 }
 Json PlayerData::Serialize()
 {
+	//Assert(false, std::format("Serializign player data comp entity:{} scene:{}", m_body->GetEntitySafe().GetName(), m_body->GetEntitySafe().GetSceneName()));
 	return { {"MoveSpeed", m_xMoveSpeed}, {"JumpHeight", m_maxJumpHeight}, {"Body", TrySerializeComponent<PhysicsBodyData>(m_body)}};
 }
 

@@ -31,6 +31,7 @@ public:
 
 	void SetVisualData(const VisualDataPositions& positions);
 
+	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 
 	std::string ToString() const override;

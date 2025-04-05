@@ -1,123 +1,192 @@
 {
-	"Entities": [
-		{
-			"Name": "Test1",
-			"Components": [
-				{
-					"Type": "TransformData",
-					"Pos": {
-						"X": 5,
-						"Y": 6
-					},
-					"LastPos": {
-						"X": 55,
-						"Y": 66
-					},
-					"LastFramePos": {
-						"X": 100,
-						"Y": 89
-					}
-				},
-				{
-					"Type": "EntityRendererData",
-					"Layers": [
-						"Player"
-					],
-					"VisualData": {
-						"Buffer": [
-							[
-								{
-									"Pos": {
-										"Row": 0,
-										"Col": 0
-									},
-									"Char": "A",
-									"Color": {
-										"R": 255,
-										"G": 255,
-										"B": 255
-									}
-								}
-							]
-						],
-						"Font": "Default",
-						"FontSize": "Default",
-						"Pivot": "Center",
-						"CharSpacing": {
-							"X": 1,
-							"Y": 1
-						}
-					}
-				},
-				{
-					"Type": "CameraData",
-					"AspectRatio": {
-						"X": 3,
-						"Y": 6
-					},
-					"LensSize": 10,
-					"FollowTarget": {
-						"Entity": "Test2",
-						"Scene": "scene1"
-					}
-				},
-				{
-					"Type": "PhysicsBodyData",
-					"AABB": {
-						"Size": {
-							"X": 4,
-							"Y": 10
-						}
-					},
-					"Offset": {
-						"X": 2,
-						"Y": 5
-					},
-					"Mass": 5,
-					"Gravity": 9.8,
-					"Restitution": 2,
-					"Friction": 5.6,
-					"Velocity": {
-						"X": 2,
-						"Y": 7
-					},
-					"TerminalVelocity": 67,
-					"Acceleration": {
-						"X": 56,
-						"Y": 9
-					}
-				},
-				{
-					"Type": "PlayerData",
-					"MoveSpeed": 5,
-					"JumpHeight": 2,
-					"Body": {
-						"Scene": "scene1",
-						"Entity": "Test1",
-						"Component": "PhysicsBodyData"
-					}
-				}
-			]
-		},
-		{
-			"Name": "Test2",
-			"Components": [
-				{
-					"Type": "TransformData",
-					"Pos": {
-						"X": 0,
-						"Y": 0
-					},
-					"LastPos": {
-						"X": 5,
-						"Y": 6
-					},
-					"LastFramePos": {
-						"X": 1,
-						"Y": 8
-					}
-				}
-			]
-		}
-	]
+    "Entities": [
+        {
+            "Components": [
+                {
+                    "LastFramePos": {
+                        "X": 7434.419921875,
+                        "Y": 2339.109375
+                    },
+                    "LastPos": {
+                        "X": 7434.419921875,
+                        "Y": 2335.53955078125
+                    },
+                    "Pos": {
+                        "X": 7434.419921875,
+                        "Y": 2339.109375
+                    },
+                    "Type": "TransformData"
+                },
+                {
+                    "Layers": [
+                        "Player"
+                    ],
+                    "Type": "EntityRendererData",
+                    "VisualData": {
+                        "Buffer": [
+                            [
+                                {
+                                    "Char": "A",
+                                    "Color": "White",
+                                    "Pos": {
+                                        "Col": 0,
+                                        "Row": 0
+                                    }
+                                }
+                            ]
+                        ],
+                        "CharSpacing": {
+                            "X": 1.0,
+                            "Y": 1.0
+                        },
+                        "Font": "Default",
+                        "FontSize": "Default",
+                        "Pivot": "BottomLeft"
+                    }
+                },
+                {
+                    "AspectRatio": {
+                        "X": 3,
+                        "Y": 6
+                    },
+                    "FollowTarget": {
+                        "Entity": "Test2",
+                        "Scene": "scene1"
+                    },
+                    "LensSize": 10.0,
+                    "Type": "CameraData"
+                },
+                {
+                    "Type": "PhysicsBodyData",
+                    "Collider": {
+                        "Component": "CollisionBoxData",
+                        "Entity": "Self"
+                    },
+                    "Acceleration": {
+                        "X": 56.0,
+                        "Y": 9.800000190734863
+                    },
+                    "Friction": 5.599999904632568,
+                    "Gravity": 9.800000190734863,
+                    "Mass": 5.0,
+                    "Restitution": 1.0,
+                    "TerminalVelocity": 67.0,
+                    "Velocity": {
+                        "X": 911.4953002929688,
+                        "Y": 223.1133270263672
+                    }
+                },
+                {
+                    "Type": "CollisionBoxData",
+                    "AABB": {
+                        "Size": {
+                            "X": 4.0,
+                            "Y": 10.0
+                        }
+                    },
+                    "Offset": {
+                        "X": 2.0,
+                        "Y": 5.0
+                    }
+                },
+                {
+                    "Body": {
+                        "Component": "PhysicsBodyData",
+                        "Entity": "Test1",
+                        "Scene": "scene1"
+                    },
+                    "JumpHeight": 2.0,
+                    "MoveSpeed": 5.0,
+                    "Type": "PlayerData"
+                }
+            ],
+            "Name": "Test1"
+        },
+        {
+            "Components": [
+                {
+                    "LastFramePos": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    },
+                    "LastPos": {
+                        "X": 5.0,
+                        "Y": 6.0
+                    },
+                    "Pos": {
+                        "X": 0.0,
+                        "Y": 0.0
+                    },
+                    "Type": "TransformData"
+                }
+            ],
+            "Name": "Test2"
+        },
+        {
+            "Components": [
+                {
+                    "LastFramePos": {
+                        "X": -38.0,
+                        "Y": 32.5
+                    },
+                    "LastPos": {
+                        "X": -38.0,
+                        "Y": 32.5
+                    },
+                    "Pos": {
+                        "X": -38.0,
+                        "Y": 32.5
+                    },
+                    "Type": "TransformData"
+                },
+                {
+                    "Pos": {
+                        "X": 0.10000000149011612,
+                        "Y": 0.8999999761581421
+                    },
+                    "Type": "UIObjectData"
+                },
+                {
+                    "Layers": [
+                        "UI"
+                    ],
+                    "Type": "EntityRendererData",
+                    "VisualData": {
+                        "Buffer": [
+                            [
+                                {
+                                    "Char": "*",
+                                    "Color": {
+                                        "A": 255,
+                                        "B": 0,
+                                        "G": 161,
+                                        "R": 255
+                                    },
+                                    "Pos": {
+                                        "Col": 0,
+                                        "Row": 0
+                                    }
+                                }
+                            ]
+                        ],
+                        "CharArea": {
+                            "X": 2.0,
+                            "Y": 2.0
+                        },
+                        "CharSpacing": {
+                            "X": 1.0,
+                            "Y": 1.0
+                        },
+                        "Font": "Default",
+                        "FontSize": "Default",
+                        "Pivot": {
+                            "X": 0.0,
+                            "Y": 1.0
+                        }
+                    }
+                }
+            ],
+            "Name": "icon"
+        }
+    ]
 }

@@ -4,8 +4,8 @@
 
 namespace Physics
 {
-	PhysicsManager::PhysicsManager(SceneManagement::SceneManager& sceneManager)
-		: m_sceneManager(sceneManager), m_physics()
+	PhysicsManager::PhysicsManager(SceneManagement::SceneManager& sceneManager, CollisionRegistry& collisionRegistry)
+		: m_sceneManager(sceneManager), m_physics(collisionRegistry)
 	{
 		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* newScene) mutable -> void
 			{

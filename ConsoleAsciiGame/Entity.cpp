@@ -16,7 +16,7 @@ namespace ECS
 	/// <param name="mapper"></param>
 	/// <param name="transform"></param>
 	Entity::Entity(const std::string& name, entt::registry& mapper, const TransformData& transform) :
-		m_name(name), m_entityMapper(mapper), m_Active(true),
+		m_name(name), m_entityMapper(mapper), m_Active(true), m_IsSerializable(true),
 		//m_Id(m_entityMapper.ReserveAvailableEntityID()),
 		m_Id(m_entityMapper.create()),
 		m_Transform(AddComponent<TransformData>(transform)), 

@@ -42,13 +42,15 @@ namespace ECS
 				/*if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
 					"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;*/
 
-				WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
+				//WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
+				WorldPosition topLeftColliderPos = body->GetCollisionBox().GetAABBTopLeftWorldPos();
 				//TODO: the camera should convert to screen pos not here
 				ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(mainCamera, topLeftColliderPos);
 				/*LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}",
 					entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
 
-				m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body->GetAABB().GetSize(), topLeftScreenPos));
+				//m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body->GetAABB().GetSize(), topLeftScreenPos));
+				m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body->GetCollisionBox().GetAABB().GetSize(), topLeftScreenPos));
 			}
 
 			float velocityMagnitude = body->GetVelocity().GetMagnitude();

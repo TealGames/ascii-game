@@ -42,6 +42,7 @@ struct LightSourceData : public ComponentData
 	LightSourceData(const std::uint8_t& lightRadius, const RenderLayerType& affectedLayers, const ColorGradient& colorFilter,
 		const std::uint8_t& intensity, const float& falloff);
 
+	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 
 	std::string ToString() const override;

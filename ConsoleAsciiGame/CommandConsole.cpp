@@ -13,7 +13,7 @@ static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_ONE;
 
 static const Color CONSOLE_COLOR = { GRAY.r, GRAY.g, GRAY.b, 100 };
 
-static constexpr int COMMAND_CONSOLE_HEIGHT = 25;
+static constexpr int COMMAND_CONSOLE_HEIGHT = 20;
 static constexpr int COMMAND_CONSOLE_WIDTH = SCREEN_WIDTH;
 static constexpr int COMMAND_CONSOLE_FONT_SIZE = 25;
 static constexpr int COMMAND_CONSOLE_SPACING = 3;
@@ -21,10 +21,10 @@ static constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
 static constexpr int COMMAND_CONSOLE_TEXT_INDENT = 10;
 
 CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorManager& selector) :
-	m_inputManager(input), m_prompts(), m_outputMessages(), m_inputField()
+	m_inputManager(input), m_prompts(), m_outputMessages(), m_inputField(), m_isEnabled(false)
 {
 	GUISettings fieldSettings = GUISettings(ScreenPosition{ COMMAND_CONSOLE_WIDTH , COMMAND_CONSOLE_HEIGHT }, GRAY,
-		TextGUISettings(WHITE, FontData(COMMAND_CONSOLE_FONT_SIZE, GetGlobalFont()), COMMAND_CONSOLE_SPACING));
+		TextGUISettings(WHITE, FontData(COMMAND_CONSOLE_FONT_SIZE, GetGlobalFont()), COMMAND_CONSOLE_SPACING, TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
 	m_inputField = InputField(m_inputManager, selector, InputFieldType::Any, 
 		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit,
 		fieldSettings, [this](std::string input) -> void 
@@ -34,7 +34,7 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorMana
 		},
 		InputFieldKeyActions{ {LAST_COMMAND_KEY, [this](std::string input) -> void
 			{
-				Assert(false, std::format("Triggering stuff last input: {}", m_inputField.GetLastInput()));
+				//Assert(false, std::format("Triggering stuff last input: {}", m_inputField.GetLastInput()));
 				//TODO: this does not work because we override underlying input and not attempted input
 				m_inputField.OverrideInput(m_inputField.GetLastInput());
 			}
@@ -203,6 +203,17 @@ void CommandConsole::LogOutputMessagesUnrestricted(const std::vector<std::string
 
 void CommandConsole::Update()
 {
+	if (m_inputManager.IsKeyDown(TOGGLE_COMMAND_CONSOLE_KEY))
+	{
+		m_isEnabled = !m_isEnabled;
+	}
+
+	if (!m_isEnabled)
+	{
+		ResetInput();
+		return;
+	}
+
 	m_inputField.Update();
 
 	if (m_outputMessages.empty()) return;
@@ -227,6 +238,8 @@ void CommandConsole::TryRender()
 
 ScreenPosition CommandConsole::Render(const RenderInfo& renderInfo)
 {
+	if (!m_isEnabled) return {};
+
 	//float consoleIndent = 10;
 	Vector2 currentPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos); //{ 0, SCREEN_HEIGHT - COMMAND_CONSOLE_HEIGHT };
 	ScreenPosition totalSize = {};
@@ -252,6 +265,11 @@ ScreenPosition CommandConsole::Render(const RenderInfo& renderInfo)
 	}
 
 	return totalSize;
+}
+
+bool CommandConsole::IsEnabled() const
+{
+	return m_isEnabled;
 }
 
 void CommandConsole::ResetInput()

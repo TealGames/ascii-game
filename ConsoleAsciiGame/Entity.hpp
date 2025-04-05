@@ -78,6 +78,11 @@ namespace ECS
 		TransformData& m_Transform;
 
 		bool m_Active;
+		/// <summary>
+		/// If true, will be serialized in the scene asset so it can be deserialized
+		/// again with the same data between gameplay sessions
+		/// </summary>
+		bool m_IsSerializable;
 
 		//TODO: is this really the best location for something like this?
 		static const char* GLOBAL_SCENE_NAME;
@@ -181,6 +186,41 @@ namespace ECS
 			return m_entityMapper.try_get<T>(m_Id) != nullptr;
 		}
 
+		/// <summary>
+		/// Will return true if the target component is stored in this entity.
+		/// Note: this is slower than checking if it contains a type because it requires
+		/// O(n) complexity to check all components
+		/// </summary>
+		/// <param name="targetComponent"></param>
+		/// <returns></returns>
+		bool HasComponent(const ComponentData* targetComponent) const
+		{
+			if (targetComponent == nullptr) 
+				return false;
+
+			if (targetComponent->GetEntitySafe() != *this)
+				return false;
+
+			for (const auto& component : m_components)
+			{
+				if (component == targetComponent)
+					return true;
+			}
+			return false;
+		}
+
+		bool HasComponent(const std::string& targetComponentName) const
+		{
+			if (targetComponentName.empty()) return false;
+
+			for (const auto& component : m_components)
+			{
+				if (TryGetComponentName(component)==targetComponentName)
+					return true;
+			}
+			return false;
+		}
+
 		template<typename T>
 		requires IsComponent<T>
 		T* TryGetComponentMutable()
@@ -190,7 +230,7 @@ namespace ECS
 
 		template<typename T>
 		requires IsComponent<T>
-		const T* TryGetComponent()
+		const T* TryGetComponent() const
 		{
 			return m_entityMapper.try_get<T>(m_Id);
 		}

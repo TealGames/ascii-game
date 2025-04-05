@@ -207,14 +207,17 @@ ScreenPosition TextGUI::Render(const RenderInfo& renderInfo)
 	if (HasFontSizeFactor()) m_fontData.m_FontSize = GetFontSizeFromArea(usableSize);
 
 	Vector2 spaceUsed = CalculateSpaceUsed(m_fontData.m_FontSize, m_charSpacing);
-	if (spaceUsed.x > usableSize.m_X || spaceUsed.y > usableSize.m_Y)
+	if (m_fontData.m_FontSize==0 || spaceUsed.x > usableSize.m_X || spaceUsed.y > usableSize.m_Y)
 	{
+		//LogError("Calculing new font size");
 		m_fontData.m_FontSize = CalculateMaxFontSizeForSpace(usableSize, m_charSpacing);
 		spaceUsed = CalculateSpaceUsed(m_fontData.m_FontSize, m_charSpacing);
 	}
 
 	if (!Assert(this, m_fontData.m_FontSize != 0, std::format("Tried to render text GUI "
-		"but font size was calcualte to be 0:{}", ToString())))
+		"but font size was calcualte to be 0:{} valid font:{}. Usaable space:{} (total space:{}) space used:{}", 
+		ToString(), std::to_string(RaylibUtils::IsValidFont(m_fontData.m_Font)), renderInfo.m_RenderSize.ToString(), 
+		usableSize.ToString(), RaylibUtils::ToString(spaceUsed))))
 		return {};
 
 	const Vector2 topLeftPos = RaylibUtils::ToRaylibVector(CalculateTopLeftPos(renderInfo, spaceUsed));

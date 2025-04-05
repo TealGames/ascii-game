@@ -7,7 +7,7 @@
 
 namespace ECS
 {
-	class AnimatorSystem : MultiBodySystem
+	class AnimatorSystem : public MultiBodySystem
 	{
 	private:
 

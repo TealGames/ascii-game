@@ -5,7 +5,7 @@
 #include "Entity.hpp"
 #include "Debug.hpp"
 
-InputData::InputData() : ComponentData(HighestDependecyLevel::None),
+InputData::InputData() : ComponentData(),
 	m_actions() {}
 
 void InputData::AddAction(const Input::InputAction& action)
@@ -32,6 +32,10 @@ const std::unordered_map<std::string, Input::InputAction>& InputData::GetActions
 void InputData::InitFields()
 {
 	m_Fields= {};
+}
+std::vector<std::string> InputData::GetDependencyFlags() const
+{
+	return {};
 }
 
 //void InputData::SetInputManager(Input::InputManager& manager)

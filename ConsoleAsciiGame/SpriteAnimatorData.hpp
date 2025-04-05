@@ -51,6 +51,7 @@ struct SpriteAnimatorData : public ComponentData
 	SpriteAnimatorData(const std::vector<SpriteAnimationFrame>& frames,
 		const float& animationSpeed, const float& loopTime, const bool& loop);
 
+	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 
 	std::string ToString() const override;

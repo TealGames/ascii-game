@@ -5,6 +5,7 @@ namespace SceneManagement
 {
 	class SceneManager;
 };
+class CollisionRegistry;
 
 namespace Physics
 {
@@ -17,7 +18,7 @@ namespace Physics
 
 	private:
 	public:
-		PhysicsManager(SceneManagement::SceneManager& sceneManager);
+		PhysicsManager(SceneManagement::SceneManager& sceneManager, CollisionRegistry& collisionRegistry);
 
 		const Physics::PhysicsWorld& GetPhysicsWorld() const;
 		Physics::PhysicsWorld& GetPhysicsWorldMutable();

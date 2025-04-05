@@ -24,7 +24,7 @@ SpriteAnimatorData::SpriteAnimatorData(const Json& json) : SpriteAnimatorData()
 }
 
 SpriteAnimatorData::SpriteAnimatorData(const std::vector<SpriteAnimationFrame>& frames, const float& animationSpeed, const float& loopTime, const bool& loop) :
-	ComponentData(HighestDependecyLevel::None),
+	ComponentData(),
 	m_VisualDeltas{}, m_VisualDeltaIndex(0), m_SingleLoopLength(loopTime), m_NormalizedTime(0), m_AnimationSpeed(animationSpeed), m_Loop(loop)
 {
 	SpriteAnimationDelta visualDelta;
@@ -64,6 +64,11 @@ SpriteAnimatorData::SpriteAnimatorData(const std::vector<SpriteAnimationFrame>& 
 void SpriteAnimatorData::InitFields()
 {
 	m_Fields = {ComponentField("Loop", &m_Loop), ComponentField("Speed", &m_AnimationSpeed)};
+}
+
+std::vector<std::string> SpriteAnimatorData::GetDependencyFlags() const
+{
+	return {};
 }
 
 void SpriteAnimatorData::Deserialize(const Json& json)

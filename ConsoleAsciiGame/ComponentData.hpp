@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "ComponentField.hpp"
+#include "HelperFunctions.hpp"
 #include "IJsonSerializable.hpp"
 #include "IValidateable.hpp"
 
@@ -22,6 +23,12 @@ enum class HighestDependecyLevel
 	Entity,
 };
 
+/// <summary>
+/// This means the component requires ether a component on ANOTHER entity
+/// or the full entity object
+/// </summary>
+constexpr const char* ENTITY_DEPENDENCY_FLAG = "Entity";
+
 namespace ECS
 {
 	class Entity;
@@ -30,12 +37,8 @@ namespace ECS
 class ComponentData: public IJsonSerializable, public IValidateable
 {
 private:
-	HighestDependecyLevel m_dependencyLevel;
+	//HighestDependecyLevel m_dependencyLevel;
 public:
-
-private:
-public:
-	
 	/// <summary>
 	///	If true, it signifies that this component data has been mutatated this frame. 
 	/// This flag is useful for component systems that may use last frame buffers for
@@ -57,7 +60,9 @@ public:
 
 	std::vector<ComponentField> m_Fields;
 
-	ComponentData(const HighestDependecyLevel& dependency);
+private:
+public:
+	ComponentData();
 	virtual ~ComponentData() = default;
 	ECS::Entity& GetEntitySafeMutable();
 	const ECS::Entity& GetEntitySafe() const;
@@ -76,7 +81,28 @@ public:
 	const ComponentField* TryGetField(const std::string& name) const;
 	std::string ToStringFields() const;
 
-	HighestDependecyLevel GetDependencyLevel() const;
+	//HighestDependecyLevel GetDependencyLevel() const;
+	virtual std::vector<std::string> GetDependencyFlags() const = 0;
+	bool DependsOnEntity() const;
+	bool DependsOnAnySiblingComponent() const;
+	bool HasDependencies() const;
+	bool DoesEntityHaveComponentDependencies() const;
+
+	std::vector<std::string> GetComponentDependencies() const;
+
+	template<typename T>
+	bool DependsOnSiblingComponent() const
+	{
+		if (!DependsOnAnySiblingComponent()) return false;
+
+		const std::string tTypeName = Utils::GetTypeName<T>();
+		for (const auto& componentDependency : GetDependencyFlags())
+		{
+			if (tTypeName == componentDependency) 
+				return true;
+		}
+		return false;
+	}
 
 	virtual void Deserialize(const Json& json) = 0;
 	virtual Json Serialize() = 0;

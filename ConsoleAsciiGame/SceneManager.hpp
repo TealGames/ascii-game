@@ -40,7 +40,6 @@ namespace SceneManagement
 
 		void SetActiveScene(SceneAsset& activeScene);
 
-		void SaveCurrentScene();
 	public:
 		SceneManager(AssetManager& assetmanager);
 		~SceneManager();
@@ -51,6 +50,7 @@ namespace SceneManagement
 		/// such as fonts
 		/// </summary>
 		void LoadAllScenes();
+		void SaveCurrentScene();
 
 		int GetSceneCount() const;
 

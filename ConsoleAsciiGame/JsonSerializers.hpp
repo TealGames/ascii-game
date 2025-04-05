@@ -101,49 +101,52 @@ void to_json(Json& json, const ComponentReference& fieldReference);
 
 template<typename T>
 requires (!std::is_pointer_v<T> && ECS::IsComponent<T>)
-T* TryDeserializeComponent(const Json& json, const bool& isOptional = false)
+T* TryDeserializeComponent(const Json& json, ECS::Entity& entitySelf, const bool& isOptional = false)
 {
-	std::function<T* (const Json&)> deserializationAction = [](const Json& json)-> T*
+	SerializableComponent serializableComponent = json.get<SerializableComponent>();
+	if (serializableComponent.IsComponentOfEntitySelf()) 
+		return TryDeserializeComponentSelf<T>(json, entitySelf, isOptional);
+
+	std::function<T* (const Json&)> deserializationAction = [&serializableComponent](const Json& json)-> T*
 		{
-			SerializableComponent serializableComponent = json.get<SerializableComponent>();
-			ECS::Entity* entity = TryDeserializeEntity(json);
-			if (!Assert(entity != nullptr, std::format("Tried to deserialize component from json:{} but failed to retrieve entity", 
-				JsonUtils::ToStringProperties(json))))
-				return nullptr;
-
-			ComponentData* componentData = entity->TryGetComponentWithNameMutable(serializableComponent.m_ComponentName);
-			if (!Assert(componentData != nullptr, std::format("Tried to deserialzie component from json:{} but failed to retrieve component at index:{}",
-				JsonUtils::ToStringProperties(json), serializableComponent.m_ComponentName)))
-				return nullptr;
-
-			//SerializableComponent serializedComponent = json.get<SerializableComponent>();
-			if (!Assert(SceneManager != nullptr, std::format("Tried to parse entity from serialized entity "
-				"but parser does not contain valid scene manager")))
-				return nullptr;
-
 			try
 			{
+				ECS::Entity* entity = TryDeserializeEntity(json);
+				if (!Assert(entity != nullptr, std::format("Tried to deserialize component from json:{} but failed to retrieve entity",
+					JsonUtils::ToStringProperties(json))))
+					return nullptr;
+
+				ComponentData* componentData = entity->TryGetComponentWithNameMutable(serializableComponent.m_ComponentName);
+				if (!Assert(componentData != nullptr, std::format("Tried to deserialzie component from json:{} but failed to retrieve component at index:{}",
+					JsonUtils::ToStringProperties(json), serializableComponent.m_ComponentName)))
+					return nullptr;
+
+				//SerializableComponent serializedComponent = json.get<SerializableComponent>();
+				if (!Assert(SceneManager != nullptr, std::format("Tried to parse entity from serialized entity "
+					"but parser does not contain valid scene manager")))
+					return nullptr;
+
+				//LogError("GOTTEN TO DYNAMIC CASY");
 				return dynamic_cast<T*>(componentData);
 			}
 			catch (const std::exception& e)
 			{
-				return nullptr; 
+				Assert(false, std::format("Tried to deserialize component but ran into error:{}", e.what()));
+				return nullptr;
 			}
 		};
 
 	if (isOptional)
 	{
-		std::optional<T*> maybeEntity = TryDeserializeOptional<T*>(json,
+		std::optional<T*> maybeComponent = TryDeserializeOptional<T*>(json,
 			//We try to find entity based on its scene name (or whether it is global)
 			[&deserializationAction](const Json& json)->std::optional<T*>
 			{
 				return deserializationAction(json);
 			});
 
-		if (maybeEntity.has_value() || (maybeEntity.has_value() && maybeEntity.value() == nullptr))
-		{
-			return nullptr;
-		}
+		if (!maybeComponent.has_value()) return nullptr;
+		return maybeComponent.value();
 	}
 
 	T* tPtr = deserializationAction(json);
@@ -151,7 +154,59 @@ T* TryDeserializeComponent(const Json& json, const bool& isOptional = false)
 		"NON NULL component pointer for NON OPTIONAL functional call", JsonUtils::ToStringProperties(json))))
 		return nullptr;
 	
+	//LogError(std::format("Resulting comp: from deserializ:{}", std::to_string(tPtr!=nullptr)));
 	return tPtr;
+}
+
+/// <summary>
+/// Behaves similar to TryDeserializeComponent, but assumes the component is retrieved from the entity argument
+/// bypassing needing to find the entity with scene manager. Note: this is for getting components 
+/// of the same parent entity
+/// </summary>
+/// <typeparam name="T"></typeparam>
+/// <param name="json"></param>
+/// <param name="entity"></param>
+/// <param name="isOptional"></param>
+/// <returns></returns>
+template<typename T>
+requires (!std::is_pointer_v<T>&& ECS::IsComponent<T>)
+T* TryDeserializeComponentSelf(const Json& json, ECS::Entity& selfEntity, const bool& isOptional = false)
+{
+	std::function<T*(const Json&)> deserializationAction = [&selfEntity](const Json& json)->T*
+		{
+			try
+			{
+				SerializableComponent serializableComponent = json.get<SerializableComponent>();
+
+				const std::string tType = Utils::GetTypeName<T>();
+				const std::string jsonType = json.at("Component").get<std::string>();
+				if (!Assert(tType == jsonType, std::format("Tried to get component from SELF of entity:{} "
+					"but json type:{} does not match template:{}", selfEntity.ToString(), jsonType, tType)))
+					return nullptr;
+
+				return selfEntity.TryGetComponentMutable<T>();
+			}
+			catch (const std::exception& e)
+			{
+				Assert(false, std::format("Tried to deserialize component (SELF) but ran into error:{}", e.what()));
+				return nullptr;
+			}
+		};
+
+	if (isOptional)
+	{
+		std::optional<T*> maybeComponent = TryDeserializeOptional<T*>(json,
+			//We try to find entity based on its scene name (or whether it is global)
+			[&deserializationAction](const Json& json)->std::optional<T*>
+			{
+				return deserializationAction(json);
+			});
+
+		if (!maybeComponent.has_value()) return nullptr;
+		return maybeComponent.value();
+	}
+
+	return deserializationAction(json);
 }
 
 template<typename T>
@@ -167,16 +222,40 @@ Json TrySerializeComponent(const T* component, const bool& isOptional = false)
 		return TrySerializeOptional<const T*>(component == nullptr ? std::nullopt : std::make_optional(component),
 			[&entity, &componentName](const T* component)->Json
 			{
-				SerializableComponent serialized = SerializableComponent(entity.GetSceneName(), entity.GetName(), componentName);
-				return serialized;
+				return SerializableComponent(entity.GetSceneName(), entity.GetName(), componentName);
+				//if (componentName == "PhysicsBodyData") Assert(false, std::format("Created serializvble comp:{}", serialized.ToString()));
 			});
 	}
 
-	if (!Assert(component != nullptr, std::format("Tried to serialie NULL component for a NON OPTIONAL call")))
+	if (!Assert(component != nullptr, std::format("Tried to serialize NULL component for a NON OPTIONAL call")))
 		return {};
 
 	return SerializableComponent(entity.GetSceneName(), entity.GetName(), componentName);
 }
+
+template<typename T>
+requires (!std::is_pointer_v<T>&& ECS::IsComponent<T>)
+Json TrySerializeComponentSelf(const T* component, ECS::Entity& selfEntity, const bool& isOptional = false)
+{
+	const std::string componentName = Utils::GetTypeName<T>();
+
+	if (isOptional)
+	{
+		return TrySerializeOptional<const T*>(component == nullptr ? std::nullopt : std::make_optional(component),
+			[&componentName](const T* component)->Json
+			{
+				return SerializableComponent(componentName);
+				//if (componentName == "PhysicsBodyData") Assert(false, std::format("Created serializvble comp:{}", serialized.ToString()));
+			});
+	}
+
+	if (!Assert(component != nullptr, std::format("Tried to serialize NULL component (SELF) for a NON OPTIONAL call")))
+		return {};
+
+	return SerializableComponent(componentName);
+}
+
+
 
 void from_json(const Json& json, SerializableField& serializableField);
 void to_json(Json& json, const SerializableField& serializableField);
@@ -190,10 +269,22 @@ void to_json(Json& json, const AnimationPropertyVariant& var);
 template<typename T>
 void from_json(const Json& json, AnimationPropertyKeyframe<T>& var)
 {
-	float time = json.at("Time").get<float>();
-	T value = json.at("Value").get<T>();
+	const char* TIME_PROPERTY = "Time";
+	const char* VALUE_PROPERTY = "Value";
+	if (!HasRequiredProperties(json, { TIME_PROPERTY,  VALUE_PROPERTY }))
+		return;
 
-	var = AnimationPropertyKeyframe<T>(value, time);
+	try
+	{
+		float time = json.at(TIME_PROPERTY).get<float>();
+		T value = json.at(VALUE_PROPERTY).get<T>();
+
+		var = AnimationPropertyKeyframe<T>(value, time);
+	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize animtion property keyframe but ran into error:{}", e.what()));
+	}
 }
 template<typename T>
 void to_json(Json& json, const AnimationPropertyKeyframe<T>& var)
@@ -209,8 +300,15 @@ void from_json(const Json& json, AnimationProperty<T>& property)
 	if (!HasRequiredProperties(json, { KEYFRAMES_PROPERTY,  FIELD_REF_PROPERTY }))
 		return;
 
-	std::vector<AnimationPropertyKeyframe<T>> keyframes = json.at(KEYFRAMES_PROPERTY).get<std::vector<AnimationPropertyKeyframe<T>>>();
-	property = AnimationProperty<T>(json.at(FIELD_REF_PROPERTY).get<ComponentFieldReference>(), keyframes);
+	try
+	{
+		std::vector<AnimationPropertyKeyframe<T>> keyframes = json.at(KEYFRAMES_PROPERTY).get<std::vector<AnimationPropertyKeyframe<T>>>();
+		property = AnimationProperty<T>(json.at(FIELD_REF_PROPERTY).get<ComponentFieldReference>(), keyframes);
+	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize animtion property but ran into error:{}", e.what()));
+	}
 }
 template<typename T>
 void to_json(Json& json, const AnimationProperty<T>& property)
@@ -222,11 +320,19 @@ template<typename T>
 std::optional<T> TryDeserializeOptional(const Json& json, 
 	const std::function<std::optional<T>(const Json& json)> serializeFunc)
 {
-	if (json.is_string() && json.get<std::string>() == OPTIONAL_NULL_VALUE) 
-		return std::nullopt;
+	try
+	{
+		if (json.is_string() && json.get<std::string>() == OPTIONAL_NULL_VALUE)
+			return std::nullopt;
 
-	if (serializeFunc != nullptr) return serializeFunc(json);
-	return std::nullopt;
+		if (serializeFunc != nullptr) return serializeFunc(json);
+		return std::nullopt;
+	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize optional json property but ran into error:{}", e.what()));
+		return std::nullopt;
+	}
 }
 
 template<typename T>

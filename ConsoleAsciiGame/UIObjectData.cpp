@@ -9,8 +9,7 @@ UIObjectData::UIObjectData(const Json& json) : UIObjectData()
 	Deserialize(json);
 }
 UIObjectData::UIObjectData(const NormalizedPosition& normalizedPos) :
-	ComponentData(HighestDependecyLevel::None),
-	m_normalizedPos(normalizedPos)
+	ComponentData(), m_normalizedPos(normalizedPos)
 {
 
 }
@@ -24,6 +23,10 @@ void UIObjectData::InitFields()
 {
 	m_Fields = { ComponentField("Pos", [this](Vec2 newPos)-> void 
 		{ m_normalizedPos.SetPos(newPos); }, &m_normalizedPos.GetPosMutable()) };
+}
+std::vector<std::string> UIObjectData::GetDependencyFlags() const
+{
+	return {};
 }
 
 void UIObjectData::Deserialize(const Json& json)

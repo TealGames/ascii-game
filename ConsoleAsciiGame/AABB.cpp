@@ -5,12 +5,6 @@
 
 namespace Physics
 {
-	AABBIntersectionData::AABBIntersectionData() : 
-		AABBIntersectionData(false, Vec2::ZERO) {}
-
-	AABBIntersectionData::AABBIntersectionData(const bool& intersect, const Vec2& depth) :
-		m_DoIntersect(intersect), m_Depth(depth) {}
-
 	AABB::AABB() : AABB(WorldPosition{}, WorldPosition{}) {}
 	AABB::AABB(const WorldPosition& minPos, const WorldPosition& maxPos)
 		: m_MinPos(minPos), m_MaxPos(maxPos) {}
@@ -54,6 +48,7 @@ namespace Physics
 			GetGlobalMax(transformPos).ToString(), GetSize().ToString());
 	}
 
+	/*
 	bool DoAABBIntersect(const Vec2& entity1Pos, const AABB& entity1Bounding,
 		const Vec2& entity2Pos, const AABB& entity2Bounding)
 	{
@@ -80,8 +75,8 @@ namespace Physics
 			result.m_Depth.m_X = Utils::MinAbs(min2Global.m_X - max1Global.m_X, max2Global.m_X - min1Global.m_X);
 			result.m_Depth.m_Y = Utils::MinAbs(min2Global.m_Y - max1Global.m_Y, max2Global.m_Y - min1Global.m_Y);
 
-			/*LogError(std::format("Calculating min abs X of {} and {} is: {} MIN DEPTH Y: {}", std::to_string(min2Global.m_X - min1Global.m_X), 
-				std::to_string(max2Global.m_X - max1Global.m_X), std::to_string(result.m_Depth.m_X), std::to_string(result.m_Depth.m_Y)));*/
+			//LogError(std::format("Calculating min abs X of {} and {} is: {} MIN DEPTH Y: {}", std::to_string(min2Global.m_X - min1Global.m_X), 
+			//std::to_string(max2Global.m_X - max1Global.m_X), std::to_string(result.m_Depth.m_X), std::to_string(result.m_Depth.m_Y)));
 			return result;
 		}
 
@@ -106,7 +101,9 @@ namespace Physics
 		}
 		return result;
 	}
+	*/
 
+	/*
 	Vec2 GetAABBMinDisplacement(const Vec2& entity1Pos, const AABB& entity1Bounding,
 		const Vec2& entity2Pos, const AABB& entity2Bounding)
 	{
@@ -132,7 +129,9 @@ namespace Physics
 
 		return displacement;
 	}
+	*/
 
+	/*
 	Vec2 GetAABBDirection(const Vec2& entity1Pos, const AABB& entity1Bounding,
 		const Vec2& entity2Pos, const AABB& entity2Bounding, const bool& considerCollisions)
 	{
@@ -167,16 +166,6 @@ namespace Physics
 			//Entity2 is bottom of entity1 FULLY
 			else if (min2Global.m_Y < min1Global.m_Y && max2Global.m_Y < min1Global.m_Y) dir.m_Y = -1;
 		}
-		/*if (max1Global.m_X < max2Global.m_X && max1Global.m_X <= min2Global.m_X) return Direction::Right;
-		else if (min2Global.m_X < min1Global.m_X && max2Global.m_X <= min1Global.m_X) return Direction::Left;
-		else if (max1Global.m_Y < max2Global.m_Y && max1Global.m_Y <= min2Global.m_Y) return Direction::Up;
-		else if (min2Global.m_Y < min1Global.m_Y && max2Global.m_Y <= min1Global.m_Y) return Direction::Down;
-		else
-		{
-			LogError(std::format("Tried to get AABB direction but no directions match any of the criteria! Entity 1:{} Entity2:{}", 
-				entity1Bounding.ToString(entity1Pos), entity2Bounding.ToString(entity2Pos)));
-			return std::nullopt;
-		}*/
 
 		if (Utils::ApproximateEqualsF(std::abs(dir.m_X), 1) && 
 			Utils::ApproximateEqualsF(std::abs(dir.m_Y), 1))
@@ -188,4 +177,5 @@ namespace Physics
 		//Assert(false, std::format("aabb dir: {} normalized: {}", dir.ToString(), dir.GetNormalized().ToString()));
 		return dir;
 	}
+	*/
 }

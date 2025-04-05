@@ -12,8 +12,7 @@ EntityRendererData::EntityRendererData(const Json& json) : EntityRendererData()
 }
 
 EntityRendererData::EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers) :
-	ComponentData(HighestDependecyLevel::None),
-	m_VisualData(visualData), m_LastFrameVisualData(), m_visualBoundsSize(), m_renderLayers(renderLayers)
+	ComponentData(), m_VisualData(visualData), m_LastFrameVisualData(), m_visualBoundsSize(), m_renderLayers(renderLayers)
 {
 	int maxWidth = 0;
 	for (const auto& row : m_VisualData.m_Text.GetFull())
@@ -48,6 +47,10 @@ void EntityRendererData::SetVisualData(const VisualDataPositions& positions)
 void EntityRendererData::InitFields()
 {
 	m_Fields = {};
+}
+std::vector<std::string> EntityRendererData::GetDependencyFlags() const
+{
+	return {};
 }
 
 std::string EntityRendererData::ToString() const

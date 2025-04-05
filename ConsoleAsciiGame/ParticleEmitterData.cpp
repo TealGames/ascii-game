@@ -18,7 +18,7 @@ ParticleEmitterData::ParticleEmitterData() : ParticleEmitterData('A', FloatRange
 ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
 	const FontData& fontData, const RenderLayerType& renderLayers,
 	const WorldPosition& transformOffset, const FloatRange& speedRange, const float& spawnRate)
-	: ComponentData(HighestDependecyLevel::None), 
+	: ComponentData(), 
 	m_Char(c), m_normalizedTime(0), m_lifetimeColor(colorOverTime), 
 	m_lifetimeRange(lifeTimeRange), 
 	//m_particles(std::min(static_cast<int>(MAX_PARTICLES), static_cast<int>(std::ceil(spawnRate* m_lifetimeRange.m_Max)))),
@@ -55,6 +55,10 @@ void ParticleEmitterData::InitFields()
 	{
 		SetSpawnRate(newVal); 
 	}, &m_spawnRate)};
+}
+std::vector<std::string> ParticleEmitterData::GetDependencyFlags() const
+{
+	return {};
 }
 
 std::string ParticleEmitterData::ToString() const

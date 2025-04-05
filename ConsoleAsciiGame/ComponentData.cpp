@@ -1,17 +1,49 @@
 #include "pch.hpp"
 #include "Entity.hpp"
 #include "ComponentData.hpp"
-#include "HelperFunctions.hpp"
 #include "Debug.hpp"
 
-ComponentData::ComponentData(const HighestDependecyLevel& dependency) 
-	: m_dependencyLevel(dependency), m_MutatedThisFrame(false), m_IsEnabled(true), m_Entity(nullptr), m_Fields() 
+ComponentData::ComponentData() 
+	: m_MutatedThisFrame(false), m_IsEnabled(true), m_Entity(nullptr), m_Fields() //m_dependencyLevel(dependency)
 {
 }
 
-HighestDependecyLevel ComponentData::GetDependencyLevel() const
+//HighestDependecyLevel ComponentData::GetDependencyLevel() const
+//{
+//	return m_dependencyLevel;
+//}
+
+bool ComponentData::DependsOnEntity() const
 {
-	return m_dependencyLevel;
+	auto dependencies = GetDependencyFlags();
+	return !dependencies.empty() && dependencies[0] == ENTITY_DEPENDENCY_FLAG;
+}
+bool ComponentData::DependsOnAnySiblingComponent() const
+{
+	auto dependencies = GetDependencyFlags();
+	return !dependencies.empty() && dependencies[0] != ENTITY_DEPENDENCY_FLAG;
+}
+bool ComponentData::HasDependencies() const
+{
+	auto dependencies = GetDependencyFlags();
+	return !dependencies.empty();
+}
+std::vector<std::string> ComponentData::GetComponentDependencies() const
+{
+	if (DependsOnAnySiblingComponent()) return GetDependencyFlags();
+	return {};
+}
+bool ComponentData::DoesEntityHaveComponentDependencies() const
+{
+	if (!DependsOnAnySiblingComponent()) return false;
+
+	const ECS::Entity& thisEntity = GetEntitySafe();
+	for (const auto& compDependency : GetDependencyFlags())
+	{
+		if (!thisEntity.HasComponent(compDependency))
+			return false;
+	}
+	return true;
 }
 
 ECS::Entity& ComponentData::GetEntitySafeMutable()

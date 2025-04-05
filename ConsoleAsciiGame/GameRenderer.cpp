@@ -8,9 +8,6 @@
 #include "RaylibUtils.hpp"
 #include "ProfilerTimer.hpp"
 #include "Debug.hpp"
-#include "DebugInfo.hpp"
-#include "CommandConsole.hpp"
-#include "EntityEditorGUI.hpp"
 
 namespace Rendering
 {
@@ -91,8 +88,7 @@ namespace Rendering
     }
 
     void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer, 
-        const LineBuffer* lineBuffer, const DebugInfo* debugInfo, CommandConsole* console, 
-        EntityEditorGUI* editor)
+        const LineBuffer* lineBuffer, const std::vector<IBasicRenderable*>& renderables)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
@@ -143,7 +139,7 @@ namespace Rendering
             }
         }
 
-        if (debugInfo != nullptr)
+        /*if (debugInfo != nullptr)
         {
             Vector2 startPos = {5, 5};
             Vector2 currentPos = startPos;
@@ -188,7 +184,7 @@ namespace Rendering
                     DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, WHITE);
 
             } 
-        }
+        }*/
 
         //Draws the center screen indicator
         const float CENTER_CIRCLE_RADIUS = 5;
@@ -197,8 +193,15 @@ namespace Rendering
         const WorldPosition centerPos = {(float)SCREEN_WIDTH/2, (float)SCREEN_HEIGHT/2};
         DrawCircle(centerPos.m_X, centerPos.m_Y, CENTER_CIRCLE_RADIUS, circleColor);
 
-        if (console != nullptr) console->TryRender();
-        if (editor != nullptr) editor->TryRender();
+        /*if (console != nullptr) console->TryRender();
+        if (editor != nullptr) editor->TryRender();*/
+        for (size_t i=0; i<renderables.size(); i++)
+        {
+            if (renderables[i] == nullptr) continue;
+            if (!Assert(renderables[i]->TryRender(), std::format("Tried to render renderable at index:{} "
+                "of renderer but failed", std::to_string(i))))
+                continue;
+        }
 
         EndDrawing();
     }

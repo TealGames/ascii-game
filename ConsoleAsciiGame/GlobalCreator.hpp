@@ -9,6 +9,7 @@ namespace SceneManagement
 
 namespace GlobalCreator
 {
-	void CreateGlobals(GlobalEntityManager& manager, SceneManagement::SceneManager& sceneManager, CameraController& cameraController);
+	void CreateGlobals(GlobalEntityManager& manager, 
+		SceneManagement::SceneManager& sceneManager, CameraController& cameraController);
 }
 

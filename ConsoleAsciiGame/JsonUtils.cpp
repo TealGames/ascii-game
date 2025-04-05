@@ -7,4 +7,9 @@ namespace JsonUtils
 	{
 		return json.dump();
 	}
+
+	bool HasProperty(const Json& json, const std::string& propertyName)
+	{
+		return json.contains(propertyName);
+	}
 }

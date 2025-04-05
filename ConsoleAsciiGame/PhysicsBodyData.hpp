@@ -3,35 +3,30 @@
 #include <string>
 #include "ComponentData.hpp"
 #include "Vec2.hpp"
-#include "AABB.hpp"
-#include "WorldPosition.hpp"
-#include "Direction.hpp"
-#include "NormalizedPosition.hpp"
+//#include "WorldPosition.hpp"
+//#include "Direction.hpp"
+//#include "NormalizedPosition.hpp"
 #include "PhysicsProfile.hpp"
-
-class PhysicsBodyData;
-struct CollidingObject
-{
-	PhysicsBodyData* m_Body = nullptr;
-	MoveDirection m_Direction = MoveDirection::North;
-};
+#include "CollisionBoxData.hpp"
 
 namespace Physics
 {
 	class PhysicsWorld;
 }
 
-using CollidingBodiesCollection = std::vector<CollidingObject>;
+//class CollisionBoxData;
 class PhysicsBodyData : public ComponentData
 {
 private:
 	//The bounding box of the rigidbody that is used for collisions
 	//Note: this is RELATIVE to the transform
-	Physics::AABB m_aabb;
+	//Physics::AABB m_aabb;
+	const CollisionBoxData* m_collider;
+
 	/// <summary>
 	/// The offset in world position which the bounding box (AABB) lies from the transform position
 	/// </summary>
-	WorldPosition m_transformOffset;
+	//WorldPosition m_transformOffset;
 
 	/// <summary>
 	/// The mass of the object in Kilograms. 
@@ -52,22 +47,24 @@ private:
 
 	Physics::PhysicsProfile m_profile;
 
-	CollidingBodiesCollection m_collidingBodies;
-
 	const Physics::PhysicsWorld* m_physicsSimulation;
 
 	//TODO: add other settings like restitution (bounciness), friction, gravity, etc
 public:
 
 private:
-	bool ValidateAABB(const Physics::AABB& boundingBox) const;
-	Physics::AABB CreateAABB(const Vec2& boundingBoxSize, const WorldPosition& transformOffset);
+	//bool ValidateAABB(const Physics::AABB& boundingBox) const;
+	//Physics::AABB CreateAABB(const Vec2& boundingBoxSize, const WorldPosition& transformOffset);
+
+	PhysicsBodyData(const CollisionBoxData* collisionBox, const float& mass, 
+		const float& gravity, const float& terminalYVelocity);
 
 public:
 	PhysicsBodyData();
 	PhysicsBodyData(const Json& json);
-	PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, const WorldPosition& transformOffset);
-	PhysicsBodyData(const float& mass, const Vec2& boundingBoxSize, const WorldPosition& transformOffset, const float& gravity, const float& terminalYVelocity);
+	PhysicsBodyData(const CollisionBoxData& collisionBox, const float& mass);
+	PhysicsBodyData(const CollisionBoxData& collisionBox, const float& mass, 
+		const float& gravity, const float& terminalYVelocity);
 
 	void SetPhysicsWorldRef(const Physics::PhysicsWorld& world);
 	void RemovePhysicsWorldRef();
@@ -90,6 +87,9 @@ public:
 	const float& GetGravity() const;
 	bool IsExperiencingGravity() const;
 
+	const CollisionBoxData& GetCollisionBox() const;
+
+	/*
 	const Physics::AABB& GetAABB() const;
 	const WorldPosition GetAABBCenterWorldPos() const;
 	const WorldPosition GetAABBTopLeftWorldPos() const;
@@ -101,7 +101,9 @@ public:
 	/// <param name="relativePos"></param>
 	/// <returns></returns>
 	const WorldPosition GetAABBWorldPos(const NormalizedPosition& relativePos) const;
+	*/
 
+	/*
 	void AddCollidingBody(PhysicsBodyData& collidingBody);
 	void RemoveCollidingBody(const CollidingBodiesCollection::iterator& removeBodyIterator);
 	bool IsCollidingWithBodyInDirs(const std::vector<MoveDirection>& dirs) const;
@@ -114,9 +116,10 @@ public:
 	int GetTotalBodyCollisions();
 
 	std::string ToStringCollidingBodies() const;
+	*/
 
+	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
-
 	std::string ToString() const override;
 
 	void Deserialize(const Json& json) override;

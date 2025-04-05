@@ -1,8 +1,15 @@
 #pragma once
 #include <vector>
-#include "PhysicsBodyData.hpp"
 #include "Vec2.hpp"
 #include "WorldPosition.hpp"
+#include "CollisionRegistry.hpp"
+#include "PhysicsBodyData.hpp"
+
+class CollisionBoxData;
+namespace ECS
+{
+	class Entity;
+}
 
 namespace Physics
 {
@@ -25,18 +32,30 @@ namespace Physics
 		/// All the bodies that will be used in the physics simulation
 		/// </summary>
 		PhysicsBodyCollection m_bodies;
+		CollisionRegistry& m_collisionRegistry;
+
 	public:
 		/// <summary>
 		/// The max distance from another body that is still considered as a "collision"/ touching
 		/// </summary>
-		static constexpr float MAX_DISTANCE_FOR_COLLISION = 0.01;
 		static constexpr float BOUNCE_END_SPEED_THRESHOLD = 1;
 
 	private:
+		/// <summary>
+		/// Will get the collision normal for the two collision boxes in terms of box A
+		/// </summary>
+		/// <param name="boxA"></param>
+		/// <param name="boxB"></param>
+		/// <returns></returns>
+		Vec2 GetCollisionNormal(const CollisionBoxData& boxA, const CollisionBoxData& boxB);
 		float CalculateImpulse(const PhysicsBodyData& targetObject, const PhysicsBodyData& collidedObject, const Vec2& collisionNormal);
 
+		void HandleCollision(CollisionPair& collision);
+		void KinematicUpdate(const float& deltaTime, ECS::Entity& entity, 
+			PhysicsBodyData& body, const CollisionBoxData& collider);
+
 	public:
-		PhysicsWorld();
+		PhysicsWorld(CollisionRegistry& collisionRegistry);
 
 		const PhysicsBodyCollection& GetBodies() const;
 		PhysicsBodyCollection& GetBodiesMutable();

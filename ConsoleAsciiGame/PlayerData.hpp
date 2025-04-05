@@ -53,6 +53,7 @@ public:
 	void SetFrameInput(const Vec2Int& input);
 	void SetLastFrameInput(const Vec2Int& lastFrameInput);
 
+	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 
 	std::string ToString() const override;

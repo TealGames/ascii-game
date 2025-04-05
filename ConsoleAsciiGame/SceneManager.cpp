@@ -8,7 +8,15 @@ namespace SceneManagement
 {
 	const std::filesystem::path SceneManager::SCENES_FOLDER = "scenes";
 
+	/// <summary>
+	/// If true will save the scene when saving is invoked (application close, new scene)
+	/// </summary>
 	static constexpr bool DO_SCENE_SAVING = true;
+	/// <summary>
+	/// If true, will load all scenes from assets into storage
+	/// </summary>
+	static constexpr bool LOAD_SCENES_FROM_ASSETS = true;
+
 	//If empty then will write to original scene. Otherwise will write to this path,
 	//which can be helpful for testing
 	static const std::filesystem::path SCENE_SAVE_OUTPUT_PATH = "assets/fart.json";
@@ -35,6 +43,8 @@ namespace SceneManagement
 
 	void SceneManager::LoadAllScenes()
 	{
+		if (!LOAD_SCENES_FROM_ASSETS) return;
+
 		auto sceneAssets = m_assetManager.GetAssetsOfTypeMutable<SceneAsset>(SCENES_FOLDER);
 		if (!Assert(this, sceneAssets.size() > 0, std::format("Tried to laod all scenes in scene manager "
 			"but could not find any scenes at path: '{}'", SCENES_FOLDER.string())))
@@ -165,7 +175,8 @@ namespace SceneManagement
 	{
 		SceneAsset* asset = TryGetSceneAssetMutable(sceneName);
 		if (!Assert(asset != nullptr, std::format("Tried to load a scene with name: {} "
-			"but that scene does not exist", sceneName))) return false;
+			"but that scene does not exist. Total scenes:{}", sceneName, 
+			std::to_string(GetSceneCount())))) return false;
 
 		SetActiveScene(*asset);
 		return true;
@@ -178,11 +189,12 @@ namespace SceneManagement
 		//LogError(std::format("Active scene: {}", asset != nullptr ? "SCENE" : "NULL"));
 
 		if (!Assert(asset != nullptr, std::format("Tried to load a scene with index: {} "
-			"but that scene does not exist", std::to_string(sceneIndex)))) 
+			"but that scene does not exist. Total Scenes:{}", 
+			std::to_string(sceneIndex), std::to_string(GetSceneCount())))) 
 			return false;
 
 		SetActiveScene(*asset);
-		return true;
+		return true; 
 	}
 
 	Scene* SceneManager::GetActiveSceneMutable()

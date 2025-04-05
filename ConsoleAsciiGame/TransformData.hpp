@@ -5,12 +5,16 @@
 //Since negative positions are not allowed
 const Vec2 NULL_POS = Vec2{ -1, -1 };
 
-struct TransformData : public ComponentData
+class TransformData : public ComponentData
 {
+private:
+public:
 	Vec2 m_Pos;
 	Vec2 m_LastPos;
 	Vec2 m_LastFramePos;
 
+private:
+public:
 	TransformData();
 	TransformData(const Json& json);
 	TransformData(const Vec2& pos);
@@ -26,6 +30,7 @@ struct TransformData : public ComponentData
 
 	bool HasMovedThisFrame() const;
 
+	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 	std::string ToString() const override;
 

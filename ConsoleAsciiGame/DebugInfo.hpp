@@ -2,9 +2,10 @@
 #include <string>
 #include <vector>
 #include <optional>
-#include "Vec2.hpp"
 #include "WorldPosition.hpp"
 #include "ScreenPosition.hpp"
+#include "IBasicRenderable.hpp"
+#include "raylib.h"
 
 class Scene;
 namespace Input
@@ -19,7 +20,7 @@ struct DebugMousePosition
 	ScreenPosition m_MouseTextScreenPos = {};
 };
 
-class DebugInfo
+class DebugInfo : public IBasicRenderable
 {
 private:
 	std::vector<std::string> m_text;
@@ -27,14 +28,18 @@ private:
 
 	std::optional<DebugMousePosition> m_mouseDebugData;
 
+	bool m_isEnabled;
 public:
+	static constexpr KeyboardKey TOGGLE_DEBUG_INFO_KEY = KEY_TAB;
 
 private:
 public:
 	DebugInfo();
 
 	void ClearProperties();
-	void UpdateProperties(const float& deltaTime, const float& timeStep, Scene& activeScene, Input::InputManager& input, const CameraData& mainCamera);
+	void Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera);
+	bool TryRender() override;
+
 	void AddProperty(const std::string& name, const std::string& value);
 	const std::vector<std::string>& GetText() const;
 

@@ -7,6 +7,7 @@ using Json = nlohmann::json;
 namespace JsonUtils
 {
 	std::string ToStringProperties(const Json& json);
+	bool HasProperty(const Json& json, const std::string& propertyName);
 
 	template<typename T>
 	std::optional<T> TryGet(const Json& json)

@@ -12,7 +12,7 @@ AnimatorData::AnimatorData(const Json& json) : AnimatorData()
 }
 
 AnimatorData::AnimatorData(const std::vector<AnimationPropertyVariant>& properties, const float& animationTime, const float& speed, const bool& loop) :
-	ComponentData(HighestDependecyLevel::None),
+	ComponentData(),
 	m_Properties(properties), m_AnimationSpeed(speed), m_NormalizedTime(0), m_KeyframeIndex(0), m_AnimationLength(animationTime), m_Loop(loop)
 {
 	if (!Assert(this, !Utils::ApproximateEqualsF(m_AnimationSpeed, 0),
@@ -57,6 +57,10 @@ void AnimatorData::InitFields()
 {
 	m_Fields = { ComponentField("Loop", &m_Loop), ComponentField("Speed", 
 		(std::function<void(float)>)[this](float speed)->void {SetAnimationSpeed(speed); }, &m_AnimationSpeed) };
+}
+std::vector<std::string> AnimatorData::GetDependencyFlags() const
+{
+	return {};
 }
 
 void AnimatorData::Deserialize(const Json& json)

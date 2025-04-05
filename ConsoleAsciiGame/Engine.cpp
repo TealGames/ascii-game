@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include <thread>
 #include "Engine.hpp"
 #include "SceneManager.hpp"
 #include "raylib.h"
 #include "Globals.hpp"
+#include "Debug.hpp"
 #include "GameRenderer.hpp"
 #include "HelperFunctions.hpp"
 #include "TransformSystem.hpp"
@@ -20,6 +20,7 @@
 #include "PositionConversions.hpp"
 #include "DebugInfo.hpp"
 #include "InputProfileAsset.hpp"
+#include "JsonSerializers.hpp"
 #include "GlobalCreator.hpp"
 
 namespace Core
@@ -57,6 +58,10 @@ namespace Core
 	//TODO: json serializer should not contain so many duplicate entries (such as font code similar in many places) and should get fonts and other stuff from asset manager
 	//TODO: add serialization/deserializetion for particle emitter
 	//TODO: if necessary add color gradient GUI and color picker editor GUI
+	//TODO: add set minsize possible flag in text gui for settings text gui to min size possible based on font and area given
+	//TODO: consider when adding components to entities adding a blank component first and then setting entity so that the constructor with args can use entity pointer/transform data
+	//TODO; for entities try to remove the vector of compoennt data and intsead find a way to use the entity mapper to get all components
+	//TODO: pressed key state in input manager does not work (key down state lasts for the whole duration without any key press state activation -> maybe remove state?)
 
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
@@ -80,11 +85,9 @@ namespace Core
 		'F', 'O', 'U', 'N', 'D'} });*/
 
 	const KeyboardKey TOGGLE_PAUSE_UPDATE_KEY = KEY_F1;
-	const KeyboardKey TOGGLE_DEBUG_INFO_KEY = KEY_TAB;
-	const KeyboardKey TOGGLE_COMMAND_CONSOLE_KEY = KEY_TAB;
 
 	constexpr LoopCode SUCCESS_CODE = 0;
-	constexpr LoopCode END_CODE = 1;
+	constexpr LoopCode EXIT_CODE = 1;
 	constexpr LoopCode ERROR_CODE = 2;
 
 	void Engine::InitEngine()
@@ -101,10 +104,11 @@ namespace Core
 
 	Engine::Engine() :
 		m_assetManager(),
+		m_collisionRegistry(),
 		m_sceneManager(m_assetManager),
 		m_inputManager(m_assetManager),
 		m_cameraController(),
-		m_physicsManager(m_sceneManager),
+		m_physicsManager(m_sceneManager, m_collisionRegistry),
 		m_guiSelectorManager(m_inputManager),
 		m_transformSystem(),
 		m_uiSystem(),
@@ -113,19 +117,15 @@ namespace Core
 		//m_inputSystem(m_inputManager),
 		m_spriteAnimatorSystem(m_entityRendererSystem),
 		m_animatorSystem(),
+		m_collisionBoxSystem(m_collisionRegistry),
 		m_physicsBodySystem(m_physicsManager),
 		m_playerSystem(m_inputManager),
 		m_cameraSystem(&(m_physicsBodySystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
 		m_particleEmitterSystem(),
-		m_currentTime(std::chrono::high_resolution_clock().now()),
-		m_lastTime(std::chrono::high_resolution_clock().now()),
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
-		m_debugInfo{}, 
-		m_enableDebugInfo(false),
-		m_commandConsole(m_inputManager, m_guiSelectorManager),
-		m_enableCommandConsole(false),
-		m_entityEditor(m_inputManager, m_sceneManager, m_physicsManager, m_guiSelectorManager)
+		m_timeKeeper(),
+		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_sceneManager, m_guiSelectorManager)
 	{
 		EngineLog("FINISHED SYSTEM MANAGERS INIT");
 
@@ -186,7 +186,8 @@ namespace Core
 		//Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
 
 		m_inputManager.SetInputCooldown(0.3);
-		InitConsoleCommands();
+		//InitConsoleCommands();
+		m_editor.Init(m_playerSystem);
 		EngineLog("ADDED ALL CONSOLE COMMANDS");
 
 		//Assert(false, std::format("FOUND ACTIVE SELECTED: {}", m_guiSelectorManager.TryGetSelectableSelected()->GetLastFrameRect().ToString()));
@@ -202,7 +203,7 @@ namespace Core
 
 	Engine::~Engine()
 	{
-		m_commandConsole.DeletePrompts();
+		//m_commandConsole.DeletePrompts();
 	}
 
 	void Engine::ValidateAll()
@@ -211,94 +212,6 @@ namespace Core
 		m_sceneManager.ValidateAllScenes();
 		m_cameraController.Validate();
 		EngineLog("FINISHED VALIDATION");
-	}
-
-	void Engine::InitConsoleCommands()
-	{
-		m_commandConsole.AddPrompt(new CommandPrompt<std::string, float, float>("setpos", {"EntityName", "PosX", "PosY"},
-			[this](const std::string& entityName, const float& x, const float& y) -> void {
-				if (ECS::Entity* entity= m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
-				{
-					entity->m_Transform.SetPos({ x, y });
-				}
-			}));
-
-		m_commandConsole.AddPrompt(new CommandPrompt<std::string>("editor", { "EntityName"},
-			[this](const std::string& entityName) -> void {
-				if (ECS::Entity* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
-				{
-					//Assert(false, std::format("Sending entity: {}", entity->m_Name));
-					m_entityEditor.SetEntityGUI(*entity);
-					return;
-				}
-				m_commandConsole.LogOutputMessage(std::format("Entity with name: '{}' could not be found", 
-					entityName), ConsoleOutputMessageType::Error);
-			}));
-
-		m_commandConsole.AddPrompt(new CommandPrompt<>("docs", std::vector<std::string>{},
-			[this]() -> void {
-				m_commandConsole.LogOutputMessagesUnrestricted(
-					m_commandConsole.GetPromptDocumentationAll(), ConsoleOutputMessageType::Default);
-			}));
-
-		m_commandConsole.AddPrompt(new CommandPrompt<std::string>("debugmessage", std::vector<std::string>{"MessageFilter"},
-			[](const std::string& messageFilter) -> void {
-				SetLogMessageFilter(messageFilter);
-			}));
-
-		m_commandConsole.AddPrompt(new CommandPrompt<std::string>("debugtype", std::vector<std::string>{"MessageType"},
-			[this](const std::string& typeFilter) -> void {
-				std::optional<LogType> maybeLogType = StringToLogType(typeFilter);
-				if (maybeLogType == std::nullopt)
-				{
-					m_commandConsole.LogOutputMessage(std::format("Invalid LogType: {}", 
-						typeFilter), ConsoleOutputMessageType::Error);
-					return;
-				}
-
-				SetLogTypeFilter(maybeLogType.value());
-				/*LogError(std::format("The new log type: {} has log: {}", LogTypeToString(GetLogTypeFilter()), 
-					std::to_string(Utils::HasFlagAny(GetLogTypeFilter(), LogType::Log))));*/
-				//throw std::invalid_argument("POOP");
-			}));
-
-		m_commandConsole.AddPrompt(new CommandPrompt<>("debugreset", std::vector<std::string>{},
-			[this]() -> void {
-				ResetLogFilters();
-			}));
-
-		m_commandConsole.AddPrompt(new CommandPrompt<float>("settimestep", std::vector<std::string>{"TimeStep"},
-			[this](const float& timeStep) -> void {
-				m_timeStep = timeStep;
-			}));
-
-		m_commandConsole.AddPrompt(new CommandPrompt<int>("debugmark", std::vector<std::string>{"Index"},
-			[this](const int& index) -> void {
-				if (index == -1)
-				{
-					m_debugInfo.ClearHighlightedIndices();
-					return;
-				}
-
-				if (index < 0 || index >= m_debugInfo.GetText().size())
-				{
-					m_commandConsole.LogOutputMessage(std::format("Invalid Index: {}", 
-						std::to_string(index)), ConsoleOutputMessageType::Error);
-					return;
-				}
-
-				if (!m_debugInfo.TryAddHighlightedIndex(static_cast<std::size_t>(index)))
-				{
-					m_commandConsole.LogOutputMessage(std::format("Index already added: {}",
-						std::to_string(index)), ConsoleOutputMessageType::Error);
-					return;
-				}
-			}));
-
-		m_commandConsole.AddPrompt(new CommandPrompt<bool>("cheats", std::vector<std::string>{"CheapStatus"},
-			[this](const bool& enableCheats) -> void {
-				m_playerSystem.SetCheatStatus(enableCheats);
-			}));
 	}
 
 	void Engine::EngineLog(const std::string& log) const
@@ -313,10 +226,8 @@ namespace Core
 		ProfilerTimer timer("Engine::Update");
 #endif 
 
-		m_currentTime = std::chrono::high_resolution_clock().now();
-		m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_currentTime - m_lastTime).count() / static_cast<float>(1000) * m_timeStep;
-		m_currentFPS = 1 / m_deltaTime;
-
+		m_timeKeeper.UpdateTimeStart();
+		const float deltaTime = m_timeKeeper.GetLastDeltaTime();
 		/*if (FRAME_LIMIT != -1 || SHOW_FPS)
 		{
 			std::cout<<std::format("[ENGINE]: FRAME: {}/{} DELTA_TIME: {} FPS:{} GraphicsFPS:{}\n--------------------------------------------\n",
@@ -391,10 +302,10 @@ namespace Core
 		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
 
-		m_transformSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
-		m_uiSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
+		m_transformSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_uiSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
 
-		m_inputManager.Update(m_deltaTime);
+		m_inputManager.Update(deltaTime);
 		//if (m_enableDebugInfo)
 		//{
 		//	m_debugInfo.AddProperty("KeysDown", Utils::ToStringIterable<std::vector<std::string>, 
@@ -403,10 +314,11 @@ namespace Core
 
 		//m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<2>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
-		m_playerSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
+		m_playerSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
 		//if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<0>().GetFrameInput().ToString()));
 
-		m_physicsManager.GetPhysicsWorldMutable().UpdateStart(m_deltaTime);
+		m_collisionBoxSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_physicsManager.GetPhysicsWorldMutable().UpdateStart(deltaTime);
 		/*if (m_enableDebugInfo)
 		{
 			m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
@@ -416,13 +328,13 @@ namespace Core
 			m_debugInfo.AddProperty("GroundDist:", std::format("{} m", std::to_string(m_playerInfo.value().GetAt<0>().GetVerticalDistanceToGround())));
 		}*/
 
-		m_physicsBodySystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
+		m_physicsBodySystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
 	/*	Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
 			Conversions::WorldToScreenPosition(*mainCamera, m_playerInfo.value().m_Entity->m_Transform.m_Pos).ToString()));*/
 		
-		m_animatorSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
-		m_spriteAnimatorSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
-		m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
+		m_animatorSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_spriteAnimatorSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
 
 		/*LogError(this, std::format("Player visual: {} scene entities: {}", m_playerInfo.value().m_Entity->TryGetComponent<EntityRendererData>()->GetVisualData().ToString(), 
 			std::to_string(activeScene->GetEntityCount())));*/
@@ -430,7 +342,7 @@ namespace Core
 		//LogError(activeScene->GetAllEntities()[0]->GetName());
 		
 		//TODO: it seems enttiy system is causing a stirng to long exception
-		m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
+		m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
 		
 		//LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
 		//	std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<1>(), *(m_obstacleInfo.value().m_Data))),
@@ -442,13 +354,13 @@ namespace Core
 		//	m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 		//	m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));
 		//TODO: light system without any other problems drop frames to ~20 fps
-		m_lightSystem.SystemUpdate(*activeScene, mainCamera, m_deltaTime);
+		m_lightSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
 
-		m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), m_deltaTime);
+		m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), deltaTime);
 		const TextBufferMixed& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
-		if (m_enableCommandConsole) m_commandConsole.Update();
+		/*if (m_enableCommandConsole) m_commandConsole.Update();*/
 
 		/*if (m_enableDebugInfo)
 		{
@@ -458,33 +370,32 @@ namespace Core
 			m_debugInfo.SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X+15, mouseScreenPos.m_Y} });
 		}*/
 
-		m_entityEditor.Update(mainCamera);
+		/*m_entityEditor.Update(mainCamera);*/
 		m_guiSelectorManager.Update();
-		if (m_enableDebugInfo) m_debugInfo.UpdateProperties(m_deltaTime, m_timeStep, *activeScene, m_inputManager, mainCamera);
+		m_editor.Update(deltaTime, m_timeKeeper.GetTimeScale(), *activeScene, mainCamera);
 
 		//TODO: rendering buffer drops frames
 		if (!collapsedBuffer.empty())
 		{
-			Rendering::RenderBuffer(collapsedBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(), 
-				m_cameraSystem.GetCurrentLineBuffer(), m_enableDebugInfo? &m_debugInfo : nullptr, 
-				m_enableCommandConsole? &m_commandConsole : nullptr, &m_entityEditor);
+			Rendering::RenderBuffer(collapsedBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(),
+				m_cameraSystem.GetCurrentLineBuffer(), std::vector<IBasicRenderable*>{&m_editor});
+				//m_enableCommandConsole? &m_commandConsole : nullptr, &m_entityEditor);
 		}
 		//else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
 
 		m_transformSystem.UpdateLastFramePos(*activeScene);
 		m_physicsManager.GetPhysicsWorldMutable().UpdateEnd();
-		if (m_enableDebugInfo) m_debugInfo.ClearProperties();
+		//if (m_enableDebugInfo) m_debugInfo.ClearProperties();
 
 		//Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
 		//Log(m_sceneManager.GetActiveScene()->ToStringLayers());
 
-		m_lastTime = m_currentTime;
+		m_timeKeeper.UpdateTimeEnd();
 
-		if (FRAME_LIMIT == NO_FRAME_LIMIT) return SUCCESS_CODE;
+		if (m_timeKeeper.ReachedFrameLimit()) 
+			return EXIT_CODE;
 
-		m_currentFrameCounter++;
-		if (m_currentFrameCounter >= FRAME_LIMIT)
-			return END_CODE;
+		return SUCCESS_CODE;
 	}
 
 	void Engine::BeginUpdateLoop()
@@ -496,15 +407,6 @@ namespace Core
 			{
 				std::cin.get();
 				Utils::ClearSTDCIN();
-			}
-			if (IsKeyPressed(TOGGLE_DEBUG_INFO_KEY))
-			{
-				m_enableDebugInfo = !m_enableDebugInfo;
-			}
-			if (IsKeyPressed(TOGGLE_COMMAND_CONSOLE_KEY))
-			{
-				m_enableCommandConsole = !m_enableCommandConsole;
-				if (!m_enableCommandConsole) m_commandConsole.ResetInput();
 			}
 
 			try
@@ -520,15 +422,13 @@ namespace Core
 #ifdef ENABLE_PROFILER
 			ProfilerTimer::m_Profiler.LogCurrentRoundTimes();
 #endif
-
-			//We do not terminate update if we want to play a few frames
-			if (FRAME_LIMIT != NO_FRAME_LIMIT && m_currentFrameCounter < FRAME_LIMIT) continue;
-
 			if (!Assert(this, currentCode != ERROR_CODE, 
-				std::format("Update loop terminated due to error"), true)) return;
+				std::format("Update loop terminated due to error"), true)) 
+				return;
 
-			if (!Assert(this, currentCode != END_CODE,
-				std::format("Update loop terminated due to loop end triggered"), true)) return;
+			if (!Assert(this, currentCode != EXIT_CODE,
+				std::format("Update loop terminated due to loop end triggered"), true)) 
+				return;
 		}
 	}
 }

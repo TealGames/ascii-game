@@ -20,6 +20,7 @@ public:
 	const Input::InputAction* TryGetAction(const std::string& name) const;
 	const std::unordered_map<std::string, Input::InputAction>& GetActions() const;
 
+	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 
 	/*void SetInputManager(Input::InputManager& manager);

@@ -289,9 +289,10 @@ namespace Utils
 		if (decimalPlacePrecision)
 		{
 			finalPrecision += (GetDigitPlaces(d) - GetDecimalPlaces(d));
+			//Assert(false, std::format("Trying to:{} prec:{} actual:{}", std::to_string(d), std::to_string(precision), std::to_string()));
 		}
 		
-		oss.precision(precision);
+		oss.precision(finalPrecision);
 		oss << d;
 		return oss.str();
 	}

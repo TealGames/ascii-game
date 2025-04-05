@@ -2,7 +2,7 @@
 #include "Asset.hpp"
 #include "Debug.hpp"
 
-Asset::Asset(const std::filesystem::path& path) : m_name(), m_path(path)
+Asset::Asset(const std::filesystem::path& path) : m_name(), m_path(path), m_dependenciesSet(false)
 {
 	if (!Assert(std::filesystem::exists(m_path), std::format("Tried to create an asset at path: {} "
 		"but that path does not exist", m_path.string())))

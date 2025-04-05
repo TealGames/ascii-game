@@ -19,14 +19,14 @@ struct StoredReference
 	void* m_Pointer;
 };
 
-namespace ReferenceDatabase
+namespace ReferenceRegistry
 {
 	/// <summary>
 	/// Since it may be important to have access to references between executions we can solve this problem
 	/// by utilizing a databse that stores id and reference key-value pairs
 	/// </summary>
 	using DatabaseCollection = std::unordered_map<std::string, StoredReference>;
-	extern DatabaseCollection Database;
+	extern DatabaseCollection Registry;
 
 	bool HasReference(const std::string& name);
 	DatabaseCollection::iterator TryGetReferenceMutable(const std::string& name);
@@ -40,17 +40,17 @@ namespace ReferenceDatabase
 
 		if (typeid(reference).name() == typeid(float))
 		{
-			Database.emplace(name, StoredReference(ReferenceType::Float, &reference));
+			Registry.emplace(name, StoredReference(ReferenceType::Float, &reference));
 			return true;
 		}
 		else if (typeid(reference).name() == typeid(int))
 		{
-			Database.emplace(name, StoredReference(ReferenceType::Integer32, &reference));
+			Registry.emplace(name, StoredReference(ReferenceType::Integer32, &reference));
 			return true;
 		}
 		else if (typeid(reference).name() == typeid(std::uint8_t))
 		{
-			Database.emplace(name, StoredReference(ReferenceType::Uint8, &reference));
+			Registry.emplace(name, StoredReference(ReferenceType::Uint8, &reference));
 			return true;
 		}
 
@@ -64,7 +64,7 @@ namespace ReferenceDatabase
 	T* TryGetReference(const std::string& name)
 	{
 		auto it = TryGetReferenceMutable(name);
-		if (!Assert(this, it != Database.end(), std::format("Tried to get reference named: {} from database "
+		if (!Assert(this, it != Registry.end(), std::format("Tried to get reference named: {} from database "
 			"but no reference by that name exists", name)))
 			return nullptr;
 

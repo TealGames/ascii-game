@@ -15,11 +15,15 @@ CameraData::CameraData(const Json& json) : CameraData()
 }
 
 CameraData::CameraData(const CameraSettings& cameraSettings) :
-	ComponentData(HighestDependecyLevel::Entity), m_CameraSettings(cameraSettings), m_LastFrameBuffer() {}
+	ComponentData(), m_CameraSettings(cameraSettings), m_LastFrameBuffer() {}
 
 void CameraData::InitFields()
 {
 	m_Fields= { ComponentField("LensSize", &m_CameraSettings.m_LensSize) };
+}
+std::vector<std::string> CameraData::GetDependencyFlags() const
+{
+	return {ENTITY_DEPENDENCY_FLAG};
 }
 
 std::string CameraData::ToString() const

@@ -41,9 +41,11 @@ private:
 	std::vector<ConsoleOutputMessage> m_outputMessages;
 
 	const Input::InputManager& m_inputManager;
+	bool m_isEnabled;
 
 public:
 	static constexpr char COMMAND_CHAR= '/';
+	static constexpr KeyboardKey TOGGLE_COMMAND_CONSOLE_KEY = KEY_TAB;
 
 private:
 	std::string FormatPromptName(const std::string& name);
@@ -65,6 +67,8 @@ public:
 	void Update();
 	void TryRender();
 	ScreenPosition Render(const RenderInfo& renderInfo) override;
+
+	bool IsEnabled() const;
 
 	void ResetInput();
 	//std::string GetInput() const;
