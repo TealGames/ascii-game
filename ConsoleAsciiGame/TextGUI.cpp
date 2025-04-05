@@ -53,6 +53,17 @@ TextGUI::TextGUI(const std::string& text, const TextGUISettings& settings) :
 	TextGUI(text, settings.m_FontData, settings.m_CharSpacing, settings.m_Padding, settings.m_TextAlignment,
 		settings.m_TextColor, settings.m_FontSizeFactor, settings.m_FitToArea) {}
 
+void TextGUI::SetSettings(const TextGUISettings& settings)
+{
+	m_fontData = settings.m_FontData;
+	m_charSpacing = settings.m_CharSpacing;
+	m_padding = settings.m_Padding;
+	m_alignment = settings.m_TextAlignment;
+	m_color = settings.m_TextColor;
+	m_fontSizeFactor = settings.m_FontSizeFactor;
+	m_fitToArea = settings.m_FitToArea;
+}
+
 void TextGUI::SetText(const std::string& text)
 {
 	m_text = text;
@@ -223,6 +234,9 @@ ScreenPosition TextGUI::Render(const RenderInfo& renderInfo)
 	const Vector2 topLeftPos = RaylibUtils::ToRaylibVector(CalculateTopLeftPos(renderInfo, spaceUsed));
 	/*if (m_text=="player") Assert(false, std::format("drawing player text topL:{} actual:{} usablespace:{} reserved:{}", renderInfo.m_TopLeftPos.ToString(),
 		RaylibUtils::ToString(topLeftPos), usableSize.ToString(), renderInfo.m_RenderSize.ToString()));*/
+
+	/*Assert(false, std::format("Drawing text gui at:{} size:{} color:{}", RaylibUtils::ToString(topLeftPos),
+		std::to_string(m_fontData.m_FontSize), RaylibUtils::ToString(m_color)));*/
 
 	DrawTextEx(m_fontData.m_Font, m_text.c_str(), topLeftPos, m_fontData.m_FontSize, m_charSpacing, m_color);
 	return renderInfo.m_RenderSize;

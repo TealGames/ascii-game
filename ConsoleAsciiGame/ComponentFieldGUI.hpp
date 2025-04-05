@@ -6,7 +6,7 @@
 #include "IDelayedRenderable.hpp"
 #include "InputField.hpp"
 #include "InputManager.hpp"
-#include "CheckboxGUI.hpp"
+#include "ToggleGUI.hpp"
 
 class GUISelectorManager;
 
@@ -18,7 +18,7 @@ private:
 	const Input::InputManager& m_inputManager;
 	ComponentField& m_fieldInfo;
 	std::vector<InputField> m_inputFields;
-	CheckboxGUI m_checkbox;
+	ToggleGUI m_checkbox;
 
 	const ComponentGUI* m_componentGUI;
 	TextGUI m_fieldNameText;

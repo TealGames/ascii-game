@@ -130,7 +130,7 @@ ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 	
 	//currentPos.y += MeasureTextEx(GetFontDefault(), componentName.c_str(), TITLE_FONT_SIZE, TITLE_FONT_SPACING).y;
 	currentPos.y += componentNameTextSize.m_Y;
-	if (!m_dropdownCheckbox.IsChecked())
+	if (!m_dropdownCheckbox.IsToggled())
 	{
 		return ScreenPosition(MAX_PANEL_WIDTH, componentHeight);
 	}

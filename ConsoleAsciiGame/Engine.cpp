@@ -371,8 +371,9 @@ namespace Core
 		}*/
 
 		/*m_entityEditor.Update(mainCamera);*/
-		m_guiSelectorManager.Update();
 		m_editor.Update(deltaTime, m_timeKeeper.GetTimeScale(), *activeScene, mainCamera);
+		m_guiSelectorManager.Update();
+		//Assert(false, std::format("Found selectables:{}", m_guiSelectorManager.T));
 
 		//TODO: rendering buffer drops frames
 		if (!collapsedBuffer.empty())

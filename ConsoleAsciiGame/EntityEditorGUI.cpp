@@ -18,7 +18,9 @@ static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = {0.8, 1};
 EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneManagement::SceneManager& scene, 
 	Physics::PhysicsManager& physics, GUISelectorManager& selector)
 	: m_inputManager(input), m_sceneManager(scene), m_physicsManager(physics), m_selectorManager(selector),
-	m_entityGUIs(), m_selectedEntity(m_entityGUIs.end()), m_defaultRenderInfo() 
+	m_defaultRenderInfo(), 
+	//m_selectedEntity(std::nullopt)
+	m_entityGUIs(), m_selectedEntity(m_entityGUIs.end())
 {
 	ScreenPosition topLeftPos = Conversions::NormalizedScreenToPosition(TOP_LEFT_POS_NORMALIZED);
 	ScreenPosition topRightPos = Conversions::NormalizedScreenToPosition({ 1, 1 });
@@ -27,6 +29,9 @@ EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneMa
 
 void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 {
+	//m_selectedEntity = EntityGUI(m_inputManager, m_selectorManager, entity);
+	//m_selectedEntity.value().SetComponentsToStored();
+
 	EntityGUICollection::iterator it = m_entityGUIs.find(entity.GetName());
 	if (it == m_entityGUIs.end())
 	{
@@ -55,29 +60,33 @@ void EntityEditorGUI::Update(CameraData& mainCamera)
 		{
 			ECS::Entity& selectedEntity = entitiesWithinPos[0]->GetEntitySafeMutable();
 			if (m_selectedEntity == m_entityGUIs.end() || selectedEntity != m_selectedEntity->second.GetEntity())
+			//if (!m_selectedEntity.has_value() || (selectedEntity!=m_selectedEntity.value().GetEntity()))
 			{
 				SetEntityGUI(selectedEntity);
-				Log(std::format("Successfully selected entity: '{}'", m_selectedEntity->second.GetEntity().GetName()), false, true);
+				//Log(std::format("Successfully selected entity: '{}'", m_selectedEntity->second.GetEntity().GetName()), false, true);
 			}
 			//else Log(std::format("Failed to select any entity"), false, true);
 		}
 	}
 
 	if (m_selectedEntity!= m_entityGUIs.end()) m_selectedEntity->second.Update();
+	//if (m_selectedEntity.has_value()) m_selectedEntity.value().Update();
 }
 
 void EntityEditorGUI::TryRender()
 {
-	if (m_selectedEntity == m_entityGUIs.end()) return;
-
+	//if (m_selectedEntity == m_entityGUIs.end()) return;
 	Render(m_defaultRenderInfo);
 }
 
 ScreenPosition EntityEditorGUI::Render(const RenderInfo& renderInfo)
 {
-	if (m_selectedEntity == m_entityGUIs.end()) return {};
+	//if (!m_selectedEntity.has_value()) return {};
+	//m_selectedEntity.value().Render(renderInfo);
 
+	if (m_selectedEntity == m_entityGUIs.end()) return {};
 	m_selectedEntity->second.Render(renderInfo);
+	
 	//Assert(false, "REDNER");
 	return renderInfo.m_RenderSize;
 }

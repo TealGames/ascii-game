@@ -3,6 +3,7 @@
 #include "EntityEditorGUI.hpp"
 #include "IBasicRenderable.hpp"
 #include "DebugInfo.hpp"
+#include "ToggleGUI.hpp"
 
 namespace Core
 {
@@ -39,6 +40,8 @@ private:
 	CommandConsole m_commandConsole;
 	EntityEditorGUI m_entityEditor;
 	DebugInfo m_debugInfo;
+
+	ToggleGUI m_pauseGameToggle;
 public:
 
 private:

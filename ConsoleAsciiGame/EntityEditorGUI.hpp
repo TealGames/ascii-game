@@ -1,6 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <string>
+#include <optional>
 #include "EntityGUI.hpp"
 #include "InputManager.hpp"
 #include "SceneManager.hpp"
@@ -21,6 +22,7 @@ private:
 	RenderInfo m_defaultRenderInfo;
 	EntityGUICollection m_entityGUIs;
 	EntityGUICollection::iterator m_selectedEntity;
+	//std::optional<EntityGUI> m_selectedEntity;
 
 public:
 	static const Color EDITOR_TEXT_COLOR;

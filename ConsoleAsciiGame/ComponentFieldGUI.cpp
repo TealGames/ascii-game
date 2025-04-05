@@ -48,7 +48,7 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	}
 	else if (m_fieldInfo.IsCurrentType<bool>())
 	{
-		m_checkbox = CheckboxGUI(selector, false, fieldSettings);
+		m_checkbox = ToggleGUI(selector, false, fieldSettings);
 	}
 	else if (m_fieldInfo.IsCurrentType<std::string>())
 	{
@@ -182,7 +182,7 @@ void ComponentFieldGUI::SetInternalWithInput()
 	}
 	else if (m_fieldInfo.IsCurrentType<bool>())
 	{
-		m_fieldInfo.TrySetValue<bool>(m_checkbox.IsChecked());
+		m_fieldInfo.TrySetValue<bool>(m_checkbox.IsToggled());
 	}
 	else if (m_fieldInfo.IsCurrentType<std::string>())
 	{

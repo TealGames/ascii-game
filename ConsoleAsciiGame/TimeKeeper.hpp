@@ -36,6 +36,7 @@ public:
 	std::uint16_t GetFPS() const;
 
 	void SetTimeScale(const double& scale);
+	void StopTimeScale();
 	void ResetTimeScale();
 
 	void SetFrameLimit(const std::uint64_t& frameLimit);

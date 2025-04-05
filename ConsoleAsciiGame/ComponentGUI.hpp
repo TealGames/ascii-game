@@ -5,19 +5,19 @@
 #include "ComponentData.hpp"
 #include "ComponentFieldGUI.hpp"
 #include "InputManager.hpp"
-#include "CheckboxGUI.hpp"
+#include "ToggleGUI.hpp"
 
 class EntityGUI;
 class GUISelectorManager;
 
-class ComponentGUI : IRenderable
+class ComponentGUI : public IRenderable
 {
 private:
 	const Input::InputManager* m_inputManager;
 	ComponentData* m_component;
 	std::vector<ComponentFieldGUI> m_fieldGUIs;
 
-	CheckboxGUI m_dropdownCheckbox;
+	ToggleGUI m_dropdownCheckbox;
 	TextGUI m_componentNameText;
 
 	const EntityGUI* m_entityGUI;

@@ -131,6 +131,8 @@ public:
 	TextGUI(const std::string text, const FontData& font, const float& charSpacing, const Color& color);
 	TextGUI(const std::string& text, const TextGUISettings& settings);
 
+	void SetSettings(const TextGUISettings& settings);
+
 	void SetText(const std::string& text);
 	const std::string& GetText() const;
 

@@ -41,6 +41,10 @@ void TimeKeeper::ResetTimeScale()
 {
 	m_timeScale = 1;
 }
+void TimeKeeper::StopTimeScale()
+{
+	m_timeScale = 0;
+}
 
 void TimeKeeper::SetFrameLimit(const std::uint64_t& frameLimit)
 {

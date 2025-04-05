@@ -74,6 +74,7 @@ void SelectableGUI::Deselect()
 
 void SelectableGUI::Click()
 {
+	//Assert(false, "SELECTAVBLE CLICKL");
 	m_OnClick.Invoke(this);
 }
 

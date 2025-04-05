@@ -23,6 +23,7 @@ void GUISelectorManager::SelectNewSelectable(SelectableGUI* selectable)
 
 void GUISelectorManager::ClickSelectable(SelectableGUI* selectable)
 {
+	//Assert(false, std::format("CLICKIGN ON SELECTABLE"));
 	if (selectable == nullptr) return;
 	selectable->Click();
 }
@@ -52,6 +53,9 @@ void GUISelectorManager::Update()
 	{
 		m_lastFrameClickedPosition= m_inputManager.GetMousePosition();
 
+		/*Assert(false, std::format("CLICKED POS:{} FOUNDselectable rect: {} size: {} selected: {}", 
+			m_lastFrameClickedPosition.value().ToString(), allRect, std::to_string(m_selectables.size()),
+			HasSelecatbleSelected() ? m_currentSelected->GetLastFrameRect().ToString() : "NONE"));*/
 		for (auto& selectable : m_selectables)
 		{
 			//std::to_string(selectable->GetLastFrameRect().ContainsPos(mousePos))
@@ -74,8 +78,7 @@ void GUISelectorManager::Update()
 		//Assert(false, std::format("All rects: {}", allRect));
 	}
 
-	LogError(std::format("FOUND selectable rect: {} size: {} selected: {}", allRect, std::to_string(m_selectables.size()), 
-		HasSelecatbleSelected()? m_currentSelected->GetLastFrameRect().ToString() : "NONE"));
+	
 
 	/*LogError(std::format("Selector has: {} selectables active type: {} (rect: {}) allrect: {}", m_selectables.size(), m_currentSelected != nullptr ?
 		ToString(dynamic_cast<InputField*>(m_currentSelected)->GetFieldType()) : "NULL", 

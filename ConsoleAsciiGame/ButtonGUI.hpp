@@ -9,7 +9,7 @@
 class ButtonGUI;
 using ButtonAction = std::function<void(const ButtonGUI&)>;
 
-class ButtonGUI : public SelectableGUI, public IRenderable
+class ButtonGUI : SelectableGUI, public IRenderable
 {
 private:
 	ButtonAction m_clickAction;
@@ -23,12 +23,15 @@ private:
 public:
 
 private:
+	void InvokeClick();
+
 public:
-	ButtonGUI(GUISelectorManager* selectorManager, GUISettings& settings, 
-		const std::string text= "", const ButtonAction & clickAction = nullptr, const float& cooldownTime = 0);
+	ButtonGUI(GUISelectorManager& selectorManager, const GUISettings& settings, 
+		const std::string text= "", const ButtonAction& clickAction = nullptr, const float& cooldownTime = 0);
 	void SetClickAction(const ButtonAction& clickAction);
 
-	void Click() override;
+	void SetSettings(const GUISettings& settings);
+
 	void SetText(const std::string& text);
 
 	bool HasCooldown() const;

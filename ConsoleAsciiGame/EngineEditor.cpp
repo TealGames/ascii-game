@@ -6,8 +6,17 @@
 EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics,
 	SceneManagement::SceneManager& scene, GUISelectorManager& selector)
 	: m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_commandConsole(m_inputManager, selector), m_debugInfo(),
-	m_entityEditor(m_inputManager, m_sceneManager, physics, selector)
-{}
+	m_entityEditor(m_inputManager, m_sceneManager, physics, selector), m_pauseGameToggle(selector, false, GUISettings())
+{
+	m_pauseGameToggle.SetSettings(GUISettings({20, 20}, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
+		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(0, GetGlobalFont()), EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center, 0.8)));
+	m_pauseGameToggle.SetValueSetAction([this](const bool isChecked) -> void
+		{ 
+			if (isChecked) m_timeKeeper.StopTimeScale();
+			else m_timeKeeper.ResetTimeScale();
+			//Assert(false, "CLICKED");
+		});
+}
 
 EngineEditor::~EngineEditor()
 {
@@ -120,6 +129,8 @@ void EngineEditor::Update(const float& deltaTime, const float& timeStep,
 	m_commandConsole.Update();
 	m_entityEditor.Update(mainCamera);
 	m_debugInfo.Update(deltaTime, timeStep, activeScene, m_inputManager, mainCamera);
+
+	m_pauseGameToggle.Update();
 }
 
 bool EngineEditor::TryRender()
@@ -127,5 +138,7 @@ bool EngineEditor::TryRender()
 	m_commandConsole.TryRender();
 	m_entityEditor.TryRender();
 	m_debugInfo.TryRender();
+
+	m_pauseGameToggle.Render(RenderInfo({0,0}, {20, 20}));
 	return true;
 }
