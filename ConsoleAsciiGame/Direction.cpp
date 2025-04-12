@@ -65,10 +65,11 @@ std::optional<MoveDirection> TryConvertVectorToDirection(const Vec2& vec, const 
 
 	if (ignoreAngledDirs) return std::nullopt;
 
-	else if (vec == Vec2::NORTHEAST) return MoveDirection::Northeast;
-	else if (vec == Vec2::NORTHWEST) return MoveDirection::Northwest;
-	else if (vec == Vec2::SOUTHEAST) return MoveDirection::Southeast;
-	else if (vec == Vec2::SOUTHWEST) return MoveDirection::Southwest;
+	const float dirAsAngle = vec.GetAngle(AngleMode::Degrees);
+	if (0 < dirAsAngle && dirAsAngle < 90) return MoveDirection::Northeast;
+	else if (90 < dirAsAngle && dirAsAngle < 180) return MoveDirection::Northwest;
+	else if (180 < dirAsAngle && dirAsAngle < 270) return MoveDirection::Southwest;
+	else if (270 < dirAsAngle && dirAsAngle < 360) return MoveDirection::Southeast;
 
 	return std::nullopt;
 }

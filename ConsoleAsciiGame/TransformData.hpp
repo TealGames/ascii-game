@@ -8,10 +8,11 @@ const Vec2 NULL_POS = Vec2{ -1, -1 };
 class TransformData : public ComponentData
 {
 private:
-public:
 	Vec2 m_Pos;
 	Vec2 m_LastPos;
 	Vec2 m_LastFramePos;
+
+public:
 
 private:
 public:
@@ -27,6 +28,12 @@ public:
 	void SetPosDeltaX(const float& xDelta);
 	void SetPosDeltaY(const float& yDelta);
 	void SetPosDelta(const Vec2& moveDelta);
+
+	Vec2 GetPos() const;
+	Vec2 GetLastPos() const;
+	Vec2 GetLastFramePos() const;
+	
+	void SetLastFramePos(const Vec2& vec);
 
 	bool HasMovedThisFrame() const;
 

@@ -77,6 +77,8 @@ namespace ECS
 		const EntityID m_Id;
 		TransformData& m_Transform;
 
+		//TODO: could we maybe comine all entity falgs into one bool/ enum
+
 		bool m_Active;
 		/// <summary>
 		/// If true, will be serialized in the scene asset so it can be deserialized

@@ -12,6 +12,16 @@ AABBIntersectionData::AABBIntersectionData() :
 AABBIntersectionData::AABBIntersectionData(const bool& intersect, const Vec2& depth) :
 	m_DoIntersect(intersect), m_Depth(depth) {}
 
+bool AABBIntersectionData::IsTouchingIntersection() const
+{
+	return m_DoIntersect && m_Depth.m_X == 0 && m_Depth.m_Y == 0;
+}
+
+std::string AABBIntersectionData::ToString() const
+{
+	return std::format("[Intersect:{} Depth:{}]", std::to_string(m_DoIntersect), m_Depth.ToString());
+}
+
 CollisionBoxData::CollisionBoxData(const TransformData* transform, const Vec2& size, const WorldPosition& transformOffset) :
 	ComponentData(), m_transform(transform), m_aabb(size), m_transformOffset(transformOffset) {}
 
@@ -64,7 +74,7 @@ const WorldPosition& CollisionBoxData::GetOffset() const
 }
 const WorldPosition& CollisionBoxData::GetCurrentPos() const
 {
-	return GetTransform().m_Pos;
+	return GetTransform().GetPos();
 }
 const WorldPosition& CollisionBoxData::GetGlobalMin() const
 {
@@ -109,14 +119,129 @@ bool CollisionBoxData::DoIntersect(const CollisionBoxData& otherBox) const
 
 AABBIntersectionData CollisionBoxData::GetCollisionIntersectionData(const CollisionBoxData& otherBox) const
 {
-	const WorldPosition& thisMinGlobal = GetGlobalMin();
-	const WorldPosition& thisMaxGlobal = GetGlobalMax();
-	const WorldPosition& otherMinGlobal = otherBox.GetGlobalMin();
-	const WorldPosition& otherMaxGlobal = otherBox.GetGlobalMax();
+	const WorldPosition thisMinGlobal = GetGlobalMin();
+	const WorldPosition thisMaxGlobal = GetGlobalMax();
+	const WorldPosition otherMinGlobal = otherBox.GetGlobalMin();
+	const WorldPosition otherMaxGlobal = otherBox.GetGlobalMax();
+
+	
+	/*
+	if (thisMaxGlobal.m_X < otherMinGlobal.m_X || thisMinGlobal.m_X > otherMaxGlobal.m_X ||
+		thisMaxGlobal.m_Y < otherMinGlobal.m_Y || thisMinGlobal.m_Y > otherMaxGlobal.m_Y)
+	{
+		return AABBIntersectionData(false, {});
+	}
+
+	bool touchingX = (thisMinGlobal.m_X == otherMaxGlobal.m_X) || (thisMaxGlobal.m_X == otherMinGlobal.m_X);
+	bool touchingY = (thisMinGlobal.m_Y == otherMaxGlobal.m_Y) || (thisMaxGlobal.m_Y == otherMinGlobal.m_Y);
+
+	if (touchingX || touchingY) 
+	{
+		return AABBIntersectionData(true, {});
+	}
+
 
 	AABBIntersectionData result = {};
-	result.m_DoIntersect = (thisMaxGlobal.m_X > otherMinGlobal.m_X && thisMinGlobal.m_X < otherMaxGlobal.m_X &&
-		thisMaxGlobal.m_Y > otherMinGlobal.m_Y && thisMinGlobal.m_Y < otherMaxGlobal.m_Y);
+	result.m_DoIntersect = true;
+
+	//If OTHER body is between the min and max X of THIS body then we know there is only Y depth 
+	if (thisMinGlobal.m_X <= otherMinGlobal.m_X && otherMinGlobal.m_X <= thisMaxGlobal.m_X &&
+		thisMinGlobal.m_X <= otherMaxGlobal.m_X && otherMaxGlobal.m_X <= thisMaxGlobal.m_X)
+	{
+		
+		result.m_Depth.m_X = 0;
+	}
+	else
+	{
+		const float rightDepthX = otherMinGlobal.m_X - thisMaxGlobal.m_X;
+		const float leftDepthX = otherMaxGlobal.m_X - thisMinGlobal.m_X;
+		result.m_Depth.m_X = Utils::MinAbs(rightDepthX, leftDepthX);
+	}
+
+	//If OTHER body is between the min and max Y of THIS body then we know there is only X depth 
+	if (thisMinGlobal.m_Y <= otherMinGlobal.m_Y && otherMinGlobal.m_Y <= thisMaxGlobal.m_Y &&
+		thisMinGlobal.m_Y <= otherMaxGlobal.m_Y && otherMaxGlobal.m_Y <= thisMaxGlobal.m_Y)
+	{
+		result.m_Depth.m_Y = 0;
+	}
+	else
+	{
+		const float topDepthY = otherMinGlobal.m_Y - thisMaxGlobal.m_Y;
+		const float bottomDepthY = otherMaxGlobal.m_Y - thisMinGlobal.m_Y;
+		result.m_Depth.m_Y = Utils::MinAbs(topDepthY, bottomDepthY);
+		//Assert(false, std::format("Collision A:{} B:{} top depth:{} bottom depth:{} depth:{}",
+		//GetEntitySafe().GetName(), otherBox.GetEntitySafe().GetName(), std::to_string(topDepthY), std::to_string(bottomDepthY), std::to_string(result.m_Depth.m_Y)));
+	}
+	return result;
+	*/
+
+
+	/*result.m_DoIntersect = (thisMaxGlobal.m_X > otherMinGlobal.m_X && thisMinGlobal.m_X < otherMaxGlobal.m_X &&
+		thisMaxGlobal.m_Y > otherMinGlobal.m_Y && thisMinGlobal.m_Y < otherMaxGlobal.m_Y);*/
+
+	AABBIntersectionData result = {};
+
+	//Inttituition is that a collision occurs when the max of one is greater than the min of the other for both X and Y axes
+	//Note: this covers any type of collision, including ones that are perfectly contained within a bigger volume
+	result.m_DoIntersect = thisMinGlobal.m_X <= otherMaxGlobal.m_X && thisMaxGlobal.m_X >= otherMinGlobal.m_X &&
+		thisMinGlobal.m_Y <= otherMaxGlobal.m_Y && thisMaxGlobal.m_Y >= otherMinGlobal.m_Y;
+
+	//Note: for depth we consider how much THIS BODY is penetrating OTHER BODY in both axes
+	//and find the minimum direction ignoring the signs since rightDepthX is - and leftDepthX +
+	//(similar for y) so we can easily reverse the depth to get the vector to leave the intersection
+	if (result.m_DoIntersect)
+	{
+		const Vec2 cumulativeSize = GetAABB().GetSize() + otherBox.GetAABB().GetSize();
+
+		const float rightDepthX = otherMinGlobal.m_X - thisMaxGlobal.m_X;
+		const float leftDepthX = otherMaxGlobal.m_X - thisMinGlobal.m_X;
+	
+		//If OTHER body is between the min and max X of THIS body then we know there is only Y depth 
+		if (thisMinGlobal.m_X <= otherMinGlobal.m_X && otherMinGlobal.m_X <= thisMaxGlobal.m_X &&
+			thisMinGlobal.m_X <= otherMaxGlobal.m_X && otherMaxGlobal.m_X <= thisMaxGlobal.m_X)
+		{
+			result.m_Depth.m_X = 0;
+		}
+		else
+		{
+			result.m_Depth.m_X = Utils::MinAbs(rightDepthX, leftDepthX);
+		}
+
+		const float topDepthY = otherMinGlobal.m_Y - thisMaxGlobal.m_Y;
+		const float bottomDepthY = otherMaxGlobal.m_Y - thisMinGlobal.m_Y;
+		
+		//If OTHER body is between the min and max Y of THIS body then we know there is only X depth 
+		if (thisMinGlobal.m_Y <= otherMinGlobal.m_Y && otherMinGlobal.m_Y <= thisMaxGlobal.m_Y &&
+			thisMinGlobal.m_Y <= otherMaxGlobal.m_Y && otherMaxGlobal.m_Y <= thisMaxGlobal.m_Y)
+		{
+			result.m_Depth.m_Y = 0;
+		}
+		else
+		{
+			result.m_Depth.m_Y = Utils::MinAbs(topDepthY, bottomDepthY);
+			/*Assert(false, std::format("Collision A:{} B:{} top depth:{} bottom depth:{} depth:{}", 
+				GetEntitySafe().GetName(), otherBox.GetEntitySafe().GetName(), std::to_string(topDepthY), std::to_string(bottomDepthY), std::to_string(result.m_Depth.m_Y)));*/
+		}
+
+		/*
+		if (std::abs(rightDepthX) + std::abs(leftDepthX) == cumulativeSize.m_X || 
+			std::abs(topDepthY) + std::abs(bottomDepthY) == cumulativeSize.m_Y)
+		{
+			//Assert(false, std::format("Touching collision"));
+			result.m_Depth = Vec2::ZERO;
+		}
+		*/
+	}
+	return result;
+
+	/*if ((GetEntitySafe().GetName()=="player" || otherBox.GetEntitySafe().GetName()=="player") && 
+		(GetEntitySafe().GetName() == "Background" || otherBox.GetEntitySafe().GetName() == "Background"))
+		Assert(false, std::format("Checking intersect:{}({}) and {}({}) PLAYER:{}, THIS MIN:{} THIS MAX:{} OTHER MIN:{} OTHER MAX:{} X1:{} X2:{} Y1:{} y2:{}",
+		ToString(), GetEntitySafe().GetName(), otherBox.ToString(), otherBox.GetEntitySafe().GetName(),
+		GetEntitySafe().GetName() == "player"? "THIS" : "OTHER",
+			thisMinGlobal.ToString(), thisMaxGlobal.ToString(), otherMinGlobal.ToString(), otherMaxGlobal.ToString(),
+		std::to_string(thisMinGlobal.m_X <= otherMaxGlobal.m_X), std::to_string(thisMaxGlobal.m_X >= otherMinGlobal.m_X), 
+		std::to_string(thisMinGlobal.m_Y <= otherMaxGlobal.m_Y), std::to_string(thisMaxGlobal.m_Y >= otherMinGlobal.m_Y)));*/
 
 	//Covers case where body2 is fully inside body1
 	if (result.m_DoIntersect && thisMinGlobal.m_X <= otherMinGlobal.m_X && otherMaxGlobal.m_X <= thisMaxGlobal.m_X &&
@@ -154,10 +279,10 @@ AABBIntersectionData CollisionBoxData::GetCollisionIntersectionData(const Collis
 
 Vec2 CollisionBoxData::GetAABBMinDisplacement(const CollisionBoxData& otherBox) const
 {
-	const WorldPosition& thisMinGlobal = GetGlobalMin();
-	const WorldPosition& thisMaxGlobal = GetGlobalMax();
-	const WorldPosition& otherMinGlobal = otherBox.GetGlobalMin();
-	const WorldPosition& otherMaxGlobal = otherBox.GetGlobalMax();
+	const WorldPosition thisMinGlobal = GetGlobalMin();
+	const WorldPosition thisMaxGlobal = GetGlobalMax();
+	const WorldPosition otherMinGlobal = otherBox.GetGlobalMin();
+	const WorldPosition otherMaxGlobal = otherBox.GetGlobalMax();
 
 	Vec2 displacement = {};
 
@@ -179,10 +304,17 @@ Vec2 CollisionBoxData::GetAABBMinDisplacement(const CollisionBoxData& otherBox) 
 
 Vec2 CollisionBoxData::GetAABBDirection(const CollisionBoxData& otherBox, const bool& considerCollisions) const
 {
-	const WorldPosition& thisMinGlobal = GetGlobalMin();
-	const WorldPosition& thisMaxGlobal = GetGlobalMax();
-	const WorldPosition& otherMinGlobal = otherBox.GetGlobalMin();
-	const WorldPosition& otherMaxGlobal = otherBox.GetGlobalMax();
+	const WorldPosition thisMinGlobal = GetGlobalMin();
+	const WorldPosition thisMaxGlobal = GetGlobalMax();
+	const WorldPosition otherMinGlobal = otherBox.GetGlobalMin();
+	const WorldPosition otherMaxGlobal = otherBox.GetGlobalMax();
+
+	return GetVector(GetAABBCenterWorldPos(), otherBox.GetAABBCenterWorldPos());
+
+	const Vec2 minVec = GetVector(thisMinGlobal, otherMinGlobal);
+	const Vec2 maxVec = GetVector(thisMaxGlobal, otherMaxGlobal);
+
+	
 
 	Vec2 dir = Vec2::ZERO;
 	const WorldPosition& thisCenter = GetAABBCenterWorldPos();
@@ -236,6 +368,11 @@ std::string CollisionBoxData::ToString() const
 {
 	return std::format("[CollisionBox AABB:{}, Offset:{} transform:{}]", m_aabb.ToString(GetAABBCenterWorldPos()), 
 		m_transformOffset.ToString(), m_transform!=nullptr? GetTransform().ToString() : "NULL");
+}
+std::string CollisionBoxData::ToStringRelative() const
+{
+	return std::format("[CollisionBox AABB:{}, Offset:{} transform:{}]", m_aabb.ToString(),
+		m_transformOffset.ToString(), m_transform != nullptr ? GetTransform().ToString() : "NULL");
 }
 
 void CollisionBoxData::Deserialize(const Json& json)

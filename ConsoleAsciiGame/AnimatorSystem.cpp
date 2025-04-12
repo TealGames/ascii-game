@@ -37,8 +37,8 @@ namespace ECS
 						{
 							using PropertyConvertedType = std::remove_reference_t<decltype(value)>;
 							using ExtractedType = AnimationPropertyType<PropertyConvertedType>::Type;
-							LogError(std::format("Trying to run animator with property variant value; {} integral: {}", 
-								typeid(PropertyConvertedType).name(), typeid(ExtractedType).name()));
+							/*LogError(std::format("Trying to run animator with property variant value; {} integral: {}", 
+								typeid(PropertyConvertedType).name(), typeid(ExtractedType).name()));*/
 
 							AnimationProperty<ExtractedType>* maybeProperty = std::get_if<AnimationProperty<ExtractedType>>(&property);
 							if (!Assert(this, maybeProperty != nullptr, std::format("Tried to get the current type in variant as: {} "

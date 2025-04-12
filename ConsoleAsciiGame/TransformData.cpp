@@ -23,19 +23,18 @@ TransformData::TransformData(const Vec2& pos) :
 void TransformData::SetPos(const Vec2& newPos)
 {
 	m_LastPos = m_Pos;
-	m_Pos = newPos;
+	SetPosX(newPos.m_X);
+	SetPosY(newPos.m_Y);
 }
 
-//TODO: do scene bound checking
 void TransformData::SetPosX(const float& newX)
 {
-	SetPos(Vec2(newX, m_Pos.m_Y));
+	m_Pos.m_X = newX;
 }
 
-//TODO: do scene bound checking
 void TransformData::SetPosY(const float& newY)
 {
-	SetPos(Vec2(m_Pos.m_X, newY));
+	m_Pos.m_Y = newY;
 }
 
 void TransformData::SetPosDeltaX(const float& xDelta)
@@ -52,6 +51,24 @@ void TransformData::SetPosDelta(const Vec2& moveDelta)
 {
 	SetPosDeltaX(moveDelta.m_X);
 	SetPosDeltaY(moveDelta.m_Y);
+}
+
+Vec2 TransformData::GetPos() const
+{
+	return m_Pos;
+}
+Vec2 TransformData::GetLastPos() const
+{
+	return m_LastPos;
+}
+Vec2 TransformData::GetLastFramePos() const
+{
+	return m_LastFramePos;
+}
+
+void TransformData::SetLastFramePos(const Vec2& pos)
+{
+	m_LastFramePos = pos;
 }
 
 bool TransformData::HasMovedThisFrame() const

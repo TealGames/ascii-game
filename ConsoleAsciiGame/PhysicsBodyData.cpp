@@ -7,6 +7,9 @@
 #include "JsonSerializers.hpp"
 #include "Debug.hpp"
 
+MoveContraints::MoveContraints(const bool constrainX, const bool constrainY)
+	: m_ConstrainX(constrainX), m_ConstrainY(constrainY) {}
+
 PhysicsBodyData::PhysicsBodyData(const CollisionBoxData* coliisionBox, const float& mass, 
 	const float& gravity, const float& terminalYVelocity)
 	: ComponentData(),
@@ -16,7 +19,7 @@ PhysicsBodyData::PhysicsBodyData(const CollisionBoxData* coliisionBox, const flo
 	m_collider(coliisionBox),
 	m_velocity(), m_acceleration(),
 	m_gravity(-std::abs(gravity)), m_terminalYVelocity(-std::abs(terminalYVelocity)),
-	m_profile(0, 1), m_physicsSimulation(nullptr)
+	m_profile(1, 1), m_physicsSimulation(nullptr), m_contraints(), m_isGrounded(false)
 {
 	//LogWarning(std::format("Created physics body of size: {} offset: {} that has min: {} max: {} size: {}",
 	//boundingBoxSize.ToString(), transformOffset.ToString(), m_AABB.m_MinPos.ToString(), 
@@ -106,6 +109,7 @@ void PhysicsBodyData::SetVelocityDelta(const Vec2& vel)
 }
 void PhysicsBodyData::SetVelocity(const Vec2& vel)
 {
+	//if (GetEntitySafe().GetName() == "player" && vel == Vec2::ZERO) Assert(false, "ZERO PLAYER VEL");
 	m_velocity.m_X = vel.m_X;
 	m_velocity.m_Y = std::max(vel.m_Y, m_terminalYVelocity);
 }
@@ -132,7 +136,18 @@ const float& PhysicsBodyData::GetGravity() const
 
 bool PhysicsBodyData::IsExperiencingGravity() const
 {
+	//TODO: this should probably consider if the object is groudned or not rather than a
+	//accelerations since it can have net force a not equal to g, but since affected by gravity
 	return Utils::ApproximateEqualsF(m_acceleration.m_Y, m_gravity);
+}
+
+void PhysicsBodyData::SetIsGrounded(const bool grounded)
+{
+	m_isGrounded = grounded;
+}
+bool PhysicsBodyData::IsGrounded() const
+{
+	return m_isGrounded;
 }
 
 const float& PhysicsBodyData::GetMass() const
@@ -140,7 +155,7 @@ const float& PhysicsBodyData::GetMass() const
 	return m_mass;
 }
 
-bool PhysicsBodyData::ConservesMomentum() const
+bool PhysicsBodyData::HasMass() const
 {
 	return m_mass > 0;
 }
@@ -151,6 +166,27 @@ Vec2 PhysicsBodyData::GetMomentum() const
 const Physics::PhysicsProfile& PhysicsBodyData::GetPhysicsProfile() const
 {
 	return m_profile;
+}
+
+void PhysicsBodyData::SetConstraint(const MoveContraints& constraint)
+{
+	m_contraints = constraint;
+}
+MoveContraints PhysicsBodyData::GetConstraint() const
+{
+	return m_contraints;
+}
+bool PhysicsBodyData::HasXConstraint() const
+{
+	return m_contraints.m_ConstrainX;
+}
+bool PhysicsBodyData::HasYConstraint() const
+{
+	return m_contraints.m_ConstrainY;
+}
+bool PhysicsBodyData::HasAnyConstraints() const
+{
+	return HasXConstraint() || HasYConstraint();
 }
 
 const CollisionBoxData& PhysicsBodyData::GetCollisionBox() const

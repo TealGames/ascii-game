@@ -31,7 +31,7 @@ ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTi
 
 WorldPosition ParticleEmitterData::GetOriginWorldPos() const
 {
-	return GetEntitySafe().m_Transform.m_Pos + m_originTransformOffset;
+	return GetEntitySafe().m_Transform.GetPos() + m_originTransformOffset;
 }
 void ParticleEmitterData::SetSpawnRate(const float& value)
 {
@@ -40,7 +40,7 @@ void ParticleEmitterData::SetSpawnRate(const float& value)
 int ParticleEmitterData::ApproximateAverageParticles() const
 {
 	//Note: this approximation uses 2/3 of lifetime to give extra room, but actual value lies around half of lifetime * spawnrate
-	float average= ((m_lifetimeRange.m_Max - m_lifetimeRange.m_Min) *2/3 + m_lifetimeRange.m_Min) * m_spawnRate;
+	float average= ((m_lifetimeRange.m_Max - m_lifetimeRange.m_Min) *5/6 + m_lifetimeRange.m_Min) * m_spawnRate;
 	return static_cast<int>(std::ceilf(average));
 }
 int ParticleEmitterData::CalculateMaxParticles() const

@@ -10,7 +10,7 @@
 class GUISelectorManager;
 class CameraData;
 
-using EntityGUICollection = std::unordered_map<std::string, EntityGUI>;
+//using EntityGUICollection = std::unordered_map<std::string, EntityGUI>;
 class EntityEditorGUI : IRenderable
 {
 private:
@@ -20,9 +20,9 @@ private:
 	GUISelectorManager& m_selectorManager;
 
 	RenderInfo m_defaultRenderInfo;
-	EntityGUICollection m_entityGUIs;
-	EntityGUICollection::iterator m_selectedEntity;
-	//std::optional<EntityGUI> m_selectedEntity;
+	/*EntityGUICollection m_entityGUIs;
+	EntityGUICollection::iterator m_selectedEntity;*/
+	std::optional<EntityGUI> m_selectedEntity;
 
 public:
 	static const Color EDITOR_TEXT_COLOR;

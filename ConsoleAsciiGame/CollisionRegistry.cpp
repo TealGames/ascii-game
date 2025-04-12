@@ -9,8 +9,14 @@ CollisionPair::CollisionPair() :
 	m_CollisionBoxA(nullptr), m_CollisionBoxB(nullptr), m_IntersectionData(), m_Direction(MoveDirection::North) {}
 
 CollisionPair::CollisionPair(CollisionBoxData& boxA, CollisionBoxData& boxB,
-	const AABBIntersectionData& data, const MoveDirection& moveDir) 
+	const AABBIntersectionData& data, const MoveDirection& moveDir)
 	: m_CollisionBoxA(&boxA), m_CollisionBoxB(&boxB), m_IntersectionData(data), m_Direction(moveDir) {}
+
+std::string CollisionPair::ToString() const
+{
+	return std::format("[BoxA:{} BoxB:{} dir:{} intersect:{}]", m_CollisionBoxA->ToString(), 
+		m_CollisionBoxB->ToString(), ::ToString(m_Direction), m_IntersectionData.ToString());
+}
 
 CollisionRegistry::CollisionRegistry() {}
 
@@ -82,11 +88,20 @@ bool CollisionRegistry::TryAddCollision(const CollisionPair& pair)
 		std::format("Tried to create add collision to registry but either one or both collision boxes are NULL")))
 		return false;
 
-	if (HasCollision(*pair.m_CollisionBoxA, *pair.m_CollisionBoxB))
-		return false;
+	//We attempt to remove it a collision between the same two objects already exists
+	//Note: nothing goes wrong if the collision does not exist
+	TryRemoveCollision(pair);
 
 	m_collisions.emplace(CreateCollisionKey(*pair.m_CollisionBoxA, *pair.m_CollisionBoxB), pair);
 	return true;
+}
+
+bool CollisionRegistry::TryRemoveCollision(const CollisionPair& collisionPair)
+{
+	if (collisionPair.m_CollisionBoxA == nullptr || collisionPair.m_CollisionBoxB == nullptr) 
+		return false;
+
+	return TryRemoveCollision(*collisionPair.m_CollisionBoxA, *collisionPair.m_CollisionBoxB);
 }
 
 bool CollisionRegistry::TryRemoveCollision(const CollisionBoxData& boxA, const CollisionBoxData& boxB)
@@ -97,6 +112,17 @@ bool CollisionRegistry::TryRemoveCollision(const CollisionBoxData& boxA, const C
 	m_collisions.erase(maybeIt);
 	return true;
 }
+
+//bool CollisionRegistry::ForceUpdateCollision(const CollisionBoxData& boxA, const CollisionBoxData& boxB)
+//{
+//	const CollisionPair* collision = TryGetCollision(boxA, boxB);
+//	if (!Assert(this, collision != nullptr, std::format("Tried to force update a collision between A : {} B: {} "
+//		"but a collision between those two boxes does not exist", boxA.ToString(), boxB.ToString())))
+//		return false;
+//
+//
+//
+//}
 
 const CollisionPair* CollisionRegistry::TryGetCollision(const CollisionBoxData& boxA, const CollisionBoxData& boxB) const
 {
@@ -130,7 +156,12 @@ std::vector<CollisionPair*> CollisionRegistry::TryGetCollisionsMutable(const Col
 	return collisions;
 }
 
-bool CollisionRegistry::IsCollidingInDirs(const CollisionBoxData& box, const std::vector<MoveDirection>& dirs) const
+int CollisionRegistry::GetCollisionsCount(const CollisionBoxData& box) const
+{
+	return TryGetCollisions(box).size();
+}
+
+bool CollisionRegistry::IsCollidingInDirs(const CollisionBoxData& box, const std::vector<MoveDirection>& dirs, const bool requireTouch) const
 {
 	if (m_collisions.empty()) return false;
 
@@ -141,17 +172,54 @@ bool CollisionRegistry::IsCollidingInDirs(const CollisionBoxData& box, const std
 	{
 		if (collision == nullptr) continue;
 		if (std::find(dirs.begin(), dirs.end(), collision->m_Direction) != dirs.end())
+		{
+			if (requireTouch && !collision->m_IntersectionData.IsTouchingIntersection()) continue;
 			return true;
+		}
 	}
 	return false;
 }
-int CollisionRegistry::GetTotalCollisions()
+std::vector<MoveDirection> CollisionRegistry::TryGetCollisionDirs(const CollisionBoxData& box) const
+{
+	if (m_collisions.empty()) return {};
+
+	auto collisions = TryGetCollisions(box);
+	if (collisions.empty()) return {};
+
+	std::vector<MoveDirection> collisionDirs = {};
+	for (const auto& collision : collisions)
+	{
+		if (collision == nullptr) continue;
+		collisionDirs.push_back(collision->m_Direction);
+	}
+	return collisionDirs;
+}
+int CollisionRegistry::GetTotalCollisionsCount()
 {
 	return m_collisions.size();
 }
+void CollisionRegistry::ExecuteOnAllCollisions(const std::function<void(CollisionPair&)>& action)
+{
+	for (auto& collision : m_collisions)
+	{
+		action(collision.second);
+	}
+}
+
+void CollisionRegistry::ClearAll()
+{
+	m_collisions.clear();
+}
+
 std::string CollisionRegistry::ToStringCollidingBodies() const
 {
-	return "";
+	std::string collisionStr = "[]";
+
+	for (const auto& collision : m_collisions)
+	{
+		collisionStr += std::format("[Name:{} Data:{}]", collision.first, collision.second.ToString());
+	}
+	return collisionStr;
 	/*if (m_collidingBodies.empty()) return "[]";
 	std::string bodiesStr = "[";
 

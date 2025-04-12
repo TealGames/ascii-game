@@ -64,13 +64,13 @@ namespace ECS
         /*Log(std::format("Main camera trans: {} follow trans: {}", mainCamera.m_Transform.m_Pos.ToString(), 
             std::to_string(cameraData.m_CameraSettings.m_FollowTarget!=nullptr)));*/
         //Log(std::format("Main camera trans: {} follow trans: ", mainCamera.m_Transform.m_Pos.ToString()));
-        mainCamera.m_Transform.SetPos(cameraData.m_CameraSettings.m_FollowTarget->m_Transform.m_Pos);
+        mainCamera.m_Transform.SetPos(cameraData.m_CameraSettings.m_FollowTarget->m_Transform.GetPos());
     }
 
     bool CameraSystem::IsWithinViewport(const CameraData& camera, const WorldPosition& pos) const
     {
-        WorldPosition bottomLeftPos = camera.m_Entity->m_Transform.m_Pos - (camera.m_CameraSettings.m_WorldViewportSize/2);
-        WorldPosition topRightPos = camera.m_Entity->m_Transform.m_Pos + (camera.m_CameraSettings.m_WorldViewportSize/2);
+        WorldPosition bottomLeftPos = camera.m_Entity->m_Transform.GetPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
+        WorldPosition topRightPos = camera.m_Entity->m_Transform.GetPos() + (camera.m_CameraSettings.m_WorldViewportSize / 2);
         return bottomLeftPos.m_X <= pos.m_X && pos.m_X <= topRightPos.m_X && bottomLeftPos.m_Y <= pos.m_Y && pos.m_Y <= topRightPos.m_Y;
     }
 
@@ -82,9 +82,9 @@ namespace ECS
         float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_CameraSettings.m_WorldViewportSize.m_X, 
                                      SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y);
 
-        LogWarning(std::format("COLLAPSING CAMERA with scale: {} wdith factor: {} height factoer: {}",
+       /* LogWarning(std::format("COLLAPSING CAMERA with scale: {} wdith factor: {} height factoer: {}",
             std::to_string(scaleFactor), std::to_string(SCREEN_WIDTH / cameraData.m_CameraSettings.m_WorldViewportSize.m_X), 
-            std::to_string(SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y)));
+            std::to_string(SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y)));*/
 
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
         //Log(std::format("Total layers: {}", std::to_string(layers.size())));

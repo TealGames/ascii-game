@@ -88,7 +88,7 @@ namespace ECS
 	void EntityRendererSystem::AddTextToBuffer(TextBufferMixed& buffer, EntityRendererData& data, const Entity& entity)
 	{
 		//TODO: should this really be a function of visual data and should we expose the buffer directly from the scene like this
-		data.GetVisualData().AddTextPositionsToBuffer(entity.m_Transform.m_Pos, buffer);
+		data.GetVisualData().AddTextPositionsToBuffer(entity.m_Transform.GetPos(), buffer);
 	}
 }
 

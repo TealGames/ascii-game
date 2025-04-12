@@ -14,6 +14,8 @@
 namespace ECS
 {
 	static constexpr bool CHEATS_ENABLED_DEFAULT = false;
+	//If true, will jump immediately when landing and the up key is pressed
+	static constexpr bool DO_AUTO_JUMP = true;
 
 	PlayerSystem::PlayerSystem(Input::InputManager& input) : 
 		m_inputManager(input), m_cheatsEnabled(CHEATS_ENABLED_DEFAULT), m_lastFrameGrounded(false)
@@ -74,18 +76,19 @@ namespace ECS
 				//Auto jumping occurs when we are grounded but the input is held (meaning we might not have been changed since last frame
 				//but to make sure we immediately jump back up, we ignore it and consider it anways) 
 				//TODO: maybe this explicit auto jump is not good and we should instead have input queueing
-				if (player.GetIsGrounded() && !m_lastFrameGrounded &&
+
+				/*if (DO_AUTO_JUMP && player.GetIsGrounded() && !m_lastFrameGrounded &&
 					moveCompound->TryGetDirectionAction(Input::InputDirection::Up)->IsPressed())
 				{
 					dirDelta.m_Y = 1;
-				}
+				}*/
 
 				//TODO: normalized should be handled in input retrieving
 				dirDelta = dirDelta.GetNormalized();
 				Vec2 inputVel = { dirDelta.m_X * player.GetMoveSpeed(), dirDelta.m_Y * player.GetInitialJumpSpeed() };
 
 				//If we press up while not grounded, we stop that
-				if (!player.GetIsGrounded() && inputVel.m_Y > 0) inputVel.m_Y = 0;
+				if (!player.GetIsGrounded() && inputVel.m_Y!=0) inputVel.m_Y = 0;
 
 				player.GetBodyMutableSafe().SetVelocityDelta(inputVel);
 				m_lastFrameGrounded = player.GetIsGrounded();

@@ -14,7 +14,18 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 		{ 
 			if (isChecked) m_timeKeeper.StopTimeScale();
 			else m_timeKeeper.ResetTimeScale();
-			//Assert(false, "CLICKED");
+
+			//DebugProperties::SetLogMessages(!isChecked);
+		});
+
+	DebugProperties::OnMessageLogged.AddListener([this](const LogType& logType, const std::string& message, 
+		const bool& logToConsole, const bool& pauseOnMessage)-> void
+		{
+			if (!pauseOnMessage) return;
+
+			//To prevent paused going unpaused here we need it to be not paused state
+			if (!m_pauseGameToggle.IsToggled()) 
+				m_pauseGameToggle.ToggleValue();
 		});
 }
 
@@ -54,7 +65,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 
 	m_commandConsole.AddPrompt(new CommandPrompt<std::string>("debugmessage", std::vector<std::string>{"MessageFilter"},
 		[](const std::string& messageFilter) -> void {
-			SetLogMessageFilter(messageFilter);
+			DebugProperties::SetLogMessageFilter(messageFilter);
 		}));
 
 	m_commandConsole.AddPrompt(new CommandPrompt<std::string>("debugtype", std::vector<std::string>{"MessageType"},
@@ -67,7 +78,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 				return;
 			}
 
-			SetLogTypeFilter(maybeLogType.value());
+			DebugProperties::SetLogTypeFilter(maybeLogType.value());
 			/*LogError(std::format("The new log type: {} has log: {}", LogTypeToString(GetLogTypeFilter()),
 				std::to_string(Utils::HasFlagAny(GetLogTypeFilter(), LogType::Log))));*/
 				//throw std::invalid_argument("POOP");
@@ -75,7 +86,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 
 	m_commandConsole.AddPrompt(new CommandPrompt<>("debugreset", std::vector<std::string>{},
 		[this]() -> void {
-			ResetLogFilters();
+			DebugProperties::ResetLogFilters();
 		}));
 
 	m_commandConsole.AddPrompt(new CommandPrompt<float>("settimescale", std::vector<std::string>{"TimeScale"},
@@ -131,6 +142,11 @@ void EngineEditor::Update(const float& deltaTime, const float& timeStep,
 	m_debugInfo.Update(deltaTime, timeStep, activeScene, m_inputManager, mainCamera);
 
 	m_pauseGameToggle.Update();
+	if (m_inputManager.IsKeyPressed(PAUSE_TOGGLE_KEY))
+	{
+		//LogError("Toggle pause");
+		m_pauseGameToggle.ToggleValue();
+	}
 }
 
 bool EngineEditor::TryRender()
@@ -141,4 +157,9 @@ bool EngineEditor::TryRender()
 
 	m_pauseGameToggle.Render(RenderInfo({0,0}, {20, 20}));
 	return true;
+}
+
+void EngineEditor::TogglePause()
+{
+	
 }

@@ -4,15 +4,17 @@
 TimeKeeper::TimeKeeper() :
 	m_currentTime(std::chrono::high_resolution_clock().now()),
 	m_lastTime(std::chrono::high_resolution_clock().now()),
-	m_deltaTime(0), m_timeScale(1), m_currentFPS(0), 
+	m_scaledDeltaTime(0), m_timeScale(DEFAULT_TIME_SCALE), m_currentFPS(0),
 	m_frameCount(0), m_frameLimit(NO_FRAME_LIMIT)
 {}
 
 void TimeKeeper::UpdateTimeStart()
 {
 	m_currentTime = std::chrono::high_resolution_clock().now();
-	m_deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_currentTime - m_lastTime).count() / static_cast<float>(1000) * m_timeScale;
-	m_currentFPS = 1 / m_deltaTime;
+	m_independentDeltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(m_currentTime - m_lastTime).count() / static_cast<float>(1000);
+	m_scaledDeltaTime = m_independentDeltaTime * m_timeScale;
+
+	m_currentFPS = 1 / m_scaledDeltaTime;
 }
 void TimeKeeper::UpdateTimeEnd()
 {
@@ -20,9 +22,13 @@ void TimeKeeper::UpdateTimeEnd()
 	m_frameCount++;
 }
 
-double TimeKeeper::GetLastDeltaTime() const
+double TimeKeeper::GetLastScaledDeltaTime() const
 {
-	return m_deltaTime;
+	return m_scaledDeltaTime;
+}
+double TimeKeeper::GetLastIndependentDeltaTime() const
+{
+	return m_independentDeltaTime;
 }
 double TimeKeeper::GetTimeScale() const
 {

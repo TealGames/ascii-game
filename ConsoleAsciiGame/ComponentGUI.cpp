@@ -18,14 +18,12 @@ constexpr static float TITLE_FONT_SPACING = 2;
 //If true, will divide fields based how many we have to render, otherwise will try give them as much space as possible
 static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
 
-ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, const EntityGUI& entityGUI, ComponentData* component)
-	: m_inputManager(&inputManager), m_component(component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
+ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, const EntityGUI& entityGUI, ComponentData& component)
+	: m_inputManager(&inputManager), m_component(&component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
 	m_dropdownCheckbox(selector, false, GUISettings({}, EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUISettings())), 
-	m_componentNameText(component!=nullptr? GetComponentName() : "NULL COMPONENT", TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(TITLE_FONT_SIZE, GetGlobalFont()),
+	m_componentNameText(GetComponentName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(TITLE_FONT_SIZE, GetGlobalFont()),
 		TITLE_FONT_SPACING, TextAlignment::CenterLeft))
 {
-	if (component == nullptr) return;
-
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(), 
 		std::get<Vec2*>(component->GetFieldsMutable()[0].m_Value)->ToString()));*/
 
@@ -38,7 +36,7 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorM
 			GetComponentName(), GetEntityGUISafe().GetEntity().m_Name, 
 			Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(component->GetFields())));*/
 
-	for (auto& field : component->GetFieldsMutable())
+	for (auto& field : component.GetFieldsMutable())
 	{
 		m_fieldGUIs.push_back(ComponentFieldGUI(GetInputManager(), selector, *this, field));
 	}

@@ -65,7 +65,7 @@ const std::optional<DebugMousePosition>& DebugInfo::GetMouseDebugData() const
 
 void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera)
 {
-	if (input.IsKeyDown(TOGGLE_DEBUG_INFO_KEY))
+	if (input.IsKeyPressed(TOGGLE_DEBUG_INFO_KEY))
 	{
 		m_isEnabled = !m_isEnabled;
 	}
@@ -88,7 +88,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scen
 	const PhysicsBodyData* maybePhysics = playerEntity->TryGetComponent<PhysicsBodyData>();
 	const PlayerData* maybePlayer = playerEntity->TryGetComponent<PlayerData>();
 	AddProperty("Input", std::format("{}", maybePlayer->GetFrameInput().ToString()));
-	AddProperty("PlayerPos", std::format("{} m", playerEntity->m_Transform.m_Pos.ToString()));
+	AddProperty("PlayerPos", std::format("{} m", playerEntity->m_Transform.GetPos().ToString()));
 	AddProperty("PlayerVel", std::format("{} m/s", maybePhysics->GetVelocity().ToString(3, VectorForm::Component)));
 	AddProperty("PlayerAcc", std::format("{} m/s2", maybePhysics->GetAcceleration().ToString(3, VectorForm::Component)));
 	AddProperty("Grounded:", std::format("{}", std::to_string(maybePlayer->GetIsGrounded())));

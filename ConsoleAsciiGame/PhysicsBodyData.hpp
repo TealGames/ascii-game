@@ -14,6 +14,20 @@ namespace Physics
 	class PhysicsWorld;
 }
 
+struct MoveContraints
+{
+	/// <summary>
+	/// If TRUE, means the object cannot move in the x direction (left right)
+	/// </summary>
+	bool m_ConstrainX;
+	/// <summary>
+	/// If TRUE, the object cannot move in the Y direction (up down)
+	/// </summary>
+	bool m_ConstrainY;
+
+	MoveContraints(const bool constrainX = false, const bool constrainY = false);
+};
+
 //class CollisionBoxData;
 class PhysicsBodyData : public ComponentData
 {
@@ -44,8 +58,17 @@ private:
 
 	//TODO: maybe the physics sim should have its own gravity for all objects rather than each having their own?
 	float m_gravity;
+	/// <summary>
+	/// True if on a ground -> NOT experiencing any gravity acceleration 
+	/// </summary>
+	bool m_isGrounded;
 
 	Physics::PhysicsProfile m_profile;
+	/// <summary>
+	/// Constraints on the movement of this object. Note: if it is constrained, pos CAN still be changed
+	/// via transform, but physics system is limited in what position(s) it can change
+	/// </summary>
+	MoveContraints m_contraints;
 
 	const Physics::PhysicsWorld* m_physicsSimulation;
 
@@ -79,7 +102,7 @@ public:
 
 	const float& GetMass() const;
 	Vec2 GetMomentum() const;
-	bool ConservesMomentum() const;
+	bool HasMass() const;
 	const Physics::PhysicsProfile& GetPhysicsProfile() const;
 
 	const Vec2& GetVelocity() const;
@@ -87,7 +110,16 @@ public:
 	const float& GetGravity() const;
 	bool IsExperiencingGravity() const;
 
+	void SetIsGrounded(const bool grounded);
+	bool IsGrounded() const;
+
 	const CollisionBoxData& GetCollisionBox() const;
+
+	void SetConstraint(const MoveContraints& constraint);
+	MoveContraints GetConstraint() const;
+	bool HasXConstraint() const;
+	bool HasYConstraint() const;
+	bool HasAnyConstraints() const;
 
 	/*
 	const Physics::AABB& GetAABB() const;

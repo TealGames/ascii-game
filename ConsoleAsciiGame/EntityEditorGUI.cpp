@@ -19,8 +19,8 @@ EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneMa
 	Physics::PhysicsManager& physics, GUISelectorManager& selector)
 	: m_inputManager(input), m_sceneManager(scene), m_physicsManager(physics), m_selectorManager(selector),
 	m_defaultRenderInfo(), 
-	//m_selectedEntity(std::nullopt)
-	m_entityGUIs(), m_selectedEntity(m_entityGUIs.end())
+	m_selectedEntity(std::nullopt)
+	//m_entityGUIs(), m_selectedEntity(m_entityGUIs.end())
 {
 	ScreenPosition topLeftPos = Conversions::NormalizedScreenToPosition(TOP_LEFT_POS_NORMALIZED);
 	ScreenPosition topRightPos = Conversions::NormalizedScreenToPosition({ 1, 1 });
@@ -29,17 +29,17 @@ EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, const SceneMa
 
 void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 {
-	//m_selectedEntity = EntityGUI(m_inputManager, m_selectorManager, entity);
-	//m_selectedEntity.value().SetComponentsToStored();
+	m_selectedEntity = EntityGUI(m_inputManager, m_selectorManager, entity);
+	m_selectedEntity.value().SetComponentsToStored();
 
-	EntityGUICollection::iterator it = m_entityGUIs.find(entity.GetName());
+	/*EntityGUICollection::iterator it = m_entityGUIs.find(entity.GetName());
 	if (it == m_entityGUIs.end())
 	{
 		it = m_entityGUIs.emplace(entity.GetName(), EntityGUI(m_inputManager, m_selectorManager, entity)).first;
 	}
 
 	m_selectedEntity = it;
-	m_selectedEntity->second.SetComponentsToStored();
+	m_selectedEntity->second.SetComponentsToStored();*/
 }
 
 void EntityEditorGUI::Update(CameraData& mainCamera)
@@ -59,8 +59,8 @@ void EntityEditorGUI::Update(CameraData& mainCamera)
 		if (!entitiesWithinPos.empty())
 		{
 			ECS::Entity& selectedEntity = entitiesWithinPos[0]->GetEntitySafeMutable();
-			if (m_selectedEntity == m_entityGUIs.end() || selectedEntity != m_selectedEntity->second.GetEntity())
-			//if (!m_selectedEntity.has_value() || (selectedEntity!=m_selectedEntity.value().GetEntity()))
+			//if (m_selectedEntity == m_entityGUIs.end() || selectedEntity != m_selectedEntity->second.GetEntity())
+			if (!m_selectedEntity.has_value() || (selectedEntity!=m_selectedEntity.value().GetEntity()))
 			{
 				SetEntityGUI(selectedEntity);
 				//Log(std::format("Successfully selected entity: '{}'", m_selectedEntity->second.GetEntity().GetName()), false, true);
@@ -69,8 +69,8 @@ void EntityEditorGUI::Update(CameraData& mainCamera)
 		}
 	}
 
-	if (m_selectedEntity!= m_entityGUIs.end()) m_selectedEntity->second.Update();
-	//if (m_selectedEntity.has_value()) m_selectedEntity.value().Update();
+	//if (m_selectedEntity!= m_entityGUIs.end()) m_selectedEntity->second.Update();
+	if (m_selectedEntity.has_value()) m_selectedEntity.value().Update();
 }
 
 void EntityEditorGUI::TryRender()
@@ -81,11 +81,11 @@ void EntityEditorGUI::TryRender()
 
 ScreenPosition EntityEditorGUI::Render(const RenderInfo& renderInfo)
 {
-	//if (!m_selectedEntity.has_value()) return {};
-	//m_selectedEntity.value().Render(renderInfo);
+	if (!m_selectedEntity.has_value()) return {};
+	m_selectedEntity.value().Render(renderInfo);
 
-	if (m_selectedEntity == m_entityGUIs.end()) return {};
-	m_selectedEntity->second.Render(renderInfo);
+	//if (m_selectedEntity == m_entityGUIs.end()) return {};
+	//m_selectedEntity->second.Render(renderInfo);
 	
 	//Assert(false, "REDNER");
 	return renderInfo.m_RenderSize;

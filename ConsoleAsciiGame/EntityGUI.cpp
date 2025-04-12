@@ -8,15 +8,18 @@
 constexpr static float TITLE_FONT_SIZE = 20;
 
 EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, ECS::Entity& entity)
-	: m_inputManager(manager), m_entity(entity), m_componentGUIs(), 
-	m_entityNameText(m_entity.GetName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
+	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
+	m_entityNameText(m_entity->GetName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
 		EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center))
 {
 	//TODO: make sure to find a way to add/retrieve all components to then add here
 	//Assert(false, std::format("When adding all comps, entity: {} has:{}", entity.m_Name, std::to_string(entity.GetAllComponentsMutable().size())));
-	for (auto& comp : entity.GetAllComponentsMutable())
+	auto components = entity.GetAllComponentsMutable();
+	m_componentGUIs.reserve(components.size());
+	for (auto& comp : components)
 	{
-		m_componentGUIs.push_back(ComponentGUI(m_inputManager, selector, *this, comp));
+		if (comp == nullptr) continue;
+		m_componentGUIs.emplace_back(*m_inputManager, selector, *this, *comp);
 		//LogError(std::format("Found comp: {} for entity: {}", std::to_string(comp->GetFields().size()), entity.m_Name));
 	}
 	//Assert(false, "POOP");
@@ -96,5 +99,8 @@ ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 
 const ECS::Entity& EntityGUI::GetEntity() const
 {
-	return m_entity;
+	if (!Assert(this, m_entity != nullptr, std::format("Tried to get entity from entity GUI it is in an invalid state")))
+		throw std::invalid_argument("Invalid entity gui entity state");
+
+	return *m_entity;
 }

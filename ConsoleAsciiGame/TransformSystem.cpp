@@ -20,7 +20,7 @@ namespace ECS
 		scene.OperateOnComponents<TransformData>(
 			[](TransformData& transform, ECS::Entity& entity)->void
 			{
-				transform.m_LastFramePos = transform.m_Pos;
+				transform.SetLastFramePos(transform.GetPos());
 			});
 	}
 

@@ -4,6 +4,7 @@
 #include "IBasicRenderable.hpp"
 #include "DebugInfo.hpp"
 #include "ToggleGUI.hpp"
+#include "raylib.h"
 
 namespace Core
 {
@@ -43,9 +44,11 @@ private:
 
 	ToggleGUI m_pauseGameToggle;
 public:
+	static constexpr KeyboardKey PAUSE_TOGGLE_KEY = KEY_P;
 
 private:
 	void InitConsoleCommands(ECS::PlayerSystem& playerSystem);
+	void TogglePause();
 
 public:
 	EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics,

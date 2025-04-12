@@ -62,6 +62,8 @@ namespace Core
 	//TODO: consider when adding components to entities adding a blank component first and then setting entity so that the constructor with args can use entity pointer/transform data
 	//TODO; for entities try to remove the vector of compoennt data and intsead find a way to use the entity mapper to get all components
 	//TODO: pressed key state in input manager does not work (key down state lasts for the whole duration without any key press state activation -> maybe remove state?)
+	//TODO: make guisettings size enum of MinPossible (gets min size based on gui setting preferred size and area given during render) and MaxPossible that takes up full area given
+	//and then integrate into editor system with MinPossible and best sizes for each field and optimizing space use
 
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
@@ -120,13 +122,14 @@ namespace Core
 		m_collisionBoxSystem(m_collisionRegistry),
 		m_physicsBodySystem(m_physicsManager),
 		m_playerSystem(m_inputManager),
-		m_cameraSystem(&(m_physicsBodySystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
+		m_cameraSystem(&(m_collisionBoxSystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
 		m_particleEmitterSystem(),
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
 		m_timeKeeper(),
 		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_sceneManager, m_guiSelectorManager)
 	{
+
 		EngineLog("FINISHED SYSTEM MANAGERS INIT");
 
 		InitEngine(); 
@@ -227,7 +230,9 @@ namespace Core
 #endif 
 
 		m_timeKeeper.UpdateTimeStart();
-		const float deltaTime = m_timeKeeper.GetLastDeltaTime();
+		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
+		const float unscaledDeltaTime = m_timeKeeper.GetLastIndependentDeltaTime();
+
 		/*if (FRAME_LIMIT != -1 || SHOW_FPS)
 		{
 			std::cout<<std::format("[ENGINE]: FRAME: {}/{} DELTA_TIME: {} FPS:{} GraphicsFPS:{}\n--------------------------------------------\n",
@@ -302,10 +307,10 @@ namespace Core
 		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
 
-		m_transformSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
-		m_uiSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_transformSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+		m_uiSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 
-		m_inputManager.Update(deltaTime);
+		m_inputManager.Update(unscaledDeltaTime);
 		//if (m_enableDebugInfo)
 		//{
 		//	m_debugInfo.AddProperty("KeysDown", Utils::ToStringIterable<std::vector<std::string>, 
@@ -314,11 +319,11 @@ namespace Core
 
 		//m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<2>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
 
-		m_playerSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_playerSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 		//if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<0>().GetFrameInput().ToString()));
 
-		m_collisionBoxSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
-		m_physicsManager.GetPhysicsWorldMutable().UpdateStart(deltaTime);
+		m_collisionBoxSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+		m_physicsManager.GetPhysicsWorldMutable().UpdateStart(scaledDeltaTime);
 		/*if (m_enableDebugInfo)
 		{
 			m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
@@ -328,21 +333,21 @@ namespace Core
 			m_debugInfo.AddProperty("GroundDist:", std::format("{} m", std::to_string(m_playerInfo.value().GetAt<0>().GetVerticalDistanceToGround())));
 		}*/
 
-		m_physicsBodySystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_physicsBodySystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 	/*	Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
 			Conversions::WorldToScreenPosition(*mainCamera, m_playerInfo.value().m_Entity->m_Transform.m_Pos).ToString()));*/
 		
-		m_animatorSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
-		m_spriteAnimatorSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
-		m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_animatorSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+		m_spriteAnimatorSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+		m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 
 		/*LogError(this, std::format("Player visual: {} scene entities: {}", m_playerInfo.value().m_Entity->TryGetComponent<EntityRendererData>()->GetVisualData().ToString(), 
 			std::to_string(activeScene->GetEntityCount())));*/
-		LogError(this, std::format("Scene entities: {}", activeScene->ToString()));
+		//LogError(this, std::format("Scene entities: {}", activeScene->ToString()));
 		//LogError(activeScene->GetAllEntities()[0]->GetName());
 		
 		//TODO: it seems enttiy system is causing a stirng to long exception
-		m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 		
 		//LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
 		//	std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<1>(), *(m_obstacleInfo.value().m_Data))),
@@ -354,9 +359,9 @@ namespace Core
 		//	m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
 		//	m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));
 		//TODO: light system without any other problems drop frames to ~20 fps
-		m_lightSystem.SystemUpdate(*activeScene, mainCamera, deltaTime);
+		m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 
-		m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), deltaTime);
+		m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), scaledDeltaTime);
 		const TextBufferMixed& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
@@ -371,7 +376,7 @@ namespace Core
 		}*/
 
 		/*m_entityEditor.Update(mainCamera);*/
-		m_editor.Update(deltaTime, m_timeKeeper.GetTimeScale(), *activeScene, mainCamera);
+		m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale(), *activeScene, mainCamera);
 		m_guiSelectorManager.Update();
 		//Assert(false, std::format("Found selectables:{}", m_guiSelectorManager.T));
 
@@ -385,7 +390,6 @@ namespace Core
 		//else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
 
 		m_transformSystem.UpdateLastFramePos(*activeScene);
-		m_physicsManager.GetPhysicsWorldMutable().UpdateEnd();
 		//if (m_enableDebugInfo) m_debugInfo.ClearProperties();
 
 		//Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));

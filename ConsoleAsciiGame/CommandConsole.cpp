@@ -40,8 +40,8 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorMana
 			}
 		} });
 
-	OnMessageLogged.AddListener(
-		[this](const LogType& logType, const std::string& message, const bool& logToConsole)-> void
+	DebugProperties::OnMessageLogged.AddListener(
+		[this](const LogType& logType, const std::string& message, const bool& logToConsole, const bool& pause)-> void
 		{
 			if (!logToConsole) return;
 
@@ -203,7 +203,7 @@ void CommandConsole::LogOutputMessagesUnrestricted(const std::vector<std::string
 
 void CommandConsole::Update()
 {
-	if (m_inputManager.IsKeyDown(TOGGLE_COMMAND_CONSOLE_KEY))
+	if (m_inputManager.IsKeyPressed(TOGGLE_COMMAND_CONSOLE_KEY))
 	{
 		m_isEnabled = !m_isEnabled;
 	}

@@ -20,7 +20,7 @@ const static ScreenPosition MAX_INPUT_FIELD_SIZE = { 100, 20 };
 
 ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
 	const ComponentGUI& componentGUI, ComponentField& field)
-	: m_fieldInfo(field), m_inputFields(),m_checkbox(), m_inputManager(inputManager), m_componentGUI(&componentGUI), 
+	: m_fieldInfo(field), m_inputFields(), m_checkbox(), m_inputManager(inputManager), m_componentGUI(&componentGUI), 
 	m_fieldNameText(m_fieldInfo.m_FieldName, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
 		EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_SECONDARY_COLOR)
 {
@@ -301,7 +301,7 @@ ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Even
 
 		for (auto& field : m_inputFields)
 		{
-			renderActions.AddListener([currentPos, &inputFieldSpace, &field]() -> void
+			renderActions.AddListener([currentPos, inputFieldSpace, &field]() -> void
 				{
 					ScreenPosition size= field.Render(RenderInfo({ static_cast<int>(currentPos.x),
 														   static_cast<int>(currentPos.y) }, inputFieldSpace)); 
@@ -314,9 +314,14 @@ ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Even
 	else
 	{
 		//NOTE: unlike the fields which are big and need to be on new lines, we can render the name and checkbox on the same line
-		renderActions.AddListener([&]() -> void {ScreenPosition checkboxSize = m_checkbox.Render(RenderInfo(renderInfo.m_TopLeftPos,
-			ScreenPosition{ renderInfo.m_RenderSize.m_X, heightLeft })); });
-		currentPos.y += heightLeft;
+		renderActions.AddListener([this, currentPos, renderInfo, heightLeft, textSize]() -> void
+			{
+				m_checkbox.Render(RenderInfo(ScreenPosition(currentPos.x, currentPos.y),
+					ScreenPosition{ renderInfo.m_RenderSize.m_X, heightLeft })).m_Y;
+				//Assert(false, std::format("Rendering checkbox topL:{} currentPos:{}", renderInfo.m_TopLeftPos.ToString(), RaylibUtils::ToString(currentPos)));
+				//Assert(false, std::format("Checkbox size:{}", checkboxSize.ToString()));
+			});
+		//currentPos.y += heightLeft;
 	}
 
 	return { renderInfo.m_RenderSize.m_X, static_cast<int>(currentPos.y - renderInfo.m_TopLeftPos.m_Y) };

@@ -122,7 +122,7 @@ namespace ECS
         for (auto& buffer : buffers)
         {
             if (buffer == nullptr) continue;
-            CreateLightingForPoint(data, entity, entity.m_Transform.m_Pos, *buffer, false);
+            CreateLightingForPoint(data, entity, entity.m_Transform.GetPos(), *buffer, false);
 
             //Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
             //Log(std::format("Player Pos color: {}", RaylibUtils::ToString(buffer->GetAt(m_transform.m_Pos.GetFlipped())->m_Color)));

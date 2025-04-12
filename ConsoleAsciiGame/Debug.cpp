@@ -2,13 +2,17 @@
 #include "Debug.hpp"
 #include "StringUtil.hpp"
 
-std::string MessageFilter = "";
-LogType LogTypeFilter = LOG_TYPE_ALL;
+namespace DebugProperties
+{
+	std::string MessageFilter = "";
+	LogType LogTypeFilter = LOG_TYPE_ALL;
+	bool LogMessages = true;
 
-/// <summary>
-/// Where args are return type, log type, is logged to game console
-/// </summary>
-Event<void, LogType, std::string, bool> OnMessageLogged;
+	/// <summary>
+	/// Where args are return type, log type, LogToGameConsole, PauseOnMessage
+	/// </summary>
+	Event<void, LogType, std::string, bool, bool> OnMessageLogged;
+}
 
 std::optional<LogType> StringToLogType(const std::string& str)
 {
@@ -40,12 +44,59 @@ void LogWarning(const std::string& str, const bool& logTime, const bool& logToGa
 {
 	LogWarning<int>(nullptr, str, logTime, logToGameConsole);
 }
-void LogError(const std::string& str, const bool& logTime, const bool& logToGameConsole, const bool& showStackTrace)
+void LogError(const std::string& str, const bool& logTime, const bool& logToGameConsole, 
+	const bool& showStackTrace, const bool& pauseOnMesssageEnd)
 {
-	LogError<int>(nullptr, str, logTime, logToGameConsole, showStackTrace);
+	LogError<int>(nullptr, str, logTime, logToGameConsole, showStackTrace, pauseOnMesssageEnd);
 }
 
 bool Assert(const bool condition, const std::string& errMessage, const bool& showStackTrace)
 {
 	return Assert<int>(nullptr, condition, errMessage, showStackTrace);
+}
+
+namespace DebugProperties
+{
+	void SetLogMessages(const bool doLog)
+	{
+		LogMessages = doLog;
+	}
+
+	void SetLogMessageFilter(const std::string& message)
+	{
+		MessageFilter = message;
+	}
+	void ClearLogMessageFilter()
+	{
+		MessageFilter = "";
+	}
+	void SetLogTypeFilter(const LogType& logType)
+	{
+		LogTypeFilter = logType;
+	}
+	void AddLogTypeFilter(const LogType& logType)
+	{
+		LogTypeFilter |= logType;
+	}
+	void RemoveLogTypeFilter(const LogType& logType)
+	{
+		LogTypeFilter &= ~logType;
+	}
+	void SetAllLogTypeFilter()
+	{
+		LogTypeFilter = LOG_TYPE_ALL;
+	}
+	void SetNoneLogTypeFilter()
+	{
+		LogTypeFilter = LogType::None;
+	}
+	const LogType& GetLogTypeFilter()
+	{
+		return LogTypeFilter;
+	}
+	void ResetLogFilters()
+	{
+		ClearLogMessageFilter();
+		SetAllLogTypeFilter();
+	}
 }

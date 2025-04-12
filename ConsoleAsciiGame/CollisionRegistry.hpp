@@ -1,5 +1,4 @@
 #pragma once
-#include "pch.hpp"
 #include "CollisionBoxData.hpp"
 #include <unordered_map>
 #include <string>
@@ -14,6 +13,8 @@ struct CollisionPair
 	CollisionPair();
 	CollisionPair(CollisionBoxData& boxA, CollisionBoxData& boxB, 
 		const AABBIntersectionData& data, const MoveDirection& moveDir);
+
+	std::string ToString() const;
 };
 
 //TODO: perhaps find a way to use uint64 or similar for the keys (but then collision box system needs to store collision keys since 
@@ -39,26 +40,33 @@ public:
 	bool HasCollision(const CollisionBoxData& boxA) const;
 
 	bool TryAddCollision(const CollisionPair& collisionPair);
+	bool TryRemoveCollision(const CollisionPair& collisionPair);
 	bool TryRemoveCollision(const CollisionBoxData& boxA, const CollisionBoxData& boxB);
 
 	const CollisionPair* TryGetCollision(const CollisionBoxData& boxA, const CollisionBoxData& boxB) const;
 	std::vector<const CollisionPair*> TryGetCollisions(const CollisionBoxData& box) const;
 	std::vector<CollisionPair*> TryGetCollisionsMutable(const CollisionBoxData& box);
 
-	bool IsCollidingInDirs(const CollisionBoxData& box, const std::vector<MoveDirection>& dirs) const;
+	int GetCollisionsCount(const CollisionBoxData& box) const;
+
+	bool IsCollidingInDirs(const CollisionBoxData& box, const std::vector<MoveDirection>& dirs, const bool requireTouch=false) const;
+	std::vector<MoveDirection> TryGetCollisionDirs(const CollisionBoxData& box) const;
 	//const bool& IsCollidingWithAnyBody() const;
 
 	//CollidingBodiesCollection::iterator GetCollidingBodyIterator(const CollisionBoxData& collisionBox);
 	//bool IsValidCollidingBodyIterator(const CollidingBodiesCollection::iterator& removeBodyIterator) const;
 	//CollisionBoxData* TryGetCollidingBody(const CollisionBoxData& collisionBox);
 	//bool IsCollidingWithBody(const CollisionBoxData& collisionBox);
-	int GetTotalCollisions();
+	int GetTotalCollisionsCount();
+	void ExecuteOnAllCollisions(const std::function<void(CollisionPair&)>& collision);
 	/// <summary>
 	/// Returns the objects that this object collides with while preserving the order 
 	/// the collisions would have happened
 	/// </summary>
 	/// <returns></returns>
 	//const CollidingBodiesCollection& GetCollidingBodiesOrdered() const;
+
+	void ClearAll();
 
 	std::string ToStringCollidingBodies() const;
 };

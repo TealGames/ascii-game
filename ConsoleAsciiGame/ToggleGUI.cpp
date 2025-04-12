@@ -4,7 +4,7 @@
 #include "GUISelectorManager.hpp"
 #include <optional>
 
-static constexpr int MAX_HEIGHT = 10;
+static constexpr int MAX_HEIGHT = 15;
 
 ToggleGUI::ToggleGUI() : 
 	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
@@ -19,7 +19,8 @@ ToggleGUI::ToggleGUI(GUISelectorManager& manager, const bool& startValue, const 
 		{
 			//LogError("POOP");
 			ToggleValue();
-			Deselect(); 
+			self->Deselect();
+			//SetSettings({});
 		});
 }
 

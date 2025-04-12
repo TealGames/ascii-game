@@ -472,7 +472,8 @@ bool SceneAsset::TryLoadLevelBackground()
 	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));
 
 	CollisionBoxData& collisionBox = backgroundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(backgroundEntity.m_Transform, backgroundVisual.GetWorldSize(), { 0,0 }));
-	PhysicsBodyData& physicsBody = backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(collisionBox, 5));
+	PhysicsBodyData& physicsBody = backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(collisionBox, 10));
+	physicsBody.SetConstraint(MoveContraints(true, true));
 	/*LogWarning(std::format("Created Physics body: {} visual size: {}", physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), 
 		backgroundVisual.m_Text.GetSize().ToString()));*/
 }

@@ -1,5 +1,6 @@
 #include "pch.hpp"
 #include <cmath>
+#include <numbers>
 #include <string>
 #include <format>
 #include "HelperFunctions.hpp"
@@ -65,6 +66,10 @@ float Vec2::GetAngle(const AngleMode& angleMode) const
 		&& Utils::ApproximateEqualsF(m_Y, 0)) return 0;
 
 	float rad = std::atan2(m_Y, m_X);
+	//Since atan2 gives you result in [-pi/2, pi/2) we can flip negaative rads
+	//to their positive by doing full rotation other way
+	if (rad < 0) rad += 2 * std::numbers::pi;
+
 	if (angleMode == AngleMode::Degrees) return Utils::ToDegrees(rad);
 	
 	return rad;
@@ -77,9 +82,8 @@ float Vec2::GetMagnitude() const
 
 Vec2 Vec2::GetNormalized() const
 {
-	float magnitude = GetMagnitude();
-	if (!Assert(this, !Utils::ApproximateEqualsF(magnitude, 0),
-		std::format("Tried to normalize vector: {} but it has magnitude 0", ToString())))
+	const float magnitude = GetMagnitude();
+	if (Utils::ApproximateEqualsF(magnitude, 0))
 		return Vec2::ZERO;
 
 	return Vec2(m_X / magnitude, m_Y / magnitude);
@@ -162,9 +166,29 @@ Vec2 Vec2::operator/(const float& scalar) const
 
 bool Vec2::operator==(const Vec2& otherVec) const
 {
-	bool sameX = Utils::ApproximateEquals(m_X, otherVec.m_X);
-	bool sameY = Utils::ApproximateEquals(m_Y, otherVec.m_Y);
-	return sameX && sameY;
+	return Utils::ApproximateEquals(m_X, otherVec.m_X) && 
+		Utils::ApproximateEquals(m_Y, otherVec.m_Y);
+}
+
+bool Vec2::operator!=(const Vec2& other) const
+{
+	return !(*this == other);
+}
+bool Vec2::operator>(const Vec2& other) const
+{
+	return m_X > other.m_X && m_Y > other.m_Y;
+}
+bool Vec2::operator>=(const Vec2& other) const
+{
+	return m_X >= other.m_X && m_Y >= other.m_Y;
+}
+bool Vec2::operator<(const Vec2& other) const
+{
+	return m_X < other.m_X && m_Y < other.m_Y;
+}
+bool Vec2::operator<=(const Vec2& other) const
+{
+	return m_X <= other.m_X && m_Y <= other.m_Y;
 }
 
 Vec2& Vec2::operator=(const Vec2& other)
@@ -202,8 +226,7 @@ float GetYComponent(const float& speed, const float& angle, const AngleMode& mod
 
 Vec2 GetVector(const Vec2& startPos, const Vec2& endPos)
 {
-	Vec2 result(endPos.m_X - startPos.m_X, endPos.m_Y - startPos.m_Y);
-	return result;
+	return Vec2(endPos.m_X - startPos.m_X, endPos.m_Y - startPos.m_Y);
 }
 Vec2 GetVector(const Vec2& unitVector, const float& magnitude)
 {

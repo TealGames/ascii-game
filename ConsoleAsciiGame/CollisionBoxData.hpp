@@ -6,10 +6,17 @@
 struct AABBIntersectionData
 {
 	bool m_DoIntersect;
+	/// <summary>
+	/// The penetration vector of bodyB into bodyA
+	/// </summary>
 	Vec2 m_Depth;
 
 	AABBIntersectionData();
 	AABBIntersectionData(const bool& intersect, const Vec2& depth);
+
+	bool IsTouchingIntersection() const;
+
+	std::string ToString() const;
 };
 
 class TransformData;
@@ -30,8 +37,7 @@ private:
 	const TransformData& GetTransform() const;
 	const WorldPosition& GetCurrentPos() const;
 
-	const WorldPosition& GetGlobalMin() const;
-	const WorldPosition& GetGlobalMax() const;
+
 
 	CollisionBoxData(const TransformData* transform, const Vec2& size, const WorldPosition& transformOffset);
 
@@ -48,6 +54,9 @@ public:
 	//bool HasValidTransform() const;
 	//void SetTransform(const TransformData& transform);
 	const WorldPosition GetAABBCenterWorldPos() const;
+	const WorldPosition& GetGlobalMin() const;
+	const WorldPosition& GetGlobalMax() const;
+
 	const WorldPosition GetAABBTopLeftWorldPos() const;
 
 	/// <summary>
@@ -61,6 +70,12 @@ public:
 	bool DoIntersect(const WorldPosition& pos) const;
 	bool DoIntersect(const CollisionBoxData& otherBox) const;
 
+	/// <summary>
+	/// Returns intersection considering OTHERBOX as colliding with THISBOX
+	/// For example depth is how much OTHERBOX is inside THISBOX
+	/// </summary>
+	/// <param name="otherBox"></param>
+	/// <returns></returns>
 	AABBIntersectionData GetCollisionIntersectionData(const CollisionBoxData& otherBox) const;
 
 	/// <summary>
@@ -91,6 +106,7 @@ public:
 	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 	std::string ToString() const override;
+	std::string ToStringRelative() const;
 
 	void Deserialize(const Json& json) override;
 	Json Serialize() override;

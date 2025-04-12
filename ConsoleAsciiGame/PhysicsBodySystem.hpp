@@ -1,6 +1,6 @@
 #pragma once
 #include "MultiBodySystem.hpp"
-#include "ColliderOutlineBuffer.hpp"
+//#include "ColliderOutlineBuffer.hpp"
 #include "LineBuffer.hpp"
 #include "PhysicsManager.hpp"
 
@@ -9,7 +9,7 @@ namespace ECS
 	class PhysicsBodySystem : MultiBodySystem
 	{
 	private:
-		ColliderOutlineBuffer m_colliderOutlineBuffer;
+		//ColliderOutlineBuffer m_colliderOutlineBuffer;
 		LineBuffer m_lineBuffer;
 		Physics::PhysicsManager& m_physicsManager;
 
@@ -20,8 +20,8 @@ namespace ECS
 		PhysicsBodySystem(Physics::PhysicsManager& physicsManager);
 		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
 
-		const ColliderOutlineBuffer& GetColliderBuffer() const;
-		ColliderOutlineBuffer& GetColliderBufferMutable();
+		//const ColliderOutlineBuffer& GetColliderBuffer() const;
+		//ColliderOutlineBuffer& GetColliderBufferMutable();
 
 		const LineBuffer& GetLineBuffer() const;
 		LineBuffer& GetLineBufferMutable();

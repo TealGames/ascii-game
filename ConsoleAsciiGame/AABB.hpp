@@ -42,6 +42,7 @@ namespace Physics
 		/// <returns></returns>
 		WorldPosition GetWorldPos(const WorldPosition& centerPos, const NormalizedPosition& relativePos) const;
 
+		std::string ToString() const;
 		std::string ToString(const WorldPosition& transformPos) const;
 	};
 

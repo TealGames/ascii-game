@@ -7,7 +7,7 @@
 #include "GUIRect.hpp"
 
 using ToggleAction = std::function<void(bool isChecked)>;
-class ToggleGUI :  SelectableGUI, public IRenderable
+class ToggleGUI : public SelectableGUI, public IRenderable
 {
 private:
 	/// <summary>

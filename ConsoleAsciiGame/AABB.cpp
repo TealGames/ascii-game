@@ -44,8 +44,14 @@ namespace Physics
 
 	std::string AABB::ToString(const WorldPosition& transformPos) const
 	{
-		return std::format("[Min:{} Max:{} Size: {}]", GetGlobalMin(transformPos).ToString(), 
+		return std::format("[GMin:{} GMax:{} Size: {}]", GetGlobalMin(transformPos).ToString(), 
 			GetGlobalMax(transformPos).ToString(), GetSize().ToString());
+	}
+
+	std::string AABB::ToString() const
+	{
+		return std::format("[Min:{} Max:{} Size: {}]", m_MinPos.ToString(),
+			m_MaxPos.ToString(), GetSize().ToString());
 	}
 
 	/*

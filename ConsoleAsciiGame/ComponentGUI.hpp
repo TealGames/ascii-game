@@ -28,7 +28,7 @@ private:
 
 public:
 	ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector,
-		const EntityGUI& entityGUI, ComponentData* component);
+		const EntityGUI& entityGUI, ComponentData& component);
 	~ComponentGUI();
 	
 	void Update();

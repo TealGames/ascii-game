@@ -37,9 +37,9 @@ public:
 	bool IsInit() const;
 	void Init();
 
-	virtual void Select();
-	virtual void Deselect();
-	virtual void Click();
+	void Select();
+	void Deselect();
+	void Click();
 	bool IsSelected() const;
 
 	const GUIRect GetLastFrameRect() const;

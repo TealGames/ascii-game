@@ -37,6 +37,7 @@ void PlayerData::TrySetInitialJumpSpeed()
 	if (m_body == nullptr || m_maxJumpHeight < 0) return;
 
 	m_initialJumpSpeed = CalculateInitialJumpSpeed();
+	//Assert(false, std::format("Init speed:{}", std::to_string(m_initialJumpSpeed)));
 }
 
 const float& PlayerData::GetMoveSpeed() const

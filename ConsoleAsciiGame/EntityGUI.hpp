@@ -10,8 +10,8 @@ class GUISelectorManager;
 class EntityGUI : IRenderable
 {
 private:
-	const Input::InputManager& m_inputManager;
-	ECS::Entity& m_entity;
+	const Input::InputManager* m_inputManager;
+	ECS::Entity* m_entity;
 
 	std::vector<ComponentGUI> m_componentGUIs;
 	TextGUI m_entityNameText;

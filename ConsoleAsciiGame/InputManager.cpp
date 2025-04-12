@@ -37,7 +37,7 @@ namespace Input
 			if (profile == nullptr) continue;
 			m_profiles.emplace(profile->GetName(), profile);
 		}
-		LogError("Finished input manager");
+		//LogError("Finished input manager");
 
 		//std::string fileName = "";
 		//try
@@ -134,12 +134,12 @@ namespace Input
 		//We then check again (in case we might have left cooldown)
 		if (!inputState.InCooldown())
 		{
-			if (IsKeyDown(device, keyValue))
+			if (IsKeyPressed(device, keyValue)) inputState.SetState(KeyState::Pressed);
+			else if (IsKeyDown(device, keyValue))
 			{
 				inputState.SetState(KeyState::Down);
 				//LogError(this, std::format("INput state for; {} IS: {}", std::to_string(keyValue), ToString(inputState.GetState())));
 			}
-			else if (IsKeyPressed(device, keyValue)) inputState.SetState(KeyState::Pressed);
 			else if (IsKeyReleased(device, keyValue)) inputState.SetState(KeyState::Released);
 			else
 			{
@@ -198,6 +198,9 @@ namespace Input
 
 			key = ::GetKeyPressed();
 		}
+
+		/*if (IsKeyPressed(KeyboardKey::KEY_TAB)) Assert(false, std::format("PRESS TAB"));
+		LogWarning(std::format("Key state:{}", ToString(GetKeyState(KeyboardKey::KEY_TAB))));*/
 	}
 
 	/*void InputManager::AddProfile(const std::string& name, const std::filesystem::path& profilePath)

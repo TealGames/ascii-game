@@ -50,7 +50,7 @@ float Vec2Int::GetAngle(const AngleMode& angleMode) const
 	if (Utils::ApproximateEqualsF(m_X, 0)
 		&& Utils::ApproximateEqualsF(m_Y, 0)) return 0;
 
-	float rad = std::atan2(m_Y, m_X);
+	const float rad = std::atan2(m_Y, m_X);
 	if (angleMode == AngleMode::Degrees) return Utils::ToDegrees(rad);
 
 	return rad;
@@ -63,9 +63,8 @@ float Vec2Int::GetMagnitude() const
 
 Vec2Int Vec2Int::GetNormalized() const
 {
-	float magnitude = GetMagnitude();
-	if (!Assert(this, !Utils::ApproximateEqualsF(magnitude, 0),
-		std::format("Tried to normalize vector: {} but it has magnitude 0", ToString())))
+	const float magnitude = GetMagnitude();
+	if (!Utils::ApproximateEqualsF(magnitude, 0))
 		return Vec2Int::ZERO;
 
 	return Vec2Int(m_X / magnitude, m_Y / magnitude);
@@ -172,8 +171,7 @@ float GetDistance(const Vec2Int& vec1, const Vec2Int& vec2)
 
 Vec2Int GetVector(const Vec2Int& startPos, const Vec2Int& endPos)
 {
-	Vec2Int result(endPos.m_X - startPos.m_X, endPos.m_Y - startPos.m_Y);
-	return result;
+	return Vec2Int(endPos.m_X - startPos.m_X, endPos.m_Y - startPos.m_Y);
 }
 Vec2Int GetVector(const Vec2Int& unitVector, const float& magnitude)
 {

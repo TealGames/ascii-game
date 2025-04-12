@@ -237,8 +237,8 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 		{
 			currentTextChar[0] = m_Text.GetAtUnsafe({ r, c }).m_Char;
 			currentSize = MeasureTextEx(GetFont(), currentTextChar, GetFontSize(), 0);
-			Log(std::format("TEXT CHAR SIZE Char: {} of font size: {} at r: {} c: {} has size: {}", Utils::ToString(currentTextChar[0]),
-				std::to_string(GetFontSize()), std::to_string(r), std::to_string(c), RaylibUtils::ToString(currentSize)));
+			/*Log(std::format("TEXT CHAR SIZE Char: {} of font size: {} at r: {} c: {} has size: {}", Utils::ToString(currentTextChar[0]),
+				std::to_string(GetFontSize()), std::to_string(r), std::to_string(c), RaylibUtils::ToString(currentSize)));*/
 			//currentSize.y = m_font->baseSize;
 			if (currentSize.y > currentRowMaxHeight)
 			{
@@ -264,8 +264,8 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 			}
 		}
 
-		Log(std::format("Tried to make visual data now at row: {} has max colL: {} with char: {} of hieght: {}",
-			std::to_string(r), std::to_string(maxColHeight), Utils::ToString(maxColHeightChar), std::to_string(currentRowMaxHeight)));
+		/*Log(std::format("Tried to make visual data now at row: {} has max colL: {} with char: {} of hieght: {}",
+			std::to_string(r), std::to_string(maxColHeight), Utils::ToString(maxColHeightChar), std::to_string(currentRowMaxHeight)));*/
 
 		//Update the current total size based on the stored previous row and col sizes
 		previousRowsHeight += (currentRowMaxHeight + m_charSpacing.m_Y);

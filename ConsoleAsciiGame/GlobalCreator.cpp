@@ -29,6 +29,9 @@ namespace GlobalCreator
 
 		ECS::Entity& playerEntity = globalsManager.CreateGlobalEntity("player", TransformData(Vec2{ 10, 5 }));
 		CollisionBoxData& playerCollider = playerEntity.AddComponent<CollisionBoxData>(CollisionBoxData(playerEntity.m_Transform, Vec2(2, 2), Vec2(0, 0)));
+		/*Assert(false, std::format("Created player collider:{} min:{} max:{}", playerCollider.ToStringRelative(), 
+			playerCollider.GetGlobalMin().ToString(), playerCollider.GetGlobalMax().ToString()));*/
+
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(playerCollider, 1, GRAVITY, 20));
 
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));

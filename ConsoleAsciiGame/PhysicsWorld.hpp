@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <unordered_set>
+#include <cstdint>
 #include "Vec2.hpp"
 #include "WorldPosition.hpp"
 #include "CollisionRegistry.hpp"
@@ -13,6 +15,15 @@ namespace ECS
 
 namespace Physics
 {
+	enum class EntityType : std::uint8_t
+	{
+		A = 0,
+		B = 1,
+		AB = 2,
+	};
+	bool HasFlagEntityA(const EntityType& entityType);
+	bool HasFlagEntityB(const EntityType& entityType);
+
 	struct RaycastInfo
 	{
 		PhysicsBodyData* m_BodyHit = nullptr;
@@ -34,11 +45,18 @@ namespace Physics
 		PhysicsBodyCollection m_bodies;
 		CollisionRegistry& m_collisionRegistry;
 
+		/// <summary>
+		/// Stores a list of entity names that have had their collisions resolved this frame
+		/// mainly so certain functions should/should not be applied when an entity is marked with a collision resolved
+		/// </summary>
+		//TODO: perhaps this could be avoided by having a tag property on an entity that can be a const char*
+		std::unordered_set<std::string> m_nonGroundedCollidingEntities;
+
 	public:
 		/// <summary>
-		/// The max distance from another body that is still considered as a "collision"/ touching
+		/// The speed threshold to finish a bounce to prevent jittery behavior when the jump height becomes small
 		/// </summary>
-		static constexpr float BOUNCE_END_SPEED_THRESHOLD = 1;
+		static constexpr float BOUNCE_END_SPEED_THRESHOLD = 0.5;
 
 	private:
 		/// <summary>
@@ -47,12 +65,67 @@ namespace Physics
 		/// <param name="boxA"></param>
 		/// <param name="boxB"></param>
 		/// <returns></returns>
-		Vec2 GetCollisionNormal(const CollisionBoxData& boxA, const CollisionBoxData& boxB);
+		Vec2 GetCollisionNormalBodyB(const AABBIntersectionData& data);
+		//float CalculateImpulse(const PhysicsBodyData& targetObject, const PhysicsBodyData& collidedObject, const Vec2& collisionNormal);
 		float CalculateImpulse(const PhysicsBodyData& targetObject, const PhysicsBodyData& collidedObject, const Vec2& collisionNormal);
 
-		void HandleCollision(CollisionPair& collision);
+		/// <summary>
+		/// Will resolve collisions in a variety of manners:
+		/// -> first will push object out while still counting it as colliding but not interesecting in area
+		/// -> will attempt to use impulse (only if both have mass and are not constrained)
+		/// -> will then set new body velocities singularly (if one is constraiend) or both (none constrained)
+		/// Note: returns true if the colliding bodies are SEPARATED and NO LONGER COLLIDING (since simple push does not separate them from collision
+		/// and only moves it out to min possible area to be counted as collision it would return false)
+		/// </summary>
+		/// <param name="collision"></param>
+		/// <returns></returns>
+		void ResolveCollision(CollisionPair& collision, PhysicsBodyData* bodyA, PhysicsBodyData* bodyB);
+
 		void KinematicUpdate(const float& deltaTime, ECS::Entity& entity, 
 			PhysicsBodyData& body, const CollisionBoxData& collider);
+
+		/// <summary>
+		/// The basic type of collision resolution that will push the moved body out or the one which is not
+		/// constrained (will force move constrined one in edge case if both constrained) to a direction
+		/// This is by default applied to all collisions
+		/// </summary>
+		/// <param name="entityA"></param>
+		/// <param name="entityB"></param>
+		/// <param name="bodyA"></param>
+		/// <param name="bodyB"></param>
+		/// <param name="collision"></param>
+		void PushMovedBodyOut(ECS::Entity& entityA, ECS::Entity& entityB, 
+			PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const CollisionPair& collision);
+
+		/// <summary>
+		/// A type of collision resolution that will apply an impulse to both entities 
+		/// using their mass and incoming velocities as well as
+		/// their physics profile such as restitution settings
+		/// Note: only works when both have NO constraints, both have mass and velocities
+		/// </summary>
+		/// <param name="entityA"></param>
+		/// <param name="entityB"></param>
+		/// <param name="bodyA"></param>
+		/// <param name="bodyB"></param>
+		/// <param name="data"></param>
+		void ApplyImpulse(ECS::Entity& entityA, ECS::Entity& entityB,
+			PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& data);
+
+		/// <summary>
+		/// A type of collision resolution that will set the velocities of either entity A, B or both 
+		/// from restitution physics settings which dicatates how much velocity is left in normal collision 
+		/// direction and can thus be used to calcualte new velocities regardless of mass
+		/// Note: used when only one or none have mass values or when one body is constrained while the other is not
+		/// </summary>
+		/// <param name="entityA"></param>
+		/// <param name="entityB"></param>
+		/// <param name="bodyA"></param>
+		/// <param name="bodyB"></param>
+		/// <param name="data"></param>
+		/// <param name="updateEntityType"></param>
+		void SetVelocitiesFromRestitution(ECS::Entity& entityA, ECS::Entity& entityB,
+			PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& data, 
+			const EntityType updateEntityType);
 
 	public:
 		PhysicsWorld(CollisionRegistry& collisionRegistry);
@@ -65,7 +138,6 @@ namespace Physics
 		void ClearAllBodies();
 
 		void UpdateStart(const float& deltaTime);
-		void UpdateEnd();
 
 		/// <summary>
 		/// Will raycast from the origin using the ray with magnitude and direction using the slab method

@@ -52,15 +52,34 @@ std::string LogTypeToString(const LogType& logType);
 
 constexpr LogType LOG_TYPE_ALL = LogType::Log | LogType::Error | LogType::Warning;
 constexpr bool DEFAULT_LOG_TIME = true;
-constexpr bool DEFAULT_LOG_TO_GAME_CONSOLE= false;
-constexpr bool DEFAULT_SHOW_STACK_TRACE= false;
-constexpr bool THROW_ON_FAILED_ASSERT = true;
-constexpr bool THROW_ON_ALL_ERROR = false;
+constexpr bool DEFAULT_LOG_TO_GAME_CONSOLE = false;
+constexpr bool DEFAULT_SHOW_STACK_TRACE = false;
+constexpr bool DEFAULT_PAUSE_ON_MESSAGE = false;
 
-extern std::string MessageFilter;
-extern LogType LogTypeFilter;
+namespace DebugProperties
+{
+	constexpr bool THROW_ON_FAILED_ASSERT = true;
+	constexpr bool THROW_ON_ALL_ERROR = false;
+	constexpr bool PAUSE_ON_ERROR = true;
 
-extern Event<void, LogType, std::string, bool> OnMessageLogged;
+	extern bool LogMessages;
+	extern std::string MessageFilter;
+	extern LogType LogTypeFilter;
+
+	extern Event<void, LogType, std::string, bool, bool> OnMessageLogged;
+
+	void SetLogMessages(const bool doLog);
+		
+	void SetLogMessageFilter(const std::string& message);
+	void ClearLogMessageFilter();
+	void SetLogTypeFilter(const LogType& logType);
+	void AddLogTypeFilter(const LogType& logType);
+	void RemoveLogTypeFilter(const LogType& logType);
+	void SetAllLogTypeFilter();
+	void SetNoneLogTypeFilter();
+	const LogType& GetLogTypeFilter();
+	void ResetLogFilters();
+}
 
 /// <summary>
 /// Achieves the same as defualt log but also includes the class that called it
@@ -72,16 +91,17 @@ extern Event<void, LogType, std::string, bool> OnMessageLogged;
 template<typename T>
 void LogMessage(const T* const objPtr, const LogType& logType, const std::string& message, 
 	const bool& showStackTrace, const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, 
-	const char* overrideANSIColor= nullptr)
+	const char* overrideANSIColor= nullptr, const bool& pauseOnMessageDone= DEFAULT_PAUSE_ON_MESSAGE)
 {
 	//Log(logType, std::format("{}: {}", objPtr != nullptr ? typeid(T).name() : "", str), logTime);
 
-	//if (!DoLogMessages) return;
-	//if ((LOG_MESSAGE_TYPES & logType) != LogType::None) return;
-	if (!Utils::HasFlagAny(LogTypeFilter, logType)) return;
+	if (!DebugProperties::LogMessages) return;
 
-	if (!MessageFilter.empty() &&
-		message.substr(0, MessageFilter.size()) != MessageFilter) return;
+	//if ((LOG_MESSAGE_TYPES & logType) != LogType::None) return;
+	if (!Utils::HasFlagAny(DebugProperties::LogTypeFilter, logType)) return;
+
+	if (!DebugProperties::MessageFilter.empty() &&
+		message.substr(0, DebugProperties::MessageFilter.size()) != DebugProperties::MessageFilter) return;
 
 	std::string stackTraceMessage = message;
 	if (showStackTrace) stackTraceMessage += std::format("\n-------> STACK TRACE: {}", Utils::GetCurrentStackTrace());
@@ -121,8 +141,8 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 	
 	std::cout << fullMessage << std::endl;
 
-	if (THROW_ON_ALL_ERROR && (logType & LogType::Error) != LogType::None) throw std::invalid_argument(message);
-	OnMessageLogged.Invoke(logType, message, logToGameConsole);
+	if (DebugProperties::THROW_ON_ALL_ERROR && (logType & LogType::Error) != LogType::None) throw std::invalid_argument(message);
+	DebugProperties::OnMessageLogged.Invoke(logType, message, logToGameConsole, pauseOnMessageDone);
 }
 
 /// <summary>
@@ -176,9 +196,10 @@ void LogWarning(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME,
 /// <param name="logTime"></param>
 template<typename T>
 void LogError(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE)
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE, 
+	const bool& pauseOnMesssageEnd= DEFAULT_PAUSE_ON_MESSAGE)
 {
-	LogMessage<T>(objPtr, LogType::Error, str, showStackTrace, logTime, logToGameConsole);
+	LogMessage<T>(objPtr, LogType::Error, str, showStackTrace, logTime, logToGameConsole, nullptr, pauseOnMesssageEnd);
 }
 /// <summary>
 /// Logs a message as an ERROR type
@@ -186,7 +207,8 @@ void LogError(const T* const objPtr, const std::string& str, const bool& logTime
 /// <param name="str"></param>
 /// <param name="logTime"></param>
 void LogError(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE);
+	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE, 
+	const bool& pauseOnMesssageEnd = DEFAULT_PAUSE_ON_MESSAGE);
 
 /// <summary>
 /// If condition is false will log error and return false, othersise return true and does nothing
@@ -200,45 +222,7 @@ bool Assert(const T* const objPtr, const bool condition, const std::string& errM
 	if (!condition)
 	{
 		LogError<T>(objPtr, errMessage, DEFAULT_LOG_TIME, true, showStackTrace);
-		if (THROW_ON_FAILED_ASSERT) throw std::invalid_argument(errMessage);
+		if (DebugProperties::THROW_ON_FAILED_ASSERT) throw std::invalid_argument(errMessage);
 	}
 	return condition;
-}
-
-inline void SetLogMessageFilter(const std::string& message)
-{
-	MessageFilter = message;
-}
-inline void ClearLogMessageFilter()
-{
-	MessageFilter = "";
-}
-inline void SetLogTypeFilter(const LogType& logType)
-{
-	LogTypeFilter = logType;
-}
-inline void AddLogTypeFilter(const LogType& logType)
-{
-	LogTypeFilter |= logType;
-}
-inline void RemoveLogTypeFilter(const LogType& logType)
-{
-	LogTypeFilter &= ~logType;
-}
-inline void SetAllLogTypeFilter()
-{
-	LogTypeFilter = LOG_TYPE_ALL;
-}
-inline void SetNoneLogTypeFilter()
-{
-	LogTypeFilter = LogType::None;
-}
-inline const LogType& GetLogTypeFilter()
-{
-	return LogTypeFilter;
-}
-inline void ResetLogFilters()
-{
-	ClearLogMessageFilter();
-	SetAllLogTypeFilter();
 }
