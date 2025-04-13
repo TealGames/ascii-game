@@ -9,14 +9,13 @@
 #include "ToggleGUI.hpp"
 
 class GUISelectorManager;
-
 class ComponentGUI;
 
 class ComponentFieldGUI : IDelayedRenderable
 {
 private:
-	const Input::InputManager& m_inputManager;
-	ComponentField& m_fieldInfo;
+	const Input::InputManager* m_inputManager;
+	ComponentField* m_fieldInfo;
 	std::vector<InputField> m_inputFields;
 	ToggleGUI m_checkbox;
 
@@ -25,6 +24,9 @@ private:
 public:
 
 private:
+	const Input::InputManager& GetInputManager() const;
+	ComponentField& GetFieldInfo();
+
 public:
 	ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
 		const ComponentGUI& componentGUI, ComponentField& field);

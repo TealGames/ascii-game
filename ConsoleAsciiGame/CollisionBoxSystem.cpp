@@ -28,89 +28,80 @@ namespace ECS
 		int collisionsAdded = 0;
 
 		m_collisionRegistry.ClearAll();
-		scene.OperateOnComponents<CollisionBoxData>(
-			[&](CollisionBoxData& boxA, ECS::Entity& entityA) -> void
+		std::vector<CollisionBoxData*> boxes = {};
+		scene.GetComponentsMutable<CollisionBoxData>(boxes);
+		if (boxes.empty()) return;
+
+		for (auto& box : boxes)
+		{
+			box->UpdateCollisionStates();
+		}
+
+		for (auto& boxA : boxes)
+		{
+			if (boxA == nullptr) continue;
+
+			collision = {};
+			minBodyDisplacement = {};
+			minBodyDisplacementVec = {};
+
+			bounds.push_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntitySafe().GetName(), boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
+			if (RENDER_COLLIDER_OUTLINES)
 			{
-				collision = {};
-				minBodyDisplacement = {};
-				minBodyDisplacementVec = {};
+				/*if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
+					"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;*/
 
-				bounds.push_back(std::format("[ENTITY:{} BOX:{}]", entityA.GetName(), boxA.GetAABB().ToString(boxA.GetAABBCenterWorldPos())));
-				if (RENDER_COLLIDER_OUTLINES)
+					//WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
+				WorldPosition topLeftColliderPos = boxA->GetAABBTopLeftWorldPos();
+				//TODO: the camera should convert to screen pos not here
+				ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(mainCamera, topLeftColliderPos);
+				/*LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}",
+					entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
+
+					//m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body->GetAABB().GetSize(), topLeftScreenPos));
+				m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(boxA->GetAABB().GetSize(), topLeftScreenPos));
+			}
+
+			for (auto& boxB : boxes)
+			{
+				if (boxB == nullptr || boxA==boxB) continue;
+
+				//Note: we check to make sure we do not have existing collision so we do not consider the same collision
+						//twice and accidentally change state
+				bool hasThisCollision = m_collisionRegistry.HasCollision(*boxA, *boxB);
+				if (hasThisCollision) return;
+
+				//Intersection is handled as BODYA is the body that is colliding with BODYB (Pretending as though bodyb is not moving)
+				//NOTE: so we are essentially saying is BODY A encroaching on any other bodies space and if so do something
+				collision = boxA->GetCollisionIntersectionData(*boxB);
+
+				/*LogError(std::format("Found collisions: between{}({}) and {}({}) ->{}", boxA.ToString(), entityA.GetName(),
+					boxB.ToString(), entityB.GetName(), collision.ToString()));*/
+					//Assert(false, std::format("Checking collision"));
+				if (collision.m_DoIntersect)
 				{
-					/*if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
-						"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;*/
+					if (std::abs(collision.m_Depth.m_X) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_X = 0;
+					if (std::abs(collision.m_Depth.m_Y) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_Y = 0;
 
-						//WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
-					WorldPosition topLeftColliderPos = boxA.GetAABBTopLeftWorldPos();
-					//TODO: the camera should convert to screen pos not here
-					ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(mainCamera, topLeftColliderPos);
-					/*LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}",
-						entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
+					if (!Assert(this, TryAddCollisionToRegistry(*boxA, *boxB, collision), std::format("Tried to add collision:{} to "
+						"registry but something went wrong", collision.ToString())))
+						return;
 
-						//m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body->GetAABB().GetSize(), topLeftScreenPos));
-					m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(boxA.GetAABB().GetSize(), topLeftScreenPos));
+					//Note: internal implementation checks if they already have those collisions listed
+					boxA->TryAddCollidingBox(*boxB);
+					boxB->TryAddCollidingBox(*boxA);
+
+					//LogError(std::format("Box a has new box b flag:{}", ));
 				}
-
-				//TODO: improve the searching algorithm by adding a broad phase and narrow phase such as by having a 
-				// Bounding Volume Hierarhy for the narrow phase to reduce search time
-				scene.OperateOnComponents<CollisionBoxData>(
-					[&](CollisionBoxData& boxB, ECS::Entity& entityB) -> void
-					{
-						if (entityA == entityB) return;
-
-						bool hasThisCollision = m_collisionRegistry.HasCollision(boxA, boxB);
-						if (hasThisCollision) return;
-
-						//Intersection is handled as BODYA is the body that is colliding with BODYB (Pretending as though bodyb is not moving)
-						//NOTE: so we are essentially saying is BODY A encroaching on any other bodies space and if so do something
-						//collision = Physics::GetAABBIntersectionData(bodyBEntity.m_Transform.m_Pos, bodyB.GetAABB(), bodyAEntity.m_Transform.m_Pos, bodyA.GetAABB());
-
-						//Intersection is handled as BODYA is the body that is colliding with BODYB (Pretending as though bodyb is not moving)
-						//NOTE: so we are essentially saying is BODY A encroaching on any other bodies space and if so do something
-						collision = boxA.GetCollisionIntersectionData(boxB);
-
-						/*LogError(std::format("Found collisions: between{}({}) and {}({}) ->{}", boxA.ToString(), entityA.GetName(), 
-							boxB.ToString(), entityB.GetName(), collision.ToString()));*/
-						//Assert(false, std::format("Checking collision"));
-						if (collision.m_DoIntersect)
-						{ 
-							if (std::abs(collision.m_Depth.m_X) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_X = 0;
-							if (std::abs(collision.m_Depth.m_Y) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_Y = 0;
-
-							/*if (!Assert(this, collision.m_Depth.m_X!=0 && collision.m_Depth.m_Y!=0, std::format("Tried to check collision between:{}({}) and {}({}) "
-								"with intersecting from data TRUE but depth is 0:{}", boxA.ToString(), entityA.GetName(),
-								boxB.ToString(), entityB.GetName(), collision.ToString())))
-								return;*/
-
-							//Assert(false, std::format("Found intersecting collision"));
-							/*if (!hasThisCollision)
-							{
-								Assert(this, TryAddCollisionToRegistry(boxA, boxB, collision),
-									std::format("Attempted to add collision to collision box system but something went wrong"));
-								collisionsAdded++;
-							}*/
-							//return;
-
-							TryAddCollisionToRegistry(boxA, boxB, collision);
-						}
-
-						/*
-						//TODO: maybe we could work in min aabb displacement into depth of intersection data to prevent so many complex calculations
-						minBodyDisplacement = boxA.GetAABBMinDisplacement(boxB);
-						minBodyDisplacementVec = { std::abs(minBodyDisplacement.m_X), std::abs(minBodyDisplacement.m_Y) };
-						//If we pass intersect check (meaning we didnt intersect) and it was valid we can remove iterator if we pass
-						//the threshold in order to allow for some degree of touching to still be considered as colliding
-						if (hasThisCollision && minBodyDisplacementVec.GetMagnitude() > CollisionBoxData::MAX_DISTANCE_FOR_COLLISION)
-						{
-							//boxA.RemoveCollidingBody(entityACollisionBIt);
-							//Assert(false, std::format("Reached max distance for collision and exited"));
-							m_collisionRegistry.TryRemoveCollision(boxA, boxB);
-							collisionsAdded--;
-						}
-						*/
-					});
-			});
+				else
+				{
+					//If we do not have a collision, we try to remove those bodies in case they already were 
+					//stored before
+					boxA->TryRemoveCollidingBox(*boxB);
+					boxB->TryRemoveCollidingBox(*boxA);
+				}
+			}
+		}
 
 		/*LogError(std::format("All colliders:{} ------ COLLISIONS:{} REGISTRY:{}", Utils::ToStringIterable<std::vector<std::string>, std::string>(bounds),
 			std::to_string(collisionsAdded), m_collisionRegistry.ToStringCollidingBodies()));*/
@@ -134,8 +125,8 @@ namespace ECS
 			return false;
 		}
 
-		LogError(std::format("Entity:{} Has collision with:{} on dira:{} ({})", boxA.GetEntitySafe().GetName(), 
-			boxB.GetEntitySafe().GetName(), collidingDir.ToString(), ToString(maybeDirType.value())));
+		/*LogError(std::format("Entity:{} Has collision with:{} on dira:{} ({})", boxA.GetEntitySafe().GetName(), 
+			boxB.GetEntitySafe().GetName(), collidingDir.ToString(), ToString(maybeDirType.value())));*/
 		return m_collisionRegistry.TryAddCollision(CollisionPair(boxA, boxB, intersection, maybeDirType.value()));
 	}
 
@@ -148,5 +139,21 @@ namespace ECS
 	ColliderOutlineBuffer& CollisionBoxSystem::GetColliderBufferMutable()
 	{
 		return m_colliderOutlineBuffer;
+	}
+
+	std::vector<CollisionBoxData*> CollisionBoxSystem::FindBodiesContainingPos(Scene& scene, const WorldPosition& worldPos) const
+	{
+		std::vector<CollisionBoxData*> bodiesFound = {};
+
+		scene.OperateOnComponents<CollisionBoxData>(
+			[&bodiesFound, &worldPos](CollisionBoxData& box, ECS::Entity& entity) -> void
+			{
+				if (box.DoIntersect(worldPos))
+				{
+					bodiesFound.push_back(&box);
+				}
+			});
+
+		return bodiesFound;
 	}
 }

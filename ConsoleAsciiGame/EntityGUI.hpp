@@ -4,6 +4,7 @@
 #include "InputManager.hpp"
 #include "Entity.hpp"
 #include "ComponentGUI.hpp"
+#include "ToggleGUI.hpp"
 
 class GUISelectorManager;
 
@@ -15,11 +16,13 @@ private:
 
 	std::vector<ComponentGUI> m_componentGUIs;
 	TextGUI m_entityNameText;
+	ToggleGUI m_activeToggle;
 public:
 
 private:
 public:
 	EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, ECS::Entity& entity);
+	~EntityGUI();
 
 	void Update();
 	void SetComponentsToStored();

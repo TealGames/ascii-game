@@ -64,6 +64,7 @@ namespace Core
 	//TODO: pressed key state in input manager does not work (key down state lasts for the whole duration without any key press state activation -> maybe remove state?)
 	//TODO: make guisettings size enum of MinPossible (gets min size based on gui setting preferred size and area given during render) and MaxPossible that takes up full area given
 	//and then integrate into editor system with MinPossible and best sizes for each field and optimizing space use
+	//TODO: when pressing the toggle on the editor for gameobject active the program crashes
 
 	static constexpr std::uint8_t TARGET_FPS = 60;
 
@@ -124,10 +125,12 @@ namespace Core
 		m_playerSystem(m_inputManager),
 		m_cameraSystem(&(m_collisionBoxSystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
 		m_particleEmitterSystem(),
+		m_triggerSystem(),
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
 		m_timeKeeper(),
-		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_sceneManager, m_guiSelectorManager)
+		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, 
+			m_sceneManager, m_cameraController, m_guiSelectorManager, m_collisionBoxSystem)
 	{
 
 		EngineLog("FINISHED SYSTEM MANAGERS INIT");
@@ -334,6 +337,7 @@ namespace Core
 		}*/
 
 		m_physicsBodySystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+		m_triggerSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 	/*	Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
 			Conversions::WorldToScreenPosition(*mainCamera, m_playerInfo.value().m_Entity->m_Transform.m_Pos).ToString()));*/
 		
@@ -376,8 +380,8 @@ namespace Core
 		}*/
 
 		/*m_entityEditor.Update(mainCamera);*/
-		m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale(), *activeScene, mainCamera);
 		m_guiSelectorManager.Update();
+		m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale(), *activeScene, mainCamera);
 		//Assert(false, std::format("Found selectables:{}", m_guiSelectorManager.T));
 
 		//TODO: rendering buffer drops frames

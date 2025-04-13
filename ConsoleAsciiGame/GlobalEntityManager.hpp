@@ -68,41 +68,6 @@ public:
 	const std::vector<ECS::Entity>& GetAllGlobalEntities() const;
 	std::vector<ECS::Entity>& GetAllGlobalEntitiesMutable();
 
-	/*template<typename T>
-	std::vector<T*> TryGetComponentsOfType(const ComponentType& type, 
-		const std::function<void(T*, const EntityID&)>& action = nullptr)
-	{
-		return m_globalEntityMapper.TryGetComponentsOfType<T>(type, action);
-	}*/
-
-	/*template<typename T>
-	bool AddComponent(ECS::Entity& entity, const T& component)
-	{
-		return entity.AddComponent<T>(component);
-	}
-
-	template<typename T>
-	bool AddComponent(const ECS::EntityID& id, const T& component)
-	{
-		auto iterator = GetGlobalEntityIteratorMutable(id);
-		if (!Assert(this, IsValidIterator(iterator), std::format("Tried to add component: {} "
-			"to global entity by ID: {} but it does not exist as a global entity",
-			typeid(T).name(), std::to_string(id)))) return false;
-
-		return iterator->second->AddComponent<T>(component);
-	}
-
-	template<typename T>
-	bool AddComponent(const std::string& name, const T& component)
-	{
-		auto iterator = GetGlobalEntityIteratorMutable(name);
-		if (!Assert(this, IsValidIterator(iterator), std::format("Tried to add component: {} "
-			"to global entity by NAME: {} but it does not exist as a global entity",
-			typeid(T).name(), name))) return false;
-
-		return iterator->second->AddComponent<T>(component);
-	}*/
-
 	template<typename T>
 	requires ECS::IsComponent<T>
 	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)
@@ -112,42 +77,17 @@ public:
 			{
 				return TryGetGlobalEntityMutable(id);
 			}, action);
+	}
 
-		/*
-		auto view = m_globalEntityMapper.view<T>();
-		for (auto entityId : view)
-		{
-			ECS::Entity* entityPtr = TryGetGlobalEntityMutable(entityId);
-			if (!Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
-				"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
-				typeid(T).name(), ECS::Entity::ToString(entityId)))) 
-				return;
-
-			if (!entityPtr->m_Active) continue;
-
-			T* component = &(view.get<T>(entityId));
-			ComponentData* componentBase = static_cast<ComponentData*>(component);
-			if (!componentBase->m_IsEnabled) continue;
-
-			action(*component, *entityPtr);
-		}
-		*/
-		/*const ComponentType type = GetComponentFromType<T>();
-		if (!Assert(type != ComponentType::None, std::format("Tried to operate on component type: {} "
-			"but failed to retrieve its enum value", typeid(T).name()))) return;
-
-		std::function<void(T*, const EntityID&)> actions = [this, &action](T* component, const EntityID& id)-> void
+	template<typename T>
+	requires ECS::IsComponent<T>
+	void GetComponents(std::vector<T*>& inputVec)
+	{
+		ECS::GetRegistryComponentsMutable<T>(m_globalEntityMapper,
+			[this](const ECS::EntityID id)->ECS::Entity*
 			{
-				ECS::Entity* entityPtr = TryGetEntity(id);
-				if (!Assert(entityPtr != nullptr, std::format("Tried to operate on component type: {} "
-					"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
-					typeid(T).name(), std::to_string(id)))) return;
-
-				action(*component, *entityPtr);
-			};
-
-		m_entityMapper.TryGetComponentsOfType<T>(type,actions);
-		m_globalEntities.TryGetComponentsOfType<T>(type,actions);*/
+				return TryGetGlobalEntityMutable(id);
+			}, inputVec);
 	}
 };
 

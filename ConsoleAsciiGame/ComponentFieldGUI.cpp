@@ -20,8 +20,8 @@ const static ScreenPosition MAX_INPUT_FIELD_SIZE = { 100, 20 };
 
 ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
 	const ComponentGUI& componentGUI, ComponentField& field)
-	: m_fieldInfo(field), m_inputFields(), m_checkbox(), m_inputManager(inputManager), m_componentGUI(&componentGUI), 
-	m_fieldNameText(m_fieldInfo.m_FieldName, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
+	: m_fieldInfo(&field), m_inputFields(), m_checkbox(), m_inputManager(&inputManager), m_componentGUI(&componentGUI), 
+	m_fieldNameText(GetFieldInfo().m_FieldName, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
 		EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_SECONDARY_COLOR)
 {
 	/*if (m_fieldInfo.IsCurrentType<Vec2>()) 
@@ -31,47 +31,47 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	//Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Vec2*>(m_fieldInfo.m_Value)->ToString()));
 
 	InputFieldFlag fieldFlags = InputFieldFlag::None;
-	if (m_fieldInfo.IsReadonly()) fieldFlags |= InputFieldFlag::UserUIReadonly;
+	if (GetFieldInfo().IsReadonly()) fieldFlags |= InputFieldFlag::UserUIReadonly;
 
 	GUISettings fieldSettings = GUISettings(MAX_INPUT_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
 		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(0, GetGlobalFont()), EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center, FIELD_FONT_FACTOR));
 	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
 		std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
 
-	if (m_fieldInfo.IsCurrentType<int>() || m_fieldInfo.IsCurrentType<std::uint8_t>())
+	if (GetFieldInfo().IsCurrentType<int>() || GetFieldInfo().IsCurrentType<std::uint8_t>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Integer, fieldFlags, fieldSettings));
+		m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::Integer, fieldFlags, fieldSettings));
 	}
-	else if (m_fieldInfo.IsCurrentType<float>())
+	else if (GetFieldInfo().IsCurrentType<float>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, fieldSettings));
+		m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::Float, fieldFlags, fieldSettings));
 	}
-	else if (m_fieldInfo.IsCurrentType<bool>())
+	else if (GetFieldInfo().IsCurrentType<bool>())
 	{
 		m_checkbox = ToggleGUI(selector, false, fieldSettings);
 	}
-	else if (m_fieldInfo.IsCurrentType<std::string>())
+	else if (GetFieldInfo().IsCurrentType<std::string>())
 	{
-		m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::String, fieldFlags, fieldSettings));
+		m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::String, fieldFlags, fieldSettings));
 	}
-	else if (m_fieldInfo.IsCurrentType<Vec2>())
+	else if (GetFieldInfo().IsCurrentType<Vec2>())
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Float, fieldFlags, fieldSettings));
+			m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::Float, fieldFlags, fieldSettings));
 		}
 	}
-	else if (m_fieldInfo.IsCurrentType<Vec2Int>())
+	else if (GetFieldInfo().IsCurrentType<Vec2Int>())
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.push_back(InputField(m_inputManager, selector, InputFieldType::Integer, fieldFlags, fieldSettings));
+			m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::Integer, fieldFlags, fieldSettings));
 		}
 	}
 	else
 	{
 		LogError(this, std::format("Tried to construct component field GUI for property: '{}' "
-			"but could not find any actions for its type: {}", m_fieldInfo.m_FieldName, m_fieldInfo.GetCurrentType().name()));
+			"but could not find any actions for its type: {}", GetFieldInfo().m_FieldName, GetFieldInfo().GetCurrentType().name()));
 	}
 }
 
@@ -80,35 +80,50 @@ ComponentFieldGUI::~ComponentFieldGUI()
 	//LogError("Destroyed compoent field GUI");
 }
 
+const Input::InputManager& ComponentFieldGUI::GetInputManager() const
+{
+	if (!Assert(this, m_inputManager != nullptr, std::format("Tried to get Input Manager but it is null")))
+		throw std::invalid_argument("Invalid input manager state");
+
+	return *m_inputManager;
+}
+ComponentField& ComponentFieldGUI::GetFieldInfo()
+{
+	if (!Assert(this, m_fieldInfo != nullptr, std::format("Tried to get field info but it is NULL")))
+		throw std::invalid_argument("Invalid field info");
+
+	return *m_fieldInfo;
+}
+
 void ComponentFieldGUI::SetFieldToInternal()
 {
 	//Assert(false, std::format("Type for field is: {}", m_fieldInfo.GetCurrentType().name()));
-	if (m_fieldInfo.IsCurrentType<int>())
+	if (GetFieldInfo().IsCurrentType<int>())
 	{
-		m_inputFields[0].OverrideInput(std::to_string(*(m_fieldInfo.TryGetValue<int>())));
+		m_inputFields[0].OverrideInput(std::to_string(*(GetFieldInfo().TryGetValue<int>())));
 	}
-	else if (m_fieldInfo.IsCurrentType<std::uint8_t>())
+	else if (GetFieldInfo().IsCurrentType<std::uint8_t>())
 	{
-		m_inputFields[0].OverrideInput(std::to_string(*(m_fieldInfo.TryGetValue<std::uint8_t>())));
+		m_inputFields[0].OverrideInput(std::to_string(*(GetFieldInfo().TryGetValue<std::uint8_t>())));
 	}
-	else if (m_fieldInfo.IsCurrentType<float>())
+	else if (GetFieldInfo().IsCurrentType<float>())
 	{
-		m_inputFields[0].OverrideInput(std::to_string(*(m_fieldInfo.TryGetValue<float>())));
+		m_inputFields[0].OverrideInput(std::to_string(*(GetFieldInfo().TryGetValue<float>())));
 	}
-	else if (m_fieldInfo.IsCurrentType<bool>())
+	else if (GetFieldInfo().IsCurrentType<bool>())
 	{
-		m_checkbox.SetValue(*(m_fieldInfo.TryGetValue<bool>()));
+		m_checkbox.SetValue(*(GetFieldInfo().TryGetValue<bool>()));
 	}
-	else if (m_fieldInfo.IsCurrentType<std::string>())
+	else if (GetFieldInfo().IsCurrentType<std::string>())
 	{
 		//Assert(false, "POOP");
-		const std::string* str = m_fieldInfo.TryGetValue<std::string>();
+		const std::string* str = GetFieldInfo().TryGetValue<std::string>();
 		//Assert(false, std::format("String FOR COMPOENNT FIELD IS: {}", str == nullptr ? "NULL" : *str));
 		m_inputFields[0].OverrideInput(*str);
 	}
-	else if (m_fieldInfo.IsCurrentType<Vec2>())
+	else if (GetFieldInfo().IsCurrentType<Vec2>())
 	{
-		const Vec2* point = m_fieldInfo.TryGetValue<Vec2>();
+		const Vec2* point = GetFieldInfo().TryGetValue<Vec2>();
 		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
 
 		m_inputFields[0].OverrideInput(std::to_string(point->m_X));
@@ -117,16 +132,16 @@ void ComponentFieldGUI::SetFieldToInternal()
 		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
 		//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
 	}
-	else if (m_fieldInfo.IsCurrentType<Vec2Int>())
+	else if (GetFieldInfo().IsCurrentType<Vec2Int>())
 	{
-		const Vec2Int* point = m_fieldInfo.TryGetValue<Vec2Int>();
+		const Vec2Int* point = GetFieldInfo().TryGetValue<Vec2Int>();
 		m_inputFields[0].OverrideInput(std::to_string(point->m_X));
 		m_inputFields[1].OverrideInput(std::to_string(point->m_Y));
 	}
 	else
 	{
 		LogError(this, std::format("Tried to set field to internal value for property: '{}' "
-			"but could not find any actions for its type", m_fieldInfo.m_FieldName));
+			"but could not find any actions for its type", GetFieldInfo().m_FieldName));
 		return;
 	}
 
@@ -157,53 +172,53 @@ void ComponentFieldGUI::SetFieldToInternal()
 }
 void ComponentFieldGUI::SetInternalWithInput()
 {
-	if (m_fieldInfo.IsReadonly()) return;
+	if (GetFieldInfo().IsReadonly()) return;
 
-	LogError(std::format("Getting internal input and setting it. is point: {} field name: {} is point: {}", 
-		m_fieldInfo.GetCurrentType().name(), m_fieldInfo.m_FieldName, std::to_string(m_fieldInfo.IsCurrentType<Vec2>())));
+	/*LogError(std::format("Getting internal input and setting it. is point: {} field name: {} is point: {}", 
+		m_fieldInfo.GetCurrentType().name(), m_fieldInfo.m_FieldName, std::to_string(m_fieldInfo.IsCurrentType<Vec2>())));*/
 
-	if (m_fieldInfo.IsCurrentType<int>())
+	if (GetFieldInfo().IsCurrentType<int>())
 	{
-		LogError("REAHCED INT");
+		//LogError("REAHCED INT");
 		//LogError(std::format("Setting internal value with: {}", std::to_string(m_inputFields[0].GetIntInput())));
-		m_fieldInfo.TrySetValue<int>(m_inputFields[0].GetIntInput());
+		GetFieldInfo().TrySetValue<int>(m_inputFields[0].GetIntInput());
 	}
-	else if (m_fieldInfo.IsCurrentType<std::uint8_t>())
+	else if (GetFieldInfo().IsCurrentType<std::uint8_t>())
 	{
-		LogError("REAHCED UNISGNED INT");
+		//LogError("REAHCED UNISGNED INT");
 		//LogError(std::format("Setting internal value with: {}", std::to_string(m_inputFields[0].GetIntInput())));
 		std::uint8_t convertedValue = static_cast<std::uint8_t>(std::abs(m_inputFields[0].GetIntInput()));
-		m_fieldInfo.TrySetValue<std::uint8_t>(convertedValue);
+		GetFieldInfo().TrySetValue<std::uint8_t>(convertedValue);
 	}
-	else if (m_fieldInfo.IsCurrentType<float>())
+	else if (GetFieldInfo().IsCurrentType<float>())
 	{
-		LogError("REAHCED FLOAT");
-		m_fieldInfo.TrySetValue<float>(m_inputFields[0].GetFloatInput());
+		//LogError("REAHCED FLOAT");
+		GetFieldInfo().TrySetValue<float>(m_inputFields[0].GetFloatInput());
 	}
-	else if (m_fieldInfo.IsCurrentType<bool>())
+	else if (GetFieldInfo().IsCurrentType<bool>())
 	{
-		m_fieldInfo.TrySetValue<bool>(m_checkbox.IsToggled());
+		GetFieldInfo().TrySetValue<bool>(m_checkbox.IsToggled());
 	}
-	else if (m_fieldInfo.IsCurrentType<std::string>())
+	else if (GetFieldInfo().IsCurrentType<std::string>())
 	{
-		LogError("REAHCED STRINGF");
-		m_fieldInfo.TrySetValue<std::string>(m_inputFields[0].GetInput());
+		//LogError("REAHCED STRINGF");
+		GetFieldInfo().TrySetValue<std::string>(m_inputFields[0].GetInput());
 	}
-	else if (m_fieldInfo.IsCurrentType<Vec2>())
+	else if (GetFieldInfo().IsCurrentType<Vec2>())
 	{
 		//m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput()
-		LogError("REAHCED POINT");
-		m_fieldInfo.TrySetValue<Vec2>({ m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput() });
+		//LogError("REAHCED POINT");
+		GetFieldInfo().TrySetValue<Vec2>({ m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput() });
 		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
 
 		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
 		//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
 	}
-	else if (m_fieldInfo.IsCurrentType<Vec2Int>())
+	else if (GetFieldInfo().IsCurrentType<Vec2Int>())
 	{
 		//m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput()
-		LogError("REAHCED POINT");
-		m_fieldInfo.TrySetValue<Vec2Int>({ m_inputFields[0].GetIntInput(), m_inputFields[1].GetIntInput() });
+		//LogError("REAHCED POINT");
+		GetFieldInfo().TrySetValue<Vec2Int>({ m_inputFields[0].GetIntInput(), m_inputFields[1].GetIntInput() });
 		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
 
 		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
@@ -211,9 +226,9 @@ void ComponentFieldGUI::SetInternalWithInput()
 	}
 	else
 	{
-		LogError("REAHCED ERROR");
+		//LogError("REAHCED ERROR");
 		LogError(this, std::format("Tried to set internal value with input for property: '{}' "
-			"but could not find any actions for its type", m_fieldInfo.m_FieldName));
+			"but could not find any actions for its type", GetFieldInfo().m_FieldName));
 	}
 }
 
@@ -224,7 +239,7 @@ void ComponentFieldGUI::Update()
 		for (auto& inputField : m_inputFields)
 		{
 			inputField.Update();
-			LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
+			//LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
 		}
 	}
 	else m_checkbox.Update();
@@ -305,7 +320,7 @@ ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Even
 				{
 					ScreenPosition size= field.Render(RenderInfo({ static_cast<int>(currentPos.x),
 														   static_cast<int>(currentPos.y) }, inputFieldSpace)); 
-					LogError(std::format("Input field has size: {}", size.ToString()));
+					//LogError(std::format("Input field has size: {}", size.ToString()));
 				});
 			currentPos.x += inputFieldSpace.m_X;
 		}
@@ -329,13 +344,13 @@ ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Even
 
 const ComponentField& ComponentFieldGUI::GetFieldInfo() const
 {
-	return m_fieldInfo;
+	return GetFieldInfo();
 }
 
 const ComponentGUI& ComponentFieldGUI::GetComponentGUISafe() const
 {
 	if (!Assert(this, m_componentGUI != nullptr, std::format("Tried to get component GUI "
-		"from a field named : '{}'", m_fieldInfo.ToString())))
+		"from a field named : '{}'", GetFieldInfo().ToString())))
 	{
 		throw std::invalid_argument("Failed to retrieve entity gui");
 	}

@@ -9,7 +9,8 @@
 static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
 
 GUISelectorManager::GUISelectorManager(const Input::InputManager& input) 
-	: m_inputManager(input), m_selectables(), m_currentSelected(nullptr), m_lastFrameClickedPosition()
+	: m_inputManager(input), m_selectables(), m_currentSelected(nullptr), 
+	m_lastFrameClickedPosition(), m_selectedThisFrame(false)
 {
 
 }
@@ -49,6 +50,8 @@ void GUISelectorManager::Update()
 	}
 
 	m_lastFrameClickedPosition = std::nullopt;
+	if (m_currentSelected != nullptr && m_selectedThisFrame) m_selectedThisFrame = false;
+
 	if (!m_selectables.empty() && m_inputManager.GetInputKey(SELECT_KEY)->GetState().IsReleased())
 	{
 		m_lastFrameClickedPosition= m_inputManager.GetMousePosition();
@@ -68,6 +71,8 @@ void GUISelectorManager::Update()
 			{
 				ClickSelectable(selectable);
 				SelectNewSelectable(selectable);
+				m_selectedThisFrame = true;
+
 				/*Assert(false, std::format("Mouse pos: {} selectable null: {} rect: {}", mousePos.ToString(),
 					std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL"));*/
 				//LogError(std::format("CLICKED ON NEW SELECTABLE"));
@@ -130,4 +135,8 @@ const SelectableGUI* GUISelectorManager::TryGetSelectableSelected() const
 std::optional<ScreenPosition> GUISelectorManager::GetLastFrameClickedPosition() const
 {
 	return m_lastFrameClickedPosition;
+}
+bool GUISelectorManager::SelectedSelectableThisFrame() const
+{
+	return m_selectedThisFrame;
 }

@@ -1,7 +1,9 @@
 #pragma once
+#include <cstdint>
 #include "AABB.hpp"
 #include "ComponentData.hpp"
 #include "IValidateable.hpp"
+#include <unordered_map>
 
 struct AABBIntersectionData
 {
@@ -19,13 +21,33 @@ struct AABBIntersectionData
 	std::string ToString() const;
 };
 
+enum class CollisionFlag : std::uint8_t
+{
+	None=				0,
+	AddedThisFrame=		1,
+	RemovedThisFrame=	2,
+};
+std::string ToString(const CollisionFlag flag);
+
+class CollisionBoxData;
+struct CollidingBoxInfo
+{
+	const CollisionBoxData* m_Box;
+	CollisionFlag m_Flag;
+
+	CollidingBoxInfo(const CollisionBoxData& box, const CollisionFlag& flag);
+};
+
 class TransformData;
+using CollidingInfoCollection = std::vector<CollidingBoxInfo>;
 class CollisionBoxData : public ComponentData
 {
 private:
 	Physics::AABB m_aabb;
 	WorldPosition m_transformOffset;
 	const TransformData* m_transform;
+
+	CollidingInfoCollection m_collidingBoxes;
 
 	//CollidingBodiesCollection m_collidingBodies;
 
@@ -38,13 +60,28 @@ private:
 	const WorldPosition& GetCurrentPos() const;
 
 
-
 	CollisionBoxData(const TransformData* transform, const Vec2& size, const WorldPosition& transformOffset);
+
+	CollidingInfoCollection::iterator TryGetCollidingBoxIt(const CollisionBoxData& otherBox);
 
 public:
 	CollisionBoxData();
 	CollisionBoxData(const Json& json);
 	CollisionBoxData(const TransformData& transform, const Vec2& size, const WorldPosition& transformOffset);
+
+	bool IsCollidingWithBox(const CollisionBoxData& otherBox) const;
+	bool TryAddCollidingBox(const CollisionBoxData& otherBox);
+	bool TryRemoveCollidingBox(const CollisionBoxData& otherBox);
+
+	std::vector<const CollisionBoxData*> GetCollisionEnterBoxes() const;
+	std::vector<const CollisionBoxData*> GetCollisionExitBoxes() const;
+	std::vector<const CollisionBoxData*> GetAllCollisionBoxes() const;
+
+	/// <summary>
+	/// Updates the state of the colliding box info. Collisions added this frame are set to the default flag
+	/// while those that had a frame to be in the removed frame state will actually get removed
+	/// </summary>
+	void UpdateCollisionStates();
 
 	bool operator==(const CollisionBoxData& other) const;
 

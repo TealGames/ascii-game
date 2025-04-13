@@ -161,6 +161,19 @@ namespace RaylibUtils
 	{
 		DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
 	}
+	void DrawRay2D(const ScreenPosition& startPos, Vec2 dir, const Color& color)
+	{
+		const Vec2 endPos = Vec2(startPos.m_X, startPos.m_Y) + dir;
+		DrawLine(startPos.m_X, startPos.m_Y, endPos.m_X, endPos.m_Y, color);
+		
+		const float& triangleSideLength = dir.GetMagnitude() / 3;
+		const Vec2 lineNormalDir = dir.GetNormal().GetNormalized();
+
+		const Vec2 p1 = endPos + (lineNormalDir * triangleSideLength / 2);
+		const Vec2 p2 = endPos + (lineNormalDir.GetOppositeDirection() * triangleSideLength / 2);
+		const Vec2 p3 = endPos + dir.GetNormalized() * triangleSideLength / 2 * std::sqrtf(3);
+		DrawTriangle(ToRaylibVector(p1), ToRaylibVector(p2), ToRaylibVector(p3), color);
+	}
 
 	std::string ToString(const Vector2& vec)
 	{

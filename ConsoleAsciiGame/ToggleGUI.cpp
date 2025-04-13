@@ -24,24 +24,30 @@ ToggleGUI::ToggleGUI(GUISelectorManager& manager, const bool& startValue, const 
 		});
 }
 
+ToggleGUI::~ToggleGUI()
+{
+	/*if (m_settings.m_Size == ScreenPosition{69, 69}) 
+		Assert(false, std::format("DEATRUCTOR HELL YEAH settings:{}", m_settings.m_Size.ToString()));*/
+}
+
 void ToggleGUI::SetSettings(const GUISettings& settings)
 {
 	m_settings = settings;
 }
 
-const bool& ToggleGUI::IsToggled() const
+bool ToggleGUI::IsToggled() const
 {
 	return m_isToggled;
 }
 
-void ToggleGUI::SetValue(const bool& value)
+void ToggleGUI::SetValue(const bool value)
 {
 	m_isToggled = value;
-	if (m_valueSetAction != nullptr) m_valueSetAction(m_isToggled);
+	if (m_valueSetAction) m_valueSetAction(m_isToggled);
 }
 void ToggleGUI::ToggleValue()
 {
-	SetValue(!IsToggled());
+	SetValue(!m_isToggled);
 }
 
 void ToggleGUI::SetValueSetAction(const ToggleAction& action)

@@ -132,7 +132,6 @@ namespace Physics
 
 		const PhysicsBodyCollection& GetBodies() const;
 		PhysicsBodyCollection& GetBodiesMutable();
-		PhysicsBodyCollection FindBodiesContainingPos(const WorldPosition& wordlPos) const;
 
 		void AddBody(PhysicsBodyData& body);
 		void ClearAllBodies();

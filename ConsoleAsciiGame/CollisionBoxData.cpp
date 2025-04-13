@@ -22,8 +22,20 @@ std::string AABBIntersectionData::ToString() const
 	return std::format("[Intersect:{} Depth:{}]", std::to_string(m_DoIntersect), m_Depth.ToString());
 }
 
+std::string ToString(const CollisionFlag flag)
+{
+	if (flag == CollisionFlag::None) return "None";
+	else if (flag == CollisionFlag::AddedThisFrame) return "AddedThisFrame";
+	else if (flag == CollisionFlag::RemovedThisFrame) return "RemovedThisFrame";
+
+	Assert(false, "Tried to convert collision flag to string but no actions found");
+	return "";
+}
+
+CollidingBoxInfo::CollidingBoxInfo(const CollisionBoxData& box, const CollisionFlag& flag) : m_Box(&box), m_Flag(flag) {}
+
 CollisionBoxData::CollisionBoxData(const TransformData* transform, const Vec2& size, const WorldPosition& transformOffset) :
-	ComponentData(), m_transform(transform), m_aabb(size), m_transformOffset(transformOffset) {}
+	ComponentData(), m_transform(transform), m_aabb(size), m_transformOffset(transformOffset), m_collidingBoxes() {}
 
 CollisionBoxData::CollisionBoxData(const TransformData& transform, const Vec2& size, const WorldPosition& transformOffset) :
 	CollisionBoxData(&transform, size, transformOffset) {}
@@ -34,6 +46,104 @@ CollisionBoxData::CollisionBoxData() :
 CollisionBoxData::CollisionBoxData(const Json& json) : CollisionBoxData()
 {
 	Deserialize(json);
+}
+
+CollidingInfoCollection::iterator CollisionBoxData::TryGetCollidingBoxIt(const CollisionBoxData& otherBox)
+{
+	for (auto it= m_collidingBoxes.begin(); it!=m_collidingBoxes.end(); it++)
+	{
+		if (it->m_Box == &otherBox)
+			return it;
+	}
+	return m_collidingBoxes.end();
+}
+
+bool CollisionBoxData::TryAddCollidingBox(const CollisionBoxData& otherBox)
+{
+	if (IsCollidingWithBox(otherBox)) 
+		return false;
+
+	m_collidingBoxes.emplace_back(otherBox, CollisionFlag::AddedThisFrame);
+	return true;
+}
+
+bool CollisionBoxData::TryRemoveCollidingBox(const CollisionBoxData& otherBox)
+{
+	auto boxIt = TryGetCollidingBoxIt(otherBox);
+	if (boxIt == m_collidingBoxes.end()) 
+		return false;
+
+	//We do not immediately remove it so it stays for one frame by being in the removed state
+	//so any other places can check this before it get removed next frame
+	boxIt->m_Flag = CollisionFlag::RemovedThisFrame;
+	return true;
+}
+
+bool CollisionBoxData::IsCollidingWithBox(const CollisionBoxData& otherBox) const
+{
+	if (m_collidingBoxes.empty()) return false;
+
+	//TODO: this should be optimized especially if done every frame
+	//so potential fix is to use a unordered map instead
+	for (const auto& colliding : m_collidingBoxes)
+	{
+		if (colliding.m_Box == &otherBox) 
+			return true;
+	}
+	return false;
+}
+
+std::vector<const CollisionBoxData*> CollisionBoxData::GetCollisionEnterBoxes() const
+{
+	if (m_collidingBoxes.empty()) return {};
+
+	std::vector<const CollisionBoxData*> resultBoxes = {};
+	for (const auto& box : m_collidingBoxes)
+	{
+		if (box.m_Flag == CollisionFlag::AddedThisFrame && box.m_Box != nullptr)
+			resultBoxes.push_back(box.m_Box);
+	}
+	return resultBoxes;
+}
+std::vector<const CollisionBoxData*> CollisionBoxData::GetCollisionExitBoxes() const
+{
+	if (m_collidingBoxes.empty()) return {};
+
+	std::vector<const CollisionBoxData*> resultBoxes = {};
+	for (const auto& box : m_collidingBoxes)
+	{
+		if (box.m_Flag == CollisionFlag::RemovedThisFrame && box.m_Box!=nullptr)
+			resultBoxes.push_back(box.m_Box);
+	}
+	return resultBoxes;
+}
+std::vector<const CollisionBoxData*> CollisionBoxData::GetAllCollisionBoxes() const
+{
+	if (m_collidingBoxes.empty()) return {};
+
+	std::vector<const CollisionBoxData*> resultBoxes = {};
+	for (const auto& box : m_collidingBoxes)
+	{
+		if (box.m_Box!=nullptr) resultBoxes.push_back(box.m_Box);
+	}
+	//if (m_collidingBoxes[0].m_Flag == CollisionFlag::RemovedThisFrame) Assert(false, std::format("POOP FART"));
+	LogError(std::format("Collisions found:{} first:{}", std::to_string(resultBoxes.size()), ::ToString(m_collidingBoxes[0].m_Flag)));
+	return resultBoxes;
+}
+
+void CollisionBoxData::UpdateCollisionStates()
+{
+	for (int i = m_collidingBoxes.size() - 1; i >= 0; i--)
+	{
+		if (m_collidingBoxes[i].m_Flag == CollisionFlag::AddedThisFrame)
+		{
+			m_collidingBoxes[i].m_Flag = CollisionFlag::None;
+		}
+		else if (m_collidingBoxes[i].m_Flag == CollisionFlag::RemovedThisFrame)
+		{
+			m_collidingBoxes.erase(m_collidingBoxes.begin() + i);
+		}
+	}
 }
 
 bool CollisionBoxData::operator==(const CollisionBoxData& other) const

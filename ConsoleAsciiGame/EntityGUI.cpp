@@ -10,8 +10,15 @@ constexpr static float TITLE_FONT_SIZE = 20;
 EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, ECS::Entity& entity)
 	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
 	m_entityNameText(m_entity->GetName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
-		EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center))
+		EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center)), 
+	m_activeToggle(selector, m_entity->m_Active, GUISettings({69, 69}, EntityEditorGUI::EDITOR_BACKGROUND_COLOR, TextGUISettings()))
 {
+
+	/*m_activeToggle.SetValueSetAction([this](bool isChecked)mutable -> void 
+		{
+			m_entity->m_Active = isChecked;
+		});*/
+
 	//TODO: make sure to find a way to add/retrieve all components to then add here
 	//Assert(false, std::format("When adding all comps, entity: {} has:{}", entity.m_Name, std::to_string(entity.GetAllComponentsMutable().size())));
 	auto components = entity.GetAllComponentsMutable();
@@ -44,6 +51,11 @@ EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& sel
 	*/
 }
 
+EntityGUI::~EntityGUI()
+{
+	//Assert(false, std::format("Entity GUI for:{} destroyed", m_entity!=nullptr? m_entity->GetName() : "NULL"));
+}
+
 void EntityGUI::SetComponentsToStored()
 {
 	for (auto& component : m_componentGUIs)
@@ -54,10 +66,19 @@ void EntityGUI::SetComponentsToStored()
 
 void EntityGUI::Update()
 {
+	m_activeToggle.Update();
+	//LogError(std::format("Has valid selector:{}", std::to_string(m_activeToggle.GetSelectorManager().SelectedSelectableThisFrame())));
 	for (auto& component : m_componentGUIs)
 	{
 		component.Update();
 	}
+
+	//We need to make sure we update the toggle to match a value if active was 
+	//set internally and not via UI
+	//Note: side effect is bool var "active" will be set to value again as before due
+	//to callback occuring when value is set
+	if (m_entity->m_Active != m_activeToggle.IsToggled())
+		m_activeToggle.SetValue(m_entity->m_Active);
 }
 
 ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
@@ -67,9 +88,10 @@ ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 	Vector2 textSize = RaylibUtils::ToRaylibVector(m_entityNameText.CalculateSize(renderInfo));
 	//Assert(false, std::format("Text size: {}", RaylibUtils::ToString(textSize)));
 
-	DrawRectangle(currentPos.x, currentPos.y, renderInfo.m_RenderSize.m_X, textSize.y, DARKGRAY);
+	DrawRectangle(currentPos.x, currentPos.y, renderInfo.m_RenderSize.m_X, textSize.y, EntityEditorGUI::EDITOR_PRIMARY_COLOR);
+	ScreenPosition toggleSize= m_activeToggle.Render(RenderInfo(renderInfo.m_TopLeftPos, ScreenPosition(textSize.y, textSize.y)));
 	//DrawTextEx(GetGlobalFont(), m_entity.GetName().c_str(), currentPos, TITLE_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_TEXT_COLOR);
-	m_entityNameText.Render(RenderInfo(renderInfo.m_TopLeftPos, {static_cast<int>(textSize.x), static_cast<int>(textSize.y)}));
+	m_entityNameText.Render(RenderInfo(renderInfo.m_TopLeftPos+ ScreenPosition(toggleSize.m_X, 0), {static_cast<int>(textSize.x), static_cast<int>(textSize.y)}));
 
 	currentPos.y += textSize.y;
 	//currentPos.y += MeasureTextEx(GetGlobalFont(), m_entity.m_Name.c_str(), GLOBAL_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X).y;
@@ -89,7 +111,7 @@ ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 		/*Assert(false, std::format("Found comp: {} fields:{}", componentGUI.GetComponentName(), 
 					Utils::ToStringIterable<std::vector<std::string>, std::string>(componentGUI.GetFieldNames())));*/
 		componentSpaceLeft = ScreenPosition(renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y- (currentPos.y - renderInfo.m_TopLeftPos.m_Y));
-		LogError(std::format("Space left:{}", componentSpaceLeft.ToString()));
+		//LogError(std::format("Space left:{}", componentSpaceLeft.ToString()));
 		componentSize= componentGUI.Render(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y)}, componentSpaceLeft));
 		currentPos.y += componentSize.m_Y;
 	}

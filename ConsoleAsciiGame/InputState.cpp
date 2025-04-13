@@ -22,7 +22,7 @@ namespace Input
 		InputState(KeyState::Neutral, cooldown) {}
 
 	InputState::InputState(const KeyState& startState, const float& cooldownTime) :
-		m_keyState(startState), m_cooldownTime(cooldownTime), m_currentCooldownTime()
+		m_keyState(startState), m_cooldownTime(cooldownTime), m_currentCooldownTime(), m_downTime()
 	{
 	}
 
@@ -33,6 +33,9 @@ namespace Input
 
 	void InputState::SetState(const KeyState& newState)
 	{
+		if (m_keyState == KeyState::Down && newState != KeyState::Down) 
+			m_downTime = 0;
+
 		m_keyState = newState;
 	}
 	bool InputState::IsState(const KeyState& state) const
@@ -48,6 +51,10 @@ namespace Input
 	{
 		return IsState(KeyState::Down);
 	}
+	bool InputState::IsDownForTime(const float downTime) const
+	{
+		return IsDown() && m_downTime >= downTime;
+	}
 	bool InputState::IsReleased() const
 	{
 		return IsState(KeyState::Released);
@@ -57,12 +64,12 @@ namespace Input
 	{
 		return IsState(KeyState::Cooldown);
 	}
-	const float& InputState::GetCooldownTime() const
+	float InputState::GetCooldownTime() const
 	{
 		return m_cooldownTime;
 	}
 
-	const float& InputState::GetCurrentCooldownTime() const
+	float InputState::GetCurrentCooldownTime() const
 	{
 		return m_currentCooldownTime;
 	}
@@ -81,6 +88,20 @@ namespace Input
 		if (!HasCooldown()) return;
 
 		m_currentCooldownTime += delta;
+		if (m_currentCooldownTime >= m_cooldownTime)
+		{
+			ResetDefault();
+		}
+	}
+
+	float InputState::GetCurrentDownTime() const
+	{
+		return m_downTime;
+	}
+	void InputState::SetDownTimeDelta(float deltaTime)
+	{
+		if (!IsDown()) return;
+		m_downTime += deltaTime;
 	}
 
 	void InputState::ResetDefault()

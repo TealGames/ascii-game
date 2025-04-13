@@ -161,6 +161,7 @@ public:
 	const ECS::Entity* TryGetEntity(const std::string& name, const bool& ignoreCase = false) const;
 
 	template<typename T>
+	requires ECS::IsComponent<T>
 	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)
 	{
 		/*auto view = m_entityMapper.view<T>();
@@ -180,6 +181,19 @@ public:
 			}, action);
 
 		TryGetGlobalEntityManagerMutable().OperateOnComponents<T>(action);
+	}
+
+	template<typename T>
+	requires ECS::IsComponent<T>
+	void GetComponentsMutable(std::vector<T*>& inputVector)
+	{
+		ECS::GetRegistryComponentsMutable<T>(m_entityMapper,
+			[this](const ECS::EntityID id)->ECS::Entity*
+			{
+				return TryGetEntityMutable(id);
+			}, inputVector);
+
+		TryGetGlobalEntityManagerMutable().GetComponents<T>(inputVector);
 	}
 
 	bool Validate() override;

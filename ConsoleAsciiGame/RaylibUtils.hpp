@@ -7,6 +7,7 @@
 #include "Point3D.hpp"
 #include "Vec2.hpp"
 #include "Vec2Int.hpp"
+#include "PositionConversions.hpp"
 #include <optional>
 
 namespace RaylibUtils
@@ -28,6 +29,7 @@ namespace RaylibUtils
 	bool ColorEqual(const Color& color1, const Color& color2);
 
 	void DrawFPSCounter();
+	void DrawRay2D(const ScreenPosition& startPos, Vec2 dir, const Color& color);
 
 	std::string ToString(const Vector2& vec);
 	Vector2 ToRaylibVector(const Vec2& vec);

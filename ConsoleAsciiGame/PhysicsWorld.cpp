@@ -54,21 +54,6 @@ namespace Physics
 		m_bodies = {};
 	}
 
-	PhysicsBodyCollection PhysicsWorld::FindBodiesContainingPos(const WorldPosition& worldPos) const
-	{
-		PhysicsBodyCollection bodiesFound = {};
-		for (const auto& body : m_bodies)
-		{
-			//if (body->DoesAABBContainPos(worldPos))
-			if (body->GetCollisionBox().DoIntersect(worldPos))
-			{
-				bodiesFound.push_back(body);
-			}
-		}
-
-		return bodiesFound;
-	}
-
 	void PhysicsWorld::UpdateStart(const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
@@ -90,18 +75,18 @@ namespace Physics
 
 				//TODO: if one has physics body while other does not do we still simulate physics?
 				PhysicsBodyData* bodyA = collisionData.m_CollisionBoxA->GetEntitySafeMutable().TryGetComponentMutable<PhysicsBodyData>();
-				if (bodyA == nullptr);
+				if (bodyA == nullptr) return;
 
 				PhysicsBodyData* bodyB = collisionData.m_CollisionBoxB->GetEntitySafeMutable().TryGetComponentMutable<PhysicsBodyData>();
 				if (bodyB == nullptr) return;
 
 				//Assert(false, std::format("Found collision"));
-				if (collisionData.m_CollisionBoxA->GetEntitySafe().GetName() == "player" ||
-					collisionData.m_CollisionBoxB->GetEntitySafe().GetName() == "player")
-				{
-					LogError(std::format("Has collision touching: {} data:{}", std::to_string(collisionData.m_IntersectionData.IsTouchingIntersection()), collisionData.ToString()));
-					//if (!collisionData.m_IntersectionData.IsTouchingIntersection()) Assert(false, "NON TCOUHGIN COLLISON");
-				}
+				//if (collisionData.m_CollisionBoxA->GetEntitySafe().GetName() == "player" ||
+				//	collisionData.m_CollisionBoxB->GetEntitySafe().GetName() == "player")
+				//{
+				//	LogError(std::format("Has collision touching: {} data:{}", std::to_string(collisionData.m_IntersectionData.IsTouchingIntersection()), collisionData.ToString()));
+				//	//if (!collisionData.m_IntersectionData.IsTouchingIntersection()) Assert(false, "NON TCOUHGIN COLLISON");
+				//}
 				
 				//Since touching collisions are not actually interecting inside another body we should not
 				//apply any methods of collision resolution (but we still need to know they are colliding 

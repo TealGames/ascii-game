@@ -6,6 +6,7 @@
 #include "EntityRendererData.hpp"
 #include "AnimatorData.hpp"
 #include "CameraData.hpp"
+#include "TriggerData.hpp"
 #include "CollisionBoxData.hpp"
 #include "SpriteAnimatorData.hpp"
 #include "PhysicsBodyData.hpp"
@@ -34,7 +35,7 @@ namespace GlobalCreator
 
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(playerCollider, 1, GRAVITY, 20));
 
-		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 5, 20));
+		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 8, 20));
 
 		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
 		LightSourceData& lightSource = playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
@@ -74,6 +75,12 @@ namespace GlobalCreator
 		ECS::Entity& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
 		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
 		cameraController.TryRegisterCamera(cameraData);
+
+		ECS::Entity& trigger = globalsManager.CreateGlobalEntity("Trigger", TransformData(Vec2{15, 0}));
+		CollisionBoxData& triggerCollider = trigger.AddComponent<CollisionBoxData>(CollisionBoxData(trigger.m_Transform, Vec2(5, 5), Vec2(0, 0)));
+		TriggerData& triggerData= trigger.AddComponent<TriggerData>(TriggerData(triggerCollider));
+		//triggerData.m_OnExit.AddListener([](const CollisionBoxData* enteredBody)-> void { LogError(std::format("EXIITNG"), true, false, false, true); });
+		//triggerData.m_OnEnter.AddListener([](const CollisionBoxData* enteredBody)-> void { LogError(std::format("ENTERING"), true, false, false, true); });
 
 		////This is to make sure they all have the main camera set as this global
 		//sceneManager.m_OnLoad.AddListener([&mainCameraEntity](Scene* scene)-> void

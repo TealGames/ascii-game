@@ -48,4 +48,28 @@ namespace ECS
 			action(*component, *entityPtr);
 		}
 	}
+
+	template<typename T>
+	requires ECS::IsComponent<T>
+	void GetRegistryComponentsMutable(entt::registry& registry, const std::function<ECS::Entity*(const ECS::EntityID&)>& entityFromIDFunc, 
+		std::vector<T*>& inputVector)
+	{
+		auto view = registry.view<T>();
+		for (auto entityId : view)
+		{
+			ECS::Entity* entityPtr = entityFromIDFunc(entityId);
+			if (!Assert(entityPtr != nullptr, std::format("Tried to get components of type: {} "
+				"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
+				typeid(T).name(), ECS::Entity::ToString(entityId))))
+				return;
+
+			if (!entityPtr->m_Active) continue;
+
+			T* component = &(view.get<T>(entityId));
+			ComponentData* componentBase = static_cast<ComponentData*>(component);
+			if (!componentBase->m_IsEnabled) continue;
+
+			inputVector.push_back(component);
+		}
+	}
 }

@@ -9,7 +9,7 @@ class SelectableGUI;
 
 using SelectableEvent = Event<void, SelectableGUI*>;
 
-class SelectableGUI : ISelectable
+class SelectableGUI : public ISelectable
 {
 private:
 	GUIRect m_lastFrameRect;

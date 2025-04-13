@@ -10,6 +10,10 @@ private:
 	const Input::InputManager& m_inputManager;
 	std::vector<SelectableGUI*> m_selectables;
 	SelectableGUI* m_currentSelected;
+	/// <summary>
+	/// True if the current selectable was selected THIS frame
+	/// </summary>
+	bool m_selectedThisFrame;
 
 	std::optional<ScreenPosition> m_lastFrameClickedPosition;
 	
@@ -28,6 +32,8 @@ public:
 	void AddSelectable(SelectableGUI* selectable);
 	bool HasSelecatbleSelected() const;
 	const SelectableGUI* TryGetSelectableSelected() const;
+
+	bool SelectedSelectableThisFrame() const;
 
 	std::optional<ScreenPosition> GetLastFrameClickedPosition() const;
 };

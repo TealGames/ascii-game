@@ -125,22 +125,22 @@ namespace Input
 		if (inputState.InCooldown())
 		{
 			inputState.SetCooldownDelta(deltaTime);
-			if (inputState.GetCurrentCooldownTime() >= inputState.GetCooldownTime())
-			{
-				inputState.ResetDefault();
-			}
 		}
 
-		//We then check again (in case we might have left cooldown)
+		//We then check again (in case we might have left cooldown after delta finished cooldown)
 		if (!inputState.InCooldown())
 		{
 			if (IsKeyPressed(device, keyValue)) inputState.SetState(KeyState::Pressed);
 			else if (IsKeyDown(device, keyValue))
 			{
+				//Only if the state is already down do we apply the delta time since if we just set it now
+				//the held time might be off
 				inputState.SetState(KeyState::Down);
+				inputState.SetDownTimeDelta(deltaTime);
 				//LogError(this, std::format("INput state for; {} IS: {}", std::to_string(keyValue), ToString(inputState.GetState())));
 			}
-			else if (IsKeyReleased(device, keyValue)) inputState.SetState(KeyState::Released);
+			else if (IsKeyReleased(device, keyValue)) 
+				inputState.SetState(KeyState::Released);
 			else
 			{
 				//If we are not pressing anything, but last frame we released and we have cooldown

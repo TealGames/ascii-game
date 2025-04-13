@@ -2,11 +2,27 @@
 #include "EngineEditor.hpp"
 #include "TimeKeeper.hpp"
 #include "PlayerSystem.hpp"
+#include "CameraController.hpp"
+#include "PositionConversions.hpp"
+#include "SceneManager.hpp"
+#include "PhysicsManager.hpp"
+#include "RaylibUtils.hpp"
+#include "GUISelectorManager.hpp"
+#include "CollisionBoxSystem.hpp"
+
+static constexpr KeyboardKey PAUSE_TOGGLE_KEY = KEY_P;
+static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
+
+EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
 
 EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics,
-	SceneManagement::SceneManager& scene, GUISelectorManager& selector)
-	: m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_commandConsole(m_inputManager, selector), m_debugInfo(),
-	m_entityEditor(m_inputManager, m_sceneManager, physics, selector), m_pauseGameToggle(selector, false, GUISettings())
+	SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, ECS::CollisionBoxSystem& collisionSystem)
+	: m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_cameraController(camera), 
+	m_physicsManager(physics), m_guiSelector(selector), m_collisionBoxSystem(collisionSystem),
+	m_commandConsole(m_inputManager, selector), m_debugInfo(),
+	m_entityEditor(m_inputManager, camera, selector),
+	m_pauseGameToggle(selector, false, GUISettings()), m_editModeToggle(selector, false, GUISettings()),
+	m_editModeInfo()
 {
 	m_pauseGameToggle.SetSettings(GUISettings({20, 20}, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
 		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(0, GetGlobalFont()), EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center, 0.8)));
@@ -17,6 +33,9 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 
 			//DebugProperties::SetLogMessages(!isChecked);
 		});
+
+	m_editModeToggle.SetSettings(GUISettings({ 20, 20 }, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
+		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(0, GetGlobalFont()), EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center, 0.8)));
 
 	DebugProperties::OnMessageLogged.AddListener([this](const LogType& logType, const std::string& message, 
 		const bool& logToConsole, const bool& pauseOnMessage)-> void
@@ -134,11 +153,10 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 }
 
 void EngineEditor::Update(const float& deltaTime, const float& timeStep, 
-	const Scene& activeScene, CameraData& mainCamera)
+	Scene& activeScene, CameraData& mainCamera)
 {
 	//Assert(false, std::format("Entity editor update"));
 	m_commandConsole.Update();
-	m_entityEditor.Update(mainCamera);
 	m_debugInfo.Update(deltaTime, timeStep, activeScene, m_inputManager, mainCamera);
 
 	m_pauseGameToggle.Update();
@@ -147,6 +165,31 @@ void EngineEditor::Update(const float& deltaTime, const float& timeStep,
 		//LogError("Toggle pause");
 		m_pauseGameToggle.ToggleValue();
 	}
+
+	m_editModeToggle.Update();
+	//LogError(std::format("Is toggled:{} selected:{}", std::to_string(m_editModeToggle.IsToggled()), std::to_string(m_editModeInfo.m_Selected != nullptr)));
+
+	ScreenPosition mouseClickedPos = m_inputManager.GetMousePosition();
+	WorldPosition worldClickedPos = Conversions::ScreenToWorldPosition(mainCamera, mouseClickedPos);
+	if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsPressed())
+	{
+		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(activeScene, worldClickedPos);
+		if (!entitiesWithinPos.empty())
+		{
+			m_editModeInfo.m_Selected = &(entitiesWithinPos[0]->GetEntitySafeMutable());
+			m_entityEditor.SetEntityGUI(*m_editModeInfo.m_Selected);
+		}
+	}
+	//If we are in edit mode holding the down button (and not selected selectable this frame-> meaning click might correspond to selectable click not edit mode click) 
+	// we can move the selected entity to that pos
+	else if (m_editModeToggle.IsToggled() && m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsDownForTime(HELD_TIME_FOR_OBJECT_MOVE) &&
+		!m_guiSelector.SelectedSelectableThisFrame() && m_editModeInfo.m_Selected != nullptr)
+	{
+		/*Assert(false, std::format("Is down for:{} needed:{}", std::to_string(m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().GetCurrentDownTime()), 
+			std::to_string(HELD_TIME_FOR_OBJECT_MOVE)));*/
+		m_editModeInfo.m_Selected->m_Transform.SetPos(worldClickedPos);
+	}
+	m_entityEditor.Update();
 }
 
 bool EngineEditor::TryRender()
@@ -155,11 +198,26 @@ bool EngineEditor::TryRender()
 	m_entityEditor.TryRender();
 	m_debugInfo.TryRender();
 
-	m_pauseGameToggle.Render(RenderInfo({0,0}, {20, 20}));
-	return true;
-}
+	const int TOGGLE_SIZE = 20;
+	m_pauseGameToggle.Render(RenderInfo({SCREEN_WIDTH/2,0}, { TOGGLE_SIZE, TOGGLE_SIZE }));
+	m_editModeToggle.Render(RenderInfo({ SCREEN_WIDTH/2 + TOGGLE_SIZE, 0}, { TOGGLE_SIZE, TOGGLE_SIZE }));
 
-void EngineEditor::TogglePause()
-{
-	
+	if (m_editModeToggle.IsToggled() && m_editModeInfo.m_Selected != nullptr)
+	{
+		const float RAY_LENGTH = 25;
+		const ScreenPosition entityScreenPos = Conversions::WorldToScreenPosition(m_cameraController.GetActiveCamera(), 
+			m_editModeInfo.m_Selected->m_Transform.GetPos());
+
+		const ScreenPosition axisRayXEndPos = entityScreenPos + ScreenPosition(RAY_LENGTH, 0);
+		const ScreenPosition axisRayYEndPos = entityScreenPos + ScreenPosition(0, -RAY_LENGTH);
+		//Assert(false, std::format("Rendering rays at pos:{}", entityScreenPos.ToString()));
+
+		RaylibUtils::DrawRay2D(entityScreenPos, Vec2(RAY_LENGTH, 0), WHITE);
+		RaylibUtils::DrawRay2D(entityScreenPos, Vec2(0, -RAY_LENGTH), WHITE);
+
+		//DrawLine(entityScreenPos.m_X, entityScreenPos.m_Y, axisRayXEndPos.m_X, axisRayXEndPos.m_Y, BLUE);
+		//DrawLine(entityScreenPos.m_X, entityScreenPos.m_Y, axisRayYEndPos.m_X, axisRayYEndPos.m_Y, BLUE);
+	}
+
+	return true;
 }

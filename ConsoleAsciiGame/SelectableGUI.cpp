@@ -26,11 +26,13 @@ bool SelectableGUI::IsInit() const
 void SelectableGUI::Init()
 {
 	if (IsInit()) return;
-	if (m_selectorManager != nullptr)
-	{
-		GetSelectorManager().AddSelectable(this);
-		m_addedToManager = true;
-	}
+
+	if (!Assert(this, m_selectorManager != nullptr,
+		std::format("Tried to init selectable GUI but selector manager is NULL")))
+		return;
+
+	GetSelectorManager().AddSelectable(this);
+	m_addedToManager = true;
 }
 
 GUIRect& SelectableGUI::GetLastFrameRectMutable()

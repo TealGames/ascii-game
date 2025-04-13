@@ -65,6 +65,7 @@ namespace ECS
 				{
 					player.SetFrameInput(Vec2Int::ZERO);
 				}
+				
 
 				//TODO: Player moves faster on diagonals
 				if (!player.HasInputChanged()) return;
@@ -76,21 +77,29 @@ namespace ECS
 				//Auto jumping occurs when we are grounded but the input is held (meaning we might not have been changed since last frame
 				//but to make sure we immediately jump back up, we ignore it and consider it anways) 
 				//TODO: maybe this explicit auto jump is not good and we should instead have input queueing
-
-				/*if (DO_AUTO_JUMP && player.GetIsGrounded() && !m_lastFrameGrounded &&
+				if (DO_AUTO_JUMP && player.GetIsGrounded() && !m_lastFrameGrounded &&
 					moveCompound->TryGetDirectionAction(Input::InputDirection::Up)->IsPressed())
 				{
 					dirDelta.m_Y = 1;
-				}*/
+				}
 
 				//TODO: normalized should be handled in input retrieving
 				dirDelta = dirDelta.GetNormalized();
-				Vec2 inputVel = { dirDelta.m_X * player.GetMoveSpeed(), dirDelta.m_Y * player.GetInitialJumpSpeed() };
 
 				//If we press up while not grounded, we stop that
-				if (!player.GetIsGrounded() && inputVel.m_Y!=0) inputVel.m_Y = 0;
+				//if (!player.GetIsGrounded() && inputVel.m_X>0) inputVel.m_Y = 0;
 
-				player.GetBodyMutableSafe().SetVelocityDelta(inputVel);
+				player.GetBodyMutableSafe().SetVelocityDelta({ dirDelta.m_X * player.GetMoveSpeed(), 0});
+
+				//If we are grounded and press up, only for that moment do we then apply the initial jump speed
+				if (player.GetIsGrounded() && dirDelta.m_Y > 0)
+					player.GetBodyMutableSafe().SetVelocityDelta({ 0, dirDelta.m_Y * player.GetInitialJumpSpeed() });
+
+				//If we stop pressing up while still going up, we cancel further movement up
+				const float playerYVel = player.GetBodyMutableSafe().GetVelocity().m_Y;
+				if (!player.GetIsGrounded() && playerYVel > 0 && dirDelta.m_Y < 0)
+					player.GetBodyMutableSafe().SetVelocityYDelta(-playerYVel);
+
 				m_lastFrameGrounded = player.GetIsGrounded();
 			});
 	}

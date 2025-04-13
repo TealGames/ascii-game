@@ -61,8 +61,6 @@ void ButtonGUI::Update(const float& deltaTime)
 		{
 			m_currentCooldownTime = 0;
 		}
-
-		return;
 	}
 }
 

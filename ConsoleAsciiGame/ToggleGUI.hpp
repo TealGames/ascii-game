@@ -23,14 +23,15 @@ public:
 private:
 public:
 	ToggleGUI();
+	~ToggleGUI();
 	ToggleGUI(GUISelectorManager& manager, const bool& startValue, const GUISettings& settings, 
 		const ToggleAction& valueSetAction=nullptr);
 
 	void SetSettings(const GUISettings& settings);
 
-	void SetValue(const bool& value);
+	void SetValue(const bool value);
 	void ToggleValue();
-	const bool& IsToggled() const;
+	bool IsToggled() const;
 
 	void SetValueSetAction(const ToggleAction& action);
 
