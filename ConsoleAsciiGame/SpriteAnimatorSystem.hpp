@@ -14,7 +14,7 @@ namespace ECS
 	public:
 
 	private:
-		void SetVisual(ECS::Entity& entity, const VisualDataPositions& visualData);
+		void SetVisual(ECS::Entity& entity, const SpriteAnimation& animation);
 	public:
 		SpriteAnimatorSystem(EntityRendererSystem& entityRenderer);
 		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;

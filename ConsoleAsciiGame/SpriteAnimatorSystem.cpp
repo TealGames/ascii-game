@@ -2,6 +2,7 @@
 #include "SpriteAnimatorSystem.hpp"
 #include "HelperFunctions.hpp"
 #include "EntityRendererData.hpp"
+#include "SpriteAnimation.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -17,29 +18,56 @@ namespace ECS
 		ProfilerTimer timer("SpriteAnimatorSystem::SystemUpdate");
 #endif 
 
-		scene.OperateOnComponents<SpriteAnimatorData>(
-			[this, &scene, &deltaTime](SpriteAnimatorData& data, ECS::Entity& entity)-> void
-			{
-				if (data.m_NormalizedTime >= data.m_SingleLoopLength && !data.m_Loop) return;
+		if (deltaTime <= 0) return;
 
-				data.m_NormalizedTime += deltaTime;
-				if (data.m_NormalizedTime > data.m_VisualDeltas[data.m_VisualDeltaIndex].m_Time && data.m_Loop)
+		scene.OperateOnComponents<SpriteAnimatorData>(
+			[this, &scene, deltaTime](SpriteAnimatorData& data, ECS::Entity& entity)-> void
+			{
+				if (!data.IsPlayingAnimation()) return;
+
+				SpriteAnimation* currentAnim = data.TryGetPlayingAnimationMutable();
+				if (currentAnim == nullptr) return;
+				const float animDeltaTime = deltaTime* currentAnim->m_AnimationSpeed;
+
+				if (currentAnim->m_NormalizedTime >= currentAnim->m_SingleLoopLength && !currentAnim->m_Loop) 
+					return;
+
+				currentAnim->m_NormalizedTime += animDeltaTime;
+				if (currentAnim->m_NormalizedTime > currentAnim->m_FrameDeltas[currentAnim->m_FrameIndex].m_Time && currentAnim->m_Loop)
 				{
-					data.m_VisualDeltaIndex = (data.m_VisualDeltaIndex + 1) % data.m_VisualDeltas.size();
-					if (data.m_VisualDeltaIndex==0) data.m_NormalizedTime -= data.m_SingleLoopLength;
-					SetVisual(entity, data.m_VisualDeltas[data.m_VisualDeltaIndex].m_VisualDelta);
+					currentAnim->m_FrameIndex = (currentAnim->m_FrameIndex + 1) % currentAnim->m_FrameDeltas.size();
+					if (currentAnim->m_FrameIndex==0) currentAnim->m_NormalizedTime -= currentAnim->m_SingleLoopLength;
+					SetVisual(entity, *currentAnim);
 				}
 			});
 	}
 
-	void SpriteAnimatorSystem::SetVisual(ECS::Entity& entity, const VisualDataPositions& positions)
+	void SpriteAnimatorSystem::SetVisual(ECS::Entity& entity, const SpriteAnimation& animation)
 	{
-		//TODO: this should maybe be abstracted into the system?
+		//TODO: this should maybe be included as dependency for the animator?
 		EntityRendererData* renderer = entity.TryGetComponentMutable<EntityRendererData>();
 		if (!Assert(this, renderer != nullptr, std::format("Tried to set the visual on sprite animator for entity: {} "
 			"but it does not have entity renderer component", entity.GetName()))) return;
 
-		renderer->SetVisualData(positions);
+		const VisualData* currAnimVisual = animation.TryGetCurrentVisualData();
+		if (!Assert(this, currAnimVisual != nullptr, std::format("Tried to set the animation visual for entity:{} "
+			"but failed to retrieve current animation visual. FrameIndex:{}", entity.GetName(), std::to_string(animation.m_FrameIndex))))
+			return;
+
+		//Note: since the first animation (or any animation) may not have the same size as the default visual of 
+		//the renderer we need to take that into account in order to be able to use the frame delta optimization
+		//and without having any weird out of bounds bugs
+		if (renderer->GetVisualSize() != currAnimVisual->GetBufferSize()) renderer->OverrideVisualData(*currAnimVisual);
+		else
+		{
+			const SpriteAnimationDelta* animDelta = animation.TryGetCurrentAnimationDelta();
+			if (!Assert(this, animDelta != nullptr, std::format("Tried to set the animation visual for entity:{} "
+				"but failed to retrieve current animation delta. FrameIndex:{}", entity.GetName(), std::to_string(animation.m_FrameIndex))))
+				return;
+
+			renderer->SetVisualDataDeltas(animDelta->m_VisualDelta);
+
+		}
 		renderer->m_MutatedThisFrame = true;
 	}
 }

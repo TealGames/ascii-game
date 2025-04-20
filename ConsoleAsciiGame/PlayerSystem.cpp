@@ -27,6 +27,8 @@ namespace ECS
 		ProfilerTimer timer("PlayerSystem::SystemUpdate");
 #endif 
 
+		if (deltaTime <= 0) return;
+		
 		scene.OperateOnComponents<PlayerData>(
 			[this, &scene, &deltaTime, &mainCamera](PlayerData& player, ECS::Entity& entity)-> void
 			{

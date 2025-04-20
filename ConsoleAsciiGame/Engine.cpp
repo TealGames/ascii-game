@@ -23,6 +23,8 @@
 #include "JsonSerializers.hpp"
 #include "GlobalCreator.hpp"
 
+#include "Fig.hpp"
+
 namespace Core
 {
 	//-------------------------------------------------------------------
@@ -38,7 +40,6 @@ namespace Core
 	//to not need dependence on raylib for keyboardkey and other input stuff and to keep it an implementation detail
 	//TODO: guirect and aabb both require similar things and have similar features/functions/strucutre perhaps they should be merged into one general type
 	//or they should both contain a more general type and extend its features
-	//TODO: create a general selectable with selection rect, padding, select/deselect functions as well as a general selection profile with mouse key up,down select actions, etc
 	//TODO: sizing on all gui objeccts should be relative in case screen size changes
 	//TODO: bug where player on start can be moved to the end of the ground rectangle (probably due to it being the min distance when considerign x and y moves)
 	//TODO: maybe remake the editor using entities and some other rendering
@@ -65,8 +66,14 @@ namespace Core
 	//TODO: make guisettings size enum of MinPossible (gets min size based on gui setting preferred size and area given during render) and MaxPossible that takes up full area given
 	//and then integrate into editor system with MinPossible and best sizes for each field and optimizing space use
 	//TODO: when pressing the toggle on the editor for gameobject active the program crashes
-
-	static constexpr std::uint8_t TARGET_FPS = 60;
+	//TODO: update the visual data system so that instead of having to place characcters in grid we can place them in any position (vec2) from the pivot pos
+	//by having the visual data store it based off of grid (like maybe a preset setting that has default char spacing for each char) or custom ones for each character
+	//TODO: the asset system is a little akward with dependencies. Scene asset should ideally noy depeend on the asset manager but should get its level asset via a depedency on another asset
+	// or file from constructor. LAso scene asset should not have to be laoded separately by another class that is not the asset manager. so maybe there should be a setup function 
+	//in the asset amanger to do so before it is added
+	//TODO: it is weird that the json serializes have the asset and scene manager dependecies which will eventually get added and linked to the files that all use serializers
+	//and it should instead be a dependecy injection of those types into the deserialization functions (maybe event split deserializetion/serialization of components into separate class?)
+	//and remove the depedneyc on json and the implicit need for scene manager/asset manager hidden via the serializers
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -92,12 +99,6 @@ namespace Core
 	constexpr LoopCode SUCCESS_CODE = 0;
 	constexpr LoopCode EXIT_CODE = 1;
 	constexpr LoopCode ERROR_CODE = 2;
-
-	void Engine::InitEngine()
-	{
-		InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME.c_str());
-		SetTargetFPS(TARGET_FPS);
-	}
 
 	void Engine::Destroy()
 	{
@@ -130,23 +131,18 @@ namespace Core
 		//m_mainCameraInfo(std::nullopt),
 		m_timeKeeper(),
 		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, 
-			m_sceneManager, m_cameraController, m_guiSelectorManager, m_collisionBoxSystem)
+			m_sceneManager, m_cameraController, m_guiSelectorManager, m_collisionBoxSystem),
+		m_gameManager(m_sceneManager.m_GlobalEntityManager)
 	{
-
 		EngineLog("FINISHED SYSTEM MANAGERS INIT");
 
-		InitEngine(); 
-		EngineLog("FINISHED RAYLIB WINDOW CREATION");
+		InitJsonSerializationDependencies(m_sceneManager, m_assetManager);
 
-		InitJsonSerializationDependencies(m_sceneManager);
-
-		m_assetManager.InitDependencoes<SceneAsset, GlobalEntityManager, AssetManager>(m_sceneManager.m_GlobalEntityManager, m_assetManager);
-		m_assetManager.InitDependencoes<InputProfileAsset, Input::InputManager>(m_inputManager);
+		m_assetManager.InitDependencies<SceneAsset, GlobalEntityManager, AssetManagement::AssetManager>(m_sceneManager.m_GlobalEntityManager, m_assetManager);
+		m_assetManager.InitDependencies<InputProfileAsset, Input::InputManager>(m_inputManager);
 		EngineLog("FINISHED ASSET MANAGER DEPENDENCY INIT");
- 
-		//Note: globals create main menu camera that then adds itself to each scene when scene is loaded
-		//TODO: change this weird and akward way of setting camera that feels hidden
-		GlobalCreator::CreateGlobals(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController);
+
+		GlobalCreator::CreateGlobals(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
 
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
@@ -179,7 +175,7 @@ namespace Core
 		ECS::Entity& uiIcon= m_sceneManager.GetActiveSceneMutable()->CreateEntity("icon", TransformData(Vec2{ 0, 0 }));
 		uiIcon.AddComponent<UIObjectData>(NormalizedPosition(0.1, 0.9));
 		uiIcon.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData({ {TextCharPosition({0,0}, TextChar(ORANGE, '*')) } },
+			VisualData({ {TextCharArrayPosition({0,0}, TextChar(ORANGE, '*')) } },
 				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
 				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::UI });
 
@@ -191,10 +187,14 @@ namespace Core
 		//Log(this, std::format("CAMERA ID: {}", mainCameraEntity.ToString()));
 		//Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
 
+		//m_inputManager.InitProfiles();
 		m_inputManager.SetInputCooldown(0.3);
 		//InitConsoleCommands();
 		m_editor.Init(m_playerSystem);
 		EngineLog("ADDED ALL CONSOLE COMMANDS");
+
+		//Note: globals create main menu camera that then adds itself to each scene when scene is loaded
+		//TODO: change this weird and akward way of setting camera that feels hidden
 
 		//Assert(false, std::format("FOUND ACTIVE SELECTED: {}", m_guiSelectorManager.TryGetSelectableSelected()->GetLastFrameRect().ToString()));
 		/*for (const auto& entity : m_sceneManager.GetActiveSceneMutable()->GetAllEntities())
@@ -202,6 +202,7 @@ namespace Core
 			LogError(this, std::format("Entity: {} has fields: {}", entity->m_Name,
 				Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(entity->m_Transform.GetFields())));
 		}*/
+		m_gameManager.GameStart();
 		EngineLog("FINISHED GAME INIT");
 
 		ValidateAll();
@@ -217,6 +218,7 @@ namespace Core
 		m_assetManager.Validate();
 		m_sceneManager.ValidateAllScenes();
 		m_cameraController.Validate();
+		m_gameManager.GameValidate();
 		EngineLog("FINISHED VALIDATION");
 	}
 
@@ -310,8 +312,10 @@ namespace Core
 		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
 		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
 
-		m_transformSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
-		m_uiSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+		//Note: technically transform system should be using scaled time but since it is possible to change pos
+		//even when time is stopped we need to make sure it updates just in case
+		m_transformSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
+		m_uiSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 
 		m_inputManager.Update(unscaledDeltaTime);
 		//if (m_enableDebugInfo)
@@ -351,7 +355,7 @@ namespace Core
 		//LogError(activeScene->GetAllEntities()[0]->GetName());
 		
 		//TODO: it seems enttiy system is causing a stirng to long exception
-		m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+		m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 		
 		//LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
 		//	std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<1>(), *(m_obstacleInfo.value().m_Data))),
@@ -365,7 +369,7 @@ namespace Core
 		//TODO: light system without any other problems drop frames to ~20 fps
 		m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 
-		m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), scaledDeltaTime);
+		m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), unscaledDeltaTime);
 		const TextBufferMixed& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
@@ -378,6 +382,8 @@ namespace Core
 			WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(*m_mainCameraInfo.value().m_Data, mouseScreenPos);
 			m_debugInfo.SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X+15, mouseScreenPos.m_Y} });
 		}*/
+
+		m_gameManager.GameUpdate();
 
 		/*m_entityEditor.Update(mainCamera);*/
 		m_guiSelectorManager.Update();

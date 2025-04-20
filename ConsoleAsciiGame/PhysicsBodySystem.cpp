@@ -23,6 +23,7 @@ namespace ECS
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("PhysicsBodySystem::SystemUpdate");
 #endif 
+		if (deltaTime <= 0) return;
 
 		//TODO: when physics world provides optimization then use it
 		//if (!RENDER_COLLIDER_OUTLINES) return;

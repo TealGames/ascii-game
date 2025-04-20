@@ -27,9 +27,9 @@ using TextBufferMixed = std::vector<TextBufferPosition>;
 class TextBuffer
 {
 	FontData m_FontData;
-	std::vector<TextCharPosition> m_TextPositions;
+	std::vector<TextCharArrayPosition> m_TextPositions;
 
-	TextBuffer(const FontData& font, const std::vector<TextCharPosition>& positions);
+	TextBuffer(const FontData& font, const std::vector<TextCharArrayPosition>& positions);
 };
 
 std::string ToString(const TextBufferMixed& buffer);

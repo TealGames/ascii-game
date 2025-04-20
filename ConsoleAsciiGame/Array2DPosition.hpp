@@ -10,14 +10,16 @@ private:
 private:
 public:
 	Array2DPosition();
-	Array2DPosition(const int& row, const int& col);
+	Array2DPosition(const int row, const int col);
 	Array2DPosition(const Array2DPosition&) = default;
 
 	const int& GetRow() const;
 	const int& GetCol() const;
 
-	void SetRow(const int& row);
-	void SetCol(const int& col);
+	void SetRow(int row);
+	void IncrementRow(const int delta);
+	void SetCol(int col);
+	void IncrementCol(const int delta);
 
 	std::string ToString() const;
 

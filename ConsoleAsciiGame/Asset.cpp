@@ -1,8 +1,11 @@
 #include "pch.hpp"
 #include "Asset.hpp"
 #include "Debug.hpp"
+#include <fstream>
 
-Asset::Asset(const std::filesystem::path& path) : m_name(), m_path(path), m_dependenciesSet(false)
+Asset::Asset(const std::filesystem::path& path, const bool hasDependencies) 
+//Note: if we do not have dependencies we can say they are already set
+	: m_name(), m_path(path), m_dependenciesSet(!hasDependencies)
 {
 	if (!Assert(std::filesystem::exists(m_path), std::format("Tried to create an asset at path: {} "
 		"but that path does not exist", m_path.string())))
@@ -35,6 +38,11 @@ bool Asset::AreDependenciesSet() const
 void Asset::MarkDependenciesSet()
 {
 	m_dependenciesSet = true;
+}
+
+void Asset::SaveToSelf()
+{
+	SaveToPath(GetPath());
 }
 
 std::string Asset::ToString() const

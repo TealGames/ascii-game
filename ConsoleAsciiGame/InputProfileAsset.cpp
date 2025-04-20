@@ -13,16 +13,30 @@ static const std::string INPUT_HEADER = "Input";
 static constexpr char COMPOUND_INPUT_IDENTIFIER = '>';
 
 InputProfileAsset::InputProfileAsset(const std::filesystem::path& path)
-	: Asset(path), m_profile(std::nullopt) {}
+	: Asset(path, true), m_profile(std::nullopt) {}
+
+Input::InputManager& InputProfileAsset::GetInputManager()
+{
+	if (!Assert(this, m_inputManager!=nullptr, std::format("Tried to retrieve scene MUTABLE from scene asset:{} "
+		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
+	{
+		throw std::invalid_argument("Invalid scene asset dependency");
+	}
+
+	//LogError(std::format("Scene has value:{}", m_scene.value().ToString()));
+	return *m_inputManager;
+}
 
 void InputProfileAsset::SetDependencies(Input::InputManager& input)
 {
 	m_profile = Input::InputProfile(input, GetName());
-	DeserializeFile(input);
+	m_inputManager = &input;
 	MarkDependenciesSet();
+
+	UpdateAssetFromFile();
 }
 
-void InputProfileAsset::DeserializeFile(Input::InputManager& inputManager)
+void InputProfileAsset::UpdateAssetFromFile()
 {
 	std::ifstream stream(GetPath());
 
@@ -105,15 +119,15 @@ void InputProfileAsset::DeserializeFile(Input::InputManager& inputManager)
 
 			if (currentDevice.value() == Input::DeviceType::Keyboard)
 			{
-				currentInputKey = inputManager.GetInputKey(std::any_cast<KeyboardKey>(inputAsEnum));
+				currentInputKey = GetInputManager().GetInputKey(std::any_cast<KeyboardKey>(inputAsEnum));
 			}
 			else if (currentDevice.value() == Input::DeviceType::Mouse)
 			{
-				currentInputKey = inputManager.GetInputKey(std::any_cast<MouseButton>(inputAsEnum));
+				currentInputKey = GetInputManager().GetInputKey(std::any_cast<MouseButton>(inputAsEnum));
 			}
 			else if (currentDevice.value() == Input::DeviceType::Gamepad)
 			{
-				currentInputKey = inputManager.GetInputKey(std::any_cast<GamepadButton>(inputAsEnum));
+				currentInputKey = GetInputManager().GetInputKey(std::any_cast<GamepadButton>(inputAsEnum));
 			}
 			else
 			{
@@ -162,6 +176,11 @@ void InputProfileAsset::DeserializeFile(Input::InputManager& inputManager)
 	}
 
 	Log(this, std::format("Successfully created profile: {}", GetProfileMutable().ToString()));
+}
+
+void InputProfileAsset::SaveToPath(const std::filesystem::path& path)
+{
+	//TODO: implement
 }
 
 Input::InputProfile& InputProfileAsset::GetProfileMutable()

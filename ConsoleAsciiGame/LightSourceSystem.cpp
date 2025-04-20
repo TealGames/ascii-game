@@ -27,6 +27,7 @@ namespace ECS
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("LightSourceSystem::SystemUpdate"); 
 #endif 
+        if (deltaTime <= 0) return;
 
         //TODO: fixed lighting points should bake their lighting into the buffer rather than have to reapply calculations
         //TODO: SPEEDUP could maybe be lighting that does not change (even if the lighting moves) could be made into lightmap

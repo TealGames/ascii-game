@@ -18,12 +18,26 @@ const Vec2 VisualData::PIVOT_CENTER = {0.5, 0.5};
 const Vec2 VisualData::PIVOT_BOTTOM_CENTER = {0.5, 0};
 const Vec2 VisualData::PIVOT_TOP_CENTER = {0.5, 1};
 
-const Vec2 VisualData::DEFAULT_PIVOT = PIVOT_TOP_LEFT;
+const Vec2 VisualData::DEFAULT_PIVOT = PIVOT_CENTER;
 
 VisualDataPreset::VisualDataPreset(const Font& font, const float& fontSize, const Vec2& charSpacing,
 	const CharAreaType& charAreaType, const Vec2& predefinedCharArea, const NormalizedPosition& relativePivotPos) :
 	m_Font(font), m_FontSize(fontSize), m_CharSpacing(charSpacing), m_CharAreaType(charAreaType), 
 		m_PredefinedCharArea(predefinedCharArea), m_RelativePivotPos(relativePivotPos) {}
+
+std::string ToString(const RawTextBufferBlock& rawBuffer)
+{
+	std::string fullStr = "";
+	for (size_t r = 0; r < rawBuffer.size(); r++)
+	{
+		fullStr += "\n";
+		for (size_t c = 0; c < rawBuffer[r].size(); c++)
+		{
+			fullStr += std::format("[{}] ", rawBuffer[r][c].ToString());
+		}
+	}
+	return fullStr;
+}
 
 VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize,
 	const Vec2& charSpacing, const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
@@ -35,7 +49,9 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, co
 	if (!Assert(this, HasValidFont(false), std::format("Tried to create visual data: {} "
 		"but the font argument in constructor is INVALID", ToString()))) return;
 
-	std::optional<TextArray> squaredBuffer = CreateSquaredBuffer(rawBuffer);
+	LogError(std::format("B egan creating square buffer with: {}", ::ToString(m_rawTextBlock)));
+
+	std::optional<TextArray> squaredBuffer = CreateRectangularBuffer(rawBuffer);
 	if (!Assert(squaredBuffer.has_value(), std::format("Tried to create a Visual data with raw buffer: {}, "
 		"but failed to square data", ToStringRawBuffer(rawBuffer)))) return;
 	//Log(std::format("Square buffer val in optional: {}", squaredBuffer.value().ToString()));
@@ -63,7 +79,7 @@ VisualData::VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPres
 	VisualData(rawBuffer, preset.m_Font, preset.m_FontSize, preset.m_CharSpacing, 
 		preset.m_RelativePivotPos, preset.m_CharAreaType, preset.m_PredefinedCharArea)
 {
-
+	LogError("Began creating visual data");
 }
 
 bool VisualData::HasValidFont(const bool assertMessage, const std::string& extraMessage) const
@@ -78,59 +94,171 @@ bool VisualData::HasValidFont(const bool assertMessage, const std::string& extra
 	return Assert(this, isFontValid, fullMessage);
 }
 
-std::optional<TextArray> VisualData::CreateSquaredBuffer(const RawTextBufferBlock& rawBuffer) const
+std::optional<TextArray> VisualData::CreateRectangularBuffer(const RawTextBufferBlock& rawBuffer) const
 {
 	std::vector<std::vector<TextChar>> filledSpaces = {};
 	filledSpaces.reserve(rawBuffer.size());
 
-	int maxRowCharLen = 0;
-	int adjacentColDiff = 0;
+	size_t maxWidth = 0;
+	Array2DPosition currArrPos = {};
 
-	for (const auto& row : rawBuffer)
+	size_t r = 0;
+	size_t c = 0;
+	size_t spaceDiff = 0;
+	for (r = 0; r < rawBuffer.size(); r++)
 	{
-		if (row.size() > maxRowCharLen) maxRowCharLen = row.size();
-
 		filledSpaces.push_back({});
-		filledSpaces.back().reserve(maxRowCharLen);
+		if (maxWidth >0) filledSpaces.back().reserve(maxWidth);
 
-		for (int i = 1; i < row.size(); i++)
+		//Note: this section checks to make sure that there are no skips in rows
+		if (r != 0)
 		{
-			filledSpaces.back().push_back(row[i - 1].m_Text);
-			adjacentColDiff = row[i].m_RowColPos.GetRow() - row[i - 1].m_RowColPos.GetCol();
+			//We take the difference between the current row and the last row (we are guaranteed
+			//to have at least one element on row above if NOT at row 0
+			spaceDiff = rawBuffer[r][0].m_RowColPos.GetRow() - rawBuffer[r - 1][0].m_RowColPos.GetRow();
 
-			if (adjacentColDiff > 1)
+			//Note: 1 diff is the ideal amount so diff 1-> 0 iterations
+			//so if it is greater than we fill extra spaces with empty char placeholder
+			for (size_t i = 0; i < spaceDiff - 1; i++)
 			{
-				for (int i = 0; i < adjacentColDiff - 1; i++)
+				filledSpaces.push_back({});
+				filledSpaces.reserve(maxWidth);
+				for (size_t j = 0; j < maxWidth; j++)
 				{
 					filledSpaces.back().push_back(TextChar(Color(), EMPTY_CHAR_PLACEHOLDER));
 				}
 			}
 		}
-		filledSpaces.back().push_back(row.back().m_Text);
-	}
-	//Log(std::format("After intercolumn check max len: {} actual chars; {}", std::to_string(maxRowCharLen), TextBuffer::ToString(filledSpaces)));
 
-	for (int r = 0; r < filledSpaces.size(); r++)
+		for (c = 0; c < rawBuffer[r].size(); c++)
+		{
+			LogError(std::format("Going through r: {} c:{}", std::to_string(r), std::to_string(c)));
+			//Note: we must have each non 0 col have the same row as the previous col in order to not mess the process up
+			//Note: curreArrPos is used as the previous row col pos since we do this check before the new one is assigned
+			if (c != 0 && !Assert(this, currArrPos.GetRow() == rawBuffer[r][c].m_RowColPos.GetRow(),
+				std::format("Tried to create rectangular buffer of raw buffer:{} but at raw buffer r:{} c:{} the"
+					"pos:{} does not have the same row as the previous one: {}", ::ToString(rawBuffer), std::to_string(r), std::to_string(c),
+					rawBuffer[r][c].m_RowColPos.ToString(), currArrPos.ToString())))
+				return {};
+
+			currArrPos = rawBuffer[r][c].m_RowColPos;
+			spaceDiff = (currArrPos.GetCol() - rawBuffer[r][0].m_RowColPos.GetCol()) + 1;
+			//Note: since the first raw col pos may (incorrectly) be a non (0,0) we must subtract to get actual columns
+			if (spaceDiff > maxWidth)
+			{
+				maxWidth = spaceDiff;
+				//Assert(false, std::format("Max width updated to:{}", std::to_string(maxWidth)));
+			}
+
+			//Note: this section makes suere there are no skips before any columns
+			//and MUST be done before any existing text char is added to ensure order is maintained
+			if (c != 0)
+			{
+				spaceDiff = currArrPos.GetCol() - rawBuffer[r][c - 1].m_RowColPos.GetCol();
+				for (size_t i = 0; i < spaceDiff - 1; i++)
+				{
+					filledSpaces.back().push_back(TextChar(Color(), EMPTY_CHAR_PLACEHOLDER));
+				}
+			}
+
+			filledSpaces.back().push_back(rawBuffer[r][c].m_Text);
+		}
+	}
+
+	//Since we do not know max width at any definitive point, we need to check they all have 
+	//max width and add any extra chars at the end
+	spaceDiff = 0;
+	for (r=0; r<filledSpaces.size(); r++)
 	{
-		if (filledSpaces[r].size() == maxRowCharLen) continue;
-		/*if (!Assert(filledSpaces[r].size() < maxRowCharLen,
-			std::format("Tried to get rectangalized scene text for render layer but the current "
-				"row size: {} is bigger than the max: {}",
-				std::to_string(filledSpaces[r].size()), std::to_string(maxRowCharLen))))
-			return std::nullopt;*/
+		spaceDiff = maxWidth - filledSpaces[r].size();
+		if (!Assert(this, spaceDiff >= 0, std::format("Tried to create rectangular buffer of raw buffer:{} "
+			"but when trying to fill remaining columns with max width:{} the amount of space to fill for row:{} minus row filled space:{} is:{} which is not allowed",
+			::ToString(rawBuffer), std::to_string(maxWidth), std::to_string(r), std::to_string(filledSpaces[r].size()),
+			std::to_string(spaceDiff))))
+			return {};
 
-		for (int i = 0; i < filledSpaces[r].size() - maxRowCharLen; i++)
+		
+		for (c = 0; c < spaceDiff; c++)
+		{
+			LogError(std::format("Row:{} has width:{} needed:{}", std::to_string(r), std::to_string(filledSpaces[r].size()), std::to_string(maxWidth)));
 			filledSpaces[r].push_back(TextChar(Color(), EMPTY_CHAR_PLACEHOLDER));
+		}
 	}
-	TextArray result = TextArray(filledSpaces[0].size(), filledSpaces.size(), filledSpaces);
-	/*Log(std::format("Size: {}x{} result: {}",
-		std::to_string(filledSpaces.size()), std::to_string(filledSpaces[0].size()), result.ToString()));*/
-	return result;
+
+	LogError(std::format("REACHED CREATION of size:[{}, {}]. buffer:{} rectangular:{}", std::to_string(maxWidth), 
+		std::to_string(filledSpaces.size()), ::ToString(rawBuffer), ::ToString(filledSpaces)));
+	return TextArray(maxWidth, filledSpaces.size(), filledSpaces);
+
+	//std::vector<std::vector<TextChar>> filledSpaces = {};
+	//filledSpaces.reserve(rawBuffer.size());
+
+	//for (r = 0; r < rawBuffer.size(); r++)
+	//{
+	//	filledSpaces.push_back({});
+	//	filledSpaces.back().reserve(maxWidth);
+
+	//	for (c=0; c < rawBuffer[r].size(); c++)
+	//	{
+	//		filledSpaces.back().push_back(TextChar(Color(), EMPTY_CHAR_PLACEHOLDER));
+	//	}
+	//}
+
+	//std::vector<std::vector<TextChar>> filledSpaces = {};
+	//filledSpaces.reserve(rawBuffer.size());
+
+	//int maxRowCharLen = 0;
+	//int adjacentColDiff = 0;
+
+	//for (const auto& row : rawBuffer)
+	//{
+	//	if (row.size() > maxRowCharLen) maxRowCharLen = row.size();
+
+	//	filledSpaces.push_back({});
+	//	filledSpaces.back().reserve(maxRowCharLen);
+
+	//	for (int i = 1; i < row.size(); i++)
+	//	{
+	//		filledSpaces.back().push_back(row[i - 1].m_Text);
+	//		adjacentColDiff = row[i].m_RowColPos.GetRow() - row[i - 1].m_RowColPos.GetCol();
+
+	//		if (adjacentColDiff > 1)
+	//		{
+	//			for (int i = 0; i < adjacentColDiff - 1; i++)
+	//			{
+	//				filledSpaces.back().push_back(TextChar(Color(), EMPTY_CHAR_PLACEHOLDER));
+	//			}
+	//		}
+	//	}
+	//	filledSpaces.back().push_back(row.back().m_Text);
+	//}
+	////Log(std::format("After intercolumn check max len: {} actual chars; {}", std::to_string(maxRowCharLen), TextBuffer::ToString(filledSpaces)));
+
+	//for (int r = 0; r < filledSpaces.size(); r++)
+	//{
+	//	if (filledSpaces[r].size() == maxRowCharLen) continue;
+	//	/*if (!Assert(filledSpaces[r].size() < maxRowCharLen,
+	//		std::format("Tried to get rectangalized scene text for render layer but the current "
+	//			"row size: {} is bigger than the max: {}",
+	//			std::to_string(filledSpaces[r].size()), std::to_string(maxRowCharLen))))
+	//		return std::nullopt;*/
+
+	//	for (int i = 0; i < filledSpaces[r].size() - maxRowCharLen; i++)
+	//		filledSpaces[r].push_back(TextChar(Color(), EMPTY_CHAR_PLACEHOLDER));
+	//}
+	//TextArray result = TextArray(filledSpaces[0].size(), filledSpaces.size(), filledSpaces);
+	///*Log(std::format("Size: {}x{} result: {}",
+	//	std::to_string(filledSpaces.size()), std::to_string(filledSpaces[0].size()), result.ToString()));*/
+	//return result;
 }
 
 const RawTextBufferBlock& VisualData::GetRawBuffer() const
 {
 	return m_rawTextBlock;
+}
+
+Vec2Int VisualData::GetBufferSize() const
+{
+	return m_Text.GetSize();
 }
 
 Vec2 VisualData::GetWorldSize() const

@@ -8,9 +8,8 @@
 #include "SerializableEntity.hpp"
 #include "ComponentData.hpp"
 #include "Entity.hpp"
-#include "Scene.hpp"
 #include "AnimatorData.hpp"
-#include "SpriteAnimatorData.hpp"
+#include "SpriteAnimation.hpp"
 #include "ComponentFieldReference.hpp"
 #include "SerializableField.hpp"
 #include "ColorGradient.hpp"
@@ -21,6 +20,7 @@
 #include <cstdint>
 #include <vector>
 #include "FloatRange.hpp"
+#include "Asset.hpp"
 
 using Json = nlohmann::json;
 using JsonOrdered = nlohmann::ordered_json;
@@ -28,11 +28,15 @@ namespace SceneManagement
 {
 	class SceneManager;
 }
+namespace AssetManagement
+{
+	class AssetManager;
+}
 
 inline const char* OPTIONAL_NULL_VALUE = "null";
-extern SceneManagement::SceneManager* SceneManager;
 
-void InitJsonSerializationDependencies(SceneManagement::SceneManager& manager);
+void InitJsonSerializationDependencies(SceneManagement::SceneManager& manager, 
+	AssetManagement::AssetManager& assetManager);
 
 bool HasRequiredProperties(const Json& json, const std::vector<std::string>& propertyNames);
 
@@ -63,8 +67,8 @@ void to_json(Json& json, const ColorGradient& gradient);
 void from_json(const Json& json, TextChar& textChar);
 void to_json(Json& json, const TextChar& textChar);
 
-void from_json(const Json& json, TextCharPosition& textChar);
-void to_json(Json& json, const TextCharPosition& textChar);
+void from_json(const Json& json, TextCharArrayPosition& textChar);
+void to_json(Json& json, const TextCharArrayPosition& textChar);
 
 std::optional<Font> TryDeserializeFont(const Json& json);
 Json TrySerializeFont(const Font& font);
@@ -78,13 +82,56 @@ void to_json(Json& json, const TextBufferPosition& textChar);
 void from_json(const Json& json, VisualData& visualData);
 void to_json(Json& json, const VisualData& visualData);
 
-void from_json(const Json& json, SpriteAnimationDelta& delta);
-void to_json(Json& json, const SpriteAnimationDelta& delta);
+void from_json(const Json& json, SpriteAnimationFrame& frame);
+void to_json(Json& json, const SpriteAnimationFrame& frame);
+
+void from_json(const Json& json, SpriteAnimation& anim);
+void to_json(Json& json, const SpriteAnimation& anim);
 
 namespace Physics
 {
 	void from_json(const Json& json, Physics::AABB& aabb);
 	void to_json(Json& json, const Physics::AABB& aabb);
+}
+
+Asset* TryDeserializeAsset(const Json& json);
+Json TrySerializeAsset(const Asset& asset);
+Json TrySerializeAssets(const std::vector<const Asset*>& assets);
+
+template<typename T>
+requires (!std::is_pointer_v<T> && IsAssetType<T>)
+T* TryDeserializeTypeAsset(const Json& json)
+{
+	try
+	{
+		return dynamic_cast<T*>(TryDeserializeAsset(json));
+	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize Asset into type:{} but ran into error:{}", 
+			Utils::GetTypeName<T>(), e.what()));
+	}
+	return nullptr;
+}
+
+template<typename T>
+requires (!std::is_pointer_v<T> && IsAssetType<T>)
+std::vector<T*> TryDeserializeTypeAssets(const Json& json)
+{
+	try
+	{
+		std::vector<T*> assets = {};
+		for (const auto& jsonProeprty : json.get<std::vector<std::string>>())
+		{
+			assets.push_back(TryDeserializeAsset(jsonProeprty));
+		}
+	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize Asset into type:{} but ran into error:{}",
+			Utils::GetTypeName<T>(), e.what()));
+	}
+	return {};
 }
 
 void from_json(const Json& json, SerializableEntity& serializableEntity);
@@ -122,9 +169,9 @@ T* TryDeserializeComponent(const Json& json, ECS::Entity& entitySelf, const bool
 					return nullptr;
 
 				//SerializableComponent serializedComponent = json.get<SerializableComponent>();
-				if (!Assert(SceneManager != nullptr, std::format("Tried to parse entity from serialized entity "
+				/*if (!Assert(SceneManager != nullptr, std::format("Tried to parse entity from serialized entity "
 					"but parser does not contain valid scene manager")))
-					return nullptr;
+					return nullptr;*/
 
 				//LogError("GOTTEN TO DYNAMIC CASY");
 				return dynamic_cast<T*>(componentData);

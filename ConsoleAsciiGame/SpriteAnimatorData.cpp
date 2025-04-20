@@ -2,68 +2,67 @@
 #include "SpriteAnimatorData.hpp"
 #include "JsonSerializers.hpp"
 #include "HelperFunctions.hpp"
+#include "SpriteAnimationAsset.hpp"
 
-SpriteAnimationFrame::SpriteAnimationFrame() : SpriteAnimationFrame(0, {}) {}
-SpriteAnimationFrame::SpriteAnimationFrame(const float& time, const VisualData& frame) :
-	m_Time(time), m_VisualFrame(frame) {}
-
-SpriteAnimationDelta::SpriteAnimationDelta() : SpriteAnimationDelta(0, {}) {}
-SpriteAnimationDelta::SpriteAnimationDelta(const float& time, const VisualDataPositions& data) :
-	m_Time(time), m_VisualDelta(data) {}
-
-std::string SpriteAnimationDelta::ToString() const
-{
-	return std::format("[Time:{}, VisualDelta:{}]", std::to_string(m_Time), 
-		Utils::ToStringIterable<VisualDataPositions, TextCharPosition>(m_VisualDelta));
-}
-
-SpriteAnimatorData::SpriteAnimatorData() : SpriteAnimatorData({}, 1, 1, false) {}
+SpriteAnimatorData::SpriteAnimatorData() : ComponentData(), m_animations(), m_playingAnimation(nullptr) {}
 SpriteAnimatorData::SpriteAnimatorData(const Json& json) : SpriteAnimatorData()
 {
 	Deserialize(json);
 }
 
-SpriteAnimatorData::SpriteAnimatorData(const std::vector<SpriteAnimationFrame>& frames, const float& animationSpeed, const float& loopTime, const bool& loop) :
-	ComponentData(),
-	m_VisualDeltas{}, m_VisualDeltaIndex(0), m_SingleLoopLength(loopTime), m_NormalizedTime(0), m_AnimationSpeed(animationSpeed), m_Loop(loop)
+void SpriteAnimatorData::AddAnimation(SpriteAnimationAsset& animation)
 {
-	SpriteAnimationDelta visualDelta;
+	m_animations.emplace(animation.GetAnimation().m_Name, &animation);
+}
 
-	VisualDataPositions currentVisual = {};
-	const VisualData* currentData = nullptr;
-	const VisualData* prevData = nullptr;
+bool SpriteAnimatorData::HasAnimation(const std::string& name) const
+{
+	return m_animations.find(name) != m_animations.end();
+}
 
-	for (int i=0; i<frames.size(); i++)
-	{
-		currentData = &(frames[i].m_VisualFrame);
-		if (currentData == nullptr) continue;
+bool SpriteAnimatorData::IsPlayingAnimation() const
+{
+	return m_playingAnimation != nullptr;
+}
+const SpriteAnimation* SpriteAnimatorData::TryGetPlayingAnimation() const
+{
+	if (m_playingAnimation == nullptr) return nullptr;
+	return &(m_playingAnimation->GetAnimation());
+}
+SpriteAnimation* SpriteAnimatorData::TryGetPlayingAnimationMutable()
+{
+	if (m_playingAnimation == nullptr) return nullptr;
+	return &(m_playingAnimation->GetAnimationMutable());
+}
+bool SpriteAnimatorData::TryPlayAnimation(const std::string& name)
+{
+	TryStopCurrentAnimation();
 
-		visualDelta = { frames[i].m_Time, {} };
-		currentVisual = {};
+	auto animIt = m_animations.find(name);
+	if (animIt == m_animations.end()) return false;
 
-		if (i>0) prevData = &(frames[i - 1].m_VisualFrame);
+	m_playingAnimation = animIt->second;
+	return true;
+}
+bool SpriteAnimatorData::TryStopCurrentAnimation()
+{
+	if (!IsPlayingAnimation()) return false;
 
-		for (int r = 0; r < currentData->m_Text.GetHeight(); r++)
-		{
-			for (int c = 0; c < currentData->m_Text.GetWidth(); c++)
-			{
-				if (prevData != nullptr)
-				{
-					if (r >= prevData->m_Text.GetHeight() || c >= prevData->m_Text.GetWidth()) continue;
-					if (currentData->m_Text.GetAtUnsafe({r, c}) == prevData->m_Text.GetAtUnsafe({r, c})) continue;
-				}
-				
-				currentVisual.emplace_back(Array2DPosition{r,c}, currentData->m_Text.GetAtUnsafe({r, c}));
-			}
-		}
-		visualDelta.m_VisualDelta = currentVisual;
-		m_VisualDeltas.push_back(visualDelta);
-	}
+	m_playingAnimation = nullptr;
+	return true;
+}
+bool SpriteAnimatorData::TryStopAnimation(const std::string& name)
+{
+	if (!IsPlayingAnimation() || m_playingAnimation->GetAnimation().m_Name!=name) return false;
+
+	m_playingAnimation = nullptr;
+	return true;
 }
 
 void SpriteAnimatorData::InitFields()
 {
-	m_Fields = {ComponentField("Loop", &m_Loop), ComponentField("Speed", &m_AnimationSpeed)};
+	//m_Fields = {ComponentField("Loop", &m_Loop), ComponentField("Speed", &m_AnimationSpeed)};
+	m_Fields = {};
 }
 
 std::vector<std::string> SpriteAnimatorData::GetDependencyFlags() const
@@ -73,19 +72,31 @@ std::vector<std::string> SpriteAnimatorData::GetDependencyFlags() const
 
 void SpriteAnimatorData::Deserialize(const Json& json)
 {
-	m_Loop = json.at("Loop").get<bool>();
-	m_AnimationSpeed = json.at("Speed").get<float>();
-	m_SingleLoopLength = json.at("Length").get<float>();
-	m_VisualDeltas = json.at("VisualDeltas").get<std::vector<SpriteAnimationDelta>>();
+	SpriteAnimationAsset* animAsset = nullptr;
+	for (const Json& animationJson : json.at("Animations").get<std::vector<Json>>())
+	{
+		animAsset= TryDeserializeTypeAsset<SpriteAnimationAsset>(animationJson);
+		m_animations.emplace(animAsset->GetAnimation().m_Name, animAsset);
+	}
 }
 Json SpriteAnimatorData::Serialize()
 {
-	return { {"Loop", m_Loop}, {"Speed", m_AnimationSpeed}, {"Length", m_SingleLoopLength }, {"VisualDeltas", m_VisualDeltas}};
+	std::vector<Json> serializedAssets = {};
+	for (const auto& animation : m_animations)
+	{
+		if (animation.second == nullptr) continue;
+		serializedAssets.push_back(TrySerializeAsset(*animation.second));
+	}
+	return { "Animations", serializedAssets };
 }
 
 std::string SpriteAnimatorData::ToString() const
 {
-	return std::format("[SpriteAnimator Loop:{} Speed:{} Length:{} VisualDeltas:{}]",
-		std::to_string(m_Loop), std::to_string(m_AnimationSpeed), std::to_string(m_SingleLoopLength), 
-		Utils::ToStringIterable<std::vector<SpriteAnimationDelta>, SpriteAnimationDelta>(m_VisualDeltas));
+	std::vector<std::string> animtionsStr = {};
+	for (const auto& anim : m_animations)
+	{
+		animtionsStr.push_back(anim.second->GetAnimation().ToString());
+	}
+	return std::format("[SpriteAniamtor Anims:{}]", 
+		Utils::ToStringIterable<std::vector<std::string>, std::string>(animtionsStr));
 }

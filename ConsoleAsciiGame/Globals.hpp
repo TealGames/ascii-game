@@ -7,6 +7,7 @@
 
 //TODO: this might have to become a txt or json file
 inline const std::string WINDOW_NAME = "game";
+static constexpr std::uint8_t TARGET_FPS = 60;
 inline constexpr int SCREEN_WIDTH = 800;
 inline constexpr int SCREEN_HEIGHT = 600;
 inline const Vec2Int SCREEN_ASPECT_RATIO = { 4, 3 };

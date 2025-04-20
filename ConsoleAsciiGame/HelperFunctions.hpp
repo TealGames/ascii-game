@@ -338,6 +338,25 @@ namespace Utils
 		return str;
 	}
 
+	template<typename T>
+	std::string ToStringIterable(const std::vector<std::vector<T>>& vec2d, const bool newLineOnEveryRow=false)
+	{
+		std::vector<std::string> vecStrs = {};
+		for (const auto& vec : vec2d)
+		{
+			vecStrs.push_back(newLineOnEveryRow? "\n" : "" + Utils::ToStringIterable<std::vector<T>, T>(vec));
+		}
+
+		return Utils::ToStringIterable<std::vector<std::string>, std::string>(vecStrs);
+	}
+
+	template<typename KType, typename VType>
+	std::string ToStringPair(const KType& key, const VType& value)
+	{
+		return std::format("[K:{}, V:{}]", Utils::TryToString<KType>(key).value_or(""),
+			Utils::TryToString<VType>(value).value_or(""));
+	}
+
 	std::string ToString(const char& c);
 	std::string ToStringDouble(const double& d, const std::streamsize& precision, const bool& decimalPlacePrecision =true );
 	
@@ -688,7 +707,4 @@ namespace Utils
 	{
 		return ptr != nullptr;
 	}
-
-	std::string ReadFile(const std::filesystem::path& path);
-	void WriteFile(const std::filesystem::path&, const std::string content);
 }

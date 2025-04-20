@@ -10,6 +10,7 @@ namespace Physics
 		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* newScene) mutable -> void
 			{
 				if (newScene == nullptr) return;
+				//Assert(false, std::format("Scene changed"));
 
 				m_physics.ClearAllBodies();
 				for (auto& entity : newScene->GetAllEntitiesMutable())

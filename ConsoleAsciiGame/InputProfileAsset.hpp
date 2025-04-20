@@ -8,13 +8,13 @@
 class InputProfileAsset : public Asset, public IDependable<Input::InputManager>
 {
 private:
+	Input::InputManager* m_inputManager;
 	std::optional<Input::InputProfile> m_profile;
 public:
 	static const std::string EXTENSION;
 
 private:
-	void DeserializeFile(Input::InputManager& inputManager);
-
+	Input::InputManager& GetInputManager();
 public:
 	InputProfileAsset(const std::filesystem::path& path);
 
@@ -22,5 +22,8 @@ public:
 	const Input::InputProfile& GetProfile() const;
 
 	void SetDependencies(Input::InputManager& input) override;
+
+	void UpdateAssetFromFile() override;
+	void SaveToPath(const std::filesystem::path& path) override;
 };
 

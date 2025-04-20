@@ -21,22 +21,36 @@ bool TextChar::operator==(const TextChar& other) const
 std::string TextChar::ToString() const
 {
 	return std::format("[Color: {} C:{}]",
-		RaylibUtils::ToString(m_Color), Utils::ToString(m_Char));
+		RaylibUtils::ToString(m_Color), m_Char== EMPTY_CHAR_PLACEHOLDER? "EMPTY" : Utils::ToString(m_Char));
 }
 
-TextCharPosition::TextCharPosition() : TextCharPosition({}, {}) {}
-TextCharPosition::TextCharPosition(const Array2DPosition& pos, const TextChar& textChar)
+std::string ToString(const std::vector<std::vector<TextChar>>& textChars)
+{
+	std::string fullStr = "";
+	for (size_t r = 0; r < textChars.size(); r++)
+	{
+		fullStr += "\n";
+		for (size_t c = 0; c < textChars[r].size(); c++)
+		{
+			fullStr += std::format("[{}] ", textChars[r][c].ToString());
+		}
+	}
+	return fullStr;
+}
+
+TextCharArrayPosition::TextCharArrayPosition() : TextCharArrayPosition({}, {}) {}
+TextCharArrayPosition::TextCharArrayPosition(const Array2DPosition& pos, const TextChar& textChar)
 	: m_RowColPos(pos), m_Text(textChar)
 {
 
 }
 
-bool TextCharPosition::operator==(const TextCharPosition& other) const
+bool TextCharArrayPosition::operator==(const TextCharArrayPosition& other) const
 {
 	return m_RowColPos == other.m_RowColPos && m_Text == other.m_Text;
 }
 
-TextCharPosition& TextCharPosition::operator=(const TextCharPosition& other)
+TextCharArrayPosition& TextCharArrayPosition::operator=(const TextCharArrayPosition& other)
 {
 	if (*this == other) return *this;
 
@@ -45,7 +59,7 @@ TextCharPosition& TextCharPosition::operator=(const TextCharPosition& other)
 	return *this;
 }
 
-std::string TextCharPosition::ToString() const
+std::string TextCharArrayPosition::ToString() const
 {
 	return std::format("[Pos:{}, Data:{}]",
 		m_RowColPos.ToString(), m_Text.ToString());
@@ -68,14 +82,14 @@ TextArray::TextArray(const int& width, const int& height, const std::vector<std:
 {
 	if (m_height == 0) return;
 	if (!Assert(this, chars.size() == m_height, std::format("Tried to init a text array with height ({}) "
-		"that does not match character arg ({})!",
-		std::to_string(chars.size()), std::to_string(m_height)))) return;
+		"that does not match character arg ({}): {}!",
+		std::to_string(chars.size()), std::to_string(m_height), ToString(chars, true)))) return;
 
 	for (auto& textRow : m_TextArray)
 	{
 		if (!Assert(this, textRow.size() == m_width, std::format("Tried to init a text array "
-			"with width ({}) that does not match character arg ({})!",
-			std::to_string(textRow.size()), std::to_string(m_width)))) return;
+			"with width ({}) that does not match character arg ({}): {}!",
+			std::to_string(textRow.size()), std::to_string(m_width), ToString(chars, true)))) return;
 	}
 }
 
@@ -171,9 +185,10 @@ bool TextArray::IsValidPos(const Array2DPosition& rowColPos) const
 
 void TextArray::SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar)
 {
-	if (!Assert(this, IsValidPos(rowColPos), std::format("Tried to set the char: {} "
-		"at INVALID row col: {} of full buffer: {}",
-		Utils::ToString(newBufferChar.m_Char), rowColPos.ToString(), ToString()))) return;
+	if (!Assert(this, IsValidPos(rowColPos), std::format("Tried to set the char: '{}' "
+		"at INVALID row col: {} of full buffer: (Max r:{} c:{}){}",
+		Utils::ToString(newBufferChar.m_Char), rowColPos.ToString(), std::to_string(m_width-1), 
+		std::to_string(m_height-1), ToString()))) return;
 
 	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].m_Char = newBufferChar.m_Char;
 	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].m_Color = newBufferChar.m_Color;
@@ -205,7 +220,7 @@ void TextArray::SetAt(const std::vector<Array2DPosition>& rowColPos, const TextC
 	}
 }
 
-void TextArray::SetAt(const std::vector<TextCharPosition>& updatedCharsAtPos)
+void TextArray::SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos)
 {
 	for (const auto& posChar : updatedCharsAtPos)
 	{

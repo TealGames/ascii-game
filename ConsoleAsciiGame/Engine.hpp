@@ -25,6 +25,7 @@
 #include "CameraController.hpp"
 #include "CollisionRegistry.hpp"
 #include "TimeKeeper.hpp"
+#include "GameManager.hpp"
 //#include "InputManager.hpp"
 
 #include "GUISelectorManager.hpp"
@@ -37,7 +38,7 @@ namespace Core
 	{
 	private:
 
-		AssetManager m_assetManager;
+		AssetManagement::AssetManager m_assetManager;
 		CollisionRegistry m_collisionRegistry;
 		SceneManagement::SceneManager m_sceneManager;
 		Physics::PhysicsManager m_physicsManager;
@@ -67,12 +68,11 @@ namespace Core
 		//std::uint8_t m_currentFrameCounter = 0;
 
 		TimeKeeper m_timeKeeper;
-
 		EngineEditor m_editor;
+		GameManager m_gameManager;
 	public:
 
 	private:
-		void InitEngine();
 		void ValidateAll();
 		void Destroy();
 

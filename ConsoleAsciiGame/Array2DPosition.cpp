@@ -5,7 +5,7 @@
 
 Array2DPosition::Array2DPosition() : 
 	m_Pos() {}
-Array2DPosition::Array2DPosition(const int& row, const int& col) : 
+Array2DPosition::Array2DPosition(const int row, const int col) : 
 	m_Pos(row, col) {}
 
 std::string Array2DPosition::ToString() const
@@ -23,14 +23,24 @@ const int& Array2DPosition::GetCol() const
 	return m_Pos.m_Y;
 }
 
-void Array2DPosition::SetRow(const int& row)
+void Array2DPosition::SetRow(int row)
 {
+	if (row < NULL_INDEX) row = NULL_INDEX;
 	m_Pos.m_X = row;
 }
-
-void Array2DPosition::SetCol(const int& col)
+void Array2DPosition::IncrementRow(const int delta)
 {
+	SetRow(m_Pos.m_X + delta);
+}
+
+void Array2DPosition::SetCol(int col)
+{
+	if (col < NULL_INDEX) col = NULL_INDEX;
 	m_Pos.m_Y = col;
+}
+void Array2DPosition::IncrementCol(const int delta)
+{
+	SetCol(m_Pos.m_Y + delta);
 }
 
 Array2DPosition Array2DPosition::operator+(const Array2DPosition& otherPos) const

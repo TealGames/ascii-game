@@ -3,13 +3,16 @@
 #include "JsonConstants.hpp"
 #include "Debug.hpp"
 #include "SceneManager.hpp"
+#include "AssetManager.hpp"
 
 SceneManagement::SceneManager* SceneManager = nullptr;
+AssetManagement::AssetManager* AssetManager = nullptr;
 //static constexpr std::uint8_t SERIALIZATION_DECIMAL_COUNT = 3;
 
-void InitJsonSerializationDependencies(SceneManagement::SceneManager& manager)
+void InitJsonSerializationDependencies(SceneManagement::SceneManager& manager, AssetManagement::AssetManager& assetManager)
 {
 	SceneManager = &manager;
+	AssetManager = &assetManager;
 }
 
 bool HasRequiredProperties(const Json& json, const std::vector<std::string>& propertyNames)
@@ -232,7 +235,7 @@ void to_json(Json& json, const TextChar& textChar)
 	json = { {"Color", textChar.m_Char}, {"Char", textChar.m_Char}};
 }
 
-void from_json(const Json& json, TextCharPosition& textChar)
+void from_json(const Json& json, TextCharArrayPosition& textChar)
 {
 	const char* COLOR_PROPERTY = "Color";
 	const char* CHAR_PROPERTY = "Char";
@@ -242,7 +245,7 @@ void from_json(const Json& json, TextCharPosition& textChar)
 
 	try
 	{
-		textChar = TextCharPosition(json.at(POS_PROPERTY).get<Array2DPosition>(),
+		textChar = TextCharArrayPosition(json.at(POS_PROPERTY).get<Array2DPosition>(),
 			TextChar(json.at(COLOR_PROPERTY).get<Color>(), json.at(CHAR_PROPERTY).get<std::string>()[0]));
 	}
 	catch (const std::exception& e)
@@ -250,7 +253,7 @@ void from_json(const Json& json, TextCharPosition& textChar)
 		Assert(false, std::format("Tried to deserialize textcharpos:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
-void to_json(Json& json, const TextCharPosition& textChar)
+void to_json(Json& json, const TextCharArrayPosition& textChar)
 {
 	json = { {"Pos", textChar.m_RowColPos}, {"Char", std::string(1, textChar.m_Text.m_Char)}, {"Color", textChar.m_Text.m_Color}};
 }
@@ -402,7 +405,7 @@ void from_json(const Json& json, VisualData& visualData)
 
 	try
 	{
-		auto textChars = json.at(BUFFER_PROPERTY).get<std::vector<std::vector<TextCharPosition>>>();
+		auto textChars = json.at(BUFFER_PROPERTY).get<std::vector<std::vector<TextCharArrayPosition>>>();
 
 		//std::optional<Font> maybeFont = TryDeserializeFont(json.at(FONT_PROEPRTY).get<std::string>());
 
@@ -462,25 +465,58 @@ void to_json(Json& json, const VisualData& visualData)
 	if (visualData.HasPredefinedCharArea()) json["CharArea"] = visualData.GetPredefinedCharArea();
 }
 
-void from_json(const Json& json, SpriteAnimationDelta& delta)
+void from_json(const Json& json, SpriteAnimationFrame& frame)
 {
 	const char* TIME_PROPERTY = "Time";
-	const char* DELTA_PROPERTY = "Delta";
-	if (!HasRequiredProperties(json, { TIME_PROPERTY, DELTA_PROPERTY })) 
+	const char* VISUAL_PROPERTY = "Visual";
+	if (!HasRequiredProperties(json, { TIME_PROPERTY, VISUAL_PROPERTY }))
 		return;
 
 	try
 	{
-		delta = SpriteAnimationDelta(json.at(TIME_PROPERTY).get<float>(), json.at(DELTA_PROPERTY).get<VisualDataPositions>());
+		frame = SpriteAnimationFrame(json.at(TIME_PROPERTY).get<float>(), json.at(VISUAL_PROPERTY).get<VisualData>());
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize sprite animation delta:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		Assert(false, std::format("Tried to deserialize sprite animation frame:{} but ran into error:{}",
+			JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
-void to_json(Json& json, const SpriteAnimationDelta& delta)
+void to_json(Json& json, const SpriteAnimationFrame& frame)
 {
-	json = { {"Time", delta.m_Time}, {"Delta", delta.m_VisualDelta}};
+	json= { {"Time", frame.m_Time}, {"Visual", frame.m_VisualFrame} };
+}
+
+void from_json(const Json& json, SpriteAnimation& anim)
+{
+	const char* NAME_PROPERTY = "Name";
+	const char* LOOP_PROPERTY = "Loop";
+	const char* SPEED_PROPERTY = "Speed";
+	const char* LENGTH_PROPERTY = "Length";
+	const char* VISUALS_PROPERTY = "Visuals";
+	if (!HasRequiredProperties(json, { NAME_PROPERTY, LOOP_PROPERTY, SPEED_PROPERTY,
+		LENGTH_PROPERTY, VISUALS_PROPERTY }))
+		return;
+
+	try
+	{
+		anim.m_Name = json.at(NAME_PROPERTY).get<std::string>();
+		anim.m_Loop = json.at(LOOP_PROPERTY).get<bool>();
+		anim.m_AnimationSpeed = json.at(SPEED_PROPERTY).get<float>();
+		anim.m_SingleLoopLength = json.at(LENGTH_PROPERTY).get<float>();
+		anim.SetVisualsFromFrames(json.at(VISUALS_PROPERTY).get<std::vector<SpriteAnimationFrame>>());
+	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize sprite animation:{} but ran into error:{}", 
+			JsonUtils::ToStringProperties(json), e.what()));
+	}
+}
+void to_json(Json& json, const SpriteAnimation& anim)
+{
+
+	json= { {"Loop", anim.m_Loop}, {"Speed", anim.m_AnimationSpeed},
+		{"Length", anim.m_SingleLoopLength }, {"Visuals", anim.m_FrameVisuals} };
 }
 
 void from_json(const Json& json, SerializableEntity& serializableEntity)
@@ -497,12 +533,41 @@ void from_json(const Json& json, SerializableEntity& serializableEntity)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize serializable entity:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		Assert(false, std::format("Tried to deserialize serializable entity:{} but ran into error:{}", 
+			JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const SerializableEntity& serializableEntity)
 {
 	json = { {"Entity", serializableEntity.m_EntityName}, {"Scene", serializableEntity.m_SceneName} };
+}
+
+Asset* TryDeserializeAsset(const Json& json)
+{
+	try
+	{
+		return AssetManager->TryGetAssetMutable(json.get<std::string>());
+	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize asset:{} but ran into error:{}", 
+			JsonUtils::ToStringProperties(json), e.what()));
+	}
+	return nullptr;
+}
+Json TrySerializeAsset(const Asset& asset)
+{
+	return asset.GetName();
+}
+Json TrySerializeAssets(const std::vector<const Asset*>& assets)
+{
+	std::vector<Json> assetsSerialized;
+	for (const auto& asset : assets)
+	{
+		if (asset == nullptr) continue;
+		assetsSerialized.push_back(TrySerializeAsset(*asset));
+	}
+	return assetsSerialized;
 }
 
 ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)

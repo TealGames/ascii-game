@@ -6,7 +6,7 @@
 #include "raylib.h"
 
 //The character used for empty spaces and will NOT be rendered
-constexpr char EMPTY_CHAR_PLACEHOLDER = '_';
+constexpr char EMPTY_CHAR_PLACEHOLDER = ' ';
 
 //TODO: optimization could be to group together similar colors
 //into one batch that contains the positions, different chars and color
@@ -23,17 +23,19 @@ struct TextChar
 	std::string ToString() const;
 };
 
-struct TextCharPosition
+std::string ToString(const std::vector<std::vector<TextChar>>& textChars);
+
+struct TextCharArrayPosition
 {
 	Array2DPosition m_RowColPos;
 	TextChar m_Text;
 
-	TextCharPosition();
-	TextCharPosition(const Array2DPosition& pos, const TextChar& textChar);
-	TextCharPosition(const TextCharPosition&) = default;
+	TextCharArrayPosition();
+	TextCharArrayPosition(const Array2DPosition& pos, const TextChar& textChar);
+	TextCharArrayPosition(const TextCharArrayPosition&) = default;
 
-	bool operator==(const TextCharPosition& other) const;
-	TextCharPosition& operator=(const TextCharPosition& other);
+	bool operator==(const TextCharArrayPosition& other) const;
+	TextCharArrayPosition& operator=(const TextCharArrayPosition& other);
 	std::string ToString() const;
 };
 
@@ -88,7 +90,7 @@ public:
 	void SetAt(const Array2DPosition& rowColPos, const Color& newColor);
 
 	void SetAt(const std::vector<Array2DPosition>& rowColPos, const TextChar& newBufferChar);
-	void SetAt(const std::vector<TextCharPosition>& updatedCharsAtPos);
+	void SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos);
 	void SetAt(const std::vector<ColorPosition>& updateColorsAtPos);
 
 	/// <summary>

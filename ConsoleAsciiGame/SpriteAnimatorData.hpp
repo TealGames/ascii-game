@@ -2,54 +2,55 @@
 #include <vector>
 #include "VisualData.hpp"
 #include "ComponentData.hpp"
+#include <unordered_map>
 
-/// <summary>
-/// Stores the whole entire visual frame. This is meant for the user interface for 
-/// supplying the frames to the sprite aniamtor
-/// </summary>
-struct SpriteAnimationFrame
+class SpriteAnimationAsset;
+class SpriteAnimation;
+
+class SpriteAnimatorData : public ComponentData
 {
-	float m_Time;
-	VisualData m_VisualFrame;
+private:
+	//TODO: replace with sparse set for optimization
+	std::unordered_map<std::string, SpriteAnimationAsset*> m_animations;
+	SpriteAnimationAsset* m_playingAnimation;
 
-	SpriteAnimationFrame();
-	SpriteAnimationFrame(const float& time, const VisualData& frame);
-};
+public:
 
-/// <summary>
-/// Stores a delta from the past frame. This is meant for internal storage of the 
-/// frames and provides optimization
-/// </summary>
-struct SpriteAnimationDelta
-{
-	float m_Time;
-	VisualDataPositions m_VisualDelta;
-
-	SpriteAnimationDelta();
-	SpriteAnimationDelta(const float& time, const VisualDataPositions& data);
-
-	std::string ToString() const;
-};
-
-struct SpriteAnimatorData : public ComponentData
-{
-	std::vector<SpriteAnimationDelta> m_VisualDeltas;
-	size_t m_VisualDeltaIndex;
-	/// <summary>
-	/// The duration in seconds of a single animation loop
-	/// </summary>
-	float m_SingleLoopLength;
-	/// <summary>
-	/// The current time of the animation relative to its beginning
-	/// </summary>
-	float m_NormalizedTime;
-	float m_AnimationSpeed;
-	bool m_Loop;
-
+private:
+public:
 	SpriteAnimatorData();
 	SpriteAnimatorData(const Json& json);
-	SpriteAnimatorData(const std::vector<SpriteAnimationFrame>& frames,
-		const float& animationSpeed, const float& loopTime, const bool& loop);
+
+	void AddAnimation(SpriteAnimationAsset& animationAsset);
+
+	template<typename ...Args>
+	void EmplaceAnimation(Args&&... args)
+	{
+		auto tuple = std::make_tuple(args...);
+		m_animations.emplace(std::get<0>(tuple), std::forward(args...));
+	}
+
+	bool HasAnimation(const std::string& name) const;
+
+	bool IsPlayingAnimation() const;
+	const SpriteAnimation* TryGetPlayingAnimation() const;
+	SpriteAnimation* TryGetPlayingAnimationMutable();
+	/// <summary>
+	/// Will attempt to play an animation by this name (if it exists).
+	/// Note: since only one animation can play at a time any other playing are stopped
+	/// Note: returns false if no animation begun to play and returns true if began playing
+	/// </summary>
+	/// <param name="name"></param>
+	/// <returns></returns>
+	bool TryPlayAnimation(const std::string& name);
+	/// <summary>
+	/// Tries to stop the playing animation (if there is any playing) by this name
+	/// Return false if none stopped and true if one was stopped
+	/// </summary>
+	/// <param name="name"></param>
+	/// <returns></returns>
+	bool TryStopAnimation(const std::string& name);
+	bool TryStopCurrentAnimation();
 
 	std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;

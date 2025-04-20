@@ -49,7 +49,9 @@ struct VisualDataPreset
 		const NormalizedPosition& relativePivotPos);
 };
 
-using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
+using RawTextBufferBlock = std::vector<std::vector<TextCharArrayPosition>>;
+std::string ToString(const RawTextBufferBlock& rawBuffer);
+
 class VisualData
 {
 public:
@@ -135,11 +137,12 @@ public:
 
 	VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPreset& preset);
 	
-	std::optional<TextArray> CreateSquaredBuffer(const RawTextBufferBlock& rawBuffer) const;
+	std::optional<TextArray> CreateRectangularBuffer(const RawTextBufferBlock& rawBuffer) const;
 	std::string ToStringRawBuffer(const RawTextBufferBlock& block);
 
 	const RawTextBufferBlock& GetRawBuffer() const;
 
+	Vec2Int GetBufferSize() const;
 	Vec2 GetWorldSize() const;
 	/// <summary>
 	/// Pivot position is relative to origin of bottom left [0,0] and top right [1, 1]
@@ -165,4 +168,4 @@ public:
 };
 
 //TODO: should sprites have emptyu char for locations not covered or should they store the position?
-using VisualDataPositions = std::vector<TextCharPosition>;
+using VisualDataPositions = std::vector<TextCharArrayPosition>;

@@ -4,7 +4,6 @@
 #include "JsonUtils.hpp"
 #include "JsonSerializers.hpp"
 #include "RaylibUtils.hpp"
-
 #include "AnimatorData.hpp"
 #include "CameraData.hpp"
 #include "EntityRendererData.hpp"
@@ -15,14 +14,16 @@
 #include "SpriteAnimatorData.hpp"
 #include "UIObjectData.hpp"
 #include "ParticleEmitterData.hpp"
+#include "AssetManager.hpp"
+#include "IOHandler.hpp"
 
-const std::string SceneAsset::SCENE_EXTENSION = ".json";
+const std::string SceneAsset::EXTENSION = ".json";
 const std::string SceneAsset::LEVEL_EXTENSION = ".level";
 
 SceneAsset::SceneAsset(const std::filesystem::path& path) : 
-	Asset(path), m_assetManager(nullptr), m_scene(std::nullopt) {}
+	Asset(path, true), m_assetManager(nullptr), m_scene(std::nullopt) {}
 
-AssetManager& SceneAsset::GetAssetManagerMutable()
+AssetManagement::AssetManager& SceneAsset::GetAssetManagerMutable()
 {
 	if (!Assert(this, m_assetManager!=nullptr, std::format("Tried to retrieve asset manager MUTABLE from scene asset:{} "
 		"but the asset manager has no reference yet due to dependencies for this asset not initialized", ToString())))
@@ -57,7 +58,7 @@ const Scene& SceneAsset::GetScene() const
 	return m_scene.value();
 }
 
-void SceneAsset::SetDependencies(GlobalEntityManager& globalManager, AssetManager& assetManager)
+void SceneAsset::SetDependencies(GlobalEntityManager& globalManager, AssetManagement::AssetManager& assetManager)
 {
 	m_assetManager = &assetManager;
 	m_scene = Scene(GetName(), globalManager);
@@ -65,8 +66,10 @@ void SceneAsset::SetDependencies(GlobalEntityManager& globalManager, AssetManage
 	//LogError(std::format("Set scene dependencies: {}", m_scene.value().ToString()));
 }
 
-void SceneAsset::Deserialize(const Json& json)
+void SceneAsset::UpdateAssetFromFile()
 {
+	Json json = Json::parse(IO::TryReadFile(GetPath()));
+
 	Json entityComponentsJson = {};
 	Json currentComponentJson = {};
 	std::string componentName = "";
@@ -180,11 +183,11 @@ void SceneAsset::Deserialize(const Json& json)
 			{
 				std::function<void()> delayedAction = [componentCreated, currentComponentJson]() mutable-> void
 					{
-						LogError("INSIDE DELAWED ACTION FUNC");
+						/*LogError("INSIDE DELAWED ACTION FUNC");
 						LogError("Deserializing delayed component:{} dependencies:{} has dependencies:{}", 
 							Utils::FormatTypeName(typeid(*componentCreated).name())), 
 							Utils::ToStringIterable<std::vector<std::string>, std::string>(componentCreated->GetDependencyFlags()), 
-							std::to_string(componentCreated->DoesEntityHaveComponentDependencies());
+							std::to_string(componentCreated->DoesEntityHaveComponentDependencies());*/
 
 						componentCreated->Deserialize(currentComponentJson);
 						//LogError(std::format("Created {} component: {}", Utils::FormatTypeName(typeid(*componentCreated).name()), componentCreated->ToString()));
@@ -195,7 +198,7 @@ void SceneAsset::Deserialize(const Json& json)
 			}
 		}
 
-		LogError(std::format("Entity:{} has sibling dependenceis:{}", currentEntity->GetName(), std::to_string(delayedSiblingDependencies.size())));
+		//LogError(std::format("Entity:{} has sibling dependenceis:{}", currentEntity->GetName(), std::to_string(delayedSiblingDependencies.size())));
 
 		//Since some components may require dependencies on other components before they could be deserialized
 		//we wait until all other non-dependent components are deserialized then we do the others
@@ -220,17 +223,18 @@ void SceneAsset::Deserialize(const Json& json)
 					continue;
 				}
 
-				LogError(std::format("Invoking delayed func:{}", Utils::FormatTypeName(typeid(*std::get<1>(delayedSiblingDependencies[i])).name())));
+				//LogError(std::format("Invoking delayed func:{}", Utils::FormatTypeName(typeid(*std::get<1>(delayedSiblingDependencies[i])).name())));
 				std::get<0>(delayedSiblingDependencies[i])();
 			}
 		}
 	}
 
 	if (delayedEntityDependencies.HasListeners()) delayedEntityDependencies.Invoke();
+	TryLoadLevelBackground();
 	//Assert(false, std::format("ENDED DESERIALIZATION"));
 }
 
-Json SceneAsset::Serialize()
+void SceneAsset::SaveToPath(const std::filesystem::path& path)
 {
 	//TODO: floats should not be fully serialized and should be partially cut off
 
@@ -312,20 +316,20 @@ Json SceneAsset::Serialize()
 				{
 					Assert(false, std::format("Tried to SERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
 						"but no component by that name exists!", componentName, entity->GetName(), GetPath().string()));
-					return {};
+					return;
 				}
 			}
 			catch (const std::exception& e)
 			{
 				LogError(this, std::format("Tried to serialize scene asset but ran into error while converting component"
 					"of type : {} for entity : {}. Error : {}", componentName, entity->GetName(), e.what()));
-				return {};
+				return;
 			}
 			LogError(std::format("Created component json:{}", JsonUtils::ToStringProperties(serializedComponentJson)));
 
 			if (!Assert(this, !serializedComponentJson.empty(), std::format("Tried to deserialize scene asset for entity:{} "
 				"at component:{} but its component json is empty!", entity->GetName(), componentName)))
-				return {};
+				return;
 
 			currentComponentJson.insert(serializedComponentJson.begin(), serializedComponentJson.end());
 			currentEntityJson["Components"].push_back(currentComponentJson);
@@ -333,46 +337,8 @@ Json SceneAsset::Serialize()
 		json["Entities"].push_back(currentEntityJson);
 	}
 	LogError(std::format("Resulting json : {}", JsonUtils::ToStringProperties(json)));
-	return json;
-}
-
-void SceneAsset::SerializeToPath(const std::filesystem::path& path)
-{
-	std::ofstream stream(path);
-	if (!Assert(this, !!stream, std::format("Tried to serialzie scene asset to path:{}"
-		"but file could not be opened", path.string())))
-		return;
-
-	Json serializedJson = Serialize();
-	stream << serializedJson;
-	LogError(std::format("Serialized json:{}", JsonUtils::ToStringProperties(serializedJson)));
-}
-void SceneAsset::SerializeToSelf()
-{
-	SerializeToPath(GetPath());
-}
-
-void SceneAsset::Load()
-{
-	std::string currentLine = "";
-	std::string fullJson = "";
-	std::ifstream fstream(GetPath());
-
-	while (std::getline(fstream, currentLine))
-	{
-		fullJson += currentLine;
-	}
-
-	Json parsedJson = Json::parse(fullJson);
-
-	Deserialize(parsedJson);
-	LogError(std::format("DESERIALIZE SCENE:{}", GetScene().ToString()));
-	TryLoadLevelBackground();
-
-	//Log("Creating new layer in scene");
-
-	LogError(std::format("SCENE LOADED:{}", GetScene().ToString()));
-	//Assert(false, "ENDED LAODING SCENE");
+	
+	IO::TryWriteFile(path, json.dump());
 }
 
 bool SceneAsset::TryLoadLevelBackground()
@@ -384,7 +350,7 @@ bool SceneAsset::TryLoadLevelBackground()
 		return false;
 
 	std::ifstream fstream(maybePath);
-	std::vector<std::vector<TextCharPosition>> visualPositions = {};
+	std::vector<std::vector<TextCharArrayPosition>> visualPositions = {};
 
 	int r = 0;
 	std::string currentLine = "";
@@ -454,7 +420,7 @@ bool SceneAsset::TryLoadLevelBackground()
 				//TODO: what is the best way of doing this? putting in text chars and putting empty chars
 				//which would work fine for init but hard to create collision bound
 				//OR do we leave empty spots and put them in with positions?
-				visualPositions.back().push_back(TextCharPosition{ Array2DPosition(r, i), TextChar(currentColor, currentLine[i])});
+				visualPositions.back().push_back(TextCharArrayPosition{ Array2DPosition(r, i), TextChar(currentColor, currentLine[i])});
 			}
 			r++;
 		}
@@ -463,6 +429,7 @@ bool SceneAsset::TryLoadLevelBackground()
 	//We then create the background entity based off the the visual positions in the asset
 	const VisualData backgroundVisual = VisualData(visualPositions, GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE,
 		VisualData::DEFAULT_CHAR_SPACING, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::PIVOT_CENTER);
+	//Assert(false, std::format("Background visual:{} actual is:{}", ::ToString(visualPositions), backgroundVisual.ToString()));
 
 	ECS::Entity& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformData(Vec2{ 0,-10 }));
 	backgroundEntity.m_IsSerializable = false;
@@ -476,9 +443,4 @@ bool SceneAsset::TryLoadLevelBackground()
 	physicsBody.SetConstraint(MoveContraints(true, true));
 	/*LogWarning(std::format("Created Physics body: {} visual size: {}", physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), 
 		backgroundVisual.m_Text.GetSize().ToString()));*/
-}
-
-void SceneAsset::Unload()
-{
-	//TODO: implement
 }

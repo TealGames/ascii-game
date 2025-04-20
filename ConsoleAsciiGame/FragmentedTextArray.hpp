@@ -9,7 +9,7 @@ enum class TextArrayPositionType
 
 std::string ToString(const TextArrayPositionType& positionType);
 
-using TextCharCollection = std::vector<std::vector<TextCharPosition>>;
+using TextCharCollection = std::vector<std::vector<TextCharArrayPosition>>;
 class FragmentedTextArray
 {
 private:
@@ -20,11 +20,11 @@ private:
 public:
 
 private:
-	TextCharPosition* TryGetPosMutable(const Array2DPosition& position, const TextArrayPositionType& positionType);
+	TextCharArrayPosition* TryGetPosMutable(const Array2DPosition& position, const TextArrayPositionType& positionType);
 
 public:
 	FragmentedTextArray();
-	FragmentedTextArray(const std::vector<std::vector<TextCharPosition>>& chars);
+	FragmentedTextArray(const std::vector<std::vector<TextCharArrayPosition>>& chars);
 
 	
 	/// <summary>
@@ -40,17 +40,17 @@ public:
 	/// <returns></returns>
 	bool IsValidIndexPos(const Array2DPosition& index);
 
-	const TextCharPosition* TryGetPos(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType);
+	const TextCharArrayPosition* TryGetPos(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType);
 
 	void SetAt(const Array2DPosition& pos, const TextArrayPositionType& positionTypen, const TextChar& newBufferChar);
 	void SetAt(const Array2DPosition& pos, const TextArrayPositionType& positionTypen, const char& newChar);
 	void SetAt(const Array2DPosition& pos, const TextArrayPositionType& positionTypen, const Color& newColor);
 
 	void SetAt(const std::vector<Array2DPosition>& rowColPos, const TextArrayPositionType& positionTypen, const TextChar& newBufferChar);
-	void SetAt(const std::vector<TextCharPosition>& updatedCharsAtPos, const TextArrayPositionType& positionTypen);
+	void SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos, const TextArrayPositionType& positionTypen);
 	void SetAt(const std::vector<ColorPosition>& updateColorsAtPos, const TextArrayPositionType& positionTypen);
 
-	static std::string ToString(const std::vector<std::vector<TextCharPosition>>& chars,
+	static std::string ToString(const std::vector<std::vector<TextCharArrayPosition>>& chars,
 		const bool convertChars = true);
 	std::string ToString(const bool convertChars = true) const;
 

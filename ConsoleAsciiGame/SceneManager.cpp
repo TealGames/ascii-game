@@ -21,7 +21,7 @@ namespace SceneManagement
 	//which can be helpful for testing
 	static const std::filesystem::path SCENE_SAVE_OUTPUT_PATH = "assets/fart.json";
 
-	SceneManager::SceneManager(AssetManager& assetmanager) :
+	SceneManager::SceneManager(AssetManagement::AssetManager& assetmanager) :
 		m_assetManager(assetmanager), m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager(),
 		m_OnLoad(), m_OnSceneChange()
 		/*m_globalEntities{}, m_globalEntitiesLookup{}, m_globalEntityMapper()*/
@@ -37,8 +37,8 @@ namespace SceneManagement
 	{
 		if (m_activeScene == nullptr || !DO_SCENE_SAVING) return;
 
-		if (SCENE_SAVE_OUTPUT_PATH.empty()) m_activeScene->SerializeToSelf();
-		else m_activeScene->SerializeToPath(SCENE_SAVE_OUTPUT_PATH);
+		if (SCENE_SAVE_OUTPUT_PATH.empty()) m_activeScene->SaveToSelf();
+		else m_activeScene->SaveToPath(SCENE_SAVE_OUTPUT_PATH);
 	}
 
 	void SceneManager::LoadAllScenes()
@@ -66,7 +66,7 @@ namespace SceneManagement
 		//to be able to find the scene when retrieving it from scene manager
 		for (auto& scene : m_allScenes)
 		{
-			scene->Load();
+			scene->UpdateAssetFromFile();
 			m_OnLoad.Invoke(&(scene->GetSceneMutable()));
 			Log(std::format("Loaded scene: {}", scene->GetName()));
 		}

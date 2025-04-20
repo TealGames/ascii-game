@@ -17,7 +17,7 @@ namespace SceneManagement
 	private:
 		static const std::filesystem::path SCENES_FOLDER;
 
-		AssetManager& m_assetManager;
+		AssetManagement::AssetManager& m_assetManager;
 
 		SceneAsset* m_activeScene;
 		//TODO: sicne we may reach a poitner with many scenes, maybe we should make this a map with scene names
@@ -41,7 +41,7 @@ namespace SceneManagement
 		void SetActiveScene(SceneAsset& activeScene);
 
 	public:
-		SceneManager(AssetManager& assetmanager);
+		SceneManager(AssetManagement::AssetManager& assetmanager);
 		~SceneManager();
 
 		/// <summary>

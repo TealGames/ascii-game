@@ -4,13 +4,14 @@
 #include "Debug.hpp"
 #include <cctype>
 #include "InputProfileAsset.hpp"
+#include "AssetManager.hpp"
 
 namespace Input
 {
 	const std::filesystem::path InputManager::INPUT_PROFILES_FOLDER = "input";
 	//const std::string InputManager::PROFILE_PREFIX = "profile_";
 
-	InputManager::InputManager(AssetManager& assetManager)
+	InputManager::InputManager(AssetManagement::AssetManager& assetManager)
 		: m_assetManager(assetManager), m_keyboardStates(), m_mouseStates(), m_gamepadStates(), m_profiles{}
 	{
 		for (const auto& key : GetAllKeyboardKeys())

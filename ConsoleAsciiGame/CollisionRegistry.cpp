@@ -18,7 +18,7 @@ std::string CollisionPair::ToString() const
 		m_CollisionBoxB->ToString(), ::ToString(m_Direction), m_IntersectionData.ToString());
 }
 
-CollisionRegistry::CollisionRegistry() {}
+CollisionRegistry::CollisionRegistry() : m_collisions() {}
 
 std::string CollisionRegistry::CreateCollisionKey(const CollisionBoxData& boxA, const CollisionBoxData& boxB) const
 {

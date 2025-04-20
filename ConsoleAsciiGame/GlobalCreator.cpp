@@ -15,10 +15,13 @@
 #include "CameraController.hpp"
 #include "ParticleEmitterData.hpp"
 #include "RaylibUtils.hpp"
+#include "AssetManager.hpp"
+#include "SpriteAnimationAsset.hpp"
 
 namespace GlobalCreator
 {
-	void CreateGlobals(GlobalEntityManager& globalsManager, SceneManagement::SceneManager& sceneManager, CameraController& cameraController)
+	void CreateGlobals(GlobalEntityManager& globalsManager, SceneManagement::SceneManager& sceneManager, 
+		CameraController& cameraController, AssetManagement::AssetManager& assetManager)
 	{
 		//ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData(Vec2{ 20, 20 }));
 
@@ -34,7 +37,6 @@ namespace GlobalCreator
 			playerCollider.GetGlobalMin().ToString(), playerCollider.GetGlobalMax().ToString()));*/
 
 		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(playerCollider, 1, GRAVITY, 20));
-
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 8, 20));
 
 		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
@@ -50,7 +52,7 @@ namespace GlobalCreator
 		//Assert(false, std::format("Light source fields: {}", lightSource.ToStringFields()));
 
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'H')) } },visualPreset), RenderLayerType::Player });
+			VisualData({ {TextCharArrayPosition({0,0}, TextChar(GRAY, 'H')) } },visualPreset), RenderLayerType::Player });
 
 		ComponentFieldReference lightRadiusref = ComponentFieldReference(&lightSource, "Radius");
 		//Assert(false, std::format("Entity light radius: {}", lightRadiusref.m_Entity->ToString()));
@@ -62,9 +64,15 @@ namespace GlobalCreator
 			AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(8), 0),
 			AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1) })}, 1, 1, true));
 
-		playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData(
+		SpriteAnimatorData& spriteAnimator= playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData());
+		SpriteAnimationAsset* testAnim = assetManager.TryGetTypeAssetMutable<SpriteAnimationAsset>("test");
+		//Assert(false, std::format("Adding anim:{}", testAnim->ToString()));
+		spriteAnimator.AddAnimation(*testAnim);
+		spriteAnimator.TryPlayAnimation(testAnim->GetAnimation().m_Name);
+
+		/*playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData(
 			{ SpriteAnimationFrame(0, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, 'O'))}}, visualPreset)),
-			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));
+			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));*/
 
 		ColorGradient particleGradient = ColorGradient(RED, BLUE);
 		playerEntity.AddComponent<ParticleEmitterData>(ParticleEmitterData('W', FloatRange(1, 11), particleGradient, FontData(5, GetGlobalFont()),

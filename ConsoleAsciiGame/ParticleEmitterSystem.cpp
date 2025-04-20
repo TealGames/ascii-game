@@ -18,7 +18,8 @@ namespace ECS
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("AnimatorSystem::SystemUpdate");
 #endif 
-
+		//Note: we should NOT opyimize be having a deltaTime <=0 early return because we still need to render 
+		//particles even thoguh they do not change across time
 		scene.OperateOnComponents<ParticleEmitterData>(
 			[this, &scene, &deltaTime](ParticleEmitterData& data, ECS::Entity& entity)-> void
 			{
@@ -40,10 +41,13 @@ namespace ECS
 					//so they can all be removed in one go using erase
 					data.m_particles.ExecuteOnAvailable([&](Particle& particle, size_t index)-> void
 						{
-							particle.m_Pos = particle.m_Pos + particle.m_Velocity * deltaTime;
-							particle.m_AliveTime += deltaTime;
-							particle.SetColorFromAliveTime(data.m_lifetimeColor);
-
+							if (deltaTime > 0)
+							{
+								particle.m_Pos = particle.m_Pos + particle.m_Velocity * deltaTime;
+								particle.m_AliveTime += deltaTime;
+								particle.SetColorFromAliveTime(data.m_lifetimeColor);
+							}
+							
 							//TODO: maybe try to opimize this better since if tehre are multiple particles to be removed
 							//we have to shift the elements in the vector (especially if there are many elements)
 							//each time separately
@@ -59,6 +63,8 @@ namespace ECS
 							}
 						});
 				}
+
+				if (deltaTime <= 0) return;
 
 				const float fractionalParticlesToSpawn = data.m_spawnRate * deltaTime + data.m_lastFrameFractionParticles;
 				const int wholeParticlesToSpawn = static_cast<int>(fractionalParticlesToSpawn);

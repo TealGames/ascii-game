@@ -20,7 +20,7 @@ std::string TextBufferPosition::ToString() const
 		m_Pos.ToString(), m_Text.ToString());
 }
 
-TextBuffer::TextBuffer(const FontData& font, const std::vector<TextCharPosition>& positions) : 
+TextBuffer::TextBuffer(const FontData& font, const std::vector<TextCharArrayPosition>& positions) : 
 	m_FontData(font), m_TextPositions(positions)
 {
 }

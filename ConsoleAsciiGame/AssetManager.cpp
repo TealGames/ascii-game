@@ -3,122 +3,142 @@
 #include "Debug.hpp"
 #include "SceneAsset.hpp"
 #include "InputProfileAsset.hpp"
+#include "SpriteAnimationAsset.hpp"
 
-std::filesystem::path AssetManager::ASSET_PATH = "assets";
 static bool THROW_ON_UNKNWON_ASSET = false;
 
-AssetManager::AssetManager()
+namespace AssetManagement
 {
-	if (!Assert(this, std::filesystem::exists(ASSET_PATH), std::format("Tried to add all assets at path:{} "
-		"but path is invalid", ASSET_PATH.string())))
-		return;
+	std::filesystem::path AssetManager::ASSET_PATH = "assets";
 
-	std::string fileExtension = "";
-	for (const auto& file : std::filesystem::recursive_directory_iterator(ASSET_PATH))
+	AssetManager::AssetManager() : m_assets(), m_allFiles() 
 	{
-		if (!std::filesystem::is_regular_file(file)) continue;
+		if (!Assert(this, std::filesystem::exists(ASSET_PATH), std::format("Tried to add all assets at path:{} "
+			"but path is invalid", ASSET_PATH.string())))
+			return;
 
-		//TODO: identity asset type from extension now int is placeholder
-		fileExtension = file.path().extension().string();
+		std::string fileExtension = "";
+		for (const auto& file : std::filesystem::recursive_directory_iterator(ASSET_PATH))
+		{
+			if (!std::filesystem::is_regular_file(file)) continue;
 
-		//We add each file based on its extension to the list
-		auto existingExtensionIt = m_allFiles.find(fileExtension);
-		if (existingExtensionIt == m_allFiles.end())
-		{
-			m_allFiles.emplace(fileExtension, std::vector<std::filesystem::path>{file.path()});
-		}
-		else
-		{
-			existingExtensionIt->second.push_back(file.path());
-		}
+			//TODO: identity asset type from extension now int is placeholder
+			fileExtension = file.path().extension().string();
 
-		//We try to convert this file into a useable asset
-		if (fileExtension == SceneAsset::SCENE_EXTENSION)
-		{
-			if (!Assert(this, TryAddAsset<SceneAsset>(file.path()), 
-				std::format("Tried to add asset at path:{} as scene asset but failed", file.path().string())))
-				return;
-		}
-		else if (fileExtension == InputProfileAsset::EXTENSION)
-		{
-			if (!Assert(this, TryAddAsset<InputProfileAsset>(file.path()),
-				std::format("Tried to add asset at path:{} as input profile asset but failed", file.path().string())))
-				return;
-		}
-		else
-		{
-			LogError(this, std::format("Tried to add asset at path:{} but the extension "
-				"does not correspond to any asset action", file.path().string()));
-			if (THROW_ON_UNKNWON_ASSET) throw std::invalid_argument("Invalid asset type");
+			//We add each file based on its extension to the list
+			auto existingExtensionIt = m_allFiles.find(fileExtension);
+			if (existingExtensionIt == m_allFiles.end())
+			{
+				m_allFiles.emplace(fileExtension, std::vector<std::filesystem::path>{file.path()});
+			}
+			else
+			{
+				existingExtensionIt->second.push_back(file.path());
+			}
+
+			//We try to convert this file into a useable asset 
+			if (fileExtension == SceneAsset::EXTENSION)
+			{
+				if (!Assert(this, TryCreateAssetFromFile<SceneAsset>(file.path()),
+					std::format("Tried to add asset at path:{} as scene asset but failed", file.path().string())))
+					return;
+			}
+			else if (fileExtension == InputProfileAsset::EXTENSION)
+			{
+				if (!Assert(this, TryCreateAssetFromFile<InputProfileAsset>(file.path()),
+					std::format("Tried to add asset at path:{} as input profile asset but failed", file.path().string())))
+					return;
+			}
+			else if (fileExtension == SpriteAnimationAsset::EXTENSION)
+			{
+				if (!Assert(this, TryCreateAssetFromFile<SpriteAnimationAsset>(file.path()),
+					std::format("Tried to add asset at path:{} as sprite animation asset but failed", file.path().string())))
+					return;
+			}
+			else
+			{
+				LogError(this, std::format("Tried to add asset at path:{} but the extension "
+					"does not correspond to any asset action", file.path().string()));
+				if (THROW_ON_UNKNWON_ASSET) throw std::invalid_argument("Invalid asset type");
+			}
 		}
 	}
-}
 
-AssetManager::~AssetManager()
-{
-	for (auto& assetPair : m_assets)
+	AssetManager::~AssetManager()
 	{
-		delete assetPair.second;
+		for (auto& assetPair : m_assets)
+		{
+			delete assetPair.second;
+		}
+		m_assets = {};
 	}
-	m_assets = {};
-}
 
-bool AssetManager::Validate()
-{
-	for (const auto& asset : m_assets)
+	bool AssetManager::Validate()
 	{
-		if (!Assert(this, asset.second->AreDependenciesSet(), std::format("Tried to validate asset manager but "
-			"asset:{} has not all dependencies set!", asset.second->ToString())))
-			return false;
+		for (const auto& asset : m_assets)
+		{
+			if (!Assert(this, asset.second->AreDependenciesSet(), std::format("Tried to validate asset manager but "
+				"asset:{} has not all dependencies set!", asset.second->ToString())))
+				return false;
+		}
+		return true;
 	}
-	return true;
-}
 
-std::filesystem::path AssetManager::GetAssetPath(const std::filesystem::path& directoryFile) const
-{
-	return ASSET_PATH / directoryFile;
-}
+	std::filesystem::path AssetManager::GetAssetPath(const std::filesystem::path& directoryFile) const
+	{
+		return ASSET_PATH / directoryFile;
+	}
 
-std::filesystem::path AssetManager::TryGetAssetPath(const std::filesystem::path& fullFileName)
-{
-	return TryGetAssetPath(Asset::ExtractNameFromFile(fullFileName), fullFileName.extension().string());
-}
+	std::filesystem::path AssetManager::TryGetAssetPath(const std::filesystem::path& fullFileName)
+	{
+		return TryGetAssetPath(Asset::ExtractNameFromFile(fullFileName), fullFileName.extension().string());
+	}
 
-std::filesystem::path AssetManager::TryGetAssetPath(const std::string& fileName, const std::string& extension)
-{
-	if (!Assert(this, extension.substr(0, 1) == ".", std::format("Tried to get assed path from file name:{} "
-		"and extension but extension is invalid:{}", fileName, extension)))
+	std::filesystem::path AssetManager::TryGetAssetPath(const std::string& fileName, const std::string& extension)
+	{
+		if (!Assert(this, extension.substr(0, 1) == ".", std::format("Tried to get assed path from file name:{} "
+			"and extension but extension is invalid:{}", fileName, extension)))
+			return {};
+
+		auto extensionIt = m_allFiles.find(extension);
+		if (!Assert(this, extensionIt != m_allFiles.end(), std::format("Tried to get asset path from file:{} extension:{} "
+			"but asset manager contains no assets with that extension", fileName, extension)))
+			return {};
+
+		for (const auto& path : extensionIt->second)
+		{
+			if (Asset::ExtractNameFromFile(path) == fileName)
+				return path;
+		}
+
+		Assert(this, false, std::format("Tried to get asset path from file:{} extension:{} "
+			"but asset manager could not find any assets with that file name", fileName, extension));
 		return {};
-
-	auto extensionIt = m_allFiles.find(extension);
-	if (!Assert(this, extensionIt != m_allFiles.end(), std::format("Tried to get asset path from file:{} extension:{} "
-		"but asset manager contains no assets with that extension", fileName, extension)))
-		return {};
-
-	for (const auto& path : extensionIt->second)
-	{
-		if (Asset::ExtractNameFromFile(path) == fileName)
-			return path;
 	}
 
-	Assert(this, false, std::format("Tried to get asset path from file:{} extension:{} "
-		"but asset manager could not find any assets with that file name", fileName, extension));
-	return {};
-}
+	Asset* AssetManager::TryGetAssetMutable(const std::string& name)
+	{
+		auto assetIt = m_assets.find(name);
+		if (assetIt == m_assets.end())
+			return nullptr;
 
-Asset* AssetManager::TryGetAssetMutable(const std::string& name)
-{
-	auto assetIt= m_assets.find(name);
-	if (assetIt == m_assets.end())
-		return nullptr;
+		return assetIt->second;
+	}
+	Asset* AssetManager::TryGetAssetMutableFromPath(const std::filesystem::path& path)
+	{
+		return TryGetAssetMutable(Asset::ExtractNameFromFile(path));
+	}
 
-	return assetIt->second;
-}
-const Asset* AssetManager::TryGetAsset(const std::string& name) const
-{
-	auto assetIt = m_assets.find(name);
-	if (assetIt == m_assets.end()) 
-		return nullptr;
+	const Asset* AssetManager::TryGetAsset(const std::string& name) const
+	{
+		auto assetIt = m_assets.find(name);
+		if (assetIt == m_assets.end())
+			return nullptr;
 
-	return assetIt->second;
+		return assetIt->second;
+	}
+	const Asset* AssetManager::TryGetAssetFromPath(const std::filesystem::path& path) const
+	{
+		return TryGetAsset(Asset::ExtractNameFromFile(path));
+	}
 }

@@ -11,9 +11,9 @@ std::string ToString(const TextArrayPositionType& positionType)
 	else return "[TEXT ARRAY POSITION TYPE ENUM PARSE FAILED]";
 }
 
-FragmentedTextArray::FragmentedTextArray() : FragmentedTextArray(std::vector<std::vector<TextCharPosition>>{}) {}
+FragmentedTextArray::FragmentedTextArray() : FragmentedTextArray(std::vector<std::vector<TextCharArrayPosition>>{}) {}
 
-FragmentedTextArray::FragmentedTextArray(const std::vector<std::vector<TextCharPosition>>& chars) 
+FragmentedTextArray::FragmentedTextArray(const std::vector<std::vector<TextCharArrayPosition>>& chars) 
 	: m_textArray(chars), m_minIndices(NULL_INDEX, NULL_INDEX), m_maxIndices(NULL_INDEX, NULL_INDEX)
 {
 	for (int r = 0; r < m_textArray.size(); r++)
@@ -30,7 +30,7 @@ FragmentedTextArray::FragmentedTextArray(const std::vector<std::vector<TextCharP
 	}
 }
 
-TextCharPosition* FragmentedTextArray::TryGetPosMutable(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType)
+TextCharArrayPosition* FragmentedTextArray::TryGetPosMutable(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType)
 {
 	//TODO: run benchamarks to see if checking min and max is actually worth it?
 
@@ -63,7 +63,7 @@ TextCharPosition* FragmentedTextArray::TryGetPosMutable(const Array2DPosition& r
 	return nullptr;
 }
 
-const TextCharPosition* FragmentedTextArray::TryGetPos(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType)
+const TextCharArrayPosition* FragmentedTextArray::TryGetPos(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType)
 {
 	return TryGetPosMutable(rowColPos, positionType);
 }
@@ -80,7 +80,7 @@ bool FragmentedTextArray::IsValidIndexPos(const Array2DPosition& rowCol)
 
 void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const TextChar& newBufferChar)
 {
-	TextCharPosition* pos = TryGetPosMutable(rowColPos, positionType);
+	TextCharArrayPosition* pos = TryGetPosMutable(rowColPos, positionType);
 	if (!Assert(this, pos != nullptr, std::format("Tried to set position: {}({}) with BUFFER CHAR: {} for fragmented text array "
 		"but data was not found", rowColPos.ToString(), ::ToString(positionType), newBufferChar.ToString()))) return;
 
@@ -88,7 +88,7 @@ void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArra
 }
 void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const char& newChar)
 {
-	TextCharPosition* pos = TryGetPosMutable(rowColPos, positionType);
+	TextCharArrayPosition* pos = TryGetPosMutable(rowColPos, positionType);
 	if (!Assert(this, pos != nullptr, std::format("Tried to set position: {}({}) with CHAR: {} for fragmented text array "
 		"but data was not found", rowColPos.ToString(), ::ToString(positionType), Utils::ToString(newChar)))) return;
 
@@ -96,7 +96,7 @@ void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArra
 }
 void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const Color& newColor)
 {
-	TextCharPosition* pos = TryGetPosMutable(rowColPos, positionType);
+	TextCharArrayPosition* pos = TryGetPosMutable(rowColPos, positionType);
 	if (!Assert(this, pos != nullptr, std::format("Tried to set position: {}({}) with COLOR: {} for fragmented text array "
 		"but data was not found", rowColPos.ToString(), ::ToString(positionType), RaylibUtils::ToString(newColor)))) return;
 
@@ -105,7 +105,7 @@ void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArra
 
 void FragmentedTextArray::SetAt(const std::vector<Array2DPosition>& rowColPos, const TextArrayPositionType& positionType, const TextChar& newBufferChar)
 {
-	TextCharPosition* dataPtr = nullptr;
+	TextCharArrayPosition* dataPtr = nullptr;
 
 	//TODO: this should be more optimized for positions data searching since it is O(n^2) for every search
 	for (const auto& pos : rowColPos)
@@ -117,9 +117,9 @@ void FragmentedTextArray::SetAt(const std::vector<Array2DPosition>& rowColPos, c
 		dataPtr->m_Text = newBufferChar;
 	}
 }
-void FragmentedTextArray::SetAt(const std::vector<TextCharPosition>& updatedCharsAtPos, const TextArrayPositionType& positionType)
+void FragmentedTextArray::SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos, const TextArrayPositionType& positionType)
 {
-	TextCharPosition* dataPtr = nullptr;
+	TextCharArrayPosition* dataPtr = nullptr;
 
 	//TODO: this should be more optimized for positions data searching since it is O(n^2) for every search
 	for (const auto& updatedChars : updatedCharsAtPos)
@@ -133,7 +133,7 @@ void FragmentedTextArray::SetAt(const std::vector<TextCharPosition>& updatedChar
 }
 void FragmentedTextArray::SetAt(const std::vector<ColorPosition>& updateColorsAtPos, const TextArrayPositionType& positionType)
 {
-	TextCharPosition* dataPtr = nullptr;
+	TextCharArrayPosition* dataPtr = nullptr;
 
 	//TODO: this should be more optimized for positions data searching since it is O(n^2) for every search
 	for (const auto& updatedChars : updateColorsAtPos)
@@ -146,7 +146,7 @@ void FragmentedTextArray::SetAt(const std::vector<ColorPosition>& updateColorsAt
 	}
 }
 
-std::string FragmentedTextArray::ToString(const std::vector<std::vector<TextCharPosition>>& chars,
+std::string FragmentedTextArray::ToString(const std::vector<std::vector<TextCharArrayPosition>>& chars,
 	const bool convertAll)
 {
 	std::string fullStr = "";

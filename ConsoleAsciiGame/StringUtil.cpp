@@ -7,6 +7,8 @@ namespace Utils
 
 	StringUtil& StringUtil::Trim()
 	{
+		//size_t startIndex = str.find_first_not_of(' ');
+		//size_t endIndex = str.find_last_not_of(' ');
 		size_t startIndex = str.find_first_not_of(' ');
 		size_t endIndex = str.find_last_not_of(' ');
 

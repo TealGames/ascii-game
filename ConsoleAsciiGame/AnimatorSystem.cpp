@@ -19,6 +19,7 @@ namespace ECS
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("AnimatorSystem::SystemUpdate");
 #endif 
+		if (deltaTime <= 0) return;
 
 		scene.OperateOnComponents<AnimatorData>(
 			[this, &scene, &deltaTime](AnimatorData& data, ECS::Entity& entity)-> void
