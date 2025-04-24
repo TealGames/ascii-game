@@ -6,7 +6,7 @@
 #include "EntityRendererData.hpp"
 #include "Debug.hpp"
 
-static const NormalizedPosition HEALTH_START_POS_RELATIVE = { 0.2, 0.1 };
+static const NormalizedPosition HEALTH_START_POS_RELATIVE = { 0.05, 0.95 };
 static const float HELATH_DELTA_X_RELATIVE = 0.05;
 
 namespace Game
@@ -19,9 +19,9 @@ namespace Game
 		{
 			m_health.reserve(GameState::MAX_HEALTH);
 
-			const VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
+			const VisualDataPreset visualPreset = { GetGlobalFont(), 4, VisualData::DEFAULT_CHAR_SPACING,
 					CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
-			const VisualData healthVisualData = VisualData({ {TextCharArrayPosition({0,0}, TextChar(RED, '@')) } }, visualPreset);
+			const VisualData healthVisualData = VisualData({ {TextCharArrayPosition({0,0}, TextChar(Color(215, 71, 9, 255), '@'))}}, visualPreset);
 
 			for (size_t i = 0; i < GameState::MAX_HEALTH; i++)
 			{
@@ -34,7 +34,9 @@ namespace Game
 
 				healthUI.m_Active = i < state.GetHealth();
 				m_health.push_back(&healthUI);
+				LogError(std::format("Craeted health:{}", healthPosRelative.GetPos().ToString()));
 			}
+			//Assert(false, std::format("Created Health UI max:{} globals:{}", std::to_string(GameState::MAX_HEALTH), globalEntities.ToStringEntityData()));
 
 			state.m_OnHealthChanged.AddListener([this](std::uint8_t oldHealth, std::uint8_t newHealth)-> void
 				{

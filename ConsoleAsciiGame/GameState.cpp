@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "GameState.hpp"
 
-GameState::GameState() {}
+GameState::GameState() : m_health(START_HEALTH), m_isPaused() {}
 
 void GameState::SetHealth(const std::uint8_t newHealth)
 {

@@ -2,7 +2,7 @@
 #include "InputProfileAsset.hpp"
 #include <fstream>
 #include "InputManager.hpp"
-
+#include "IOHandler.hpp"
 
 const std::string InputProfileAsset::EXTENSION = ".input";
 
@@ -13,7 +13,12 @@ static const std::string INPUT_HEADER = "Input";
 static constexpr char COMPOUND_INPUT_IDENTIFIER = '>';
 
 InputProfileAsset::InputProfileAsset(const std::filesystem::path& path)
-	: Asset(path, true), m_profile(std::nullopt) {}
+	: Asset(path, true), m_profile(std::nullopt), m_inputManager(nullptr)
+{
+	if (!Assert(this, IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a input profile asset from path:'{}' "
+		"but it does not have required extension:'{}'", EXTENSION)))
+		return;
+}
 
 Input::InputManager& InputProfileAsset::GetInputManager()
 {

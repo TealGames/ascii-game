@@ -123,7 +123,7 @@ namespace ECS
 			//componentNames = Utils::ToStringIterable<std::vector<std::string>, std::string>(m_components);
 		}
 
-		return std::format("['{}'(ID: {})-> {}]", GetName(), Entity::ToString(m_Id), componentNames);
+		return std::format("['{}'(ID: {} A:{})-> {}]", GetName(), Entity::ToString(m_Id), std::to_string(m_Active), componentNames);
 		/*auto components= Utils::GetKeysFromMap<ComponentType, ComponentID>(m_componentIDs.begin(), m_componentIDs.end());
 		std::string componentsStr = ::ToString(MergeComponents(components));*/
 		//return std::format("['{}' c:{}]", m_Name, componentsStr);

@@ -28,6 +28,7 @@ namespace ECS
 			{
 				WorldPosition worldPos = Conversions::ScreenToWorldPosition(mainCamera, Conversions::NormalizedScreenToPosition(data.GetNormalizedPos()));
 				entity.m_Transform.SetPos(worldPos);
+				LogError(std::format("Update called for ui object data:{} scene bodesi:{}", entity.GetName(), scene.ToStringEntityData()));
 			});
 	}
 }

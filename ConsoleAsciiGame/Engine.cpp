@@ -172,13 +172,6 @@ namespace Core
 		//PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(0, Vec2(10, 10), Vec2(0, 0)));
 		//m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
 
-		ECS::Entity& uiIcon= m_sceneManager.GetActiveSceneMutable()->CreateEntity("icon", TransformData(Vec2{ 0, 0 }));
-		uiIcon.AddComponent<UIObjectData>(NormalizedPosition(0.1, 0.9));
-		uiIcon.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData({ {TextCharArrayPosition({0,0}, TextChar(ORANGE, '*')) } },
-				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
-				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::UI });
-
 		/*EngineLog(std::format("LOADED LAYERS FOR SCENE '{}': {}",
 			m_sceneManager.GetActiveScene()->GetName(),
 			m_sceneManager.GetActiveScene()->ToStringLayers()));*/

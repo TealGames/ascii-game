@@ -5,14 +5,17 @@
 #include "StringUtil.hpp"
 #include "Debug.hpp"
 
-FigProperty::FigProperty(const std::string& key, const FigValue& value) 
+const std::string Fig::COMMENT_START = "/*";
+const std::string Fig::COMMENT_CLOSE= "*\\";
+
+FigPropertyRef::FigPropertyRef(const std::string& key, const FigValue& value) 
 	: m_Key(key.c_str()), m_Value(&value) {}
 
-std::string FigProperty::GetKey() const
+std::string FigPropertyRef::GetKey() const
 {
 	return m_Key;
 }
-const FigValue& FigProperty::GetValue() const
+const FigValue& FigPropertyRef::GetValue() const
 {
 	if (!Assert(this, m_Value != nullptr, std::format("Tried to get value from FIG property with key:{} "
 		"but value is null", GetKey())))
@@ -21,9 +24,24 @@ const FigValue& FigProperty::GetValue() const
 	return *m_Value;
 }
 
-std::string FigProperty::ToString() const
+std::string FigPropertyRef::ToString() const
 {
 	return std::format("[Key:{} Value:{}]", GetKey(), Utils::ToStringIterable<FigValue, std::string>(GetValue()));
+}
+
+FigProperty::FigProperty(const std::string& key, const FigValue& value) 
+	: m_Key(key), m_Value(value) {}
+
+FigProperty::FigProperty() : FigProperty("", {}) {}
+
+bool FigProperty::IsEmpty() const
+{
+	return m_Key.empty() || m_Value.empty();
+}
+
+std::string FigProperty::ToString() const
+{
+	return std::format("[Key:{} Value:{}]", m_Key, Utils::ToStringIterable<FigValue, std::string>(m_Value));
 }
 
 Fig::Fig() : m_properties(), m_markedProperties() {}
@@ -64,6 +82,31 @@ Fig::~Fig()
 	m_markedProperties = {};
 }
 
+void Fig::ParseValue(std::vector<std::string>& buffer, const std::string& line)
+{
+	if (line.empty()) return;
+
+	//Be default we always want to push a new value since if it is empty -> we want new val
+	//if we need a new line -> we want to push new line
+	buffer.push_back("");
+	bool foundSeparator = false;
+
+	//Note: this is not too much worse than string.find since it is a naive search
+	for (const auto& c : line)
+	{
+		if (c == VALUE_SEPARATOR_CHAR)
+		{
+			foundSeparator = true;
+			buffer.push_back("");
+			continue;
+		}
+		if (foundSeparator && c == ' ')
+			continue;
+
+		buffer.back().push_back(c);
+	}
+}
+
 void Fig::ParseValueIntoProperty(PropertyCollection::Iterator& propertyIt, const std::string& line)
 {
 	//if (propertyIt == m_properties.end()) 
@@ -71,33 +114,109 @@ void Fig::ParseValueIntoProperty(PropertyCollection::Iterator& propertyIt, const
 		"into property for line:{} but iterator points to END", line)))
 		return;
 
-	//Be default we always want to push a new value since if it is empty -> we want new val
-	//if we need a new line -> we want to push new line
-	//propertyIt->second.push_back("");
-	propertyIt.GetValueMutable().push_back("");
+	ParseValue(propertyIt.GetValueMutable(), line);
+	//propertyIt.GetValueMutable().push_back("");
 
-	//Note: this is not too much worse than string.find since it is a naive search
-	bool foundSeparator = false;
+	////Note: this is not too much worse than string.find since it is a naive search
+	//bool foundSeparator = false;
 
-	for (const auto& c : line)
-	{
-		if (c == VALUE_SEPARATOR_CHAR)
-		{
-			foundSeparator = true;
-			propertyIt.GetValueMutable().push_back("");
-			continue;
-		}
-		if (foundSeparator && c == ' ')
-			continue;
+	//for (const auto& c : line)
+	//{
+	//	if (c == VALUE_SEPARATOR_CHAR)
+	//	{
+	//		foundSeparator = true;
+	//		propertyIt.GetValueMutable().push_back("");
+	//		continue;
+	//	}
+	//	if (foundSeparator && c == ' ')
+	//		continue;
 
-		propertyIt.GetValueMutable().back().push_back(c);
-	}
+	//	propertyIt.GetValueMutable().back().push_back(c);
+	//}
+}
 
-	//LogError(std::format("Created new property: {} line:{} FULL FIG:{}", propertyIt.ToString(), line, ToString()));
+//TODO: make property line parse value be a figvalue with vector rather than the full string
+Fig::PropertyParseResult Fig::ParsePropertyLine(const std::string& line, std::string* keyResult, std::string* valueResult)
+{
+	const size_t keyValueSeparatorIndex = line.find(KEY_VALUE_SEPARATOR);
+	if (keyValueSeparatorIndex == std::string::npos) 
+		return PropertyParseResult::NoKeyValueSeparator;
+	
+	if (keyResult != nullptr) *keyResult = line.substr(0, keyValueSeparatorIndex);
+
+	const size_t valueStartIdx = line.find_first_not_of(' ', keyValueSeparatorIndex + 1);
+	if (valueStartIdx == std::string::npos)
+		return PropertyParseResult::NoPropertyValue;
+
+	if (valueResult!=nullptr) *valueResult = Utils::StringUtil(line.substr(valueStartIdx)).Trim().ToString();
+	return PropertyParseResult::Success;
+}
+
+Fig::PropertyParseResult Fig::ParsePropertyLine(const std::string& line, std::string* keyResult, FigValue* valueResult)
+{
+	std::string valueFull = "";
+	Fig::PropertyParseResult parseResult = ParsePropertyLine(line, keyResult, &valueFull);
+	if (parseResult != PropertyParseResult::Success || valueResult==nullptr) return parseResult;
+
+	ParseValue(*valueResult, valueFull);
+	return PropertyParseResult::Success;
+}
+
+bool Fig::HasComment(const std::string& line)
+{
+	size_t startSymbolIdx = line.find(COMMENT_START);
+	size_t endSymbolIdx = line.find(COMMENT_CLOSE);
+
+	return startSymbolIdx != std::string::npos && endSymbolIdx != std::string::npos &&
+		endSymbolIdx >= startSymbolIdx + COMMENT_START.size();
 }
 
 void Fig::AddProperty(const std::string& line)
 {
+	std::string key = "";
+	std::string value = "";
+	//Note: we should not use the figvalue overload with vector of string values because
+	//then we will have to make a copy of the vector when placing into target location
+	//since we are not sure which iterator to add it to
+	PropertyParseResult parseResult = ParsePropertyLine(line, &key, &value);
+
+	//If we have no colon (meaning it is not a key value pair)
+	//we just attempt to add to the most recent added property (to allow
+	//for multi-line data)
+	if (parseResult== PropertyParseResult::NoKeyValueSeparator)
+	{
+		if (!Assert(this, !m_properties.IsEmpty(), std::format("Tried to add FIG property from line:'{}' with no KEY VALUE pair "
+			"but that is only allowed if there are existing properties (there are 0)", line)))
+			return;
+
+		//LogError(std::format("Line has no key: {}", line));
+		ParseValueIntoProperty(--m_properties.EndMutable(), line);
+		return;
+	}
+
+	//Even if it is empty, we allow no values since it may carry over to the next line
+	else if (parseResult== PropertyParseResult::NoPropertyValue)
+	{
+		m_properties.Insert(key, FigValue());
+		return;
+	}
+
+	if (!Assert(this, parseResult==PropertyParseResult::Success, std::format("Tried to parse FIG property from line:'{}' "
+		"but parse resulted in a non-success state that was not handled", line)))
+		return;
+
+	auto propertyIt = m_properties.Insert(key, FigValue());
+	if (!Assert(this, propertyIt.second, std::format("Tried to add FIG line:'{}' "
+		"but properties failed to add key:{}", line, key)))
+		return;
+
+	if (!Assert(this, propertyIt.first.GetKey() == key, std::format("Tried to add FIG line:'{}' "
+		"but the found key:{} does not match the iterator key:{} properties:{}", line, key, propertyIt.first.GetKey(), m_properties.ToString(true))))
+		return;
+
+	ParseValueIntoProperty(propertyIt.first, value);
+
+	/*
 	const size_t colonIndex = line.find(KEY_VALUE_SEPARATOR);
 
 	//If we have no colon (meaning it is not a key value pair)
@@ -113,7 +232,7 @@ void Fig::AddProperty(const std::string& line)
 		ParseValueIntoProperty(--m_properties.EndMutable(), line);
 		return;
 	}
-
+	
 	const std::string& key = line.substr(0, colonIndex);
 	const size_t valueStartIdx = line.find_first_not_of(' ', colonIndex+1);
 	//Even if it is empty, we allow no values since it may carry over to the next line
@@ -126,7 +245,7 @@ void Fig::AddProperty(const std::string& line)
 	const std::string valueFull = Utils::StringUtil(line.substr(valueStartIdx)).Trim().ToString();
 	
 	//We create a property with no value so that the parsed value can be added via function
-	LogError(std::format("BEFORE INSERT properties:{}", m_properties.ToString(true)));
+	//LogError(std::format("BEFORE INSERT properties:{}", m_properties.ToString(true)));
 	auto propertyIt= m_properties.Insert(key, FigValue());
 	//LogError(std::format("Added temp key:{} waiting for parse value property key:{}", key, propertyIt.first.GetKey()));
 	if (!Assert(this, propertyIt.second, std::format("Tried to add FIG line:'{}' "
@@ -138,6 +257,7 @@ void Fig::AddProperty(const std::string& line)
 		return;
 
 	ParseValueIntoProperty(propertyIt.first, valueFull);
+	*/
 }
 void Fig::AddMarkedProperty(const std::string& header, const std::string& line)
 {
@@ -159,28 +279,46 @@ void Fig::AddMarkedProperty(const std::string& header, const std::string& line)
 void Fig::CreateContents(const std::vector<std::string>& contents)
 {
 	std::string currentMarker = "";
-	for (auto line : contents)
+	std::string cleanedLine = "";
+	bool isInComment = false;
+
+	for (auto& line : contents)
 	{
 		if (line.empty()) continue;
 
-		line = Utils::StringUtil(line).Trim().ToString();
-		Log(std::format("Found line:{}", line));
-		if (line[0] == MARKER_CHAR)
+		cleanedLine = "";
+		for (size_t i = 0; i < line.size(); i++)
 		{
-			currentMarker = line.substr(1);
+			if (i < line.size() - COMMENT_START.size() - COMMENT_CLOSE.size()
+				&& line.substr(i, COMMENT_START.size()) == COMMENT_START)
+				isInComment = true;
+
+			else if (isInComment && i < line.size() - COMMENT_CLOSE.size()
+				&& line.substr(i, COMMENT_CLOSE.size()) == COMMENT_CLOSE)
+				isInComment = false;
+
+			if (!isInComment) cleanedLine.push_back(line[i]);
+		}
+		if (cleanedLine.empty()) continue;
+		cleanedLine = Utils::StringUtil(cleanedLine).Trim().ToString();
+
+		Log(std::format("Found line:{}", cleanedLine));
+		if (cleanedLine[0] == MARKER_CHAR)
+		{
+			currentMarker = cleanedLine.substr(1);
 			if (!Assert(this, !currentMarker.empty(), std::format("Tried to create FIG contents for line:'{}' "
-				"but current marker is not complete", line)))
+				"but current marker is not complete", cleanedLine)))
 				return;
 
 			if (!Assert(this, !currentMarker.contains(KEY_VALUE_SEPARATOR), std::format("Tried to create FIG contents but line:{} "
-				"contains marker:{} with invalid character '{}'", line, currentMarker, Utils::ToString(KEY_VALUE_SEPARATOR))))
+				"contains marker:{} with invalid character '{}'", cleanedLine, currentMarker, Utils::ToString(KEY_VALUE_SEPARATOR))))
 				return;
 
 			continue;
 		}
 
-		if (currentMarker.empty()) AddProperty(line);
-		else AddMarkedProperty(currentMarker, line);
+		if (currentMarker.empty()) AddProperty(cleanedLine);
+		else AddMarkedProperty(currentMarker, cleanedLine);
 	}
 }
 
@@ -253,7 +391,7 @@ void Fig::GetAllValuesFrom(const std::string& markerName, std::vector<const FigV
 	}
 }
 
-void Fig::GetAllProperties(std::vector<FigProperty>& properties) const
+void Fig::GetAllProperties(std::vector<FigPropertyRef>& properties) const
 {
 	for (const auto& property : m_properties)
 	{
@@ -271,13 +409,20 @@ void Fig::GetAllProperties(std::vector<FigProperty>& properties) const
 		markedProperty.second->GetAllProperties(properties);
 	}
 }
-void Fig::GetAllProperties(const std::string& markerName, std::vector<FigProperty>& properties) const
+void Fig::GetAllProperties(const std::string& markerName, std::vector<FigPropertyRef>& properties) const
 {
 	auto markerIt = m_markedProperties.find(markerName);
 	if (markerIt == m_markedProperties.end() || markerIt->second == nullptr)
 		return;
 
 	markerIt->second->GetAllProperties(properties);
+}
+
+std::optional<FigProperty> Fig::TryGetPropertyFromLine(const std::string& line)
+{
+	FigProperty resultProperty = FigProperty();
+	ParsePropertyLine(line, &resultProperty.m_Key, &resultProperty.m_Value);
+	return resultProperty.IsEmpty() ? std::nullopt : std::make_optional<FigProperty>(resultProperty);
 }
 
 std::string Fig::ToString() const

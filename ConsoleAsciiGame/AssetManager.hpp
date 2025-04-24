@@ -105,8 +105,19 @@ namespace AssetManagement
 		/// <param name="name"></param>
 		/// <param name="extension"></param>
 		/// <returns></returns>
-		std::filesystem::path TryGetAssetPath(const std::filesystem::path& fullFileName);
-		std::filesystem::path TryGetAssetPath(const std::string& fileName, const std::string& extension);
+		std::filesystem::path TryGetAssetPath(const std::filesystem::path& fullFileName) const;
+		std::filesystem::path TryGetAssetPath(const std::string& fileName, const std::string& extension) const;
+
+		/// <summary>
+		/// Will retrieve the file contents (if found) of the file located at the file and extension names
+		/// </summary>
+		/// <param name="fileName"></param>
+		/// <param name="extension"></param>
+		/// <returns></returns>
+		std::vector<std::string> TryReadAssetFile(const std::string& fileName, const std::string& extension) const;
+		bool TryWriteToAssetFile(const std::string& fileName, const std::string& extension, const std::string& newContents) const;
+		bool TryExecuteOnAssetFile(const std::string& fileName, const std::string& extension, const IO::FileLineAction& action) const;
+		bool TryExecuteOnAssetFile(const std::filesystem::path& fullFileName, const IO::FileLineAction& action) const;
 
 		Asset* TryGetAssetMutable(const std::string& name);
 		Asset* TryGetAssetMutableFromPath(const std::filesystem::path& path);

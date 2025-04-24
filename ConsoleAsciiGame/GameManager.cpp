@@ -11,7 +11,7 @@ void GameManager::GameValidate()
 
 void GameManager::GameStart()
 {
-	m_uiManager.UpdateUI();
+	m_uiManager.StartUI();
 }
 
 void GameManager::GameUpdate()

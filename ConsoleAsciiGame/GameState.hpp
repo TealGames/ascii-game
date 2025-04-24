@@ -11,6 +11,7 @@ private:
 
 public:
 	static constexpr std::uint8_t MAX_HEALTH = 5;
+	static constexpr std::uint8_t START_HEALTH = 3;
 
 	/// <summary>
 	/// An event that invokes whenver the health is changed via one of the 

@@ -5,18 +5,34 @@
 
 using FigValue = std::vector<std::string>;
 
-struct FigProperty
+/// <summary>
+/// Stores a reference to an existing fig key and value
+/// </summary>
+struct FigPropertyRef
 {
 	const char* m_Key;
 	const FigValue* m_Value;
 
-	FigProperty(const std::string& key, const FigValue& value);
+	FigPropertyRef(const std::string& key, const FigValue& value);
 	//Note: we do this to prevent rvalue assignments so we can optimize
 	//with no copying with lvalue references
-	FigProperty(std::string&&, FigValue&&) = delete;
+	FigPropertyRef(std::string&&, FigValue&&) = delete;
 
 	std::string GetKey() const;
 	const FigValue& GetValue() const;
+
+	std::string ToString() const;
+};
+
+struct FigProperty
+{
+	std::string m_Key;
+	FigValue m_Value;
+
+	FigProperty();
+	FigProperty(const std::string& key, const FigValue& value);
+
+	bool IsEmpty() const;
 
 	std::string ToString() const;
 };
@@ -32,6 +48,13 @@ using MarkedPropertyCollection = std::unordered_map<std::string, Fig*>;
 class Fig
 {
 private:
+	enum class PropertyParseResult
+	{
+		Success,
+		NoKeyValueSeparator,
+		NoPropertyValue,
+	};
+
 	PropertyCollection m_properties;
 	MarkedPropertyCollection m_markedProperties;
 
@@ -39,9 +62,17 @@ public:
 	static constexpr char MARKER_CHAR = '@';
 	static constexpr char VALUE_SEPARATOR_CHAR = ',';
 	static constexpr char KEY_VALUE_SEPARATOR = ':';
+	static const std::string COMMENT_START;
+	static const std::string COMMENT_CLOSE;
 
 private:
+	static void ParseValue(std::vector<std::string>& buffer, const std::string& line);
 	void ParseValueIntoProperty(PropertyCollection::Iterator& propertyIt, const std::string& line);
+	static PropertyParseResult ParsePropertyLine(const std::string& line, std::string* keyResult, std::string* valueResult);
+	static PropertyParseResult ParsePropertyLine(const std::string& line, std::string* keyResult, FigValue* valueResult);
+
+	static bool HasComment(const std::string& line);
+
 	void AddProperty(const std::string& line);
 	void AddMarkedProperty(const std::string& header, const std::string& line);
 
@@ -69,8 +100,10 @@ public:
 	/// <param name="input"></param>
 	void GetAllValuesFrom(const std::string& markerName, std::vector<const FigValue*>& input) const;
 
-	void GetAllProperties(std::vector<FigProperty>& properties) const;
-	void GetAllProperties(const std::string& markerName, std::vector<FigProperty>& properties) const;
+	void GetAllProperties(std::vector<FigPropertyRef>& properties) const;
+	void GetAllProperties(const std::string& markerName, std::vector<FigPropertyRef>& properties) const;
+
+	static std::optional<FigProperty> TryGetPropertyFromLine(const std::string& line);
 
 	std::string ToString() const;
 };

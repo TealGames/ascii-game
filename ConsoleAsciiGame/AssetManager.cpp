@@ -4,6 +4,8 @@
 #include "SceneAsset.hpp"
 #include "InputProfileAsset.hpp"
 #include "SpriteAnimationAsset.hpp"
+#include "FontAsset.hpp"
+#include "IOHandler.hpp"
 
 static bool THROW_ON_UNKNWON_ASSET = false;
 
@@ -55,6 +57,12 @@ namespace AssetManagement
 					std::format("Tried to add asset at path:{} as sprite animation asset but failed", file.path().string())))
 					return;
 			}
+			else if (fileExtension == FontAsset::EXTENSION)
+			{
+				if (!Assert(this, TryCreateAssetFromFile<FontAsset>(file.path()),
+					std::format("Tried to add asset at path:{} as font asset but failed", file.path().string())))
+					return;
+			}
 			else
 			{
 				LogError(this, std::format("Tried to add asset at path:{} but the extension "
@@ -89,12 +97,12 @@ namespace AssetManagement
 		return ASSET_PATH / directoryFile;
 	}
 
-	std::filesystem::path AssetManager::TryGetAssetPath(const std::filesystem::path& fullFileName)
+	std::filesystem::path AssetManager::TryGetAssetPath(const std::filesystem::path& fullFileName) const
 	{
 		return TryGetAssetPath(Asset::ExtractNameFromFile(fullFileName), fullFileName.extension().string());
 	}
 
-	std::filesystem::path AssetManager::TryGetAssetPath(const std::string& fileName, const std::string& extension)
+	std::filesystem::path AssetManager::TryGetAssetPath(const std::string& fileName, const std::string& extension) const
 	{
 		if (!Assert(this, extension.substr(0, 1) == ".", std::format("Tried to get assed path from file name:{} "
 			"and extension but extension is invalid:{}", fileName, extension)))
@@ -114,6 +122,37 @@ namespace AssetManagement
 		Assert(this, false, std::format("Tried to get asset path from file:{} extension:{} "
 			"but asset manager could not find any assets with that file name", fileName, extension));
 		return {};
+	}
+
+	std::vector<std::string> AssetManager::TryReadAssetFile(const std::string& fileName, const std::string& extension) const
+	{
+		const std::filesystem::path path = TryGetAssetPath(fileName, extension);
+		if (path.empty()) return {};
+
+		return IO::TryReadFileByLine(path);
+	}
+
+	bool AssetManager::TryExecuteOnAssetFile(const std::string& fileName, const std::string& extension, const IO::FileLineAction& action) const
+	{
+		const std::filesystem::path path = TryGetAssetPath(fileName, extension);
+		if (!Assert(this, !path.empty(), std::format("Tried to execute action on asset file lines from fileanme:'{}' "
+			"and extension:'{}' but resulting asset path is empty", fileName, extension)))
+			return false;
+
+		return IO::TryExecuteOnFileByLine(path, action);
+	}
+	bool AssetManager::TryExecuteOnAssetFile(const std::filesystem::path& fullFileName, const IO::FileLineAction& action) const
+	{
+		return TryExecuteOnAssetFile(Asset::ExtractNameFromFile(fullFileName), fullFileName.extension().string(), action);
+	}
+
+	bool AssetManager::TryWriteToAssetFile(const std::string& fileName, 
+		const std::string& extension, const std::string& newContents) const
+	{
+		const std::filesystem::path path = TryGetAssetPath(fileName, extension);
+		if (path.empty()) return false;
+
+		return IO::TryWriteFile(path, newContents);
 	}
 
 	Asset* AssetManager::TryGetAssetMutable(const std::string& name)

@@ -21,7 +21,12 @@ const std::string SceneAsset::EXTENSION = ".json";
 const std::string SceneAsset::LEVEL_EXTENSION = ".level";
 
 SceneAsset::SceneAsset(const std::filesystem::path& path) : 
-	Asset(path, true), m_assetManager(nullptr), m_scene(std::nullopt) {}
+	Asset(path, true), m_assetManager(nullptr), m_scene(std::nullopt) 
+{
+	if (!Assert(this, IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a scene asset from path:'{}' "
+		"but it does not have required extension:'{}'", EXTENSION)))
+		return;
+}
 
 AssetManagement::AssetManager& SceneAsset::GetAssetManagerMutable()
 {
@@ -68,7 +73,7 @@ void SceneAsset::SetDependencies(GlobalEntityManager& globalManager, AssetManage
 
 void SceneAsset::UpdateAssetFromFile()
 {
-	Json json = Json::parse(IO::TryReadFile(GetPath()));
+	Json json = Json::parse(IO::TryReadFileFull(GetPath()));
 
 	Json entityComponentsJson = {};
 	Json currentComponentJson = {};

@@ -3,6 +3,7 @@
 #include "Fig.hpp"
 #include "FigDeserializers.hpp"
 #include "Debug.hpp"
+#include "IOHandler.hpp"
 
 const std::string SpriteAnimationAsset::EXTENSION = ".sanim";
 
@@ -16,6 +17,10 @@ static constexpr char NEW_ROW_SYMBOL = '-';
 
 SpriteAnimationAsset::SpriteAnimationAsset(const std::filesystem::path& path) : Asset(path, false), m_animation()
 {
+	if (!Assert(this, IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a sprite animation asset from path:'{}' "
+		"but it does not have required extension:'{}'", EXTENSION)))
+		return;
+
 	UpdateAssetFromFile();
 }
 
@@ -33,7 +38,7 @@ void SpriteAnimationAsset::UpdateAssetFromFile()
 	Fig fig = Fig(GetPath());
 	//Assert(false, std::format("Found fig:{}", fig.ToString()));
 
-	std::vector<FigProperty> figProperties = {};
+	std::vector<FigPropertyRef> figProperties = {};
 	fig.GetAllProperties(GENERAL_MARKER, figProperties);
 	//Assert(false, std::format("Get all properties: {} first:{}", std::to_string(figProperties.size()), figProperties[0].GetValue()[0]));
 

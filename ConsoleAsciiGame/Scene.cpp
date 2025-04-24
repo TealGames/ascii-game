@@ -650,9 +650,14 @@ std::string Scene::ToStringLayers() const
 
 std::string Scene::ToStringEntityData() const
 {
-	return "NULL";
-	/*return std::format("[Global: {} Local: {}]", 
-		m_globalEntities.ToStringEntityData(), m_entityMapper.ToStringData());*/
+	std::vector<std::string> sceneStr = {};
+	for (const auto& entity : m_localEntities)
+	{
+		sceneStr.push_back(entity.ToString());
+	}
+	return std::format("[\n-----GLOBALS----: {} \n----Local-----: {}]", 
+		TryGetGlobalEntityManager().ToStringEntityData(), 
+		Utils::ToStringIterable<std::vector<std::string>, std::string>(sceneStr));
 }
 
 void Scene::ResetFrameDirtyComponentCount()

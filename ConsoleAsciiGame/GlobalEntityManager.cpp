@@ -22,8 +22,12 @@ int GlobalEntityManager::GetCount() const
 
 std::string GlobalEntityManager::ToStringEntityData() const
 {
-	return "";
-	//return m_globalEntityMapper.ToStringData();
+	std::vector<std::string> entityStr = {};
+	for (const auto& entity : m_globalEntities)
+	{
+		entityStr.push_back(entity.ToString());
+	}
+	return Utils::ToStringIterable<std::vector<std::string>, std::string>(entityStr);
 }
 
 std::string GlobalEntityManager::CleanName(const std::string name) const

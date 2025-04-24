@@ -23,6 +23,12 @@ namespace IO
 		return true;
 	}
 
+	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::filesystem::path& extension)
+	{
+		if (!std::filesystem::exists(path)) return false;
+		return path.extension() == extension.extension();
+	}
+
 	bool CreatePathIfNotExist(const std::filesystem::path& path, const bool forceCleanPath)
 	{
 		if (!DoesPathExist(path))
@@ -48,13 +54,12 @@ namespace IO
 		return true;
 	}
 
-	std::string TryReadFile(const std::filesystem::path& path)
+	std::string TryReadFileFull(const std::filesystem::path& path)
 	{
 		const std::filesystem::path cleanedPath = CleanPath(path);
-		CreatePathIfNotExist(path);
 
 		std::ifstream file(cleanedPath);
-		if (!Assert(file.is_open(), std::format("Tried to READ from file at path {} "
+		if (!Assert(file.is_open(), std::format("Tried to READ from file (full) at path {} "
 			"but it could not be opened", cleanedPath.string())))
 			return "";
 
@@ -62,6 +67,42 @@ namespace IO
 		stream << file.rdbuf();
 		file.close();
 		return stream.str();
+	}
+
+	std::vector<std::string> TryReadFileByLine(const std::filesystem::path& path)
+	{
+		const std::filesystem::path cleanedPath = CleanPath(path);
+
+		std::ifstream file(cleanedPath);
+		if (!Assert(file.is_open(), std::format("Tried to READ from file (by lines) at path {} "
+			"but it could not be opened", cleanedPath.string())))
+			return {};
+
+		std::vector<std::string> lines = {};
+		std::string line = "";
+		while (std::getline(file, line))
+		{
+			lines.push_back(line);
+		}
+		return lines;
+	}
+
+	bool TryExecuteOnFileByLine(const std::filesystem::path& path, const FileLineAction& action)
+	{
+		const std::filesystem::path cleanedPath = CleanPath(path);
+
+		std::ifstream file(cleanedPath);
+		if (!Assert(file.is_open(), std::format("Tried to execute an action for file (by lines) at path {} "
+			"but it could not be opened", cleanedPath.string())))
+			return false;
+
+		std::vector<std::string> lines = {};
+		std::string line = "";
+		while (std::getline(file, line))
+		{
+			if (action) action(&line);
+		}
+		return true;
 	}
 }
 
