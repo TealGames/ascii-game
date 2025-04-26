@@ -17,7 +17,7 @@ private:
 	RenderInfo m_defaultRenderInfo;
 	/*EntityGUICollection m_entityGUIs;
 	EntityGUICollection::iterator m_selectedEntity;*/
-	std::optional<EntityGUI> m_selectedEntity;
+	EntityGUI* m_selectedEntity;
 
 public:
 	static const Color EDITOR_TEXT_COLOR;
@@ -34,6 +34,7 @@ private:
 public:
 	EntityEditorGUI(const Input::InputManager& input, const CameraController& cameraController, 
 		GUISelectorManager& selector);
+	~EntityEditorGUI();
 
 	void SetEntityGUI(ECS::Entity& entity);
 

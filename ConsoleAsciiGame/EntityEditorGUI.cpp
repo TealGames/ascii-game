@@ -18,12 +18,17 @@ EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input,
 	const CameraController& cameraController, GUISelectorManager& selector)
 	: m_inputManager(&input), m_selectorManager(&selector),
 	m_defaultRenderInfo(), 
-	m_selectedEntity(std::nullopt)
+	m_selectedEntity(nullptr)
 	//m_entityGUIs(), m_selectedEntity(m_entityGUIs.end())
 {
 	ScreenPosition topLeftPos = Conversions::NormalizedScreenToPosition(TOP_LEFT_POS_NORMALIZED);
 	ScreenPosition topRightPos = Conversions::NormalizedScreenToPosition({ 1, 1 });
 	m_defaultRenderInfo = RenderInfo(topLeftPos, ScreenPosition{ topRightPos.m_X - topLeftPos.m_X, SCREEN_HEIGHT });
+}
+EntityEditorGUI::~EntityEditorGUI()
+{
+	if (m_selectedEntity != nullptr)
+		delete m_selectedEntity;
 }
 
 const Input::InputManager& EntityEditorGUI::GetInputManagerSafe() const
@@ -43,11 +48,12 @@ GUISelectorManager& EntityEditorGUI::GetGUISelector()
 
 void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 {
-	if (m_selectedEntity.has_value() && m_selectedEntity.value().GetEntity() == entity) 
+	if (m_selectedEntity!=nullptr && m_selectedEntity->GetEntity() == entity)
 		return;
 
-	m_selectedEntity = EntityGUI(GetInputManagerSafe(), GetGUISelector(), entity);
-	m_selectedEntity.value().SetComponentsToStored();
+	delete m_selectedEntity;
+	m_selectedEntity = new EntityGUI(GetInputManagerSafe(), GetGUISelector(), entity);
+	m_selectedEntity->SetComponentsToStored();
 
 	/*EntityGUICollection::iterator it = m_entityGUIs.find(entity.GetName());
 	if (it == m_entityGUIs.end())
@@ -61,8 +67,9 @@ void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 
 void EntityEditorGUI::Update()
 {
-	if (m_selectedEntity.has_value()) 
-		m_selectedEntity.value().Update();
+	if (m_selectedEntity == nullptr) return;
+
+	m_selectedEntity->Update();
 }
 
 void EntityEditorGUI::TryRender()
@@ -73,8 +80,8 @@ void EntityEditorGUI::TryRender()
 
 ScreenPosition EntityEditorGUI::Render(const RenderInfo& renderInfo)
 {
-	if (!m_selectedEntity.has_value()) return {};
-	m_selectedEntity.value().Render(renderInfo);
+	if (m_selectedEntity==nullptr) return {};
+	m_selectedEntity->Render(renderInfo);
 
 	return renderInfo.m_RenderSize;
 }
