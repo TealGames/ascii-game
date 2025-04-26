@@ -25,7 +25,7 @@ LightSourceData::LightSourceData(const std::uint8_t& lightRadius, const RenderLa
 	const std::uint8_t& intensity, const float& falloff) :
 	ComponentData(), 
 	m_LightRadius(lightRadius), m_GradientFilter(colorFilter), m_AffectedLayers(affectedLayers),
-	m_Intensity(intensity), m_FalloffStrength(falloff), m_LastFrameData{}
+	m_Intensity(intensity), m_FalloffStrength(falloff)//, m_LastFrameData{}
 {
 
 }

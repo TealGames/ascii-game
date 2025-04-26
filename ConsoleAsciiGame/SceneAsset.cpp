@@ -3,7 +3,6 @@
 #include "SceneAsset.hpp"
 #include "JsonUtils.hpp"
 #include "JsonSerializers.hpp"
-#include "RaylibUtils.hpp"
 #include "AnimatorData.hpp"
 #include "CameraData.hpp"
 #include "EntityRendererData.hpp"
@@ -16,15 +15,18 @@
 #include "ParticleEmitterData.hpp"
 #include "AssetManager.hpp"
 #include "IOHandler.hpp"
+#include "VisualDataParser.hpp"
 
 const std::string SceneAsset::EXTENSION = ".json";
 const std::string SceneAsset::LEVEL_EXTENSION = ".level";
+
+static const char* LEVEL_BACKGROUND_PROPERTY_NAME = "Level";
 
 SceneAsset::SceneAsset(const std::filesystem::path& path) : 
 	Asset(path, true), m_assetManager(nullptr), m_scene(std::nullopt) 
 {
 	if (!Assert(this, IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a scene asset from path:'{}' "
-		"but it does not have required extension:'{}'", EXTENSION)))
+		"but it does not have required extension:'{}'", path.string(), EXTENSION)))
 		return;
 }
 
@@ -354,93 +356,22 @@ bool SceneAsset::TryLoadLevelBackground()
 		"but could not find level from asset manager using name:{} extension:{}", ToString(), GetName(), LEVEL_EXTENSION)))
 		return false;
 
-	std::ifstream fstream(maybePath);
-	std::vector<std::vector<TextCharArrayPosition>> visualPositions = {};
+	//std::ifstream fstream(maybePath);
+	//std::vector<std::vector<TextCharArrayPosition>> visualPositions = {};
+	Fig levelFig = Fig(maybePath);
+	//Assert(false, std::format("Level fig:{}", levelFig.ToString()));
 
-	int r = 0;
-	std::string currentLine = "";
-	std::unordered_map<std::string, Color> colorAliases = {};
-	const std::string keyHeader = "key:";
-	const std::string sceneHeader = "level:";
-	const char charColorAliasStart = '[';
-	const char charColorAliasEnd = ']';
-	bool isParsingKey = false;
-
-	int lineIndex = -1;
-	const Color defaultColor = BLACK;
-	Color currentColor = defaultColor;
-	while (std::getline(fstream, currentLine))
-	{
-		lineIndex++;
-		if (currentLine.empty()) continue;
-
-		if (currentLine == keyHeader) isParsingKey = true;
-		else if (currentLine == sceneHeader) isParsingKey = false;
-
-		else if (isParsingKey)
-		{
-			std::size_t equalsSignIndex = currentLine.find('=');
-			std::string colorAlias = currentLine.substr(0, equalsSignIndex);
-			std::string hexString = currentLine.substr(equalsSignIndex + 1);
-			std::optional<uint32_t> maybeConvertedHex = Utils::TryParseHex<uint32_t>(hexString);
-			if (!Assert(maybeConvertedHex.has_value(), std::format("Tried to parse level background fro scene asset: {}, but encountered "
-				"unparsable hex: '{}' at line: {}", ToString(), hexString, std::to_string(lineIndex)))) continue;
-
-			Color convertedColor = RaylibUtils::GetColorFromHex(maybeConvertedHex.value());
-			//Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));
-			colorAliases.emplace(colorAlias, convertedColor);
-		}
-		else
-		{
-			visualPositions.push_back({});
-			//std::cout << "ALLOC with line: "<<currentLine<< std::endl;
-			//if (currentLine.size() > maxLineChars) maxLineChars = currentLine.size();
-
-			for (int i = 0; i < currentLine.size(); i++)
-			{
-				if (currentLine[i] == '\t' || currentLine[i]==' ') continue;
-				//We need to make sure there is at least 2 chars in front for at least one for alias and one for ending symbol
-				if (currentLine[i] == charColorAliasStart && i< currentLine.size()-2)
-				{
-					int colorAliasEndIndex = currentLine.find(charColorAliasEnd, i + 1);
-					if (!Assert(colorAliasEndIndex != std::string::npos, std::format("Tried to parse a color alias for level background for scene asset: {} at line: {} "
-						"but did not find color alias end at color alias start at index: {}",
-						ToString(), std::to_string(lineIndex), std::to_string(i)))) continue;
-
-					std::string colorAlias = currentLine.substr(i + 1, colorAliasEndIndex - (i + 1));
-					if (!Assert(colorAliases.find(colorAlias) != colorAliases.end(), std::format("Tried to parse a color alias for level background "
-						"for scene asset : {} at line : {} but color alias: {} starting at index:{} has no color data defined in KEY section",
-						ToString(), std::to_string(lineIndex), colorAlias, std::to_string(i + 1))))
-					{
-						i = colorAliasEndIndex;
-						continue;
-					}
-
-					//Log(std::format("Found good color alias: {}", colorAlias));
-					currentColor = colorAliases[colorAlias];
-					i = colorAliasEndIndex;
-					continue;
-				}
-
-				//TODO: what is the best way of doing this? putting in text chars and putting empty chars
-				//which would work fine for init but hard to create collision bound
-				//OR do we leave empty spots and put them in with positions?
-				visualPositions.back().push_back(TextCharArrayPosition{ Array2DPosition(r, i), TextChar(currentColor, currentLine[i])});
-			}
-			r++;
-		}
-	}
-
-	//We then create the background entity based off the the visual positions in the asset
-	const VisualData backgroundVisual = VisualData(visualPositions, GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE,
-		VisualData::DEFAULT_CHAR_SPACING, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::PIVOT_CENTER);
-	//Assert(false, std::format("Background visual:{} actual is:{}", ::ToString(visualPositions), backgroundVisual.ToString()));
+	VisualData backgroundVisual = ParseDefaultVisualData(levelFig.TryGetBaldValue(LEVEL_BACKGROUND_PROPERTY_NAME));
+	if (!Assert(this, !backgroundVisual.IsEmpty(), std::format("Tried to parse level background for scene asset:{} "
+		"but resulted in empty visual data when using fig value:{} visual data:{}", ToString(), 
+		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_BACKGROUND_PROPERTY_NAME)), backgroundVisual.ToString())))
+		return false;
 
 	ECS::Entity& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformData(Vec2{ 0,-10 }));
 	backgroundEntity.m_IsSerializable = false;
 	EntityRendererData& backgroundRenderer = backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
 
-	LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
+	LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().ToString()));
 	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));
 
 	CollisionBoxData& collisionBox = backgroundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(backgroundEntity.m_Transform, backgroundVisual.GetWorldSize(), { 0,0 }));

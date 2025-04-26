@@ -1,5 +1,4 @@
 #pragma once
-#include "Array2DPosition.hpp"
 #include "CameraData.hpp"
 #include "NormalizedPosition.hpp"
 

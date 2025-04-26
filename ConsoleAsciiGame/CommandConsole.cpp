@@ -24,7 +24,7 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorMana
 	m_inputManager(input), m_prompts(), m_outputMessages(), m_inputField(), m_isEnabled(false)
 {
 	GUISettings fieldSettings = GUISettings(ScreenPosition{ COMMAND_CONSOLE_WIDTH , COMMAND_CONSOLE_HEIGHT }, GRAY,
-		TextGUISettings(WHITE, FontData(COMMAND_CONSOLE_FONT_SIZE, GetGlobalFont()), COMMAND_CONSOLE_SPACING, TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
+		TextGUISettings(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
 	m_inputField = InputField(m_inputManager, selector, InputFieldType::Any, 
 		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit,
 		fieldSettings, [this](std::string input) -> void 
@@ -54,7 +54,7 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorMana
 
 std::string CommandConsole::FormatPromptName(const std::string& name)
 {
-	return Utils::StringUtil(name).Trim().ToLowerCase().ToString();
+	return Utils::StringUtil(name).TrimSpaces().ToLowerCase().ToString();
 }
 
 PromptCollection::iterator CommandConsole::TryGetIteratorForPromptName(const std::string& name)

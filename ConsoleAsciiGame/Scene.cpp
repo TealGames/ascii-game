@@ -421,7 +421,7 @@ std::vector<const RenderLayer*> Scene::GetAllLayers() const
 	return layers;
 }
 
-void Scene::AddToLayer(const RenderLayerType& layers, TextBufferPosition& textBufferPos)
+void Scene::AddToLayer(const RenderLayerType& layers, TextBufferCharPosition& textBufferPos)
 {
 	if (layers == RenderLayerType::None) return;
 
@@ -433,9 +433,9 @@ void Scene::AddToLayer(const RenderLayerType& layers, TextBufferPosition& textBu
 	}
 }
 
-std::vector<TextBufferMixed*> Scene::GetLayerBufferMutable(const RenderLayerType& renderLayers)
+std::vector<FragmentedTextBuffer*> Scene::GetLayerBufferMutable(const RenderLayerType& renderLayers)
 {
-	std::vector<TextBufferMixed*> buffers = {};
+	std::vector<FragmentedTextBuffer*> buffers = {};
 	if (renderLayers == RenderLayerType::None) return buffers;
 
 	for (auto& layer : m_layers)

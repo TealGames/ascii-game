@@ -13,6 +13,17 @@ TextChar::TextChar() :
 TextChar::TextChar(const Color& color, const char& textChar = EMPTY_CHAR_PLACEHOLDER) :
 	m_Color(color), m_Char(textChar) {}
 
+bool TextChar::IsEmpty() const
+{
+	return m_Char == EMPTY_CHAR_PLACEHOLDER;
+}
+Vec2 TextChar::GetWorldSize(const FontProperties& font) const
+{
+	const std::string tempStr = std::string(1, m_Char);
+	const Vector2 size = MeasureTextEx(font.m_FontType, tempStr.c_str(), font.m_Size, font.m_Tracking);
+	return { size.x, size.y };
+}
+
 bool TextChar::operator==(const TextChar& other) const
 {
 	return RaylibUtils::ColorEqual(m_Color, other.m_Color) && m_Char == other.m_Char;

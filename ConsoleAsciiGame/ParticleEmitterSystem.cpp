@@ -80,7 +80,7 @@ namespace ECS
 					randomVel = GetVector(data.m_speedRange.GetRandom(), randomDir.GetAngle());
 					randomLifeTime = data.m_lifetimeRange.GetRandom();
 
-					Particle* particlePtr = data.m_particles.TryAdd(Particle(TextChar(initialColor, data.m_Char), data.m_FontData.m_FontSize,
+					Particle* particlePtr = data.m_particles.TryAdd(Particle(TextChar(initialColor, data.m_Char), data.m_FontData.m_Size,
 						data.GetOriginWorldPos(), randomVel, randomLifeTime));
 					AddParticleToLayers(data, *particlePtr, renderLayers);
 				}
@@ -94,7 +94,7 @@ namespace ECS
 	{
 		for (auto& layer : renderLayers)
 		{
-			layer->AddText(TextBufferPosition(particle.m_Pos, 
+			layer->AddText(TextBufferCharPosition(particle.m_Pos, 
 				particle.m_TextChar, data.m_FontData));
 		}
 	}

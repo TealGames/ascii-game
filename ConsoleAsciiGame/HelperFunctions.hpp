@@ -158,7 +158,7 @@ namespace Utils
 	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>>
 			 && HasBitwiseAnd<EnumType> && HasBitwiseOr<EnumType> && 
 			 AllSameType<EnumType, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
-	constexpr bool HasFlagAny(const EnumType& enumBits, const CheckFlagType&... checkFlags)
+	constexpr bool HasFlagAny(const EnumType enumBits, const CheckFlagType... checkFlags)
 	{
 		EnumType flagsCombined = (checkFlags | ...);
 		return (enumBits & flagsCombined) != static_cast<EnumType>(0);
@@ -168,7 +168,7 @@ namespace Utils
 	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>>
 		     && HasBitwiseAnd<EnumType> && HasBitwiseOr<EnumType> && 
 			 AllSameType<EnumType, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
-	constexpr bool HasFlagAll (const EnumType& enumBits, const CheckFlagType&... checkFlags)
+	constexpr bool HasFlagAll (const EnumType enumBits, const CheckFlagType... checkFlags)
 	{
 		EnumType flagsCombined = (checkFlags | ...);
 		return (enumBits & flagsCombined) == flagsCombined;

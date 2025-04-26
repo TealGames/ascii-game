@@ -285,10 +285,11 @@ Json TrySerializeFont(const Font& font)
 	return maybeFontConstant.value();
 }
 
-void from_json(const Json& json, FontData& font)
+void from_json(const Json& json, FontProperties& font)
 {
 	const char* FONT_PROEPRTY = "Font";
 	const char* FONT_SIZE_PROPERTY = "FontSize";
+	const char* TRACKING_PROPERTY = "Tracking";
 	std::optional<Font> maybeFont = TryDeserializeFont(json.at(FONT_PROEPRTY).get<std::string>());
 
 	try
@@ -306,7 +307,7 @@ void from_json(const Json& json, FontData& font)
 		}
 		else fontSize = fontJson.get<float>();
 
-		font = FontData(fontSize, maybeFont.value());
+		font = FontProperties(fontSize, json.at(TRACKING_PROPERTY).get<float>(), maybeFont.value());
 	}
 	catch (const std::exception& e)
 	{
@@ -314,16 +315,16 @@ void from_json(const Json& json, FontData& font)
 	}
 }
 	
-void to_json(Json& json, const FontData& font)
+void to_json(Json& json, const FontProperties& font)
 {
-	json["Font"] = TrySerializeFont(font.m_Font);
+	json["Font"] = TrySerializeFont(font.m_FontType);
 
-	std::optional<std::string> maybeFontSizeConstant = JsonConstants::TryGetFontSizeConstant(font.m_FontSize);
+	std::optional<std::string> maybeFontSizeConstant = JsonConstants::TryGetFontSizeConstant(font.m_Size);
 	if (maybeFontSizeConstant.has_value()) json["FontSize"] = maybeFontSizeConstant.value();
-	else json["FontSize"] = font.m_FontSize;
+	else json["FontSize"] = font.m_Size;
 }
 
-void from_json(const Json& json, TextBufferPosition& textChar)
+void from_json(const Json& json, TextBufferCharPosition& textChar)
 {
 	const char* TEXT_CHAR_PROPERTY = "Text";
 	/*const char* FONT_PROEPRTY = "Font";
@@ -347,16 +348,16 @@ void from_json(const Json& json, TextBufferPosition& textChar)
 	//else fontSize = fontJson.get<float>();
 	try
 	{
-		FontData data = json.get<FontData>();
+		FontProperties data = json.get<FontProperties>();
 
-		textChar = TextBufferPosition(json.at(POS_PROPERTY).get<Vec2>(), json.at(TEXT_CHAR_PROPERTY).get<TextChar>(), data);
+		textChar = TextBufferCharPosition(json.at(POS_PROPERTY).get<Vec2>(), json.at(TEXT_CHAR_PROPERTY).get<TextChar>(), data);
 	}
 	catch (const std::exception& e)
 	{
 		Assert(false, std::format("Tried to deserialize text buffer pos:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
-void to_json(Json& json, const TextBufferPosition& textChar)
+void to_json(Json& json, const TextBufferCharPosition& textChar)
 {
 	/*json["Font"] = TrySerializeFont(textChar.m_FontData.m_Font);
 
@@ -399,13 +400,11 @@ void from_json(const Json& json, VisualData& visualData)
 	/*const char* FONT_PROEPRTY = "Font";
 	const char* FONT_SIZE_PROPERTY = "FontSize";*/
 	const char* PIVOT_PROPERTY = "Pivot";
-	const char* CHAR_SPACING_PROPERTY = "CharSpacing";
-	const char* CHAR_AREA_PROPERTY = "CharArea";
-	if (!HasRequiredProperties(json, { BUFFER_PROPERTY, PIVOT_PROPERTY, CHAR_SPACING_PROPERTY })) return;
+	if (!HasRequiredProperties(json, { BUFFER_PROPERTY, PIVOT_PROPERTY})) return;
 
 	try
 	{
-		auto textChars = json.at(BUFFER_PROPERTY).get<std::vector<std::vector<TextCharArrayPosition>>>();
+		auto textChars = json.at(BUFFER_PROPERTY).get<std::vector<TextBufferCharPosition>>();
 
 		//std::optional<Font> maybeFont = TryDeserializeFont(json.at(FONT_PROEPRTY).get<std::string>());
 
@@ -421,7 +420,7 @@ void from_json(const Json& json, VisualData& visualData)
 		//	fontSize = maybeFontSize.value();
 		//}
 		//else fontSize = fontJson.get<float>();
-		FontData fontData = json.get<FontData>();
+		FontProperties fontData = json.get<FontProperties>();
 
 		Vec2 pivotPos = VisualData::DEFAULT_PIVOT;
 		Json pivotJson = json.at(PIVOT_PROPERTY);
@@ -435,11 +434,7 @@ void from_json(const Json& json, VisualData& visualData)
 		}
 		else pivotPos = pivotJson.get<Vec2>();
 
-		visualData = VisualData(textChars, fontData.m_Font, fontData.m_FontSize, json.at(CHAR_SPACING_PROPERTY).get<Vec2>(), NormalizedPosition(pivotPos));
-		if (json.contains(CHAR_AREA_PROPERTY))
-		{
-			visualData.SetPredefinedCharArea(json.at(CHAR_AREA_PROPERTY).get<Vec2>());
-		}
+		visualData = VisualData(textChars, fontData.m_FontType, fontData.m_Size, NormalizedPosition(pivotPos));
 	}
 	catch (const std::exception& e)
 	{
@@ -452,17 +447,11 @@ void to_json(Json& json, const VisualData& visualData)
 	std::optional<std::string> maybeFontSizeConstant = JsonConstants::TryGetFontSizeConstant(visualData.GetFontSize());
 	if (maybeFontSizeConstant.has_value()) json["FontSize"] = maybeFontSizeConstant.value();
 	else json["FontSize"] = visualData.GetFontSize();*/
-	Json fontDataJson = visualData.GetFontData();
-	json.merge_patch(fontDataJson);
-
-	json["Buffer"] = visualData.GetRawBuffer();
+	json["Buffer"] = visualData.GetBuffer();
 
 	std::optional<std::string> maybePivotConstant = JsonConstants::TryGetPivotConstant(visualData.GetPivot());
 	if (maybePivotConstant.has_value()) json["Pivot"] = maybePivotConstant.value();
 	else json["Pivot"] = visualData.GetPivot();
-
-	json["CharSpacing"] = visualData.GetCharSpacing();
-	if (visualData.HasPredefinedCharArea()) json["CharArea"] = visualData.GetPredefinedCharArea();
 }
 
 void from_json(const Json& json, SpriteAnimationFrame& frame)
@@ -504,7 +493,7 @@ void from_json(const Json& json, SpriteAnimation& anim)
 		anim.m_Loop = json.at(LOOP_PROPERTY).get<bool>();
 		anim.m_AnimationSpeed = json.at(SPEED_PROPERTY).get<float>();
 		anim.m_SingleLoopLength = json.at(LENGTH_PROPERTY).get<float>();
-		anim.SetVisualsFromFrames(json.at(VISUALS_PROPERTY).get<std::vector<SpriteAnimationFrame>>());
+		anim.m_Frames = json.at(VISUALS_PROPERTY).get<std::vector<SpriteAnimationFrame>>();
 	}
 	catch (const std::exception& e)
 	{
@@ -516,7 +505,7 @@ void to_json(Json& json, const SpriteAnimation& anim)
 {
 
 	json= { {"Loop", anim.m_Loop}, {"Speed", anim.m_AnimationSpeed},
-		{"Length", anim.m_SingleLoopLength }, {"Visuals", anim.m_FrameVisuals} };
+		{"Length", anim.m_SingleLoopLength }, {"Visuals", anim.m_Frames} };
 }
 
 void from_json(const Json& json, SerializableEntity& serializableEntity)

@@ -1,7 +1,13 @@
 #include "pch.hpp"
 #include "FontData.hpp"
+#include "RaylibUtils.hpp"
 
-FontData::FontData() : FontData(0, {}) {}
+FontProperties::FontProperties() : FontProperties(0, 0, {}) {}
 
-FontData::FontData(const float& fontSize, const Font& font) :
-	m_Font(font), m_FontSize(fontSize) {}
+FontProperties::FontProperties(const float fontSize, const float spacing, const Font& font) :
+	m_FontType(font), m_Tracking(spacing), m_Size(fontSize) {}
+
+bool FontProperties::HasValidFont() const
+{
+	return RaylibUtils::IsValidFont(m_FontType);
+}

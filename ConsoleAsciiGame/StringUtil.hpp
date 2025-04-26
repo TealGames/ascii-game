@@ -7,7 +7,10 @@ namespace Utils {
 		std::string str;
 	public:
 		StringUtil(const std::string&);
-		StringUtil& Trim();
+		StringUtil& TrimSpaces();
+		StringUtil& TrimIdents();
+		StringUtil& TrimChar(const char c);
+
 		StringUtil& ToLowerCase();
 		StringUtil& RemoveChar(char c);
 		StringUtil& RemoveSpaces();

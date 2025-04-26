@@ -18,45 +18,6 @@
                     "Type": "TransformData"
                 },
                 {
-                    "Layers": [
-                        "Player"
-                    ],
-                    "Type": "EntityRendererData",
-                    "VisualData": {
-                        "Buffer": [
-                            [
-                                {
-                                    "Char": "A",
-                                    "Color": "White",
-                                    "Pos": {
-                                        "Col": 0,
-                                        "Row": 0
-                                    }
-                                }
-                            ]
-                        ],
-                        "CharSpacing": {
-                            "X": 1.0,
-                            "Y": 1.0
-                        },
-                        "Font": "Default",
-                        "FontSize": "Default",
-                        "Pivot": "BottomLeft"
-                    }
-                },
-                {
-                    "AspectRatio": {
-                        "X": 3,
-                        "Y": 6
-                    },
-                    "FollowTarget": {
-                        "Entity": "Test2",
-                        "Scene": "scene1"
-                    },
-                    "LensSize": 10.0,
-                    "Type": "CameraData"
-                },
-                {
                     "Type": "PhysicsBodyData",
                     "Collider": {
                         "Component": "CollisionBoxData",

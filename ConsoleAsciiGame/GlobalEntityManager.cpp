@@ -33,7 +33,7 @@ std::string GlobalEntityManager::ToStringEntityData() const
 std::string GlobalEntityManager::CleanName(const std::string name) const
 {
 	Utils::StringUtil stringUtils(name);
-	return stringUtils.ToLowerCase().Trim().RemoveChar(' ').ToString();
+	return stringUtils.ToLowerCase().TrimSpaces().RemoveChar(' ').ToString();
 }
 
 EntityIDCollection::iterator GlobalEntityManager::GetGlobalEntityIteratorMutable(const ECS::EntityID& id)

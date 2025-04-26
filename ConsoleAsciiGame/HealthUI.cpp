@@ -19,9 +19,10 @@ namespace Game
 		{
 			m_health.reserve(GameState::MAX_HEALTH);
 
-			const VisualDataPreset visualPreset = { GetGlobalFont(), 4, VisualData::DEFAULT_CHAR_SPACING,
-					CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
-			const VisualData healthVisualData = VisualData({ {TextCharArrayPosition({0,0}, TextChar(Color(215, 71, 9, 255), '@'))}}, visualPreset);
+			/*const VisualDataPreset visualPreset = { GetGlobalFont(), 4, VisualData::DEFAULT_CHAR_SPACING,
+					CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };*/
+			FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, GetGlobalFont());
+			const VisualData healthVisualData = VisualData({ {TextChar(Color(215, 71, 9, 255), '@')}}, {0, 0}, fontSettings, VisualData::DEFAULT_PIVOT);
 
 			for (size_t i = 0; i < GameState::MAX_HEALTH; i++)
 			{

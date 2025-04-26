@@ -14,7 +14,7 @@ private:
 
 public:
 	VisualData m_VisualData;
-	std::vector<TextCharArrayPosition> m_LastFrameVisualData;
+	//std::vector<TextCharArrayPosition> m_LastFrameVisualData;
 	
 public:
 	EntityRendererData();
@@ -22,10 +22,10 @@ public:
 	EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers);
 
 	RenderLayerType GetRenderLayers() const;
-	Vec2Int GetVisualSize() const;
+	//Vec2Int GetVisualSize() const;
 	const VisualData& GetVisualData() const;
 
-	void SetVisualDataDeltas(const VisualDataPositions& positions);
+	//void SetVisualDataDeltas(const VisualDataPositions& positions);
 	void OverrideVisualData(const VisualData& newVisual);
 
 	std::vector<std::string> GetDependencyFlags() const override;

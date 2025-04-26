@@ -2,6 +2,14 @@
 #include "NormalizedPosition.hpp"
 #include "Debug.hpp"
 
+const Vec2 NormalizedPosition::TOP_LEFT = { 0, 1 };
+const Vec2 NormalizedPosition::TOP_RIGHT = { 1, 1 };
+const Vec2 NormalizedPosition::BOTTOM_LEFT = { 0, 0 };
+const Vec2 NormalizedPosition::BOTTOM_RIGHT = { 1, 0 };
+const Vec2 NormalizedPosition::CENTER = { 0.5, 0.5 };
+const Vec2 NormalizedPosition::BOTTOM_CENTER = { 0.5, 0 };
+const Vec2 NormalizedPosition::TOP_CENTER = { 0.5, 1 };
+
 NormalizedPosition::NormalizedPosition() : 
 	NormalizedPosition(0, 0) {}
 
@@ -40,4 +48,46 @@ void NormalizedPosition::SetPos(const Vec2& relativePos)
 {
 	m_pos.m_X = std::clamp(relativePos.m_X, float(0), float(1));
 	m_pos.m_Y = std::clamp(relativePos.m_Y, float(0), float(1));
+}
+
+NormalizedPosition NormalizedPosition::operator+(const NormalizedPosition& other) const
+{
+	return { m_pos.m_X + other.m_pos.m_X, m_pos.m_Y + other.m_pos.m_Y };
+}
+
+NormalizedPosition NormalizedPosition::operator-(const NormalizedPosition& other) const
+{
+	return { m_pos.m_X - other.m_pos.m_X, m_pos.m_Y - other.m_pos.m_Y };
+}
+
+NormalizedPosition NormalizedPosition::operator*(const NormalizedPosition& other) const
+{
+	return { m_pos.m_X * other.m_pos.m_X, m_pos.m_Y * other.m_pos.m_Y };
+}
+
+NormalizedPosition NormalizedPosition::operator*(const float& scalar) const
+{
+	return { m_pos.m_X * scalar, m_pos.m_Y * scalar };
+}
+
+NormalizedPosition NormalizedPosition::operator/(const float& scalar) const
+{
+	if (!Assert(this, scalar != 0,
+		std::format("Tried to divide a normalized position: {} by a 0 value scalar", m_pos.ToString())))
+	{
+		return *this;
+	}
+
+	return { m_pos.m_X / scalar, m_pos.m_Y / scalar };
+}
+
+bool NormalizedPosition::operator==(const NormalizedPosition& other) const
+{
+	return Utils::ApproximateEquals(m_pos.m_X, other.m_pos.m_X) &&
+		Utils::ApproximateEquals(m_pos.m_Y, other.m_pos.m_Y);
+}
+
+bool NormalizedPosition::operator!=(const NormalizedPosition& other) const
+{
+	return !(*this == other);
 }

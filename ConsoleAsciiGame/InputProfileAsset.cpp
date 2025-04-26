@@ -16,7 +16,7 @@ InputProfileAsset::InputProfileAsset(const std::filesystem::path& path)
 	: Asset(path, true), m_profile(std::nullopt), m_inputManager(nullptr)
 {
 	if (!Assert(this, IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a input profile asset from path:'{}' "
-		"but it does not have required extension:'{}'", EXTENSION)))
+		"but it does not have required extension:'{}'", path.string(), EXTENSION)))
 		return;
 }
 

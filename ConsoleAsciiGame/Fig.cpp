@@ -61,7 +61,7 @@ Fig::Fig(const std::string& contents) : Fig()
 	}
 	CreateContents(fileLines);
 }
-Fig::Fig(const std::filesystem::path& path) : Fig()
+Fig::Fig(const std::filesystem::path& path, const FigFlag flag) : Fig()
 {
 	std::string currentLine = "";
 	std::fstream fstream = std::fstream(path);
@@ -71,7 +71,7 @@ Fig::Fig(const std::filesystem::path& path) : Fig()
 	{
 		fileLines.push_back(currentLine);
 	}
-	CreateContents(fileLines);
+	CreateContents(fileLines, flag);
 }
 Fig::~Fig()
 {
@@ -142,13 +142,15 @@ Fig::PropertyParseResult Fig::ParsePropertyLine(const std::string& line, std::st
 	if (keyValueSeparatorIndex == std::string::npos) 
 		return PropertyParseResult::NoKeyValueSeparator;
 	
-	if (keyResult != nullptr) *keyResult = line.substr(0, keyValueSeparatorIndex);
+	//Note: we want to get rid of any spaces at the start or end of a key to make sure it can easily be searched/retrieved
+	if (keyResult != nullptr) *keyResult = Utils::StringUtil(line.substr(0, keyValueSeparatorIndex)).TrimSpaces().ToString();
 
+	//Note: we want to ignore any spaces between the initial key declaration and the start of the value
 	const size_t valueStartIdx = line.find_first_not_of(' ', keyValueSeparatorIndex + 1);
 	if (valueStartIdx == std::string::npos)
 		return PropertyParseResult::NoPropertyValue;
 
-	if (valueResult!=nullptr) *valueResult = Utils::StringUtil(line.substr(valueStartIdx)).Trim().ToString();
+	if (valueResult!=nullptr) *valueResult = Utils::StringUtil(line.substr(valueStartIdx)).TrimSpaces().ToString();
 	return PropertyParseResult::Success;
 }
 
@@ -171,7 +173,7 @@ bool Fig::HasComment(const std::string& line)
 		endSymbolIdx >= startSymbolIdx + COMMENT_START.size();
 }
 
-void Fig::AddProperty(const std::string& line)
+void Fig::AddProperty(const std::string& line, const FigFlag flag)
 {
 	std::string key = "";
 	std::string value = "";
@@ -180,9 +182,9 @@ void Fig::AddProperty(const std::string& line)
 	//since we are not sure which iterator to add it to
 	PropertyParseResult parseResult = ParsePropertyLine(line, &key, &value);
 
-	//If we have no colon (meaning it is not a key value pair)
-	//we just attempt to add to the most recent added property (to allow
-	//for multi-line data)
+	//If we have no colon (meaning it is not a key value pair and is just a overflow value)
+	//we just attempt to add to the most recent added property to allow
+	//for multi-line data
 	if (parseResult== PropertyParseResult::NoKeyValueSeparator)
 	{
 		if (!Assert(this, !m_properties.IsEmpty(), std::format("Tried to add FIG property from line:'{}' with no KEY VALUE pair "
@@ -190,7 +192,12 @@ void Fig::AddProperty(const std::string& line)
 			return;
 
 		//LogError(std::format("Line has no key: {}", line));
-		ParseValueIntoProperty(--m_properties.EndMutable(), line);
+		//Note: if the line contains the spaces, we keep the line as it appeared, otherwise we trim
+		const std::string lineFormatted = Utils::HasFlagAll(flag, FigFlag::IncludeOverflowLineStartSpaces)?
+			line : Utils::StringUtil(line).TrimSpaces().ToString();
+
+		//Log(std::format("Line formatted is:{}", lineFormatted));
+		ParseValueIntoProperty(--m_properties.EndMutable(), lineFormatted);
 		return;
 	}
 
@@ -259,7 +266,7 @@ void Fig::AddProperty(const std::string& line)
 	ParseValueIntoProperty(propertyIt.first, valueFull);
 	*/
 }
-void Fig::AddMarkedProperty(const std::string& header, const std::string& line)
+void Fig::AddMarkedProperty(const std::string& header, const std::string& line, const FigFlag flag)
 {
 	MarkedPropertyCollection::iterator markedSectionIt = m_markedProperties.find(header);
 	if (markedSectionIt == m_markedProperties.end())
@@ -273,10 +280,10 @@ void Fig::AddMarkedProperty(const std::string& header, const std::string& line)
 	}
 	
 	//LogError(std::format("Adding marked proeprty:{} of line:{}", header, line));
-	markedSectionIt->second->AddProperty(line);
+	markedSectionIt->second->AddProperty(line, flag);
 }
 
-void Fig::CreateContents(const std::vector<std::string>& contents)
+void Fig::CreateContents(const std::vector<std::string>& contents, const FigFlag flags)
 {
 	std::string currentMarker = "";
 	std::string cleanedLine = "";
@@ -300,7 +307,8 @@ void Fig::CreateContents(const std::vector<std::string>& contents)
 			if (!isInComment) cleanedLine.push_back(line[i]);
 		}
 		if (cleanedLine.empty()) continue;
-		cleanedLine = Utils::StringUtil(cleanedLine).Trim().ToString();
+		////Note: we only want to trim tabs and NOT SPACES since spaces may be part of line
+		//cleanedLine = Utils::StringUtil(cleanedLine).Trim().ToString();
 
 		Log(std::format("Found line:{}", cleanedLine));
 		if (cleanedLine[0] == MARKER_CHAR)
@@ -317,8 +325,8 @@ void Fig::CreateContents(const std::vector<std::string>& contents)
 			continue;
 		}
 
-		if (currentMarker.empty()) AddProperty(cleanedLine);
-		else AddMarkedProperty(currentMarker, cleanedLine);
+		if (currentMarker.empty()) AddProperty(cleanedLine, flags);
+		else AddMarkedProperty(currentMarker, cleanedLine, flags);
 	}
 }
 

@@ -13,7 +13,8 @@ FontAsset::FontAsset(const std::filesystem::path& path)
 		"but it does not have required font extension:'{}'", path.string(), EXTENSION)))
 		return;
 
-	m_font = LoadFontEx(path.string().c_str(), 64, nullptr, 0);
+	const std::string pathString = path.string();
+	m_font = LoadFontEx(pathString.c_str(), 64, nullptr, 0);
 }
 FontAsset::~FontAsset()
 {
@@ -36,4 +37,10 @@ const Font& FontAsset::GetFont() const
 		throw std::invalid_argument("Invalid font state");
 
 	return m_font;
+}
+
+void FontAsset::UpdateAssetFromFile()
+{
+	const std::string pathString = GetPath().string();
+	m_font = LoadFontEx(pathString.c_str(), 64, nullptr, 0);
 }

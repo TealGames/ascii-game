@@ -10,6 +10,7 @@
 #include "Vec2.hpp"
 #include "NormalizedPosition.hpp"
 #include "WorldPosition.hpp"
+#include "TextBuffer.hpp"
 
 
 ////TODO: the data from get world size of visual data should be abstracted
@@ -49,15 +50,13 @@ struct VisualDataPreset
 		const NormalizedPosition& relativePivotPos);
 };
 
-using RawTextBufferBlock = std::vector<std::vector<TextCharArrayPosition>>;
-std::string ToString(const RawTextBufferBlock& rawBuffer);
+//using RawTextBufferBlock = std::vector<std::vector<TextCharArrayPosition>>;
+//std::string ToString(const RawTextBufferBlock& rawBuffer);
 
 class VisualData
 {
 public:
 	static const float& DEFAULT_FONT_SIZE;
-	static const Vec2& DEFAULT_CHAR_SPACING;
-	static const Vec2& DEFAULT_PREDEFINED_CHAR_AREA;
 
 	static const Vec2 PIVOT_TOP_LEFT;
 	static const Vec2 PIVOT_TOP_RIGHT;
@@ -74,15 +73,15 @@ private:
 	/// The raw text block that was then transformed into the rectangular text array 
 	/// (by filling in skipped positions with empty spaces)
 	/// </summary>
-	RawTextBufferBlock m_rawTextBlock;
+	//RawTextBufferBlock m_rawTextBlock;
 
-	/// <summary>
-	/// The spacing between characters in the visual in [WIDTH, HEIGHT]
-	/// </summary>
-	Vec2 m_charSpacing;
+	///// <summary>
+	///// The spacing between characters in the visual in [WIDTH, HEIGHT]
+	///// </summary>
+	//Vec2 m_charSpacing;
 
-	CharAreaType m_charAreaType;
-	Vec2 m_predefinedCharArea;
+	//CharAreaType m_charAreaType;
+	//Vec2 m_predefinedCharArea;
 
 	/// <summary>
 	/// The position relative to the visual that corresponds to the transform position.
@@ -90,26 +89,37 @@ private:
 	/// </summary>
 	NormalizedPosition m_pivotRelative;
 
-	FontData m_fontData;
+	//FontData m_fontData;
 
+	/// <summary>
+	/// This holds all of the characters and their positions from the pivot 
+	/// NOTE: all positions all based on the left side (image each char is on a rect, the top left pos is
+	/// the coorindate used for the buffer)
+	/// </summary>
+	FragmentedTextBuffer m_buffer;
 public:
-	TextArray m_Text;
 
 private:
-	bool HasValidFont(const bool assertMessage= true, const std::string& extraMessage="") const;
+	//bool HasValidFont(const bool assertMessage= true, const std::string& extraMessage="") const;
 
-	WorldPosition GetTopLeftPos(const WorldPosition& pivotWorldPos, const Vec2& totalSize) const;
-	void AddTextPositionsToBufferPredefined(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
-	void AddTextPositionsToBufferAdaptive(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
+	//WorldPosition GetTopLeftPos(const WorldPosition& pivotWorldPos, const Vec2& totalSize) const;
+	/*void AddTextPositionsToBufferPredefined(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
+	void AddTextPositionsToBufferAdaptive(const WorldPosition& transformPos, TextBufferMixed& buffer) const;*/
 
 private:
-	VisualData(const RawTextBufferBlock& rawBuffer, const Font& font, const float& fontSize, const Vec2& charSpacing,
-		const NormalizedPosition& relativePivotPos, const CharAreaType& charAreaType,
-		const Vec2& predefinedCharArea);
-
 public:
 	VisualData();
-	/// <summary>
+
+	VisualData(const FragmentedTextBuffer& rawBuffer, const Font& font, const float& fontSize,
+		const NormalizedPosition& relativePivotPos);
+
+	VisualData(const std::vector<std::vector<TextBufferChar>>& rawBuffer, const Vec2& charSpacing,
+		const NormalizedPosition& relativePivotPos);
+
+	VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, const Vec2& charSpacing,
+		const FontProperties& fontSettings, const NormalizedPosition& relativePivotPos);
+
+	/*/// <summary>
 	/// This constructor is used for the adaptive char area for the text
 	/// </summary>
 	/// <param name="rawBuffer"></param>
@@ -135,14 +145,14 @@ public:
 		const Vec2& predefinedCharArea,
 		const NormalizedPosition& relativePivotPos);
 
-	VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPreset& preset);
+	VisualData(const RawTextBufferBlock& rawBuffer, const VisualDataPreset& preset);*/
 	
-	std::optional<TextArray> CreateRectangularBuffer(const RawTextBufferBlock& rawBuffer) const;
-	std::string ToStringRawBuffer(const RawTextBufferBlock& block);
+	//FragmentedTextBuffer CreateRectangularBuffer(const std::vector<std::vector<TextBufferChar>>& rawBuffer) const;
 
-	const RawTextBufferBlock& GetRawBuffer() const;
+	//const RawTextBufferBlock& GetRawBuffer() const;
 
-	Vec2Int GetBufferSize() const;
+	//Vec2Int GetBufferSize() const;
+	bool IsEmpty() const;
 	Vec2 GetWorldSize() const;
 	/// <summary>
 	/// Pivot position is relative to origin of bottom left [0,0] and top right [1, 1]
@@ -150,19 +160,19 @@ public:
 	/// <param name="pivotPosition"></param>
 	/// <param name="transformPos"></param>
 	/// <returns></returns>
-	void AddTextPositionsToBuffer(const WorldPosition& transformPos, TextBufferMixed& buffer) const;
-
-	const Vec2& GetCharSpacing() const;
+	void AddTextPositionsToBuffer(const WorldPosition& transformPos, FragmentedTextBuffer& buffer) const;
+	const FragmentedTextBuffer& GetBuffer() const;
+	/*const Vec2& GetCharSpacing() const;
 	const Font& GetFont() const;
 	float GetFontSize() const;
-	const FontData& GetFontData() const;
+	const FontProperties& GetFontData() const;*/
 
 	const Vec2& GetPivot() const;
 
-	void SetPredefinedCharArea(const Vec2& area);
+	/*void SetPredefinedCharArea(const Vec2& area);
 	void SetAdpativeCharArea();
 	bool HasPredefinedCharArea() const;
-	const Vec2& GetPredefinedCharArea() const;
+	const Vec2& GetPredefinedCharArea() const;*/
 
 	std::string ToString() const;
 };

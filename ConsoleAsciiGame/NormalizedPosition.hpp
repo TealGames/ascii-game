@@ -10,6 +10,13 @@ class NormalizedPosition
 private:
 	Vec2 m_pos;
 public:
+	static const Vec2 TOP_LEFT;
+	static const Vec2 TOP_RIGHT;
+	static const Vec2 BOTTOM_LEFT;
+	static const Vec2 BOTTOM_RIGHT;
+	static const Vec2 CENTER;
+	static const Vec2 BOTTOM_CENTER;
+	static const Vec2 TOP_CENTER;
 
 private:
 	bool IsValidPos() const;
@@ -26,5 +33,14 @@ public:
 	/// <returns></returns>
 	Vec2& GetPosMutable();
 	void SetPos(const Vec2& relativePos);
+
+	NormalizedPosition operator+(const NormalizedPosition& other) const;
+	NormalizedPosition operator-(const NormalizedPosition& other) const;
+	NormalizedPosition operator*(const NormalizedPosition& other) const;
+	NormalizedPosition operator*(const float& scalar) const;
+	NormalizedPosition operator/(const float& scalar) const;
+
+	bool operator==(const NormalizedPosition& other) const;
+	bool operator!=(const NormalizedPosition& other) const;
 };
 

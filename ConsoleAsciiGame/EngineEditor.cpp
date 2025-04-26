@@ -25,7 +25,7 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 	m_editModeInfo()
 {
 	m_pauseGameToggle.SetSettings(GUISettings({20, 20}, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
-		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(0, GetGlobalFont()), EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center, 0.8)));
+		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, 0.8)));
 	m_pauseGameToggle.SetValueSetAction([this](const bool isChecked) -> void
 		{ 
 			if (isChecked) m_timeKeeper.StopTimeScale();
@@ -35,7 +35,7 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 		});
 
 	m_editModeToggle.SetSettings(GUISettings({ 20, 20 }, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
-		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(0, GetGlobalFont()), EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center, 0.8)));
+		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, 0.8)));
 
 	DebugProperties::OnMessageLogged.AddListener([this](const LogType& logType, const std::string& message, 
 		const bool& logToConsole, const bool& pauseOnMessage)-> void

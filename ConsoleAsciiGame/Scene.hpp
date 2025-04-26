@@ -100,8 +100,8 @@ public:
 	std::vector<const RenderLayer*> GetLayers(const RenderLayerType& renderLayers) const;
 	std::vector<const RenderLayer*> GetAllLayers() const;
 
-	void AddToLayer(const RenderLayerType& type, TextBufferPosition& texture);
-	std::vector<TextBufferMixed*> GetLayerBufferMutable(const RenderLayerType& renderLayers);
+	void AddToLayer(const RenderLayerType& type, TextBufferCharPosition& texture);
+	std::vector<FragmentedTextBuffer*> GetLayerBufferMutable(const RenderLayerType& renderLayers);
 	//std::vector<TextBuffer*> GetTextBuffersMutable(const RenderLayerType& renderLayers);
 	//void SetLayers(const RenderLayerType& renderLayers, const std::vector<TextCharPosition>& positions);
 	//void SetLayers(const RenderLayerType& renderLayers, const std::vector<ColorPosition>& positions);

@@ -16,7 +16,7 @@ ParticleEmitterData::ParticleEmitterData() : ParticleEmitterData('A', FloatRange
 	ColorGradient(WHITE), {}, RenderLayerType::Player, {}, FloatRange(1, 1), float(5)) {}
 
 ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
-	const FontData& fontData, const RenderLayerType& renderLayers,
+	const FontProperties& fontData, const RenderLayerType& renderLayers,
 	const WorldPosition& transformOffset, const FloatRange& speedRange, const float& spawnRate)
 	: ComponentData(), 
 	m_Char(c), m_normalizedTime(0), m_lifetimeColor(colorOverTime), 
@@ -72,7 +72,7 @@ void ParticleEmitterData::Deserialize(const Json& json)
 	m_Char = json.at("Char").get<char>();
 	m_lifetimeRange = json.at("LifetimeRange").get<FloatRange>();
 	m_lifetimeColor = json.at("LifetimeColor").get<ColorGradient>();
-	m_FontData = json.at("FontData").get<FontData>();
+	m_FontData = json.at("FontData").get<FontProperties>();
 	m_renderLayers = json.at("Layers").get<RenderLayerType>();
 	m_originTransformOffset = json.at("Offset").get<WorldPosition>();
 	m_speedRange = json.at("SpeedRange").get<FloatRange>();

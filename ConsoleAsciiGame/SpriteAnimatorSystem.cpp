@@ -27,15 +27,22 @@ namespace ECS
 
 				SpriteAnimation* currentAnim = data.TryGetPlayingAnimationMutable();
 				if (currentAnim == nullptr) return;
-				const float animDeltaTime = deltaTime* currentAnim->m_AnimationSpeed;
 
+				if (!Assert(this, 0 <= currentAnim->m_FrameIndex && currentAnim->m_FrameIndex < currentAnim->m_Frames.size(),
+					std::format("Tried to update frame idnex in sprite animator, but frame index:{} is at out of bound position of frames:[0, {})",
+						std::to_string(currentAnim->m_FrameIndex), std::to_string(currentAnim->m_Frames.size()))))
+					return;
+
+				if (currentAnim->m_Frames.empty()) return;
+
+				const float animDeltaTime = deltaTime* currentAnim->m_AnimationSpeed;
 				if (currentAnim->m_NormalizedTime >= currentAnim->m_SingleLoopLength && !currentAnim->m_Loop) 
 					return;
 
 				currentAnim->m_NormalizedTime += animDeltaTime;
-				if (currentAnim->m_NormalizedTime > currentAnim->m_FrameDeltas[currentAnim->m_FrameIndex].m_Time && currentAnim->m_Loop)
+				if (currentAnim->m_NormalizedTime > currentAnim->m_Frames[currentAnim->m_FrameIndex].m_Time && currentAnim->m_Loop)
 				{
-					currentAnim->m_FrameIndex = (currentAnim->m_FrameIndex + 1) % currentAnim->m_FrameDeltas.size();
+					currentAnim->m_FrameIndex = (currentAnim->m_FrameIndex + 1) % currentAnim->m_Frames.size();
 					if (currentAnim->m_FrameIndex==0) currentAnim->m_NormalizedTime -= currentAnim->m_SingleLoopLength;
 					SetVisual(entity, *currentAnim);
 				}
@@ -54,6 +61,11 @@ namespace ECS
 			"but failed to retrieve current animation visual. FrameIndex:{}", entity.GetName(), std::to_string(animation.m_FrameIndex))))
 			return;
 
+		//TODO: perhaps there should be some optimization here and maybe we can reintroduce frame deltas in some way?
+		//however it may be defiiculty becase pviots can change and then the positions may too
+		renderer->OverrideVisualData(*currAnimVisual);
+
+		/*
 		//Note: since the first animation (or any animation) may not have the same size as the default visual of 
 		//the renderer we need to take that into account in order to be able to use the frame delta optimization
 		//and without having any weird out of bounds bugs
@@ -69,5 +81,6 @@ namespace ECS
 
 		}
 		renderer->m_MutatedThisFrame = true;
+		*/
 	}
 }

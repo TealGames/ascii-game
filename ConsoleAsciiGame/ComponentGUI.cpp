@@ -21,8 +21,8 @@ static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
 ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, const EntityGUI& entityGUI, ComponentData& component)
 	: m_inputManager(&inputManager), m_component(&component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
 	m_dropdownCheckbox(selector, false, GUISettings({}, EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUISettings())), 
-	m_componentNameText(GetComponentName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(TITLE_FONT_SIZE, GetGlobalFont()),
-		TITLE_FONT_SPACING, TextAlignment::CenterLeft))
+	m_componentNameText(GetComponentName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, 
+		FontProperties(TITLE_FONT_SIZE, TITLE_FONT_SPACING, GetGlobalFont()),TextAlignment::CenterLeft))
 {
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(), 
 		std::get<Vec2*>(component->GetFieldsMutable()[0].m_Value)->ToString()));*/

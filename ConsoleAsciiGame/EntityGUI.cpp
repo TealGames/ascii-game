@@ -9,8 +9,8 @@ constexpr static float TITLE_FONT_SIZE = 20;
 
 EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, ECS::Entity& entity)
 	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
-	m_entityNameText(m_entity->GetName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
-		EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center)), 
+	m_entityNameText(m_entity->GetName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, 
+		FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),TextAlignment::Center)),
 	m_activeToggle(selector, m_entity->m_Active, GUISettings({69, 69}, EntityEditorGUI::EDITOR_BACKGROUND_COLOR, TextGUISettings()))
 {
 

@@ -12,7 +12,7 @@ EntityRendererData::EntityRendererData(const Json& json) : EntityRendererData()
 }
 
 EntityRendererData::EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers) :
-	ComponentData(), m_VisualData(visualData), m_LastFrameVisualData(), m_renderLayers(renderLayers)
+	ComponentData(), m_VisualData(visualData), m_renderLayers(renderLayers)//, m_LastFrameVisualData(),
 {
 
 }
@@ -21,25 +21,25 @@ RenderLayerType EntityRendererData::GetRenderLayers() const
 {
 	return m_renderLayers;
 }
-Vec2Int EntityRendererData::GetVisualSize() const
-{
-	return m_VisualData.GetBufferSize();
-}
+//Vec2Int EntityRendererData::GetVisualSize() const
+//{
+//	return m_VisualData.GetBufferSize();
+//}
 
 const VisualData& EntityRendererData::GetVisualData() const
 {
 	return m_VisualData;
 }
 
-void EntityRendererData::SetVisualDataDeltas(const VisualDataPositions& positions)
-{
-	for (const auto& pos : positions)
-	{
-		LogError(std::format("Attempting to set the pos:{} for entity renderer of {} full visual:{}", 
-			pos.ToString(), GetEntitySafe().GetName(), ToString()));
-		m_VisualData.m_Text.SetAt(pos.m_RowColPos, pos.m_Text);
-	}
-}
+//void EntityRendererData::SetVisualDataDeltas(const VisualDataPositions& positions)
+//{
+//	for (const auto& pos : positions)
+//	{
+//		LogError(std::format("Attempting to set the pos:{} for entity renderer of {} full visual:{}", 
+//			pos.ToString(), GetEntitySafe().GetName(), ToString()));
+//		m_VisualData.m_Text.SetAt(pos.m_RowColPos, pos.m_Text);
+//	}
+//}
 void EntityRendererData::OverrideVisualData(const VisualData& newVisual)
 {
 	m_VisualData = newVisual;

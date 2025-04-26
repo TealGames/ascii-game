@@ -53,7 +53,7 @@ namespace Utils
 		if (typeName.substr(0, CLASS_NAME.size()) == CLASS_NAME)
 			result = result.substr(CLASS_NAME.size());
 
-		return StringUtil::StringUtil(result).Trim().ToString();
+		return StringUtil::StringUtil(result).TrimSpaces().ToString();
 	}
 
 	std::string GetCurrentStackTrace() 

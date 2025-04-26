@@ -37,8 +37,7 @@ class SpriteAnimation
 private:
 public:
 	std::string m_Name;
-	std::vector<SpriteAnimationDelta> m_FrameDeltas;
-	std::vector<VisualData> m_FrameVisuals;
+	std::vector<SpriteAnimationFrame> m_Frames;
 	size_t m_FrameIndex;
 	/// <summary>
 	/// The duration in seconds of a single animation loop
@@ -57,12 +56,10 @@ public:
 	SpriteAnimation(const std::string& name, const std::vector<SpriteAnimationFrame>& frames,
 		const float& animationSpeed, const float& loopTime, const bool& loop);
 
-	void SetVisualsFromFrames(const std::vector<SpriteAnimationFrame>& frames);
+	//void SetVisualsFromFrames(const std::vector<SpriteAnimationFrame>& frames);
 
 	const VisualData& GetVisualDataForFrame(const size_t index) const;
 	const VisualData* TryGetCurrentVisualData() const;
-
-	const SpriteAnimationDelta* TryGetCurrentAnimationDelta() const;
 
 	std::string ToString() const;
 };

@@ -2,30 +2,38 @@
 #include "TextBuffer.hpp"
 #include "HelperFunctions.hpp"
 
-TextBufferPosition::TextBufferPosition(const Vec2& pos, const TextChar& textChar,
-	const Font& font, const float& fontSize)
-	: m_Pos(pos), m_FontData(fontSize, font), m_Text(textChar)
-{
+TextBufferCharPosition::TextBufferCharPosition() : TextBufferCharPosition({}, {}, {}) {}
+TextBufferCharPosition::TextBufferCharPosition(const Vec2& pos, const TextChar& textChar, const FontProperties& font)
+	: m_Pos(pos), m_Text(textChar), m_FontData(font) {}
 
+Vec2 TextBufferCharPosition::GetWorldSize() const
+{
+	return m_Text.GetWorldSize(m_FontData);
+}
+std::string TextBufferCharPosition::ToString() const
+{
+	return std::format("[VisualDataPosChar Pos:{} Text:{}]", m_Pos.ToString(), m_Text.ToString());
+}
+std::string ToString(const std::vector<TextBufferCharPosition>& chars)
+{
+	std::vector<std::string> strs = {};
+	for (const auto& c : chars)
+	{
+		strs.push_back(c.ToString());
+	}
+	return Utils::ToStringIterable<std::vector<std::string>, std::string>(strs);
 }
 
-TextBufferPosition::TextBufferPosition(const Vec2& pos, const TextChar& textChar,
-	const FontData& fontData)
-	: m_Pos(pos), m_FontData(fontData), m_Text(textChar)
-{}
+TextBufferChar::TextBufferChar() : TextBufferChar({}, {}) {}
 
-std::string TextBufferPosition::ToString() const
+TextBufferChar::TextBufferChar(const TextChar& textChar, const FontProperties& font)
+	: m_Text(textChar), m_FontData(font) {}
+
+Vec2 TextBufferChar::GetWorldSize() const
 {
-	return std::format("[Pos:{}, Data:{}]",
-		m_Pos.ToString(), m_Text.ToString());
+	return m_Text.GetWorldSize(m_FontData);
 }
-
-TextBuffer::TextBuffer(const FontData& font, const std::vector<TextCharArrayPosition>& positions) : 
-	m_FontData(font), m_TextPositions(positions)
+std::string TextBufferChar::ToString() const
 {
-}
-
-std::string ToString(const TextBufferMixed& buffer)
-{
-	return Utils::ToStringIterable<TextBufferMixed, TextBufferPosition>(buffer);
+	return std::format("[VisualDataChar Text:{}]", m_Text.ToString());
 }

@@ -44,6 +44,10 @@ void Asset::SaveToSelf()
 {
 	SaveToPath(GetPath());
 }
+void Asset::SaveToPath(const std::filesystem::path& path)
+{
+	return;
+}
 
 std::string Asset::ToString() const
 {

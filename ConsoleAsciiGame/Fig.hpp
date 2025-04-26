@@ -2,6 +2,7 @@
 #include <string>
 #include <filesystem>
 #include "PreservedMap.hpp"
+#include <cstdint>
 
 using FigValue = std::vector<std::string>;
 
@@ -45,6 +46,43 @@ using PropertyCollection = PreservedMap<std::string, FigValue>;
 class Fig;
 using MarkedPropertyCollection = std::unordered_map<std::string, Fig*>;
 
+using FigFlagIntegralType = std::uint8_t;
+enum class FigFlag : FigFlagIntegralType
+{
+	None= 0,
+	/// <summary>
+	/// Will include spaces at the start of each new line of a property value's (ONLY new lines after initial property key declaration line
+	/// so spaces between key and value of initial line will NOT be counted, only the lines that overflow)
+	/// as part of the value itself up until the first character of that line. By DEFAULT, overflow line's spaces at the start are trimmed
+	/// </summary>
+	IncludeOverflowLineStartSpaces= 1<<0
+};
+
+constexpr FigFlag operator&(const FigFlag& lhs, const FigFlag& rhs)
+{
+	return static_cast<FigFlag>(static_cast<FigFlagIntegralType>(lhs)
+		& static_cast<FigFlagIntegralType>(rhs));
+}
+constexpr FigFlag& operator&=(FigFlag& lhs, const FigFlag& rhs)
+{
+	lhs = lhs & rhs;
+	return lhs;
+}
+constexpr FigFlag operator|(const FigFlag& lhs, const FigFlag& rhs)
+{
+	return static_cast<FigFlag>(static_cast<FigFlagIntegralType>(lhs)
+		| static_cast<FigFlagIntegralType>(rhs));
+}
+constexpr FigFlag& operator|=(FigFlag& lhs, const FigFlag& rhs)
+{
+	lhs = lhs | rhs;
+	return lhs;
+}
+constexpr FigFlag operator~(const FigFlag& op)
+{
+	return static_cast<FigFlag>(~static_cast<FigFlagIntegralType>(op));
+}
+
 class Fig
 {
 private:
@@ -73,16 +111,16 @@ private:
 
 	static bool HasComment(const std::string& line);
 
-	void AddProperty(const std::string& line);
-	void AddMarkedProperty(const std::string& header, const std::string& line);
+	void AddProperty(const std::string& line, const FigFlag flag = FigFlag::None);
+	void AddMarkedProperty(const std::string& header, const std::string& line, const FigFlag flag = FigFlag::None);
 
 public:
 	Fig();
 	Fig(const std::string& contents);
-	Fig(const std::filesystem::path& path);
+	Fig(const std::filesystem::path& path, const FigFlag flag= FigFlag::None);
 	~Fig();
 
-	void CreateContents(const std::vector<std::string>& str);
+	void CreateContents(const std::vector<std::string>& str, const FigFlag flags= FigFlag::None);
 
 	bool HasBaldProperty(const std::string& key) const;
 	bool HasMarkedProperty(const std::string& markerName, const std::string& key) const;

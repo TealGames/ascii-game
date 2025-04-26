@@ -8,6 +8,7 @@ namespace IO
 	std::filesystem::path CleanPath(const std::filesystem::path& path);
 	bool DoesPathExist(const std::filesystem::path& path);
 	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::filesystem::path& extension);
+	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::string& extension);
 
 	bool CreatePathIfNotExist(const std::filesystem::path& path, const bool forceCleanPath=false);
 

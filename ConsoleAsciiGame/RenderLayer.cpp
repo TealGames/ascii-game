@@ -73,9 +73,9 @@ bool operator!=(const RenderLayerType& lhs, const RenderLayerNumericType& rhs)
 }
 
 RenderLayer::RenderLayer() : m_buffer{} {}
-RenderLayer::RenderLayer(const TextBufferMixed& buffer) : m_buffer(buffer) {}
+RenderLayer::RenderLayer(const FragmentedTextBuffer& buffer) : m_buffer(buffer) {}
 
-void RenderLayer::AddText(const TextBufferPosition& bufferPos)
+void RenderLayer::AddText(const TextBufferCharPosition& bufferPos)
 {
 	m_buffer.push_back(bufferPos);
 }
@@ -85,12 +85,12 @@ void RenderLayer::AddText(const TextBufferPosition& bufferPos)
 //	return m_buffer;
 //}
 
-TextBufferMixed& RenderLayer::GetBufferMutable()
+FragmentedTextBuffer& RenderLayer::GetBufferMutable()
 {
 	return m_buffer;
 }
 
-const TextBufferMixed& RenderLayer::GetBuffer() const
+const FragmentedTextBuffer& RenderLayer::GetBuffer() const
 {
 	return m_buffer;
 }
@@ -213,5 +213,10 @@ void RenderLayer::ResetToDefault()
 
 std::string RenderLayer::ToString() const
 {
-	return Utils::ToStringIterable<TextBufferMixed, TextBufferPosition>(m_buffer);
+	std::vector<std::string> layerStr = {};
+	for (const auto& text : m_buffer)
+	{
+		layerStr.push_back(text.ToString());
+	}
+	return Utils::ToStringIterable<std::vector<std::string>, std::string>(layerStr);
 }

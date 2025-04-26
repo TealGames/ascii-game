@@ -8,7 +8,7 @@ namespace IO
 	std::filesystem::path CleanPath(const std::filesystem::path& path)
 	{
 		Utils::StringUtil cleaner(path.string());
-		const std::string cleaned = cleaner.Trim().ToString();
+		const std::string cleaned = cleaner.TrimSpaces().ToString();
 		return cleaned;
 	}
 
@@ -25,8 +25,13 @@ namespace IO
 
 	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::filesystem::path& extension)
 	{
-		if (!std::filesystem::exists(path)) return false;
+		//if (!std::filesystem::exists(path)) return false;
+		LogError(std::format("Comaping extension:{} and {}", path.extension().string(), extension.extension().string()));
 		return path.extension() == extension.extension();
+	}
+	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::string& extension)
+	{
+		return path.extension().string() == extension;
 	}
 
 	bool CreatePathIfNotExist(const std::filesystem::path& path, const bool forceCleanPath)

@@ -22,6 +22,7 @@
 #include "InputProfileAsset.hpp"
 #include "JsonSerializers.hpp"
 #include "GlobalCreator.hpp"
+#include "GlobalColorCodes.hpp"
 
 #include "Fig.hpp"
 
@@ -140,6 +141,8 @@ namespace Core
 
 		m_assetManager.InitDependencies<SceneAsset, GlobalEntityManager, AssetManagement::AssetManager>(m_sceneManager.m_GlobalEntityManager, m_assetManager);
 		m_assetManager.InitDependencies<InputProfileAsset, Input::InputManager>(m_inputManager);
+		//TODO: glocal color codes should not reside in engine init but should be a second-class/hierarchy call
+		GlobalColorCodes::InitCodes(m_assetManager);
 		EngineLog("FINISHED ASSET MANAGER DEPENDENCY INIT");
 
 		GlobalCreator::CreateGlobals(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
@@ -363,7 +366,7 @@ namespace Core
 		m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 
 		m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), unscaledDeltaTime);
-		const TextBufferMixed& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
+		const FragmentedTextBuffer& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
 		Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
 		/*if (m_enableCommandConsole) m_commandConsole.Update();*/

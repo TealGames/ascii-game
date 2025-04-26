@@ -37,7 +37,7 @@ namespace ECS
         //which can prevent the ned for pointers
 
         
-        std::vector<TextBufferMixed*> affectedLayerBuffers = {};
+        std::vector<FragmentedTextBuffer*> affectedLayerBuffers = {};
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
             {
@@ -97,7 +97,7 @@ namespace ECS
                 //}
 
                 scene.IncreaseFrameDirtyComponentCount();
-                if (CACHE_LAST_BUFFER && !data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
+                //if (CACHE_LAST_BUFFER && !data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
                 RenderLight(data, entity, affectedLayerBuffers);
                 data.m_MutatedThisFrame = false;
                 //std::cout << "Rendering lgiht" << std::endl;
@@ -106,7 +106,7 @@ namespace ECS
     }
 
 	void LightSourceSystem::RenderLight(LightSourceData& data, ECS::Entity& entity, 
-        std::vector<TextBufferMixed*>& buffers, bool displayLightLevels)
+        std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels)
     {
         //TODO: right now we use only the transform pos, but we should also use every pos on player too
         
@@ -133,10 +133,10 @@ namespace ECS
     //TODO: this probably needs to be optimized
     //TODO: there is a lot of get flopped and conversions from cartesia and row col pos so that could be optimized
     void LightSourceSystem::CreateLightingForPoint(LightSourceData & data, const ECS::Entity & entity,
-        const WorldPosition& centerPos, TextBufferMixed & buffer, bool displayLightLevels)
+        const WorldPosition& centerPos, FragmentedTextBuffer& buffer, bool displayLightLevels)
     {
         std::sort(buffer.begin(), buffer.end(), 
-            [&centerPos](const TextBufferPosition& first, const TextBufferPosition& second) -> bool
+            [&centerPos](const TextBufferCharPosition& first, const TextBufferCharPosition& second) -> bool
             {
                 return GetDistance(centerPos, first.m_Pos) < GetDistance(centerPos, second.m_Pos);
                 
@@ -173,7 +173,7 @@ namespace ECS
     }
 
     Color LightSourceSystem::CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, 
-        const TextBufferPosition& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
+        const TextBufferCharPosition& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
         //Log(std::format("Distance between {} and {} is: {}",
         //currentPos.ToString(), centerPos.ToString(), std::to_string(distanceToCenter)));

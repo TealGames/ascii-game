@@ -13,7 +13,7 @@ namespace Rendering
 {
     constexpr bool DONT_RENDER_NON_UTILS = false;
 
-    void RenderBuffer(const TextBufferMixed& buffer, const RenderInfo& renderInfo)
+    void RenderBuffer(const FragmentedTextBuffer& buffer, const RenderInfo& renderInfo)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
@@ -87,7 +87,7 @@ namespace Rendering
        // EndDrawing();
     }
 
-    void RenderBuffer(const TextBufferMixed& buffer, const ColliderOutlineBuffer* outlineBuffer, 
+    void RenderBuffer(const FragmentedTextBuffer& buffer, const ColliderOutlineBuffer* outlineBuffer,
         const LineBuffer* lineBuffer, const std::vector<IBasicRenderable*>& renderables)
     {
 #ifdef ENABLE_PROFILER
@@ -109,13 +109,13 @@ namespace Rendering
         for (const auto& pos : buffer)
         {
             drawStr[0] = pos.m_Text.m_Char;
-            if (!Assert(RaylibUtils::FontSupportsChar(pos.m_FontData.m_Font, pos.m_Text.m_Char), 
+            if (!Assert(RaylibUtils::FontSupportsChar(pos.m_FontData.m_FontType, pos.m_Text.m_Char), 
                 std::format("GameRenderer tried to render character: {} but font does not support this character!", Utils::ToString(pos.m_Text.m_Char))))
                 continue;
 
             //LogWarning(std::format("Drawing text at pos: {}", pos.m_Pos.ToString()));
             //This should be optimized to use rows of text rather going through each text char individiaully
-            DrawTextEx(pos.m_FontData.m_Font, drawStr, RaylibUtils::ToRaylibVector(pos.m_Pos), pos.m_FontData.m_FontSize, 0, pos.m_Text.m_Color);
+            DrawTextEx(pos.m_FontData.m_FontType, drawStr, RaylibUtils::ToRaylibVector(pos.m_Pos), pos.m_FontData.m_Size, 0, pos.m_Text.m_Color);
         }
 
         if (outlineBuffer != nullptr)

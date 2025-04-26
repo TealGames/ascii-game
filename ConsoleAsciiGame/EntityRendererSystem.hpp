@@ -19,7 +19,7 @@ namespace ECS
 	public:
 
 	private:
-		void AddTextToBuffer(TextBufferMixed& buffer, EntityRendererData& data, const Entity& entity);
+		void AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data, const Entity& entity);
 
 	public:
 		EntityRendererSystem();

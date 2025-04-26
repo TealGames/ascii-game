@@ -35,7 +35,7 @@ struct ParticleEmitterData : ComponentData
 {
 	WorldPosition m_originTransformOffset;
 
-	FontData m_FontData;
+	FontProperties m_FontData;
 	//The color of any particle over the course of its lifetime
 	ColorGradient m_lifetimeColor;
 	char m_Char;
@@ -61,7 +61,7 @@ struct ParticleEmitterData : ComponentData
 
 	ParticleEmitterData();
 	ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
-		const FontData& fontData, const RenderLayerType& renderLayers, 
+		const FontProperties& fontData, const RenderLayerType& renderLayers, 
 		const WorldPosition& transformOffset, const FloatRange& speedRange, const float& spawnRate);
 
 	WorldPosition GetOriginWorldPos() const;

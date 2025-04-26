@@ -21,8 +21,8 @@ const static ScreenPosition MAX_INPUT_FIELD_SIZE = { 100, 20 };
 ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
 	const ComponentGUI& componentGUI, ComponentField& field)
 	: m_fieldInfo(&field), m_inputFields(), m_checkbox(), m_inputManager(&inputManager), m_componentGUI(&componentGUI), 
-	m_fieldNameText(GetFieldInfo().m_FieldName, FontData(TITLE_FONT_SIZE, GetGlobalFont()), 
-		EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, EntityEditorGUI::EDITOR_SECONDARY_COLOR)
+	m_fieldNameText(GetFieldInfo().m_FieldName, FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+		EntityEditorGUI::EDITOR_SECONDARY_COLOR)
 {
 	/*if (m_fieldInfo.IsCurrentType<Vec2>()) 
 
@@ -34,7 +34,7 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	if (GetFieldInfo().IsReadonly()) fieldFlags |= InputFieldFlag::UserUIReadonly;
 
 	GUISettings fieldSettings = GUISettings(MAX_INPUT_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
-		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontData(0, GetGlobalFont()), EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, TextAlignment::Center, FIELD_FONT_FACTOR));
+		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, FIELD_FONT_FACTOR));
 	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
 		std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
 
@@ -344,7 +344,9 @@ ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Even
 
 const ComponentField& ComponentFieldGUI::GetFieldInfo() const
 {
-	return GetFieldInfo();
+	if (!Assert(this, m_fieldInfo != nullptr, std::format("Tried to get field info from component field GUI but it is NULL")))
+		throw std::invalid_argument("Invalid field info state");
+	return *m_fieldInfo;
 }
 
 const ComponentGUI& ComponentFieldGUI::GetComponentGUISafe() const

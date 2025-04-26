@@ -1,38 +1,37 @@
 #pragma once
-#include "TextArray.hpp"
 #include "Vec2.hpp"
+#include "TextArray.hpp"
 #include "FontData.hpp"
-
-//using TextBuffer = TextArray;
 
 //TODO: perhaps the camera or something should group together into a new structure with the same font and font size
 //so that we do not need to repeat the same data for mutliple entries
-struct TextBufferPosition
+struct TextBufferCharPosition
 {
 	Vec2 m_Pos;
-	FontData m_FontData;
 	TextChar m_Text;
+	FontProperties m_FontData;
 
-	bool operator==(const TextBufferPosition& other) const = default;
+	TextBufferCharPosition();
+	TextBufferCharPosition(const Vec2& pos, const TextChar& textChar, const FontProperties& font);
+	Vec2 GetWorldSize() const;
+
 	std::string ToString() const;
-
-	TextBufferPosition(const Vec2& pos, const TextChar& textChar, 
-		const Font& font, const float& fontSize);
-
-	TextBufferPosition(const Vec2& pos, const TextChar& textChar,
-		const FontData& fontData);
 };
+std::string ToString(const std::vector<TextBufferCharPosition>& chars);
 
-using TextBufferMixed = std::vector<TextBufferPosition>;
-class TextBuffer
+struct TextBufferChar
 {
-	FontData m_FontData;
-	std::vector<TextCharArrayPosition> m_TextPositions;
+	TextChar m_Text;
+	FontProperties m_FontData;
 
-	TextBuffer(const FontData& font, const std::vector<TextCharArrayPosition>& positions);
+	TextBufferChar();
+	TextBufferChar(const TextChar& textChar, const FontProperties& font);
+	Vec2 GetWorldSize() const;
+
+	std::string ToString() const;
 };
 
-std::string ToString(const TextBufferMixed& buffer);
+using FragmentedTextBuffer = std::vector<TextBufferCharPosition>;
 
 //template<typename T>
 //struct TexturePosition

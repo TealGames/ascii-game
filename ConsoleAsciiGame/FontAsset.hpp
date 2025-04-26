@@ -18,5 +18,7 @@ public:
 
 	Font& GetFontMutable();
 	const Font& GetFont() const;
+
+	void UpdateAssetFromFile() override;
 };
 

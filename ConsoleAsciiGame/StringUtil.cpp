@@ -5,12 +5,12 @@ namespace Utils
 {
 	StringUtil::StringUtil(const std::string& s) : str(s) {}
 
-	StringUtil& StringUtil::Trim()
+	StringUtil& StringUtil::TrimChar(const char c)
 	{
 		//size_t startIndex = str.find_first_not_of(' ');
 		//size_t endIndex = str.find_last_not_of(' ');
-		size_t startIndex = str.find_first_not_of(' ');
-		size_t endIndex = str.find_last_not_of(' ');
+		size_t startIndex = str.find_first_not_of(c);
+		size_t endIndex = str.find_last_not_of(c);
 
 		//If we did not find any for it, we just return early with no changes
 		if (startIndex < 0 || startIndex >= str.size() ||
@@ -18,6 +18,16 @@ namespace Utils
 
 		str = str.substr(startIndex, endIndex - startIndex + 1);
 		return *this;
+	}
+
+	StringUtil& StringUtil::TrimSpaces()
+	{
+		return TrimChar(' ');
+	}
+
+	StringUtil& StringUtil::TrimIdents()
+	{
+		return TrimChar('\t');
 	}
 
 	StringUtil& StringUtil::ToLowerCase()

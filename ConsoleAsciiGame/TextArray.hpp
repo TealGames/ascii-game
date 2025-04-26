@@ -3,7 +3,8 @@
 #include <string>
 //#include <array>
 #include "Array2DPosition.hpp"
-#include "raylib.h"
+#include "Vec2.hpp"
+#include "FontData.hpp"
 
 //The character used for empty spaces and will NOT be rendered
 constexpr char EMPTY_CHAR_PLACEHOLDER = ' ';
@@ -18,6 +19,9 @@ struct TextChar
 	TextChar();
 	TextChar(const Color& color, const char& textChar);
 	TextChar(const TextChar&) = default;
+
+	bool IsEmpty() const;
+	Vec2 GetWorldSize(const FontProperties& font) const;
 
 	bool operator==(const TextChar& other) const;
 	std::string ToString() const;

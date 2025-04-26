@@ -67,8 +67,7 @@ class TextGUI : public IRenderable
 {
 private:
 	std::string m_text;
-	FontData m_fontData;
-	float m_charSpacing;
+	FontProperties m_fontData;
 	Color m_color;
 
 	/// <summary>
@@ -123,12 +122,12 @@ private:
 	ScreenPosition CalculateUsableSpace(const RenderInfo& renderInfo) const;
 
 private:
-	TextGUI(const std::string text, const FontData& font, const float& charSpacing, const GUIPadding& padding,
+	TextGUI(const std::string text, const FontProperties& font, const GUIPadding& padding,
 		const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea);
 
 public:
 	TextGUI();
-	TextGUI(const std::string text, const FontData& font, const float& charSpacing, const Color& color);
+	TextGUI(const std::string text, const FontProperties& font, const Color& color);
 	TextGUI(const std::string& text, const TextGUISettings& settings);
 
 	void SetSettings(const TextGUISettings& settings);

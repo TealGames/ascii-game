@@ -26,8 +26,9 @@ namespace GlobalCreator
 		//ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData(Vec2{ 20, 20 }));
 
 		//Font* fontptr = &(GetGlobalFont());
-		VisualDataPreset visualPreset = {GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
-				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };
+		/*VisualDataPreset visualPreset = {, VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
+				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };*/
+		FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, GetGlobalFont());
 		//LogError(std::format("Is valid preset font:{}", std::to_string(RaylibUtils::IsValidFont(visualPreset.m_Font))));
 
 
@@ -52,7 +53,7 @@ namespace GlobalCreator
 		//Assert(false, std::format("Light source fields: {}", lightSource.ToStringFields()));
 
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData({ {TextCharArrayPosition({0,0}, TextChar(GRAY, 'H')) } },visualPreset), RenderLayerType::Player });
+			VisualData(std::vector<std::vector<TextChar>>{ {TextChar(GRAY, 'H') }}, {0, 0}, fontSettings, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
 		ComponentFieldReference lightRadiusref = ComponentFieldReference(&lightSource, "Radius");
 		//Assert(false, std::format("Entity light radius: {}", lightRadiusref.m_Entity->ToString()));
@@ -75,7 +76,7 @@ namespace GlobalCreator
 			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));*/
 
 		ColorGradient particleGradient = ColorGradient(RED, BLUE);
-		playerEntity.AddComponent<ParticleEmitterData>(ParticleEmitterData('W', FloatRange(1, 11), particleGradient, FontData(5, GetGlobalFont()),
+		playerEntity.AddComponent<ParticleEmitterData>(ParticleEmitterData('W', FloatRange(1, 11), particleGradient, fontSettings,
 			RenderLayerType::Player, WorldPosition(), FloatRange(5, 16), float(5)));
 
 		//m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };

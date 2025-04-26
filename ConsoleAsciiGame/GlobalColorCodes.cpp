@@ -36,7 +36,7 @@ namespace GlobalColorCodes
 		const std::uint8_t b = std::stoi(property.m_Value[0].substr(4, 2), nullptr, 16);
 		std::uint8_t a = 255;
 		if (property.m_Value[0].size() == 8)
-			a = std::stoi(property.m_Value[0].substr(4, 2), nullptr, 16);
+			a = std::stoi(property.m_Value[0].substr(6, 2), nullptr, 16);
 
 		Color color = { r, g, b, a };
 		auto emplaceResult= ColorCodes.emplace(property.m_Key, color);

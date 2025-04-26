@@ -30,10 +30,12 @@ namespace ECS
 		ProfilerTimer timer("EntityRendererSystem::SystemUpdate");
 #endif 
 
-		std::vector<TextBufferMixed*> affectedLayerBuffers = {};
+		std::vector<FragmentedTextBuffer*> affectedLayerBuffers = {};
 		scene.OperateOnComponents<EntityRendererData>(
 			[this, &scene, &affectedLayerBuffers](EntityRendererData& data, ECS::Entity& entity)-> void
 			{
+				//if(entity.GetName()== "Background") Assert(false, std::format("Entity:{} has visual:{}", entity.GetName(), data.m_VisualData.ToString()));
+
 				//Log(std::format("Player is at pos: {}", entity.m_Transform.m_Pos.ToString()));
 				affectedLayerBuffers = scene.GetLayerBufferMutable(data.GetRenderLayers()); 
 				//Log(std::format("RENDER LAYERS: {}", std::to_string(affectedLayerBuffers.size())));
@@ -48,6 +50,7 @@ namespace ECS
 				if (!Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
 					"but entity's render data: {} has no render layers", entity.GetName()))) return;
 
+				/*
 				if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !entity.m_Transform.HasMovedThisFrame() &&
 					!data.m_LastFrameVisualData.empty())
 				{
@@ -55,16 +58,17 @@ namespace ECS
 					//{
 					//	if (buffer == nullptr) continue;
 					//	/*Log(std::format("STARTING BUFFER: {}       -> ALL VISUAL DATA: {}",
-					//		buffer->ToString(), Utils::ToStringIterable<std::vector<TextCharPosition>, TextCharPosition>(data.m_LastFrameVisualData)));*/
+					//		buffer->ToString(), Utils::ToStringIterable<std::vector<TextCharPosition>, TextCharPosition>(data.m_LastFrameVisualData)));
 
 					//	buffer->m_TexturePositions = data.m_LastFrameVisualData;
 					//}
 					//return;
 				}
+				*/
 
 				scene.IncreaseFrameDirtyComponentCount();
-				if (!data.m_LastFrameVisualData.empty())
-					data.m_LastFrameVisualData.clear();
+				/*if (!data.m_LastFrameVisualData.empty())
+					data.m_LastFrameVisualData.clear();*/
 
 				//LogWarning(std::format("Entity: {} has visual: {}", entity.m_Name, data.GetVisualData().m_Text.ToString()));
 				for (auto& buffer : affectedLayerBuffers)
@@ -82,10 +86,10 @@ namespace ECS
 	std::string EntityRendererSystem::GetVisualString(const EntityRendererData& data) const
 	{
 		std::string visualStr = "";
-		return data.GetVisualData().m_Text.ToString();
+		return data.GetVisualData().ToString();
 	}
 
-	void EntityRendererSystem::AddTextToBuffer(TextBufferMixed& buffer, EntityRendererData& data, const Entity& entity)
+	void EntityRendererSystem::AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data, const Entity& entity)
 	{
 		//TODO: should this really be a function of visual data and should we expose the buffer directly from the scene like this
 		data.GetVisualData().AddTextPositionsToBuffer(entity.m_Transform.GetPos(), buffer);

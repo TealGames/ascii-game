@@ -34,9 +34,11 @@ public:
 
 	/// <summary>
 	/// Will write the data found in the asset to the corresponding file at the path
+	/// Note: by default this has no implementation because not all assets may be able
+	/// to be modified from the asset since some may just be wrappers
 	/// </summary>
 	/// <param name="path"></param>
-	virtual void SaveToPath(const std::filesystem::path& path) = 0;
+	virtual void SaveToPath(const std::filesystem::path& path);
 	void SaveToSelf();
 
 	virtual std::string ToString() const;

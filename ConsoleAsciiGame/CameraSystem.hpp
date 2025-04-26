@@ -22,7 +22,7 @@ namespace ECS
 	class CameraSystem : public SingleBodySystem<CameraData>
 	{
 	private:
-		TextBufferMixed m_currentFrameBuffer;
+		FragmentedTextBuffer m_currentFrameBuffer;
 		ColliderOutlineBuffer* m_colliderOutlineBuffer;
 		LineBuffer* m_lineBuffer;
 
@@ -50,7 +50,7 @@ namespace ECS
 		void SystemUpdate(Scene& scene, CameraData& component,
 			ECS::Entity& entity, const float& deltaTime) override;
 
-		const TextBufferMixed& GetCurrentFrameBuffer() const;
+		const FragmentedTextBuffer& GetCurrentFrameBuffer() const;
 		const ColliderOutlineBuffer* GetCurrentColliderOutlineBuffer() const;
 		const LineBuffer* GetCurrentLineBuffer() const;
 	};

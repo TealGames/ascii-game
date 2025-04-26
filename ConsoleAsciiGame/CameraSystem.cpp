@@ -103,7 +103,7 @@ namespace ECS
                 m_currentFrameBuffer.emplace_back(textBufferPos);
                 //TODO: it seems as thoguh font scaling causes problems and size inconsistencies with rest of world
 
-                if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_FontSize *= scaleFactor;
+                if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_Size *= scaleFactor;
                 newScreenPos = Conversions::WorldToScreenPosition(cameraData, textBufferPos.m_Pos);
                 m_currentFrameBuffer.back().m_Pos = Vec2(static_cast<float>(newScreenPos.m_X), static_cast<float>(newScreenPos.m_Y));
             }
@@ -136,7 +136,7 @@ namespace ECS
         if (CACHE_LAST_BUFFER) cameraData.m_LastFrameBuffer = m_currentFrameBuffer;
     }
     
-    const TextBufferMixed& CameraSystem::GetCurrentFrameBuffer() const
+    const FragmentedTextBuffer& CameraSystem::GetCurrentFrameBuffer() const
     {
         if (m_currentFrameBuffer.empty()) return {};
         return m_currentFrameBuffer;
