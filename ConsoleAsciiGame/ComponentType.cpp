@@ -40,11 +40,11 @@ std::string ToString(const ComponentType& type)
 	if (integralType == 0) return "";
 
 	std::vector<std::string> allStrs = {};
-	if ((type & ComponentType::Transform) != ComponentType::None) allStrs.push_back("Transform");
-	if ((type & ComponentType::EntityRenderer) != ComponentType::None) allStrs.push_back("EntityRenderer");
-	if ((type & ComponentType::LightSource) != ComponentType::None) allStrs.push_back("LightSource");
-	if ((type & ComponentType::Camera) != ComponentType::None) allStrs.push_back("Camera");
-	if ((type & ComponentType::Player) != ComponentType::None) allStrs.push_back("Player");
+	if ((type & ComponentType::Transform) != ComponentType::None) allStrs.emplace_back("Transform");
+	if ((type & ComponentType::EntityRenderer) != ComponentType::None) allStrs.emplace_back("EntityRenderer");
+	if ((type & ComponentType::LightSource) != ComponentType::None) allStrs.emplace_back("LightSource");
+	if ((type & ComponentType::Camera) != ComponentType::None) allStrs.emplace_back("Camera");
+	if ((type & ComponentType::Player) != ComponentType::None) allStrs.emplace_back("Player");
 
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(allStrs);
 }

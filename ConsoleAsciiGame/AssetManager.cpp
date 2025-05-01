@@ -4,6 +4,7 @@
 #include "SceneAsset.hpp"
 #include "InputProfileAsset.hpp"
 #include "SpriteAnimationAsset.hpp"
+#include "SpriteAsset.hpp"
 #include "FontAsset.hpp"
 #include "IOHandler.hpp"
 
@@ -35,7 +36,7 @@ namespace AssetManagement
 			}
 			else
 			{
-				existingExtensionIt->second.push_back(file.path());
+				existingExtensionIt->second.emplace_back(file.path());
 			}
 
 			//We try to convert this file into a useable asset 
@@ -55,6 +56,12 @@ namespace AssetManagement
 			{
 				if (!Assert(this, TryCreateAssetFromFile<SpriteAnimationAsset>(file.path()),
 					std::format("Tried to add asset at path:{} as sprite animation asset but failed", file.path().string())))
+					return;
+			}
+			else if (fileExtension == SpriteAsset::EXTENSION)
+			{
+				if (!Assert(this, TryCreateAssetFromFile<SpriteAsset>(file.path()),
+					std::format("Tried to add asset at path:{} as sprite asset but failed", file.path().string())))
 					return;
 			}
 			else if (fileExtension == FontAsset::EXTENSION)

@@ -357,7 +357,8 @@ namespace Utils
 			Utils::TryToString<VType>(value).value_or(""));
 	}
 
-	std::string ToString(const char& c);
+	std::string ToString(const char c);
+	std::string ToString(const std::uint8_t u8);
 	std::string ToStringDouble(const double& d, const std::streamsize& precision, const bool& decimalPlacePrecision =true );
 	
 	template<typename T>
@@ -399,7 +400,6 @@ namespace Utils
 	/// <param name="input"></param>
 	/// <returns></returns>
 	std::string TryExtractFloat(const std::string& input);
-
 	std::string TryExtractNonIntegralValues(const std::string& input);
 
 	std::vector<std::string> Split(const std::string& str, const char& separator);

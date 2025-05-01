@@ -9,6 +9,7 @@
 
 class EntityGUI;
 class GUISelectorManager;
+class PopupGUIManager;
 
 class ComponentGUI : public IRenderable
 {
@@ -28,7 +29,7 @@ private:
 
 public:
 	ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector,
-		const EntityGUI& entityGUI, ComponentData& component);
+		PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component);
 	~ComponentGUI();
 	
 	void Update();

@@ -100,9 +100,24 @@ public:
 	static const GUIPadding DEFAULT_PADDING;
 
 private:
-	float GetFontSizeFromArea(const ScreenPosition& parentArea) const;
-	float CalculateMaxFontSizeForSpace(const Vec2& space, const float& spacing) const;
-	float CalculateMaxFontSizeForSpace(const ScreenPosition& space, const float& spacing) const;
+	/// <summary>
+	/// Will approximate the best font based on the area given. 
+	/// Note: giving a text size greatly improves the accuracy of the estimation
+	/// </summary>
+	/// <param name="parentArea"></param>
+	/// <param name="textSize"></param>
+	/// <returns></returns>
+	float GetFontSizeFromArea(const Vec2& parentArea, const int textSize= -1) const;
+	/// <summary>
+	/// Will find the best font size using the spacing and space requirements.
+	/// Note: sicne this is an iterative and slow process, starting sizes greatly help in reducing iterations
+	/// </summary>
+	/// <param name="space"></param>
+	/// <param name="spacing"></param>
+	/// <param name="startingSize"></param>
+	/// <returns></returns>
+	float CalculateMaxFontSizeForSpace(const Vec2& space, const float spacing, const float startingSize= 0) const;
+	float CalculateMaxFontSizeForSpace(const ScreenPosition& space, const float spacing, const float startingSize=0) const;
 	Vector2 CalculateSpaceUsed(const float& fontSize, const float& spacing) const;
 
 	/// <summary>
@@ -119,7 +134,7 @@ private:
 	/// </summary>
 	/// <param name="renderInfo"></param>
 	/// <returns></returns>
-	ScreenPosition CalculateUsableSpace(const RenderInfo& renderInfo) const;
+	Vec2 CalculateUsableSpace(const RenderInfo& renderInfo) const;
 
 private:
 	TextGUI(const std::string text, const FontProperties& font, const GUIPadding& padding,

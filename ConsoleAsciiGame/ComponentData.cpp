@@ -103,7 +103,7 @@ std::string ComponentData::ToStringFields() const
 	std::vector<std::string> fieldStrings = {};
 	for (const auto& field : m_Fields)
 	{
-		fieldStrings.push_back(field.ToString());
+		fieldStrings.emplace_back(field.ToString());
 	}
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(fieldStrings);
 }

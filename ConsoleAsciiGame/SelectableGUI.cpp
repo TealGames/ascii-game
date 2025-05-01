@@ -3,26 +3,18 @@
 #include "GUISelectorManager.hpp"
 #include "Debug.hpp"
 
-SelectableGUI::SelectableGUI() 
-	: m_selectorManager(nullptr), m_lastFrameRect(), 
-	m_isSelected(false), m_addedToManager(false), 
-	m_OnSelect(), m_OnDeselect()
-{
-
-}
+SelectableGUI::SelectableGUI()
+	: SelectableGUI(nullptr) {}
 
 SelectableGUI::SelectableGUI(GUISelectorManager* selectorManager) : 
 	m_selectorManager(selectorManager), m_lastFrameRect(), 
 	m_isSelected(false), m_addedToManager(false),
-	m_OnSelect(), m_OnDeselect()
+	m_OnSelect(), m_OnDeselect(), m_dragTime(0)
 {
 	
 }
 
-bool SelectableGUI::IsInit() const
-{
-	return m_addedToManager;
-}
+bool SelectableGUI::IsInit() const { return m_addedToManager; }
 void SelectableGUI::Init()
 {
 	if (IsInit()) return;
@@ -35,20 +27,15 @@ void SelectableGUI::Init()
 	m_addedToManager = true;
 }
 
-GUIRect& SelectableGUI::GetLastFrameRectMutable()
-{
-	return m_lastFrameRect;
-}
+GUIRect& SelectableGUI::GetLastFrameRectMutable() { return m_lastFrameRect; }
+const GUIRect SelectableGUI::GetLastFrameRect() const { return m_lastFrameRect; }
 
-const GUIRect SelectableGUI::GetLastFrameRect() const
-{
-	return m_lastFrameRect;
-}
+void SelectableGUI::SetLastFramneRect(const GUIRect& newRect) { m_lastFrameRect = newRect; }
 
-void SelectableGUI::SetLastFramneRect(const GUIRect& newRect)
-{
-	m_lastFrameRect = newRect;
-}
+bool SelectableGUI::IsSelected() const { return m_isSelected; }
+bool SelectableGUI::IsDraggedForTime(const float time) const { return time <= m_dragTime; }
+void SelectableGUI::SetDragTime(const float time) { m_dragTime = time; }
+void SelectableGUI::ClearDragTime() { m_dragTime = 0; }
 
 GUISelectorManager& SelectableGUI::GetSelectorManager()
 {
@@ -78,11 +65,6 @@ void SelectableGUI::Click()
 {
 	//Assert(false, "SELECTAVBLE CLICKL");
 	m_OnClick.Invoke(this);
-}
-
-bool SelectableGUI::IsSelected() const
-{
-	return m_isSelected;
 }
 
 void SelectableGUI::DrawDisabledOverlay(const RenderInfo& renderInfo) const

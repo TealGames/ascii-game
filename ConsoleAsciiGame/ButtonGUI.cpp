@@ -50,7 +50,7 @@ bool ButtonGUI::IsInCooldown() const
 		&& m_currentCooldownTime < m_cooldownTime;
 }
 
-void ButtonGUI::Update(const float& deltaTime)
+void ButtonGUI::Update(const float deltaTime)
 {
 	if (!IsInit()) Init();
 

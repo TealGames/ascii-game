@@ -17,6 +17,7 @@ private:
 
 	bool m_isSelected;
 	bool m_addedToManager;
+	float m_dragTime;
 
 public:
 	SelectableEvent m_OnSelect;
@@ -40,7 +41,12 @@ public:
 	void Select();
 	void Deselect();
 	void Click();
+
 	bool IsSelected() const;
+	bool IsDraggedForTime(const float time) const;
+
+	void SetDragTime(const float time);
+	void ClearDragTime();
 
 	const GUIRect GetLastFrameRect() const;
 };

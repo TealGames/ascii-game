@@ -20,7 +20,7 @@ void DebugInfo::ClearProperties()
 void DebugInfo::AddProperty(const std::string& name, const std::string& value)
 {
 	std::string fullStr = std::format("{}: {}", name, value);
-	m_text.push_back(fullStr.c_str());
+	m_text.emplace_back(fullStr.c_str());
 }
 
 const std::vector<std::string>& DebugInfo::GetText() const
@@ -33,7 +33,7 @@ bool DebugInfo::TryAddHighlightedIndex(const size_t& index)
 	if (std::find(m_highlightedIndices.begin(), m_highlightedIndices.end(), index) !=
 		m_highlightedIndices.end()) return false;
 
-	m_highlightedIndices.push_back(index);
+	m_highlightedIndices.emplace_back(index);
 	//TODO: yes this is inneficient but we want to make sure get function does not mutate the data
 	std::sort(m_highlightedIndices.begin(), m_highlightedIndices.end());
 	return true;
@@ -65,13 +65,12 @@ const std::optional<DebugMousePosition>& DebugInfo::GetMouseDebugData() const
 
 void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera)
 {
+	ClearProperties();
 	if (input.IsKeyPressed(TOGGLE_DEBUG_INFO_KEY))
 	{
 		m_isEnabled = !m_isEnabled;
 	}
 	if (!m_isEnabled) return;
-
-	ClearProperties();
 
 	AddProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
 	AddProperty("DeltaTime", std::format("{} s", std::to_string(deltaTime)));

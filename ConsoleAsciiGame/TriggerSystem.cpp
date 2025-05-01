@@ -22,7 +22,7 @@ namespace ECS
 			[this, &scene, &deltaTime](TriggerData& data, ECS::Entity& entity)-> void
 			{
 				const auto& onEnterBodies = data.GetCollisionBox().GetCollisionEnterBoxes();
-				LogError(std::format("Found enter bodies: {}", std::to_string(data.GetCollisionBox().GetAllCollisionBoxes().size())));
+				//LogError(std::format("Found enter bodies: {}", std::to_string(data.GetCollisionBox().GetAllCollisionBoxes().size())));
 				if (!onEnterBodies.empty())
 				{
 					for (const auto& body : onEnterBodies) data.m_OnEnter.Invoke(body);

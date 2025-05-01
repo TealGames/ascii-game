@@ -1,11 +1,12 @@
 #pragma once
 #include <string>
+#include <cstdint>
 
 namespace Input
 {
-	enum class KeyState
+	enum class KeyState : std::uint8_t
 	{
-		Neutral,
+		Neutral= 0,
 		Cooldown,
 		Pressed,
 		Down,
@@ -34,7 +35,7 @@ namespace Input
 		static constexpr float NO_COOLDOWN_TIME = -1;
 
 	private:
-		InputState(const KeyState& startState, const float& cooldownTime);
+		InputState(const KeyState startState, const float& cooldownTime);
 		void ResetDefault();
 
 	public:
@@ -52,9 +53,9 @@ namespace Input
 		float GetCurrentDownTime() const;
 		void SetDownTimeDelta(float deltaTime);
 
-		const KeyState& GetState() const;
-		void SetState(const KeyState& newState);
-		bool IsState(const KeyState& state) const;
+		const KeyState GetState() const;
+		void SetState(const KeyState newState);
+		bool IsState(const KeyState state) const;
 
 		bool IsPressed() const;
 		bool IsDown() const;

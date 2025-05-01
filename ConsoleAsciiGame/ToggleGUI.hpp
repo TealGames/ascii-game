@@ -22,10 +22,9 @@ public:
 
 private:
 public:
-	ToggleGUI();
-	~ToggleGUI();
 	ToggleGUI(GUISelectorManager& manager, const bool& startValue, const GUISettings& settings, 
 		const ToggleAction& valueSetAction=nullptr);
+	~ToggleGUI();
 
 	void SetSettings(const GUISettings& settings);
 

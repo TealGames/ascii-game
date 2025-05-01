@@ -7,7 +7,7 @@
 
 constexpr static float TITLE_FONT_SIZE = 20;
 
-EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, ECS::Entity& entity)
+EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, PopupGUIManager& popupManager, ECS::Entity& entity)
 	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
 	m_entityNameText(m_entity->GetName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, 
 		FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),TextAlignment::Center)),
@@ -26,7 +26,7 @@ EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& sel
 	for (auto& comp : components)
 	{
 		if (comp == nullptr) continue;
-		m_componentGUIs.emplace_back(*m_inputManager, selector, *this, *comp);
+		m_componentGUIs.emplace_back(*m_inputManager, selector, popupManager, *this, *comp);
 		//LogError(std::format("Found comp: {} for entity: {}", std::to_string(comp->GetFields().size()), entity.m_Name));
 	}
 	//Assert(false, "POOP");

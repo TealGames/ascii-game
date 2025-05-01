@@ -139,7 +139,7 @@ std::vector<const CollisionPair*> CollisionRegistry::TryGetCollisions(const Coll
 	for (const auto& collision : m_collisions)
 	{
 		if (*collision.second.m_CollisionBoxA == box || *collision.second.m_CollisionBoxB == box)
-			collisions.push_back(&(collision.second));
+			collisions.emplace_back(&(collision.second));
 	}
 	return collisions;
 }
@@ -151,7 +151,7 @@ std::vector<CollisionPair*> CollisionRegistry::TryGetCollisionsMutable(const Col
 	for (auto& collision : m_collisions)
 	{
 		if (*collision.second.m_CollisionBoxA == box || *collision.second.m_CollisionBoxB == box)
-			collisions.push_back(&(collision.second));
+			collisions.emplace_back(&(collision.second));
 	}
 	return collisions;
 }
@@ -190,7 +190,7 @@ std::vector<MoveDirection> CollisionRegistry::TryGetCollisionDirs(const Collisio
 	for (const auto& collision : collisions)
 	{
 		if (collision == nullptr) continue;
-		collisionDirs.push_back(collision->m_Direction);
+		collisionDirs.emplace_back(collision->m_Direction);
 	}
 	return collisionDirs;
 }

@@ -75,6 +75,14 @@ namespace Core
 	//TODO: it is weird that the json serializes have the asset and scene manager dependecies which will eventually get added and linked to the files that all use serializers
 	//and it should instead be a dependecy injection of those types into the deserialization functions (maybe event split deserializetion/serialization of components into separate class?)
 	//and remove the depedneyc on json and the implicit need for scene manager/asset manager hidden via the serializers
+	//TODO: make some of the colors for the editor and sizing global values, as well as ways to get global text gui settings for the buttons, text
+	//TODO: extract some of the editor and gameplay engine code so that the engine does not include any dependencies to editor
+	//TODO: there is gui rect and render info both of which have nearly identical data so pick one to use consistently
+	//TODO: checkbox on component field gui throws error when selected
+	//TODO: the reason why lot of editor/event/callback stuff is getting invalidated/thrown errors because there may be some moves (like using push instead of emplace)
+	//which then cause any function with "this" capture group to be invalidated as its object no longer exists. Checking "if(function)" does not work since that checks 
+	//if func is not empty, but it could be not empty and have invalid this pointer leading to crashes/strange behavior. A check for this must be implmeneted in the
+	//event class to prevent this issue such as creating a function class wrapper
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -131,7 +139,7 @@ namespace Core
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
 		m_timeKeeper(),
-		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, 
+		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_assetManager,
 			m_sceneManager, m_cameraController, m_guiSelectorManager, m_collisionBoxSystem),
 		m_gameManager(m_sceneManager.m_GlobalEntityManager)
 	{
@@ -234,175 +242,75 @@ namespace Core
 		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
 		const float unscaledDeltaTime = m_timeKeeper.GetLastIndependentDeltaTime();
 
-		/*if (FRAME_LIMIT != -1 || SHOW_FPS)
-		{
-			std::cout<<std::format("[ENGINE]: FRAME: {}/{} DELTA_TIME: {} FPS:{} GraphicsFPS:{}\n--------------------------------------------\n",
-				std::to_string(m_currentFrameCounter + 1), std::to_string(FRAME_LIMIT), 
-				Utils::ToStringDouble(m_deltaTime, DOUBLE_LOG_PRECISION), 
-				Utils::ToStringDouble(m_currentFPS, DOUBLE_LOG_PRECISION), std::to_string(GetFPS()));
-		}*/
-
-		/*
-		if (m_enableDebugInfo)
-		{
-			m_debugInfo.AddProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
-			m_debugInfo.AddProperty("DeltaTime", std::format("{} s", std::to_string(m_deltaTime)));
-			m_debugInfo.AddProperty("TimeStep", std::format("{} s", std::to_string(m_timeStep)));
-		}
-		*/
-
-		/*m_lastTime = m_currentTime;
-		return SUCCESS_CODE;*/
-
-		Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
-		if (!Assert(this, activeScene != nullptr, std::format("Tried to update the active scene but there "
-			"are none set as active right now", activeScene->GetName())))
-			return ERROR_CODE;
-
-		if (!Assert(this, activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
-			"are no entities in the scene", activeScene->GetName())))
-			return ERROR_CODE;
-
-		m_cameraController.UpdateActiveCamera();
-		CameraData& mainCamera = m_cameraController.GetActiveCameraMutable();
-
-		std::string cameraSceneName = mainCamera.GetEntitySafe().GetSceneName();
-		if (!Assert(this, cameraSceneName== ECS::Entity::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(), 
-			std::format("Tried to get active camera:{} during update loop, "
-			"but that camera is not in the active scene OR global storage (main camera scene:{}, active scene:{})", mainCamera.ToString(),
-			cameraSceneName, activeScene->GetName())))
-			return ERROR_CODE;
-
-		/*if (!Assert(this, activeScene->HasMainCamera(), std::format("Tried to update the active scene: {}, "
-			"but it has no main camera", activeScene->GetName())))
-			return ERROR_CODE;
-		
-		CameraData* mainCamera = activeScene->TryGetMainCameraMutable();
-		ECS::Entity* mainCameraEntity = activeScene->TryGetMainCameraEntityMutable();
-
-		if (!Assert(this, mainCamera != nullptr && mainCameraEntity != nullptr,
-			std::format("Tried to update the active scene:{} but failed to retrieve "
-				"main camera(found:{}) and/or its entity(found:{})", activeScene->GetName(),
-				std::to_string(mainCamera != nullptr), std::to_string(mainCameraEntity != nullptr))))
-			return ERROR_CODE;*/
-
-
-		/*if (!Assert(this, m_playerInfo.has_value(),
-			std::format("Tried to update the active scene:{} but failed to get "
-				"player info in a valid state", activeScene->GetName())))
-			return ERROR_CODE;*/
-
-		//We need to reset to default since previous changes were baked into the buffer
-		//so we need to clear it for a fresh update
-
-		//for (auto& layer : activeScene->GetLayersMutable())
-		//{
-		//	//Log(std::format("Resetting to  default layer: {}/{}", std::to_string(i), std::to_string(m_Layers.size()-1)));
-		//	layer->ResetToDefault();
-		//}
-	
-		//TODO: maybe some general scene stuff should be abstracted into scene manager
-		activeScene->ResetAllLayers();
-		activeScene->ResetFrameDirtyComponentCount();
-
-		//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
-		//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
-
-		//Note: technically transform system should be using scaled time but since it is possible to change pos
-		//even when time is stopped we need to make sure it updates just in case
-		m_transformSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
-		m_uiSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
-
 		m_inputManager.Update(unscaledDeltaTime);
-		//if (m_enableDebugInfo)
-		//{
-		//	m_debugInfo.AddProperty("KeysDown", Utils::ToStringIterable<std::vector<std::string>, 
-		//		std::string>(m_inputManager.GetAllKeysWithStateAsString(Input::KeyState::Down)));
-		//}
 
-		//m_inputSystem.SystemUpdate(*activeScene, m_playerInfo.value().GetAt<2>(), *(m_playerInfo.value().m_Entity), m_deltaTime);
-
-		m_playerSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
-		//if (m_enableDebugInfo) m_debugInfo.AddProperty("Input", std::format("{}", m_playerInfo.value().GetAt<0>().GetFrameInput().ToString()));
-
-		m_collisionBoxSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
-		m_physicsManager.GetPhysicsWorldMutable().UpdateStart(scaledDeltaTime);
-		/*if (m_enableDebugInfo)
+		const FragmentedTextBuffer* frameBuffer = nullptr;
+		if (m_editor.IsInGameView())
 		{
-			m_debugInfo.AddProperty("PlayerPos", std::format("{} m", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
-			m_debugInfo.AddProperty("PlayerVel", std::format("{} m/s", m_playerInfo.value().GetAt<1>().GetVelocity().ToString(3, VectorForm::Component)));
-			m_debugInfo.AddProperty("PlayerAcc", std::format("{} m/s2", m_playerInfo.value().GetAt<1>().GetAcceleration().ToString(3, VectorForm::Component)));
-			m_debugInfo.AddProperty("Grounded:", std::format("{}", std::to_string(m_playerInfo.value().GetAt<0>().GetIsGrounded())));
-			m_debugInfo.AddProperty("GroundDist:", std::format("{} m", std::to_string(m_playerInfo.value().GetAt<0>().GetVerticalDistanceToGround())));
-		}*/
+			Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
+			if (!Assert(this, activeScene != nullptr, std::format("Tried to update the active scene but there "
+				"are none set as active right now", activeScene->GetName())))
+				return ERROR_CODE;
 
-		m_physicsBodySystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
-		m_triggerSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
-	/*	Log(std::format("Player POS: {} SCREEN POS: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(), 
-			Conversions::WorldToScreenPosition(*mainCamera, m_playerInfo.value().m_Entity->m_Transform.m_Pos).ToString()));*/
-		
-		m_animatorSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
-		m_spriteAnimatorSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
-		m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			if (!Assert(this, activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
+				"are no entities in the scene", activeScene->GetName())))
+				return ERROR_CODE;
 
-		/*LogError(this, std::format("Player visual: {} scene entities: {}", m_playerInfo.value().m_Entity->TryGetComponent<EntityRendererData>()->GetVisualData().ToString(), 
-			std::to_string(activeScene->GetEntityCount())));*/
-		//LogError(this, std::format("Scene entities: {}", activeScene->ToString()));
-		//LogError(activeScene->GetAllEntities()[0]->GetName());
-		
-		//TODO: it seems enttiy system is causing a stirng to long exception
-		m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
-		
-		//LogWarning(this, std::format("PLAYER OBSTACLE COLLISION: {} PLAYER POS: {} (PLAYER RECT: {}) last input: {} velocity: {} OBSTACLE POS: {} (OBstacle REDCT: {}) ", 
-		//	std::to_string(Physics::DoBodiesIntersect(m_playerInfo.value().GetAt<1>(), *(m_obstacleInfo.value().m_Data))),
-		//	m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
-		//	//TODO: this is technically wrong since we use transform pos as center for aabb global pos but it could be offset (just for testing when offset=0)
-		//	m_playerInfo.value().GetAt<1>().GetAABB().ToString(m_playerInfo.value().m_Entity->m_Transform.m_Pos),
-		//	m_playerInfo.value().GetAt<0>().GetFrameInput().ToString(),
-		//	m_playerInfo.value().GetAt<1>().GetVelocity().ToString(),
-		//	m_obstacleInfo.value().m_Entity->m_Transform.m_Pos.ToString(),
-		//	m_obstacleInfo.value().m_Data->GetAABB().ToString(m_obstacleInfo.value().m_Entity->m_Transform.m_Pos)));
-		//TODO: light system without any other problems drop frames to ~20 fps
-		m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_cameraController.UpdateActiveCamera();
+			CameraData& mainCamera = m_cameraController.GetActiveCameraMutable();
 
-		m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), unscaledDeltaTime);
-		const FragmentedTextBuffer& collapsedBuffer = m_cameraSystem.GetCurrentFrameBuffer();
-		Assert(this, !collapsedBuffer.empty(), std::format("Tried to render buffer from camera output, but it has no data"));
+			std::string cameraSceneName = mainCamera.GetEntitySafe().GetSceneName();
+			if (!Assert(this, cameraSceneName == ECS::Entity::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
+				std::format("Tried to get active camera:{} during update loop, "
+					"but that camera is not in the active scene OR global storage (main camera scene:{}, active scene:{})", mainCamera.ToString(),
+					cameraSceneName, activeScene->GetName())))
+				return ERROR_CODE;
 
-		/*if (m_enableCommandConsole) m_commandConsole.Update();*/
+			//TODO: maybe some general scene stuff should be abstracted into scene manager
+			activeScene->ResetAllLayers();
+			activeScene->ResetFrameDirtyComponentCount();
 
-		/*if (m_enableDebugInfo)
-		{
-			Vector2 mousePos = GetMousePosition();
-			ScreenPosition mouseScreenPos = { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y)};
-			WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(*m_mainCameraInfo.value().m_Data, mouseScreenPos);
-			m_debugInfo.SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X+15, mouseScreenPos.m_Y} });
-		}*/
+			//TODO: ideally the systems would be supplied with only relevenat components without the need of entities
+			//but this can only be the case if data is stored directyl without std::any and linear component data for same entities is used
 
-		m_gameManager.GameUpdate();
+			//Note: technically transform system should be using scaled time but since it is possible to change pos
+			//even when time is stopped we need to make sure it updates just in case
+			m_transformSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
+			m_uiSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 
-		/*m_entityEditor.Update(mainCamera);*/
-		m_guiSelectorManager.Update();
-		m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale(), *activeScene, mainCamera);
-		//Assert(false, std::format("Found selectables:{}", m_guiSelectorManager.T));
+			m_playerSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_collisionBoxSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_physicsManager.GetPhysicsWorldMutable().UpdateStart(scaledDeltaTime);
+			m_physicsBodySystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_triggerSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_animatorSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_spriteAnimatorSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
+			m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), unscaledDeltaTime);
+			m_gameManager.GameUpdate();
 
-		//TODO: rendering buffer drops frames
-		if (!collapsedBuffer.empty())
-		{
-			Rendering::RenderBuffer(collapsedBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(),
+			m_guiSelectorManager.Update();
+			m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale());
+
+			frameBuffer = &m_cameraSystem.GetCurrentFrameBuffer();
+			Assert(this, frameBuffer!=nullptr && !frameBuffer->empty(), std::format("Tried to render buffer from camera output, but it has no data"));
+
+			Rendering::RenderBuffer(frameBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(),
 				m_cameraSystem.GetCurrentLineBuffer(), std::vector<IBasicRenderable*>{&m_editor});
-				//m_enableCommandConsole? &m_commandConsole : nullptr, &m_entityEditor);
+
+			m_transformSystem.UpdateLastFramePos(*activeScene);
 		}
-		//else if (ALWAYS_RENDER) Rendering::RenderBuffer(DEFAULT_RENDER_DATA, RENDER_INFO);
+		else
+		{
+			m_guiSelectorManager.Update();
+			m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale());
 
-		m_transformSystem.UpdateLastFramePos(*activeScene);
-		//if (m_enableDebugInfo) m_debugInfo.ClearProperties();
-
-		//Log(std::format("Player pos: {}", m_playerInfo.value().m_Entity->m_Transform.m_Pos.ToString()));
-		//Log(m_sceneManager.GetActiveScene()->ToStringLayers());
-
+			Rendering::RenderBuffer(nullptr, nullptr, nullptr, std::vector<IBasicRenderable*>{&m_editor});
+		}
+		
 		m_timeKeeper.UpdateTimeEnd();
-
 		if (m_timeKeeper.ReachedFrameLimit()) 
 			return EXIT_CODE;
 

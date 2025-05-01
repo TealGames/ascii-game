@@ -44,7 +44,7 @@ public:
 		if (args.size() != m_args.size()) return false;
 
 		std::vector<std::string> thing = {};
-		(thing.push_back(typeid(Args).name()), ...);
+		(thing.emplace_back(typeid(Args).name()), ...);
 		/*Log(std::format("HERE YOU GO: args: {} doc: {} RECENT TRY: {}", 
 			Utils::ToStringIterable<std::vector<std::string>, std::string>(args), GetDocumentation(),
 			Utils::ToStringIterable<std::vector<std::string>, std::string>(thing)));*/

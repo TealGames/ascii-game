@@ -151,11 +151,17 @@ namespace RaylibUtils
 		};
 	}
 
+	Color ToRaylibColor(const Utils::Color color)
+	{
+		return {color.m_R, color.m_G, color.m_B, color.m_A};
+	}
+
 	bool ColorEqual(const Color& color1, const Color& color2)
 	{
 		return color1.r == color2.r && color1.g == color2.g && 
 			color1.b == color2.b && color1.a == color2.a;
 	}
+
 
 	void DrawFPSCounter()
 	{
@@ -198,16 +204,6 @@ namespace RaylibUtils
 	bool IsValidFont(const Font& font)
 	{
 		return font.texture.id != 0;
-	}
-	float GetMaxFontSizeForSpace(const Font& font, const std::string& text, const Vec2& space, const float& spacing)
-	{
-		Vector2 currentSpace = {std::numeric_limits<float>().max(), std::numeric_limits<float>().max() };
-		float fontSize = space.m_Y;
-		while (currentSpace.x <= space.m_X && currentSpace.y <= space.m_Y)
-		{
-			currentSpace = MeasureTextEx(font, text.c_str(), fontSize, spacing);
-		}
-		return fontSize;
 	}
 
 	void RemoveFontExtraSpacing(Font& font)

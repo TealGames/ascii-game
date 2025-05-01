@@ -13,7 +13,7 @@ void ColliderOutlineBuffer::ClearAll()
 
 void ColliderOutlineBuffer::AddRectangle(const RectangleOutlineData& rectangleData)
 {
-	m_RectangleBuffer.push_back(rectangleData);
+	m_RectangleBuffer.emplace_back(rectangleData);
 }
 
 bool ColliderOutlineBuffer::HasData() const

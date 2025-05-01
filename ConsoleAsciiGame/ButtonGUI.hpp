@@ -37,7 +37,7 @@ public:
 	bool HasCooldown() const;
 	bool IsInCooldown() const;
 
-	void Update(const float& deltaTime);
+	void Update(const float deltaTime);
 	ScreenPosition Render(const RenderInfo& renderInfo) override;
 };
 

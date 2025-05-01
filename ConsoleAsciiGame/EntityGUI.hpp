@@ -7,6 +7,7 @@
 #include "ToggleGUI.hpp"
 
 class GUISelectorManager;
+class PopupGUIManager;
 
 class EntityGUI : IRenderable
 {
@@ -21,7 +22,8 @@ public:
 
 private:
 public:
-	EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, ECS::Entity& entity);
+	EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, 
+		PopupGUIManager& popupManager, ECS::Entity& entity);
 	~EntityGUI();
 
 	void Update();

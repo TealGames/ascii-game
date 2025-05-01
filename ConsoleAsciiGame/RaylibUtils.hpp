@@ -9,6 +9,7 @@
 #include "Vec2Int.hpp"
 #include "PositionConversions.hpp"
 #include <optional>
+#include "Color.hpp"
 
 namespace RaylibUtils
 {
@@ -25,6 +26,7 @@ namespace RaylibUtils
 	Color GetColorFromPoint(const Utils::Point3D& rgb);
 
 	Color GetColorFromHex(const std::uint32_t& hexNumber);
+	Color ToRaylibColor(const Utils::Color color);
 
 	bool ColorEqual(const Color& color1, const Color& color2);
 

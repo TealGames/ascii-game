@@ -16,14 +16,16 @@ constexpr static float FIELD_FONT_FACTOR = 0.8;
 constexpr static float FONT_SIZE = 10;
 constexpr static float FONT_SPACING = 10;
 
-const static ScreenPosition MAX_INPUT_FIELD_SIZE = { 100, 20 };
+const static ScreenPosition MAX_FIELD_SIZE = { 100, 20 };
 
-ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
+ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, PopupGUIManager& popupManager,
 	const ComponentGUI& componentGUI, ComponentField& field)
-	: m_fieldInfo(&field), m_inputFields(), m_checkbox(), m_inputManager(&inputManager), m_componentGUI(&componentGUI), 
+	: m_fieldInfo(&field), m_inputFields(), m_checkbox(selector, false, GUISettings()), m_colorPicker(selector, popupManager, GUISettings()), 
+	m_inputManager(&inputManager), m_componentGUI(&componentGUI),
 	m_fieldNameText(GetFieldInfo().m_FieldName, FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
 		EntityEditorGUI::EDITOR_SECONDARY_COLOR)
 {
+	//LogWarning(std::format("compinent field gui addr create:{}", Utils::ToStringPointerAddress(this)));
 	/*if (m_fieldInfo.IsCurrentType<Vec2>()) 
 
 		Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Vec2*>(m_fieldInfo.m_Value)->ToString()));*/
@@ -33,51 +35,85 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	InputFieldFlag fieldFlags = InputFieldFlag::None;
 	if (GetFieldInfo().IsReadonly()) fieldFlags |= InputFieldFlag::UserUIReadonly;
 
-	GUISettings fieldSettings = GUISettings(MAX_INPUT_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
+	GUISettings fieldSettings = GUISettings(MAX_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
 		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, FIELD_FONT_FACTOR));
 	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
 		std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
 
 	if (GetFieldInfo().IsCurrentType<int>() || GetFieldInfo().IsCurrentType<std::uint8_t>())
 	{
-		m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::Integer, fieldFlags, fieldSettings));
+		m_inputFields.emplace_back(GetInputManager(), selector, InputFieldType::Integer, fieldFlags, fieldSettings);
 	}
 	else if (GetFieldInfo().IsCurrentType<float>())
 	{
-		m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::Float, fieldFlags, fieldSettings));
+		m_inputFields.emplace_back(GetInputManager(), selector, InputFieldType::Float, fieldFlags, fieldSettings);
 	}
 	else if (GetFieldInfo().IsCurrentType<bool>())
 	{
-		m_checkbox = ToggleGUI(selector, false, fieldSettings);
+		m_checkbox.SetSettings(fieldSettings);
 	}
 	else if (GetFieldInfo().IsCurrentType<std::string>())
 	{
-		m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::String, fieldFlags, fieldSettings));
+		m_inputFields.emplace_back(GetInputManager(), selector, InputFieldType::String, fieldFlags, fieldSettings);
 	}
 	else if (GetFieldInfo().IsCurrentType<Vec2>())
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::Float, fieldFlags, fieldSettings));
+			m_inputFields.emplace_back(GetInputManager(), selector, InputFieldType::Float, fieldFlags, fieldSettings);
 		}
 	}
 	else if (GetFieldInfo().IsCurrentType<Vec2Int>())
 	{
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.push_back(InputField(GetInputManager(), selector, InputFieldType::Integer, fieldFlags, fieldSettings));
+			m_inputFields.emplace_back(GetInputManager(), selector, InputFieldType::Integer, fieldFlags, fieldSettings);
 		}
+	}
+	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
+	{
+		m_colorPicker.SetSettings(fieldSettings);
 	}
 	else
 	{
 		LogError(this, std::format("Tried to construct component field GUI for property: '{}' "
 			"but could not find any actions for its type: {}", GetFieldInfo().m_FieldName, GetFieldInfo().GetCurrentType().name()));
 	}
+
+	//TODO: this should not be called on set field to internal since it gets called every frame
+	if (!m_inputFields.empty())
+	{
+		for (auto& field : m_inputFields)
+		{
+			//LogError("Set field submit action");
+			field.SetSubmitAction([this](std::string input) -> void
+				{
+					//LogError(std::format("Setting internal input for field with str: {} type: {} is point: {}",
+					//	input, m_fieldInfo.GetCurrentType().name(), std::to_string(m_fieldInfo.IsCurrentType<Vec2>())));
+
+					//for (auto& inputField : m_inputFields)
+					//{
+					//	LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
+					//}
+
+					SetInternalWithInput();
+				});
+		}
+	}
+	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
+	{
+
+	}
+	else m_checkbox.SetValueSetAction([this](bool isChecked)-> void
+		{
+			LogError("Fart and shit");
+			SetInternalWithInput();
+		});
 }
 
 ComponentFieldGUI::~ComponentFieldGUI()
 {
-	//LogError("Destroyed compoent field GUI");
+	LogError("Destroyed compoent field GUI");
 }
 
 const Input::InputManager& ComponentFieldGUI::GetInputManager() const
@@ -138,37 +174,16 @@ void ComponentFieldGUI::SetFieldToInternal()
 		m_inputFields[0].OverrideInput(std::to_string(point->m_X));
 		m_inputFields[1].OverrideInput(std::to_string(point->m_Y));
 	}
+	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
+	{
+		m_colorPicker.SetColor(*(GetFieldInfo().TryGetValue<Utils::Color>()));
+	}
 	else
 	{
 		LogError(this, std::format("Tried to set field to internal value for property: '{}' "
 			"but could not find any actions for its type", GetFieldInfo().m_FieldName));
 		return;
 	}
-
-	//TODO: this should not be called on set field to internal since it gets called every frame
-	if (!m_inputFields.empty())
-	{
-		for (auto& field : m_inputFields)
-		{
-			//LogError("Set field submit action");
-			field.SetSubmitAction([this](std::string input) -> void
-				{
-					//LogError(std::format("Setting internal input for field with str: {} type: {} is point: {}",
-					//	input, m_fieldInfo.GetCurrentType().name(), std::to_string(m_fieldInfo.IsCurrentType<Vec2>())));
-
-					//for (auto& inputField : m_inputFields)
-					//{
-					//	LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
-					//}
-
-					SetInternalWithInput();
-				});
-		}
-	}
-	else m_checkbox.SetValueSetAction([this](bool isChecked)-> void
-		{
-			SetInternalWithInput();
-		});
 }
 void ComponentFieldGUI::SetInternalWithInput()
 {
@@ -224,6 +239,10 @@ void ComponentFieldGUI::SetInternalWithInput()
 		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
 		//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
 	}
+	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
+	{
+		GetFieldInfo().TrySetValue<Utils::Color>(m_colorPicker.GetColor());
+	}
 	else
 	{
 		//LogError("REAHCED ERROR");
@@ -241,6 +260,10 @@ void ComponentFieldGUI::Update()
 			inputField.Update();
 			//LogError(std::format("Found field: {} that belongs to type: {}", ToString(inputField.GetFieldType()), m_fieldInfo.GetCurrentType().name()));
 		}
+	}
+	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
+	{
+		m_colorPicker.Update();
 	}
 	else m_checkbox.Update();
 	//TODO: internal should only be set when enter pressed on input
@@ -312,7 +335,7 @@ ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Even
 	{
 		//ScreenPosition inputFieldSizeUsed = {};
 		ScreenPosition inputFieldSpace = { static_cast<int>(renderInfo.m_RenderSize.m_X / m_inputFields.size()),
-										   std::min(heightLeft, MAX_INPUT_FIELD_SIZE.m_Y) };
+										   std::min(heightLeft, MAX_FIELD_SIZE.m_Y) };
 
 		for (auto& field : m_inputFields)
 		{
@@ -326,17 +349,30 @@ ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Even
 		}
 		currentPos.y += inputFieldSpace.m_Y;
 	}
-	else
+	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
 	{
-		//NOTE: unlike the fields which are big and need to be on new lines, we can render the name and checkbox on the same line
-		renderActions.AddListener([this, currentPos, renderInfo, heightLeft, textSize]() -> void
+		const int fieldHeight = std::min(MAX_FIELD_SIZE.m_Y, heightLeft);
+		renderActions.AddListener([this, currentPos, renderInfo, fieldHeight, textSize]() -> void
 			{
-				m_checkbox.Render(RenderInfo(ScreenPosition(currentPos.x, currentPos.y),
-					ScreenPosition{ renderInfo.m_RenderSize.m_X, heightLeft })).m_Y;
+				m_colorPicker.Render(RenderInfo(ScreenPosition(currentPos.x, currentPos.y),
+					ScreenPosition{ renderInfo.m_RenderSize.m_X, fieldHeight }));
 				//Assert(false, std::format("Rendering checkbox topL:{} currentPos:{}", renderInfo.m_TopLeftPos.ToString(), RaylibUtils::ToString(currentPos)));
 				//Assert(false, std::format("Checkbox size:{}", checkboxSize.ToString()));
 			});
-		//currentPos.y += heightLeft;
+		currentPos.y += fieldHeight;
+	}
+	else
+	{
+		//NOTE: if there is more than 1/5 of the space left, we can just draw the checkbox on the same line
+		if (renderInfo.m_RenderSize.m_X - textSize.x >= 0.2 * renderInfo.m_RenderSize.m_X) currentPos.y -= textSize.y;
+		renderActions.AddListener([this, currentPos, renderInfo, textSize]() -> void
+			{
+				m_checkbox.Render(RenderInfo(ScreenPosition(currentPos.x, currentPos.y),
+					ScreenPosition{ renderInfo.m_RenderSize.m_X, static_cast<int>(textSize.y) }));
+				//Assert(false, std::format("Rendering checkbox topL:{} currentPos:{}", renderInfo.m_TopLeftPos.ToString(), RaylibUtils::ToString(currentPos)));
+				//Assert(false, std::format("Checkbox size:{}", checkboxSize.ToString()));
+			});
+		currentPos.y += textSize.y;
 	}
 
 	return { renderInfo.m_RenderSize.m_X, static_cast<int>(currentPos.y - renderInfo.m_TopLeftPos.m_Y) };

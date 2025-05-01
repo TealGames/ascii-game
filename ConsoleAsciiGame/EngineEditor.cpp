@@ -9,23 +9,35 @@
 #include "RaylibUtils.hpp"
 #include "GUISelectorManager.hpp"
 #include "CollisionBoxSystem.hpp"
+#include "ColorPopupGUI.hpp"
 
 static constexpr KeyboardKey PAUSE_TOGGLE_KEY = KEY_P;
 static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
 
 EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
 
-EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics,
+EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
 	SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, ECS::CollisionBoxSystem& collisionSystem)
-	: m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_cameraController(camera), 
+	: 
+	m_displayingGameView(true),
+	m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_cameraController(camera),
 	m_physicsManager(physics), m_guiSelector(selector), m_collisionBoxSystem(collisionSystem),
-	m_commandConsole(m_inputManager, selector), m_debugInfo(),
-	m_entityEditor(m_inputManager, camera, selector),
+	m_commandConsole(m_inputManager, selector), m_debugInfo(), 
+	m_popupManager(),
+	m_entityEditor(m_inputManager, camera, selector, m_popupManager),
+	m_spriteEditor(selector, input, assetManager),
 	m_pauseGameToggle(selector, false, GUISettings()), m_editModeToggle(selector, false, GUISettings()),
-	m_editModeInfo()
+	m_editModeInfo(), m_assetEditorButton(selector, GUISettings(), "AssetEditors")
 {
-	m_pauseGameToggle.SetSettings(GUISettings({20, 20}, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
-		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, 0.8)));
+	const GUISettings toggleSettings = GUISettings({ 20, 20 }, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
+		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
+			TextAlignment::Center, GUIPadding(), 0.8));
+
+	const GUISettings buttonSettings = GUISettings({ 20, 20 }, EntityEditorGUI::EDITOR_PRIMARY_COLOR,
+		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+			TextAlignment::Center, GUIPadding(), 0.8));
+
+	m_pauseGameToggle.SetSettings(toggleSettings);
 	m_pauseGameToggle.SetValueSetAction([this](const bool isChecked) -> void
 		{ 
 			if (isChecked) m_timeKeeper.StopTimeScale();
@@ -34,8 +46,15 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 			//DebugProperties::SetLogMessages(!isChecked);
 		});
 
-	m_editModeToggle.SetSettings(GUISettings({ 20, 20 }, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
-		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, 0.8)));
+	m_editModeToggle.SetSettings(toggleSettings);
+
+	m_assetEditorButton.SetSettings(buttonSettings);
+	m_assetEditorButton.SetClickAction([this](const ButtonGUI& button)-> void
+		{
+			m_displayingGameView = !m_displayingGameView;
+			if (m_displayingGameView) m_assetEditorButton.SetText("AssetEditors");
+			else m_assetEditorButton.SetText("GameView");
+		});
 
 	DebugProperties::OnMessageLogged.AddListener([this](const LogType& logType, const std::string& message, 
 		const bool& logToConsole, const bool& pauseOnMessage)-> void
@@ -46,6 +65,9 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 			if (!m_pauseGameToggle.IsToggled()) 
 				m_pauseGameToggle.ToggleValue();
 		});
+
+	LogWarning(std::format("Popup addr:{}", Utils::ToStringPointerAddress(&m_popupManager)));
+	m_popupManager.AddPopup(new ColorPopupGUI(m_guiSelector, m_inputManager), { 100, 100 }, HIGHEST_PRIORITY);
 }
 
 EngineEditor::~EngineEditor()
@@ -152,12 +174,27 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 	InitConsoleCommands(playerSystem);
 }
 
-void EngineEditor::Update(const float& deltaTime, const float& timeStep, 
-	Scene& activeScene, CameraData& mainCamera)
+void EngineEditor::Update(const float deltaTime, const float timeStep)
 {
+	m_assetEditorButton.Update(deltaTime);
+	m_popupManager.UpdatePopups(deltaTime);
+
+	if (!IsInGameView())
+	{
+		m_spriteEditor.Update(deltaTime);
+		return;
+	}
+
+	Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
+	if (!Assert(this, activeScene != nullptr, std::format("Tried to update the engine editor but "
+		"there are no active scenes right now", activeScene->GetName())))
+		return;
+
+	const CameraData& mainCamera = m_cameraController.GetActiveCamera();
+
 	//Assert(false, std::format("Entity editor update"));
 	m_commandConsole.Update();
-	m_debugInfo.Update(deltaTime, timeStep, activeScene, m_inputManager, mainCamera);
+	m_debugInfo.Update(deltaTime, timeStep, *activeScene, m_inputManager, mainCamera);
 
 	m_pauseGameToggle.Update();
 	if (m_inputManager.IsKeyPressed(PAUSE_TOGGLE_KEY))
@@ -173,7 +210,7 @@ void EngineEditor::Update(const float& deltaTime, const float& timeStep,
 	WorldPosition worldClickedPos = Conversions::ScreenToWorldPosition(mainCamera, mouseClickedPos);
 	if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsPressed())
 	{
-		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(activeScene, worldClickedPos);
+		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(*activeScene, worldClickedPos);
 		if (!entitiesWithinPos.empty())
 		{
 			m_editModeInfo.m_Selected = &(entitiesWithinPos[0]->GetEntitySafeMutable());
@@ -192,32 +229,53 @@ void EngineEditor::Update(const float& deltaTime, const float& timeStep,
 	m_entityEditor.Update();
 }
 
+bool EngineEditor::IsInGameView() const
+{
+	return m_displayingGameView;
+}
+
 bool EngineEditor::TryRender()
 {
-	m_commandConsole.TryRender();
-	m_entityEditor.TryRender();
-	m_debugInfo.TryRender();
-
-	const int TOGGLE_SIZE = 20;
-	m_pauseGameToggle.Render(RenderInfo({SCREEN_WIDTH/2,0}, { TOGGLE_SIZE, TOGGLE_SIZE }));
-	m_editModeToggle.Render(RenderInfo({ SCREEN_WIDTH/2 + TOGGLE_SIZE, 0}, { TOGGLE_SIZE, TOGGLE_SIZE }));
-
-	if (m_editModeToggle.IsToggled() && m_editModeInfo.m_Selected != nullptr)
+	if (IsInGameView())
 	{
-		const float RAY_LENGTH = 25;
-		const ScreenPosition entityScreenPos = Conversions::WorldToScreenPosition(m_cameraController.GetActiveCamera(), 
-			m_editModeInfo.m_Selected->m_Transform.GetPos());
+		m_commandConsole.TryRender();
+		m_entityEditor.TryRender();
+		m_debugInfo.TryRender();
 
-		const ScreenPosition axisRayXEndPos = entityScreenPos + ScreenPosition(RAY_LENGTH, 0);
-		const ScreenPosition axisRayYEndPos = entityScreenPos + ScreenPosition(0, -RAY_LENGTH);
-		//Assert(false, std::format("Rendering rays at pos:{}", entityScreenPos.ToString()));
+		const int TOGGLE_SIZE = 20;
+		m_pauseGameToggle.Render(RenderInfo({ SCREEN_WIDTH / 2,0 }, { TOGGLE_SIZE, TOGGLE_SIZE }));
+		m_editModeToggle.Render(RenderInfo({ SCREEN_WIDTH / 2 + TOGGLE_SIZE, 0 }, { TOGGLE_SIZE, TOGGLE_SIZE }));
 
-		RaylibUtils::DrawRay2D(entityScreenPos, Vec2(RAY_LENGTH, 0), WHITE);
-		RaylibUtils::DrawRay2D(entityScreenPos, Vec2(0, -RAY_LENGTH), WHITE);
+		if (m_editModeToggle.IsToggled() && m_editModeInfo.m_Selected != nullptr)
+		{
+			const float RAY_LENGTH = 25;
+			const ScreenPosition entityScreenPos = Conversions::WorldToScreenPosition(m_cameraController.GetActiveCamera(),
+				m_editModeInfo.m_Selected->m_Transform.GetPos());
 
-		//DrawLine(entityScreenPos.m_X, entityScreenPos.m_Y, axisRayXEndPos.m_X, axisRayXEndPos.m_Y, BLUE);
-		//DrawLine(entityScreenPos.m_X, entityScreenPos.m_Y, axisRayYEndPos.m_X, axisRayYEndPos.m_Y, BLUE);
+			const ScreenPosition axisRayXEndPos = entityScreenPos + ScreenPosition(RAY_LENGTH, 0);
+			const ScreenPosition axisRayYEndPos = entityScreenPos + ScreenPosition(0, -RAY_LENGTH);
+			//Assert(false, std::format("Rendering rays at pos:{}", entityScreenPos.ToString()));
+
+			RaylibUtils::DrawRay2D(entityScreenPos, Vec2(RAY_LENGTH, 0), WHITE);
+			RaylibUtils::DrawRay2D(entityScreenPos, Vec2(0, -RAY_LENGTH), WHITE);
+
+			//DrawLine(entityScreenPos.m_X, entityScreenPos.m_Y, axisRayXEndPos.m_X, axisRayXEndPos.m_Y, BLUE);
+			//DrawLine(entityScreenPos.m_X, entityScreenPos.m_Y, axisRayYEndPos.m_X, axisRayYEndPos.m_Y, BLUE);
+		}
 	}
+	else
+	{
+		const float leftPadding = 150;
+		DrawRectangle(0, 0, leftPadding, SCREEN_HEIGHT, EntityEditorGUI::EDITOR_BACKGROUND_COLOR);
+
+		DrawRectangle(leftPadding, 0, SCREEN_WIDTH- leftPadding, SCREEN_HEIGHT, EntityEditorGUI::EDITOR_SECONDARY_BACKGROUND_COLOR);
+		m_spriteEditor.Render(RenderInfo(ScreenPosition(leftPadding, 0), ScreenPosition(SCREEN_WIDTH - leftPadding, SCREEN_HEIGHT)));
+	}
+
+	m_assetEditorButton.Render(RenderInfo({ 0, 0 }, { 120, 20 }));
+
+	//NOTE: popup manager MUST be the last editor GUI to be rendered
+	m_popupManager.RenderPopups();
 
 	return true;
 }

@@ -160,6 +160,11 @@ void InputField::SetSubmitAction(const InputFieldAction& action)
 	m_submitAction = action;
 }
 
+void InputField::SetSettings(const GUISettings& settings)
+{
+	m_settings = settings;
+}
+
 void InputField::SetAttemptedInputDelta(const std::string& input)
 {
 	std::string cleanedInput = CleanInput(input);

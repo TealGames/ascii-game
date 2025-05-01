@@ -2,6 +2,7 @@
 #include <vector>
 #include <functional>
 #include <limits>
+#include <format>
 #include <cstdint>
 
 template <typename TReturn, typename...TArgs>
@@ -36,6 +37,17 @@ private:
 		return TryGetIteratorForListener(listener) != m_listeners.end();
 	}
 
+	std::string GetSignatureStr() const
+	{
+		std::string result = std::format("{}(", typeid(TReturn).name());
+
+		std::string arg_list = "";
+		((arg_list += (arg_list.empty() ? "" : ", ") + std::string(typeid(TArgs).name())), ...);
+
+		result += arg_list + ")";
+		return result;
+	}
+
 public:
 	Event(const std::uint8_t maxListeners = std::numeric_limits<std::uint8_t>::max())
 		: m_listeners{}, m_maxListenersAllowed(maxListeners)
@@ -53,6 +65,13 @@ public:
 
 		for (ListenerType& listener : m_listeners)
 		{
+			if (!listener)
+			{
+				throw std::invalid_argument(std::format("Tried to invoke an event with signature: "
+					"'{}' but found invalid listener", GetSignatureStr()));
+				return false;
+			}
+
 			listener(args...);
 		}
 		return true;
@@ -62,12 +81,19 @@ public:
 	{
 		if (m_listeners.size() >= m_maxListenersAllowed)
 		{
-			std::string err = std::format("Tried to add listener to event but it "
-				"has already reached its max listener limit: {}", m_maxListenersAllowed);
-			LogError(this, err);
+			throw std::invalid_argument(std::format("Tried to add listener to event with signature:'{}' but it "
+				"has already reached its max listener limit: {}", GetSignatureStr(), m_maxListenersAllowed));
 			return;
 		}
-		m_listeners.push_back(listener);
+
+		if (!listener)
+		{
+			throw std::invalid_argument(std::format("Tried to add listener to event with signature: "
+				"'{}' but function was invalid", GetSignatureStr()));
+			return;
+		}
+
+		m_listeners.emplace_back(listener);
 	}
 
 	bool HasListener(const std::function<TReturn(TArgs...)> listener) const

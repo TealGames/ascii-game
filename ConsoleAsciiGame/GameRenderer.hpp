@@ -21,8 +21,6 @@ namespace Rendering
         std::uint16_t m_FontSize;
         bool m_CenterBuffer;
     };
-
-    void RenderBuffer(const FragmentedTextBuffer& buffer, const RenderInfo& renderInfo);
-    void RenderBuffer(const FragmentedTextBuffer& layerBuffers, const ColliderOutlineBuffer* outlineBuffer= nullptr,
+    void RenderBuffer(const FragmentedTextBuffer* layerBuffers, const ColliderOutlineBuffer* outlineBuffer= nullptr,
         const LineBuffer* lineBuffer = nullptr, const std::vector<IBasicRenderable*>& renderables = {});
 }

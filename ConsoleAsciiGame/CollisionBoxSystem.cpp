@@ -45,7 +45,7 @@ namespace ECS
 			minBodyDisplacement = {};
 			minBodyDisplacementVec = {};
 
-			bounds.push_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntitySafe().GetName(), boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
+			bounds.emplace_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntitySafe().GetName(), boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
 			if (RENDER_COLLIDER_OUTLINES)
 			{
 				/*if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
@@ -150,7 +150,7 @@ namespace ECS
 			{
 				if (box.DoIntersect(worldPos))
 				{
-					bodiesFound.push_back(&box);
+					bodiesFound.emplace_back(&box);
 				}
 			});
 

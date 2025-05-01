@@ -7,9 +7,11 @@
 #include "InputField.hpp"
 #include "InputManager.hpp"
 #include "ToggleGUI.hpp"
+#include "ColorPickerGUI.hpp"
 
 class GUISelectorManager;
 class ComponentGUI;
+class PopupGUIManager;
 
 class ComponentFieldGUI : IDelayedRenderable
 {
@@ -18,6 +20,7 @@ private:
 	ComponentField* m_fieldInfo;
 	std::vector<InputField> m_inputFields;
 	ToggleGUI m_checkbox;
+	ColorPickerGUI m_colorPicker;
 
 	const ComponentGUI* m_componentGUI;
 	TextGUI m_fieldNameText;
@@ -28,7 +31,7 @@ private:
 	ComponentField& GetFieldInfo();
 
 public:
-	ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, 
+	ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, PopupGUIManager& popupManager,
 		const ComponentGUI& componentGUI, ComponentField& field);
 	ComponentFieldGUI(const ComponentFieldGUI&) = default;
 	~ComponentFieldGUI();

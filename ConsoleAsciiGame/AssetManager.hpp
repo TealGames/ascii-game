@@ -187,7 +187,7 @@ namespace AssetManagement
 				{
 					try
 					{
-						assets.push_back(dynamic_cast<T*>(asset.second));
+						assets.emplace_back(dynamic_cast<T*>(asset.second));
 					}
 					catch (const std::exception& e)
 					{

@@ -144,7 +144,7 @@ VisualData::VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, cons
 		for (const auto& dataChar : row)
 		{
 			dataCharSize= dataChar.GetWorldSize(fontSettings);
-			LogError(std::format("Found char:{} size:{}", Utils::ToString(dataChar.m_Char), dataCharSize.ToString()));
+			//LogError(std::format("Found char:{} size:{}", Utils::ToString(dataChar.m_Char), dataCharSize.ToString()));
 			rowWidthSize += dataCharSize.m_X;
 			if (dataCharSize.m_Y > rowHeightSizeMax)
 				rowHeightSizeMax = dataCharSize.m_Y;
@@ -156,7 +156,7 @@ VisualData::VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, cons
 			unpaddedSize.m_X = rowWidthSize;
 		unpaddedSize.m_Y += rowHeightSizeMax;
 
-		LogError(std::format("Row size:{} unpadded row:{}", std::to_string(rowWidthSize), unpaddedSize.ToString()));
+		//LogError(std::format("Row size:{} unpadded row:{}", std::to_string(rowWidthSize), unpaddedSize.ToString()));
 	}
 
 	NormalizedPosition currPosNormalized = NormalizedPosition::TOP_LEFT;
@@ -183,8 +183,8 @@ VisualData::VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, cons
 				Vec2 pivotDiff = (currPosNormalized.GetPos()- relativePivotPos.GetPos()) * fullSize;
 
 				m_buffer.push_back(TextBufferCharPosition(pivotDiff, rawBuffer[r][c], fontSettings));
-				LogError(std::format("Adding visual data char:{} current norm:{} pivot:{} pivots diff:{} size diff:{} ", m_buffer.back().ToString(), 
-					currPosNormalized.GetPos().ToString(), relativePivotPos.GetPos().ToString(), (relativePivotPos.GetPos() - currPosNormalized.GetPos()).ToString(), pivotDiff.ToString()));
+				/*LogError(std::format("Adding visual data char:{} current norm:{} pivot:{} pivots diff:{} size diff:{} ", m_buffer.back().ToString(), 
+					currPosNormalized.GetPos().ToString(), relativePivotPos.GetPos().ToString(), (relativePivotPos.GetPos() - currPosNormalized.GetPos()).ToString(), pivotDiff.ToString()));*/
 			}
 
 			charSize = rawBuffer[r][c].GetWorldSize(fontSettings);
@@ -460,7 +460,7 @@ Vec2 VisualData::GetWorldSize() const
 		if (charMax.m_X > maxPos.m_X) maxPos.m_X = charMax.m_X;
 		if (charMax.m_Y > maxPos.m_Y) maxPos.m_Y = charMax.m_Y;
 	}
-	LogError(std::format("When calcualting size min:{} max:{}", minPos.ToString(), maxPos.ToString()));
+	//LogError(std::format("When calcualting size min:{} max:{}", minPos.ToString(), maxPos.ToString()));
 	return {std::abs(maxPos.m_X- minPos.m_X), std::abs(maxPos.m_Y- minPos.m_Y)};
 }
 

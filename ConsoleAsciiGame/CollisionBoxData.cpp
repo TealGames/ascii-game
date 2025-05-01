@@ -101,7 +101,7 @@ std::vector<const CollisionBoxData*> CollisionBoxData::GetCollisionEnterBoxes() 
 	for (const auto& box : m_collidingBoxes)
 	{
 		if (box.m_Flag == CollisionFlag::AddedThisFrame && box.m_Box != nullptr)
-			resultBoxes.push_back(box.m_Box);
+			resultBoxes.emplace_back(box.m_Box);
 	}
 	return resultBoxes;
 }
@@ -113,7 +113,7 @@ std::vector<const CollisionBoxData*> CollisionBoxData::GetCollisionExitBoxes() c
 	for (const auto& box : m_collidingBoxes)
 	{
 		if (box.m_Flag == CollisionFlag::RemovedThisFrame && box.m_Box!=nullptr)
-			resultBoxes.push_back(box.m_Box);
+			resultBoxes.emplace_back(box.m_Box);
 	}
 	return resultBoxes;
 }
@@ -124,7 +124,7 @@ std::vector<const CollisionBoxData*> CollisionBoxData::GetAllCollisionBoxes() co
 	std::vector<const CollisionBoxData*> resultBoxes = {};
 	for (const auto& box : m_collidingBoxes)
 	{
-		if (box.m_Box!=nullptr) resultBoxes.push_back(box.m_Box);
+		if (box.m_Box!=nullptr) resultBoxes.emplace_back(box.m_Box);
 	}
 	//if (m_collidingBoxes[0].m_Flag == CollisionFlag::RemovedThisFrame) Assert(false, std::format("POOP FART"));
 	LogError(std::format("Collisions found:{} first:{}", std::to_string(resultBoxes.size()), ::ToString(m_collidingBoxes[0].m_Flag)));

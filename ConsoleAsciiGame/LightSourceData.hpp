@@ -5,6 +5,7 @@
 #include "RenderLayer.hpp"
 #include "Point3D.hpp"
 #include "ComponentData.hpp"
+#include "Color.hpp"
 
 struct LightMapChar
 {
@@ -24,6 +25,8 @@ struct LightSourceData : public ComponentData
 	//The layers which the light will apply its effect to
 	RenderLayerType m_AffectedLayers;
 	ColorGradient m_GradientFilter;
+	Utils::Color test;
+	bool shit;
 
 	//The strength of the light initially
 	std::uint8_t m_Intensity;

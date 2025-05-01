@@ -86,6 +86,8 @@ void SceneAsset::UpdateAssetFromFile()
 	ECS::Entity* currentEntity = nullptr;
 	ComponentData* componentCreated = nullptr;
 
+	//Note: we want this to be a deque since it has queue-like behavior, but we still need indexing
+	//so it must be double ended, and cannot be a hashmap for this reason
 	std::deque<std::tuple<std::function<void()>, ComponentData*>> delayedSiblingDependencies;
 	Event<void> delayedEntityDependencies;
 
@@ -371,8 +373,8 @@ bool SceneAsset::TryLoadLevelBackground()
 	backgroundEntity.m_IsSerializable = false;
 	EntityRendererData& backgroundRenderer = backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
 
-	LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().ToString()));
-	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));
+	/*LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().ToString()));
+	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));*/
 
 	CollisionBoxData& collisionBox = backgroundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(backgroundEntity.m_Transform, backgroundVisual.GetWorldSize(), { 0,0 }));
 	PhysicsBodyData& physicsBody = backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(collisionBox, 10));

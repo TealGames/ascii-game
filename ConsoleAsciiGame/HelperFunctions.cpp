@@ -275,9 +275,13 @@ namespace Utils
 		return std::accumulate(vec.begin(), vec.end(), std::string());
 	}
 
-	std::string ToString(const char& c)
+	std::string ToString(const char c)
 	{
 		return std::string(1, c);
+	}
+	std::string ToString(const std::uint8_t u8)
+	{
+		return std::to_string(static_cast<int>(u8));
 	}
 
 	std::string ToStringDouble(const double& d, const std::streamsize& precision, const bool& decimalPlacePrecision)

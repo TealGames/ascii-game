@@ -18,7 +18,7 @@ constexpr static float TITLE_FONT_SPACING = 2;
 //If true, will divide fields based how many we have to render, otherwise will try give them as much space as possible
 static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
 
-ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, const EntityGUI& entityGUI, ComponentData& component)
+ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component)
 	: m_inputManager(&inputManager), m_component(&component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
 	m_dropdownCheckbox(selector, false, GUISettings({}, EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUISettings())), 
 	m_componentNameText(GetComponentName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, 
@@ -36,9 +36,12 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorM
 			GetComponentName(), GetEntityGUISafe().GetEntity().m_Name, 
 			Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(component->GetFields())));*/
 
-	for (auto& field : component.GetFieldsMutable())
+	auto& fields = component.GetFieldsMutable();
+	m_fieldGUIs.reserve(fields.size());
+	for (auto& field : fields)
 	{
-		m_fieldGUIs.push_back(ComponentFieldGUI(GetInputManager(), selector, *this, field));
+		m_fieldGUIs.emplace_back(GetInputManager(), selector, popupManager, *this, field);
+		LogWarning(std::format("created field gui from compoennt:{}", Utils::ToStringPointerAddress(&m_fieldGUIs.back())));
 	}
 
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(),
@@ -98,7 +101,7 @@ std::vector<std::string> ComponentGUI::GetFieldNames() const
 	std::vector<std::string> fieldNames = {};
 	for (const auto& field : m_fieldGUIs)
 	{
-		fieldNames.push_back(field.GetFieldInfo().m_FieldName);
+		fieldNames.emplace_back(field.GetFieldInfo().m_FieldName);
 	}
 	return fieldNames;
 }
@@ -144,7 +147,7 @@ ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 	{
 		//We subtract from current pos since as we go down y value increases
 		if (!DIVIDE_FIELDS_BY_AMOUNT) fieldHeight = renderInfo.m_RenderSize.m_Y - (currentPos.y- renderInfo.m_TopLeftPos.m_Y);
-		renderActions.push_back({});
+		renderActions.emplace_back();
 		fieldSize = fieldGUI.SetupRender(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y) },
 												{ renderInfo.m_RenderSize.m_X, fieldHeight }), renderActions.back());
 		/*if (m_fieldGUIs.size() == 3)

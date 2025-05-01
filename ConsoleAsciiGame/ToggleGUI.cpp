@@ -6,9 +6,9 @@
 
 static constexpr int MAX_HEIGHT = 15;
 
-ToggleGUI::ToggleGUI() : 
-	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
-	m_valueSetAction(nullptr) {}
+//ToggleGUI::ToggleGUI() : 
+//	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
+//	m_valueSetAction(nullptr) {}
 
 ToggleGUI::ToggleGUI(GUISelectorManager& manager, const bool& startValue, const GUISettings& settings, 
 	const ToggleAction& valueSetAction)

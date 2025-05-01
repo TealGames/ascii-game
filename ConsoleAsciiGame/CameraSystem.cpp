@@ -89,6 +89,10 @@ namespace ECS
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
         //Log(std::format("Total layers: {}", std::to_string(layers.size())));
         ScreenPosition newScreenPos = {};
+
+        //TODO: this is inefficient because we render each pos within viewport, but even if some objects are within the same pos
+        //the one behind it is still rendered. NOTE: it is difficult to find a solution when we might have small overlaps and we 
+        //wanbt overlaps to be visible to ensure realism/not akward visuals + makes it difficult when using raylib
         for (const auto& layer : layers)
         {
             //Log(std::format("LAYER has buffer: {}", layer->ToString()));

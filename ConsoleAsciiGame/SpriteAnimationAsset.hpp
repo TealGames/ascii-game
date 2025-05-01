@@ -1,7 +1,5 @@
 #pragma once
 #include "Asset.hpp"
-#include "IJsonSerializable.hpp"
-#include "IDependable.hpp"
 #include "SpriteAnimation.hpp"
 
 class SpriteAnimationAsset : public Asset

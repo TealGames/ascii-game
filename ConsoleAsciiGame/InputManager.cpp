@@ -195,7 +195,7 @@ namespace Input
 				}
 				m_charKeysPressed += keyPressed;
 			}
-			m_capturedKeys.push_back(key);
+			m_capturedKeys.emplace_back(key);
 
 			key = ::GetKeyPressed();
 		}
@@ -223,7 +223,7 @@ namespace Input
 		for (int keyCode = static_cast<int>(KEY_BACK); 
 			keyCode <= static_cast<int>(KEY_KB_MENU); keyCode++)
 		{
-			keys.push_back(static_cast<KeyboardKey>(keyCode));
+			keys.emplace_back(static_cast<KeyboardKey>(keyCode));
 		}
 		return keys;
 	}
@@ -233,7 +233,7 @@ namespace Input
 		for (int keyCode = static_cast<int>(MOUSE_BUTTON_LEFT); 
 			keyCode <= static_cast<int>(MOUSE_BUTTON_BACK); keyCode++)
 		{
-			keys.push_back(static_cast<MouseButton>(keyCode));
+			keys.emplace_back(static_cast<MouseButton>(keyCode));
 		}
 		return keys;
 	}
@@ -243,7 +243,7 @@ namespace Input
 		for (int keyCode = static_cast<int>(GAMEPAD_BUTTON_LEFT_FACE_UP); 
 			keyCode <= static_cast<int>(GAMEPAD_BUTTON_RIGHT_THUMB); keyCode++)
 		{
-			keys.push_back(static_cast<GamepadButton>(keyCode));
+			keys.emplace_back(static_cast<GamepadButton>(keyCode));
 		}
 		return keys;
 	}
@@ -292,17 +292,17 @@ namespace Input
 		for (const auto& keyboardKey : m_keyboardStates)
 		{
 			if (keyboardKey.second.GetState().IsState(state)) 
-				keys.push_back(&keyboardKey.second);
+				keys.emplace_back(&keyboardKey.second);
 		}
 		for (const auto& mouseButton : m_mouseStates)
 		{
 			if (mouseButton.second.GetState().IsState(state))
-				keys.push_back(&mouseButton.second);
+				keys.emplace_back(&mouseButton.second);
 		}
 		for (const auto& gamepadButton : m_gamepadStates)
 		{
 			if (gamepadButton.second.GetState().IsState(state))
-				keys.push_back(&gamepadButton.second);
+				keys.emplace_back(&gamepadButton.second);
 		}
 
 		return keys;
@@ -313,17 +313,17 @@ namespace Input
 		for (const auto& keyboardKey : m_keyboardStates)
 		{
 			if (keyboardKey.second.GetState().IsState(state))
-				keys.push_back(keyboardKey.second.ToString(false, false));
+				keys.emplace_back(keyboardKey.second.ToString(false, false));
 		}
 		for (const auto& mouseButton : m_mouseStates)
 		{
 			if (mouseButton.second.GetState().IsState(state))
-				keys.push_back(mouseButton.second.ToString(false, false));
+				keys.emplace_back(mouseButton.second.ToString(false, false));
 		}
 		for (const auto& gamepadButton : m_gamepadStates)
 		{
 			if (gamepadButton.second.GetState().IsState(state))
-				keys.push_back(gamepadButton.second.ToString(false, false));
+				keys.emplace_back(gamepadButton.second.ToString(false, false));
 		}
 
 		return keys;

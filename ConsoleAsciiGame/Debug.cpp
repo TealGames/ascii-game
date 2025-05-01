@@ -29,9 +29,9 @@ std::string LogTypeToString(const LogType& logType)
 	std::vector<std::string> elementBits = {};
 	if (logType == LogType::None) return "[]";
 
-	if (Utils::HasFlagAll(logType, LogType::Log)) elementBits.push_back("Log");
-	if (Utils::HasFlagAll(logType, LogType::Warning)) elementBits.push_back("Warning");
-	if (Utils::HasFlagAll(logType, LogType::Error)) elementBits.push_back("Error");
+	if (Utils::HasFlagAll(logType, LogType::Log)) elementBits.emplace_back("Log");
+	if (Utils::HasFlagAll(logType, LogType::Warning)) elementBits.emplace_back("Warning");
+	if (Utils::HasFlagAll(logType, LogType::Error)) elementBits.emplace_back("Error");
 
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(elementBits);
 }

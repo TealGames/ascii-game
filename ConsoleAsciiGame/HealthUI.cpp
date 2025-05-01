@@ -35,7 +35,7 @@ namespace Game
 
 				healthUI.m_Active = i < state.GetHealth();
 				m_health.push_back(&healthUI);
-				LogError(std::format("Craeted health:{}", healthPosRelative.GetPos().ToString()));
+				//LogError(std::format("Craeted health:{}", healthPosRelative.GetPos().ToString()));
 			}
 			//Assert(false, std::format("Created Health UI max:{} globals:{}", std::to_string(GameState::MAX_HEALTH), globalEntities.ToStringEntityData()));
 

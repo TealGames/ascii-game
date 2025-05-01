@@ -1,34 +1,25 @@
 #pragma once
 #include "CommandConsole.hpp"
 #include "EntityEditorGUI.hpp"
+#include "SpriteEditorGUI.hpp"
+#include "PopupGUIManager.hpp"
 #include "IBasicRenderable.hpp"
 #include "DebugInfo.hpp"
 #include "ToggleGUI.hpp"
+#include "ButtonGUI.hpp"
 #include "raylib.h"
 
-namespace Core
-{
-	class Engine;
-}
-namespace Input
-{
-	class InputManager;
-}
-namespace SceneManagement
-{
-	class SceneManager;
-}
-namespace Physics
-{
-	class PhysicsManager;
-}
+namespace Core { class Engine; }
+namespace Input { class InputManager; }
+namespace SceneManagement { class SceneManager; }
+namespace Physics { class PhysicsManager; }
+namespace AssetManagement { class AssetManager; }
 namespace ECS
 {
 	class PlayerSystem;
 	class CollisionBoxSystem;
 	class Entity;
 }
-class GUISelectorManager;
 class Scene;
 class CameraData;
 class TimeKeeper;
@@ -50,28 +41,35 @@ private:
 	SceneManagement::SceneManager& m_sceneManager;
 	Physics::PhysicsManager& m_physicsManager;
 	const CameraController& m_cameraController;
-	const GUISelectorManager& m_guiSelector;
+	GUISelectorManager& m_guiSelector;
 	ECS::CollisionBoxSystem& m_collisionBoxSystem;
 
 	CommandConsole m_commandConsole;
-	EntityEditorGUI m_entityEditor;
 	DebugInfo m_debugInfo;
+	PopupGUIManager m_popupManager;
+
+	EntityEditorGUI m_entityEditor;
+	SpriteEditorGUI m_spriteEditor;
 
 	ToggleGUI m_pauseGameToggle;
 	ToggleGUI m_editModeToggle;
+	ButtonGUI m_assetEditorButton;
 	EditModeInfo m_editModeInfo;
+
+	bool m_displayingGameView;
 
 private:
 	void InitConsoleCommands(ECS::PlayerSystem& playerSystem);
 
 public:
-	EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics,
+	EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
 		SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, ECS::CollisionBoxSystem& collisionSystem);
 	~EngineEditor();
 
 	void Init(ECS::PlayerSystem& playerSystem);
-	void Update(const float& deltaTime, const float& timeStep, 
-		Scene& activeScene, CameraData& mainCamera);
+	void Update(const float deltaTime, const float timeStep);
+
+	bool IsInGameView() const;
 
 	bool TryRender() override;
 };

@@ -25,7 +25,7 @@ std::string GlobalEntityManager::ToStringEntityData() const
 	std::vector<std::string> entityStr = {};
 	for (const auto& entity : m_globalEntities)
 	{
-		entityStr.push_back(entity.ToString());
+		entityStr.emplace_back(entity.ToString());
 	}
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(entityStr);
 }

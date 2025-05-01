@@ -85,7 +85,7 @@ std::string AnimatorData::ToString() const
 				using PropertyConvertedType = std::remove_const_t<std::remove_reference_t<decltype(value)>>;
 				using ExtractedType = AnimationPropertyType<PropertyConvertedType>::Type;
 
-				propertyStrs.push_back(std::get<PropertyConvertedType>(property).ToString());
+				propertyStrs.emplace_back(std::get<PropertyConvertedType>(property).ToString());
 
 			}, property);
 		

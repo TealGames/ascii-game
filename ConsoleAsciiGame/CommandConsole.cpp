@@ -70,7 +70,7 @@ void CommandConsole::AddPrompt(ICommandPrompt* prompt)
 	auto it = TryGetIteratorForPromptName(formattedName);
 	if (it == m_prompts.end()) it = m_prompts.emplace(formattedName, std::vector<ICommandPrompt*>{}).first;
 
-	it->second.push_back(prompt);
+	it->second.emplace_back(prompt);
 }
 
 std::string CommandConsole::GetDocumentationForPrompt(PromptCollection::iterator& promptIt, const size_t& index) const
@@ -157,7 +157,7 @@ std::vector<std::string> CommandConsole::GetPromptDocumentation(const std::strin
 
 	for (const auto& promptOverload : it->second)
 	{
-		docs.push_back(promptOverload->GetDocumentation());
+		docs.emplace_back(promptOverload->GetDocumentation());
 	}
 
 	return docs;
@@ -170,7 +170,7 @@ std::vector<std::string> CommandConsole::GetPromptDocumentationAll()
 	{
 		for (const auto& promptOverload : prompt.second)
 		{
-			docs.push_back(promptOverload->GetDocumentation());
+			docs.emplace_back(promptOverload->GetDocumentation());
 		}
 	}
 	return docs;

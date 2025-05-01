@@ -53,7 +53,7 @@ Fig::Fig(const std::string& contents) : Fig()
 	{
 		if (c == '\n')
 		{
-			fileLines.push_back("");
+			fileLines.emplace_back("");
 			lineIndex++;
 			continue;
 		}
@@ -69,7 +69,7 @@ Fig::Fig(const std::filesystem::path& path, const FigFlag flag) : Fig()
 
 	while (std::getline(fstream, currentLine))
 	{
-		fileLines.push_back(currentLine);
+		fileLines.emplace_back(currentLine);
 	}
 	CreateContents(fileLines, flag);
 }
@@ -88,7 +88,7 @@ void Fig::ParseValue(std::vector<std::string>& buffer, const std::string& line)
 
 	//Be default we always want to push a new value since if it is empty -> we want new val
 	//if we need a new line -> we want to push new line
-	buffer.push_back("");
+	buffer.emplace_back("");
 	bool foundSeparator = false;
 
 	//Note: this is not too much worse than string.find since it is a naive search
@@ -97,7 +97,7 @@ void Fig::ParseValue(std::vector<std::string>& buffer, const std::string& line)
 		if (c == VALUE_SEPARATOR_CHAR)
 		{
 			foundSeparator = true;
-			buffer.push_back("");
+			buffer.emplace_back("");
 			continue;
 		}
 		if (foundSeparator && c == ' ')
@@ -366,7 +366,7 @@ void Fig::GetAllValues(std::vector<const FigValue*>& input) const
 {
 	for (const auto& property : m_properties)
 	{
-		input.push_back(property.second);
+		input.emplace_back(property.second);
 	}
 
 	if (m_markedProperties.empty())

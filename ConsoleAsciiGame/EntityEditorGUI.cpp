@@ -7,6 +7,7 @@
 
 const Color EntityEditorGUI::EDITOR_TEXT_COLOR = WHITE;
 const Color EntityEditorGUI::EDITOR_BACKGROUND_COLOR = { 30, 30, 30, 255 };
+const Color EntityEditorGUI::EDITOR_SECONDARY_BACKGROUND_COLOR = { 45, 45, 45, 255 };
 const Color EntityEditorGUI::EDITOR_SECONDARY_COLOR = GRAY;
 const Color EntityEditorGUI::EDITOR_PRIMARY_COLOR = DARKGRAY;
 
@@ -14,9 +15,9 @@ const Vec2 EntityEditorGUI::EDITOR_CHAR_SPACING = { 3, 2 };
 
 static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = {0.8, 1};
 
-EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input, 
-	const CameraController& cameraController, GUISelectorManager& selector)
-	: m_inputManager(&input), m_selectorManager(&selector),
+EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input,
+	const CameraController& cameraController, GUISelectorManager& selector, PopupGUIManager& popupManager)
+	: m_inputManager(&input), m_selectorManager(&selector), m_popupManager(&popupManager),
 	m_defaultRenderInfo(), 
 	m_selectedEntity(nullptr)
 	//m_entityGUIs(), m_selectedEntity(m_entityGUIs.end())
@@ -40,7 +41,7 @@ const Input::InputManager& EntityEditorGUI::GetInputManagerSafe() const
 }
 GUISelectorManager& EntityEditorGUI::GetGUISelector()
 {
-	if (!Assert(this, m_inputManager != nullptr, "Tried to get gui selector manager but is NULL"))
+	if (!Assert(this, m_selectorManager != nullptr, "Tried to get gui selector manager but is NULL"))
 		throw std::invalid_argument("Invalid gui selector manager state");
 
 	return *m_selectorManager;
@@ -52,7 +53,7 @@ void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 		return;
 
 	delete m_selectedEntity;
-	m_selectedEntity = new EntityGUI(GetInputManagerSafe(), GetGUISelector(), entity);
+	m_selectedEntity = new EntityGUI(GetInputManagerSafe(), GetGUISelector(), *m_popupManager, entity);
 	m_selectedEntity->SetComponentsToStored();
 
 	/*EntityGUICollection::iterator it = m_entityGUIs.find(entity.GetName());

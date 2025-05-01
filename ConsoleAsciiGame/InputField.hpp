@@ -125,6 +125,7 @@ public:
 	const InputFieldType& GetFieldType() const;
 
 	void SetSubmitAction(const InputFieldAction& action);
+	void SetSettings(const GUISettings& settings);
 
 	void OverrideInput(const std::string& str);
 	const std::string& GetInput() const;
