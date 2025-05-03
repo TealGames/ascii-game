@@ -36,6 +36,7 @@ public:
 	ComponentFieldGUI(const ComponentFieldGUI&) = default;
 	~ComponentFieldGUI();
 
+	void Init();
 	void Update();
 	void SetFieldToInternal();
 	void SetInternalWithInput();

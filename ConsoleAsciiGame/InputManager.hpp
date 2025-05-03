@@ -84,7 +84,12 @@ namespace Input
 		std::vector<std::string> GetAllKeysWithStateAsString(const KeyState& state) const;
 
 		std::string GetCharsPressedSinceLastFrame() const;
-		ScreenPosition GetMousePosition() const;
+		/// <summary>
+		/// Gets the current mouses's position. Note: pos is screen coordinate
+		/// but uses floats for more precision
+		/// </summary>
+		/// <returns></returns>
+		Vec2 GetMousePosition() const;
 
 		const InputKey* GetInputKey(const KeyboardKey& key) const;
 		const InputKey* GetInputKey(const MouseButton& button) const;

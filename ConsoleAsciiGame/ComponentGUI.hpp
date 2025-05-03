@@ -32,6 +32,7 @@ public:
 		PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component);
 	~ComponentGUI();
 	
+	void Init();
 	void Update();
 	void SetFieldsToStored();
 	ScreenPosition Render(const RenderInfo& renderInfo) override;

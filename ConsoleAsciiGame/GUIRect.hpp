@@ -1,6 +1,7 @@
 #pragma once
 #include "Vec2Int.hpp"
 #include "ScreenPosition.hpp"
+#include "WorldPosition.hpp"
 #include "NormalizedPosition.hpp"
 
 class GUIRect
@@ -16,6 +17,7 @@ public:
 
 	ScreenPosition GetPosWithinRect(const NormalizedPosition& normalizedPos) const;
 	bool ContainsPos(const ScreenPosition& pos) const;
+	bool ContainsPos(const WorldPosition& pos) const;
 
 	const ScreenPosition& GetTopleftPos() const;
 	const ScreenPosition& GetBottomRightPos() const;

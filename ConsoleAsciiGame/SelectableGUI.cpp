@@ -3,27 +3,25 @@
 #include "GUISelectorManager.hpp"
 #include "Debug.hpp"
 
-SelectableGUI::SelectableGUI()
-	: SelectableGUI(nullptr) {}
-
-SelectableGUI::SelectableGUI(GUISelectorManager* selectorManager) : 
-	m_selectorManager(selectorManager), m_lastFrameRect(), 
+SelectableGUI::SelectableGUI() : 
+	//m_selectorManager(selectorManager), 
+	m_lastFrameRect(), 
 	m_isSelected(false), m_addedToManager(false),
 	m_OnSelect(), m_OnDeselect(), m_dragTime(0)
 {
 	
 }
 
-bool SelectableGUI::IsInit() const { return m_addedToManager; }
-void SelectableGUI::Init()
+bool SelectableGUI::HasInit() const { return m_addedToManager; }
+void SelectableGUI::Init(GUISelectorManager& selector)
 {
-	if (IsInit()) return;
+	if (HasInit()) return;
 
-	if (!Assert(this, m_selectorManager != nullptr,
-		std::format("Tried to init selectable GUI but selector manager is NULL")))
-		return;
+	//if (!Assert(this, m_selectorManager != nullptr,
+	//	std::format("Tried to init selectable GUI but selector manager is NULL")))
+	//	return;
 
-	GetSelectorManager().AddSelectable(this);
+	selector.AddSelectable(this);
 	m_addedToManager = true;
 }
 
@@ -34,26 +32,33 @@ void SelectableGUI::SetLastFramneRect(const GUIRect& newRect) { m_lastFrameRect 
 
 bool SelectableGUI::IsSelected() const { return m_isSelected; }
 bool SelectableGUI::IsDraggedForTime(const float time) const { return time <= m_dragTime; }
-void SelectableGUI::SetDragTime(const float time) { m_dragTime = time; }
+void SelectableGUI::UpdateDrag(const Vec2 mouseDelta, const float time) 
+{ 
+	m_dragTime = time;  
+	LogError(std::format("drag updated mouse mag:{} time:{}", std::to_string( mouseDelta.GetMagnitude()), std::to_string(time)));
+	if (mouseDelta.GetMagnitude() != 0)
+	{
+		m_OnDragDelta.Invoke(this, m_dragTime, mouseDelta);
+	}
+}
 void SelectableGUI::ClearDragTime() { m_dragTime = 0; }
 
-GUISelectorManager& SelectableGUI::GetSelectorManager()
-{
-	if (!Assert(this, m_selectorManager != nullptr, std::format("Tried to get selector manager" 
-		" from selectable gui but the manager is NULL")))
-	{
-		throw std::invalid_argument("Invalid selector manager state");
-	}
-
-	return *m_selectorManager;
-}
+//GUISelectorManager& SelectableGUI::GetSelectorManager()
+//{
+//	if (!Assert(this, m_selectorManager != nullptr, std::format("Tried to get selector manager" 
+//		" from selectable gui but the manager is NULL")))
+//	{
+//		throw std::invalid_argument("Invalid selector manager state");
+//	}
+//
+//	return *m_selectorManager;
+//}
 
 void SelectableGUI::Select()
 {
 	m_isSelected = true;
 	m_OnSelect.Invoke(this);
 }
-
 
 void SelectableGUI::Deselect()
 {

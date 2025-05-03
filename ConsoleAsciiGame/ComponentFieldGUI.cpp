@@ -106,7 +106,7 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, GU
 	}
 	else m_checkbox.SetValueSetAction([this](bool isChecked)-> void
 		{
-			LogError("Fart and shit");
+			//LogError("Fart and shit");
 			SetInternalWithInput();
 		});
 }

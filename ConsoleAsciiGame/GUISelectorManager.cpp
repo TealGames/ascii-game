@@ -10,7 +10,7 @@ static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
 
 GUISelectorManager::GUISelectorManager(const Input::InputManager& input) 
 	: m_inputManager(input), m_selectables(), m_currentSelected(nullptr), m_currentDragged(nullptr),
-	m_selectedThisFrame(false)
+	m_selectedThisFrame(false), m_lastFrameMousePos(m_inputManager.GetMousePosition())
 {
 
 }
@@ -53,41 +53,47 @@ void GUISelectorManager::Update()
 	if (m_currentSelected != nullptr && m_selectedThisFrame) m_selectedThisFrame = false;
 	const Input::KeyState selectKeyState = m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetState();
 
+	const Vec2 mousePos = m_inputManager.GetMousePosition();
+	const Vec2 mouseDelta = mousePos - m_lastFrameMousePos;
+	m_lastFrameMousePos = mousePos;
+
 	//Note: since the initial click on a draggable selectable is the only thing that matters, we do not care if it moves outside the area
 	//so we can easily just update the current one that is dragged
-	if (selectKeyState == Input::KeyState::Down && m_currentDragged!=nullptr) 
-		m_currentDragged->SetDragTime(m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetCurrentDownTime());
-
-
+	if (selectKeyState == Input::KeyState::Down && m_currentDragged != nullptr)
+	{
+		LogError(std::format("Updating drag for:{} all selectable:{}", typeid(*m_currentDragged).name(), ToStringSelectableTypes()));
+		m_currentDragged->UpdateDrag(mouseDelta, m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetCurrentDownTime());
+	}
+		
 	//NOTE: if the key is not released or pressed, it means no select or drag changes have occured so we do not need to look
 	if (m_selectables.empty() || (selectKeyState!= Input::KeyState::Released && selectKeyState!= Input::KeyState::Pressed)) return;
 
 	/*Assert(false, std::format("CLICKED POS:{} FOUNDselectable rect: {} size: {} selected: {}",
 			m_lastFrameClickedPosition.value().ToString(), allRect, std::to_string(m_selectables.size()),
 			HasSelecatbleSelected() ? m_currentSelected->GetLastFrameRect().ToString() : "NONE"));*/
-	const ScreenPosition mousePos= m_inputManager.GetMousePosition();
+	
 	for (auto& selectable : m_selectables)
 	{
 		//std::to_string(selectable->GetLastFrameRect().ContainsPos(mousePos))
-		if (selectable == nullptr) continue;
+		if (selectable.second == nullptr) continue;
 		/*allRect += std::format("Mouse pos: {} selectable null: {} rect: {}", m_lastFrameClickedPosition.value().ToString(),
 			std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL");*/
 
 		
 		//NOTE: since we can only click or release on one selectable, we can then break when we find it
-		if (selectable->GetLastFrameRect().ContainsPos(mousePos))
+		if (selectable.second->GetLastFrameRect().ContainsPos(mousePos))
 		{
 			if (selectKeyState == Input::KeyState::Pressed)
 			{
 				//Note: we do not need to cancel the selectable because we can have one selected
 				//while we drag on another
-				m_currentDragged = selectable;
+				m_currentDragged = selectable.second;
 				break;
 			}
 			else if (selectKeyState == Input::KeyState::Released)
 			{
-				ClickSelectable(selectable);
-				SelectNewSelectable(selectable);
+				ClickSelectable(selectable.second);
+				SelectNewSelectable(selectable.second);
 				m_selectedThisFrame = true;
 				break;
 			}
@@ -108,11 +114,11 @@ void GUISelectorManager::Update()
 		m_currentSelected!=nullptr? m_currentSelected->GetLastFrameRect().ToString() : "NULL", allRect));*/
 }
 
-void GUISelectorManager::AddSelectable(SelectableGUI* selectable)
+void GUISelectorManager::AddSelectable(SelectableGUI* selectable, const GUIEventPriority eventPriority)
 {
 	if (selectable == nullptr) return;
 
-	m_selectables.push_back(selectable);
+	m_selectables.emplace(eventPriority, selectable);
 
 	//Since we need callback from select and deselect (since it may be called outside of this class)
 	//in order to control selection flow, but must prevent recursive calls
@@ -147,3 +153,13 @@ void GUISelectorManager::AddSelectable(SelectableGUI* selectable)
 bool GUISelectorManager::HasSelecatbleSelected() const { return m_currentSelected != nullptr; }
 const SelectableGUI* GUISelectorManager::TryGetSelectableSelected() const { return m_currentSelected; }
 bool GUISelectorManager::SelectedSelectableThisFrame() const { return m_selectedThisFrame; }
+
+std::string GUISelectorManager::ToStringSelectableTypes() const
+{
+	std::vector<std::string> typeStr = {};
+	for (const auto& selectable : m_selectables)
+	{
+		typeStr.push_back(typeid(selectable.second).name());
+	}
+	return Utils::ToStringIterable<std::vector<std::string>, std::string>(typeStr);
+}

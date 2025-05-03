@@ -334,10 +334,10 @@ namespace Input
 		return m_charKeysPressed;
 	}
 
-	ScreenPosition InputManager::GetMousePosition() const
+	Vec2 InputManager::GetMousePosition() const
 	{
 		Vector2 mousePos= ::GetMousePosition();
-		return {static_cast<int>(mousePos.x), static_cast<int>(mousePos.y)};
+		return {mousePos.x, mousePos.y};
 	}
 
 	const InputKey* InputManager::GetInputKey(const KeyboardKey& key) const

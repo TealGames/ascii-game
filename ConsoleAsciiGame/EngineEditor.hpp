@@ -60,6 +60,7 @@ private:
 
 private:
 	void InitConsoleCommands(ECS::PlayerSystem& playerSystem);
+	void SelectEntityEditor(ECS::Entity& entity);
 
 public:
 	EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,

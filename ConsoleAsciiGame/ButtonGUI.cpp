@@ -52,7 +52,7 @@ bool ButtonGUI::IsInCooldown() const
 
 void ButtonGUI::Update(const float deltaTime)
 {
-	if (!IsInit()) Init();
+	//if (!HasInit()) Init();
 
 	if (IsInCooldown())
 	{

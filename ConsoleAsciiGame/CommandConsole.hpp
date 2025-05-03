@@ -58,6 +58,7 @@ private:
 public:
 	CommandConsole(const Input::InputManager& input, GUISelectorManager& selector);
 
+	void Init();
 	//void SetActiveConsole(CommandConsole& console);
 
 	void AddPrompt(ICommandPrompt* prompt);

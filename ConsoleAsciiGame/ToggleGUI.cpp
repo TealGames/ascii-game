@@ -57,7 +57,7 @@ void ToggleGUI::SetValueSetAction(const ToggleAction& action)
 
 void ToggleGUI::Update()
 {
-	if (!IsInit()) Init();
+	//if (!IsInit()) Init();
 }
 
 ScreenPosition ToggleGUI::Render(const RenderInfo& renderInfo)

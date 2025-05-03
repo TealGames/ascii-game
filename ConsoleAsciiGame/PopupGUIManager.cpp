@@ -42,18 +42,31 @@ bool PopupGUIManager::TryClosePopup(PopupGUIInfo& popupInfo)
 	return true;
 }
 
-void PopupGUIManager::AddPopup(PopupGUI* popup, const ScreenPosition& targetSize, const RenderPriority priority)
+//TODO: since we init after adding popup order creation matters so priority from popups can be removed
+void PopupGUIManager::AddAndInitPopup(PopupGUI* popup, const ScreenPosition& targetSize, const RenderPriority priority)
 {
-	m_popups.emplace(priority, PopupGUIInfo(*popup, RenderInfo(PopupGUIInfo::INVALID_RENDER_POS, targetSize)));
+	auto emplaced= m_popups.emplace(priority, PopupGUIInfo(*popup, RenderInfo(PopupGUIInfo::INVALID_RENDER_POS, targetSize)));
+	emplaced.first->second.m_GUI->Init();
 }
 
 void PopupGUIManager::UpdatePopups(const float deltaTime)
 {
+	//Note: since we store in decreasing priority, higher priority-> faster init/gui selector placement
+	//and therefore get checked earlier by select/click/drag events
 	for (auto& popup : m_popups)
 	{
 		if (!popup.second.IsEnabled()) continue;
 
 		popup.second.m_GUI->Update(deltaTime);
+	}
+}
+ 
+void PopupGUIManager::CloseAllPopups()
+{
+	for (auto& popupInfo : m_popups)
+	{
+		if (popupInfo.second.IsEnabled())
+			TryClosePopup(popupInfo.second);
 	}
 }
 

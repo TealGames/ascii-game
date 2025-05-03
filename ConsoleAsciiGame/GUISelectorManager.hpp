@@ -1,21 +1,22 @@
 #pragma once
 #include "SelectableGUI.hpp"
 #include "InputManager.hpp"
-#include <vector>
+#include <map>
 #include <optional>
 
 class GUISelectorManager
 {
 private:
 	const Input::InputManager& m_inputManager;
-	std::vector<SelectableGUI*> m_selectables;
+	//TODO: for optimization reasons, this is slow
+	std::map<GUIEventPriority, SelectableGUI*, std::greater<GUIEventPriority>> m_selectables;
 	SelectableGUI* m_currentSelected;
 	SelectableGUI* m_currentDragged;
 	/// <summary>
 	/// True if the current selectable was selected THIS frame
 	/// </summary>
 	bool m_selectedThisFrame;
-	
+	Vec2 m_lastFrameMousePos;
 public:
 
 private:
@@ -23,12 +24,15 @@ private:
 	void DeselectCurrentSelectable();
 	void ClickSelectable(SelectableGUI* selectable);
 
+	std::string ToStringSelectableTypes() const;
+	
+
 public:
 	GUISelectorManager(const Input::InputManager& input);
 
 	void Update();
 
-	void AddSelectable(SelectableGUI* selectable);
+	void AddSelectable(SelectableGUI* selectable, const GUIEventPriority eventPriority);
 	bool HasSelecatbleSelected() const;
 	const SelectableGUI* TryGetSelectableSelected() const;
 

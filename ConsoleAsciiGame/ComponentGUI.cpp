@@ -41,7 +41,7 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorM
 	for (auto& field : fields)
 	{
 		m_fieldGUIs.emplace_back(GetInputManager(), selector, popupManager, *this, field);
-		LogWarning(std::format("created field gui from compoennt:{}", Utils::ToStringPointerAddress(&m_fieldGUIs.back())));
+		//LogWarning(std::format("created field gui from compoennt:{}", Utils::ToStringPointerAddress(&m_fieldGUIs.back())));
 	}
 
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(),
@@ -52,6 +52,11 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorM
 ComponentGUI::~ComponentGUI()
 {
 	//LogError("COMPOENNT GUI destroyed");
+}
+
+void ComponentGUI::Init()
+{
+
 }
 
 const Input::InputManager& ComponentGUI::GetInputManager() const

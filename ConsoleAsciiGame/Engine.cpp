@@ -83,6 +83,7 @@ namespace Core
 	//which then cause any function with "this" capture group to be invalidated as its object no longer exists. Checking "if(function)" does not work since that checks 
 	//if func is not empty, but it could be not empty and have invalid this pointer leading to crashes/strange behavior. A check for this must be implmeneted in the
 	//event class to prevent this issue such as creating a function class wrapper
+	//TODO: make optimizations based on suggestions in video: https://www.youtube.com/watch?v=IroPQ150F6c&t=1406s
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;

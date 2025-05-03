@@ -7,25 +7,36 @@
 class GUISelectorManager;
 class SelectableGUI;
 
-using SelectableEvent = Event<void, SelectableGUI*>;
+using GUIEventPriority = std::uint8_t;
+
+using SelectableInteractEvent = Event<void, SelectableGUI*>;
+/// <summary>
+/// Where float is the total drag time and the vec2 is the move delta
+/// </summary>
+using SelectableDragEvent = Event<void, SelectableGUI*, float, Vec2>;
 
 class SelectableGUI : public ISelectable
 {
 private:
 	GUIRect m_lastFrameRect;
-	GUISelectorManager* m_selectorManager;
+	//GUISelectorManager* m_selectorManager;
 
 	bool m_isSelected;
 	bool m_addedToManager;
 	float m_dragTime;
 
 public:
-	SelectableEvent m_OnSelect;
-	SelectableEvent m_OnDeselect;
-	SelectableEvent m_OnClick;
+	SelectableInteractEvent m_OnSelect;
+	SelectableInteractEvent m_OnDeselect;
+	SelectableInteractEvent m_OnClick;
+	/// <summary>
+	/// Invokes ONLY when this object is dragged with a delta greater than 0
+	/// Note: delta is in carteisan coords but in
+	/// </summary>
+	SelectableDragEvent m_OnDragDelta;
 
 protected:
-	GUISelectorManager& GetSelectorManager();
+	//GUISelectorManager& GetSelectorManager();
 	void SetLastFramneRect(const GUIRect& newRect);
 	GUIRect& GetLastFrameRectMutable();
 
@@ -33,10 +44,9 @@ protected:
 
 public:
 	SelectableGUI();
-	SelectableGUI(GUISelectorManager* selectorManager);
 
-	bool IsInit() const;
-	void Init();
+	bool HasInit() const;
+	void Init(GUISelectorManager& selectorManager, const GUIEventPriority);
 
 	void Select();
 	void Deselect();
@@ -45,7 +55,7 @@ public:
 	bool IsSelected() const;
 	bool IsDraggedForTime(const float time) const;
 
-	void SetDragTime(const float time);
+	void UpdateDrag(const Vec2 mouseDelta, const float time);
 	void ClearDragTime();
 
 	const GUIRect GetLastFrameRect() const;

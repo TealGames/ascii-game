@@ -156,6 +156,8 @@ public:
 		return TryClosePopup(infoPtr);
 	}
 
+	void CloseAllPopups();
+
 	void RenderPopups();
 	void UpdatePopups(const float deltaTime);
 };

@@ -14,13 +14,17 @@ ScreenPosition GUIRect::GetPosWithinRect(const NormalizedPosition& normalizedPos
 			static_cast<int>(m_topLeftPos.m_Y+ (1- normalizedPos.GetPos().m_Y)* m_size.m_Y)};
 }
 
-bool GUIRect::ContainsPos(const ScreenPosition& pos) const
+bool GUIRect::ContainsPos(const WorldPosition& pos) const
 {
 	if (m_size.m_X == 0 || m_size.m_Y == 0) return false;
 
 	return m_topLeftPos.m_X <= pos.m_X && pos.m_X <= m_bottomRightPos.m_X && 
 			//Note: as y go down, y increases so top left has MIN Y and bottom right has MAX Y
 		   m_topLeftPos.m_Y <= pos.m_Y && pos.m_Y <= m_bottomRightPos.m_Y;
+}
+bool GUIRect::ContainsPos(const ScreenPosition& pos) const
+{
+	return ContainsPos(WorldPosition(pos.m_X, pos.m_Y));
 }
 
 const ScreenPosition& GUIRect::GetTopleftPos() const

@@ -52,6 +52,11 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorMana
 		});
 }
 
+void CommandConsole::Init()
+{
+	m_inputField.Init();
+}
+
 std::string CommandConsole::FormatPromptName(const std::string& name)
 {
 	return Utils::StringUtil(name).TrimSpaces().ToLowerCase().ToString();

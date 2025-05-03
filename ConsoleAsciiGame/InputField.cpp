@@ -100,7 +100,7 @@ void InputField::Update()
 
 	//TODO: this might bnot be the best way of doing this and having this bee called everytime on update
 	//instead this should be a function called by some general system on selectables on gui selector manager
-	if (!IsInit()) Init();
+	//if (!HasInit()) Init();
 
 	if (IsSelected() && GetInputManager().GetInputKey(ESCAPE_KEY)->GetState().IsReleased())
 	{

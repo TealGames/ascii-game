@@ -9,7 +9,7 @@
 class ButtonGUI;
 using ButtonAction = std::function<void(const ButtonGUI&)>;
 
-class ButtonGUI : SelectableGUI, public IRenderable
+class ButtonGUI : public SelectableGUI, public IRenderable
 {
 private:
 	ButtonAction m_clickAction;

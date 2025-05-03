@@ -18,6 +18,11 @@ public:
 	Event<void, float> m_OnValueSet;
 
 private:
+	/// <summary>
+	/// Will return the current value of the slider as a value between 0 and 1
+	/// </summary>
+	/// <returns></returns>
+	float GetValueNormalized() const;
 public:
 	SliderGUI(GUISelectorManager& selector, const Input::InputManager& inputManager, 
 		const Vec2 minMaxValues, const GUISettings& settings);
@@ -26,11 +31,13 @@ public:
 	void SetMinValue(const float min);
 	void SetMaxValue(const float max);
 	void SetValue(const float value);
+	void SetValueDelta(const float delta);
 
 	float GetMinValue() const;
 	float GetMaxValue() const;
 	int GetMinValueInt() const;
 	int GetMaxValueInt() const;
+	float GetValue() const;
 
 	void Update();
 	ScreenPosition Render(const RenderInfo& renderInfo) override;

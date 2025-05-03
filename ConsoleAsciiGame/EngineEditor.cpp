@@ -67,7 +67,6 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 		});
 
 	LogWarning(std::format("Popup addr:{}", Utils::ToStringPointerAddress(&m_popupManager)));
-	m_popupManager.AddPopup(new ColorPopupGUI(m_guiSelector, m_inputManager), { 100, 100 }, HIGHEST_PRIORITY);
 }
 
 EngineEditor::~EngineEditor()
@@ -169,9 +168,19 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 		}));
 }
 
+void EngineEditor::SelectEntityEditor(ECS::Entity& entity)
+{
+	m_entityEditor.SetEntityGUI(*m_editModeInfo.m_Selected);
+	m_popupManager.CloseAllPopups();
+}
+
 void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 {
 	InitConsoleCommands(playerSystem);
+
+	//Note: the init order matters because it creates the order that the objects are added to the selector
+	m_popupManager.AddAndInitPopup(new ColorPopupGUI(m_guiSelector, m_inputManager), { 100, 100 }, HIGHEST_PRIORITY);
+	m_commandConsole.Init();
 }
 
 void EngineEditor::Update(const float deltaTime, const float timeStep)
@@ -206,15 +215,15 @@ void EngineEditor::Update(const float deltaTime, const float timeStep)
 	m_editModeToggle.Update();
 	//LogError(std::format("Is toggled:{} selected:{}", std::to_string(m_editModeToggle.IsToggled()), std::to_string(m_editModeInfo.m_Selected != nullptr)));
 
-	ScreenPosition mouseClickedPos = m_inputManager.GetMousePosition();
-	WorldPosition worldClickedPos = Conversions::ScreenToWorldPosition(mainCamera, mouseClickedPos);
+	Vec2 mouseClickedPos = m_inputManager.GetMousePosition();
+	WorldPosition worldClickedPos = Conversions::ScreenToWorldPosition(mainCamera, ScreenPosition(mouseClickedPos.m_X, mouseClickedPos.m_Y));
 	if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsPressed())
 	{
 		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(*activeScene, worldClickedPos);
 		if (!entitiesWithinPos.empty())
 		{
 			m_editModeInfo.m_Selected = &(entitiesWithinPos[0]->GetEntitySafeMutable());
-			m_entityEditor.SetEntityGUI(*m_editModeInfo.m_Selected);
+			SelectEntityEditor(*m_editModeInfo.m_Selected);
 		}
 	}
 	//If we are in edit mode holding the down button (and not selected selectable this frame-> meaning click might correspond to selectable click not edit mode click) 

@@ -6,6 +6,8 @@
 
 class GUISelectorManager;
 class PopupGUIManager;
+namespace Input { class InputManager; }
+
 class ColorPickerGUI :  public SelectableGUI, public IRenderable
 {
 private:
