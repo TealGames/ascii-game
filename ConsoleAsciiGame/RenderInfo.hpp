@@ -8,4 +8,6 @@ struct RenderInfo
 
 	RenderInfo();
 	RenderInfo(const ScreenPosition& topLeftPos, const ScreenPosition& renderSize);
+
+	std::string ToString() const;
 };

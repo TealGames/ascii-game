@@ -1,31 +1,29 @@
 #pragma once
 #include "SelectableGUI.hpp"
 #include "IRenderable.hpp"
-#include "GUISettings.hpp"
+#include "GUIStyle.hpp"
 #include "Color.hpp"
 
-class GUISelectorManager;
 class PopupGUIManager;
 namespace Input { class InputManager; }
 
-class ColorPickerGUI :  public SelectableGUI, public IRenderable
+class ColorPickerGUI :  public SelectableGUI
 {
 private:
 	PopupGUIManager* m_popupManager;
-	GUISettings m_settings;
+	GUIStyle m_settings;
 	Utils::Color m_color;
 public:
 
 private:
 public:
-	ColorPickerGUI(GUISelectorManager& guiSelector, PopupGUIManager& popupManager, const GUISettings& settings);
+	ColorPickerGUI(PopupGUIManager& popupManager, const GUIStyle& settings);
 
 	void SetColor(const Utils::Color color);
-	void SetSettings(const GUISettings& settings);
+	void SetSettings(const GUIStyle& settings);
 
 	Utils::Color GetColor() const;
 
-	void Update();
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	RenderInfo Render(const RenderInfo& renderInfo) override;
 };
 

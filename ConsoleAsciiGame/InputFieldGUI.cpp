@@ -1,7 +1,7 @@
 #include <optional>
 #include <cstdint>
 #include "pch.hpp"
-#include "InputField.hpp"
+#include "InputFieldGUI.hpp"
 #include "Debug.hpp"
 #include "StringUtil.hpp"
 #include "Globals.hpp"
@@ -27,10 +27,10 @@ std::string ToString(const InputFieldType& type)
 	return "";
 }
 
-InputField::InputField(const Input::InputManager* manager, GUISelectorManager* selectorManager, 
-	const InputFieldType& type, const InputFieldFlag& flags, const GUISettings& settings, 
+InputFieldGUI::InputFieldGUI(const Input::InputManager& manager, const InputFieldType& type, 
+	const InputFieldFlag& flags, const GUIStyle& settings, 
 	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
-	: SelectableGUI(selectorManager), m_inputManager(manager), m_type(type), m_input(), m_lastInput(), 
+	: SelectableGUI(), m_inputManager(&manager), m_type(type), m_input(), m_lastInput(), 
 	m_textGUI("", settings.m_TextSettings), m_inputFlags(flags), m_submitAction(submitAction),
 	m_keyActions(keyPressActions), m_settings(settings), m_lastRenderRect()
 {
@@ -39,22 +39,22 @@ InputField::InputField(const Input::InputManager* manager, GUISelectorManager* s
 	if (HasFlag(InputFieldFlag::SelectOnStart)) Select();
 }
 
-InputField::InputField() : InputField(nullptr, nullptr, InputFieldType::Any, InputFieldFlag::None, {}, nullptr, {}) 
-{
-	
-}
+//InputField::InputField() : InputField(nullptr, nullptr, InputFieldType::Any, InputFieldFlag::None, {}, nullptr, {}) 
+//{
+//	
+//}
 
-InputField::InputField(const Input::InputManager& manager, GUISelectorManager& selectorManager, 
-	const InputFieldType& type, const InputFieldFlag& flags, const GUISettings& settings,
-	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
-	:InputField(&manager, &selectorManager, type, flags, settings, submitAction, keyPressActions) {}
+//InputFieldGUI::InputFieldGUI(const Input::InputManager& manager,
+//	const InputFieldType& type, const InputFieldFlag& flags, const GUISettings& settings,
+//	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
+//	:InputFieldGUI(&manager, type, flags, settings, submitAction, keyPressActions) {}
 
-InputField::~InputField()
+InputFieldGUI::~InputFieldGUI()
 {
 	//LogError("Input field destroyed");
 }
 
-const Input::InputManager& InputField::GetInputManager() const
+const Input::InputManager& InputFieldGUI::GetInputManager() const
 {
 	if (!Assert(this, m_inputManager != nullptr,
 		std::format("Tried to retreive input manager from input field but it is NULLPTR")))
@@ -64,44 +64,13 @@ const Input::InputManager& InputField::GetInputManager() const
 	return *m_inputManager;
 }
 
-std::string InputField::CleanInput(const std::string& input) const
+std::string InputFieldGUI::CleanInput(const std::string& input) const
 {
 	return Utils::StringUtil(input).RemoveSpaces().ToString();
 }
 
-void InputField::Update()
+void InputFieldGUI::Update(const float deltaTime)
 {
-	//TODO: increase the area of selection and add potential padding
-	//TODO: add general key select and submits for a general profile so each selectable does not 
-	// need to have its own defined
-	
-	//LogError(std::format("Is selected: {} attempted: {} real: {}", m_isSelected, m_attemptedInput, m_input));
-	//If we press select key inside this area we then select or deselect
-	//bool isSelectReleased = GetInputManager().GetInputKey(SELECT_KEY)->GetState().IsReleased();
-
-	/*LogError(std::format("SELECTED FIELD. last render rect: {} mouse: {} CONTAINS: {}",
-		m_lastRenderRect.ToString(), m_inputManager->GetMousePosition().ToString(), 
-		std::to_string(m_lastRenderRect.ContainsPos(m_inputManager->GetMousePosition()))));*/
-
-	/*
-	if (isSelectReleased && m_lastRenderRect.ContainsPos(m_inputManager->GetMousePosition()))
-	{
-		if (m_isSelected)
-		{
-			Deselect();
-		}
-		else
-		{
-			Select();
-			LogError("SELECTED");
-		}
-	}
-	*/
-
-	//TODO: this might bnot be the best way of doing this and having this bee called everytime on update
-	//instead this should be a function called by some general system on selectables on gui selector manager
-	//if (!HasInit()) Init();
-
 	if (IsSelected() && GetInputManager().GetInputKey(ESCAPE_KEY)->GetState().IsReleased())
 	{
 		Deselect();
@@ -155,17 +124,15 @@ void InputField::Update()
 	SetAttemptedInputDelta(keysPressed);
 }
 
-void InputField::SetSubmitAction(const InputFieldAction& action)
+void InputFieldGUI::SetSubmitAction(const InputFieldAction& action) { m_submitAction = action; }
+void InputFieldGUI::SetKeyPressAction(const KeyboardKey key, const InputFieldAction& action)
 {
-	m_submitAction = action;
+	m_keyActions.emplace(key, action);
 }
 
-void InputField::SetSettings(const GUISettings& settings)
-{
-	m_settings = settings;
-}
+void InputFieldGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }
 
-void InputField::SetAttemptedInputDelta(const std::string& input)
+void InputFieldGUI::SetAttemptedInputDelta(const std::string& input)
 {
 	std::string cleanedInput = CleanInput(input);
 
@@ -188,12 +155,9 @@ void InputField::SetAttemptedInputDelta(const std::string& input)
 	}
 	else SetInput(m_attemptedInput + input, true);
 }
-void InputField::ResetInput()
-{
-	m_input = "";
-}
+void InputFieldGUI::ResetInput() { m_input = ""; }
 
-void InputField::SetInput(const std::string& newInput, const bool isAttemptedInput)
+void InputFieldGUI::SetInput(const std::string& newInput, const bool isAttemptedInput)
 {
 	if (newInput.empty()) return;
 	if (newInput == m_input) return;
@@ -218,58 +182,41 @@ void InputField::SetInput(const std::string& newInput, const bool isAttemptedInp
 	//Assert(false, std::format("Override input with; {} newinput: {}", m_input, newInput));
 }
 
-void InputField::OverrideInput(const std::string& input)
+void InputFieldGUI::OverrideInput(const std::string& input)
 {
 	SetInput(input, false);
 }
 
-const InputFieldType& InputField::GetFieldType() const
-{
-	return m_type;
-}
+const InputFieldType& InputFieldGUI::GetFieldType() const { return m_type; }
 
-std::string InputField::GetDisplayInput() const
+std::string InputFieldGUI::GetDisplayInput() const
 {
 	if (HasFlag(InputFieldFlag::ShowCaret)) return m_input + "_";
 	return m_input;
 }
-std::string InputField::GetDisplayAttemptedInput() const
+std::string InputFieldGUI::GetDisplayAttemptedInput() const
 {
 	if (HasFlag(InputFieldFlag::ShowCaret)) return m_attemptedInput + "_";
 	return m_attemptedInput;
 }
 
-const std::string& InputField::GetInput() const
-{
-	return m_input;
-}
+const std::string& InputFieldGUI::GetInput() const { return m_input; }
+const std::string& InputFieldGUI::GetLastInput() const { return m_lastInput; }
+int InputFieldGUI::GetIntInput() const { return std::stoi(m_input); }
+float InputFieldGUI::GetFloatInput() const { return std::stof(m_input); }
 
-const std::string& InputField::GetLastInput() const
-{
-	return m_lastInput;
-}
-
-int InputField::GetIntInput() const
-{
-	return std::stoi(m_input);
-}
-
-float InputField::GetFloatInput() const
-{
-	return std::stof(m_input);
-}
-
-bool InputField::HasFlag(const InputFieldFlag& flag) const
+bool InputFieldGUI::HasFlag(const InputFieldFlag& flag) const
 {
 	return Utils::HasFlagAll(m_inputFlags, flag);
 }
 
-ScreenPosition InputField::Render(const RenderInfo& renderInfo)
+RenderInfo InputFieldGUI::Render(const RenderInfo& renderInfo)
 {
 	const int widthUsed = std::min(renderInfo.m_RenderSize.m_X, m_settings.m_Size.m_X);
 	const int heightUsed = std::min(renderInfo.m_RenderSize.m_Y, m_settings.m_Size.m_Y);
 	Vec2Int renderSize = { widthUsed, heightUsed };
 
+	Assert(false, std::format("drawing field gui at:{}", renderInfo.ToString()));
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, widthUsed, heightUsed, m_settings.m_BackgroundColor);
 	std::string inputStr = IsSelected() && !HasFlag(InputFieldFlag::UserUIReadonly) ? GetDisplayAttemptedInput() : GetDisplayInput();
 	//Assert(false, std::format("Found input: {}", inputStr));
@@ -296,7 +243,7 @@ ScreenPosition InputField::Render(const RenderInfo& renderInfo)
 	m_lastRenderRect.SetTopLeftPos(renderInfo.m_TopLeftPos);*/
 	
 	//LogError(std::format("Updating input field rect to: {}", m_lastRenderRect.ToString()));
-	return renderSize;
+	return { renderInfo.m_TopLeftPos, renderSize };
 }
 
 //const GUIRect& InputField::GetLastRenderRect() const

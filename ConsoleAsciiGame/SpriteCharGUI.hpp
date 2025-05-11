@@ -1,7 +1,7 @@
 #pragma once
 #include "TextBuffer.hpp"
 #include "IRenderable.hpp"
-#include "InputField.hpp"
+#include "InputFieldGUI.hpp"
 
 class GUISelectorManager;
 namespace Input { class InputManager; }
@@ -9,16 +9,16 @@ namespace Input { class InputManager; }
 class SpriteCharGUI : public IRenderable
 {
 private:	
-	InputField m_charField;
+	InputFieldGUI m_charField;
 
 public:
 
 private:
 public:
-	SpriteCharGUI(GUISelectorManager& guiSelector, Input::InputManager& inputManager);
+	SpriteCharGUI(Input::InputManager& inputManager);
 
 	void Update();
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	RenderInfo Render(const RenderInfo& renderInfo) override;
 
 	TextBufferCharPosition GetAsTextBufferChar() const;
 };

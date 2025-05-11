@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "IRenderable.hpp"
+#include "ITreeGUIConstructible.hpp"
+#include "LayoutGUI.hpp"
 #include "ComponentData.hpp"
 #include "ComponentFieldGUI.hpp"
 #include "InputManager.hpp"
@@ -11,10 +12,11 @@ class EntityGUI;
 class GUISelectorManager;
 class PopupGUIManager;
 
-class ComponentGUI : public IRenderable
+class ComponentGUI : public ITreeGUIConstructible
 {
 private:
 	const Input::InputManager* m_inputManager;
+	LayoutGUI m_guiContainer;
 	ComponentData* m_component;
 	std::vector<ComponentFieldGUI> m_fieldGUIs;
 
@@ -28,15 +30,16 @@ private:
 	const Input::InputManager& GetInputManager() const;
 
 public:
-	ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector,
-		PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component);
+	ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, 
+		const EntityGUI& entityGUI, ComponentData& component);
 	~ComponentGUI();
 	
-	void Init();
+	//void Init();
 	void Update();
 	void SetFieldsToStored();
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	//ScreenPosition Render(const RenderInfo& renderInfo) override;
 	//ScreenPosition SetupRender(const RenderInfo& renderInfo, Event<void>& renderActions) override;
+	GUIElement* GetTreeGUI() override;
 
 	std::string GetComponentName() const;
 	std::vector<std::string> GetFieldNames() const;

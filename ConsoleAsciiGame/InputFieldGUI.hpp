@@ -5,10 +5,8 @@
 #include <cstdint>
 #include "InputManager.hpp"
 #include "raylib.h"
-#include "IRenderable.hpp"
 #include "GUIRect.hpp"
-#include "ISelectable.hpp"
-#include "GUISettings.hpp"
+#include "GUIStyle.hpp"
 #include "SelectableGUI.hpp"
 #include "TextGUI.hpp"
 
@@ -73,7 +71,7 @@ constexpr InputFieldFlag operator~(const InputFieldFlag& op)
 
 using InputFieldAction = std::function<void(std::string input)>;
 using InputFieldKeyActions = std::unordered_map<KeyboardKey, InputFieldAction>;
-class InputField : public SelectableGUI, public IRenderable
+class InputFieldGUI : public SelectableGUI
 {
 private:
 	InputFieldType m_type;
@@ -90,13 +88,13 @@ private:
 	InputFieldAction m_submitAction;
 	InputFieldKeyActions m_keyActions;
 
-	GUISettings m_settings;
+	GUIStyle m_settings;
 
 	const Input::InputManager* m_inputManager;
 
 private:
-	InputField(const Input::InputManager* manager, GUISelectorManager* selectorManager, const InputFieldType& type, const InputFieldFlag& flags,
-		const GUISettings& settings, const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions);
+	/*InputFieldGUI(const Input::InputManager* manager, const InputFieldType& type, const InputFieldFlag& flags,
+		const GUISettings& settings, const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions);*/
 
 	std::string CleanInput(const std::string& input) const;
 	
@@ -113,19 +111,20 @@ private:
 	void SetInput(const std::string& newInput, const bool isAttemptedInput);
 
 public:
-	InputField();
-	InputField(const Input::InputManager& manager, GUISelectorManager& selectorManager, 
-		const InputFieldType& type, const InputFieldFlag& flags, const GUISettings& settings,
+	//InputField();
+	InputFieldGUI(const Input::InputManager& manager, const InputFieldType& type, 
+		const InputFieldFlag& flags, const GUIStyle& settings, 
 		const InputFieldAction& submitAction=nullptr, const InputFieldKeyActions& keyPressActions = {});
-	~InputField();
+	~InputFieldGUI();
 
-	void Update();
+	void Update(const float deltaTime) override;
 
 	bool HasFlag(const InputFieldFlag& flag) const;
 	const InputFieldType& GetFieldType() const;
 
 	void SetSubmitAction(const InputFieldAction& action);
-	void SetSettings(const GUISettings& settings);
+	void SetKeyPressAction(const KeyboardKey key, const InputFieldAction& action);
+	void SetSettings(const GUIStyle& settings);
 
 	void OverrideInput(const std::string& str);
 	const std::string& GetInput() const;
@@ -146,7 +145,7 @@ public:
 	/// <returns></returns>
 	float GetFloatInput() const;
 
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	RenderInfo Render(const RenderInfo& renderInfo) override;
 	//const GUIRect& GetLastRenderRect() const;
 };
 

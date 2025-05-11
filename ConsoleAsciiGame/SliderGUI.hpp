@@ -1,16 +1,16 @@
 #pragma once
 #include "SelectableGUI.hpp"
 #include "IRenderable.hpp"
-#include "GUISettings.hpp"
+#include "GUIStyle.hpp"
 #include "Event.hpp"
 
 class GUISelectorManager;
 namespace Input { class InputManager; }
-class SliderGUI : public SelectableGUI, public IRenderable
+class SliderGUI : public SelectableGUI
 {
 private:
 	const Input::InputManager* m_inputManager;
-	GUISettings m_settings;
+	GUIStyle m_settings;
 	Vec2 m_minMaxValues;
 	float m_value;
 	
@@ -24,10 +24,10 @@ private:
 	/// <returns></returns>
 	float GetValueNormalized() const;
 public:
-	SliderGUI(GUISelectorManager& selector, const Input::InputManager& inputManager, 
-		const Vec2 minMaxValues, const GUISettings& settings);
+	SliderGUI(const Input::InputManager& inputManager, 
+		const Vec2 minMaxValues, const GUIStyle& settings);
 
-	void SetSettings(const GUISettings& settings);
+	void SetSettings(const GUIStyle& settings);
 	void SetMinValue(const float min);
 	void SetMaxValue(const float max);
 	void SetValue(const float value);
@@ -39,7 +39,6 @@ public:
 	int GetMaxValueInt() const;
 	float GetValue() const;
 
-	void Update();
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	RenderInfo Render(const RenderInfo& renderInfo) override;
 };
 

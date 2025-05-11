@@ -5,18 +5,19 @@
 GUIRect::GUIRect() : GUIRect(ScreenPosition(), Vec2Int()) {}
 
 GUIRect::GUIRect(const ScreenPosition& topLeftPos, const Vec2Int& size) :
-	m_topLeftPos(topLeftPos), m_size(size), m_bottomRightPos(GetPosWithinRect({1, 0})) {}
+	m_topLeftPos(topLeftPos), m_bottomRightPos(GetPosWithinRect({1, 0})) {}
 
 ScreenPosition GUIRect::GetPosWithinRect(const NormalizedPosition& normalizedPos) const
 {
-	return {static_cast<int>(m_topLeftPos.m_X+ normalizedPos.GetPos().m_X * m_size.m_X), 
+	const Vec2Int size = GetSize();
+	return {static_cast<int>(m_topLeftPos.m_X+ normalizedPos.GetPos().m_X * size.m_X),
 			//We add the section from the top left y because Y POS INCREASES as you move DOWN
-			static_cast<int>(m_topLeftPos.m_Y+ (1- normalizedPos.GetPos().m_Y)* m_size.m_Y)};
+			static_cast<int>(m_topLeftPos.m_Y+ (1- normalizedPos.GetPos().m_Y)* size.m_Y)};
 }
 
 bool GUIRect::ContainsPos(const WorldPosition& pos) const
 {
-	if (m_size.m_X == 0 || m_size.m_Y == 0) return false;
+	//if (m_size.m_X == 0 || m_size.m_Y == 0) return false;
 
 	return m_topLeftPos.m_X <= pos.m_X && pos.m_X <= m_bottomRightPos.m_X && 
 			//Note: as y go down, y increases so top left has MIN Y and bottom right has MAX Y
@@ -35,24 +36,22 @@ const ScreenPosition& GUIRect::GetBottomRightPos() const
 {
 	return m_bottomRightPos;
 }
-const Vec2Int& GUIRect::GetSize() const
+Vec2Int GUIRect::GetSize() const
 {
-	return m_size;
+	return Vec2Int(m_bottomRightPos.m_X - m_topLeftPos.m_X, m_topLeftPos.m_Y- m_bottomRightPos.m_Y);
 }
 
 void GUIRect::SetTopLeftPos(const ScreenPosition& pos)
 {
 	m_topLeftPos = pos;
-	m_bottomRightPos = GetPosWithinRect({ 1, 0 });
 }
 void GUIRect::SetSize(const Vec2Int& size)
 {
-	m_size = size;
-	m_bottomRightPos = GetPosWithinRect({ 1, 0 });
+	m_bottomRightPos = m_topLeftPos + Vec2Int(size.m_X, -size.m_Y);
 }
 
 std::string GUIRect::ToString() const
 {
 	return std::format("[TopLeft: {} BottomRight: {} Size: {}]", 
-		m_topLeftPos.ToString(), m_bottomRightPos.ToString(), m_size.ToString());
+		m_topLeftPos.ToString(), m_bottomRightPos.ToString(), GetSize().ToString());
 }

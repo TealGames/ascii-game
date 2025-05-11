@@ -8,6 +8,7 @@
 #include "RaylibUtils.hpp"
 #include "ProfilerTimer.hpp"
 #include "Debug.hpp"
+#include "GUIHierarchy.hpp"
 
 namespace Rendering
 {
@@ -88,7 +89,7 @@ namespace Rendering
     }
 
     void RenderBuffer(const FragmentedTextBuffer* buffer, const ColliderOutlineBuffer* outlineBuffer,
-        const LineBuffer* lineBuffer, const std::vector<IBasicRenderable*>& renderables)
+        const LineBuffer* lineBuffer, GUIHierarchy* hierarchy)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
@@ -198,13 +199,14 @@ namespace Rendering
 
         /*if (console != nullptr) console->TryRender();
         if (editor != nullptr) editor->TryRender();*/
-        for (size_t i=0; i<renderables.size(); i++)
+        if (hierarchy!=nullptr) hierarchy->RenderAll();
+       /* for (size_t i=0; i<renderables.size(); i++)
         {
             if (renderables[i] == nullptr) continue;
             if (!Assert(renderables[i]->TryRender(), std::format("Tried to render renderable at index:{} "
                 "of renderer but failed", std::to_string(i))))
                 continue;
-        }
+        }*/
 
         EndDrawing();
     }

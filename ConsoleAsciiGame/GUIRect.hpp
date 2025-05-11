@@ -8,7 +8,7 @@ class GUIRect
 {
 private:
 	ScreenPosition m_topLeftPos;
-	Vec2Int m_size;
+	//Vec2Int m_size;
 	ScreenPosition m_bottomRightPos;
 
 public:
@@ -21,7 +21,7 @@ public:
 
 	const ScreenPosition& GetTopleftPos() const;
 	const ScreenPosition& GetBottomRightPos() const;
-	const Vec2Int& GetSize() const;
+	Vec2Int GetSize() const;
 
 	void SetTopLeftPos(const ScreenPosition& pos);
 	void SetSize(const Vec2Int& size);

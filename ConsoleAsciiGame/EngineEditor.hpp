@@ -8,6 +8,7 @@
 #include "ToggleGUI.hpp"
 #include "ButtonGUI.hpp"
 #include "raylib.h"
+#include "GUIHierarchy.hpp"
 
 namespace Core { class Engine; }
 namespace Input { class InputManager; }
@@ -33,9 +34,11 @@ struct EditModeInfo
 	EditModeInfo();
 };
 
-class EngineEditor : public IBasicRenderable
+class EngineEditor //: public IBasicRenderable
 {
 private:
+	ECS::Entity* m_editorObj;
+
 	TimeKeeper& m_timeKeeper;
 	const Input::InputManager& m_inputManager;
 	SceneManagement::SceneManager& m_sceneManager;
@@ -43,6 +46,7 @@ private:
 	const CameraController& m_cameraController;
 	GUISelectorManager& m_guiSelector;
 	ECS::CollisionBoxSystem& m_collisionBoxSystem;
+	GUIHierarchy& m_guiTree;
 
 	CommandConsole m_commandConsole;
 	DebugInfo m_debugInfo;
@@ -64,7 +68,7 @@ private:
 
 public:
 	EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
-		SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, ECS::CollisionBoxSystem& collisionSystem);
+		SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, GUIHierarchy& guiTree, ECS::CollisionBoxSystem& collisionSystem);
 	~EngineEditor();
 
 	void Init(ECS::PlayerSystem& playerSystem);
@@ -72,6 +76,6 @@ public:
 
 	bool IsInGameView() const;
 
-	bool TryRender() override;
+	bool TryRender();
 };
 

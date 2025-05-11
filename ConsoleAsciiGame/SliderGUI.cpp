@@ -6,8 +6,8 @@ static const Vec2 HANDLE_SIZE = {10, 20};
 static constexpr int SLIDER_HEIGHT = 10;
 static constexpr float MIN_DRAG_TIME_TO_MOVE = 0.1;
 
-SliderGUI::SliderGUI(GUISelectorManager& selector, const Input::InputManager& inputManager, const Vec2 minMaxValues, const GUISettings& settings)
-	: SelectableGUI(&selector), m_inputManager(&inputManager), m_settings(settings), 
+SliderGUI::SliderGUI(const Input::InputManager& inputManager, const Vec2 minMaxValues, const GUIStyle& settings)
+	: SelectableGUI(), m_inputManager(&inputManager), m_settings(settings), 
 	m_minMaxValues(minMaxValues), m_value(GetMinValue()), m_OnValueSet() 
 {
 	m_OnDragDelta.AddListener([this](SelectableGUI* gui, const float dragTime, const Vec2 mouseDelta)-> void 
@@ -21,7 +21,7 @@ SliderGUI::SliderGUI(GUISelectorManager& selector, const Input::InputManager& in
 		});
 }
 
-void SliderGUI::SetSettings(const GUISettings& settings)
+void SliderGUI::SetSettings(const GUIStyle& settings)
 {
 	m_settings = settings;
 }
@@ -48,11 +48,7 @@ int SliderGUI::GetMaxValueInt() const { return m_minMaxValues.YAsInt(); }
 float SliderGUI::GetValue() const { return m_value; };
 float SliderGUI::GetValueNormalized() const { return (m_value / m_minMaxValues.m_Y) + m_minMaxValues.m_X; }
 
-void SliderGUI::Update()
-{
-	//if (!HasInit()) Init();
-}
-ScreenPosition SliderGUI::Render(const RenderInfo& renderInfo)
+RenderInfo SliderGUI::Render(const RenderInfo& renderInfo)
 {
 	const float sliderWidth = renderInfo.m_RenderSize.m_X;
 	const float sliderHeight = std::min(renderInfo.m_RenderSize.m_Y, SLIDER_HEIGHT);
@@ -64,5 +60,5 @@ ScreenPosition SliderGUI::Render(const RenderInfo& renderInfo)
 	DrawRectangle(handlePosX, handlePosY, HANDLE_SIZE.m_X, HANDLE_SIZE.m_Y, ORANGE);
 	SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, Vec2Int(sliderWidth, sliderHeight)));
 
-	return ScreenPosition(sliderWidth, sliderHeight);
+	return { renderInfo.m_TopLeftPos, ScreenPosition(sliderWidth, sliderHeight) };
 }

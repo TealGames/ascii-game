@@ -5,8 +5,8 @@
 #include "TextBuffer.hpp"
 #include "LineBuffer.hpp"
 #include "ColliderOutlineBuffer.hpp"
-#include "IBasicRenderable.hpp"
 
+class GUIHierarchy;
 class DebugInfo;
 class CommandConsole;
 class EntityEditorGUI;
@@ -22,5 +22,5 @@ namespace Rendering
         bool m_CenterBuffer;
     };
     void RenderBuffer(const FragmentedTextBuffer* layerBuffers, const ColliderOutlineBuffer* outlineBuffer= nullptr,
-        const LineBuffer* lineBuffer = nullptr, const std::vector<IBasicRenderable*>& renderables = {});
+        const LineBuffer* lineBuffer = nullptr, GUIHierarchy* hierarchy=nullptr);
 }

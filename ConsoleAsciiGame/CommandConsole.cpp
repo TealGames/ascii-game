@@ -2,9 +2,10 @@
 #include "CommandConsole.hpp"
 #include "StringUtil.hpp"
 #include "HelperFunctions.hpp"
-#include "CommandPromptType.hpp"
 #include "Debug.hpp"
 #include "RaylibUtils.hpp"
+#include "GUISelectorManager.hpp"
+#include "GUIHierarchy.hpp"
 
 static constexpr int MAX_OUTPUT_MESSAGES = 10;
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
@@ -20,25 +21,27 @@ static constexpr int COMMAND_CONSOLE_SPACING = 3;
 static constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
 static constexpr int COMMAND_CONSOLE_TEXT_INDENT = 10;
 
-CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorManager& selector) :
-	m_inputManager(input), m_prompts(), m_outputMessages(), m_inputField(), m_isEnabled(false)
+CommandConsole::CommandConsole(const Input::InputManager& input, GUIHierarchy& hierarchy, GUISelectorManager& selector) :
+	m_inputManager(input), m_prompts(), m_outputMessages(), 
+	m_inputField(input, InputFieldType::Any, 
+		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit, GUIStyle()), 
+	m_isEnabled(false)
 {
-	GUISettings fieldSettings = GUISettings(ScreenPosition{ COMMAND_CONSOLE_WIDTH , COMMAND_CONSOLE_HEIGHT }, GRAY,
-		TextGUISettings(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
-	m_inputField = InputField(m_inputManager, selector, InputFieldType::Any, 
-		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit,
-		fieldSettings, [this](std::string input) -> void 
+	GUIStyle fieldSettings = GUIStyle(ScreenPosition{ COMMAND_CONSOLE_WIDTH , COMMAND_CONSOLE_HEIGHT }, GRAY,
+		TextGUIStyle(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
+	m_inputField.SetSettings(fieldSettings);
+	m_inputField.SetSubmitAction([this](std::string input) -> void
 		{
 			TryInvokePrompt();
 			ResetInput();
-		},
-		InputFieldKeyActions{ {LAST_COMMAND_KEY, [this](std::string input) -> void
-			{
-				//Assert(false, std::format("Triggering stuff last input: {}", m_inputField.GetLastInput()));
-				//TODO: this does not work because we override underlying input and not attempted input
-				m_inputField.OverrideInput(m_inputField.GetLastInput());
-			}
-		} });
+		});
+	m_inputField.SetKeyPressAction(LAST_COMMAND_KEY, [this](std::string input) -> void
+		{
+			//Assert(false, std::format("Triggering stuff last input: {}", m_inputField.GetLastInput()));
+			//TODO: this does not work because we override underlying input and not attempted input
+			m_inputField.OverrideInput(m_inputField.GetLastInput());
+		});
+	selector.AddSelectable(DEFAULT_LAYER, &m_inputField);
 
 	DebugProperties::OnMessageLogged.AddListener(
 		[this](const LogType& logType, const std::string& message, const bool& logToConsole, const bool& pause)-> void
@@ -50,11 +53,8 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUISelectorMana
 
 			LogOutputMessage(message, messageType);
 		});
-}
 
-void CommandConsole::Init()
-{
-	m_inputField.Init();
+	hierarchy.AddToRoot(DEFAULT_LAYER, this);
 }
 
 std::string CommandConsole::FormatPromptName(const std::string& name)
@@ -206,7 +206,7 @@ void CommandConsole::LogOutputMessagesUnrestricted(const std::vector<std::string
 	}
 }
 
-void CommandConsole::Update()
+void CommandConsole::Update(const float deltaTime)
 {
 	if (m_inputManager.IsKeyPressed(TOGGLE_COMMAND_CONSOLE_KEY))
 	{
@@ -218,8 +218,6 @@ void CommandConsole::Update()
 		ResetInput();
 		return;
 	}
-
-	m_inputField.Update();
 
 	if (m_outputMessages.empty()) return;
 
@@ -236,12 +234,12 @@ void CommandConsole::Update()
 	}
 }
 
-void CommandConsole::TryRender()
-{
-	Render(RenderInfo({ 0, SCREEN_HEIGHT - COMMAND_CONSOLE_HEIGHT }, { SCREEN_WIDTH, COMMAND_CONSOLE_HEIGHT }));
-}
+//void CommandConsole::TryRender()
+//{
+//	Render(RenderInfo({ 0, SCREEN_HEIGHT - COMMAND_CONSOLE_HEIGHT }, { SCREEN_WIDTH, COMMAND_CONSOLE_HEIGHT }));
+//}
 
-ScreenPosition CommandConsole::Render(const RenderInfo& renderInfo)
+RenderInfo CommandConsole::Render(const RenderInfo& renderInfo)
 {
 	if (!m_isEnabled) return {};
 
@@ -253,7 +251,7 @@ ScreenPosition CommandConsole::Render(const RenderInfo& renderInfo)
 	//DrawRectangle(currentPos.x, currentPos.y, renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, consoleColor);
 
 	//DrawTextEx(GetGlobalFont(), GetInput().c_str(), { currentPos.x + consoleIndent, currentPos.y }, COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, WHITE);
-	ScreenPosition fieldSize = m_inputField.Render(renderInfo);
+	ScreenPosition fieldSize = m_inputField.Render(renderInfo).m_RenderSize;
 	currentPos.y -= fieldSize.m_Y;
 	totalSize = fieldSize;
 
@@ -269,18 +267,11 @@ ScreenPosition CommandConsole::Render(const RenderInfo& renderInfo)
 		currentPos.y -= currentMessageSize.y;
 	}
 
-	return totalSize;
+	return { renderInfo.m_RenderSize, totalSize};
 }
 
-bool CommandConsole::IsEnabled() const
-{
-	return m_isEnabled;
-}
-
-void CommandConsole::ResetInput()
-{
-	m_inputField.ResetInput();
-}
+bool CommandConsole::IsEnabled() const { return m_isEnabled; }
+void CommandConsole::ResetInput() { m_inputField.ResetInput(); }
 //std::string CommandConsole::GetInput() const
 //{
 //	return m_input + "_";

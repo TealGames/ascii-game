@@ -3,18 +3,18 @@
 #include "EntityGUI.hpp"
 #include "InputManager.hpp"
 
-class GUISelectorManager;
+class GUIHierarchy;
 class CameraData;
 class CameraController;
 class PopupGUIManager;
 
 //using EntityGUICollection = std::unordered_map<std::string, EntityGUI>;
-class EntityEditorGUI : IRenderable
+class EntityEditorGUI
 {
 private:
 	const Input::InputManager* m_inputManager;
 	PopupGUIManager* m_popupManager;
-	GUISelectorManager* m_selectorManager;
+	GUIHierarchy* m_guiTree;
 
 	RenderInfo m_defaultRenderInfo;
 	/*EntityGUICollection m_entityGUIs;
@@ -32,17 +32,16 @@ public:
 
 private:
 	const Input::InputManager& GetInputManagerSafe() const;
-	GUISelectorManager& GetGUISelector();
 
 public:
 	EntityEditorGUI(const Input::InputManager& input, const CameraController& cameraController, 
-		GUISelectorManager& selector, PopupGUIManager& popupManager);
+		GUIHierarchy& hierarchy, PopupGUIManager& popupManager);
 	~EntityEditorGUI();
 
 	void SetEntityGUI(ECS::Entity& entity);
 
 	void Update();
-	void TryRender();
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	//void TryRender();
+	//RenderInfo Render(const RenderInfo& renderInfo) override;
 };
 

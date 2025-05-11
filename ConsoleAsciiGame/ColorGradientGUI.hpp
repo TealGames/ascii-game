@@ -3,7 +3,7 @@
 #include "IRenderable.hpp"
 #include "ColorGradient.hpp"
 
-class ColorGradientGUI : public SelectableGUI, IRenderable
+class ColorGradientGUI : public SelectableGUI
 {
 private:
 	ColorGradient m_gradient;
@@ -16,7 +16,7 @@ public:
 	void SetGradient(const ColorGradient& gradient);
 	const ColorGradient& GetGradient() const;
 
-	void Update();
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	void Update(const float deltaTime) override;
+	RenderInfo Render(const RenderInfo& renderInfo) override;
 };
 

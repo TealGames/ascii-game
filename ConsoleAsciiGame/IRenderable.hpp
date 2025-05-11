@@ -3,6 +3,6 @@
 
 struct IRenderable
 {
-	virtual ScreenPosition Render(const RenderInfo& renderInfo) = 0;
 	virtual ~IRenderable() = default;
+	virtual RenderInfo Render(const RenderInfo& renderInfo) = 0;
 };

@@ -3,11 +3,9 @@
 #include "GUIRect.hpp"
 #include "Event.hpp"
 #include "RenderInfo.hpp"
+#include "GUIElement.hpp"
 
-class GUISelectorManager;
 class SelectableGUI;
-
-using GUIEventPriority = std::uint8_t;
 
 using SelectableInteractEvent = Event<void, SelectableGUI*>;
 /// <summary>
@@ -15,14 +13,13 @@ using SelectableInteractEvent = Event<void, SelectableGUI*>;
 /// </summary>
 using SelectableDragEvent = Event<void, SelectableGUI*, float, Vec2>;
 
-class SelectableGUI : public ISelectable
+class SelectableGUI : public ISelectable, public GUIElement
 {
 private:
 	GUIRect m_lastFrameRect;
 	//GUISelectorManager* m_selectorManager;
 
 	bool m_isSelected;
-	bool m_addedToManager;
 	float m_dragTime;
 
 public:
@@ -45,9 +42,6 @@ protected:
 public:
 	SelectableGUI();
 
-	bool HasInit() const;
-	void Init(GUISelectorManager& selectorManager, const GUIEventPriority);
-
 	void Select();
 	void Deselect();
 	void Click();
@@ -59,5 +53,8 @@ public:
 	void ClearDragTime();
 
 	const GUIRect GetLastFrameRect() const;
+
+	virtual void Update(const float deltaTime) override;
+	virtual RenderInfo Render(const RenderInfo& renderInfo) = 0;
 };
 

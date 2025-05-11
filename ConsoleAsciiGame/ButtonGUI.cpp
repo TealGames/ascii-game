@@ -3,14 +3,14 @@
 #include "raylib.h"
 #include "Debug.hpp"
 
-ButtonGUI::ButtonGUI(GUISelectorManager& selectorManager, const GUISettings& settings, const std::string text, const ButtonAction& clickAction, const float& cooldownTime) :
-	SelectableGUI(&selectorManager), m_clickAction(clickAction), m_cooldownTime(cooldownTime), m_currentCooldownTime(0),
+ButtonGUI::ButtonGUI(const GUIStyle& settings, const std::string text, const ButtonAction& clickAction, const float& cooldownTime) :
+	SelectableGUI(), m_clickAction(clickAction), m_cooldownTime(cooldownTime), m_currentCooldownTime(0),
 	m_settings(settings), m_textGUI(text, settings.m_TextSettings)
 {
 	m_OnClick.AddListener([this](SelectableGUI* self)-> void {InvokeClick(); });
 }
 
-void ButtonGUI::SetSettings(const GUISettings& settings)
+void ButtonGUI::SetSettings(const GUIStyle& settings)
 {
 	m_settings = settings;
 	m_textGUI.SetSettings(m_settings.m_TextSettings);
@@ -52,19 +52,17 @@ bool ButtonGUI::IsInCooldown() const
 
 void ButtonGUI::Update(const float deltaTime)
 {
-	//if (!HasInit()) Init();
+	if (!IsInCooldown()) return;
 
-	if (IsInCooldown())
+	//TODO: cooldown should probably be poart of every selectable
+	m_currentCooldownTime += deltaTime;
+	if (m_currentCooldownTime >= m_cooldownTime)
 	{
-		m_currentCooldownTime += deltaTime;
-		if (m_currentCooldownTime >= m_cooldownTime)
-		{
-			m_currentCooldownTime = 0;
-		}
+		m_currentCooldownTime = 0;
 	}
 }
 
-ScreenPosition ButtonGUI::Render(const RenderInfo& renderInfo)
+RenderInfo ButtonGUI::Render(const RenderInfo& renderInfo)
 {
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, renderInfo.m_RenderSize.m_X, 
 		renderInfo.m_RenderSize.m_Y, m_settings.m_BackgroundColor);
@@ -72,5 +70,5 @@ ScreenPosition ButtonGUI::Render(const RenderInfo& renderInfo)
 	//Assert(false, std::format("Button rendering text;{}", m_textGUI.GetText()));
 	m_textGUI.Render(renderInfo);
 	SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));
-	return renderInfo.m_RenderSize;
+	return { renderInfo.m_TopLeftPos, renderInfo.m_RenderSize };
 }

@@ -61,6 +61,7 @@ int Vec2::YAsInt() const
 
 float Vec2::GetAngle(const AngleMode& angleMode) const
 {
+
 	//Just in case to prevent implementations returning undefined
 	if (Utils::ApproximateEqualsF(m_X, 0) 
 		&& Utils::ApproximateEqualsF(m_Y, 0)) return 0;
@@ -68,6 +69,10 @@ float Vec2::GetAngle(const AngleMode& angleMode) const
 	float rad = std::atan2(m_Y, m_X);
 	//Since atan2 gives you result in [-pi/2, pi/2) we can flip negaative rads
 	//to their positive by doing full rotation other way
+
+	//TODO: i think this is wrong because we get negative angles in both the second and fourth quadrants
+	//which would not make sense to add 2pi to second quadrant angle. Also, this means all are in terms of -90, 90
+	//which would also make the third quadrant wrong as well
 	if (rad < 0) rad += 2 * std::numbers::pi;
 
 	if (angleMode == AngleMode::Degrees) return Utils::ToDegrees(rad);

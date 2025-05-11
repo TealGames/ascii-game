@@ -6,8 +6,8 @@
 #include "PopupGUIManager.hpp"
 #include "HelperFunctions.hpp"
 
-ColorPickerGUI::ColorPickerGUI(GUISelectorManager& guiSelector, PopupGUIManager& popupManager, const GUISettings& settings)
-	: SelectableGUI(&guiSelector), m_settings(settings), m_color(), m_popupManager(&popupManager)
+ColorPickerGUI::ColorPickerGUI(PopupGUIManager& popupManager, const GUIStyle& settings)
+	: SelectableGUI(), m_settings(settings), m_color(), m_popupManager(&popupManager)
 {
 	//LogWarning(std::format("coloc picker addr create:{}", Utils::ToStringPointerAddress(this)));
 	m_OnSelect.AddListener([this](SelectableGUI* gui)-> void
@@ -20,15 +20,10 @@ ColorPickerGUI::ColorPickerGUI(GUISelectorManager& guiSelector, PopupGUIManager&
 }
 
 void ColorPickerGUI::SetColor(const Utils::Color color) { m_color = color; }
-void ColorPickerGUI::SetSettings(const GUISettings& settings) { m_settings = settings; }
+void ColorPickerGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }
 Utils::Color ColorPickerGUI::GetColor() const { return m_color; }
 
-void ColorPickerGUI::Update()
-{
-	if (!IsInit()) Init();
-}
-
-ScreenPosition ColorPickerGUI::Render(const RenderInfo& renderInfo)
+RenderInfo ColorPickerGUI::Render(const RenderInfo& renderInfo)
 {
 	//Assert(false, std::format("settings size: {} render info:{}", m_settings.m_Size.ToString(), renderInfo.m_RenderSize.ToString()));
 
@@ -42,5 +37,5 @@ ScreenPosition ColorPickerGUI::Render(const RenderInfo& renderInfo)
 
 	SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, {widthUsed, heightUsed}));
 
-	return { widthUsed, heightUsed };
+	return { renderInfo.m_TopLeftPos,ScreenPosition(widthUsed, heightUsed)};
 }

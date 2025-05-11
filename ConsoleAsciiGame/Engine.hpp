@@ -27,7 +27,7 @@
 #include "TimeKeeper.hpp"
 #include "GameManager.hpp"
 //#include "InputManager.hpp"
-
+#include "GUIHierarchy.hpp"
 #include "GUISelectorManager.hpp"
 #include "EngineEditor.hpp"
 
@@ -45,6 +45,7 @@ namespace Core
 		CameraController m_cameraController;
 		Input::InputManager m_inputManager;
 		GUISelectorManager m_guiSelectorManager;
+		GUIHierarchy m_uiTree;
 
 		//TODO: there has to be a way that does not involve us writing every possible system
 		ECS::TransformSystem m_transformSystem;

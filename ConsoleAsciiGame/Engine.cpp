@@ -84,6 +84,7 @@ namespace Core
 	//if func is not empty, but it could be not empty and have invalid this pointer leading to crashes/strange behavior. A check for this must be implmeneted in the
 	//event class to prevent this issue such as creating a function class wrapper
 	//TODO: make optimizations based on suggestions in video: https://www.youtube.com/watch?v=IroPQ150F6c&t=1406s
+	//TODO: merge vec2 and vec2int into one type with 2 template args that can be int,int for vec2int and float, float for vec2
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -123,7 +124,8 @@ namespace Core
 		m_inputManager(m_assetManager),
 		m_cameraController(),
 		m_physicsManager(m_sceneManager, m_collisionRegistry),
-		m_guiSelectorManager(m_inputManager),
+		m_guiSelectorManager(m_inputManager, m_uiTree),
+		m_uiTree({SCREEN_WIDTH, SCREEN_HEIGHT}),
 		m_transformSystem(),
 		m_uiSystem(),
 		m_entityRendererSystem(),
@@ -141,7 +143,7 @@ namespace Core
 		//m_mainCameraInfo(std::nullopt),
 		m_timeKeeper(),
 		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_assetManager,
-			m_sceneManager, m_cameraController, m_guiSelectorManager, m_collisionBoxSystem),
+			m_sceneManager, m_cameraController, m_guiSelectorManager, m_uiTree, m_collisionBoxSystem),
 		m_gameManager(m_sceneManager.m_GlobalEntityManager)
 	{
 		EngineLog("FINISHED SYSTEM MANAGERS INIT");
@@ -210,6 +212,9 @@ namespace Core
 		m_gameManager.GameStart();
 		EngineLog("FINISHED GAME INIT");
 
+		//Note: gui selector init has to be after any other calls because we want to ensure we create the selectable
+		//tree after as much time is given to add any gui elements to the ui tree
+		m_guiSelectorManager.Init();
 		ValidateAll();
 	}
 
@@ -293,22 +298,24 @@ namespace Core
 			m_gameManager.GameUpdate();
 
 			m_guiSelectorManager.Update();
+			m_uiTree.UpdateAll(unscaledDeltaTime);
 			m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale());
 
 			frameBuffer = &m_cameraSystem.GetCurrentFrameBuffer();
 			Assert(this, frameBuffer!=nullptr && !frameBuffer->empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
 			Rendering::RenderBuffer(frameBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(),
-				m_cameraSystem.GetCurrentLineBuffer(), std::vector<IBasicRenderable*>{&m_editor});
+				m_cameraSystem.GetCurrentLineBuffer(), &m_uiTree);
 
 			m_transformSystem.UpdateLastFramePos(*activeScene);
 		}
 		else
 		{
 			m_guiSelectorManager.Update();
+			m_uiTree.UpdateAll(unscaledDeltaTime);
 			m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale());
 
-			Rendering::RenderBuffer(nullptr, nullptr, nullptr, std::vector<IBasicRenderable*>{&m_editor});
+			Rendering::RenderBuffer(nullptr, nullptr, nullptr, &m_uiTree);
 		}
 		
 		m_timeKeeper.UpdateTimeEnd();

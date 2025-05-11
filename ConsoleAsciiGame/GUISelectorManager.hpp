@@ -3,13 +3,17 @@
 #include "InputManager.hpp"
 #include <map>
 #include <optional>
+#include "GUIHierarchy.hpp"
 
 class GUISelectorManager
 {
 private:
 	const Input::InputManager& m_inputManager;
+	GUIHierarchy& m_hierarchy;
+	std::map<GUILayer, std::vector<SelectableGUI*>, std::greater<GUILayer>> m_selectableLayers;
 	//TODO: for optimization reasons, this is slow
-	std::map<GUIEventPriority, SelectableGUI*, std::greater<GUIEventPriority>> m_selectables;
+	//std::map<GUIEventPriority, SelectableGUI*, std::greater<GUIEventPriority>> m_selectables;
+
 	SelectableGUI* m_currentSelected;
 	SelectableGUI* m_currentDragged;
 	/// <summary>
@@ -20,6 +24,8 @@ private:
 public:
 
 private:
+	void CraeteSelectableArray();
+
 	void SelectNewSelectable(SelectableGUI* selectable);
 	void DeselectCurrentSelectable();
 	void ClickSelectable(SelectableGUI* selectable);
@@ -28,11 +34,14 @@ private:
 	
 
 public:
-	GUISelectorManager(const Input::InputManager& input);
+	GUISelectorManager(const Input::InputManager& input, GUIHierarchy& hierarchy);
 
+	void Init();
 	void Update();
 
-	void AddSelectable(SelectableGUI* selectable, const GUIEventPriority eventPriority);
+	void AddSelectable(const GUILayer layer, SelectableGUI* selectable);
+	void AddSelectables(const GUILayer layer, const std::vector<SelectableGUI*>& selectables);
+
 	bool HasSelecatbleSelected() const;
 	const SelectableGUI* TryGetSelectableSelected() const;
 

@@ -4,6 +4,7 @@
 #include "NormalizedPosition.hpp"
 #include "PositionConversions.hpp"
 #include "CameraController.hpp"
+#include "GUIHierarchy.hpp"
 
 const Color EntityEditorGUI::EDITOR_TEXT_COLOR = WHITE;
 const Color EntityEditorGUI::EDITOR_BACKGROUND_COLOR = { 30, 30, 30, 255 };
@@ -16,15 +17,13 @@ const Vec2 EntityEditorGUI::EDITOR_CHAR_SPACING = { 3, 2 };
 static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = {0.8, 1};
 
 EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input,
-	const CameraController& cameraController, GUISelectorManager& selector, PopupGUIManager& popupManager)
-	: m_inputManager(&input), m_selectorManager(&selector), m_popupManager(&popupManager),
+	const CameraController& cameraController, GUIHierarchy& hiearchy, PopupGUIManager& popupManager)
+	: m_inputManager(&input), m_guiTree(&hiearchy), m_popupManager(&popupManager),
 	m_defaultRenderInfo(), 
 	m_selectedEntity(nullptr)
 	//m_entityGUIs(), m_selectedEntity(m_entityGUIs.end())
 {
-	ScreenPosition topLeftPos = Conversions::NormalizedScreenToPosition(TOP_LEFT_POS_NORMALIZED);
-	ScreenPosition topRightPos = Conversions::NormalizedScreenToPosition({ 1, 1 });
-	m_defaultRenderInfo = RenderInfo(topLeftPos, ScreenPosition{ topRightPos.m_X - topLeftPos.m_X, SCREEN_HEIGHT });
+	
 }
 EntityEditorGUI::~EntityEditorGUI()
 {
@@ -39,31 +38,20 @@ const Input::InputManager& EntityEditorGUI::GetInputManagerSafe() const
 
 	return *m_inputManager;
 }
-GUISelectorManager& EntityEditorGUI::GetGUISelector()
-{
-	if (!Assert(this, m_selectorManager != nullptr, "Tried to get gui selector manager but is NULL"))
-		throw std::invalid_argument("Invalid gui selector manager state");
-
-	return *m_selectorManager;
-}
 
 void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 {
 	if (m_selectedEntity!=nullptr && m_selectedEntity->GetEntity() == entity)
 		return;
 
+	//TODO: we should not be able to delete entity gui like this especially if it has gui elements,
+	//therefore there must be some way to handle it without causing problems to the gui system
 	delete m_selectedEntity;
-	m_selectedEntity = new EntityGUI(GetInputManagerSafe(), GetGUISelector(), *m_popupManager, entity);
+	m_selectedEntity = new EntityGUI(GetInputManagerSafe(), *m_popupManager, entity);
 	m_selectedEntity->SetComponentsToStored();
 
-	/*EntityGUICollection::iterator it = m_entityGUIs.find(entity.GetName());
-	if (it == m_entityGUIs.end())
-	{
-		it = m_entityGUIs.emplace(entity.GetName(), EntityGUI(m_inputManager, m_selectorManager, entity)).first;
-	}
-
-	m_selectedEntity = it;
-	m_selectedEntity->second.SetComponentsToStored();*/
+	m_selectedEntity->GetTreeGUI()->SetBounds(TOP_LEFT_POS_NORMALIZED, NormalizedPosition::BOTTOM_RIGHT);
+	m_guiTree->AddToRoot(DEFAULT_LAYER, m_selectedEntity->GetTreeGUI());
 }
 
 void EntityEditorGUI::Update()
@@ -73,17 +61,21 @@ void EntityEditorGUI::Update()
 	m_selectedEntity->Update();
 }
 
-void EntityEditorGUI::TryRender()
-{
-	//if (m_selectedEntity == m_entityGUIs.end()) return;
-	Render(m_defaultRenderInfo);
-}
+//void EntityEditorGUI::TryRender()
+//{
+//	//if (m_selectedEntity == m_entityGUIs.end()) return;
+//	ScreenPosition topLeftPos = Conversions::NormalizedScreenToPosition(TOP_LEFT_POS_NORMALIZED);
+//	ScreenPosition topRightPos = Conversions::NormalizedScreenToPosition({ 1, 1 });
+//	Render(RenderInfo(topLeftPos, ScreenPosition{ topRightPos.m_X - topLeftPos.m_X, SCREEN_HEIGHT }));
+//}
 
-ScreenPosition EntityEditorGUI::Render(const RenderInfo& renderInfo)
+/*
+RenderInfo EntityEditorGUI::Render(const RenderInfo& renderInfo)
 {
 	if (m_selectedEntity==nullptr) return {};
 	m_selectedEntity->Render(renderInfo);
 
 	return renderInfo.m_RenderSize;
 }
+*/
 

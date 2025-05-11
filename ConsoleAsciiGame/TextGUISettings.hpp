@@ -4,7 +4,7 @@
 #include "TextGUI.hpp"
 #include "GUIPadding.hpp"
 
-class TextGUISettings
+class TextGUIStyle
 {
 public:
 	Color m_TextColor;
@@ -15,8 +15,8 @@ public:
 	bool m_FitToArea;
 
 public:
-	TextGUISettings();
-	TextGUISettings(const Color& textColor, const FontProperties& fontData, const TextAlignment& alignment=TextGUI::DEFAULT_ALIGNMENT, 
+	TextGUIStyle();
+	TextGUIStyle(const Color& textColor, const FontProperties& fontData, const TextAlignment& alignment=TextGUI::DEFAULT_ALIGNMENT, 
 		const GUIPadding& padding= TextGUI::DEFAULT_PADDING, const float& factor= TextGUI::NULL_FONT_FACTOR,
 		const bool& fitToArea= TextGUI::DEFAULT_FIT_TO_AREA);
 };

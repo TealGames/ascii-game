@@ -7,7 +7,7 @@
 #include <queue>
 #include <chrono> 
 #include "InputManager.hpp"
-#include "InputField.hpp"
+#include "InputFieldGUI.hpp"
 #include "IRenderable.hpp"
 
 using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
@@ -28,8 +28,9 @@ enum class ConsoleOutputMessageType
 };
 
 class GUISelectorManager;
+class GUIHierarchy;
 
-class CommandConsole : IRenderable
+class CommandConsole : public GUIElement
 {
 private:
 	/// <summary>
@@ -37,7 +38,7 @@ private:
 	/// </summary>
 	PromptCollection m_prompts;
 
-	InputField m_inputField;
+	InputFieldGUI m_inputField;
 	std::vector<ConsoleOutputMessage> m_outputMessages;
 
 	const Input::InputManager& m_inputManager;
@@ -56,18 +57,17 @@ private:
 	Color GetColorFromMessageType(const ConsoleOutputMessageType& message);
 	
 public:
-	CommandConsole(const Input::InputManager& input, GUISelectorManager& selector);
+	CommandConsole(const Input::InputManager& input, GUIHierarchy& hierarchy, GUISelectorManager& selector);
 
-	void Init();
 	//void SetActiveConsole(CommandConsole& console);
 
 	void AddPrompt(ICommandPrompt* prompt);
 	bool HasPrompt(const std::string& promptName);
 	void DeletePrompts();
 
-	void Update();
-	void TryRender();
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	void Update(const float deltaTime) override;
+	//void TryRender();
+	RenderInfo Render(const RenderInfo& renderInfo) override;
 
 	bool IsEnabled() const;
 

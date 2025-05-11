@@ -1,26 +1,27 @@
 #pragma once
-#include "IRenderable.hpp"
+#include "ITreeGUIConstructible.hpp"
 #include "ButtonGUI.hpp"
+#include "ContainerGUI.hpp"
 
-class GUISelectorManager;
+class GUIHierarchy;
 namespace AssetManagement { class AssetManager; }
 namespace Input { class InputManager; }
 
-class SpriteEditorGUI : public IRenderable
+class SpriteEditorGUI
 {
 private:
-	GUISelectorManager* m_selectorManager;
 	AssetManagement::AssetManager* m_assetManager;
 	const Input::InputManager* m_inputManager;
 
+	ContainerGUI m_guiContainer;
 	ButtonGUI m_saveButton;
 public:
 
 private:
 public:
-	SpriteEditorGUI(GUISelectorManager& guiSelector, const Input::InputManager& inputManager, AssetManagement::AssetManager& assetManager);
+	SpriteEditorGUI(GUIHierarchy& hierarchy, const Input::InputManager& inputManager, AssetManagement::AssetManager& assetManager);
 
 	void Update(const float deltaTime);
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	//ScreenPosition Render(const RenderInfo& renderInfo) override;
 };
 

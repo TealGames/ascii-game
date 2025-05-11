@@ -32,7 +32,16 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	Vec2& GetPosMutable();
+
+	const float& GetX() const;
+	const float& GetY() const;
+
+	float& GetXMutable();
+	float& GetYMutable();
+
 	void SetPos(const Vec2& relativePos);
+
+	bool IsZero() const;
 
 	NormalizedPosition operator+(const NormalizedPosition& other) const;
 	NormalizedPosition operator-(const NormalizedPosition& other) const;
@@ -42,5 +51,13 @@ public:
 
 	bool operator==(const NormalizedPosition& other) const;
 	bool operator!=(const NormalizedPosition& other) const;
+	bool operator>(const NormalizedPosition& other) const;
+	bool operator>=(const NormalizedPosition& other) const;
+	bool operator<(const NormalizedPosition& other) const;
+	bool operator<=(const NormalizedPosition& other) const;
 };
+
+NormalizedPosition GetSizeFromCorners(const NormalizedPosition& topLeft, const NormalizedPosition& bottomRight);
+NormalizedPosition GetBottomRight(const NormalizedPosition& topLeft, const NormalizedPosition& size);
+NormalizedPosition GetTopLeft(const NormalizedPosition& bottomRight, const NormalizedPosition& size);
 

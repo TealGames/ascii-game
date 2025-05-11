@@ -4,7 +4,9 @@
 #include "ScreenPosition.hpp"
 #include "ComponentField.hpp"
 #include "IDelayedRenderable.hpp"
-#include "InputField.hpp"
+#include "ITreeGUIConstructible.hpp"
+#include "InputFieldGUI.hpp"
+#include "ContainerGUI.hpp"
 #include "InputManager.hpp"
 #include "ToggleGUI.hpp"
 #include "ColorPickerGUI.hpp"
@@ -13,12 +15,13 @@ class GUISelectorManager;
 class ComponentGUI;
 class PopupGUIManager;
 
-class ComponentFieldGUI : IDelayedRenderable
+class ComponentFieldGUI : IDelayedRenderable, public ITreeGUIConstructible
 {
 private:
 	const Input::InputManager* m_inputManager;
+	ContainerGUI m_guiContainer;
 	ComponentField* m_fieldInfo;
-	std::vector<InputField> m_inputFields;
+	std::vector<InputFieldGUI> m_inputFields;
 	ToggleGUI m_checkbox;
 	ColorPickerGUI m_colorPicker;
 
@@ -31,17 +34,18 @@ private:
 	ComponentField& GetFieldInfo();
 
 public:
-	ComponentFieldGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, PopupGUIManager& popupManager,
+	ComponentFieldGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager,
 		const ComponentGUI& componentGUI, ComponentField& field);
 	ComponentFieldGUI(const ComponentFieldGUI&) = default;
 	~ComponentFieldGUI();
 
-	void Init();
+	//void Init();
 	void Update();
 	void SetFieldToInternal();
 	void SetInternalWithInput();
 	//ScreenPosition Render(const RenderInfo& renderInfo) override;
 	ScreenPosition SetupRender(const RenderInfo& renderInfo, Event<void>& renderActions) override;
+	GUIElement* GetTreeGUI() override;
 
 	const ComponentField& GetFieldInfo() const;
 

@@ -7,17 +7,20 @@
 
 constexpr static float TITLE_FONT_SIZE = 20;
 
-EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& selector, PopupGUIManager& popupManager, ECS::Entity& entity)
+EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, ECS::Entity& entity)
 	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
-	m_entityNameText(m_entity->GetName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, 
+	m_entityNameText(m_entity->GetName(), TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, 
 		FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),TextAlignment::Center)),
-	m_activeToggle(selector, m_entity->m_Active, GUISettings({69, 69}, EntityEditorGUI::EDITOR_BACKGROUND_COLOR, TextGUISettings()))
+	m_activeToggle(m_entity->m_Active, GUIStyle({69, 69}, EntityEditorGUI::EDITOR_BACKGROUND_COLOR, TextGUIStyle())), 
+	m_guiLayout(LayoutType::Vertical, SizingType::ExpandParent), m_entityHeader(EntityEditorGUI::EDITOR_PRIMARY_COLOR)
 {
 
 	/*m_activeToggle.SetValueSetAction([this](bool isChecked)mutable -> void 
 		{
 			m_entity->m_Active = isChecked;
 		});*/
+
+	m_guiLayout.AddLayoutElement(&m_entityHeader);
 
 	//TODO: make sure to find a way to add/retrieve all components to then add here
 	//Assert(false, std::format("When adding all comps, entity: {} has:{}", entity.m_Name, std::to_string(entity.GetAllComponentsMutable().size())));
@@ -26,9 +29,11 @@ EntityGUI::EntityGUI(const Input::InputManager& manager, GUISelectorManager& sel
 	for (auto& comp : components)
 	{
 		if (comp == nullptr) continue;
-		m_componentGUIs.emplace_back(*m_inputManager, selector, popupManager, *this, *comp);
+		m_componentGUIs.emplace_back(*m_inputManager, popupManager, *this, *comp);
+		m_guiLayout.AddLayoutElement(m_componentGUIs.back().GetTreeGUI());
 		//LogError(std::format("Found comp: {} for entity: {}", std::to_string(comp->GetFields().size()), entity.m_Name));
 	}
+	
 	//Assert(false, "POOP");
 	/*Assert(false, std::format("For entity: {} found fields: {}", entity.m_Name, 
 		Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(entity.m_Transform.GetFields())));*/
@@ -66,7 +71,7 @@ void EntityGUI::SetComponentsToStored()
 
 void EntityGUI::Update()
 {
-	m_activeToggle.Update();
+	//m_activeToggle.Update();
 	//LogError(std::format("Has valid selector:{}", std::to_string(m_activeToggle.GetSelectorManager().SelectedSelectableThisFrame())));
 	for (auto& component : m_componentGUIs)
 	{
@@ -81,6 +86,12 @@ void EntityGUI::Update()
 		m_activeToggle.SetValue(m_entity->m_Active);
 }
 
+GUIElement* EntityGUI::GetTreeGUI()
+{
+	return &m_guiLayout;
+}
+
+/*
 ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 {
 	Vector2 currentPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
@@ -101,15 +112,10 @@ ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 	ScreenPosition componentSpaceLeft = {};
 	ScreenPosition componentSize = {};
 
-	/*if (m_entity.m_Name == "player")
-	{
-		Assert(false, std::format("size for each component: {} entity size: {}", std::to_string(entityGUISize.m_Y), std::to_string(renderInfo.m_RenderSize.m_Y)));
-	}*/
-
 	for (auto& componentGUI : m_componentGUIs)
 	{
-		/*Assert(false, std::format("Found comp: {} fields:{}", componentGUI.GetComponentName(), 
-					Utils::ToStringIterable<std::vector<std::string>, std::string>(componentGUI.GetFieldNames())));*/
+		//Assert(false, std::format("Found comp: {} fields:{}", componentGUI.GetComponentName(), 
+		//Utils::ToStringIterable<std::vector<std::string>, std::string>(componentGUI.GetFieldNames())));
 		componentSpaceLeft = ScreenPosition(renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y- (currentPos.y - renderInfo.m_TopLeftPos.m_Y));
 		//LogError(std::format("Space left:{}", componentSpaceLeft.ToString()));
 		componentSize= componentGUI.Render(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y)}, componentSpaceLeft));
@@ -118,6 +124,7 @@ ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 	//Assert(false, std::format("END OF THE ROAD"));
 	return renderInfo.m_RenderSize;
 }
+*/
 
 const ECS::Entity& EntityGUI::GetEntity() const
 {

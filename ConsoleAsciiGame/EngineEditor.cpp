@@ -17,24 +17,28 @@ static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
 EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
 
 EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
-	SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, ECS::CollisionBoxSystem& collisionSystem)
+	SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, GUIHierarchy& guiTree, ECS::CollisionBoxSystem& collisionSystem)
 	: 
+	m_editorObj(nullptr),
 	m_displayingGameView(true),
 	m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_cameraController(camera),
-	m_physicsManager(physics), m_guiSelector(selector), m_collisionBoxSystem(collisionSystem),
-	m_commandConsole(m_inputManager, selector), m_debugInfo(), 
+	m_physicsManager(physics), m_guiSelector(selector), m_guiTree(guiTree), m_collisionBoxSystem(collisionSystem),
+	m_commandConsole(m_inputManager, m_guiTree, m_guiSelector), m_debugInfo(),
 	m_popupManager(),
-	m_entityEditor(m_inputManager, camera, selector, m_popupManager),
-	m_spriteEditor(selector, input, assetManager),
-	m_pauseGameToggle(selector, false, GUISettings()), m_editModeToggle(selector, false, GUISettings()),
-	m_editModeInfo(), m_assetEditorButton(selector, GUISettings(), "AssetEditors")
+	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager),
+	m_spriteEditor(m_guiTree, m_inputManager, assetManager),
+	m_pauseGameToggle(false, GUIStyle()), m_editModeToggle(false, GUIStyle()),
+	m_editModeInfo(), m_assetEditorButton(GUIStyle(), "AssetEditors")
 {
-	const GUISettings toggleSettings = GUISettings({ 20, 20 }, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
-		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
+
+	scene.m_GlobalEntityManager.CreateGlobalEntity("__Editor", TransformData());
+
+	const GUIStyle toggleSettings = GUIStyle({ 20, 20 }, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
+		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
 			TextAlignment::Center, GUIPadding(), 0.8));
 
-	const GUISettings buttonSettings = GUISettings({ 20, 20 }, EntityEditorGUI::EDITOR_PRIMARY_COLOR,
-		TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+	const GUIStyle buttonSettings = GUIStyle({ 20, 20 }, EntityEditorGUI::EDITOR_PRIMARY_COLOR,
+		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
 			TextAlignment::Center, GUIPadding(), 0.8));
 
 	m_pauseGameToggle.SetSettings(toggleSettings);
@@ -48,6 +52,8 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 
 	m_editModeToggle.SetSettings(toggleSettings);
 
+	m_assetEditorButton.SetSize({ 0.1, 0.2 });
+	m_assetEditorButton.SetTopLeftPos(NormalizedPosition::TOP_CENTER);
 	m_assetEditorButton.SetSettings(buttonSettings);
 	m_assetEditorButton.SetClickAction([this](const ButtonGUI& button)-> void
 		{
@@ -179,8 +185,7 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 	InitConsoleCommands(playerSystem);
 
 	//Note: the init order matters because it creates the order that the objects are added to the selector
-	m_popupManager.AddAndInitPopup(new ColorPopupGUI(m_guiSelector, m_inputManager), { 100, 100 }, HIGHEST_PRIORITY);
-	m_commandConsole.Init();
+	m_popupManager.AddPopup(new ColorPopupGUI(m_inputManager), { 100, 100 }, HIGHEST_PRIORITY);
 }
 
 void EngineEditor::Update(const float deltaTime, const float timeStep)
@@ -202,17 +207,17 @@ void EngineEditor::Update(const float deltaTime, const float timeStep)
 	const CameraData& mainCamera = m_cameraController.GetActiveCamera();
 
 	//Assert(false, std::format("Entity editor update"));
-	m_commandConsole.Update();
+	//m_commandConsole.Update();
 	m_debugInfo.Update(deltaTime, timeStep, *activeScene, m_inputManager, mainCamera);
 
-	m_pauseGameToggle.Update();
+	//m_pauseGameToggle.Update();
 	if (m_inputManager.IsKeyPressed(PAUSE_TOGGLE_KEY))
 	{
 		//LogError("Toggle pause");
 		m_pauseGameToggle.ToggleValue();
 	}
 
-	m_editModeToggle.Update();
+	//m_editModeToggle.Update();
 	//LogError(std::format("Is toggled:{} selected:{}", std::to_string(m_editModeToggle.IsToggled()), std::to_string(m_editModeInfo.m_Selected != nullptr)));
 
 	Vec2 mouseClickedPos = m_inputManager.GetMousePosition();
@@ -247,8 +252,8 @@ bool EngineEditor::TryRender()
 {
 	if (IsInGameView())
 	{
-		m_commandConsole.TryRender();
-		m_entityEditor.TryRender();
+		//m_commandConsole.TryRender();
+		//m_entityEditor.TryRender();
 		m_debugInfo.TryRender();
 
 		const int TOGGLE_SIZE = 20;
@@ -278,7 +283,7 @@ bool EngineEditor::TryRender()
 		DrawRectangle(0, 0, leftPadding, SCREEN_HEIGHT, EntityEditorGUI::EDITOR_BACKGROUND_COLOR);
 
 		DrawRectangle(leftPadding, 0, SCREEN_WIDTH- leftPadding, SCREEN_HEIGHT, EntityEditorGUI::EDITOR_SECONDARY_BACKGROUND_COLOR);
-		m_spriteEditor.Render(RenderInfo(ScreenPosition(leftPadding, 0), ScreenPosition(SCREEN_WIDTH - leftPadding, SCREEN_HEIGHT)));
+		//m_spriteEditor.Render(RenderInfo(ScreenPosition(leftPadding, 0), ScreenPosition(SCREEN_WIDTH - leftPadding, SCREEN_HEIGHT)));
 	}
 
 	m_assetEditorButton.Render(RenderInfo({ 0, 0 }, { 120, 20 }));

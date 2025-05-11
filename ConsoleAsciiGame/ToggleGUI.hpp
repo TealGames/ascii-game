@@ -3,11 +3,11 @@
 #include <functional>
 #include "SelectableGUI.hpp"
 #include "IRenderable.hpp"
-#include "GUISettings.hpp"
+#include "GUIStyle.hpp"
 #include "GUIRect.hpp"
 
 using ToggleAction = std::function<void(bool isChecked)>;
-class ToggleGUI : public SelectableGUI, public IRenderable
+class ToggleGUI : public SelectableGUI
 {
 private:
 	/// <summary>
@@ -15,18 +15,18 @@ private:
 	/// that changes between the two after a click
 	/// </summary>
 	bool m_isToggled;
-	GUISettings m_settings;
+	GUIStyle m_settings;
 
 	ToggleAction m_valueSetAction;
 public:
 
 private:
 public:
-	ToggleGUI(GUISelectorManager& manager, const bool& startValue, const GUISettings& settings, 
+	ToggleGUI(const bool& startValue, const GUIStyle& settings, 
 		const ToggleAction& valueSetAction=nullptr);
 	~ToggleGUI();
 
-	void SetSettings(const GUISettings& settings);
+	void SetSettings(const GUIStyle& settings);
 
 	void SetValue(const bool value);
 	void ToggleValue();
@@ -34,7 +34,6 @@ public:
 
 	void SetValueSetAction(const ToggleAction& action);
 
-	void Update();
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	RenderInfo Render(const RenderInfo& renderInfo) override;
 };
 

@@ -10,9 +10,9 @@ static constexpr int MAX_HEIGHT = 15;
 //	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
 //	m_valueSetAction(nullptr) {}
 
-ToggleGUI::ToggleGUI(GUISelectorManager& manager, const bool& startValue, const GUISettings& settings, 
+ToggleGUI::ToggleGUI(const bool& startValue, const GUIStyle& settings, 
 	const ToggleAction& valueSetAction)
-	: SelectableGUI(&manager),  m_isToggled(startValue), m_settings(settings), 
+	: SelectableGUI(),  m_isToggled(startValue), m_settings(settings), 
 	m_valueSetAction(valueSetAction)
 {
 	m_OnClick.AddListener([this](SelectableGUI* self)-> void 
@@ -30,7 +30,7 @@ ToggleGUI::~ToggleGUI()
 		Assert(false, std::format("DEATRUCTOR HELL YEAH settings:{}", m_settings.m_Size.ToString()));*/
 }
 
-void ToggleGUI::SetSettings(const GUISettings& settings)
+void ToggleGUI::SetSettings(const GUIStyle& settings)
 {
 	m_settings = settings;
 }
@@ -55,12 +55,7 @@ void ToggleGUI::SetValueSetAction(const ToggleAction& action)
 	m_valueSetAction = action;
 }
 
-void ToggleGUI::Update()
-{
-	//if (!IsInit()) Init();
-}
-
-ScreenPosition ToggleGUI::Render(const RenderInfo& renderInfo)
+RenderInfo ToggleGUI::Render(const RenderInfo& renderInfo)
 {
 	const int guiHeight= std::min(renderInfo.m_RenderSize.m_Y, MAX_HEIGHT);
 	const int guiWidth = guiHeight;
@@ -83,5 +78,5 @@ ScreenPosition ToggleGUI::Render(const RenderInfo& renderInfo)
 
 	GetLastFrameRectMutable().SetTopLeftPos(renderInfo.m_TopLeftPos);
 	GetLastFrameRectMutable().SetSize({renderInfo.m_RenderSize.m_X, guiHeight });
-	return GetLastFrameRect().GetSize();
+	return { renderInfo.m_TopLeftPos, GetLastFrameRect().GetSize() };
 }

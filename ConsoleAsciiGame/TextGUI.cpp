@@ -50,11 +50,11 @@ TextGUI::TextGUI(const std::string text, const FontProperties& font, const GUIPa
 TextGUI::TextGUI(const std::string text, const FontProperties& font, const Color& color) :
 	TextGUI(text, font, DEFAULT_PADDING, DEFAULT_ALIGNMENT, color, NULL_FONT_FACTOR, DEFAULT_FIT_TO_AREA) {}
 	
-TextGUI::TextGUI(const std::string& text, const TextGUISettings& settings) :
+TextGUI::TextGUI(const std::string& text, const TextGUIStyle& settings) :
 	TextGUI(text, settings.m_FontData, settings.m_Padding, settings.m_TextAlignment,
 		settings.m_TextColor, settings.m_FontSizeFactor, settings.m_FitToArea) {}
 
-void TextGUI::SetSettings(const TextGUISettings& settings)
+void TextGUI::SetSettings(const TextGUIStyle& settings)
 {
 	m_fontData = settings.m_FontData;
 	m_padding = settings.m_Padding;
@@ -236,9 +236,11 @@ void TextGUI::SetPadding(const GUIPadding& padding)
 	m_padding = padding;
 }
 
+void TextGUI::Update(const float deltaTime) {};
+
 //NOTE: default sizing policy of text is to find size based on settings and if it fits within space to leave it
 //but it if does not, will shrink to max posible value that can fit within space
-ScreenPosition TextGUI::Render(const RenderInfo& renderInfo)
+RenderInfo TextGUI::Render(const RenderInfo& renderInfo)
 {
 	if (m_text.empty()) return {};
 
@@ -280,7 +282,8 @@ ScreenPosition TextGUI::Render(const RenderInfo& renderInfo)
 	}*/
 
 	DrawTextEx(m_fontData.m_FontType, m_text.c_str(), topLeftPos, m_fontData.m_Size, m_fontData.m_Tracking, m_color);
-	return renderInfo.m_RenderSize;
+	//Note: although we use a different top left pos for actual text due to padding, the full object starts at the render info top left
+	return { renderInfo.m_TopLeftPos, renderInfo.m_RenderSize };
 }
 
 ScreenPosition TextGUI::CalculateSize(const RenderInfo& renderInfo) const

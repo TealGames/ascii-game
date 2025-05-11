@@ -1,6 +1,5 @@
 #pragma once
-#include "SelectableGUI.hpp"
-#include "IRenderable.hpp"
+#include "GUIElement.hpp"
 #include <string>
 #include "FontData.hpp"
 #include "raylib.h"
@@ -8,7 +7,7 @@
 #include <cstdint>
 #include "GUIPadding.hpp"
 
-class TextGUISettings;
+class TextGUIStyle;
 
 enum class TextAlignment : std::uint8_t
 {
@@ -63,7 +62,7 @@ bool IsMiddleVerticalAlignment(const TextAlignment& alignment);
 /// <returns></returns>
 bool IsRightAlignment(const TextAlignment& alignment);
 
-class TextGUI : public IRenderable
+class TextGUI : public GUIElement
 {
 private:
 	std::string m_text;
@@ -143,9 +142,9 @@ private:
 public:
 	TextGUI();
 	TextGUI(const std::string text, const FontProperties& font, const Color& color);
-	TextGUI(const std::string& text, const TextGUISettings& settings);
+	TextGUI(const std::string& text, const TextGUIStyle& settings);
 
-	void SetSettings(const TextGUISettings& settings);
+	void SetSettings(const TextGUIStyle& settings);
 
 	void SetText(const std::string& text);
 	const std::string& GetText() const;
@@ -186,7 +185,8 @@ public:
 	void SetPaddingLeft(const float& padding);
 	void SetPadding(const GUIPadding& padding);
 
-	ScreenPosition Render(const RenderInfo& renderInfo) override;
+	void Update(const float deltaTime) override;
+	RenderInfo Render(const RenderInfo& renderInfo) override;
 	ScreenPosition CalculateSize(const RenderInfo& renderInfo) const;
 
 	std::string ToString() const;

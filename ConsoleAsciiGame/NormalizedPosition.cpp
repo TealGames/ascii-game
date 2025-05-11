@@ -44,11 +44,19 @@ Vec2& NormalizedPosition::GetPosMutable()
 	return m_pos;
 }
 
+const float& NormalizedPosition::GetX() const { return m_pos.m_X; }
+const float& NormalizedPosition::GetY() const { return m_pos.m_Y; }
+
+float& NormalizedPosition::GetXMutable() { return m_pos.m_X; }
+float& NormalizedPosition::GetYMutable() { return m_pos.m_Y; }
+
 void NormalizedPosition::SetPos(const Vec2& relativePos)
 {
 	m_pos.m_X = std::clamp(relativePos.m_X, float(0), float(1));
 	m_pos.m_Y = std::clamp(relativePos.m_Y, float(0), float(1));
 }
+
+bool NormalizedPosition::IsZero() const { return m_pos == Vec2::ZERO; }
 
 NormalizedPosition NormalizedPosition::operator+(const NormalizedPosition& other) const
 {
@@ -90,4 +98,34 @@ bool NormalizedPosition::operator==(const NormalizedPosition& other) const
 bool NormalizedPosition::operator!=(const NormalizedPosition& other) const
 {
 	return !(*this == other);
+}
+
+bool NormalizedPosition::operator>(const NormalizedPosition& other) const
+{
+	return m_pos.m_X > other.m_pos.m_X && m_pos.m_Y > other.m_pos.m_Y;
+}
+bool NormalizedPosition::operator>=(const NormalizedPosition& other) const
+{
+	return *this > other || *this == other;
+}
+bool NormalizedPosition::operator<(const NormalizedPosition& other) const
+{
+	return m_pos.m_X < other.m_pos.m_X && m_pos.m_Y < other.m_pos.m_Y;
+}
+bool NormalizedPosition::operator<=(const NormalizedPosition& other) const
+{
+	return *this < other || *this == other;
+}
+
+NormalizedPosition GetSizeFromCorners(const NormalizedPosition& topLeft, const NormalizedPosition& bottomRight)
+{
+	return NormalizedPosition(bottomRight.GetX() - topLeft.GetX(), topLeft.GetY() - bottomRight.GetY());
+}
+NormalizedPosition GetBottomRight(const NormalizedPosition& topLeft, const NormalizedPosition& size)
+{
+	return NormalizedPosition(topLeft.GetX() + size.GetX(), topLeft.GetY() - size.GetY());
+}
+NormalizedPosition GetTopLeft(const NormalizedPosition& bottomRight, const NormalizedPosition& size)
+{
+	return NormalizedPosition(bottomRight.GetX() - size.GetX(), bottomRight.GetY() + size.GetY());
 }

@@ -13,12 +13,11 @@ const ColorGradient& ColorGradientGUI::GetGradient() const
 	return m_gradient;
 }
 
-void ColorGradientGUI::Update()
+void ColorGradientGUI::Update(const float deltaTime)
 {
-	if (!IsInit()) Init();
-
 }
-ScreenPosition ColorGradientGUI::Render(const RenderInfo& renderInfo)
+
+RenderInfo ColorGradientGUI::Render(const RenderInfo& renderInfo)
 {
 	//TODO: finish implementing
 	Color startColor = m_gradient.GetFirstColor(false);

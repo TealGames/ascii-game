@@ -18,11 +18,12 @@ constexpr static float TITLE_FONT_SPACING = 2;
 //If true, will divide fields based how many we have to render, otherwise will try give them as much space as possible
 static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
 
-ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorManager& selector, PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component)
+ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component)
 	: m_inputManager(&inputManager), m_component(&component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
-	m_dropdownCheckbox(selector, false, GUISettings({}, EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUISettings())), 
-	m_componentNameText(GetComponentName(), TextGUISettings(EntityEditorGUI::EDITOR_TEXT_COLOR, 
-		FontProperties(TITLE_FONT_SIZE, TITLE_FONT_SPACING, GetGlobalFont()),TextAlignment::CenterLeft))
+	m_dropdownCheckbox(false, GUIStyle({}, EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUIStyle())), 
+	m_componentNameText(GetComponentName(), TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, 
+		FontProperties(TITLE_FONT_SIZE, TITLE_FONT_SPACING, GetGlobalFont()),TextAlignment::CenterLeft)), 
+	m_guiContainer(LayoutType::Vertical, SizingType::ExpandParent)
 {
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(), 
 		std::get<Vec2*>(component->GetFieldsMutable()[0].m_Value)->ToString()));*/
@@ -40,9 +41,11 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, GUISelectorM
 	m_fieldGUIs.reserve(fields.size());
 	for (auto& field : fields)
 	{
-		m_fieldGUIs.emplace_back(GetInputManager(), selector, popupManager, *this, field);
+		m_fieldGUIs.emplace_back(GetInputManager(), popupManager, *this, field);
+		m_guiContainer.AddLayoutElement(m_fieldGUIs.back().GetTreeGUI());
 		//LogWarning(std::format("created field gui from compoennt:{}", Utils::ToStringPointerAddress(&m_fieldGUIs.back())));
 	}
+
 
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(),
 		std::get<Vec2*>(m_fieldGUIs[0].GetFieldInfo().m_Value)->ToString()));*/
@@ -54,10 +57,10 @@ ComponentGUI::~ComponentGUI()
 	//LogError("COMPOENNT GUI destroyed");
 }
 
-void ComponentGUI::Init()
-{
-
-}
+//void ComponentGUI::Init()
+//{
+//
+//}
 
 const Input::InputManager& ComponentGUI::GetInputManager() const
 {
@@ -80,12 +83,13 @@ void ComponentGUI::SetFieldsToStored()
 
 void ComponentGUI::Update()
 {
-	m_dropdownCheckbox.Update();
+	//m_dropdownCheckbox.Update();
 	for (auto& field : m_fieldGUIs)
 	{
 		field.Update();
 	}
 }
+
 
 std::string ComponentGUI::GetComponentName() const
 {
@@ -111,6 +115,11 @@ std::vector<std::string> ComponentGUI::GetFieldNames() const
 	return fieldNames;
 }
 
+GUIElement* ComponentGUI::GetTreeGUI()
+{
+	return &m_guiContainer;
+}
+/*
 ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 {
 	//Assert(false, std::format("REDNER field: {}", m_fieldGUIs[0].GetFieldInfo().m_FieldName));
@@ -155,11 +164,6 @@ ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 		renderActions.emplace_back();
 		fieldSize = fieldGUI.SetupRender(RenderInfo({ static_cast<int>(currentPos.x), static_cast<int>(currentPos.y) },
 												{ renderInfo.m_RenderSize.m_X, fieldHeight }), renderActions.back());
-		/*if (m_fieldGUIs.size() == 3)
-		{
-			LogError(std::format("found field of name: {} with size: {} one hegiht: {} total space: {}",
-				fieldGUI.GetFieldInfo().m_FieldName, std::to_string(fieldSize.m_Y), std::to_string(oneFieldHeight), std::to_string(renderInfo.m_RenderSize.m_Y)));
-		}*/
 		currentPos.y += fieldSize.m_Y;
 		componentHeight += fieldSize.m_Y;
 	}
@@ -177,6 +181,7 @@ ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 	//Assert(false, std::format("height: {} size used: {}", std::to_string(fieldHeight), fieldSize.ToString()));
 	return ScreenPosition(MAX_PANEL_WIDTH, componentHeight);
 }
+*/
 
 const EntityGUI& ComponentGUI::GetEntityGUISafe() const
 {
