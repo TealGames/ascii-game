@@ -14,7 +14,7 @@ private:
 	const Input::InputManager* m_inputManager;
 
 	ContainerGUI m_guiContainer;
-	ButtonGUI m_saveButton;
+	//ButtonGUI m_saveButton;
 public:
 
 private:

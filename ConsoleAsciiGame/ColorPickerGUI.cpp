@@ -27,15 +27,13 @@ RenderInfo ColorPickerGUI::Render(const RenderInfo& renderInfo)
 {
 	//Assert(false, std::format("settings size: {} render info:{}", m_settings.m_Size.ToString(), renderInfo.m_RenderSize.ToString()));
 
-	const int widthUsed = std::min(renderInfo.m_RenderSize.m_X, m_settings.m_Size.m_X);
-	const int heightUsed = std::min(renderInfo.m_RenderSize.m_Y, m_settings.m_Size.m_Y);
 	//Assert(false, std::format("Background color:{}", m_color.ToString()));
 
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, 
-		widthUsed, heightUsed, RaylibUtils::ToRaylibColor(m_color));
+		renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, RaylibUtils::ToRaylibColor(m_color));
 	//if (!IsSelected()) DrawDisabledOverlay({ renderInfo.m_TopLeftPos, {widthUsed, heightUsed} });
 
-	SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, {widthUsed, heightUsed}));
+	SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));
 
-	return { renderInfo.m_TopLeftPos,ScreenPosition(widthUsed, heightUsed)};
+	return renderInfo;
 }

@@ -5,7 +5,8 @@
 GUIRect::GUIRect() : GUIRect(ScreenPosition(), Vec2Int()) {}
 
 GUIRect::GUIRect(const ScreenPosition& topLeftPos, const Vec2Int& size) :
-	m_topLeftPos(topLeftPos), m_bottomRightPos(GetPosWithinRect({1, 0})) {}
+	//Note: as you go DOWN -> Y INCREASES
+	m_topLeftPos(topLeftPos), m_bottomRightPos(m_topLeftPos.m_X + size.m_X, m_topLeftPos.m_Y+ size.m_Y) {}
 
 ScreenPosition GUIRect::GetPosWithinRect(const NormalizedPosition& normalizedPos) const
 {

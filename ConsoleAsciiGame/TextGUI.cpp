@@ -8,6 +8,7 @@
 
 const GUIPadding TextGUI::DEFAULT_PADDING = GUIPadding();
 static constexpr float FONT_SIZE_CALC_DELTA = 0.5;
+static constexpr bool DRAW_RENDER_BOUNDS = false;
 
 bool IsTopAlignment(const TextAlignment& alignment)
 {
@@ -261,8 +262,8 @@ RenderInfo TextGUI::Render(const RenderInfo& renderInfo)
 		spaceUsed = CalculateSpaceUsed(m_fontData.m_Size, m_fontData.m_Tracking);
 	}
 
-	if (!Assert(this, m_fontData.m_Size != 0, std::format("Tried to render text GUI "
-		"but font size was calcualte to be 0:{} valid font:{}. Usaable space:{} (total space:{}) space used:{}", 
+	if (!Assert(this, m_fontData.m_Size != 0, std::format("Tried to render text GUI with id:{} "
+		"but font size was calculated to be 0:{} valid font:{}. Usaable space:{} (total space:{}) space used:{}", std::to_string(GetId()),
 		ToString(), std::to_string(RaylibUtils::IsValidFont(m_fontData.m_FontType)), renderInfo.m_RenderSize.ToString(), 
 		usableSize.ToString(), RaylibUtils::ToString(spaceUsed))))
 		return {};
@@ -282,6 +283,7 @@ RenderInfo TextGUI::Render(const RenderInfo& renderInfo)
 	}*/
 
 	DrawTextEx(m_fontData.m_FontType, m_text.c_str(), topLeftPos, m_fontData.m_Size, m_fontData.m_Tracking, m_color);
+	if (DRAW_RENDER_BOUNDS) DrawRectangleLines(topLeftPos.x, topLeftPos.y, spaceUsed.x, spaceUsed.y, YELLOW);
 	//Note: although we use a different top left pos for actual text due to padding, the full object starts at the render info top left
 	return { renderInfo.m_TopLeftPos, renderInfo.m_RenderSize };
 }

@@ -71,9 +71,12 @@ public:
 		const VectorForm form = VectorForm::Component) const;
 
 	Vec2 operator+(const Vec2& other) const;
+	Vec2& operator+=(const Vec2& other);
 	Vec2 operator-(const Vec2& other) const;
+	Vec2& operator-=(const Vec2& other);
 	Vec2 operator*(const Vec2& other) const;
 	Vec2 operator*(const float& scalar) const;
+	Vec2 operator/(const Vec2& other) const;
 	Vec2 operator/(const float& scalar) const;
 
 	bool operator==(const Vec2& other) const;
@@ -109,6 +112,8 @@ Vec2 GetVectorEndPoint(const Vec2& startPos, const Vec2& vector);
 // -> THIS IS MOST USEFUL FOR GETTING THE SCALAR FOR VECTORS IN PARALLEL DIRECTIONS (and extracting the parts in that direction)
 // -> Note: <0 result means they are in opposite directions, >0 means they are <90 degrees from each other and =0 means they are at 90 degrees
 float DotProduct(const Vec2& vecA, const Vec2& vecB);
+
+Vec2 Abs(const Vec2& vec);
 
 Vec2 GenerateRandomVec2(const Vec2& minVec, const Vec2 maxVec);
 Vec2 GenerateRandomDir();

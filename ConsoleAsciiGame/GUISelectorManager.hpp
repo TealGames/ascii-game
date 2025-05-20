@@ -20,11 +20,13 @@ private:
 	/// True if the current selectable was selected THIS frame
 	/// </summary>
 	bool m_selectedThisFrame;
+	bool m_guiTreeUpdated;
 	Vec2 m_lastFrameMousePos;
 public:
 
 private:
-	void CraeteSelectableArray();
+	void TryUpdateTree();
+	void CreateSelectableArray();
 
 	void SelectNewSelectable(SelectableGUI* selectable);
 	void DeselectCurrentSelectable();
@@ -46,5 +48,7 @@ public:
 	const SelectableGUI* TryGetSelectableSelected() const;
 
 	bool SelectedSelectableThisFrame() const;
+
+	std::string ToStringSelectables() const;
 };
 

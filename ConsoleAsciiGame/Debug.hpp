@@ -226,3 +226,9 @@ bool Assert(const T* const objPtr, const bool condition, const std::string& errM
 	}
 	return condition;
 }
+
+template<typename T>
+void Break(const T* const objPtr)
+{
+	Assert(objPtr, false, std::format("Break invoked"));
+}

@@ -10,6 +10,10 @@ class NormalizedPosition
 private:
 	Vec2 m_pos;
 public:
+	static constexpr float MIN = 0;
+	static constexpr float HALF = 0.5;
+	static constexpr float MAX = 1;
+
 	static const Vec2 TOP_LEFT;
 	static const Vec2 TOP_RIGHT;
 	static const Vec2 BOTTOM_LEFT;
@@ -31,7 +35,7 @@ public:
 	/// setting from the public set function
 	/// </summary>
 	/// <returns></returns>
-	Vec2& GetPosMutable();
+	//Vec2& GetPosMutable();
 
 	const float& GetX() const;
 	const float& GetY() const;
@@ -40,8 +44,13 @@ public:
 	float& GetYMutable();
 
 	void SetPos(const Vec2& relativePos);
-
+	void SetPosX(const float x);
+	void SetPosY(const float y);
+	void SetPosDeltaX(const float deltaX);
+	void SetPosDeltaY(const float deltaY);
 	bool IsZero() const;
+
+	std::string ToString() const;
 
 	NormalizedPosition operator+(const NormalizedPosition& other) const;
 	NormalizedPosition operator-(const NormalizedPosition& other) const;

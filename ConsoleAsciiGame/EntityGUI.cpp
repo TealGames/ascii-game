@@ -6,13 +6,14 @@
 #include "EntityEditorGUI.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 20;
+constexpr float ACTIVE_TOGGLE_SPACE = 0.15;
 
 EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, ECS::Entity& entity)
 	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
-	m_entityNameText(m_entity->GetName(), TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, 
-		FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),TextAlignment::Center)),
-	m_activeToggle(m_entity->m_Active, GUIStyle({69, 69}, EntityEditorGUI::EDITOR_BACKGROUND_COLOR, TextGUIStyle())), 
-	m_guiLayout(LayoutType::Vertical, SizingType::ExpandParent), m_entityHeader(EntityEditorGUI::EDITOR_PRIMARY_COLOR)
+	m_entityNameText(std::format("{}{}", m_entity->GetName(), m_entity->IsGlobal()? "(G)" : ""), TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR,
+		FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),TextAlignment::CenterLeft)),
+	m_activeToggle(m_entity->m_Active, GUIStyle(EntityEditorGUI::EDITOR_BACKGROUND_COLOR, TextGUIStyle())), 
+	m_guiLayout(LayoutType::Vertical, SizingType::ShrinkOnly), m_entityHeader(EntityEditorGUI::EDITOR_PRIMARY_COLOR)
 {
 
 	/*m_activeToggle.SetValueSetAction([this](bool isChecked)mutable -> void 
@@ -20,19 +21,30 @@ EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupM
 			m_entity->m_Active = isChecked;
 		});*/
 
+	m_entityHeader.SetSize({1, 0.03 });
+	m_entityHeader.PushChild(&m_activeToggle);
+	m_activeToggle.SetBounds(NormalizedPosition::TOP_LEFT, { ACTIVE_TOGGLE_SPACE, 0});
+
+	m_entityHeader.PushChild(&m_entityNameText);
+	m_entityNameText.SetBounds({ ACTIVE_TOGGLE_SPACE, 1 }, NormalizedPosition::BOTTOM_RIGHT);
+
 	m_guiLayout.AddLayoutElement(&m_entityHeader);
 
 	//TODO: make sure to find a way to add/retrieve all components to then add here
 	//Assert(false, std::format("When adding all comps, entity: {} has:{}", entity.m_Name, std::to_string(entity.GetAllComponentsMutable().size())));
 	auto components = entity.GetAllComponentsMutable();
 	m_componentGUIs.reserve(components.size());
+
 	for (auto& comp : components)
 	{
 		if (comp == nullptr) continue;
 		m_componentGUIs.emplace_back(*m_inputManager, popupManager, *this, *comp);
+
 		m_guiLayout.AddLayoutElement(m_componentGUIs.back().GetTreeGUI());
-		//LogError(std::format("Found comp: {} for entity: {}", std::to_string(comp->GetFields().size()), entity.m_Name));
+		//i++;
+		//m_guiLayout.AddLayoutElement(m_componentGUIs.back().GetTreeGUI());
 	}
+	//Assert(false, std::format("Added"));
 	
 	//Assert(false, "POOP");
 	/*Assert(false, std::format("For entity: {} found fields: {}", entity.m_Name, 

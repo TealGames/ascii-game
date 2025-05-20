@@ -11,17 +11,14 @@ private:
 public:
 
 private:
+	bool HasInvalidSize() const;
+
 public:
 	RelativeGUIRect();
+	RelativeGUIRect(const NormalizedPosition& size);
 	RelativeGUIRect(const NormalizedPosition& topLeft, const NormalizedPosition& size);
 
-	/// <summary>
-	/// Will update the size of the rect. If keeptopleft is TRUE, it will update bottom right pos
-	/// otherwise, if FALSE, will update the topleftpos
-	/// </summary>
-	/// <param name="size"></param>
-	/// <param name="keepTopLeft"></param>
-	void SetSize(const NormalizedPosition& size, const bool keepTopLeft);
+	void SetSize(const NormalizedPosition& size);
 	void SetMaxSize();
 	void SetTopLeft(const NormalizedPosition& topLeft);
 	void SetBottomRight(const NormalizedPosition& bottomRight);
@@ -39,6 +36,7 @@ public:
 	std::string ToString() const;
 };
 
-ScreenPosition GetRealPos(const NormalizedPosition relativePos, const ScreenPosition& parentSize);
+ScreenPosition GetSizeFromRelativePos(const NormalizedPosition& relativePos, const ScreenPosition& parentSize);
+ScreenPosition GetSizeFromFactor(const Vec2& factor, const ScreenPosition& parentSize);
 
 

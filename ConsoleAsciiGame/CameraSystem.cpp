@@ -24,7 +24,7 @@ namespace ECS
 	CameraSystem::CameraSystem(ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer) :
         m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
 	{
-        LogWarning(std::format("CREATED CAMERA SYSTEM: {}", std::to_string(colliderBuffer!=nullptr)));
+        //LogWarning(std::format("CREATED CAMERA SYSTEM: {}", std::to_string(colliderBuffer!=nullptr)));
 	}
 
     void CameraSystem::SystemUpdate(Scene& scene, CameraData& data,

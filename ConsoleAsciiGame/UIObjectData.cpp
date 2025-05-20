@@ -21,8 +21,11 @@ const NormalizedPosition& UIObjectData::GetNormalizedPos() const
 
 void UIObjectData::InitFields()
 {
-	m_Fields = { ComponentField("Pos", [this](Vec2 newPos)-> void 
-		{ m_normalizedPos.SetPos(newPos); }, &m_normalizedPos.GetPosMutable()) };
+	//TODO: we do not want to allow normalized pos to have getposmutable avaialbe so we do
+	//not mess up internal vec2, but var for field needs to be mutable?
+	m_Fields = {};
+	/*m_Fields = { ComponentField("Pos", [this](Vec2 newPos)-> void 
+		{ m_normalizedPos.SetPos(newPos); }, &m_normalizedPos.GetPosMutable()) };*/
 }
 std::vector<std::string> UIObjectData::GetDependencyFlags() const
 {

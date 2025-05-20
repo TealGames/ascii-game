@@ -5,7 +5,7 @@
 SpriteCharGUI::SpriteCharGUI(Input::InputManager& inputManager) 
 	: m_charField(inputManager, InputFieldType::String, InputFieldFlag::None, GUIStyle()) 
 {
-	GUIStyle fieldSettings = GUIStyle({50, 15}, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
+	GUIStyle fieldSettings = GUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR,
 		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
 			TextAlignment::Center, 0.8));
 

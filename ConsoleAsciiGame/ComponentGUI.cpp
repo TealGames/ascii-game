@@ -9,21 +9,24 @@
 #include "GUISelectorManager.hpp"
 #include "EntityEditorGUI.hpp"
 
-constexpr static int MAX_PANEL_WIDTH = 100;
-constexpr static int MAX_PANEL_HEIGHT = 100;
+constexpr static float HEADER_PANEL_HEIGHT = 0.03;
+constexpr static float DROPDOWN_WIDTH = 0.2;
 
 constexpr static float TITLE_FONT_SIZE = 10;
 constexpr static float TITLE_FONT_SPACING = 2;
 
+constexpr static float ONE_FIELD_MAX_ENTITY_SPACE = 0.05;
+
 //If true, will divide fields based how many we have to render, otherwise will try give them as much space as possible
-static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
+//static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
 
 ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component)
 	: m_inputManager(&inputManager), m_component(&component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
-	m_dropdownCheckbox(false, GUIStyle({}, EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUIStyle())), 
+	m_dropdownCheckbox(false, GUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUIStyle())), 
 	m_componentNameText(GetComponentName(), TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, 
 		FontProperties(TITLE_FONT_SIZE, TITLE_FONT_SPACING, GetGlobalFont()),TextAlignment::CenterLeft)), 
-	m_guiContainer(LayoutType::Vertical, SizingType::ExpandParent)
+	m_guiContainer(), m_fieldLayout(LayoutType::Vertical, SizingType::ExpandAndShrink, {}, EntityEditorGUI::EDITOR_BACKGROUND_COLOR), 
+	m_nameHeader(EntityEditorGUI::EDITOR_BACKGROUND_COLOR)
 {
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(), 
 		std::get<Vec2*>(component->GetFieldsMutable()[0].m_Value)->ToString()));*/
@@ -37,14 +40,58 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIMana
 			GetComponentName(), GetEntityGUISafe().GetEntity().m_Name, 
 			Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(component->GetFields())));*/
 
+	m_nameHeader.SetSize({ 1, 1 });
+	m_nameHeader.SetFixed(false, true);
+	m_nameHeader.PushChild(&m_dropdownCheckbox);
+	m_nameHeader.PushChild(&m_componentNameText);
+	m_dropdownCheckbox.SetBounds(NormalizedPosition::TOP_LEFT, { DROPDOWN_WIDTH, 0});
+	m_componentNameText.SetBounds({ DROPDOWN_WIDTH, 1}, NormalizedPosition::BOTTOM_RIGHT);
+
+	m_guiContainer.PushChild(&m_nameHeader);
+	m_guiContainer.SetSize({1, HEADER_PANEL_HEIGHT });
+
 	auto& fields = component.GetFieldsMutable();
 	m_fieldGUIs.reserve(fields.size());
+
+	//size_t i = 0;
+	float totalHeightNorm = 0;
 	for (auto& field : fields)
 	{
 		m_fieldGUIs.emplace_back(GetInputManager(), popupManager, *this, field);
-		m_guiContainer.AddLayoutElement(m_fieldGUIs.back().GetTreeGUI());
+		LogError(std::format("Added component field: {}", m_fieldGUIs.back().GetTreeGUI()->ToStringBase()));
+		//m_fieldGUIs.back().GetTreeGUI()->SetSize({ 1, float(1)/m_fieldGUIs.size()});
+		m_fieldLayout.AddLayoutElement(m_fieldGUIs.back().GetTreeGUI());
+		totalHeightNorm += m_fieldGUIs.back().GetTreeGUI()->GetSize().GetY();
+
+		LogWarning(std::format("Adding field element parent:{}", m_fieldGUIs.back().GetTreeGUI()->ToStringBase()));
+		//i++;
 		//LogWarning(std::format("created field gui from compoennt:{}", Utils::ToStringPointerAddress(&m_fieldGUIs.back())));
 	}
+	//Assert(false, std::format("Poop"));
+
+	m_dropdownCheckbox.SetValueSetAction([this, totalHeightNorm](const bool isChecked) -> void
+		{
+			if (isChecked)
+			{
+				//Assert(false, std::format("CHECK"));
+				//LogWarning(std::format("Creating tree to compoennt gui:{}", m_fieldGUIs.back().GetTreeGUI()->ToStringRecursive("")));
+
+				//m_guiContainer.SetSize(NormalizedPosition( 1, HEADER_PANEL_HEIGHT+ ONE_FIELD_MAX_ENTITY_SPACE * totalHeightNorm));
+				m_guiContainer.SetSize(NormalizedPosition( 1, HEADER_PANEL_HEIGHT+ ONE_FIELD_MAX_ENTITY_SPACE * m_fieldGUIs.size()));
+
+				m_fieldLayout.SetSize({1, 1- m_nameHeader.GetSize().GetY() });
+				m_fieldLayout.SetTopLeftPos(NormalizedPosition::TOP_LEFT- Vec2(0, m_nameHeader.GetSize().GetY()));
+				m_guiContainer.PushChild(&m_fieldLayout);
+
+				//Assert(false, std::format("Component tree:{}", m_guiContainer.ToStringRecursive("")));
+			}
+			else
+			{
+				m_guiContainer.TryPopChildAt(1);
+				//m_nameHeader.SetSize({1, 1});
+				m_guiContainer.SetSize({ 1, HEADER_PANEL_HEIGHT });
+			}
+		});
 
 
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(),
@@ -89,7 +136,6 @@ void ComponentGUI::Update()
 		field.Update();
 	}
 }
-
 
 std::string ComponentGUI::GetComponentName() const
 {

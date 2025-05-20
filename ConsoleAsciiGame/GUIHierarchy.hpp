@@ -42,6 +42,10 @@ private:
 
 	bool IsLayerRootID(const GUIElementID id) const;
 
+	RenderInfo GetRootRenderInfo() const;
+
+	bool TryCalculateElementRenderInfoHelper(const GUIElementID targetId, const RenderInfo& parentInfo, 
+		GUIElement& currentElement, RenderInfo& outInfo) const;
 public:
 	GUIHierarchy(const Vec2Int rootCanvasSize);
 
@@ -78,7 +82,10 @@ public:
 	/// </summary>
 	void ExecuteOnAllElementsDescending(const std::function<void(GUILayer, GUIElement*)>& action);
 
+	RenderInfo TryCalculateElementRenderInfo(const GUIElement& element) const;
+
 	void UpdateAll(const float deltaTime);
 	void RenderAll();
+	std::string ToStringTree() const;
 };
 

@@ -2,46 +2,70 @@
 #include "GUISelectorManager.hpp"
 #include "GUIRect.hpp"
 #include "Debug.hpp"
+#include "HelperFunctions.hpp"
 
 //TODO: these should all be changed to be parsed or retrieved from ui layer of input profile from input manager
 static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
 
 GUISelectorManager::GUISelectorManager(const Input::InputManager& input, GUIHierarchy& hierarchy)
 	: m_inputManager(input), m_hierarchy(hierarchy), m_selectableLayers(), m_currentSelected(nullptr), m_currentDragged(nullptr),
-	m_selectedThisFrame(false), m_lastFrameMousePos(m_inputManager.GetMousePosition())
+	m_selectedThisFrame(false), m_guiTreeUpdated(false), m_lastFrameMousePos(m_inputManager.GetMousePosition())
 {
 }
 
-
-void GUISelectorManager::CraeteSelectableArray()
+void GUISelectorManager::CreateSelectableArray()
 {
 	m_selectableLayers.clear();
 	m_hierarchy.ExecuteOnAllElementsDescending([this](GUILayer layer, GUIElement* element) -> void
 		{
+			if (element == nullptr) return;
+			//LogWarning(std::format("Bool is element:{} selectable:", element->ToStringBase()));
 			if (SelectableGUI* selectable = dynamic_cast<SelectableGUI*>(element))
+			{
 				AddSelectable(layer, selectable);
+				//LogWarning(std::format("YES"));
+			}
 		});
+	LogError(std::format("END of selectable array craetion:{}", m_hierarchy.ToStringTree()));
+}
+
+void GUISelectorManager::TryUpdateTree()
+{
+	if (!m_guiTreeUpdated) return;
+
+	CreateSelectableArray();
+	m_guiTreeUpdated = false;
 }
 
 void GUISelectorManager::Init()
 {
-	CraeteSelectableArray();
+	CreateSelectableArray();
 
 	//TODO: this is slow and not very good solution to have to recreate selectable array on every addition/removal
-	m_hierarchy.m_OnElementAdded.AddListener([this](const GUIElement* element)-> void 
+	m_hierarchy.m_OnElementAdded.AddListener([this](const GUIElement* element)-> void
 		{
-			CraeteSelectableArray();
+			//static size_t i = 0;
+
+			//LogError(std::format("DOPE SHIT"));
+			//CraeteSelectableArray();
+			m_guiTreeUpdated = true;
+
+			/*if (i>=1) Assert(false, std::format("Updated selectable array ({}) element added:{} selectables:{} HIERARCHY:{}", 
+				std::to_string(i), element->ToStringBase(), ToStringSelectables(), m_hierarchy.ToStringTree()));
+			i++;*/
 		});
 
 	m_hierarchy.m_OnElementRemoved.AddListener([this](const GUIElement* element)-> void
 		{
-			CraeteSelectableArray();
+			//CreateSelectableArray();
+			m_guiTreeUpdated = true;
 		});
 }
 
 void GUISelectorManager::SelectNewSelectable(SelectableGUI* selectable)
 {
 	if (selectable == nullptr) return;
+	LogWarning(std::format("SELEC NEW SELECTABLE:{}", selectable->ToStringBase()));
 	selectable->Select();
 	//Assert(false, std::format("SHOULD SELECTE NEW ONE AT: {}", selectable->GetLastFrameRect().ToString()));
 }
@@ -51,6 +75,8 @@ void GUISelectorManager::ClickSelectable(SelectableGUI* selectable)
 	//Assert(false, std::format("CLICKIGN ON SELECTABLE"));
 	if (selectable == nullptr) return;
 	selectable->Click();
+	LogWarning(std::format("CLICK SELECTABLE:{} tree:{}", selectable->ToStringBase(), m_hierarchy.ToStringTree()));
+	LogError(std::format("click selectable ADDR:{}", Utils::ToStringPointerAddress(selectable)));
 }
 
 void GUISelectorManager::DeselectCurrentSelectable()
@@ -62,6 +88,7 @@ void GUISelectorManager::DeselectCurrentSelectable()
 
 void GUISelectorManager::Update()
 {
+	static int clickTime = 0;
 	//std::string allRect = "";
 	//for (auto& selectable : m_selectables)
 	//{
@@ -73,6 +100,7 @@ void GUISelectorManager::Update()
 	//	//allRect += "HELLO";
 	//}
 
+	TryUpdateTree();
 
 	if (m_currentSelected != nullptr && m_selectedThisFrame) m_selectedThisFrame = false;
 	const Input::KeyState selectKeyState = m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetState();
@@ -85,7 +113,7 @@ void GUISelectorManager::Update()
 	//so we can easily just update the current one that is dragged
 	if (selectKeyState == Input::KeyState::Down && m_currentDragged != nullptr)
 	{
-		LogError(std::format("Updating drag for:{} all selectable:{}", typeid(*m_currentDragged).name(), ToStringSelectableTypes()));
+		//LogError(std::format("Updating drag for:{} all selectable:{}", typeid(*m_currentDragged).name(), ToStringSelectableTypes()));
 		m_currentDragged->UpdateDrag(mouseDelta, m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetCurrentDownTime());
 	}
 		
@@ -106,7 +134,10 @@ void GUISelectorManager::Update()
 				std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL");*/
 
 
-				//NOTE: since we can only click or release on one selectable, we can then break when we find it
+			//NOTE: since we can only click or release on one selectable, we can then break when we find it
+			/*LogError(std::format("checking selectable:{} last rect:{} contains pos:{}->{}", selectable->ToStringBase(), 
+				selectable->GetLastFrameRect().ToString(), mousePos.ToString(), std::to_string(selectable->GetLastFrameRect().ContainsPos(mousePos))));*/
+
 			if (selectable->GetLastFrameRect().ContainsPos(mousePos))
 			{
 				if (selectKeyState == Input::KeyState::Pressed)
@@ -118,7 +149,10 @@ void GUISelectorManager::Update()
 				}
 				else if (selectKeyState == Input::KeyState::Released)
 				{
+					LogError(std::format("BEFORE click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
 					ClickSelectable(selectable);
+					LogError(std::format("AFTER click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
+
 					SelectNewSelectable(selectable);
 					m_selectedThisFrame = true;
 					break;
@@ -132,6 +166,9 @@ void GUISelectorManager::Update()
 			}
 		}
 	}
+	//clickTime++;
+	if (selectKeyState == Input::KeyState::Released && clickTime>2) 
+		Assert(false, std::format("After event CLICKED:{} \n\n selectavle tree:{} \n\ngui tree:{}", mousePos.ToString(), ToStringSelectables(), m_hierarchy.ToStringTree()));
 	
 	//Assert(false, std::format("All rects: {}", allRect));
 
@@ -144,6 +181,12 @@ void GUISelectorManager::Update()
 
 void GUISelectorManager::AddSelectable(const GUILayer layer, SelectableGUI* selectable)
 {
+	if (selectable == nullptr)
+	{
+		Assert(false, std::format("Tried to add selectable to gui selector manager but it is NULL"));
+		return;
+	}
+
 	auto it = m_selectableLayers.find(layer);
 
 	if (it == m_selectableLayers.end())
@@ -171,4 +214,22 @@ std::string GUISelectorManager::ToStringSelectableTypes() const
 		}
 	}
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(typeStr);
+}
+
+std::string GUISelectorManager::ToStringSelectables() const
+{
+	std::vector<std::string> layersList = {};
+	std::vector<std::string> selectabeList = {};
+
+	for (const auto& layer : m_selectableLayers)
+	{
+		layersList.push_back("[Layer, Selectables:");
+		for (const auto& selectable : layer.second)
+		{
+			selectabeList.push_back(selectable->ToStringBase());
+		}
+		layersList.back() += Utils::ToStringIterable(selectabeList);
+		layersList.back().push_back(']');
+	}
+	return Utils::ToStringIterable(layersList);
 }

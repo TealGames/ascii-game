@@ -3,8 +3,22 @@
 #include "IRenderable.hpp"
 #include <cstdint>
 #include "RelativeGUIRect.hpp"
+#include "Event.hpp"
+#include "HelperMacros.hpp"
 
 using GUIElementID = std::uint16_t;
+
+enum class GUIElementFlags : std::uint8_t
+{
+	/// <summary>
+	///Means the total normalized dimensions relative to the canvas will stay the same, but the size will NOT update with the 
+	/// parent. Note: this means it WILL size down/up based on canvas size changes since the dimensions are still as percents, but
+	/// if the parent size changes, it will maintain the original dimensions by updating to the corresponding values of the parent size
+	/// </summary>
+	FixedHorizontal =	1 << 0,
+	FixedVertical	=	1 << 1
+};
+FLAG_ENUM_OPERATORS(GUIElementFlags)
 
 /// <summary>
 /// A base class for gui elements whether basic types like input fields, text, buttons or containers.
@@ -25,11 +39,22 @@ private:
 	GUIElementID m_id;
 	RelativeGUIRect m_relativeRect;
 	std::vector<GUIElement*> m_children;
+	GUIElement* m_parent;
+	GUIElementFlags m_flags;
+
 public:
-	
+	//Event<void, GUIElement*> m_OnSizeUpdated;
+	Event<void, GUIElement*> m_OnFarthestChildElementAttached;
 
 private:
 	static GUIElementID GenerateId();
+	/// <summary>
+	/// A less safe version of size settings that has less checks and assumes new size is valid
+	/// It is most often used to get around checks/for performance
+	/// </summary>
+	/// <param name="vec"></param>
+	void SetSizeUnsafe(const Vec2& size);
+
 public:
 	GUIElement();
 	GUIElement(const RelativeGUIRect& relativeRect);
@@ -37,8 +62,14 @@ public:
 	~GUIElement() = default;
 
 	GUIElementID GetId() const;
+	void SetFixed(const bool horizontal, const bool vertical);
+	bool IsFixedVertical() const;
+	bool IsFixedHorizontal() const;
 	
 	void SetSize(const NormalizedPosition& size);
+	void SetMaxSize();
+	void SetSizeX(const float sizeNormalized);
+	void SetSizeY(const float sizeNormalized);
 	void SetTopLeftPos(const NormalizedPosition& topLeftPos);
 	void SetBottomRightPos(const NormalizedPosition& bottomRightPos);
 	void SetBounds(const NormalizedPosition& topLeftPos, const NormalizedPosition& bottomRightPos);
@@ -47,11 +78,16 @@ public:
 	const RelativeGUIRect& GetRect() const;
 	RelativeGUIRect& GetRectMutable();
 
+	GUIElement* GetParentMutable();
+	const GUIElement* GetParent() const;
+
 	void PushChild(GUIElement* element);
 	GUIElement* TryPopChildAt(const size_t index);
+	std::vector<GUIElement*> TryPopChildren(const size_t& startIndex, const size_t& count);
 	std::vector<GUIElement*> PopAllChildren();
 
 	std::vector<GUIElement*>& GetChildrenMutable();
+	const std::vector<GUIElement*>& GetChildren() const;
 	GUIElement* TryGetChildAtMutable(const size_t index);
 	GUIElement* TryGetChildMutable(const GUIElementID id);
 	/// <summary>
@@ -75,13 +111,17 @@ public:
 	virtual void Update(const float deltaTime) = 0;
 	void UpdateRecursive(const float deltaTime);
 
+	RenderInfo CalculateRenderInfo(const RenderInfo& parentInfo) const;
 	/// <summary>
 	/// Will render the current element and return how much space/what top left pos was ACTUALLY used
 	/// </summary>
 	/// <param name="renderInfo"></param>
 	/// <returns></returns>
-	virtual RenderInfo Render(const RenderInfo& renderInfo) = 0;
+	virtual RenderInfo Render(const RenderInfo& parentInfo) = 0;
 	void RenderRecursive(const RenderInfo& renderInfo);
+
+	std::string ToStringBase() const;
+	std::string ToStringRecursive(std::string startNewLine) const;
 
 	/// <summary>
 	/// Will calculate the total space/top left pos used for rendering for the given child at index

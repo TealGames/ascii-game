@@ -15,11 +15,11 @@ class GUISelectorManager;
 class ComponentGUI;
 class PopupGUIManager;
 
-class ComponentFieldGUI : IDelayedRenderable, public ITreeGUIConstructible
+class ComponentFieldGUI : public ITreeGUIConstructible
 {
 private:
 	const Input::InputManager* m_inputManager;
-	ContainerGUI m_guiContainer;
+	ContainerGUI m_guiLayout;
 	ComponentField* m_fieldInfo;
 	std::vector<InputFieldGUI> m_inputFields;
 	ToggleGUI m_checkbox;
@@ -44,7 +44,7 @@ public:
 	void SetFieldToInternal();
 	void SetInternalWithInput();
 	//ScreenPosition Render(const RenderInfo& renderInfo) override;
-	ScreenPosition SetupRender(const RenderInfo& renderInfo, Event<void>& renderActions) override;
+	//ScreenPosition SetupRender(const RenderInfo& renderInfo, Event<void>& renderActions) override;
 	GUIElement* GetTreeGUI() override;
 
 	const ComponentField& GetFieldInfo() const;

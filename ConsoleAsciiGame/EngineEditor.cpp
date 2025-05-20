@@ -31,13 +31,13 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 	m_editModeInfo(), m_assetEditorButton(GUIStyle(), "AssetEditors")
 {
 
-	scene.m_GlobalEntityManager.CreateGlobalEntity("__Editor", TransformData());
+	//scene.m_GlobalEntityManager.CreateGlobalEntity("__Editor", TransformData());
 
-	const GUIStyle toggleSettings = GUIStyle({ 20, 20 }, EntityEditorGUI::EDITOR_SECONDARY_COLOR,
+	const GUIStyle toggleSettings = GUIStyle( EntityEditorGUI::EDITOR_SECONDARY_COLOR,
 		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
 			TextAlignment::Center, GUIPadding(), 0.8));
 
-	const GUIStyle buttonSettings = GUIStyle({ 20, 20 }, EntityEditorGUI::EDITOR_PRIMARY_COLOR,
+	const GUIStyle buttonSettings = GUIStyle( EntityEditorGUI::EDITOR_PRIMARY_COLOR,
 		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
 			TextAlignment::Center, GUIPadding(), 0.8));
 
@@ -72,7 +72,7 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 				m_pauseGameToggle.ToggleValue();
 		});
 
-	LogWarning(std::format("Popup addr:{}", Utils::ToStringPointerAddress(&m_popupManager)));
+	//LogWarning(std::format("Popup addr:{}", Utils::ToStringPointerAddress(&m_popupManager)));
 }
 
 EngineEditor::~EngineEditor()

@@ -11,6 +11,10 @@ SelectableGUI::SelectableGUI() :
 {
 	
 }
+SelectableGUI::~SelectableGUI()
+{
+	//LogError(std::format("Selectable:{} destroyed", ToStringBase()));
+}
 
 GUIRect& SelectableGUI::GetLastFrameRectMutable() { return m_lastFrameRect; }
 const GUIRect SelectableGUI::GetLastFrameRect() const { return m_lastFrameRect; }
@@ -22,7 +26,7 @@ bool SelectableGUI::IsDraggedForTime(const float time) const { return time <= m_
 void SelectableGUI::UpdateDrag(const Vec2 mouseDelta, const float time) 
 { 
 	m_dragTime = time;  
-	LogError(std::format("drag updated mouse mag:{} time:{}", std::to_string( mouseDelta.GetMagnitude()), std::to_string(time)));
+	//LogError(std::format("drag updated mouse mag:{} time:{}", std::to_string( mouseDelta.GetMagnitude()), std::to_string(time)));
 	if (mouseDelta.GetMagnitude() != 0)
 	{
 		m_OnDragDelta.Invoke(this, m_dragTime, mouseDelta);
@@ -47,6 +51,7 @@ void SelectableGUI::Deselect()
 void SelectableGUI::Click()
 {
 	//Assert(false, "SELECTAVBLE CLICKL");
+	LogError(std::format("Invoked click selectable ADDR:{}", Utils::ToStringPointerAddress(this)));
 	m_OnClick.Invoke(this);
 }
 

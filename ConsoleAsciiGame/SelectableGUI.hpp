@@ -41,6 +41,7 @@ protected:
 
 public:
 	SelectableGUI();
+	~SelectableGUI();
 
 	void Select();
 	void Deselect();

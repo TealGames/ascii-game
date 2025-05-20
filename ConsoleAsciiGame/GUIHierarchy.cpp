@@ -7,11 +7,24 @@
 GUIHierarchy::GUIHierarchy(const Vec2Int rootCanvasSize) 
 	: m_rootSize(rootCanvasSize), m_layerRoots({}), m_OnElementAdded(), m_OnElementRemoved()
 {
+	m_rootElements.reserve(TOP_LAYER);
 }
+
 
 GUIElementLayersCollection::iterator GUIHierarchy::CreateNewLayer(const GUILayer layer)
 {
-	m_rootElements.push_back(ContainerGUI());
+	m_rootElements.emplace_back(ContainerGUI());
+	m_rootElements.back().m_OnFarthestChildElementAttached.AddListener([this](GUIElement* el)-> void
+		{
+			if (el == nullptr)
+			{
+				Assert(false, std::format("Invoked new gui element added with null element"));
+				return;
+			}
+
+			m_OnElementAdded.Invoke(el);
+		});
+
 	return m_layerRoots.emplace(layer, &m_rootElements.back()).first;
 }
 bool GUIHierarchy::IsLayerRootID(const GUIElementID id) const
@@ -106,7 +119,7 @@ void GUIHierarchy::AddToRoot(const GUILayer layer, GUIElement* element)
 	}
 
 	layerIt->second->PushChild(element);
-	m_OnElementAdded.Invoke(element);
+	//m_OnElementAdded.Invoke(element);
 }
 
 bool GUIHierarchy::TryAddElementAsChild(const GUIElementID parentId, GUIElement* element)
@@ -121,7 +134,7 @@ bool GUIHierarchy::TryAddElementAsChild(const GUIElementID parentId, GUIElement*
 	if (foundElement == nullptr) return false;
 
 	foundElement->PushChild(element);
-	m_OnElementAdded.Invoke(element);
+	//m_OnElementAdded.Invoke(element);
 	return true;
 }
 GUIElement* GUIHierarchy::TryRemoveElementChildren(const GUIElementID id)
@@ -187,6 +200,7 @@ void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILa
 		while (!bfsQueue.empty())
 		{
 			currElement = bfsQueue.front();
+			//LogWarning(std::format("Going throguh elkements descending el:{}", currElement->ToStringBase()));
 			//NOTE: we do NOT want to execute actions on the root elements because then we can 
 			//have acess to root and make undesired changes that should not be allowed
 			if (!IsLayerRootID(currElement->GetId())) 
@@ -214,15 +228,70 @@ void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILa
 	}
 }
 
+bool GUIHierarchy::TryCalculateElementRenderInfoHelper(const GUIElementID targetId, const RenderInfo& parentInfo,
+	GUIElement& currentElement, RenderInfo& outInfo) const
+{
+	if (currentElement.GetId() == targetId)
+	{
+		outInfo = currentElement.CalculateRenderInfo(parentInfo);
+		return true;
+	}
+
+	if (currentElement.GetChildCount() == 0) return false;
+
+	bool elementWasFound = false;
+	for (auto& child : currentElement.GetChildrenMutable())
+	{
+		if (child == nullptr) continue;
+
+		elementWasFound= TryCalculateElementRenderInfoHelper(targetId, currentElement.CalculateRenderInfo(parentInfo), *child, outInfo);
+		if (elementWasFound) return true;
+	}
+
+	return false;
+}
+
+RenderInfo GUIHierarchy::TryCalculateElementRenderInfo(const GUIElement& element) const
+{
+	RenderInfo result = {};
+	bool wasFound = false;
+	for (const auto& layerRoot : m_layerRoots)
+	{
+		if (layerRoot.second == nullptr) continue;
+		if (layerRoot.second->GetChildCount() == 0) continue;
+
+		wasFound = TryCalculateElementRenderInfoHelper(element.GetId(), GetRootRenderInfo(), *layerRoot.second, result);
+		if (wasFound) return result;
+	}
+
+	return result;
+}
+
 void GUIHierarchy::UpdateAll(const float deltaTime)
 {
-	//Since we are in increasing order and lower number -> farther in background
-	for (size_t i = 0; i < m_layerRoots.size(); i++)
+	try
 	{
-		if (m_layerRoots[i]->GetChildCount() == 0) continue;
+		//Since we are in increasing order and lower number -> farther in background
+		for (size_t i = 0; i < m_layerRoots.size(); i++)
+		{
+			if (m_layerRoots[i]->GetChildCount() == 0) continue;
 
-		m_layerRoots[i]->UpdateRecursive(deltaTime);
+			m_layerRoots[i]->UpdateRecursive(deltaTime);
+		}
 	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to run update all in gui hierarchy "
+			"but ran into error:{} full tree:{}", e.what(), ToStringTree()));
+	}
+
+	LogError(std::format("Tree:{}", ToStringTree()));
+	//Assert(false, std::format("After first update tree:{}", ToStringTree()));
+}
+
+RenderInfo GUIHierarchy::GetRootRenderInfo() const
+{
+	return RenderInfo(ScreenPosition(0, 0), m_rootSize);
 }
 
 void GUIHierarchy::RenderAll()
@@ -230,13 +299,31 @@ void GUIHierarchy::RenderAll()
 	//TODO: this could probably be optimized if there are no changes allowed during runtime
 	//by having a priority queue or map of all values to render in order
 
-	//Since we are in increasing order and lower number -> farther in background
-	for (size_t i = 0; i < m_layerRoots.size(); i++)
+	try
 	{
-		if (m_layerRoots[i]->GetChildCount() == 0) continue;
+		//Since we are in increasing order and lower number -> farther in background
+		for (size_t i = 0; i < m_layerRoots.size(); i++)
+		{
+			if (m_layerRoots[i]->GetChildCount() == 0) continue;
 
-		//Note: the top left pos is (0, 0) when rendering and y increases as you go down
-		m_layerRoots[i]->RenderRecursive(RenderInfo(ScreenPosition(0, 0), m_rootSize));
+			//Note: the top left pos is (0, 0) when rendering and y increases as you go down
+			m_layerRoots[i]->RenderRecursive(GetRootRenderInfo());
+		}
+		//Assert(false, std::format("Reender all rec"));
 	}
-	//Assert(false, std::format("Reender all rec"));
+	catch(const std::exception& e)
+	{
+		Assert(false, std::format("Tried to run render all in gui hierarchy "
+			"but ran into error:{} full tree:{}", e.what(), ToStringTree()));
+	}
+}
+
+std::string GUIHierarchy::ToStringTree() const
+{
+	std::string result = "";
+	for (const auto& layer : m_layerRoots)
+	{
+		result += std::format("\n\nLayer:{}", layer.second->ToStringRecursive(""));
+	}
+	return result;
 }

@@ -2,13 +2,13 @@
 #include "NormalizedPosition.hpp"
 #include "Debug.hpp"
 
-const Vec2 NormalizedPosition::TOP_LEFT = { 0, 1 };
-const Vec2 NormalizedPosition::TOP_RIGHT = { 1, 1 };
-const Vec2 NormalizedPosition::BOTTOM_LEFT = { 0, 0 };
-const Vec2 NormalizedPosition::BOTTOM_RIGHT = { 1, 0 };
-const Vec2 NormalizedPosition::CENTER = { 0.5, 0.5 };
-const Vec2 NormalizedPosition::BOTTOM_CENTER = { 0.5, 0 };
-const Vec2 NormalizedPosition::TOP_CENTER = { 0.5, 1 };
+const Vec2 NormalizedPosition::TOP_LEFT = { MIN, MAX };
+const Vec2 NormalizedPosition::TOP_RIGHT = { MAX, MAX };
+const Vec2 NormalizedPosition::BOTTOM_LEFT = { MIN, MIN };
+const Vec2 NormalizedPosition::BOTTOM_RIGHT = { MAX, MIN };
+const Vec2 NormalizedPosition::CENTER = { HALF, HALF };
+const Vec2 NormalizedPosition::BOTTOM_CENTER = { HALF, MIN };
+const Vec2 NormalizedPosition::TOP_CENTER = { HALF, MAX };
 
 NormalizedPosition::NormalizedPosition() : 
 	NormalizedPosition(0, 0) {}
@@ -35,14 +35,14 @@ const Vec2& NormalizedPosition::GetPos() const
 
 	return m_pos;
 }
-Vec2& NormalizedPosition::GetPosMutable()
-{
-	if (!Assert(this, IsValidPos(), std::format("Tried to retrieve normalized pos MUTABLE, "
-		"but it is an invalid state: {}", m_pos.ToString())))
-		throw std::invalid_argument("Invalid normalized pos state");
-
-	return m_pos;
-}
+//Vec2& NormalizedPosition::GetPosMutable()
+//{
+//	if (!Assert(this, IsValidPos(), std::format("Tried to retrieve normalized pos MUTABLE, "
+//		"but it is an invalid state: {}", m_pos.ToString())))
+//		throw std::invalid_argument("Invalid normalized pos state");
+//
+//	return m_pos;
+//}
 
 const float& NormalizedPosition::GetX() const { return m_pos.m_X; }
 const float& NormalizedPosition::GetY() const { return m_pos.m_Y; }
@@ -52,11 +52,33 @@ float& NormalizedPosition::GetYMutable() { return m_pos.m_Y; }
 
 void NormalizedPosition::SetPos(const Vec2& relativePos)
 {
-	m_pos.m_X = std::clamp(relativePos.m_X, float(0), float(1));
-	m_pos.m_Y = std::clamp(relativePos.m_Y, float(0), float(1));
+	SetPosX(relativePos.m_X);
+	SetPosY(relativePos.m_Y);
 }
 
-bool NormalizedPosition::IsZero() const { return m_pos == Vec2::ZERO; }
+void NormalizedPosition::SetPosX(const float x)
+{
+	m_pos.m_X = std::clamp(x, float(0), float(1));
+}
+void NormalizedPosition::SetPosY(const float y)
+{
+	m_pos.m_Y = std::clamp(y, float(0), float(1));
+}
+void NormalizedPosition::SetPosDeltaX(const float deltaX)
+{
+	SetPosX(m_pos.m_X + deltaX);
+}
+void NormalizedPosition::SetPosDeltaY(const float deltaY)
+{
+	SetPosY(m_pos.m_Y + deltaY);
+}
+
+bool NormalizedPosition::IsZero() const { return Utils::ApproximateEqualsF(m_pos.m_X, 0) && Utils::ApproximateEqualsF(m_pos.m_Y, 0); }
+
+std::string NormalizedPosition::ToString() const
+{
+	return std::format("{}", m_pos.ToString());
+}
 
 NormalizedPosition NormalizedPosition::operator+(const NormalizedPosition& other) const
 {

@@ -11,20 +11,26 @@
 #include "Vec2.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 10;
-constexpr static float FIELD_FONT_FACTOR = 0.8;
+constexpr static float FIELD_TEXT_FONT_FACTOR = 0.8;
+constexpr static float INPUT_FIELD_TEXT_FONT_FACTOR = 0.8;
 
-constexpr static float FONT_SIZE = 10;
-constexpr static float FONT_SPACING = 10;
+//constexpr static float FONT_SIZE = 10;
+//constexpr static float FONT_SPACING = 10;
 
-const static ScreenPosition MAX_FIELD_SIZE = { 100, 20 };
+constexpr static float FIELD_IDENT = 0.05;
+constexpr static float FIELD_SPACING_X = 0.05;
+
+constexpr static float FIELD_WIDTH_PER_CHAR = 0.05;
+constexpr static float FIELD_NAME_CHAR_NEW_LINE_THRESHOLD = 0.5;
 
 ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager,
 	const ComponentGUI& componentGUI, ComponentField& field)
 	: m_fieldInfo(&field), m_inputFields(), m_checkbox(false, GUIStyle()), m_colorPicker(popupManager, GUIStyle()), 
 	m_inputManager(&inputManager), m_componentGUI(&componentGUI),
-	m_fieldNameText(GetFieldInfo().m_FieldName, FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
-		EntityEditorGUI::EDITOR_SECONDARY_COLOR), m_guiContainer()
+	m_fieldNameText(GetFieldInfo().m_FieldName, TextGUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
+		FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::CenterLeft, {}, FIELD_TEXT_FONT_FACTOR)), m_guiLayout()
 {
+	//LogWarning(std::format("CReated component field"));
 	//LogWarning(std::format("compinent field gui addr create:{}", Utils::ToStringPointerAddress(this)));
 	/*if (m_fieldInfo.IsCurrentType<Vec2>()) 
 
@@ -35,17 +41,19 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 	InputFieldFlag fieldFlags = InputFieldFlag::None;
 	if (GetFieldInfo().IsReadonly()) fieldFlags |= InputFieldFlag::UserUIReadonly;
 
-	GUIStyle fieldSettings = GUIStyle(MAX_FIELD_SIZE, EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
-		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, FIELD_FONT_FACTOR));
+	GUIStyle fieldSettings = GUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
+		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));
 	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
 		std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
 
 	if (GetFieldInfo().IsCurrentType<int>() || GetFieldInfo().IsCurrentType<std::uint8_t>())
 	{
+		m_inputFields.reserve(1);
 		m_inputFields.emplace_back(GetInputManager(), InputFieldType::Integer, fieldFlags, fieldSettings);
 	}
 	else if (GetFieldInfo().IsCurrentType<float>())
 	{
+		m_inputFields.reserve(1);
 		m_inputFields.emplace_back(GetInputManager(), InputFieldType::Float, fieldFlags, fieldSettings);
 	}
 	else if (GetFieldInfo().IsCurrentType<bool>())
@@ -54,10 +62,12 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 	}
 	else if (GetFieldInfo().IsCurrentType<std::string>())
 	{
+		m_inputFields.reserve(1);
 		m_inputFields.emplace_back(GetInputManager(), InputFieldType::String, fieldFlags, fieldSettings);
 	}
 	else if (GetFieldInfo().IsCurrentType<Vec2>())
 	{
+		m_inputFields.reserve(2);
 		for (int i = 0; i < 2; i++)
 		{
 			m_inputFields.emplace_back(GetInputManager(), InputFieldType::Float, fieldFlags, fieldSettings);
@@ -65,6 +75,7 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 	}
 	else if (GetFieldInfo().IsCurrentType<Vec2Int>())
 	{
+		m_inputFields.reserve(2);
 		for (int i = 0; i < 2; i++)
 		{
 			m_inputFields.emplace_back(GetInputManager(), InputFieldType::Integer, fieldFlags, fieldSettings);
@@ -80,9 +91,29 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 			"but could not find any actions for its type: {}", GetFieldInfo().m_FieldName, GetFieldInfo().GetCurrentType().name()));
 	}
 
+
+	//m_fieldNameText.SetBounds({FIELD_IDENT, 1}, { 1, 1 - FIELD_HEIGHT });
+
+	const float textWidthNorm = FIELD_WIDTH_PER_CHAR * m_fieldNameText.GetText().size();
+	const bool fieldsStartNewLine = textWidthNorm >= FIELD_NAME_CHAR_NEW_LINE_THRESHOLD;
+	//if (fieldsStartNewLine) Assert(false, std::format("field strart new line"));
+
+	m_fieldNameText.SetSize(NormalizedPosition( textWidthNorm, fieldsStartNewLine? 0.5 : 1.0));
+	m_fieldNameText.SetTopLeftPos({ FIELD_IDENT, 1 });
+	m_guiLayout.PushChild(&m_fieldNameText);
+
+	//If we have 2 lines, we use the full max space, otherwise we use half
+	if (fieldsStartNewLine) m_guiLayout.SetSize({1, 1 });
+	else m_guiLayout.SetSize({ 1, 0.5 });
+
+	//LogWarning(std::format("HELLO THERE FIELD GUI REACHED"));
 	//TODO: this should not be called on set field to internal since it gets called every frame
 	if (!m_inputFields.empty())
 	{
+		float currentFieldX = fieldsStartNewLine ? FIELD_IDENT : m_fieldNameText.GetRect().GetBottomRighttPos().GetX();
+		const float fieldSizeX = (1 - currentFieldX - (FIELD_SPACING_X * (m_inputFields.size() - 1))) / m_inputFields.size();
+		
+		LogWarning(std::format("Field size:{}", std::to_string(FIELD_SPACING_X * (m_inputFields.size() - 1))));
 		for (auto& field : m_inputFields)
 		{
 			//LogError("Set field submit action");
@@ -98,17 +129,40 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 
 					SetInternalWithInput();
 				});
+
+			//LogWarning(std::format("Creating component field gui with size:{}", NormalizedPosition(float(1) / m_inputFields.size(), FIELD_HEIGHT).ToString()));
+			field.SetSize(NormalizedPosition(fieldSizeX, fieldsStartNewLine? 0.5 : 1));
+			field.SetTopLeftPos({ currentFieldX, fieldsStartNewLine? 1- m_fieldNameText.GetSize().GetY() : 1});
+			
+			currentFieldX += field.GetSize().GetX() + FIELD_SPACING_X;
+			/*LogWarning(std::format("Setting field:{} to:{} ACTUAL TOPLEFT:{} SIZE:{}", std::to_string(field.GetId()), field.GetRect().ToString(), */
+				//NormalizedPosition(fieldPosX, m_fieldNameText.GetSize().GetY()).ToString(), NormalizedPosition(float(1) / m_inputFields.size(), FIELD_HEIGHT).ToString()));
+			//LogWarning(std::format(" FART FART FART FART Set field size:{}", field.ToStringBase()));
+			m_guiLayout.PushChild(&field);
+			//TODO: this feels like a very gimicky solution to the problem where many fields for a component usually results in the parent layout shrinking their x and y size
+			//thus leading to fields that fit, but are very small in terms of their width. The solution was to fix their horizontal size so layout cannot change it
+			m_guiLayout.SetFixed(true, false);
 		}
+
+		//Assert(false, std::format("Craeting field with field text:{} text width:{}", m_fieldNameText.ToStringBase(), std::to_string(textWidthNorm)));
 	}
 	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
 	{
 
 	}
-	else m_checkbox.SetValueSetAction([this](bool isChecked)-> void
-		{
-			//LogError("Fart and shit");
-			SetInternalWithInput();
-		});
+	else
+	{
+		m_guiLayout.PushChild(&m_checkbox);
+		m_checkbox.SetSize({1, 1 });
+		m_checkbox.SetValueSetAction([this](bool isChecked)-> void
+			{
+				//LogError("Fart and shit");
+				SetInternalWithInput();
+			});
+	}
+
+	
+	//Assert(false, std::format("Created field gui:{}", GetTreeGUI()->ToStringRecursive("")));
 }
 
 ComponentFieldGUI::~ComponentFieldGUI()
@@ -317,10 +371,10 @@ ScreenPosition ComponentFieldGUI::Render(const RenderInfo& renderInfo)
 
 GUIElement* ComponentFieldGUI::GetTreeGUI()
 {
-	return &m_guiContainer;
+	return &m_guiLayout;
 }
 
-
+/*
 ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Event<void>& renderActions)
 {
 	//TODO: temporarily disabled
@@ -387,7 +441,7 @@ ScreenPosition ComponentFieldGUI::SetupRender(const RenderInfo& renderInfo, Even
 
 	return { renderInfo.m_RenderSize.m_X, static_cast<int>(currentPos.y - renderInfo.m_TopLeftPos.m_Y) };
 }
-
+*/
 
 const ComponentField& ComponentFieldGUI::GetFieldInfo() const
 {

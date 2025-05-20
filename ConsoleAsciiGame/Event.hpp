@@ -54,6 +54,10 @@ public:
 	{
 
 	}
+	~Event()
+	{
+		m_listeners.clear();
+	}
 
 	/// <summary>
 	/// Returns true if it successfully invoked 1+ listeners

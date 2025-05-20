@@ -283,6 +283,10 @@ namespace Utils
 	{
 		return std::to_string(static_cast<int>(u8));
 	}
+	std::string ToStringIterable(const std::vector<std::string>& strings)
+	{
+		return ToStringIterable<std::vector<std::string>, std::string>(strings);
+	}
 
 	std::string ToStringDouble(const double& d, const std::streamsize& precision, const bool& decimalPlacePrecision)
 	{

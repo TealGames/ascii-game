@@ -4,8 +4,6 @@
 #include "GUISelectorManager.hpp"
 #include <optional>
 
-static constexpr int MAX_HEIGHT = 15;
-
 //ToggleGUI::ToggleGUI() : 
 //	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
 //	m_valueSetAction(nullptr) {}
@@ -17,7 +15,7 @@ ToggleGUI::ToggleGUI(const bool& startValue, const GUIStyle& settings,
 {
 	m_OnClick.AddListener([this](SelectableGUI* self)-> void 
 		{
-			//LogError("POOP");
+			//Assert(false, "POOP");
 			ToggleValue();
 			self->Deselect();
 			//SetSettings({});
@@ -26,6 +24,7 @@ ToggleGUI::ToggleGUI(const bool& startValue, const GUIStyle& settings,
 
 ToggleGUI::~ToggleGUI()
 {
+	//LogError(std::format("Toggle destroyed"));
 	/*if (m_settings.m_Size == ScreenPosition{69, 69}) 
 		Assert(false, std::format("DEATRUCTOR HELL YEAH settings:{}", m_settings.m_Size.ToString()));*/
 }
@@ -57,26 +56,24 @@ void ToggleGUI::SetValueSetAction(const ToggleAction& action)
 
 RenderInfo ToggleGUI::Render(const RenderInfo& renderInfo)
 {
-	const int guiHeight= std::min(renderInfo.m_RenderSize.m_Y, MAX_HEIGHT);
+	const int guiHeight = renderInfo.m_RenderSize.m_Y;
 	const int guiWidth = guiHeight;
 
-	Vector2 currentPos= RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
-	currentPos.x += (renderInfo.m_RenderSize.m_X - guiWidth) / 2;
+	Vector2 topLeftPos= RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
+	topLeftPos.x += (renderInfo.m_RenderSize.m_X - guiWidth) / 2;
 
-	DrawRectangle(currentPos.x, currentPos.y, guiWidth, guiHeight, m_settings.m_BackgroundColor);
-	SetLastFramneRect(GUIRect{ ScreenPosition(currentPos.x, currentPos.y), {guiWidth, guiHeight} });
+	DrawRectangle(topLeftPos.x, topLeftPos.y, guiWidth, guiHeight, m_settings.m_BackgroundColor);
 	if (IsToggled())
 	{
 		const int radius = std::min(guiWidth, guiHeight) / 2;
-		DrawCircle(currentPos.x+radius, currentPos.y+radius, radius, WHITE);
+		DrawCircle(topLeftPos.x+radius, topLeftPos.y+radius, radius, WHITE);
 	}
 
 	//Since we do not really have different states between focus input and settings (it is done in one go)
 	//we can always draw the disabled overlay
-	DrawDisabledOverlay({ ScreenPosition{static_cast<int>(currentPos.x),
-				static_cast<int>(currentPos.y) }, ScreenPosition{guiWidth, guiHeight} });
+	DrawDisabledOverlay({ ScreenPosition{static_cast<int>(topLeftPos.x),
+				static_cast<int>(topLeftPos.y) }, ScreenPosition{guiWidth, guiHeight} });
 
-	GetLastFrameRectMutable().SetTopLeftPos(renderInfo.m_TopLeftPos);
-	GetLastFrameRectMutable().SetSize({renderInfo.m_RenderSize.m_X, guiHeight });
-	return { renderInfo.m_TopLeftPos, GetLastFrameRect().GetSize() };
+	SetLastFramneRect(GUIRect{ ScreenPosition(topLeftPos.x, topLeftPos.y), {guiWidth, guiHeight} });
+	return renderInfo;
 }

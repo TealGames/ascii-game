@@ -142,10 +142,22 @@ Vec2 Vec2::operator+(const Vec2& otherVec) const
 {
 	return {m_X + otherVec.m_X, m_Y + otherVec.m_Y};
 }
+Vec2& Vec2::operator+=(const Vec2& other)
+{
+	m_X += other.m_X;
+	m_Y += other.m_Y;
+	return *this;
+}
 
 Vec2 Vec2::operator-(const Vec2& otherVec) const
 {
 	return { m_X - otherVec.m_X, m_Y - otherVec.m_Y };
+}
+Vec2& Vec2::operator-=(const Vec2& other)
+{
+	m_X -= other.m_X;
+	m_Y -= other.m_Y;
+	return *this;
 }
 
 Vec2 Vec2::operator*(const Vec2& otherVec) const
@@ -156,6 +168,15 @@ Vec2 Vec2::operator*(const Vec2& otherVec) const
 Vec2 Vec2::operator*(const float& scalar) const
 {
 	return { m_X * scalar, m_Y * scalar };
+}
+Vec2 Vec2::operator/(const Vec2& other) const
+{
+	if (!Assert(this, other.m_X != 0 && other.m_Y!=0,
+		std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString())))
+	{
+		return *this;
+	}
+	return {m_X/ other.m_X, m_Y/other.m_Y};
 }
 
 Vec2 Vec2::operator/(const float& scalar) const
@@ -251,6 +272,11 @@ Vec2 GetVectorEndPoint(const Vec2& startPos, const Vec2& vector)
 float DotProduct(const Vec2& vecA, const Vec2& vecB)
 {
 	return (vecA.m_X * vecB.m_X) + (vecA.m_Y * vecB.m_Y);
+}
+
+Vec2 Abs(const Vec2& vec)
+{
+	return Vec2(std::abs(vec.m_X), std::abs(vec.m_Y));
 }
 
 Vec2 GenerateRandomVec2(const Vec2& minVec, const Vec2 maxVec)

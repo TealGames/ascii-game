@@ -3,10 +3,12 @@
 #include <vector>
 #include "ITreeGUIConstructible.hpp"
 #include "LayoutGUI.hpp"
+#include "ContainerGUI.hpp"
 #include "ComponentData.hpp"
 #include "ComponentFieldGUI.hpp"
 #include "InputManager.hpp"
 #include "ToggleGUI.hpp"
+#include "PanelGUI.hpp"
 
 class EntityGUI;
 class GUISelectorManager;
@@ -16,7 +18,9 @@ class ComponentGUI : public ITreeGUIConstructible
 {
 private:
 	const Input::InputManager* m_inputManager;
-	LayoutGUI m_guiContainer;
+	ContainerGUI m_guiContainer;
+	LayoutGUI m_fieldLayout;
+	PanelGUI m_nameHeader;
 	ComponentData* m_component;
 	std::vector<ComponentFieldGUI> m_fieldGUIs;
 

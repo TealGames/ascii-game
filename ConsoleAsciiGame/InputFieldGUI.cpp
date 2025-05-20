@@ -212,17 +212,13 @@ bool InputFieldGUI::HasFlag(const InputFieldFlag& flag) const
 
 RenderInfo InputFieldGUI::Render(const RenderInfo& renderInfo)
 {
-	const int widthUsed = std::min(renderInfo.m_RenderSize.m_X, m_settings.m_Size.m_X);
-	const int heightUsed = std::min(renderInfo.m_RenderSize.m_Y, m_settings.m_Size.m_Y);
-	Vec2Int renderSize = { widthUsed, heightUsed };
-
-	Assert(false, std::format("drawing field gui at:{}", renderInfo.ToString()));
-	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, widthUsed, heightUsed, m_settings.m_BackgroundColor);
+	//Assert(false, std::format("drawing field gui at:{}", renderInfo.ToString()));
+	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, m_settings.m_BackgroundColor);
 	std::string inputStr = IsSelected() && !HasFlag(InputFieldFlag::UserUIReadonly) ? GetDisplayAttemptedInput() : GetDisplayInput();
 	//Assert(false, std::format("Found input: {}", inputStr));
 	
 	m_textGUI.SetText(inputStr);
-	m_textGUI.Render(RenderInfo(renderInfo.m_TopLeftPos, renderSize));
+	m_textGUI.Render(renderInfo);
 
 	//Vector2 textStartPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
 	//const float fontSize = m_settings.m_TextSettings.GetFontSize(renderSize);
@@ -233,17 +229,16 @@ RenderInfo InputFieldGUI::Render(const RenderInfo& renderInfo)
 	//DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
 	//	fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
 
-	if (!IsSelected() || HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay({ renderInfo.m_TopLeftPos, renderSize });
+	if (!IsSelected() || HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay(renderInfo);
 
-	GetLastFrameRectMutable().SetSize(renderSize);
-	GetLastFrameRectMutable().SetTopLeftPos(renderInfo.m_TopLeftPos);
+	SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));
 	//Assert(false, std::format("On render set last rect mutable; {}", GetLastFrameRect().ToString()));
 
 	/*m_lastRenderRect.SetSize(renderSize);
 	m_lastRenderRect.SetTopLeftPos(renderInfo.m_TopLeftPos);*/
 	
 	//LogError(std::format("Updating input field rect to: {}", m_lastRenderRect.ToString()));
-	return { renderInfo.m_TopLeftPos, renderSize };
+	return renderInfo;
 }
 
 //const GUIRect& InputField::GetLastRenderRect() const

@@ -27,8 +27,8 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUIHierarchy& h
 		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit, GUIStyle()), 
 	m_isEnabled(false)
 {
-	GUIStyle fieldSettings = GUIStyle(ScreenPosition{ COMMAND_CONSOLE_WIDTH , COMMAND_CONSOLE_HEIGHT }, GRAY,
-		TextGUIStyle(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
+	GUIStyle fieldSettings = GUIStyle(GRAY, TextGUIStyle(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), 
+		TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
 	m_inputField.SetSettings(fieldSettings);
 	m_inputField.SetSubmitAction([this](std::string input) -> void
 		{

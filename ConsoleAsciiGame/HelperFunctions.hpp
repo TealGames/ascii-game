@@ -139,6 +139,11 @@ namespace Utils
 	concept HasBitwiseOr = requires(EnumType a, EnumType b) {
 		{ a | b } -> std::convertible_to<EnumType>;
 	};
+	template <typename EnumType>
+	concept HasBitwiseNot = requires(EnumType a) {
+		{ ~a } -> std::convertible_to<EnumType>;
+	};
+
 	template <typename T, typename... Args>
 	concept AllSameType = (std::is_same_v<T, Args> && ...);
 
@@ -168,12 +173,28 @@ namespace Utils
 	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>>
 		     && HasBitwiseAnd<EnumType> && HasBitwiseOr<EnumType> && 
 			 AllSameType<EnumType, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
-	constexpr bool HasFlagAll (const EnumType enumBits, const CheckFlagType... checkFlags)
+	constexpr bool HasFlagAll(const EnumType enumBits, const CheckFlagType... checkFlags)
 	{
 		EnumType flagsCombined = (checkFlags | ...);
 		return (enumBits & flagsCombined) == flagsCombined;
 	}
 
+	bool HasFlag(unsigned int fullFlag, unsigned int hasFlag);
+
+	template<typename EnumType>
+	requires std::is_enum_v<EnumType> && 
+			 std::is_integral_v<std::underlying_type_t<EnumType>> && HasBitwiseOr<EnumType>
+	constexpr void AddFlags(EnumType& enumBits, const EnumType addFlags)
+	{
+		enumBits = enumBits | addFlags;
+	}
+	template<typename EnumType>
+	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>> 
+			 && HasBitwiseAnd<EnumType> && HasBitwiseNot<EnumType>
+	constexpr void RemoveFlags(EnumType& enumBits, const EnumType removeFlags)
+	{
+		enumBits = enumBits & ~removeFlags;
+	}
 
 	//TODO: make a function that can return the type that exists in a variant
 	template <size_t Index, typename Variant>
@@ -289,6 +310,8 @@ namespace Utils
 		str += "]";
 		return str;
 	}
+
+	std::string ToStringIterable(const std::vector<std::string>& strings);
 
 	template <typename TKey, typename TValue>
 	std::string ToStringIterable(const std::unordered_map<TKey, TValue> collection,
@@ -520,8 +543,6 @@ namespace Utils
 	{
 		return GetUnorderedIntersection(std::vector<T>(vec1), std::vector<T>(vec2));
 	}
-
-	bool HasFlag(unsigned int fullFlag, unsigned int hasFlag);
 
 	double ToRadians(const double);
 	double ToDegrees(const double);

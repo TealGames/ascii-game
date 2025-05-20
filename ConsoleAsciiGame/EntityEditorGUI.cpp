@@ -14,7 +14,7 @@ const Color EntityEditorGUI::EDITOR_PRIMARY_COLOR = DARKGRAY;
 
 const Vec2 EntityEditorGUI::EDITOR_CHAR_SPACING = { 3, 2 };
 
-static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = {0.8, 1};
+static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = { 0.8, 1 };
 
 EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input,
 	const CameraController& cameraController, GUIHierarchy& hiearchy, PopupGUIManager& popupManager)
@@ -52,6 +52,7 @@ void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 
 	m_selectedEntity->GetTreeGUI()->SetBounds(TOP_LEFT_POS_NORMALIZED, NormalizedPosition::BOTTOM_RIGHT);
 	m_guiTree->AddToRoot(DEFAULT_LAYER, m_selectedEntity->GetTreeGUI());
+	//Assert(false, std::format("Clicked entity:{} tree:{}", m_selectedEntity->GetTreeGUI()->ToStringBase(), m_guiTree->ToStringTree()));
 }
 
 void EntityEditorGUI::Update()
