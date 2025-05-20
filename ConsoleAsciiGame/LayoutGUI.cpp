@@ -46,31 +46,31 @@ void LayoutGUI::LayoutUpdate()
 	if (GetChildCount() == 0) return;
 
 	//SetMaxSize();
-	Vec2 currentSizeTakenNorm = {};
+	Vec2 totalElementSizeUsed = {};
 	NormalizedPosition currentSize = {};
 	//float layoutTypeBasedSizeMax = 0;
 
 	float currentRowLenNorm = 0;
-	float totalHeight = 0;
+	int gridRows = 0;
 	for (const auto& child : GetChildrenMutable())
 	{
 		currentSize = child->GetSize();
 		
-		//If the type is a grid, we then need to apply grid-like sizing to ensure we can apply
-		//a correct scale factor
 		if (m_type == LayoutType::Grid)
 		{
-			if (currentSizeTakenNorm.m_X + currentSize.GetX() + m_spacing.GetX() < NormalizedPosition::MAX)
-				currentSizeTakenNorm.m_X += currentSize.GetX() + m_spacing.GetX();
+			if (totalElementSizeUsed.m_X + currentSize.GetX() + m_spacing.GetX() < NormalizedPosition::MAX)
+				totalElementSizeUsed.m_X += currentSize.GetX() + m_spacing.GetX();
 			else
 			{
-				currentSizeTakenNorm.m_X = currentSize.GetX() + m_spacing.GetX();
-				currentSizeTakenNorm.m_Y += currentSize.GetY() + m_spacing.GetY();
+				totalElementSizeUsed.m_X = currentSize.GetX() + m_spacing.GetX();
+				//Note: since we need the total element size, we ignore vertical spacing
+				totalElementSizeUsed.m_Y += currentSize.GetY();
+				gridRows++;
 			}
 		}
 		else
 		{
-			currentSizeTakenNorm += currentSize.GetPos();
+			totalElementSizeUsed += currentSize.GetPos();
 		}
 
 		/*if (m_type == LayoutType::Horizontal && layoutTypeBasedSizeMax > currentSize.GetY()) 
@@ -78,16 +78,17 @@ void LayoutGUI::LayoutUpdate()
 		else if (m_type == LayoutType::Vertical && layoutTypeBasedSizeMax > currentSize.GetX())
 			layoutTypeBasedSizeMax = currentSize.GetX();*/
 	}
-	if (m_type!=LayoutType::Grid) currentSizeTakenNorm+= m_spacing.GetPos() * (GetChildCount() - 1);
+	//if (m_type!=LayoutType::Grid) currentSizeTakenNorm+= m_spacing.GetPos() * (GetChildCount() - 1);
 
 	float sizeFactor = 1;
 	//If we have no sizing, we leave the size factor as one
 	if (m_sizingType != SizingType::None)
 	{
-		//We base size factor off of total x for HORIZONTAL
-		if (m_type == LayoutType::Horizontal) sizeFactor = 1 / currentSizeTakenNorm.m_X;
-		//If we have VERTICAL layout or GRID layoyt, we base size factor off of total y
-		else sizeFactor = 1 / currentSizeTakenNorm.m_Y;
+		//We base size factor off of remaining horizontal space after removing x spacing and how much total elements x size (without spaces) goes over that limit
+		if (m_type == LayoutType::Horizontal) sizeFactor = (NormalizedPosition::MAX - m_spacing.GetX() * (GetChildCount() - 1)) / totalElementSizeUsed.m_X;
+		else if (m_type == LayoutType::Vertical) sizeFactor = (NormalizedPosition::MAX - m_spacing.GetY() * (GetChildCount() - 1)) / totalElementSizeUsed.m_Y;
+		//Since grid does not have vertical elements the same as total children, we use total grid rows
+		else sizeFactor = (NormalizedPosition::MAX - m_spacing.GetY() * (gridRows - 1)) / totalElementSizeUsed.m_Y;
 
 		//If we have a special sizing type, we must make sure to apply min/max to ensure we do not do the wrong option
 		if (m_sizingType == SizingType::ExpandOnly) sizeFactor = std::max(float(1), sizeFactor);
@@ -110,7 +111,7 @@ void LayoutGUI::LayoutUpdate()
 		{
 			LogError(std::format("Tried to update layout of id:{} but current pos norm:{} "
 				"reached a point where size would be 0. Size factor:{} totalSizeNorm:{}",
-				std::to_string(GetId()), currentPosNorm.ToString(), std::to_string(sizeFactor), currentSizeTakenNorm.ToString()));
+				std::to_string(GetId()), currentPosNorm.ToString(), std::to_string(sizeFactor), totalElementSizeUsed.ToString()));
 
 			//Note: sizing sizing of none allows for elements that do not fit, we just ignore those and can leave without any errors
 			if (m_sizingType != SizingType::None) throw std::invalid_argument("Invalid layout state");
@@ -118,19 +119,26 @@ void LayoutGUI::LayoutUpdate()
 		}
 
 		auto before = children[i]->GetRect();
-		children[i]->SetTopLeftPos(currentPosNorm);
 		if (sizeFactor != 1)
 		{
 			if (children[i]->IsFixedHorizontal()) children[i]->SetSizeY(children[i]->GetSize().GetY() * sizeFactor);
 			else if (children[i]->IsFixedVertical()) children[i]->SetSizeX(children[i]->GetSize().GetX() * sizeFactor);
 			else children[i]->SetSize(children[i]->GetSize() * sizeFactor);
 		}
+		//Note: pos should ALWAYS be updated after size in case size was max before update and new top left
+		//would become unchanged due to no space to move
+		children[i]->SetTopLeftPos(currentPosNorm);
 		//LogWarning(std::format("Setting children layout(ID:{}) gui:{} -> {} SCALE:{}", std::to_string(GetId()), before.ToString(), children[i]->ToStringBase(), std::to_string(sizeFactor)));
 
 		/*LogWarning(std::format("child factor:{} total layout space:{} posNorma;{} sizeBefore:{} sizeAfter:{}", std::to_string(sizeFactor), 
 			currentSizeTakenNorm.ToString(), currentPosNorm.ToString(), before.ToString(), children[i]->GetRect().ToString()));*/
 
-		if (m_type == LayoutType::Vertical) currentPosNorm.SetPosDeltaY(-(m_spacing.GetY() + children[i]->GetSize().GetY()));
+		if (m_type == LayoutType::Vertical)
+		{
+			const auto old = currentPosNorm;
+			currentPosNorm.SetPosDeltaY(-(m_spacing.GetY() + children[i]->GetSize().GetY()));
+			LogWarning(std::format("VERTICAL POS UPDATE OLD:{} NEW:{}", old.ToString(), currentPosNorm.ToString()));
+		}
 		else if (m_type == LayoutType::Horizontal) currentPosNorm.SetPosDeltaX(m_spacing.GetX() + children[i]->GetSize().GetX());
 		else
 		{
@@ -144,8 +152,8 @@ void LayoutGUI::LayoutUpdate()
 			//LogError(std::format("Checking layout child:{} next line width:{} posNorm:{}", children[i]->ToStringBase(), std::to_string(nextLineWidth), currentPosNorm.ToString()));
 		}
 
-		LogError(std::format("While doing layout update for:{} child:{} old rect:{} new:{}", ToStringBase(), 
-			children[i]->ToStringBase(), before.ToString(), children[i]->GetRect().ToString()));
+		LogError(std::format("While doing layout update for:{} child:{} old rect:{} new:{} size factor:{} spacing:{}", ToStringBase(), 
+			std::to_string(children[i]->GetId()), before.ToString(), children[i]->GetRect().ToString(), std::to_string(sizeFactor), m_spacing.ToString()));
 	}
 
 	//Assert(false, std::format("END"));

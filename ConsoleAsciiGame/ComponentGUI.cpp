@@ -25,7 +25,7 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIMana
 	m_dropdownCheckbox(false, GUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUIStyle())), 
 	m_componentNameText(GetComponentName(), TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, 
 		FontProperties(TITLE_FONT_SIZE, TITLE_FONT_SPACING, GetGlobalFont()),TextAlignment::CenterLeft)), 
-	m_guiContainer(), m_fieldLayout(LayoutType::Vertical, SizingType::ExpandAndShrink, {}, EntityEditorGUI::EDITOR_BACKGROUND_COLOR), 
+	m_guiContainer(), m_fieldLayout(LayoutType::Vertical, SizingType::ExpandAndShrink, {0, 0.02}, EntityEditorGUI::EDITOR_BACKGROUND_COLOR), 
 	m_nameHeader(EntityEditorGUI::EDITOR_BACKGROUND_COLOR)
 {
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(), 
