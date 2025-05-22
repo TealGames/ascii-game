@@ -68,7 +68,7 @@ namespace SceneManagement
 		{
 			scene->UpdateAssetFromFile();
 			m_OnLoad.Invoke(&(scene->GetSceneMutable()));
-			Log(std::format("Loaded scene: {}", scene->GetName()));
+			//Log(std::format("Loaded scene: {}", scene->GetName()));
 		}
 		//LogError("Finsihed scene manager");
 

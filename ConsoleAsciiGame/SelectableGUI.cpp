@@ -5,7 +5,7 @@
 
 SelectableGUI::SelectableGUI() : 
 	//m_selectorManager(selectorManager), 
-	m_lastFrameRect(), 
+	//m_lastFrameRect(), 
 	m_isSelected(false),
 	m_OnSelect(), m_OnDeselect(), m_dragTime(0)
 {
@@ -16,10 +16,10 @@ SelectableGUI::~SelectableGUI()
 	//LogError(std::format("Selectable:{} destroyed", ToStringBase()));
 }
 
-GUIRect& SelectableGUI::GetLastFrameRectMutable() { return m_lastFrameRect; }
-const GUIRect SelectableGUI::GetLastFrameRect() const { return m_lastFrameRect; }
-
-void SelectableGUI::SetLastFramneRect(const GUIRect& newRect) { m_lastFrameRect = newRect; }
+//GUIRect& SelectableGUI::GetLastFrameRectMutable() { return m_lastFrameRect; }
+//const GUIRect SelectableGUI::GetLastFrameRect() const { return m_lastFrameRect; }
+//
+//void SelectableGUI::SetLastFramneRect(const GUIRect& newRect) { m_lastFrameRect = newRect; }
 
 bool SelectableGUI::IsSelected() const { return m_isSelected; }
 bool SelectableGUI::IsDraggedForTime(const float time) const { return time <= m_dragTime; }

@@ -13,7 +13,6 @@ private:
 	GUIStyle m_settings;
 	Vec2 m_minMaxValues;
 	float m_value;
-	
 public:
 	Event<void, float> m_OnValueSet;
 

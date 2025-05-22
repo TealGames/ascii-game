@@ -1,5 +1,6 @@
 #pragma once
 #include "Vec2.hpp"
+#include "NormalizedValue.hpp"
 
 /// <summary>
 /// Represents a normalized position of a rectangle where [0,0] would represent 
@@ -8,7 +9,6 @@
 class NormalizedPosition
 {
 private:
-	Vec2 m_pos;
 public:
 	static constexpr float MIN = 0;
 	static constexpr float HALF = 0.5;
@@ -22,14 +22,18 @@ public:
 	static const Vec2 BOTTOM_CENTER;
 	static const Vec2 TOP_CENTER;
 
+	NormalizedValue m_X;
+	NormalizedValue m_Y;
+
 private:
-	bool IsValidPos() const;
+	//bool IsValidPos() const;
 public:
 	NormalizedPosition();
 	NormalizedPosition(const float& x, const float& y);
 	NormalizedPosition(const Vec2& pos);
+	NormalizedPosition(const NormalizedValue x, const NormalizedValue y);
 
-	const Vec2& GetPos() const;
+	const Vec2 GetPos() const;
 	/// <summary>
 	/// Note: this should rarely be used since it can bypass the position
 	/// setting from the public set function
@@ -37,17 +41,17 @@ public:
 	/// <returns></returns>
 	//Vec2& GetPosMutable();
 
-	const float& GetX() const;
-	const float& GetY() const;
+	const float GetX() const;
+	const float GetY() const;
 
-	float& GetXMutable();
-	float& GetYMutable();
+	/*float& GetXMutable();
+	float& GetYMutable();*/
 
 	void SetPos(const Vec2& relativePos);
-	void SetPosX(const float x);
-	void SetPosY(const float y);
-	void SetPosDeltaX(const float deltaX);
-	void SetPosDeltaY(const float deltaY);
+	//void SetPosX(const float x);
+	//void SetPosY(const float y);
+	//void SetPosDeltaX(const float deltaX);
+	//void SetPosDeltaY(const float deltaY);
 	bool IsZero() const;
 
 	std::string ToString() const;

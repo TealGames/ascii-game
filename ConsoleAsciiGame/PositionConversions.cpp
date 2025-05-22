@@ -54,4 +54,9 @@ namespace Conversions
 		Vec2 screenValues = { normalized.GetPos().m_X* SCREEN_WIDTH, normalized.GetPos().m_Y * SCREEN_HEIGHT};
 		return {static_cast<int>(screenValues.m_X), static_cast<int>(SCREEN_HEIGHT- screenValues.m_Y)};
 	}
+
+	NormalizedPosition ScreenToNormalizedPosition(const ScreenPosition& pos, const Vec2Int totalScreenArea)
+	{
+		return { static_cast<float>(pos.m_X) / totalScreenArea.m_X, float(1) - (static_cast<float>(pos.m_Y) / totalScreenArea.m_Y) };
+	}
 }

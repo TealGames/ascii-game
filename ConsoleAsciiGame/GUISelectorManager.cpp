@@ -8,7 +8,7 @@
 static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
 
 GUISelectorManager::GUISelectorManager(const Input::InputManager& input, GUIHierarchy& hierarchy)
-	: m_inputManager(input), m_hierarchy(hierarchy), m_selectableLayers(), m_currentSelected(nullptr), m_currentDragged(nullptr),
+	: m_inputManager(input), m_hierarchy(hierarchy), m_selectableLayers(), m_selectionEventBlockers(), m_currentSelected(nullptr), m_currentDragged(nullptr),
 	m_selectedThisFrame(false), m_guiTreeUpdated(false), m_lastFrameMousePos(m_inputManager.GetMousePosition())
 {
 }
@@ -16,17 +16,22 @@ GUISelectorManager::GUISelectorManager(const Input::InputManager& input, GUIHier
 void GUISelectorManager::CreateSelectableArray()
 {
 	m_selectableLayers.clear();
-	m_hierarchy.ExecuteOnAllElementsDescending([this](GUILayer layer, GUIElement* element) -> void
+
+	size_t i = 0;
+	m_hierarchy.ExecuteOnAllElementsDescending([this, &i](GUILayer layer, GUIElement* element) -> void
 		{
 			if (element == nullptr) return;
 			//LogWarning(std::format("Bool is element:{} selectable:", element->ToStringBase()));
-			if (SelectableGUI* selectable = dynamic_cast<SelectableGUI*>(element))
+			if (element->IsSelectionEventBlocker()) AddSelectionEventBlocker(layer, i, element);
+			else if (SelectableGUI* selectable = dynamic_cast<SelectableGUI*>(element))
 			{
 				AddSelectable(layer, selectable);
 				//LogWarning(std::format("YES"));
 			}
+
+			i++;
 		});
-	LogError(std::format("END of selectable array craetion:{}", m_hierarchy.ToStringTree()));
+	//LogError(std::format("END of selectable array craetion:{}", m_hierarchy.ToStringTree()));
 }
 
 void GUISelectorManager::TryUpdateTree()
@@ -66,7 +71,10 @@ void GUISelectorManager::SelectNewSelectable(SelectableGUI* selectable)
 {
 	if (selectable == nullptr) return;
 	LogWarning(std::format("SELEC NEW SELECTABLE:{}", selectable->ToStringBase()));
+
+	DeselectCurrentSelectable();
 	selectable->Select();
+	m_currentSelected = selectable;
 	//Assert(false, std::format("SHOULD SELECTE NEW ONE AT: {}", selectable->GetLastFrameRect().ToString()));
 }
 
@@ -124,12 +132,28 @@ void GUISelectorManager::Update()
 			m_lastFrameClickedPosition.value().ToString(), allRect, std::to_string(m_selectables.size()),
 			HasSelecatbleSelected() ? m_currentSelected->GetLastFrameRect().ToString() : "NONE"));*/
 	
+	bool foundEventBlock = false;
+	//Note: we start at -1 because we increment at the start of each iteration due to guard statements
+	int i = -1;
 	for (auto& layer : m_selectableLayers)
 	{
 		for (auto& selectable : layer.second)
 		{
-			//std::to_string(selectable->GetLastFrameRect().ContainsPos(mousePos))
-			if (selectable == nullptr) continue;
+			i++;
+			if (selectable == nullptr)
+			{
+				auto it = m_selectionEventBlockers.find(i);
+				if (it == m_selectionEventBlockers.end()) continue;
+				
+				//Note: only if the event blocker contains the position do we block further events
+				if (it->second != nullptr && it->second->GetLastFrameRect().ContainsPos(mousePos))
+				{
+					foundEventBlock = true;
+					break;
+				}
+				else continue;
+			}
+
 			/*allRect += std::format("Mouse pos: {} selectable null: {} rect: {}", m_lastFrameClickedPosition.value().ToString(),
 				std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL");*/
 
@@ -165,6 +189,8 @@ void GUISelectorManager::Update()
 
 			}
 		}
+
+		if (foundEventBlock) break;
 	}
 	//clickTime++;
 	if (selectKeyState == Input::KeyState::Released && clickTime>2) 
@@ -199,6 +225,23 @@ void GUISelectorManager::AddSelectables(const GUILayer layer, const std::vector<
 		AddSelectable(layer, selectable);
 }
 
+void GUISelectorManager::AddSelectionEventBlocker(const GUILayer layer, const size_t elementIndex, const GUIElement* element)
+{
+	auto it = m_selectableLayers.find(layer);
+	//TODO: it might not be a good idea to have nullptr as the placeholder for event blockers in case selectables are null by accident
+
+	//Note: NULLPTR is a placeholder for event blockers
+	if (it == m_selectableLayers.end())
+		m_selectableLayers.emplace(layer, std::vector<SelectableGUI*>{ nullptr});
+	else it->second.push_back(nullptr);
+
+	m_selectionEventBlockers.emplace(elementIndex, element);
+}
+bool GUISelectorManager::IsEventBlocker(const size_t index) const
+{
+	return m_selectionEventBlockers.find(index) != m_selectionEventBlockers.end();
+}
+
 bool GUISelectorManager::HasSelecatbleSelected() const { return m_currentSelected != nullptr; }
 const SelectableGUI* GUISelectorManager::TryGetSelectableSelected() const { return m_currentSelected; }
 bool GUISelectorManager::SelectedSelectableThisFrame() const { return m_selectedThisFrame; }
@@ -206,11 +249,18 @@ bool GUISelectorManager::SelectedSelectableThisFrame() const { return m_selected
 std::string GUISelectorManager::ToStringSelectableTypes() const
 {
 	std::vector<std::string> typeStr = {};
+	size_t i = 0;
 	for (auto& layer : m_selectableLayers)
 	{
 		for (const auto& selectable : layer.second)
 		{
-			typeStr.push_back(typeid(selectable).name());
+			if (selectable == nullptr)
+			{
+				if (IsEventBlocker(i)) typeStr.push_back("[EVENT BLOCKER]");
+				else typeStr.push_back("[NULL]");
+			}
+			else typeStr.push_back(typeid(selectable).name());
+			i++;
 		}
 	}
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(typeStr);
@@ -221,12 +271,18 @@ std::string GUISelectorManager::ToStringSelectables() const
 	std::vector<std::string> layersList = {};
 	std::vector<std::string> selectabeList = {};
 
+	size_t i = 0;
 	for (const auto& layer : m_selectableLayers)
 	{
 		layersList.push_back("[Layer, Selectables:");
 		for (const auto& selectable : layer.second)
 		{
-			selectabeList.push_back(selectable->ToStringBase());
+			if (selectable == nullptr)
+			{
+				if (IsEventBlocker(i)) selectabeList.push_back("[EVENT BLOCKER]");
+				else selectabeList.push_back("[NULL]");
+			}
+			else selectabeList.push_back(selectable->ToStringBase());
 		}
 		layersList.back() += Utils::ToStringIterable(selectabeList);
 		layersList.back().push_back(']');

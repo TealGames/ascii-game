@@ -1,6 +1,5 @@
 #pragma once
 #include "ISelectable.hpp"
-#include "GUIRect.hpp"
 #include "Event.hpp"
 #include "RenderInfo.hpp"
 #include "GUIElement.hpp"
@@ -16,7 +15,7 @@ using SelectableDragEvent = Event<void, SelectableGUI*, float, Vec2>;
 class SelectableGUI : public ISelectable, public GUIElement
 {
 private:
-	GUIRect m_lastFrameRect;
+	//GUIRect m_lastFrameRect;
 	//GUISelectorManager* m_selectorManager;
 
 	bool m_isSelected;
@@ -34,8 +33,8 @@ public:
 
 protected:
 	//GUISelectorManager& GetSelectorManager();
-	void SetLastFramneRect(const GUIRect& newRect);
-	GUIRect& GetLastFrameRectMutable();
+	/*void SetLastFramneRect(const GUIRect& newRect);
+	GUIRect& GetLastFrameRectMutable();*/
 
 	void DrawDisabledOverlay(const RenderInfo& renderInfo) const;
 
@@ -53,7 +52,7 @@ public:
 	void UpdateDrag(const Vec2 mouseDelta, const float time);
 	void ClearDragTime();
 
-	const GUIRect GetLastFrameRect() const;
+	//const GUIRect GetLastFrameRect() const;
 
 	virtual void Update(const float deltaTime) override;
 	virtual RenderInfo Render(const RenderInfo& renderInfo) = 0;

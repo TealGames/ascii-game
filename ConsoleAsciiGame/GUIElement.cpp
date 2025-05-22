@@ -42,6 +42,16 @@ bool GUIElement::IsFixedHorizontal() const
 	return Utils::HasFlagAll(m_flags, GUIElementFlags::FixedHorizontal);
 }
 
+void GUIElement::SetEventBlocker(const bool status)
+{
+	if (status) Utils::AddFlags(m_flags, GUIElementFlags::BlockSelectionEvents);
+	else Utils::RemoveFlags(m_flags, GUIElementFlags::BlockSelectionEvents);
+}
+bool GUIElement::IsSelectionEventBlocker() const
+{
+	return Utils::HasFlagAll(m_flags, GUIElementFlags::BlockSelectionEvents);
+}
+
 void GUIElement::SetSizeUnsafe(const Vec2& size)
 {
 	const Vec2 parentSize = GetSize().GetPos();
@@ -113,6 +123,29 @@ void GUIElement::SetBounds(const NormalizedPosition& topLeftPos, const Normalize
 	m_relativeRect.SetBounds(topLeftPos, bottomRightPos);
 }
 
+void GUIElement::TryCenter(const bool centerX, const bool centerY)
+{
+	if (!centerX && !centerY) return;
+	const Vec2 size= GetSize().GetPos();
+	const Vec2 extraSpace = Vec2(NormalizedPosition::MAX, NormalizedPosition::MAX) - size;
+	const Vec2 currTopLeft = GetRect().GetTopLeftPos().GetPos();
+
+	SetTopLeftPos({ centerX? extraSpace.m_X / 2 : currTopLeft.m_X, centerY? extraSpace.m_Y/2 + size.m_Y: currTopLeft.m_Y});
+}
+
+void GUIElement::SetPadding(const RelativeGUIPadding& padding)
+{
+	m_padding = padding;
+}
+const RelativeGUIPadding& GUIElement::GetPadding()
+{
+	return m_padding;
+}
+RelativeGUIPadding& GUIElement::GetPaddingMutable()
+{
+	return m_padding;
+}
+
 NormalizedPosition GUIElement::GetSize() const
 {
 	return m_relativeRect.GetSize();
@@ -135,10 +168,19 @@ const GUIElement* GUIElement::GetParent() const
 	return m_parent;
 }
 
-void GUIElement::PushChild(GUIElement* element)
+size_t GUIElement::PushChild(GUIElement* element)
 {
-	m_children.emplace_back(element);
-	element->m_parent = this;
+	if (element == nullptr)
+	{
+		Assert(false, std::format("Attempted to push NULL child to element:{}", ToStringBase()));
+		return 0;
+	}
+
+	GUIElement* createdElement= m_children.emplace_back(element);
+	createdElement->m_parent = this;
+	//Note: we store index before event in case event triggers additional
+	//children creation that might ruin the result of this function
+	const size_t childIndex = GetChildCount() - 1;
 
 	GUIElement* currEl = this;
 	while (currEl->m_parent != nullptr)
@@ -146,6 +188,7 @@ void GUIElement::PushChild(GUIElement* element)
 		currEl = currEl->m_parent;
 	}
 	currEl->m_OnFarthestChildElementAttached.Invoke(this);
+	return childIndex;
 }
 GUIElement* GUIElement::TryPopChildAt(const size_t index)
 {
@@ -232,6 +275,21 @@ RenderInfo GUIElement::CalculateRenderInfo(const RenderInfo& parentInfo) const
 	return RenderInfo(parentInfo.m_TopLeftPos + GetSizeFromFactor(Abs(m_relativeRect.GetTopLeftPos().GetPos() -
 		NormalizedPosition::TOP_LEFT), parentInfo.m_RenderSize), m_relativeRect.GetSize(parentInfo.m_RenderSize));
 }
+RenderInfo GUIElement::CalculateChildRenderInfo(const RenderInfo& thisRenderInfo) const
+{
+	if (!m_padding.HasNonZeroPadding()) return thisRenderInfo;
+
+	const ScreenPosition paddingTopLeft = ScreenPosition(m_padding.m_Left.GetValue() * thisRenderInfo.m_RenderSize.m_X, 
+														 m_padding.m_Top.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
+	const ScreenPosition paddingBottomRight = ScreenPosition(m_padding.m_Right.GetValue() * thisRenderInfo.m_RenderSize.m_X, 
+															 m_padding.m_Bottom.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
+	if (m_padding.HasNonZeroPadding())
+	{
+		//Assert(false, std::format("NOn zero padding tTL:{} bR:{} padding:{}", paddingTopLeft.ToString(), paddingBottomRight.ToString(), m_padding.ToString()));
+	}
+
+	return RenderInfo(thisRenderInfo.m_TopLeftPos + paddingTopLeft, thisRenderInfo.m_RenderSize- paddingTopLeft - paddingBottomRight);
+}
 
 void GUIElement::UpdateRecursive(const float deltaTime)
 {
@@ -259,6 +317,8 @@ void GUIElement::RenderRecursive(const RenderInfo& parentInfo)
 {
 	//We get this render info based on this relative pos
 	const RenderInfo thisRenderInfo = CalculateRenderInfo(parentInfo);
+	m_lastRenderInfo = GUIRect(thisRenderInfo.m_TopLeftPos, thisRenderInfo.m_RenderSize);
+
 	if (DRAW_RENDER_BOUNDS) DrawRectangleLines(thisRenderInfo.m_TopLeftPos.m_X, thisRenderInfo.m_TopLeftPos.m_Y, 
 		thisRenderInfo.m_RenderSize.m_X, thisRenderInfo.m_RenderSize.m_Y, YELLOW);
 
@@ -268,14 +328,26 @@ void GUIElement::RenderRecursive(const RenderInfo& parentInfo)
 		renderInfo.ToString(), m_relativeRect.ToString(), thisRenderInfo.ToString()));*/
 
 	if (m_children.empty()) return;
+
+	const RenderInfo childRenderInfo = CalculateChildRenderInfo(thisRenderInfo);
+	/*if (m_padding.HasNonZeroPadding())
+	{
+		Assert(false, std::format("Padding:{} this render:{} child render:{}", 
+			m_padding.ToString(), thisRenderInfo.ToString(), childRenderInfo.ToString()));
+	}*/
+
 	for (size_t i=0; i<m_children.size(); i++)
 	{
 		if (m_children[i] == nullptr) continue;
 		//Note: we assume space reserved for this element is the space it actually 
 		//used for render (and thus can be used for children) because we do not want size
 		//changes during render especially becuase of normalized vs in-game space coordinates
-		m_children[i]->RenderRecursive(thisRenderInfo);
+		m_children[i]->RenderRecursive(childRenderInfo);
 	}
+}
+const GUIRect& GUIElement::GetLastFrameRect() const
+{
+	return m_lastRenderInfo;
 }
 
 std::string GUIElement::ToStringBase() const

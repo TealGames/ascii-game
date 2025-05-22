@@ -115,12 +115,12 @@ VisualData::VisualData(const std::vector<std::vector<TextBufferChar>>& rawBuffer
 			//and size is always in row, col so they will need to be opposites when applying changes
 			if (c == rawBuffer[r].size() - 1)
 			{
-				posNormalized.SetPosX(0);
-				posNormalized.SetPosDeltaY(-(currentRowMaxHeight + charSpacing.m_Y) / fullSize.m_Y);
+				posNormalized.m_X = 0;
+				posNormalized.m_Y -= ((currentRowMaxHeight + charSpacing.m_Y) / fullSize.m_Y);
 			}
 			else
 			{
-				posNormalized.SetPosDeltaX((charSize.m_X + charSpacing.m_X)/ fullSize.m_X);
+				posNormalized.m_X +=((charSize.m_X + charSpacing.m_X)/ fullSize.m_X);
 			}
 		}
 	}
@@ -194,12 +194,12 @@ VisualData::VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, cons
 			//and size is always in row, col so they will need to be opposites when applying changes
 			if (c == rawBuffer[r].size() - 1)
 			{
-				currPosNormalized.SetPosX(0);
-				currPosNormalized.SetPosDeltaY(-(currentRowMaxHeight + charSpacing.m_Y) / fullSize.m_Y);
+				currPosNormalized.m_X= 0;
+				currPosNormalized.m_Y-=((currentRowMaxHeight + charSpacing.m_Y) / fullSize.m_Y);
 			}
 			else
 			{
-				currPosNormalized.SetPosDeltaX((charSize.m_X + charSpacing.m_X) / fullSize.m_X);
+				currPosNormalized.m_X +=((charSize.m_X + charSpacing.m_X) / fullSize.m_X);
 			}
 		}
 	}

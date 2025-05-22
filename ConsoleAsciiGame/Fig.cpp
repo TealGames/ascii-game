@@ -310,7 +310,7 @@ void Fig::CreateContents(const std::vector<std::string>& contents, const FigFlag
 		////Note: we only want to trim tabs and NOT SPACES since spaces may be part of line
 		//cleanedLine = Utils::StringUtil(cleanedLine).Trim().ToString();
 
-		Log(std::format("Found line:{}", cleanedLine));
+		//Log(std::format("Found line:{}", cleanedLine));
 		if (cleanedLine[0] == MARKER_CHAR)
 		{
 			currentMarker = cleanedLine.substr(1);
@@ -404,8 +404,8 @@ void Fig::GetAllProperties(std::vector<FigPropertyRef>& properties) const
 	for (const auto& property : m_properties)
 	{
 		properties.emplace_back(*property.first, *property.second);
-		LogError(std::format("Added property:{} val:{}", *property.first,
-			Utils::ToStringIterable<FigValue, std::string>(*property.second)));
+		/*LogError(std::format("Added property:{} val:{}", *property.first,
+			Utils::ToStringIterable<FigValue, std::string>(*property.second)));*/
 	}
 
 	if (m_markedProperties.empty())

@@ -155,6 +155,10 @@ namespace RaylibUtils
 	{
 		return {color.m_R, color.m_G, color.m_B, color.m_A};
 	}
+	Utils::Color FromRaylibColor(const Color color)
+	{
+		return {color.r, color.g, color.b, color.a};
+	}
 
 	bool ColorEqual(const Color& color1, const Color& color2)
 	{

@@ -26,7 +26,6 @@ struct LightSourceData : public ComponentData
 	RenderLayerType m_AffectedLayers;
 	ColorGradient m_GradientFilter;
 	Utils::Color test;
-	bool shit;
 
 	//The strength of the light initially
 	std::uint8_t m_Intensity;

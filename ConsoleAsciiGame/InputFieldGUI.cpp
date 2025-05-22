@@ -121,6 +121,7 @@ void InputFieldGUI::Update(const float deltaTime)
 	if (keysPressed.empty()) return;
 
 	//Assert(false, std::format("Chars pressed since last frame: {}", keysPressed));
+	//if (keysPressed == "." && m_type == InputFieldType::Float) Assert(false, std::format("FOUND DOT"));
 	SetAttemptedInputDelta(keysPressed);
 }
 
@@ -138,7 +139,8 @@ void InputFieldGUI::SetAttemptedInputDelta(const std::string& input)
 
 	if (m_type == InputFieldType::Integer)
 	{
-		SetInput(m_attemptedInput + Utils::TryExtractInt(input), true);
+		if (input.size() == 1) SetInput(m_attemptedInput + (std::isdigit(input[0])? input : ""), true);
+		else SetInput(m_attemptedInput + Utils::TryExtractInt(input), true);
 	}
 	else if (m_type == InputFieldType::Float)
 	{
@@ -147,7 +149,10 @@ void InputFieldGUI::SetAttemptedInputDelta(const std::string& input)
 			input, Utils::TryExtractFloat(input), m_input, m_input + Utils::TryExtractFloat(input)));*/
 		//if (Utils::TryExtractFloat(input) == "-") Assert(false, std::format("Places neg"));
 		//Assert(false, std::format("Chars pressed since last frame: {} extracted: {}", input, Utils::TryExtractFloat(input)));
-		SetInput(m_attemptedInput + Utils::TryExtractFloat(input), true);
+		//if (input == "." && m_type == InputFieldType::Float) Assert(false, std::format("Attempt extracted float:{}", Utils::TryExtractFloat(".")));
+
+		if (input.size() == 1) SetInput(m_attemptedInput + (std::isdigit(input[0]) || input[0]=='.'? input : ""), true);
+		else SetInput(m_attemptedInput + Utils::TryExtractFloat(input), true);
 	}
 	else if (m_type == InputFieldType::String)
 	{
@@ -231,7 +236,7 @@ RenderInfo InputFieldGUI::Render(const RenderInfo& renderInfo)
 
 	if (!IsSelected() || HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay(renderInfo);
 
-	SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));
+	//SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));
 	//Assert(false, std::format("On render set last rect mutable; {}", GetLastFrameRect().ToString()));
 
 	/*m_lastRenderRect.SetSize(renderSize);

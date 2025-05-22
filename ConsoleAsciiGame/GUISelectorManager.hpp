@@ -11,6 +11,7 @@ private:
 	const Input::InputManager& m_inputManager;
 	GUIHierarchy& m_hierarchy;
 	std::map<GUILayer, std::vector<SelectableGUI*>, std::greater<GUILayer>> m_selectableLayers;
+	std::unordered_map<size_t, const GUIElement*> m_selectionEventBlockers;
 	//TODO: for optimization reasons, this is slow
 	//std::map<GUIEventPriority, SelectableGUI*, std::greater<GUIEventPriority>> m_selectables;
 
@@ -34,7 +35,8 @@ private:
 
 	std::string ToStringSelectableTypes() const;
 	
-
+	bool IsEventBlocker(const size_t index) const;
+	void AddSelectionEventBlocker(const GUILayer layer, const size_t elementIndex, const GUIElement* element);
 public:
 	GUISelectorManager(const Input::InputManager& input, GUIHierarchy& hierarchy);
 

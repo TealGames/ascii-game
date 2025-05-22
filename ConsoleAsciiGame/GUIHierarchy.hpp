@@ -7,7 +7,9 @@
 #include "Event.hpp"
 
 using GUILayer = std::uint8_t;
-constexpr GUILayer TOP_LAYER = std::numeric_limits<GUILayer>::max();
+constexpr GUILayer MAX_LAYERS = 16;
+
+constexpr GUILayer TOP_LAYER = MAX_LAYERS - 1;
 constexpr GUILayer BOTTOM_LAYER = std::numeric_limits<GUILayer>::min();
 constexpr GUILayer DEFAULT_LAYER = BOTTOM_LAYER;
 
@@ -49,6 +51,8 @@ private:
 public:
 	GUIHierarchy(const Vec2Int rootCanvasSize);
 
+	const Vec2Int GetRootSize() const;
+	const GUIElement* GetRootElement(const GUILayer layer) const;
 	void AddToRoot(const GUILayer layer, GUIElement* element);
 
 	GUIElement* FindMutable(const GUIElementID id);
@@ -82,7 +86,18 @@ public:
 	/// </summary>
 	void ExecuteOnAllElementsDescending(const std::function<void(GUILayer, GUIElement*)>& action);
 
-	RenderInfo TryCalculateElementRenderInfo(const GUIElement& element) const;
+	/// <summary>
+	/// Will calculate the actual size of the element AS LONG AS IT EXISTS WITHIN THE TREE
+	/// </summary>
+	/// <param name="element"></param>
+	/// <returns></returns>
+	RenderInfo TryCalculateElementRenderInfoExisting(const GUIElement& element) const;
+	/// <summary>
+	/// Will calculate the element as if it is a root element
+	/// </summary>
+	/// <param name="element"></param>
+	/// <returns></returns>
+	RenderInfo TryCalculateElementRenderInfoFromRoot(const GUIElement& element);
 
 	void UpdateAll(const float deltaTime);
 	void RenderAll();

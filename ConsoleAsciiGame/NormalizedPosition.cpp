@@ -16,24 +16,23 @@ NormalizedPosition::NormalizedPosition() :
 NormalizedPosition::NormalizedPosition(const Vec2& pos) : 
 	NormalizedPosition(pos.m_X, pos.m_Y) {}
 
-bool NormalizedPosition::IsValidPos() const
-{
-	return 0 <= m_pos.m_X && m_pos.m_X <= 1 
-		&& 0 <= m_pos.m_Y && m_pos.m_Y <= 1;
-}
+//bool NormalizedPosition::IsValidPos() const
+//{
+//	return m_X >=0 && m_X <= 1 
+//		&& 0 <= m_pos.m_Y && m_pos.m_Y <= 1;
+//}
 
-NormalizedPosition::NormalizedPosition(const float& x, const float& y) : m_pos()
-{
-	SetPos({ x, y });
-}
+NormalizedPosition::NormalizedPosition(const float& x, const float& y) : m_X(x), m_Y(y) {}
+NormalizedPosition::NormalizedPosition(const NormalizedValue x, const NormalizedValue y) 
+	: m_X(x), m_Y(y) {}
 
-const Vec2& NormalizedPosition::GetPos() const
+const Vec2 NormalizedPosition::GetPos() const
 {
-	if (!Assert(this, IsValidPos(), std::format("Tried to retrieve normalized pos IMMUTABLE, "
+	/*if (!Assert(this, IsValidPos(), std::format("Tried to retrieve normalized pos IMMUTABLE, "
 		"but it is an invalid state: {}", m_pos.ToString())))
-		throw std::invalid_argument("Invalid normalized pos state");
+		throw std::invalid_argument("Invalid normalized pos state");*/
 
-	return m_pos;
+	return Vec2(m_X.GetValue(), m_Y.GetValue());
 }
 //Vec2& NormalizedPosition::GetPosMutable()
 //{
@@ -44,87 +43,85 @@ const Vec2& NormalizedPosition::GetPos() const
 //	return m_pos;
 //}
 
-const float& NormalizedPosition::GetX() const { return m_pos.m_X; }
-const float& NormalizedPosition::GetY() const { return m_pos.m_Y; }
+const float NormalizedPosition::GetX() const { return m_X.GetValue(); }
+const float NormalizedPosition::GetY() const { return m_Y.GetValue(); }
 
-float& NormalizedPosition::GetXMutable() { return m_pos.m_X; }
-float& NormalizedPosition::GetYMutable() { return m_pos.m_Y; }
+//float& NormalizedPosition::GetXMutable() { return m_pos.m_X; }
+//float& NormalizedPosition::GetYMutable() { return m_pos.m_Y; }
 
 void NormalizedPosition::SetPos(const Vec2& relativePos)
 {
-	SetPosX(relativePos.m_X);
-	SetPosY(relativePos.m_Y);
+	/*SetPosX(relativePos.m_X);
+	SetPosY(relativePos.m_Y);*/
+	m_X = relativePos.m_X;
+	m_Y = relativePos.m_Y;
 }
 
-void NormalizedPosition::SetPosX(const float x)
-{
-	m_pos.m_X = std::clamp(x, float(0), float(1));
-}
-void NormalizedPosition::SetPosY(const float y)
-{
-	m_pos.m_Y = std::clamp(y, float(0), float(1));
-}
-void NormalizedPosition::SetPosDeltaX(const float deltaX)
-{
-	SetPosX(m_pos.m_X + deltaX);
-}
-void NormalizedPosition::SetPosDeltaY(const float deltaY)
-{
-	SetPosY(m_pos.m_Y + deltaY);
-}
+//void NormalizedPosition::SetPosX(const float x)
+//{
+//	m_X = x;
+//}
+//void NormalizedPosition::SetPosY(const float y)
+//{
+//	m_Y = y;
+//}
+//void NormalizedPosition::SetPosDeltaX(const float deltaX)
+//{
+//	SetPosX(m_X + deltaX);
+//}
+//void NormalizedPosition::SetPosDeltaY(const float deltaY)
+//{
+//	SetPosY(m_pos.m_Y + deltaY);
+//}
 
-bool NormalizedPosition::IsZero() const { return Utils::ApproximateEqualsF(m_pos.m_X, 0) && Utils::ApproximateEqualsF(m_pos.m_Y, 0); }
+bool NormalizedPosition::IsZero() const 
+{ 
+	return m_X == 0 && m_Y == 0;
+}
 
 std::string NormalizedPosition::ToString() const
 {
-	return std::format("{}", m_pos.ToString());
+	return std::format("({},{})", m_X.ToString(), m_Y.ToString());
 }
 
 NormalizedPosition NormalizedPosition::operator+(const NormalizedPosition& other) const
 {
-	return { m_pos.m_X + other.m_pos.m_X, m_pos.m_Y + other.m_pos.m_Y };
+	return NormalizedPosition(m_X + other.m_X, m_Y + other.m_Y);
 }
-
 NormalizedPosition NormalizedPosition::operator-(const NormalizedPosition& other) const
 {
-	return { m_pos.m_X - other.m_pos.m_X, m_pos.m_Y - other.m_pos.m_Y };
+	return NormalizedPosition(m_X - other.m_X, m_Y - other.m_Y);
 }
-
 NormalizedPosition NormalizedPosition::operator*(const NormalizedPosition& other) const
 {
-	return { m_pos.m_X * other.m_pos.m_X, m_pos.m_Y * other.m_pos.m_Y };
+	return NormalizedPosition(m_X * other.m_X, m_Y * other.m_Y);
 }
-
 NormalizedPosition NormalizedPosition::operator*(const float& scalar) const
 {
-	return { m_pos.m_X * scalar, m_pos.m_Y * scalar };
+	return NormalizedPosition(m_X * scalar, m_Y * scalar);
 }
-
 NormalizedPosition NormalizedPosition::operator/(const float& scalar) const
 {
 	if (!Assert(this, scalar != 0,
-		std::format("Tried to divide a normalized position: {} by a 0 value scalar", m_pos.ToString())))
+		std::format("Tried to divide a normalized position: {} by a 0 value scalar", ToString())))
 	{
 		return *this;
 	}
 
-	return { m_pos.m_X / scalar, m_pos.m_Y / scalar };
+	return NormalizedPosition(m_X / scalar, m_Y / scalar);
 }
 
 bool NormalizedPosition::operator==(const NormalizedPosition& other) const
 {
-	return Utils::ApproximateEquals(m_pos.m_X, other.m_pos.m_X) &&
-		Utils::ApproximateEquals(m_pos.m_Y, other.m_pos.m_Y);
+	return m_X == other.m_X && m_Y == other.m_Y;
 }
-
 bool NormalizedPosition::operator!=(const NormalizedPosition& other) const
 {
 	return !(*this == other);
 }
-
 bool NormalizedPosition::operator>(const NormalizedPosition& other) const
 {
-	return m_pos.m_X > other.m_pos.m_X && m_pos.m_Y > other.m_pos.m_Y;
+	return m_X > other.m_X && m_Y > other.m_Y;
 }
 bool NormalizedPosition::operator>=(const NormalizedPosition& other) const
 {
@@ -132,7 +129,7 @@ bool NormalizedPosition::operator>=(const NormalizedPosition& other) const
 }
 bool NormalizedPosition::operator<(const NormalizedPosition& other) const
 {
-	return m_pos.m_X < other.m_pos.m_X && m_pos.m_Y < other.m_pos.m_Y;
+	return m_X < other.m_X && m_Y < other.m_Y;
 }
 bool NormalizedPosition::operator<=(const NormalizedPosition& other) const
 {

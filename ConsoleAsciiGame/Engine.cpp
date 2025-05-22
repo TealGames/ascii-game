@@ -85,6 +85,9 @@ namespace Core
 	//event class to prevent this issue such as creating a function class wrapper
 	//TODO: make optimizations based on suggestions in video: https://www.youtube.com/watch?v=IroPQ150F6c&t=1406s
 	//TODO: merge vec2 and vec2int into one type with 2 template args that can be int,int for vec2int and float, float for vec2
+	//TODO: finish making out arg class to simplify out parameters
+	//TODO: a possible consideration to increase editor performance is to make all fields that are set into a wrapper such as SerializedField<T> so that we can track when a value is changed internally
+	//and thus we can then update the gui element with the value, similar to how gui receive events on their update when to set internal value. This way, we do not force update every frame
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -170,7 +173,7 @@ namespace Core
 		EngineLog(std::format("SET FIRST SCENE:{}", m_sceneManager.GetActiveScene()->ToString()));
 		//m_sceneManager.GetActiveSceneMutable()->InitScene();
 		//m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
-		LogError(std::format("Scene active: {}", m_sceneManager.GetActiveScene()->ToString()));
+		//LogError(std::format("Scene active: {}", m_sceneManager.GetActiveScene()->ToString()));
 		EngineLog("SET FIRST SCENE CAMERA");
 
 		/*
@@ -216,6 +219,8 @@ namespace Core
 		//tree after as much time is given to add any gui elements to the ui tree
 		m_guiSelectorManager.Init();
 		ValidateAll();
+
+		LogWarning(std::format("Tree hierarcxhy: {}", m_uiTree.ToStringTree()));
 	}
 
 	Engine::~Engine()

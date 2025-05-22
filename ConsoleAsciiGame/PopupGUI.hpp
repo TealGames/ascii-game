@@ -1,11 +1,15 @@
 #pragma once
-#include "IRenderable.hpp"
+#include "GUIElement.hpp"
 #include <optional>
 
-struct PopupGUI : public IRenderable
+struct PopupGUI : public GUIElement
 {
+	PopupGUI();
 	virtual ~PopupGUI() = default;
-	virtual RenderInfo Render(const RenderInfo& renderInfo) = 0;
+
+	RenderInfo Render(const RenderInfo& parentInfo) override;
+	virtual void InsideRender(const RenderInfo& parentInfo) = 0;
+
 	virtual void Update(const float deltaTime) = 0;
 };
 

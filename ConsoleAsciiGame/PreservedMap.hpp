@@ -228,9 +228,9 @@ public:
 		const std::pair<MapType::iterator, bool> mapResult = m_map.emplace(key, value);
 		m_keysOrdered.push_back(key);
 
-		if (typeid(KType) == typeid(std::string) && typeid(value)== typeid(std::vector<std::string>)) 
+		/*if (typeid(KType) == typeid(std::string) && typeid(value)== typeid(std::vector<std::string>)) 
 			LogError(std::format("Added pair: {} value:{} iterator result:{} full:{}", key, Utils::ToStringIterable<VType, std::string>(value),
-				mapResult.first->first, ToString(true)));
+				mapResult.first->first, ToString(true)));*/
 
 		if (mapResult.first == m_map.end()) return {EndMutable(), mapResult.second };
 		else return { Iterator(m_map, m_keysOrdered, m_keysOrdered.size()-1), mapResult.second};

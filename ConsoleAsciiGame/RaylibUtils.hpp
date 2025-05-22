@@ -27,6 +27,7 @@ namespace RaylibUtils
 
 	Color GetColorFromHex(const std::uint32_t& hexNumber);
 	Color ToRaylibColor(const Utils::Color color);
+	Utils::Color FromRaylibColor(const Color color);
 
 	bool ColorEqual(const Color& color1, const Color& color2);
 

@@ -544,6 +544,17 @@ namespace Utils
 		return GetUnorderedIntersection(std::vector<T>(vec1), std::vector<T>(vec2));
 	}
 
+	template <typename T, std::size_t... Is, typename... Args>
+	constexpr std::array<T, sizeof...(Is)> ConstructArrayImpl(std::index_sequence<Is...>, Args&&... args) {
+		// Expand the pack N times by repeating construction with the same args
+		return { ((void)Is, T(std::forward<Args>(args)...))... };
+	}
+
+	template <typename T, std::size_t N, typename... Args>
+	constexpr std::array<T, N> ConstructArray(Args&&... args) {
+		return ConstructArrayImpl<T>(std::make_index_sequence<N>{}, std::forward<Args>(args)...);
+	}
+
 	double ToRadians(const double);
 	double ToDegrees(const double);
 	bool ApproximateEquals(double, double);

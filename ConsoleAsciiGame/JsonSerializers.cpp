@@ -663,7 +663,7 @@ void from_json(const Json& json, SerializableComponent& serializableComponent)
 		if (JsonUtils::HasProperty(json, ENTITY_NAME_PROPERTY) && 
 			json.at(ENTITY_NAME_PROPERTY).get<std::string>() == SerializableComponent::SELF_COMPONENT_ENTITY_KEYWORD)
 		{
-			LogError(std::format("serialized self component"));
+			//LogError(std::format("serialized self component"));
 			serializableComponent = SerializableComponent(COMPONENT_NAME_PROPERTY);
 			return;
 		}

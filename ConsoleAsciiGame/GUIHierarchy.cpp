@@ -7,12 +7,22 @@
 GUIHierarchy::GUIHierarchy(const Vec2Int rootCanvasSize) 
 	: m_rootSize(rootCanvasSize), m_layerRoots({}), m_OnElementAdded(), m_OnElementRemoved()
 {
-	m_rootElements.reserve(TOP_LAYER);
+	//m_rootElements.reserve(TOP_LAYER);
+	m_rootElements.reserve(MAX_LAYERS);
 }
-
 
 GUIElementLayersCollection::iterator GUIHierarchy::CreateNewLayer(const GUILayer layer)
 {
+	LogWarning(std::format("creating new layer:{} full tree:{}", std::to_string(layer), ToStringTree()));
+
+	auto layerIt = m_layerRoots.find(layer);
+	if (layerIt != m_layerRoots.end())
+	{
+		Assert(false, std::format("Attempted to create a new layer:{} in gui hierarchy "
+			"but that layer has already been created", std::to_string(layer)));
+		return layerIt;
+	}
+
 	m_rootElements.emplace_back(ContainerGUI());
 	m_rootElements.back().m_OnFarthestChildElementAttached.AddListener([this](GUIElement* el)-> void
 		{
@@ -88,6 +98,19 @@ std::vector<GUIElement*> GUIHierarchy::GetLayerRootsMutable(const bool topLayerF
 			layers.push_back(layer.second);
 	}
 	return layers;
+}
+
+const Vec2Int GUIHierarchy::GetRootSize() const
+{
+	return m_rootSize;
+}
+const GUIElement* GUIHierarchy::GetRootElement(const GUILayer layer) const
+{
+	auto layerIt = m_layerRoots.find(layer);
+	if (layerIt == m_layerRoots.end())
+		return nullptr;
+
+	return layerIt->second;
 }
 
 //void GUIHierarchy::SetRoot(const GUILayer layer, GUIElement* root)
@@ -251,7 +274,7 @@ bool GUIHierarchy::TryCalculateElementRenderInfoHelper(const GUIElementID target
 	return false;
 }
 
-RenderInfo GUIHierarchy::TryCalculateElementRenderInfo(const GUIElement& element) const
+RenderInfo GUIHierarchy::TryCalculateElementRenderInfoExisting(const GUIElement& element) const
 {
 	RenderInfo result = {};
 	bool wasFound = false;
@@ -266,17 +289,33 @@ RenderInfo GUIHierarchy::TryCalculateElementRenderInfo(const GUIElement& element
 
 	return result;
 }
+RenderInfo GUIHierarchy::TryCalculateElementRenderInfoFromRoot(const GUIElement& element)
+{
+	return element.CalculateRenderInfo(GetRootRenderInfo());
+}
 
 void GUIHierarchy::UpdateAll(const float deltaTime)
 {
 	try
 	{
-		//Since we are in increasing order and lower number -> farther in background
-		for (size_t i = 0; i < m_layerRoots.size(); i++)
-		{
-			if (m_layerRoots[i]->GetChildCount() == 0) continue;
+		LogWarning(std::format("Before update:{}", ToStringTree()));
 
-			m_layerRoots[i]->UpdateRecursive(deltaTime);
+		//Since we are in increasing order and lower number -> farther in background
+		for (auto& rootEl : m_rootElements)
+		{
+			/*LogWarning(std::format("Attempting [{}/{}] to updarte layer root:{}. hierarcxhy:{}", std::to_string(i), std::to_string(m_layerRoots.size()),
+				m_layerRoots[i]!=nullptr? m_layerRoots[i]->ToStringBase() : "NULL", ToStringTree()));*/
+			//if (m_layerRoots[i] == nullptr) continue;
+			//{
+			//	Assert(false, std::format("Tried to update all gui elements in hierarchy, "
+			//		"but layer root was null"));
+			//	return;
+			//}
+
+			if (rootEl.GetChildCount() == 0) continue;
+
+			rootEl.UpdateRecursive(deltaTime);
+			LogWarning(std::format("Once finished update tree:{}", ToStringTree()));
 		}
 	}
 	catch (const std::exception& e)
@@ -302,12 +341,12 @@ void GUIHierarchy::RenderAll()
 	try
 	{
 		//Since we are in increasing order and lower number -> farther in background
-		for (size_t i = 0; i < m_layerRoots.size(); i++)
+		for (auto& rootEl : m_rootElements)
 		{
-			if (m_layerRoots[i]->GetChildCount() == 0) continue;
+			if (rootEl.GetChildCount() == 0) continue;
 
 			//Note: the top left pos is (0, 0) when rendering and y increases as you go down
-			m_layerRoots[i]->RenderRecursive(GetRootRenderInfo());
+			rootEl.RenderRecursive(GetRootRenderInfo());
 		}
 		//Assert(false, std::format("Reender all rec"));
 	}
@@ -320,10 +359,14 @@ void GUIHierarchy::RenderAll()
 
 std::string GUIHierarchy::ToStringTree() const
 {
-	std::string result = "";
+	std::string result = std::format("\n[Roots Defined:{}, Layers:{}]", 
+		std::to_string(m_rootElements.size()), std::to_string(m_layerRoots.size()));
+
 	for (const auto& layer : m_layerRoots)
 	{
-		result += std::format("\n\nLayer:{}", layer.second->ToStringRecursive(""));
+		result += std::format("\n\nLayer{}{}:{}", std::to_string(layer.first),
+			layer.first== BOTTOM_LAYER? "(BOTTOM)" : "",
+			layer.second!=nullptr? layer.second->ToStringRecursive("") : "NULL");
 	}
 	return result;
 }

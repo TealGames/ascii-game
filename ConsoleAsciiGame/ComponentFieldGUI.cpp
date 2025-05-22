@@ -111,7 +111,7 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 	if (!m_inputFields.empty())
 	{
 		float currentFieldX = fieldsStartNewLine ? FIELD_IDENT : m_fieldNameText.GetRect().GetBottomRighttPos().GetX();
-		const float fieldSizeX = (1 - currentFieldX - (FIELD_SPACING_X * (m_inputFields.size() - 1))) / m_inputFields.size();
+		const float fieldSizeX = (NormalizedPosition::MAX - currentFieldX - (FIELD_SPACING_X * (m_inputFields.size() - 1))) / m_inputFields.size();
 		
 		LogWarning(std::format("Field size:{}", std::to_string(FIELD_SPACING_X * (m_inputFields.size() - 1))));
 		for (auto& field : m_inputFields)
@@ -139,15 +139,22 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 				//NormalizedPosition(fieldPosX, m_fieldNameText.GetSize().GetY()).ToString(), NormalizedPosition(float(1) / m_inputFields.size(), FIELD_HEIGHT).ToString()));
 			//LogWarning(std::format(" FART FART FART FART Set field size:{}", field.ToStringBase()));
 			m_guiLayout.PushChild(&field);
-			//TODO: this feels like a very gimicky solution to the problem where many fields for a component usually results in the parent layout shrinking their x and y size
-			//thus leading to fields that fit, but are very small in terms of their width. The solution was to fix their horizontal size so layout cannot change it
-			m_guiLayout.SetFixed(true, false);
 		}
 
 		//Assert(false, std::format("Craeting field with field text:{} text width:{}", m_fieldNameText.ToStringBase(), std::to_string(textWidthNorm)));
 	}
 	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
 	{
+		const float fieldTopLeftX = fieldsStartNewLine ? FIELD_IDENT : m_fieldNameText.GetRect().GetBottomRighttPos().GetX();
+
+		m_colorPicker.SetSize(NormalizedPosition(NormalizedPosition::MAX - fieldTopLeftX, fieldsStartNewLine ? 0.5 : 1));
+		m_colorPicker.SetTopLeftPos({ fieldTopLeftX, fieldsStartNewLine ? 1 - m_fieldNameText.GetSize().GetY() : 1 });
+		m_colorPicker.SetValueSetAction([this](Utils::Color color)-> void
+			{
+				SetInternalWithInput();
+			});
+
+		m_guiLayout.PushChild(&m_colorPicker);
 
 	}
 	else
@@ -161,6 +168,9 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 			});
 	}
 
+	//TODO: this feels like a very gimicky solution to the problem where many fields for a component usually results in the parent layout shrinking their x and y size
+	//thus leading to fields that fit, but are very small in terms of their width. The solution was to fix their horizontal size so layout cannot change it
+	m_guiLayout.SetFixed(true, false);
 	
 	//Assert(false, std::format("Created field gui:{}", GetTreeGUI()->ToStringRecursive("")));
 }

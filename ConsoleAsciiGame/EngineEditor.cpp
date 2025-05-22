@@ -24,7 +24,7 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 	m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_cameraController(camera),
 	m_physicsManager(physics), m_guiSelector(selector), m_guiTree(guiTree), m_collisionBoxSystem(collisionSystem),
 	m_commandConsole(m_inputManager, m_guiTree, m_guiSelector), m_debugInfo(),
-	m_popupManager(),
+	m_popupManager(guiTree),
 	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager),
 	m_spriteEditor(m_guiTree, m_inputManager, assetManager),
 	m_pauseGameToggle(false, GUIStyle()), m_editModeToggle(false, GUIStyle()),
@@ -289,7 +289,7 @@ bool EngineEditor::TryRender()
 	m_assetEditorButton.Render(RenderInfo({ 0, 0 }, { 120, 20 }));
 
 	//NOTE: popup manager MUST be the last editor GUI to be rendered
-	m_popupManager.RenderPopups();
+	//m_popupManager.RenderPopups();
 
 	return true;
 }

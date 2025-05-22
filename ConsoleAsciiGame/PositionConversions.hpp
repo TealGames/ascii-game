@@ -14,4 +14,5 @@ namespace Conversions
 	WorldPosition ScreenToWorldPosition(const CameraData& camera, const ScreenPosition& pos);
 
 	ScreenPosition NormalizedScreenToPosition(const NormalizedPosition& pos);
+	NormalizedPosition ScreenToNormalizedPosition(const ScreenPosition& pos, const Vec2Int totalScreenArea);
 }

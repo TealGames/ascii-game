@@ -3,16 +3,20 @@
 #include "IRenderable.hpp"
 #include "GUIStyle.hpp"
 #include "Color.hpp"
+#include <functional>
 
 class PopupGUIManager;
 namespace Input { class InputManager; }
 
+using ColorPickerAction = std::function<void(Utils::Color)>;
 class ColorPickerGUI :  public SelectableGUI
 {
 private:
 	PopupGUIManager* m_popupManager;
 	GUIStyle m_settings;
 	Utils::Color m_color;
+
+	ColorPickerAction m_valueSetCallback;
 public:
 
 private:
@@ -21,6 +25,7 @@ public:
 
 	void SetColor(const Utils::Color color);
 	void SetSettings(const GUIStyle& settings);
+	void SetValueSetAction(const ColorPickerAction& action);
 
 	Utils::Color GetColor() const;
 

@@ -39,7 +39,8 @@ const ScreenPosition& GUIRect::GetBottomRightPos() const
 }
 Vec2Int GUIRect::GetSize() const
 {
-	return Vec2Int(m_bottomRightPos.m_X - m_topLeftPos.m_X, m_topLeftPos.m_Y- m_bottomRightPos.m_Y);
+	//Note: bottom right pos should have greater Y since y increases as you go down
+	return Vec2Int(m_bottomRightPos.m_X - m_topLeftPos.m_X, m_bottomRightPos.m_Y- m_topLeftPos.m_Y);
 }
 
 void GUIRect::SetTopLeftPos(const ScreenPosition& pos)

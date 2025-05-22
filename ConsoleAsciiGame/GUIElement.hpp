@@ -5,6 +5,8 @@
 #include "RelativeGUIRect.hpp"
 #include "Event.hpp"
 #include "HelperMacros.hpp"
+#include "RelativeGUIPadding.hpp"
+#include "GUIRect.hpp"
 
 using GUIElementID = std::uint16_t;
 
@@ -15,8 +17,14 @@ enum class GUIElementFlags : std::uint8_t
 	/// parent. Note: this means it WILL size down/up based on canvas size changes since the dimensions are still as percents, but
 	/// if the parent size changes, it will maintain the original dimensions by updating to the corresponding values of the parent size
 	/// </summary>
-	FixedHorizontal =	1 << 0,
-	FixedVertical	=	1 << 1
+	FixedHorizontal =		1 << 0,
+	FixedVertical	=		1 << 1,
+	/// <summary>
+	/// Although it is not a selectable, nonselectables CAN block events from propagating further
+	/// and can prevent lower level selectables from receiving their events. This is most useful
+	/// for overlays or other types of popups and dialogs that may block lower elements completely
+	/// </summary>
+	BlockSelectionEvents=	1 << 2,
 };
 FLAG_ENUM_OPERATORS(GUIElementFlags)
 
@@ -42,6 +50,14 @@ private:
 	GUIElement* m_parent;
 	GUIElementFlags m_flags;
 
+	GUIRect m_lastRenderInfo;
+
+	/// <summary>
+	/// This is how much the CHILDREN AREA is padded within this element. 
+	/// Values are relative to THIS ELEMENT"S SIZE
+	/// </summary>
+	RelativeGUIPadding m_padding;
+
 public:
 	//Event<void, GUIElement*> m_OnSizeUpdated;
 	Event<void, GUIElement*> m_OnFarthestChildElementAttached;
@@ -55,6 +71,8 @@ private:
 	/// <param name="vec"></param>
 	void SetSizeUnsafe(const Vec2& size);
 
+	RenderInfo CalculateChildRenderInfo(const RenderInfo& thisRenderInfo) const;
+
 public:
 	GUIElement();
 	GUIElement(const RelativeGUIRect& relativeRect);
@@ -65,14 +83,23 @@ public:
 	void SetFixed(const bool horizontal, const bool vertical);
 	bool IsFixedVertical() const;
 	bool IsFixedHorizontal() const;
+
+	void SetEventBlocker(const bool status);
+	bool IsSelectionEventBlocker() const;
 	
 	void SetSize(const NormalizedPosition& size);
 	void SetMaxSize();
 	void SetSizeX(const float sizeNormalized);
 	void SetSizeY(const float sizeNormalized);
+
 	void SetTopLeftPos(const NormalizedPosition& topLeftPos);
 	void SetBottomRightPos(const NormalizedPosition& bottomRightPos);
 	void SetBounds(const NormalizedPosition& topLeftPos, const NormalizedPosition& bottomRightPos);
+	void TryCenter(const bool centerX, const bool centerY);
+
+	void SetPadding(const RelativeGUIPadding& padding);
+	const RelativeGUIPadding& GetPadding();
+	RelativeGUIPadding& GetPaddingMutable();
 
 	NormalizedPosition GetSize() const;
 	const RelativeGUIRect& GetRect() const;
@@ -81,7 +108,12 @@ public:
 	GUIElement* GetParentMutable();
 	const GUIElement* GetParent() const;
 
-	void PushChild(GUIElement* element);
+	/// <summary>
+	/// Adds the element as a child and returns its child index
+	/// </summary>
+	/// <param name="element"></param>
+	/// <returns></returns>
+	size_t PushChild(GUIElement* element);
 	GUIElement* TryPopChildAt(const size_t index);
 	std::vector<GUIElement*> TryPopChildren(const size_t& startIndex, const size_t& count);
 	std::vector<GUIElement*> PopAllChildren();
@@ -112,6 +144,7 @@ public:
 	void UpdateRecursive(const float deltaTime);
 
 	RenderInfo CalculateRenderInfo(const RenderInfo& parentInfo) const;
+	const GUIRect& GetLastFrameRect() const;
 	/// <summary>
 	/// Will render the current element and return how much space/what top left pos was ACTUALLY used
 	/// </summary>

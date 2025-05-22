@@ -25,7 +25,7 @@ LightSourceData::LightSourceData(const std::uint8_t& lightRadius, const RenderLa
 	const std::uint8_t& intensity, const float& falloff) :
 	ComponentData(), 
 	m_LightRadius(lightRadius), m_GradientFilter(colorFilter), m_AffectedLayers(affectedLayers),
-	m_Intensity(intensity), m_FalloffStrength(falloff), test(), shit()//, m_LastFrameData{}
+	m_Intensity(intensity), m_FalloffStrength(falloff), test()//, m_LastFrameData{}
 {
 
 }
@@ -33,7 +33,7 @@ LightSourceData::LightSourceData(const std::uint8_t& lightRadius, const RenderLa
 void LightSourceData::InitFields()
 {
 	m_Fields = {ComponentField("FalloffStrength", &m_FalloffStrength), 
-		ComponentField("Radius", &m_LightRadius), ComponentField("Intensity", &m_Intensity), ComponentField("Color", &test),  ComponentField("Shit",&shit)};
+		ComponentField("Radius", &m_LightRadius), ComponentField("Intensity", &m_Intensity), ComponentField("Color", &test)};
 }
 std::vector<std::string> LightSourceData::GetDependencyFlags() const
 {

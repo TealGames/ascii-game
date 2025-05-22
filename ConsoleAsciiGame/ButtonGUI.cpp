@@ -69,6 +69,6 @@ RenderInfo ButtonGUI::Render(const RenderInfo& renderInfo)
 
 	//Assert(false, std::format("Button rendering text;{}", m_textGUI.GetText()));
 	m_textGUI.Render(renderInfo);
-	SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));
+	//SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));
 	return { renderInfo.m_TopLeftPos, renderInfo.m_RenderSize };
 }

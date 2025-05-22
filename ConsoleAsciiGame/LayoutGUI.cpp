@@ -33,7 +33,7 @@ void LayoutGUI::Update(const float deltaTime)
 }
 RenderInfo LayoutGUI::Render(const RenderInfo& renderInfo)
 {
-	if (m_backgroundColor.a != 0)
+	if (m_backgroundColor.a > 0.01)
 	{
 		DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y,
 			renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, m_backgroundColor);
@@ -136,18 +136,18 @@ void LayoutGUI::LayoutUpdate()
 		if (m_type == LayoutType::Vertical)
 		{
 			const auto old = currentPosNorm;
-			currentPosNorm.SetPosDeltaY(-(m_spacing.GetY() + children[i]->GetSize().GetY()));
+			currentPosNorm.m_Y -= (m_spacing.GetY() + children[i]->GetSize().GetY());
 			LogWarning(std::format("VERTICAL POS UPDATE OLD:{} NEW:{}", old.ToString(), currentPosNorm.ToString()));
 		}
-		else if (m_type == LayoutType::Horizontal) currentPosNorm.SetPosDeltaX(m_spacing.GetX() + children[i]->GetSize().GetX());
+		else if (m_type == LayoutType::Horizontal) currentPosNorm.m_X +=(m_spacing.GetX() + children[i]->GetSize().GetX());
 		else
 		{
-			currentPosNorm.SetPosDeltaX(children[i]->GetSize().GetX() + m_spacing.GetX());
+			currentPosNorm.m_X +=(children[i]->GetSize().GetX() + m_spacing.GetX());
 			const float nextLineWidth = currentPosNorm.GetX() + (i < children.size() - 1 ? children[i + 1]->GetSize().GetX() : 0);
 			if (nextLineWidth > NormalizedPosition::MAX)
 			{
-				currentPosNorm.SetPosX(0);
-				currentPosNorm.SetPosDeltaY(-(m_spacing.GetY() + children[i]->GetSize().GetY()));
+				currentPosNorm.m_X=0;
+				currentPosNorm.m_Y -= (m_spacing.GetY() + children[i]->GetSize().GetY());
 			}
 			//LogError(std::format("Checking layout child:{} next line width:{} posNorm:{}", children[i]->ToStringBase(), std::to_string(nextLineWidth), currentPosNorm.ToString()));
 		}

@@ -74,6 +74,6 @@ RenderInfo ToggleGUI::Render(const RenderInfo& renderInfo)
 	DrawDisabledOverlay({ ScreenPosition{static_cast<int>(topLeftPos.x),
 				static_cast<int>(topLeftPos.y) }, ScreenPosition{guiWidth, guiHeight} });
 
-	SetLastFramneRect(GUIRect{ ScreenPosition(topLeftPos.x, topLeftPos.y), {guiWidth, guiHeight} });
+	//SetLastFramneRect(GUIRect{ ScreenPosition(topLeftPos.x, topLeftPos.y), {guiWidth, guiHeight} });
 	return renderInfo;
 }

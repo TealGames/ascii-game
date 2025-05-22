@@ -120,7 +120,7 @@ void SceneAsset::UpdateAssetFromFile()
 				//JsonUtils::ToStringProperties(currentComponentJson), JsonUtils::ToStringProperties(entityComponentsJson), entityName));
 
 				//currentEntity->TryGetComponentMutable<TransformData>()->Deserialize(currentComponentJson);
-				LogError(std::format("Found transform for: {} entity:{}", currentEntity->TryGetComponent<TransformData>()->ToString(), currentEntity->GetName()));
+				//LogError(std::format("Found transform for: {} entity:{}", currentEntity->TryGetComponent<TransformData>()->ToString(), currentEntity->GetName()));
 				continue;
 			}
 
