@@ -156,7 +156,9 @@ void InputFieldGUI::SetAttemptedInputDelta(const std::string& input)
 	}
 	else if (m_type == InputFieldType::String)
 	{
+		//Assert(false, std::format("Reached here: input:{}", input));
 		SetInput(m_attemptedInput + Utils::TryExtractNonIntegralValues(input), true);
+		//Assert(false, std::format("Finished setting input"));
 	}
 	else SetInput(m_attemptedInput + input, true);
 }
@@ -220,9 +222,12 @@ RenderInfo InputFieldGUI::Render(const RenderInfo& renderInfo)
 	//Assert(false, std::format("drawing field gui at:{}", renderInfo.ToString()));
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, m_settings.m_BackgroundColor);
 	std::string inputStr = IsSelected() && !HasFlag(InputFieldFlag::UserUIReadonly) ? GetDisplayAttemptedInput() : GetDisplayInput();
+	LogError(std::format("Input str for render:{}", inputStr));
 	//Assert(false, std::format("Found input: {}", inputStr));
 	
 	m_textGUI.SetText(inputStr);
+
+	LogError("hello");
 	m_textGUI.Render(renderInfo);
 
 	//Vector2 textStartPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
@@ -234,7 +239,9 @@ RenderInfo InputFieldGUI::Render(const RenderInfo& renderInfo)
 	//DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
 	//	fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
 
+
 	if (!IsSelected() || HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay(renderInfo);
+	LogError(std::format("reached end here yaya"));
 
 	//SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));
 	//Assert(false, std::format("On render set last rect mutable; {}", GetLastFrameRect().ToString()));

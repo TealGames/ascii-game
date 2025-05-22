@@ -134,7 +134,25 @@ namespace Utils
 		std::string result = "";
 		for (const auto& c : input)
 		{
+			//std::cout << "DOING C:" << Utils::ToString(c);
 			if (!std::isdigit(c))
+			{
+				result += c;
+			}
+		}
+		return result;
+	}
+	std::string TryExtractHexadecimal(const std::string& input) 
+	{
+		std::string result = "";
+		char lowerChar = '0';
+		const char a = 'a';
+		const char f = 'f';
+
+		for (const auto& c : input)
+		{
+			lowerChar = std::tolower(c);
+			if (std::isdigit(lowerChar) || (lowerChar >= a && lowerChar <= f))
 			{
 				result += c;
 			}

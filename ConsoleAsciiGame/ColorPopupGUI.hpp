@@ -26,7 +26,7 @@ class ColorPopupGUI : public PopupGUI
 {
 private:
 	LayoutGUI m_sliderLayout;
-	InputFieldGUI m_rField;
+	InputFieldGUI m_hexField;
 
 	std::array<ColorChannelGUI, 3> m_rgbChannels;
 public:

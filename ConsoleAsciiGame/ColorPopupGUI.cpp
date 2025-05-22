@@ -14,6 +14,10 @@ static constexpr float CHANNEL_SLIDER_WIDTH = 0.8;
 static constexpr float CHANNEL_TEXT_WIDTH= 0.2;
 static constexpr float COLOR_DISPLAY_RADIUS = 0.15;
 
+static constexpr float SLIDER_LAYOUT_SIZE = 0.5;
+
+constexpr static float INPUT_FIELD_TEXT_FONT_FACTOR = 0.6;
+
 ColorChannelGUI::ColorChannelGUI(const Input::InputManager& input) 
 	: m_Container(), m_Slider(input, Vec2{ 0, 1 }, GUIStyle()), m_Text("", TextGUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR,
 	FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::CenterLeft, GUIPadding{}, 0.8)) 
@@ -41,24 +45,37 @@ std::uint8_t ColorChannelGUI::GetValue() const
 
 ColorPopupGUI::ColorPopupGUI(const Input::InputManager& input) 
 	: m_sliderLayout(LayoutType::Vertical, SizingType::ShrinkOnly, {0, 0.1}),
-	m_rField(input, InputFieldType::Integer, InputFieldFlag::None, GUIStyle()), 
+	m_hexField(input, InputFieldType::Any, InputFieldFlag::None, GUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR,
+		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
+			TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR))),
 	m_rgbChannels(Utils::ConstructArray<ColorChannelGUI, 3>(input))
 	/*m_rgbSliders{ Utils::ConstructArray<SliderGUI, 3>(input, Vec2{ 0, 1 }, GUIStyle()) },
 	m_rgbText{ Utils::ConstructArray<TextGUI, 3>("", TextGUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR,
 		FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::CenterLeft, GUIPadding{}, 0.8)) }*/
 {
 	SetSize({ 0.4, 0.3 });
-	m_sliderLayout.SetBounds({ 0, 0.5 }, { 1, 0 });
+	m_sliderLayout.SetBounds({ 0, SLIDER_LAYOUT_SIZE }, { 1, 0 });
 
 	for (size_t i=0; i< m_rgbChannels.size(); i++)
 	{
 		m_sliderLayout.AddLayoutElement(&m_rgbChannels[i].m_Container);
 	}
 
+	m_hexField.SetBounds({ COLOR_DISPLAY_RADIUS*3, 1}, {1, SLIDER_LAYOUT_SIZE*1.5 });
+	m_hexField.SetSubmitAction([this](const std::string& input) -> void
+		{
+			//Assert(false, std::format("SUBMIT TRIGGERED"));
+			const std::string hexInput = Utils::TryExtractHexadecimal(input);
+			if (hexInput.size()!= 6 && hexInput.size()!=8) return;
+
+			Color color = RaylibUtils::GetColorFromHex(std::stoi(hexInput, nullptr, 16));
+			SetColor(RaylibUtils::FromRaylibColor(color));
+		});
 	//m_rSlider.TryCenter(true, false);
 	
 	
 	PushChild(&m_sliderLayout);
+	PushChild(&m_hexField);
 	
 
 	//Assert(false, std::format("Popup color:{}", ToStringRecursive("")));

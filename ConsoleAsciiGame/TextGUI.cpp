@@ -257,7 +257,7 @@ RenderInfo TextGUI::Render(const RenderInfo& renderInfo)
 
 	if (m_fontData.m_Size==0 || spaceUsed.x > usableSize.m_X || spaceUsed.y > usableSize.m_Y)
 	{
-		//LogError("Calculing new font size");
+		if (m_fontData.m_Size == 0) LogError("Calculing new font size because size is 0");
 		m_fontData.m_Size = CalculateMaxFontSizeForSpace(usableSize, m_fontData.m_Tracking, m_fontData.m_Size);
 		spaceUsed = CalculateSpaceUsed(m_fontData.m_Size, m_fontData.m_Tracking);
 	}
@@ -281,11 +281,12 @@ RenderInfo TextGUI::Render(const RenderInfo& renderInfo)
 			renderInfo.m_RenderSize.ToString(), usableSize.ToString(), std::to_string(m_fontData.m_Size), 
 			std::to_string(HasFontSizeFactor()), std::to_string(GetFontSizeFromArea(usableSize)), RaylibUtils::ToString(spaceUsed)));
 	}*/
-
+	LogError(std::format("started drawing test"));
 	DrawTextEx(m_fontData.m_FontType, m_text.c_str(), topLeftPos, m_fontData.m_Size, m_fontData.m_Tracking, m_color);
+	LogError(std::format("Finsihed drawing test"));
 	if (DRAW_RENDER_BOUNDS) DrawRectangleLines(topLeftPos.x, topLeftPos.y, spaceUsed.x, spaceUsed.y, YELLOW);
 	//Note: although we use a different top left pos for actual text due to padding, the full object starts at the render info top left
-	return { renderInfo.m_TopLeftPos, renderInfo.m_RenderSize };
+	return renderInfo;
 }
 
 ScreenPosition TextGUI::CalculateSize(const RenderInfo& renderInfo) const

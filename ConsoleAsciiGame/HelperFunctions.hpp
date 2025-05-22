@@ -424,6 +424,7 @@ namespace Utils
 	/// <returns></returns>
 	std::string TryExtractFloat(const std::string& input);
 	std::string TryExtractNonIntegralValues(const std::string& input);
+	std::string TryExtractHexadecimal(const std::string& input);
 
 	std::vector<std::string> Split(const std::string& str, const char& separator);
 
