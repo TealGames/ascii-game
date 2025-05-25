@@ -21,12 +21,6 @@ inline const Vec2 GLOBAL_CHAR_AREA = { 2, 2 };
 inline constexpr float GLOBAL_FONT_SIZE = 2;
 inline const Vec2 GLOBAL_CHAR_SPACING = Vec2(1, 1);
 
-inline const Color COLLIDER_OUTLINE_COLOR = GREEN;
-inline const Color LINE_COLOR = RED;
-
-inline const Color DEBUG_TEXT_COLOR = WHITE;
-inline const Color DEBUG_HIGHLIGHTED_TEXT_COLOR = YELLOW;
-
 inline const std::string MAIN_INPUT_PROFILE_NAME = "main";
 inline const std::string MAIN_INPUT_PROFILE_MOVE_ACTION = "Move";
 

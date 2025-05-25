@@ -1,15 +1,10 @@
 #include "pch.hpp"
 #include "SpriteCharGUI.hpp"
-#include "EntityEditorGUI.hpp"
+#include "EditorStyles.hpp"
 
 SpriteCharGUI::SpriteCharGUI(Input::InputManager& inputManager) 
-	: m_charField(inputManager, InputFieldType::String, InputFieldFlag::None, GUIStyle()) 
+	: m_charField(inputManager, InputFieldType::String, InputFieldFlag::None, EditorStyles::GetInputFieldStyle(TextAlignment::Center))
 {
-	GUIStyle fieldSettings = GUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR,
-		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
-			TextAlignment::Center, 0.8));
-
-	m_charField.SetSettings(fieldSettings);
 }
 
 void SpriteCharGUI::Update()

@@ -9,9 +9,9 @@
 SpriteEditorGUI::SpriteEditorGUI(GUIHierarchy& hierarchy, const Input::InputManager& inputManager, AssetManagement::AssetManager& assetManager)
 	: m_assetManager(&assetManager), m_inputManager(&inputManager) //,m_saveButton(GUIStyle(), "Save")
 {
-	const GUIStyle buttonSettings = GUIStyle(EntityEditorGUI::EDITOR_PRIMARY_COLOR,
+	/*const GUIStyle buttonSettings = GUIStyle(EntityEditorGUI::EDITOR_PRIMARY_COLOR,
 		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
-		TextAlignment::Center, GUIPadding(), 0.8));
+		TextAlignment::Center, GUIPadding(), 0.8));*/
 
 	//m_saveButton.SetSize({ 0.1, 0.05 });
 	//m_saveButton.SetSettings(buttonSettings);

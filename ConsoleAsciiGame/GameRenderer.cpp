@@ -9,6 +9,7 @@
 #include "ProfilerTimer.hpp"
 #include "Debug.hpp"
 #include "GUIHierarchy.hpp"
+#include "EditorStyles.hpp"
 
 namespace Rendering
 {
@@ -127,7 +128,7 @@ namespace Rendering
             for (const auto& rectangle : outlineBuffer->m_RectangleBuffer)
             {
                 DrawRectangleLines(rectangle.m_Position.m_X, rectangle.m_Position.m_Y, 
-                    rectangle.m_Size.XAsInt(), rectangle.m_Size.YAsInt(), COLLIDER_OUTLINE_COLOR);
+                    rectangle.m_Size.XAsInt(), rectangle.m_Size.YAsInt(), EditorStyles::COLLIDER_OUTLINE_COLOR);
               /*  LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}", 
                     rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
             }
@@ -137,7 +138,7 @@ namespace Rendering
         {
             for (const auto& line : *lineBuffer)
             {
-                DrawLine(line.m_StartPos.m_X, line.m_StartPos.m_Y, line.m_EndPos.m_X, line.m_EndPos.m_Y, LINE_COLOR);
+                DrawLine(line.m_StartPos.m_X, line.m_StartPos.m_Y, line.m_EndPos.m_X, line.m_EndPos.m_Y, EditorStyles::LINE_COLOR);
                 /*  LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}",
                       rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
             }

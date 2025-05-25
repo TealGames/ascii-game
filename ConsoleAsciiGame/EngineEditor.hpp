@@ -55,6 +55,8 @@ private:
 	EntityEditorGUI m_entityEditor;
 	SpriteEditorGUI m_spriteEditor;
 
+	PanelGUI m_overheadBarContainer;
+	LayoutGUI m_toggleLayout;
 	ToggleGUI m_pauseGameToggle;
 	ToggleGUI m_editModeToggle;
 	ButtonGUI m_assetEditorButton;

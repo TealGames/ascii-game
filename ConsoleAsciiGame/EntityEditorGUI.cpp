@@ -6,14 +6,6 @@
 #include "CameraController.hpp"
 #include "GUIHierarchy.hpp"
 
-const Color EntityEditorGUI::EDITOR_TEXT_COLOR = WHITE;
-const Color EntityEditorGUI::EDITOR_BACKGROUND_COLOR = { 30, 30, 30, 255 };
-const Color EntityEditorGUI::EDITOR_SECONDARY_BACKGROUND_COLOR = { 45, 45, 45, 255 };
-const Color EntityEditorGUI::EDITOR_SECONDARY_COLOR = GRAY;
-const Color EntityEditorGUI::EDITOR_PRIMARY_COLOR = DARKGRAY;
-
-const Vec2 EntityEditorGUI::EDITOR_CHAR_SPACING = { 3, 2 };
-
 static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = { 0.8, 1 };
 
 EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input,

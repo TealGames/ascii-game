@@ -9,6 +9,7 @@
 #include "PositionConversions.hpp"
 #include "InputManager.hpp"
 #include "RaylibUtils.hpp"
+#include "EditorStyles.hpp"
 
 DebugInfo::DebugInfo() : 
 	m_text(), m_highlightedIndices(), m_mouseDebugData(std::nullopt), m_isEnabled(false) {}
@@ -105,7 +106,7 @@ bool DebugInfo::TryRender()
 	Vector2 currentPos = startPos;
 	Vector2 currentSize = {};
 
-	Color defaultColor = DEBUG_TEXT_COLOR;
+	Color defaultColor = EditorStyles::DEBUG_TEXT_COLOR;
 	Color currentColor = defaultColor;
 
 	const auto& highlightedIndices = GetHighlightedIndicesSorted();
@@ -119,7 +120,7 @@ bool DebugInfo::TryRender()
 	{
 		if (!highlightedIndices.empty() && currentIndex == nextHighlightedIndex)
 		{
-			currentColor = DEBUG_HIGHLIGHTED_TEXT_COLOR;
+			currentColor = EditorStyles::DEBUG_HIGHLIGHTED_TEXT_COLOR;
 			currentCollectionIndex++;
 			if (currentCollectionIndex < highlightedIndices.size())
 			{

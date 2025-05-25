@@ -110,9 +110,9 @@ namespace Core
 
 	const KeyboardKey TOGGLE_PAUSE_UPDATE_KEY = KEY_F1;
 
-	constexpr LoopCode SUCCESS_CODE = 0;
-	constexpr LoopCode EXIT_CODE = 1;
-	constexpr LoopCode ERROR_CODE = 2;
+	constexpr LoopStatusCode SUCCESS_CODE = 0;
+	constexpr LoopStatusCode EXIT_CODE = 1;
+	constexpr LoopStatusCode ERROR_CODE = 2;
 
 	void Engine::Destroy()
 	{
@@ -243,7 +243,7 @@ namespace Core
 		Log(this, log, true, false, ANSI_COLOR_BLUE);
 	}
 
-	LoopCode Engine::Update()
+	LoopStatusCode Engine::Update()
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("Engine::Update");
@@ -332,7 +332,7 @@ namespace Core
 
 	void Engine::BeginUpdateLoop()
 	{
-		LoopCode currentCode = SUCCESS_CODE;
+		LoopStatusCode currentCode = SUCCESS_CODE;
 		while (!WindowShouldClose())
 		{
 			if (IsKeyPressed(TOGGLE_PAUSE_UPDATE_KEY))

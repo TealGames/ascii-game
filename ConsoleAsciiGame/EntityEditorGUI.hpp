@@ -22,13 +22,6 @@ private:
 	EntityGUI* m_selectedEntity;
 
 public:
-	static const Color EDITOR_TEXT_COLOR;
-	static const Color EDITOR_BACKGROUND_COLOR;
-	static const Color EDITOR_SECONDARY_BACKGROUND_COLOR;
-	static const Color EDITOR_SECONDARY_COLOR;
-	static const Color EDITOR_PRIMARY_COLOR;
-
-	static const Vec2 EDITOR_CHAR_SPACING;
 
 private:
 	const Input::InputManager& GetInputManagerSafe() const;

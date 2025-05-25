@@ -7,7 +7,7 @@
 #include "Entity.hpp"
 #include "EntityGUI.hpp"
 #include "GUISelectorManager.hpp"
-#include "EntityEditorGUI.hpp"
+#include "EditorStyles.hpp"
 
 constexpr static float HEADER_PANEL_HEIGHT = 0.03;
 constexpr static float DROPDOWN_WIDTH = 0.2;
@@ -22,11 +22,10 @@ constexpr static float ONE_FIELD_MAX_ENTITY_SPACE = 0.05;
 
 ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component)
 	: m_inputManager(&inputManager), m_component(&component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
-	m_dropdownCheckbox(false, GUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR, TextGUIStyle())), 
-	m_componentNameText(GetComponentName(), TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, 
-		FontProperties(TITLE_FONT_SIZE, TITLE_FONT_SPACING, GetGlobalFont()),TextAlignment::CenterLeft)), 
-	m_guiContainer(), m_fieldLayout(LayoutType::Vertical, SizingType::ExpandAndShrink, {0, 0.02}, EntityEditorGUI::EDITOR_BACKGROUND_COLOR), 
-	m_nameHeader(EntityEditorGUI::EDITOR_BACKGROUND_COLOR)
+	m_dropdownCheckbox(false, GUIStyle(EditorStyles::EDITOR_SECONDARY_COLOR, TextGUIStyle())),
+	m_componentNameText(GetComponentName(), EditorStyles::GetTextStyle(TextAlignment::CenterLeft)), 
+	m_guiContainer(), m_fieldLayout(LayoutType::Vertical, SizingType::ExpandAndShrink, {0, 0.02}, EditorStyles::EDITOR_BACKGROUND_COLOR),
+	m_nameHeader(EditorStyles::EDITOR_BACKGROUND_COLOR)
 {
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(), 
 		std::get<Vec2*>(component->GetFieldsMutable()[0].m_Value)->ToString()));*/

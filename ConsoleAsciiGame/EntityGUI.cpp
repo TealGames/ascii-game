@@ -3,23 +3,22 @@
 #include "RaylibUtils.hpp"
 #include "HelperFunctions.hpp"
 #include "GUISelectorManager.hpp"
-#include "EntityEditorGUI.hpp"
+#include "EditorStyles.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 20;
 constexpr float ACTIVE_TOGGLE_SPACE = 0.15;
 
 EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, ECS::Entity& entity)
 	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
-	m_entityNameText(std::format("{}{}", m_entity->GetName(), m_entity->IsGlobal()? "(G)" : ""), TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR,
-		FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),TextAlignment::CenterLeft)),
-	m_activeToggle(m_entity->m_Active, GUIStyle(EntityEditorGUI::EDITOR_BACKGROUND_COLOR, TextGUIStyle())), 
-	m_guiLayout(LayoutType::Vertical, SizingType::ShrinkOnly), m_entityHeader(EntityEditorGUI::EDITOR_PRIMARY_COLOR)
+	m_entityNameText(std::format("{}{}", m_entity->GetName(), m_entity->IsGlobal()? "(G)" : ""), EditorStyles::GetTextStyle(TextAlignment::CenterLeft)),
+	m_activeToggle(m_entity->m_Active, EditorStyles::GetToggleStyle()),
+	m_guiLayout(LayoutType::Vertical, SizingType::ShrinkOnly), m_entityHeader(EditorStyles::EDITOR_PRIMARY_COLOR)
 {
 
-	/*m_activeToggle.SetValueSetAction([this](bool isChecked)mutable -> void 
+	m_activeToggle.SetValueSetAction([this](bool isChecked)-> void 
 		{
 			m_entity->m_Active = isChecked;
-		});*/
+		});
 
 	m_entityHeader.SetSize({1, 0.03 });
 	m_entityHeader.PushChild(&m_activeToggle);

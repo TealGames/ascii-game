@@ -66,7 +66,7 @@ RenderInfo ToggleGUI::Render(const RenderInfo& renderInfo)
 	if (IsToggled())
 	{
 		const int radius = std::min(guiWidth, guiHeight) / 2;
-		DrawCircle(topLeftPos.x+radius, topLeftPos.y+radius, radius, WHITE);
+		DrawCircle(topLeftPos.x+radius, topLeftPos.y+radius, radius, m_settings.m_SecondaryColor);
 	}
 
 	//Since we do not really have different states between focus input and settings (it is done in one go)

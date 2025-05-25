@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "PopupGUI.hpp"
 #include "raylib.h"
-#include "EntityEditorGUI.hpp"
+#include "EditorStyles.hpp"
 
 static constexpr float POPUP_PADDING = 0.05;
 
@@ -14,7 +14,7 @@ PopupGUI::PopupGUI()
 RenderInfo PopupGUI::Render(const RenderInfo& parentInfo)
 {
 	DrawRectangle(parentInfo.m_TopLeftPos.m_X, parentInfo.m_TopLeftPos.m_Y, parentInfo.m_RenderSize.m_X,
-		parentInfo.m_RenderSize.m_Y, EntityEditorGUI::EDITOR_BACKGROUND_COLOR);
+		parentInfo.m_RenderSize.m_Y, EditorStyles::EDITOR_BACKGROUND_COLOR);
 	InsideRender(parentInfo);
 	return parentInfo;
 }

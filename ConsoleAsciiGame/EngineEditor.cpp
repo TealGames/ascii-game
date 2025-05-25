@@ -10,6 +10,11 @@
 #include "GUISelectorManager.hpp"
 #include "CollisionBoxSystem.hpp"
 #include "ColorPopupGUI.hpp"
+#include "EditorStyles.hpp"
+
+static constexpr float TOP_BAR_HEIGHT = 0.03;
+static constexpr float ASSET_EDITOR_BUTTON_WIDTH = 0.2;
+static constexpr float TOGGLE_LAYOUT_WIDTH_PER_TOGGLE = 0.05;
 
 static constexpr KeyboardKey PAUSE_TOGGLE_KEY = KEY_P;
 static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
@@ -18,7 +23,7 @@ EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
 
 EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
 	SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, GUIHierarchy& guiTree, ECS::CollisionBoxSystem& collisionSystem)
-	: 
+	:
 	m_editorObj(nullptr),
 	m_displayingGameView(true),
 	m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_cameraController(camera),
@@ -27,21 +32,24 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 	m_popupManager(guiTree),
 	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager),
 	m_spriteEditor(m_guiTree, m_inputManager, assetManager),
-	m_pauseGameToggle(false, GUIStyle()), m_editModeToggle(false, GUIStyle()),
-	m_editModeInfo(), m_assetEditorButton(GUIStyle(), "AssetEditors")
+	m_overheadBarContainer(EditorStyles::EDITOR_BACKGROUND_COLOR), m_toggleLayout(LayoutType::Horizontal, SizingType::ShrinkOnly, {}),
+	m_pauseGameToggle(false, EditorStyles::GetToggleStyle()), m_editModeToggle(false, EditorStyles::GetToggleStyle()),
+	m_editModeInfo(), m_assetEditorButton(EditorStyles::GetButtonStyle(TextAlignment::Center), "AssetEditors")
 {
 
 	//scene.m_GlobalEntityManager.CreateGlobalEntity("__Editor", TransformData());
 
-	const GUIStyle toggleSettings = GUIStyle( EntityEditorGUI::EDITOR_SECONDARY_COLOR,
+	/*const GUIStyle toggleSettings = GUIStyle( EntityEditorGUI::EDITOR_SECONDARY_COLOR,
 		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
 			TextAlignment::Center, GUIPadding(), 0.8));
 
 	const GUIStyle buttonSettings = GUIStyle( EntityEditorGUI::EDITOR_PRIMARY_COLOR,
 		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
-			TextAlignment::Center, GUIPadding(), 0.8));
+			TextAlignment::Center, GUIPadding(), 0.8));*/
 
-	m_pauseGameToggle.SetSettings(toggleSettings);
+	//m_pauseGameToggle.SetSettings(toggleSettings);
+	m_editModeToggle.SetFixed(false, true);
+	m_pauseGameToggle.SetFixed(false, true);
 	m_pauseGameToggle.SetValueSetAction([this](const bool isChecked) -> void
 		{ 
 			if (isChecked) m_timeKeeper.StopTimeScale();
@@ -50,17 +58,27 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 			//DebugProperties::SetLogMessages(!isChecked);
 		});
 
-	m_editModeToggle.SetSettings(toggleSettings);
+	//m_editModeToggle.SetSettings(toggleSettings);
+	m_toggleLayout.AddLayoutElement(&m_pauseGameToggle);
+	m_toggleLayout.AddLayoutElement(&m_editModeToggle);
 
-	m_assetEditorButton.SetSize({ 0.1, 0.2 });
-	m_assetEditorButton.SetTopLeftPos(NormalizedPosition::TOP_CENTER);
-	m_assetEditorButton.SetSettings(buttonSettings);
+	const float layoutWidth = TOGGLE_LAYOUT_WIDTH_PER_TOGGLE * m_toggleLayout.GetChildCount();
+	const float layoutStartX = (1 - layoutWidth) / 2;
+	m_toggleLayout.SetBounds({ layoutStartX, 1}, {layoutStartX+ layoutWidth, 0});
+
+	//m_assetEditorButton.SetSettings(buttonSettings);
+	m_assetEditorButton.SetBounds(NormalizedPosition::TOP_LEFT, { ASSET_EDITOR_BUTTON_WIDTH, 0 });
 	m_assetEditorButton.SetClickAction([this](const ButtonGUI& button)-> void
 		{
 			m_displayingGameView = !m_displayingGameView;
 			if (m_displayingGameView) m_assetEditorButton.SetText("AssetEditors");
 			else m_assetEditorButton.SetText("GameView");
 		});
+
+	m_overheadBarContainer.SetBounds(NormalizedPosition::TOP_LEFT, { 1, 1 - TOP_BAR_HEIGHT });
+	m_overheadBarContainer.PushChild(&m_assetEditorButton);
+	m_overheadBarContainer.PushChild(&m_toggleLayout);
+	m_guiTree.AddToRoot(DEFAULT_LAYER, &m_overheadBarContainer);
 
 	DebugProperties::OnMessageLogged.AddListener([this](const LogType& logType, const std::string& message, 
 		const bool& logToConsole, const bool& pauseOnMessage)-> void
@@ -280,9 +298,9 @@ bool EngineEditor::TryRender()
 	else
 	{
 		const float leftPadding = 150;
-		DrawRectangle(0, 0, leftPadding, SCREEN_HEIGHT, EntityEditorGUI::EDITOR_BACKGROUND_COLOR);
+		DrawRectangle(0, 0, leftPadding, SCREEN_HEIGHT, EditorStyles::EDITOR_BACKGROUND_COLOR);
 
-		DrawRectangle(leftPadding, 0, SCREEN_WIDTH- leftPadding, SCREEN_HEIGHT, EntityEditorGUI::EDITOR_SECONDARY_BACKGROUND_COLOR);
+		DrawRectangle(leftPadding, 0, SCREEN_WIDTH- leftPadding, SCREEN_HEIGHT, EditorStyles::EDITOR_SECONDARY_BACKGROUND_COLOR);
 		//m_spriteEditor.Render(RenderInfo(ScreenPosition(leftPadding, 0), ScreenPosition(SCREEN_WIDTH - leftPadding, SCREEN_HEIGHT)));
 	}
 

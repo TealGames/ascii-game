@@ -13,7 +13,7 @@ class ColorPickerGUI :  public SelectableGUI
 {
 private:
 	PopupGUIManager* m_popupManager;
-	GUIStyle m_settings;
+	//GUIStyle m_settings;
 	Utils::Color m_color;
 
 	ColorPickerAction m_valueSetCallback;
@@ -24,7 +24,7 @@ public:
 	ColorPickerGUI(PopupGUIManager& popupManager, const GUIStyle& settings);
 
 	void SetColor(const Utils::Color color);
-	void SetSettings(const GUIStyle& settings);
+	//void SetSettings(const GUIStyle& settings);
 	void SetValueSetAction(const ColorPickerAction& action);
 
 	Utils::Color GetColor() const;

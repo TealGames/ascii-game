@@ -5,7 +5,7 @@
 #include "HelperFunctions.hpp"
 #include <limits>
 #include "RaylibUtils.hpp"
-#include "EntityEditorGUI.hpp"
+#include "EditorStyles.hpp"
 
 static constexpr float MAX_CHANNEL_VAL = std::numeric_limits<std::uint8_t>::max();
 
@@ -19,8 +19,7 @@ static constexpr float SLIDER_LAYOUT_SIZE = 0.5;
 constexpr static float INPUT_FIELD_TEXT_FONT_FACTOR = 0.6;
 
 ColorChannelGUI::ColorChannelGUI(const Input::InputManager& input) 
-	: m_Container(), m_Slider(input, Vec2{ 0, 1 }, GUIStyle()), m_Text("", TextGUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR,
-	FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::CenterLeft, GUIPadding{}, 0.8)) 
+	: m_Container(), m_Slider(input, Vec2{ 0, 1 }, EditorStyles::GetSliderStyle()), m_Text("", EditorStyles::GetTextStyle(TextAlignment::Center))
 {
 	m_Container.SetSize({1, 0.2});
 	m_Text.SetBounds(NormalizedPosition::TOP_LEFT, { CHANNEL_TEXT_WIDTH, 0 });
@@ -45,9 +44,7 @@ std::uint8_t ColorChannelGUI::GetValue() const
 
 ColorPopupGUI::ColorPopupGUI(const Input::InputManager& input) 
 	: m_sliderLayout(LayoutType::Vertical, SizingType::ShrinkOnly, {0, 0.1}),
-	m_hexField(input, InputFieldType::Any, InputFieldFlag::None, GUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR,
-		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
-			TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR))),
+	m_hexField(input, InputFieldType::Any, InputFieldFlag::None, EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)),
 	m_rgbChannels(Utils::ConstructArray<ColorChannelGUI, 3>(input))
 	/*m_rgbSliders{ Utils::ConstructArray<SliderGUI, 3>(input, Vec2{ 0, 1 }, GUIStyle()) },
 	m_rgbText{ Utils::ConstructArray<TextGUI, 3>("", TextGUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR,

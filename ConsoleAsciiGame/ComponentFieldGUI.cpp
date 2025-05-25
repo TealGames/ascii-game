@@ -7,7 +7,7 @@
 #include "EntityGUI.hpp"
 #include "Entity.hpp"
 #include "GUISelectorManager.hpp"
-#include "EntityEditorGUI.hpp"
+#include "EditorStyles.hpp"
 #include "Vec2.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 10;
@@ -27,8 +27,7 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 	const ComponentGUI& componentGUI, ComponentField& field)
 	: m_fieldInfo(&field), m_inputFields(), m_checkbox(false, GUIStyle()), m_colorPicker(popupManager, GUIStyle()), 
 	m_inputManager(&inputManager), m_componentGUI(&componentGUI),
-	m_fieldNameText(GetFieldInfo().m_FieldName, TextGUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
-		FontProperties(TITLE_FONT_SIZE, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::CenterLeft, {}, FIELD_TEXT_FONT_FACTOR)), m_guiLayout()
+	m_fieldNameText(GetFieldInfo().m_FieldName, EditorStyles::GetTextStyle(TextAlignment::CenterLeft, FIELD_TEXT_FONT_FACTOR)), m_guiLayout()
 {
 	//LogWarning(std::format("CReated component field"));
 	//LogWarning(std::format("compinent field gui addr create:{}", Utils::ToStringPointerAddress(this)));
@@ -41,36 +40,40 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 	InputFieldFlag fieldFlags = InputFieldFlag::None;
 	if (GetFieldInfo().IsReadonly()) fieldFlags |= InputFieldFlag::UserUIReadonly;
 
-	GUIStyle fieldSettings = GUIStyle(EntityEditorGUI::EDITOR_SECONDARY_COLOR, 
-		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));
+	/*GUIStyle fieldSettings = GUIStyle(EditorStyles::EDITOR_SECONDARY_COLOR,
+		TextGUIStyle(EditorStyles::EDITOR_TEXT_COLOR, FontProperties(0, EditorStyles::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));*/
 	/*Assert(false, std::format("Creating gui settings for field: {} are: {}", 
 		std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
 
 	if (GetFieldInfo().IsCurrentType<int>() || GetFieldInfo().IsCurrentType<std::uint8_t>())
 	{
 		m_inputFields.reserve(1);
-		m_inputFields.emplace_back(GetInputManager(), InputFieldType::Integer, fieldFlags, fieldSettings);
+		m_inputFields.emplace_back(GetInputManager(), InputFieldType::Integer, fieldFlags, 
+			EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));
 	}
 	else if (GetFieldInfo().IsCurrentType<float>())
 	{
 		m_inputFields.reserve(1);
-		m_inputFields.emplace_back(GetInputManager(), InputFieldType::Float, fieldFlags, fieldSettings);
+		m_inputFields.emplace_back(GetInputManager(), InputFieldType::Float, fieldFlags, 
+			EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));
 	}
 	else if (GetFieldInfo().IsCurrentType<bool>())
 	{
-		m_checkbox.SetSettings(fieldSettings);
+		m_checkbox.SetSettings(EditorStyles::GetToggleStyle());
 	}
 	else if (GetFieldInfo().IsCurrentType<std::string>())
 	{
 		m_inputFields.reserve(1);
-		m_inputFields.emplace_back(GetInputManager(), InputFieldType::String, fieldFlags, fieldSettings);
+		m_inputFields.emplace_back(GetInputManager(), InputFieldType::String, fieldFlags, 
+			EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));
 	}
 	else if (GetFieldInfo().IsCurrentType<Vec2>())
 	{
 		m_inputFields.reserve(2);
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.emplace_back(GetInputManager(), InputFieldType::Float, fieldFlags, fieldSettings);
+			m_inputFields.emplace_back(GetInputManager(), InputFieldType::Float, fieldFlags, 
+				EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));
 		}
 	}
 	else if (GetFieldInfo().IsCurrentType<Vec2Int>())
@@ -78,12 +81,13 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 		m_inputFields.reserve(2);
 		for (int i = 0; i < 2; i++)
 		{
-			m_inputFields.emplace_back(GetInputManager(), InputFieldType::Integer, fieldFlags, fieldSettings);
+			m_inputFields.emplace_back(GetInputManager(), InputFieldType::Integer, fieldFlags, 
+				EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));
 		}
 	}
 	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
 	{
-		m_colorPicker.SetSettings(fieldSettings);
+		//m_colorPicker.SetSettings(fieldSettings);
 	}
 	else
 	{

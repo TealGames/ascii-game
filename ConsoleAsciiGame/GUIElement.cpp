@@ -3,7 +3,7 @@
 #include "Debug.hpp"
 #include "HelperFunctions.hpp"
 
-static constexpr bool DRAW_RENDER_BOUNDS = false;
+static constexpr bool DRAW_RENDER_BOUNDS = true;
 
 GUIElement::GUIElement() : GUIElement(RelativeGUIRect()) {}
 GUIElement::GUIElement(const NormalizedPosition& size) : GUIElement(RelativeGUIRect(size)) {}

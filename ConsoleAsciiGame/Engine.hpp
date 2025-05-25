@@ -33,7 +33,7 @@
 
 namespace Core
 {
-	using LoopCode = std::uint8_t;
+	using LoopStatusCode = std::uint8_t;
 	class Engine
 	{
 	private:
@@ -83,7 +83,7 @@ namespace Core
 		/// Returns false if it can continue
 		/// </summary>
 		/// <returns></returns>
-		LoopCode Update();
+		LoopStatusCode Update();
 
 		void EngineLog(const std::string& log) const;
 

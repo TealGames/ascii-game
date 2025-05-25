@@ -7,7 +7,7 @@
 #include "HelperFunctions.hpp"
 
 ColorPickerGUI::ColorPickerGUI(PopupGUIManager& popupManager, const GUIStyle& settings)
-	: SelectableGUI(), m_settings(settings), m_color(), m_popupManager(&popupManager), m_valueSetCallback()
+	: SelectableGUI(), m_color(), m_popupManager(&popupManager), m_valueSetCallback() //m_settings(settings), 
 {
 	//LogWarning(std::format("coloc picker addr create:{}", Utils::ToStringPointerAddress(this)));
 	m_OnSelect.AddListener([this](SelectableGUI* gui)-> void
@@ -54,7 +54,7 @@ void ColorPickerGUI::SetColor(const Utils::Color color)
 	m_color = color; 
 	if (m_valueSetCallback) m_valueSetCallback(m_color);
 }
-void ColorPickerGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }
+//void ColorPickerGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }
 Utils::Color ColorPickerGUI::GetColor() const { return m_color; }
 
 RenderInfo ColorPickerGUI::Render(const RenderInfo& renderInfo)
