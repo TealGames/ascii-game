@@ -41,6 +41,6 @@ const Font& FontAsset::GetFont() const
 
 void FontAsset::UpdateAssetFromFile()
 {
-	const std::string pathString = GetPath().string();
+	const std::string pathString = GetPathCopy().string();
 	m_font = LoadFontEx(pathString.c_str(), 64, nullptr, 0);
 }

@@ -88,6 +88,22 @@ void GUISelectorManager::ClickSelectable(SelectableGUI* selectable)
 	LogError(std::format("click selectable ADDR:{}", Utils::ToStringPointerAddress(selectable)));
 }
 
+void GUISelectorManager::StopCurrentHovering()
+{
+	if (m_currentHovered == nullptr) return;
+	m_currentHovered->HoverEnd();
+	m_currentHovered = nullptr;
+}
+
+void GUISelectorManager::SetNewHoveredSelectable(SelectableGUI* selectable)
+{
+	if (selectable == nullptr) return;
+
+	StopCurrentHovering();
+	selectable->HoverStart();
+	m_currentHovered = selectable;
+}
+
 void GUISelectorManager::DeselectCurrentSelectable()
 {
 	if (!HasSelecatbleSelected()) return;
@@ -145,13 +161,15 @@ void GUISelectorManager::InvokeInteractionEvents()
 	const bool hasSelectionEvent = selectKeyState == Input::KeyState::Released || selectKeyState == Input::KeyState::Pressed;
 	//NOTE: if the key is not released or pressed AND the position has not changed, it means no select, drag or hover changes have occured so we do not need to look
 	if (m_selectableLayers.empty() || (!hasSelectionEvent && !hasNewHoverPos)) return;
-	
+	//Whether we find the new object that is hovered or not, we still want to stop the current hovering
+	if (hasNewHoverPos) StopCurrentHovering();
 
 	/*Assert(false, std::format("CLICKED POS:{} FOUNDselectable rect: {} size: {} selected: {}",
 			m_lastFrameClickedPosition.value().ToString(), allRect, std::to_string(m_selectables.size()),
 			HasSelecatbleSelected() ? m_currentSelected->GetLastFrameRect().ToString() : "NONE"));*/
 
-	bool foundEventBlock = false;
+	//bool foundEventBlock = false;
+	//bool foundNewHoverSelectable = false;
 	//Note: we start at -1 because we increment at the start of each iteration due to guard statements
 	int i = -1;
 	for (auto& layer : m_selectableLayers)
@@ -167,8 +185,9 @@ void GUISelectorManager::InvokeInteractionEvents()
 				//Note: only if the event blocker contains the position do we block further events
 				if (it->second != nullptr && it->second->GetLastFrameRect().ContainsPos(mousePos))
 				{
-					foundEventBlock = true;
-					break;
+					//foundEventBlock = true;
+					//break;
+					return;
 				}
 				else continue;
 			}
@@ -185,8 +204,9 @@ void GUISelectorManager::InvokeInteractionEvents()
 
 			if (hasNewHoverPos)
 			{
-				m_currentHovered = selectable;
-				if (!hasSelectionEvent) break;
+				SetNewHoveredSelectable(selectable);
+				//foundNewHoverSelectable = true;
+				if (!hasSelectionEvent) return;
 			}
 
 			if (!hasSelectionEvent) continue;
@@ -199,7 +219,7 @@ void GUISelectorManager::InvokeInteractionEvents()
 				//Note: we do not need to cancel the selectable because we can have one selected
 				//while we drag on another
 				m_currentDragged = selectable;
-				break;
+				return;
 			}
 			else if (selectKeyState == Input::KeyState::Released)
 			{
@@ -209,7 +229,7 @@ void GUISelectorManager::InvokeInteractionEvents()
 
 				SelectNewSelectable(selectable);
 				m_selectedThisFrame = true;
-				break;
+				return;
 			}
 
 			/*Assert(false, std::format("Mouse pos: {} selectable null: {} rect: {}", mousePos.ToString(),
@@ -218,7 +238,7 @@ void GUISelectorManager::InvokeInteractionEvents()
 				//Assert(false, std::format("CLICKED ON NEW SELECTABLE: {}", selectable->GetLastFrameRect().ToString()));
 		}
 
-		if (foundEventBlock) break;
+		//if (foundEventBlock) break;
 	}
 
 	//clickTime++;

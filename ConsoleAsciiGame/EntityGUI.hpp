@@ -11,6 +11,7 @@
 
 class GUIHierarchy;
 class PopupGUIManager;
+namespace AssetManagement { class AssetManager; };
 
 class EntityGUI : public ITreeGUIConstructible
 {
@@ -27,7 +28,8 @@ public:
 
 private:
 public:
-	EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, ECS::Entity& entity);
+	EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, 
+		const AssetManagement::AssetManager& assetManager, ECS::Entity& entity);
 	~EntityGUI();
 
 	void Update();

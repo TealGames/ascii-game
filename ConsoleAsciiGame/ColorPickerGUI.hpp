@@ -29,6 +29,6 @@ public:
 
 	Utils::Color GetColor() const;
 
-	RenderInfo Render(const RenderInfo& renderInfo) override;
+	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 };
 

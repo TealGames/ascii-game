@@ -221,7 +221,7 @@ bool InputFieldGUI::HasFlag(const InputFieldFlag& flag) const
 	return Utils::HasFlagAll(m_inputFlags, flag);
 }
 
-RenderInfo InputFieldGUI::Render(const RenderInfo& renderInfo)
+RenderInfo InputFieldGUI::ElementRender(const RenderInfo& renderInfo)
 {
 	//Assert(false, std::format("drawing field gui at:{}", renderInfo.ToString()));
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, m_settings.m_BackgroundColor);
@@ -243,8 +243,8 @@ RenderInfo InputFieldGUI::Render(const RenderInfo& renderInfo)
 	//DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
 	//	fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
 
-
-	if (!IsSelected() || HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay(renderInfo);
+	//Note: if this object is deselected (even if is readonly) we do not draw disabled overlay
+	if (IsSelected() && HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay(renderInfo);
 	LogError(std::format("reached end here yaya"));
 
 	//SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));

@@ -8,6 +8,8 @@
 #include "EntityGUI.hpp"
 #include "GUISelectorManager.hpp"
 #include "EditorStyles.hpp"
+#include "AssetManager.hpp"
+#include "TextureAsset.hpp"
 
 constexpr static float HEADER_PANEL_HEIGHT = 0.03;
 constexpr static float DROPDOWN_WIDTH = 0.2;
@@ -20,9 +22,12 @@ constexpr static float ONE_FIELD_MAX_ENTITY_SPACE = 0.05;
 //If true, will divide fields based how many we have to render, otherwise will try give them as much space as possible
 //static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
 
-ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component)
+ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, 
+	const AssetManagement::AssetManager& m_assetManager, const EntityGUI& entityGUI, ComponentData& component)
 	: m_inputManager(&inputManager), m_component(&component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
-	m_dropdownCheckbox(false, GUIStyle(EditorStyles::EDITOR_SECONDARY_COLOR, TextGUIStyle())),
+	m_dropdownDefaultTexture(m_assetManager.TryGetTypeAsset<TextureAsset>("dropdown_icon_default")), 
+	m_dropdownToggledTexture(m_assetManager.TryGetTypeAsset<TextureAsset>("dropdown_icon_toggled")),
+	m_dropdownCheckbox(false, EditorStyles::GetToggleStyle(), nullptr, m_dropdownDefaultTexture),
 	m_componentNameText(GetComponentName(), EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft)), 
 	m_guiContainer(), m_fieldLayout(LayoutType::Vertical, SizingType::ExpandAndShrink, {0, 0.02}, EditorStyles::EDITOR_BACKGROUND_COLOR),
 	m_nameHeader(EditorStyles::EDITOR_BACKGROUND_COLOR)
@@ -82,6 +87,8 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIMana
 				m_fieldLayout.SetTopLeftPos(NormalizedPosition::TOP_LEFT- Vec2(0, m_nameHeader.GetSize().GetY()));
 				m_guiContainer.PushChild(&m_fieldLayout);
 
+
+				if (m_dropdownToggledTexture!=nullptr) m_dropdownCheckbox.SetOverlayTexture(*m_dropdownToggledTexture);
 				//Assert(false, std::format("Component tree:{}", m_guiContainer.ToStringRecursive("")));
 			}
 			else
@@ -89,6 +96,8 @@ ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIMana
 				m_guiContainer.TryPopChildAt(1);
 				//m_nameHeader.SetSize({1, 1});
 				m_guiContainer.SetSize({ 1, HEADER_PANEL_HEIGHT });
+
+				if (m_dropdownDefaultTexture != nullptr) m_dropdownCheckbox.SetOverlayTexture(*m_dropdownDefaultTexture);
 			}
 		});
 

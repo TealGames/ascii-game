@@ -3,15 +3,16 @@
 #include "RaylibUtils.hpp"
 #include "GUISelectorManager.hpp"
 #include <optional>
+#include "TextureAsset.hpp"
 
 //ToggleGUI::ToggleGUI() : 
 //	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
 //	m_valueSetAction(nullptr) {}
 
 ToggleGUI::ToggleGUI(const bool& startValue, const GUIStyle& settings, 
-	const ToggleAction& valueSetAction)
+	const ToggleAction& valueSetAction, const TextureAsset* toggledTexture)
 	: SelectableGUI(),  m_isToggled(startValue), m_settings(settings), 
-	m_valueSetAction(valueSetAction)
+	m_valueSetAction(valueSetAction), m_overlayTexture(toggledTexture)
 {
 	m_OnClick.AddListener([this](SelectableGUI* self)-> void 
 		{
@@ -32,6 +33,14 @@ ToggleGUI::~ToggleGUI()
 void ToggleGUI::SetSettings(const GUIStyle& settings)
 {
 	m_settings = settings;
+}
+void ToggleGUI::SetOverlayTexture(const TextureAsset& asset)
+{
+	m_overlayTexture = &asset;
+}
+bool ToggleGUI::HasOverlayTexture() const
+{
+	return m_overlayTexture != nullptr;
 }
 
 bool ToggleGUI::IsToggled() const
@@ -54,10 +63,17 @@ void ToggleGUI::SetValueSetAction(const ToggleAction& action)
 	m_valueSetAction = action;
 }
 
-RenderInfo ToggleGUI::Render(const RenderInfo& renderInfo)
+void ToggleGUI::DrawOverlayTexture(const float targetWidth, const float targetHeight, const Vector2& topLeftPos)
 {
-	const int guiHeight = renderInfo.m_RenderSize.m_Y;
-	const int guiWidth = guiHeight;
+	const float scaleX = targetWidth / m_overlayTexture->GetTexture().width;
+	const float scaleY = targetHeight / m_overlayTexture->GetTexture().height;
+	DrawTextureEx(m_overlayTexture->GetTexture(), topLeftPos, 0, std::min(scaleX, scaleY), WHITE);
+}
+
+RenderInfo ToggleGUI::ElementRender(const RenderInfo& renderInfo)
+{
+	const float guiHeight = renderInfo.m_RenderSize.m_Y;
+	const float guiWidth = guiHeight;
 
 	Vector2 topLeftPos= RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
 	topLeftPos.x += (renderInfo.m_RenderSize.m_X - guiWidth) / 2;
@@ -65,15 +81,21 @@ RenderInfo ToggleGUI::Render(const RenderInfo& renderInfo)
 	DrawRectangle(topLeftPos.x, topLeftPos.y, guiWidth, guiHeight, m_settings.m_BackgroundColor);
 	if (IsToggled())
 	{
-		const int radius = std::min(guiWidth, guiHeight) / 2;
-		DrawCircle(topLeftPos.x+radius, topLeftPos.y+radius, radius, m_settings.m_SecondaryColor);
+		if (HasOverlayTexture()) DrawOverlayTexture(guiWidth, guiHeight, topLeftPos);
+		else
+		{
+			const int radius = std::min(guiWidth, guiHeight) / 2;
+			DrawCircle(topLeftPos.x + radius, topLeftPos.y + radius, radius, m_settings.m_SecondaryColor);
+		}
 	}
+	else if (HasOverlayTexture()) DrawOverlayTexture(guiWidth, guiHeight, topLeftPos);
 
 	//Since we do not really have different states between focus input and settings (it is done in one go)
 	//we can always draw the disabled overlay
-	DrawDisabledOverlay({ ScreenPosition{static_cast<int>(topLeftPos.x),
-				static_cast<int>(topLeftPos.y) }, ScreenPosition{guiWidth, guiHeight} });
+	//DrawDisabledOverlay(overlayRenderInfo);
+	//if (IsHoveredOver()) DrawHoverOverlay(overlayRenderInfo);
 
 	//SetLastFramneRect(GUIRect{ ScreenPosition(topLeftPos.x, topLeftPos.y), {guiWidth, guiHeight} });
-	return renderInfo;
+	return RenderInfo{ ScreenPosition{static_cast<int>(topLeftPos.x),
+				static_cast<int>(topLeftPos.y) }, ScreenPosition(guiWidth, guiHeight) };
 }

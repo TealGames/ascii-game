@@ -17,7 +17,7 @@ void ColorGradientGUI::Update(const float deltaTime)
 {
 }
 
-RenderInfo ColorGradientGUI::Render(const RenderInfo& renderInfo)
+RenderInfo ColorGradientGUI::ElementRender(const RenderInfo& renderInfo)
 {
 	//TODO: finish implementing
 	Color startColor = m_gradient.GetFirstColor(false);

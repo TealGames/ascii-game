@@ -38,6 +38,6 @@ public:
 	bool IsInCooldown() const;
 
 	void Update(const float deltaTime);
-	RenderInfo Render(const RenderInfo& renderInfo) override;
+	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 };
 

@@ -57,7 +57,7 @@ void ColorPickerGUI::SetColor(const Utils::Color color)
 //void ColorPickerGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }
 Utils::Color ColorPickerGUI::GetColor() const { return m_color; }
 
-RenderInfo ColorPickerGUI::Render(const RenderInfo& renderInfo)
+RenderInfo ColorPickerGUI::ElementRender(const RenderInfo& renderInfo)
 {
 	//Assert(false, std::format("settings size: {} render info:{}", m_settings.m_Size.ToString(), renderInfo.m_RenderSize.ToString()));
 

@@ -27,10 +27,15 @@ std::string Asset::GetName() const
 {
 	return m_name;
 }
-std::filesystem::path Asset::GetPath() const
+std::filesystem::path Asset::GetPathCopy() const
 {
 	return m_path;
 }
+const std::filesystem::path& Asset::GetPath() const
+{
+	return m_path;
+}
+
 bool Asset::AreDependenciesSet() const
 {
 	return m_dependenciesSet;
@@ -42,7 +47,7 @@ void Asset::MarkDependenciesSet()
 
 void Asset::SaveToSelf()
 {
-	SaveToPath(GetPath());
+	SaveToPath(GetPathCopy());
 }
 void Asset::SaveToPath(const std::filesystem::path& path)
 {
@@ -51,5 +56,5 @@ void Asset::SaveToPath(const std::filesystem::path& path)
 
 std::string Asset::ToString() const
 {
-	return std::format("[Asset:'{}' @path:{}]", GetName(), GetPath().string());
+	return std::format("[Asset:'{}' @path:{}]", GetName(), GetPathCopy().string());
 }

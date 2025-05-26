@@ -13,6 +13,8 @@
 class EntityGUI;
 class GUISelectorManager;
 class PopupGUIManager;
+namespace AssetManagement { class AssetManager; };
+class TextureAsset;
 
 class ComponentGUI : public ITreeGUIConstructible
 {
@@ -23,6 +25,9 @@ private:
 	PanelGUI m_nameHeader;
 	ComponentData* m_component;
 	std::vector<ComponentFieldGUI> m_fieldGUIs;
+
+	const TextureAsset* m_dropdownToggledTexture;
+	const TextureAsset* m_dropdownDefaultTexture;
 
 	ToggleGUI m_dropdownCheckbox;
 	TextGUI m_componentNameText;
@@ -35,7 +40,7 @@ private:
 
 public:
 	ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, 
-		const EntityGUI& entityGUI, ComponentData& component);
+		const AssetManagement::AssetManager& m_assetManager, const EntityGUI& entityGUI, ComponentData& component);
 	~ComponentGUI();
 	
 	//void Init();

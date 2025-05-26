@@ -17,6 +17,6 @@ public:
 	const ColorGradient& GetGradient() const;
 
 	void Update(const float deltaTime) override;
-	RenderInfo Render(const RenderInfo& renderInfo) override;
+	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 };
 

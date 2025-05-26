@@ -48,6 +48,8 @@ private:
 	void SelectNewSelectable(SelectableGUI* selectable);
 	void DeselectCurrentSelectable();
 	void ClickSelectable(SelectableGUI* selectable);
+	void StopCurrentHovering();
+	void SetNewHoveredSelectable(SelectableGUI* selectable);
 
 	std::string ToStringSelectableTypes() const;
 	

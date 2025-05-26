@@ -19,7 +19,7 @@ VisualData& SpriteAsset::GetVisualMutable()
 
 void SpriteAsset::UpdateAssetFromFile()
 {
-	Json json = Json::parse(IO::TryReadFileFull(GetPath()));
+	Json json = Json::parse(IO::TryReadFileFull(GetPathCopy()));
 	m_visual = json.get<VisualData>();
 }
 void SpriteAsset::SaveToPath(const std::filesystem::path& path)
@@ -31,5 +31,5 @@ void SpriteAsset::SaveToPath(const std::filesystem::path& path)
 
 std::string SpriteAsset::ToString() const
 {
-	return std::format("[SpriteAsset path:{} visual:{}]", GetPath().string(), m_visual.ToString());
+	return std::format("[SpriteAsset path:{} visual:{}]", GetPathCopy().string(), m_visual.ToString());
 }

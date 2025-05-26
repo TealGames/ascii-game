@@ -7,12 +7,14 @@ class GUIHierarchy;
 class CameraData;
 class CameraController;
 class PopupGUIManager;
+namespace AssetManagement { class AssetManager; };
 
 //using EntityGUICollection = std::unordered_map<std::string, EntityGUI>;
 class EntityEditorGUI
 {
 private:
 	const Input::InputManager* m_inputManager;
+	const AssetManagement::AssetManager* m_assetManager;
 	PopupGUIManager* m_popupManager;
 	GUIHierarchy* m_guiTree;
 
@@ -28,7 +30,7 @@ private:
 
 public:
 	EntityEditorGUI(const Input::InputManager& input, const CameraController& cameraController, 
-		GUIHierarchy& hierarchy, PopupGUIManager& popupManager);
+		GUIHierarchy& hierarchy, PopupGUIManager& popupManager, const AssetManagement::AssetManager& assetManager);
 	~EntityEditorGUI();
 
 	void SetEntityGUI(ECS::Entity& entity);

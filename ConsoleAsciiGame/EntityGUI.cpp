@@ -8,7 +8,7 @@
 constexpr static float TITLE_FONT_SIZE = 20;
 constexpr float ACTIVE_TOGGLE_SPACE = 0.15;
 
-EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, ECS::Entity& entity)
+EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, const AssetManagement::AssetManager& assetManager, ECS::Entity& entity)
 	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
 	m_entityNameText(std::format("{}{}", m_entity->GetName(), m_entity->IsGlobal()? "(G)" : ""), EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft)),
 	m_activeToggle(m_entity->m_Active, EditorStyles::GetToggleStyle()),
@@ -37,7 +37,7 @@ EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupM
 	for (auto& comp : components)
 	{
 		if (comp == nullptr) continue;
-		m_componentGUIs.emplace_back(*m_inputManager, popupManager, *this, *comp);
+		m_componentGUIs.emplace_back(*m_inputManager, popupManager, assetManager, *this, *comp);
 
 		m_guiLayout.AddLayoutElement(m_componentGUIs.back().GetTreeGUI());
 		//i++;

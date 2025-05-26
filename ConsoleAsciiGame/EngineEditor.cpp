@@ -31,7 +31,7 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 	m_physicsManager(physics), m_guiSelector(selector), m_guiTree(guiTree), m_collisionBoxSystem(collisionSystem),
 	m_commandConsole(m_inputManager, m_guiTree, m_guiSelector), m_debugInfo(guiTree),
 	m_popupManager(guiTree),
-	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager),
+	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager, assetManager),
 	m_spriteEditor(m_guiTree, m_inputManager, assetManager),
 	m_overheadBarContainer(EditorStyles::EDITOR_BACKGROUND_COLOR), m_toggleLayout(LayoutType::Horizontal, SizingType::ShrinkOnly, {}),
 	m_pauseGameToggle(false, EditorStyles::GetToggleStyle()), m_editModeToggle(false, EditorStyles::GetToggleStyle()),

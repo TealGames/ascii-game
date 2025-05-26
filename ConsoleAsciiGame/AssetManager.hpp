@@ -119,11 +119,44 @@ namespace AssetManagement
 		bool TryExecuteOnAssetFile(const std::string& fileName, const std::string& extension, const IO::FileLineAction& action) const;
 		bool TryExecuteOnAssetFile(const std::filesystem::path& fullFileName, const IO::FileLineAction& action) const;
 
-		Asset* TryGetAssetMutable(const std::string& name);
-		Asset* TryGetAssetMutableFromPath(const std::filesystem::path& path);
-
 		const Asset* TryGetAsset(const std::string& name) const;
 		const Asset* TryGetAssetFromPath(const std::filesystem::path& path) const;
+
+		template<typename T>
+		requires IsAssetType<T>
+		const T* TryGetTypeAsset(const std::string& name) const
+		{
+			const Asset* maybeAsset = TryGetAsset(name);
+			if (maybeAsset == nullptr) return nullptr;
+
+			const std::string tTypeName = Utils::GetTypeName<T>();
+			const std::string realTypename = Utils::FormatTypeName(typeid(*(maybeAsset)).name());
+			if (!Assert(this, tTypeName == realTypename, std::format("Tried to get asset of type:{} "
+				"by name:{} IMMUTABLE but asset type is actually:{}", tTypeName, name, realTypename)))
+				return nullptr;
+
+			try
+			{
+				return dynamic_cast<const T*>(maybeAsset);
+			}
+			catch (const std::exception& e)
+			{
+				LogError(this, std::format("Tried to get asset of type:{} by name:{} IMMUTABLE "
+					"but an asset by that name could not be converted to the type. Error:{}",
+					tTypeName, maybeAsset->GetName(), e.what()));
+				return nullptr;
+			}
+			return nullptr;
+		}
+		template<typename T>
+		requires IsAssetType<T>
+		const T* TryGetTypeAssetFromPath(const std::filesystem::path& path) const
+		{
+			return TryGetAsset<T>(Asset::ExtractNameFromFile(path));
+		}
+
+		Asset* TryGetAssetMutable(const std::string& name);
+		Asset* TryGetAssetMutableFromPath(const std::filesystem::path& path);
 
 		template<typename T>
 		requires IsAssetType<T>
@@ -144,17 +177,16 @@ namespace AssetManagement
 			}
 			catch (const std::exception& e)
 			{
-				LogError(this, std::format("Tried to get asset of type:{} by name:{} "
+				LogError(this, std::format("Tried to get asset of type:{} by name:{} MUTABLE "
 					"but an asset by that name could not be converted to the type. Error:{}", 
 					tTypeName, maybeAsset->GetName(), e.what()));
 				return nullptr;
 			}
 			return nullptr;
 		}
-
 		template<typename T>
 		requires IsAssetType<T>
-		T* TryGetTypeAssetMutableFromPath(const std::filesystem::path& path)
+		T* TryGetTypeAssetFromPathMutable(const std::filesystem::path& path)
 		{
 			return TryGetAssetMutable<T>(Asset::ExtractNameFromFile(path));
 		}
@@ -192,7 +224,7 @@ namespace AssetManagement
 					catch (const std::exception& e)
 					{
 						LogError(this, std::format("Tried to get assets of type:{} but asset at path:{} "
-							"could not be converted to this type", tTypeName, asset.second->GetPath().string()));
+							"could not be converted to this type", tTypeName, asset.second->GetPathCopy().string()));
 						return {};
 					}
 				}
@@ -207,7 +239,7 @@ namespace AssetManagement
 			const std::string targetAssetPath = GetAssetPath(assetDirectory).string();
 			return GetAssetsOfTypeMutable<T>([&targetAssetPath](const Asset& asset)->bool
 				{
-					std::string assetpath = asset.GetPath().string();
+					std::string assetpath = asset.GetPathCopy().string();
 					//LogError(std::format("Checking path of asset: {} to {}", asset.ToString(), targetAssetPath));
 					if (assetpath.size() < targetAssetPath.size()) return false;
 					return assetpath.substr(0, targetAssetPath.size()) == targetAssetPath;

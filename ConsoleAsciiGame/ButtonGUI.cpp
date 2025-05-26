@@ -62,7 +62,7 @@ void ButtonGUI::Update(const float deltaTime)
 	}
 }
 
-RenderInfo ButtonGUI::Render(const RenderInfo& renderInfo)
+RenderInfo ButtonGUI::ElementRender(const RenderInfo& renderInfo)
 {
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, renderInfo.m_RenderSize.m_X, 
 		renderInfo.m_RenderSize.m_Y, m_settings.m_BackgroundColor);

@@ -196,6 +196,13 @@ namespace Utils
 		enumBits = enumBits & ~removeFlags;
 	}
 
+	template<typename EnumType>
+	requires std::is_enum_v<EnumType>&& std::is_integral_v<std::underlying_type_t<EnumType>>
+	constexpr EnumType SetAllFlags()
+	{
+		return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(~0));
+	}
+
 	//TODO: make a function that can return the type that exists in a variant
 	template <size_t Index, typename Variant>
 	using VariantType = std::variant_alternative_t<Index, Variant>;

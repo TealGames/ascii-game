@@ -38,6 +38,6 @@ public:
 	int GetMaxValueInt() const;
 	float GetValue() const;
 
-	RenderInfo Render(const RenderInfo& renderInfo) override;
+	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 };
 

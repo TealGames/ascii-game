@@ -48,7 +48,7 @@ int SliderGUI::GetMaxValueInt() const { return m_minMaxValues.YAsInt(); }
 float SliderGUI::GetValue() const { return m_value; };
 float SliderGUI::GetValueNormalized() const { return (m_value / m_minMaxValues.m_Y) + m_minMaxValues.m_X; }
 
-RenderInfo SliderGUI::Render(const RenderInfo& renderInfo)
+RenderInfo SliderGUI::ElementRender(const RenderInfo& renderInfo)
 {
 	const float sliderWidth = renderInfo.m_RenderSize.m_X;
 	const float sliderHeight = renderInfo.m_RenderSize.m_Y;

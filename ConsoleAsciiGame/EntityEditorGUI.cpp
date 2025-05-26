@@ -9,8 +9,8 @@
 static const NormalizedPosition TOP_LEFT_POS_NORMALIZED = { 0.8, 1 };
 
 EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input,
-	const CameraController& cameraController, GUIHierarchy& hiearchy, PopupGUIManager& popupManager)
-	: m_inputManager(&input), m_guiTree(&hiearchy), m_popupManager(&popupManager),
+	const CameraController& cameraController, GUIHierarchy& hiearchy, PopupGUIManager& popupManager, const AssetManagement::AssetManager& assetManager)
+	: m_inputManager(&input), m_guiTree(&hiearchy), m_popupManager(&popupManager), m_assetManager(&assetManager),
 	m_defaultRenderInfo(), 
 	m_selectedEntity(nullptr)
 	//m_entityGUIs(), m_selectedEntity(m_entityGUIs.end())
@@ -38,7 +38,7 @@ void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 	//TODO: we should not be able to delete entity gui like this especially if it has gui elements,
 	//therefore there must be some way to handle it without causing problems to the gui system
 	TryCloseCurrentEntityGUI();
-	m_selectedEntity = new EntityGUI(GetInputManagerSafe(), *m_popupManager, entity);
+	m_selectedEntity = new EntityGUI(GetInputManagerSafe(), *m_popupManager, *m_assetManager, entity);
 	m_selectedEntity->SetComponentsToStored();
 
 	m_selectedEntity->GetTreeGUI()->SetBounds(TOP_LEFT_POS_NORMALIZED, NormalizedPosition::BOTTOM_RIGHT);

@@ -145,7 +145,7 @@ public:
 	/// <returns></returns>
 	float GetFloatInput() const;
 
-	RenderInfo Render(const RenderInfo& renderInfo) override;
+	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 	//const GUIRect& GetLastRenderRect() const;
 };
 

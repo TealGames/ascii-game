@@ -24,7 +24,8 @@ public:
 
 	std::string GetName() const;
 
-	std::filesystem::path GetPath() const;
+	std::filesystem::path GetPathCopy() const;
+	const std::filesystem::path& GetPath() const;
 	bool AreDependenciesSet() const;
 
 	/// <summary>

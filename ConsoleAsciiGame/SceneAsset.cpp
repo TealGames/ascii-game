@@ -75,7 +75,7 @@ void SceneAsset::SetDependencies(GlobalEntityManager& globalManager, AssetManage
 
 void SceneAsset::UpdateAssetFromFile()
 {
-	Json json = Json::parse(IO::TryReadFileFull(GetPath()));
+	Json json = Json::parse(IO::TryReadFileFull(GetPathCopy()));
 
 	Json entityComponentsJson = {};
 	Json currentComponentJson = {};
@@ -108,7 +108,7 @@ void SceneAsset::UpdateAssetFromFile()
 			componentName = currentComponentJson.at("Type").get<std::string>();
 			isTransformComponent = componentName == Utils::GetTypeName<TransformData>();
 			if (i == 0 && !Assert(isTransformComponent, std::format("Tried to parse scene file at path: '{}' "
-				"but found entity component that does not begin with Transform!", GetPath().string())))
+				"but found entity component that does not begin with Transform!", GetPathCopy().string())))
 				return;
 
 			if (isTransformComponent)
@@ -125,7 +125,7 @@ void SceneAsset::UpdateAssetFromFile()
 			}
 
 			if (!Assert(this, currentEntity != nullptr, std::format("Tried to parse scene file at path: '{}' "
-				"for component: {} but current entity: {} is null", GetPath().string(), componentName, entityName)))
+				"for component: {} but current entity: {} is null", GetPathCopy().string(), componentName, entityName)))
 				return;
 
 			if (componentName == Utils::GetTypeName<AnimatorData>())
@@ -173,7 +173,7 @@ void SceneAsset::UpdateAssetFromFile()
 			else
 			{
 				Assert(this, false, std::format("Tried to DESERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
-					"but no component by that name exists!", componentName, entityName, GetPath().string()));
+					"but no component by that name exists!", componentName, entityName, GetPathCopy().string()));
 				return;
 			}
 
@@ -324,7 +324,7 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 				else
 				{
 					Assert(false, std::format("Tried to SERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
-						"but no component by that name exists!", componentName, entity->GetName(), GetPath().string()));
+						"but no component by that name exists!", componentName, entity->GetName(), GetPathCopy().string()));
 					return;
 				}
 			}

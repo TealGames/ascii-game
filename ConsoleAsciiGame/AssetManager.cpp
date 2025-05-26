@@ -6,6 +6,7 @@
 #include "SpriteAnimationAsset.hpp"
 #include "SpriteAsset.hpp"
 #include "FontAsset.hpp"
+#include "TextureAsset.hpp"
 #include "IOHandler.hpp"
 
 static bool THROW_ON_UNKNWON_ASSET = false;
@@ -68,6 +69,12 @@ namespace AssetManagement
 			{
 				if (!Assert(this, TryCreateAssetFromFile<FontAsset>(file.path()),
 					std::format("Tried to add asset at path:{} as font asset but failed", file.path().string())))
+					return;
+			}
+			else if (fileExtension == TextureAsset::EXTENSION)
+			{
+				if (!Assert(this, TryCreateAssetFromFile<TextureAsset>(file.path()),
+					std::format("Tried to add asset at path:{} as texture asset but failed", file.path().string())))
 					return;
 			}
 			else
