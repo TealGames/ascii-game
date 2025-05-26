@@ -10,50 +10,71 @@
 #include "InputManager.hpp"
 #include "RaylibUtils.hpp"
 #include "EditorStyles.hpp"
+#include "GUIHierarchy.hpp"
 
-DebugInfo::DebugInfo() : 
-	m_text(), m_highlightedIndices(), m_mouseDebugData(std::nullopt), m_isEnabled(false) {}
+const float TOP_LEFT_Y = 0.95;
+const float DEBUG_AREA_WIDTH = 0.3;
+const float DEBUG_AREA_HIGHER_PER_PROPERTY = 0.02;
+constexpr float TEXT_SIZE = 11;
 
-void DebugInfo::ClearProperties()
+DebugInfo::DebugInfo(GUIHierarchy& hierarchy) :
+	m_textGuis(Utils::ConstructArray<TextGUI, DEBUG_PROPERTIES_COUNT>("", EditorStyles::GetTextStyleSetSize(TextAlignment::CenterLeft, TEXT_SIZE))),
+	m_layout(LayoutType::Vertical, SizingType::ExpandAndShrink),
+	m_nextIndex(0), m_mouseDebugData(std::nullopt), m_isEnabled(false)
 {
-	m_text.clear();
+	for (auto& text : m_textGuis)
+	{
+		m_layout.AddLayoutElement(&text);
+		text.SetFixed(true, false);
+	}
+	const NormalizedPosition topLeft = { 0, TOP_LEFT_Y };
+	m_container.SetBounds(topLeft, { DEBUG_AREA_WIDTH, topLeft.m_Y - DEBUG_AREA_HIGHER_PER_PROPERTY * DEBUG_PROPERTIES_COUNT });
+	hierarchy.AddToRoot(TOP_LAYER, &m_container);
 }
-void DebugInfo::AddProperty(const std::string& name, const std::string& value)
+
+//void DebugInfo::ClearProperties()
+//{
+//	m_container.PopAllChildren();
+//	//m_textGuis.clear();
+//}
+void DebugInfo::SetProperty(const std::string& name, const std::string& value)
 {
 	std::string fullStr = std::format("{}: {}", name, value);
-	m_text.emplace_back(fullStr.c_str());
+	m_textGuis[m_nextIndex].SetText(fullStr);
+
+	m_nextIndex++;
 }
 
-const std::vector<std::string>& DebugInfo::GetText() const
-{
-	return m_text;
-}
+//const std::vector<std::string>& DebugInfo::GetText() const
+//{
+//	return m_text;
+//}
 
-bool DebugInfo::TryAddHighlightedIndex(const size_t& index)
-{
-	if (std::find(m_highlightedIndices.begin(), m_highlightedIndices.end(), index) !=
-		m_highlightedIndices.end()) return false;
-
-	m_highlightedIndices.emplace_back(index);
-	//TODO: yes this is inneficient but we want to make sure get function does not mutate the data
-	std::sort(m_highlightedIndices.begin(), m_highlightedIndices.end());
-	return true;
-}
-void DebugInfo::RemoveHighlightedIndex(const size_t& index)
-{
-	auto it = std::find(m_highlightedIndices.begin(), m_highlightedIndices.end(), index);
-	if (it == m_highlightedIndices.end()) return;
-
-	m_highlightedIndices.erase(it);
-}
-void DebugInfo::ClearHighlightedIndices()
-{
-	m_highlightedIndices.clear();
-}
-const std::vector<std::size_t>& DebugInfo::GetHighlightedIndicesSorted() const
-{
-	return m_highlightedIndices;
-}
+//bool DebugInfo::TryAddHighlightedIndex(const size_t& index)
+//{
+//	if (std::find(m_highlightedIndices.begin(), m_highlightedIndices.end(), index) !=
+//		m_highlightedIndices.end()) return false;
+//
+//	m_highlightedIndices.emplace_back(index);
+//	//TODO: yes this is inneficient but we want to make sure get function does not mutate the data
+//	std::sort(m_highlightedIndices.begin(), m_highlightedIndices.end());
+//	return true;
+//}
+//void DebugInfo::RemoveHighlightedIndex(const size_t& index)
+//{
+//	auto it = std::find(m_highlightedIndices.begin(), m_highlightedIndices.end(), index);
+//	if (it == m_highlightedIndices.end()) return;
+//
+//	m_highlightedIndices.erase(it);
+//}
+//void DebugInfo::ClearHighlightedIndices()
+//{
+//	m_highlightedIndices.clear();
+//}
+//const std::vector<std::size_t>& DebugInfo::GetHighlightedIndicesSorted() const
+//{
+//	return m_highlightedIndices;
+//}
 
 void DebugInfo::SetMouseDebugData(const DebugMousePosition& info)
 {
@@ -66,40 +87,45 @@ const std::optional<DebugMousePosition>& DebugInfo::GetMouseDebugData() const
 
 void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera)
 {
-	ClearProperties();
 	if (input.IsKeyPressed(TOGGLE_DEBUG_INFO_KEY))
 	{
 		m_isEnabled = !m_isEnabled;
+		if (m_isEnabled) m_container.PushChild(&m_layout);
+		else m_container.TryPopChildAt(0);
 	}
 	if (!m_isEnabled) return;
 
-	AddProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
-	AddProperty("DeltaTime", std::format("{} s", std::to_string(deltaTime)));
-	AddProperty("TimeStep", std::format("{} s", std::to_string(timeStep)));
+	m_nextIndex = 0;
+	LogError(std::format("update startg for debug"));
+	SetProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
+	SetProperty("DeltaTime", std::format("{} s", std::to_string(deltaTime)));
+	SetProperty("TimeStep", std::format("{} s", std::to_string(timeStep)));
 
 	const ECS::Entity* playerEntity = activeScene.TryGetEntity("player", true);
 	if (!Assert(this, playerEntity != nullptr, std::format("Tried to update properties"
 		"for debug info but player could not be in active scene")))
 		return;
 
-	AddProperty("KeysDown", Utils::ToStringIterable<std::vector<std::string>,
+	SetProperty("KeysDown", Utils::ToStringIterable<std::vector<std::string>,
 		std::string>(input.GetAllKeysWithStateAsString(Input::KeyState::Down)));
 
 	const PhysicsBodyData* maybePhysics = playerEntity->TryGetComponent<PhysicsBodyData>();
 	const PlayerData* maybePlayer = playerEntity->TryGetComponent<PlayerData>();
-	AddProperty("Input", std::format("{}", maybePlayer->GetFrameInput().ToString()));
-	AddProperty("PlayerPos", std::format("{} m", playerEntity->m_Transform.GetPos().ToString()));
-	AddProperty("PlayerVel", std::format("{} m/s", maybePhysics->GetVelocity().ToString(3, VectorForm::Component)));
-	AddProperty("PlayerAcc", std::format("{} m/s2", maybePhysics->GetAcceleration().ToString(3, VectorForm::Component)));
-	AddProperty("Grounded:", std::format("{}", std::to_string(maybePlayer->GetIsGrounded())));
-	AddProperty("GroundDist:", std::format("{} m", std::to_string(maybePlayer->GetVerticalDistanceToGround())));
+	SetProperty("Input", std::format("{}", maybePlayer->GetFrameInput().ToString()));
+	SetProperty("PlayerPos", std::format("{} m", playerEntity->m_Transform.GetPos().ToString()));
+	SetProperty("PlayerVel", std::format("{} m/s", maybePhysics->GetVelocity().ToString(3, VectorForm::Component)));
+	SetProperty("PlayerAcc", std::format("{} m/s2", maybePhysics->GetAcceleration().ToString(3, VectorForm::Component)));
+	SetProperty("Grounded:", std::format("{}", std::to_string(maybePlayer->GetIsGrounded())));
+	SetProperty("GroundDist:", std::format("{} m", std::to_string(maybePlayer->GetVerticalDistanceToGround())));
 
 	Vector2 mousePos = GetMousePosition();
 	ScreenPosition mouseScreenPos = { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y) };
 	WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(mainCamera, mouseScreenPos);
 	SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X + 15, mouseScreenPos.m_Y} });
+	LogError(std::format("Finished update loop"));
 }
 
+/*
 bool DebugInfo::TryRender()
 {
 	Vector2 startPos = { 5, 5 };
@@ -146,3 +172,4 @@ bool DebugInfo::TryRender()
 	}
 	return true;
 }
+*/

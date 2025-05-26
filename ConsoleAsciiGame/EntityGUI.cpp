@@ -10,7 +10,7 @@ constexpr float ACTIVE_TOGGLE_SPACE = 0.15;
 
 EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, ECS::Entity& entity)
 	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
-	m_entityNameText(std::format("{}{}", m_entity->GetName(), m_entity->IsGlobal()? "(G)" : ""), EditorStyles::GetTextStyle(TextAlignment::CenterLeft)),
+	m_entityNameText(std::format("{}{}", m_entity->GetName(), m_entity->IsGlobal()? "(G)" : ""), EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft)),
 	m_activeToggle(m_entity->m_Active, EditorStyles::GetToggleStyle()),
 	m_guiLayout(LayoutType::Vertical, SizingType::ShrinkOnly), m_entityHeader(EditorStyles::EDITOR_PRIMARY_COLOR)
 {

@@ -188,7 +188,7 @@ namespace ECS
 		/// </summary>
 		/// <param name="targetComponent"></param>
 		/// <returns></returns>
-		bool HasComponent(const ComponentData* targetComponent) const
+		/*bool HasComponent(const ComponentData* targetComponent) const
 		{
 			if (targetComponent == nullptr) 
 				return false;
@@ -202,7 +202,7 @@ namespace ECS
 					return true;
 			}
 			return false;
-		}
+		}*/
 
 		bool HasComponent(const std::string& targetComponentName) const
 		{

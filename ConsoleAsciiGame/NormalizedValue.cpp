@@ -86,3 +86,8 @@ bool NormalizedValue::operator<=(const NormalizedValue& other) const
 {
 	return *this < other || *this == other;
 }
+
+//NormalizedValue::operator float() const
+//{
+//	return m_value;
+//}

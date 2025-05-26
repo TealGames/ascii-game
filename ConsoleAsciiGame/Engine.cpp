@@ -88,6 +88,8 @@ namespace Core
 	//TODO: finish making out arg class to simplify out parameters
 	//TODO: a possible consideration to increase editor performance is to make all fields that are set into a wrapper such as SerializedField<T> so that we can track when a value is changed internally
 	//and thus we can then update the gui element with the value, similar to how gui receive events on their update when to set internal value. This way, we do not force update every frame
+	//TODO: add a tooltip system when hovering over elements that builds on the popup system already in place for gui systems
+	//TODO: instead of doing mouse button, mouse left button, abstract into a event profile for special bindings for each type of action
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -304,7 +306,7 @@ namespace Core
 
 			m_guiSelectorManager.Update();
 			m_uiTree.UpdateAll(unscaledDeltaTime);
-			m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale());
+			m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
 
 			frameBuffer = &m_cameraSystem.GetCurrentFrameBuffer();
 			Assert(this, frameBuffer!=nullptr && !frameBuffer->empty(), std::format("Tried to render buffer from camera output, but it has no data"));
@@ -318,7 +320,7 @@ namespace Core
 		{
 			m_guiSelectorManager.Update();
 			m_uiTree.UpdateAll(unscaledDeltaTime);
-			m_editor.Update(unscaledDeltaTime, m_timeKeeper.GetTimeScale());
+			m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
 
 			Rendering::RenderBuffer(nullptr, nullptr, nullptr, &m_uiTree);
 		}

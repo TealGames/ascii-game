@@ -8,8 +8,9 @@
 static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
 
 GUISelectorManager::GUISelectorManager(const Input::InputManager& input, GUIHierarchy& hierarchy)
-	: m_inputManager(input), m_hierarchy(hierarchy), m_selectableLayers(), m_selectionEventBlockers(), m_currentSelected(nullptr), m_currentDragged(nullptr),
-	m_selectedThisFrame(false), m_guiTreeUpdated(false), m_lastFrameMousePos(m_inputManager.GetMousePosition())
+	: m_inputManager(input), m_hierarchy(hierarchy), m_selectableLayers(), m_selectionEventBlockers(), 
+	m_currentSelected(nullptr), m_currentDragged(nullptr), m_currentHovered(nullptr),
+	m_selectedThisFrame(false), m_hasGuiTreeUpdated(false), m_lastFrameMousePos(m_inputManager.GetMousePosition())
 {
 }
 
@@ -36,10 +37,10 @@ void GUISelectorManager::CreateSelectableArray()
 
 void GUISelectorManager::TryUpdateTree()
 {
-	if (!m_guiTreeUpdated) return;
+	if (!m_hasGuiTreeUpdated) return;
 
 	CreateSelectableArray();
-	m_guiTreeUpdated = false;
+	m_hasGuiTreeUpdated = false;
 }
 
 void GUISelectorManager::Init()
@@ -53,7 +54,7 @@ void GUISelectorManager::Init()
 
 			//LogError(std::format("DOPE SHIT"));
 			//CraeteSelectableArray();
-			m_guiTreeUpdated = true;
+			m_hasGuiTreeUpdated = true;
 
 			/*if (i>=1) Assert(false, std::format("Updated selectable array ({}) element added:{} selectables:{} HIERARCHY:{}", 
 				std::to_string(i), element->ToStringBase(), ToStringSelectables(), m_hierarchy.ToStringTree()));
@@ -63,7 +64,7 @@ void GUISelectorManager::Init()
 	m_hierarchy.m_OnElementRemoved.AddListener([this](const GUIElement* element)-> void
 		{
 			//CreateSelectableArray();
-			m_guiTreeUpdated = true;
+			m_hasGuiTreeUpdated = true;
 		});
 }
 
@@ -96,7 +97,7 @@ void GUISelectorManager::DeselectCurrentSelectable()
 
 void GUISelectorManager::Update()
 {
-	static int clickTime = 0;
+	
 	//std::string allRect = "";
 	//for (auto& selectable : m_selectables)
 	//{
@@ -109,13 +110,28 @@ void GUISelectorManager::Update()
 	//}
 
 	TryUpdateTree();
+	InvokeInteractionEvents();
+	m_lastFrameMousePos = m_inputManager.GetMousePosition();
+	
+	//Assert(false, std::format("All rects: {}", allRect));
+
+	
+
+	/*LogError(std::format("Selector has: {} selectables active type: {} (rect: {}) allrect: {}", m_selectables.size(), m_currentSelected != nullptr ?
+		ToString(dynamic_cast<InputField*>(m_currentSelected)->GetFieldType()) : "NULL", 
+		m_currentSelected!=nullptr? m_currentSelected->GetLastFrameRect().ToString() : "NULL", allRect));*/
+}
+
+void GUISelectorManager::InvokeInteractionEvents()
+{
+	static int clickTime = 0;
 
 	if (m_currentSelected != nullptr && m_selectedThisFrame) m_selectedThisFrame = false;
 	const Input::KeyState selectKeyState = m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetState();
 
 	const Vec2 mousePos = m_inputManager.GetMousePosition();
 	const Vec2 mouseDelta = mousePos - m_lastFrameMousePos;
-	m_lastFrameMousePos = mousePos;
+	//m_lastFrameMousePos = mousePos;
 
 	//Note: since the initial click on a draggable selectable is the only thing that matters, we do not care if it moves outside the area
 	//so we can easily just update the current one that is dragged
@@ -124,14 +140,17 @@ void GUISelectorManager::Update()
 		//LogError(std::format("Updating drag for:{} all selectable:{}", typeid(*m_currentDragged).name(), ToStringSelectableTypes()));
 		m_currentDragged->UpdateDrag(mouseDelta, m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetCurrentDownTime());
 	}
-		
-	//NOTE: if the key is not released or pressed, it means no select or drag changes have occured so we do not need to look
-	if (m_selectableLayers.empty() || (selectKeyState!= Input::KeyState::Released && selectKeyState!= Input::KeyState::Pressed)) return;
+
+	const bool hasNewHoverPos = mousePos != m_lastFrameMousePos;
+	const bool hasSelectionEvent = selectKeyState == Input::KeyState::Released || selectKeyState == Input::KeyState::Pressed;
+	//NOTE: if the key is not released or pressed AND the position has not changed, it means no select, drag or hover changes have occured so we do not need to look
+	if (m_selectableLayers.empty() || (!hasSelectionEvent && !hasNewHoverPos)) return;
+	
 
 	/*Assert(false, std::format("CLICKED POS:{} FOUNDselectable rect: {} size: {} selected: {}",
 			m_lastFrameClickedPosition.value().ToString(), allRect, std::to_string(m_selectables.size()),
 			HasSelecatbleSelected() ? m_currentSelected->GetLastFrameRect().ToString() : "NONE"));*/
-	
+
 	bool foundEventBlock = false;
 	//Note: we start at -1 because we increment at the start of each iteration due to guard statements
 	int i = -1;
@@ -144,7 +163,7 @@ void GUISelectorManager::Update()
 			{
 				auto it = m_selectionEventBlockers.find(i);
 				if (it == m_selectionEventBlockers.end()) continue;
-				
+
 				//Note: only if the event blocker contains the position do we block further events
 				if (it->second != nullptr && it->second->GetLastFrameRect().ContainsPos(mousePos))
 				{
@@ -158,51 +177,53 @@ void GUISelectorManager::Update()
 				std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL");*/
 
 
-			//NOTE: since we can only click or release on one selectable, we can then break when we find it
-			/*LogError(std::format("checking selectable:{} last rect:{} contains pos:{}->{}", selectable->ToStringBase(), 
-				selectable->GetLastFrameRect().ToString(), mousePos.ToString(), std::to_string(selectable->GetLastFrameRect().ContainsPos(mousePos))));*/
+				//NOTE: since we can only click or release on one selectable, we can then break when we find it
+				/*LogError(std::format("checking selectable:{} last rect:{} contains pos:{}->{}", selectable->ToStringBase(),
+					selectable->GetLastFrameRect().ToString(), mousePos.ToString(), std::to_string(selectable->GetLastFrameRect().ContainsPos(mousePos))));*/
 
-			if (selectable->GetLastFrameRect().ContainsPos(mousePos))
+			if (!selectable->GetLastFrameRect().ContainsPos(mousePos)) continue;
+
+			if (hasNewHoverPos)
 			{
-				if (selectKeyState == Input::KeyState::Pressed)
-				{
-					//Note: we do not need to cancel the selectable because we can have one selected
-					//while we drag on another
-					m_currentDragged = selectable;
-					break;
-				}
-				else if (selectKeyState == Input::KeyState::Released)
-				{
-					LogError(std::format("BEFORE click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
-					ClickSelectable(selectable);
-					LogError(std::format("AFTER click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
-
-					SelectNewSelectable(selectable);
-					m_selectedThisFrame = true;
-					break;
-				}
-
-				/*Assert(false, std::format("Mouse pos: {} selectable null: {} rect: {}", mousePos.ToString(),
-					std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL"));*/
-					//LogError(std::format("CLICKED ON NEW SELECTABLE"));
-					//Assert(false, std::format("CLICKED ON NEW SELECTABLE: {}", selectable->GetLastFrameRect().ToString()));
-
+				m_currentHovered = selectable;
+				if (!hasSelectionEvent) break;
 			}
+
+			if (!hasSelectionEvent) continue;
+
+			//Note: from both press and release events we can break without caring about the hover event because
+			//both events would be triggered for the same object that should have gotten checked for the hover event few lines above
+			//Press triggers a drag event WHICH IS INDEPENDENT FROM A SELECT EVENT
+			if (selectKeyState == Input::KeyState::Pressed)
+			{
+				//Note: we do not need to cancel the selectable because we can have one selected
+				//while we drag on another
+				m_currentDragged = selectable;
+				break;
+			}
+			else if (selectKeyState == Input::KeyState::Released)
+			{
+				LogError(std::format("BEFORE click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
+				ClickSelectable(selectable);
+				LogError(std::format("AFTER click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
+
+				SelectNewSelectable(selectable);
+				m_selectedThisFrame = true;
+				break;
+			}
+
+			/*Assert(false, std::format("Mouse pos: {} selectable null: {} rect: {}", mousePos.ToString(),
+				std::to_string(selectable != nullptr), selectable != nullptr ? selectable->GetLastFrameRect().ToString() : "NULL"));*/
+				//LogError(std::format("CLICKED ON NEW SELECTABLE"));
+				//Assert(false, std::format("CLICKED ON NEW SELECTABLE: {}", selectable->GetLastFrameRect().ToString()));
 		}
 
 		if (foundEventBlock) break;
 	}
+
 	//clickTime++;
-	if (selectKeyState == Input::KeyState::Released && clickTime>2) 
+	if (selectKeyState == Input::KeyState::Released && clickTime > 2)
 		Assert(false, std::format("After event CLICKED:{} \n\n selectavle tree:{} \n\ngui tree:{}", mousePos.ToString(), ToStringSelectables(), m_hierarchy.ToStringTree()));
-	
-	//Assert(false, std::format("All rects: {}", allRect));
-
-	
-
-	/*LogError(std::format("Selector has: {} selectables active type: {} (rect: {}) allrect: {}", m_selectables.size(), m_currentSelected != nullptr ?
-		ToString(dynamic_cast<InputField*>(m_currentSelected)->GetFieldType()) : "NULL", 
-		m_currentSelected!=nullptr? m_currentSelected->GetLastFrameRect().ToString() : "NULL", allRect));*/
 }
 
 void GUISelectorManager::AddSelectable(const GUILayer layer, SelectableGUI* selectable)
@@ -242,9 +263,12 @@ bool GUISelectorManager::IsEventBlocker(const size_t index) const
 	return m_selectionEventBlockers.find(index) != m_selectionEventBlockers.end();
 }
 
+bool GUISelectorManager::SelectedSelectableThisFrame() const { return m_selectedThisFrame; }
 bool GUISelectorManager::HasSelecatbleSelected() const { return m_currentSelected != nullptr; }
 const SelectableGUI* GUISelectorManager::TryGetSelectableSelected() const { return m_currentSelected; }
-bool GUISelectorManager::SelectedSelectableThisFrame() const { return m_selectedThisFrame; }
+const SelectableGUI* GUISelectorManager::TryGetSelectableDragged() const { return m_currentDragged; }
+const SelectableGUI* GUISelectorManager::TryGetSelectableHovered() const { return m_currentHovered; }
+
 
 std::string GUISelectorManager::ToStringSelectableTypes() const
 {

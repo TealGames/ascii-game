@@ -150,7 +150,7 @@ public:
 	const std::string& GetText() const;
 
 	void SetFontSize(const float& size);
-
+	void SetTextColor(const Color color);
 	/// <summary>
 	/// Sets the factor of the text relative to the parent area. 
 	/// Note: value is clamped to be positive

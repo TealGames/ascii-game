@@ -19,8 +19,7 @@ EntityEditorGUI::EntityEditorGUI(const Input::InputManager& input,
 }
 EntityEditorGUI::~EntityEditorGUI()
 {
-	if (m_selectedEntity != nullptr)
-		delete m_selectedEntity;
+	TryCloseCurrentEntityGUI();
 }
 
 const Input::InputManager& EntityEditorGUI::GetInputManagerSafe() const
@@ -33,18 +32,29 @@ const Input::InputManager& EntityEditorGUI::GetInputManagerSafe() const
 
 void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
 {
-	if (m_selectedEntity!=nullptr && m_selectedEntity->GetEntity() == entity)
+	if (HasEntitySelected() && m_selectedEntity->GetEntity() == entity)
 		return;
 
 	//TODO: we should not be able to delete entity gui like this especially if it has gui elements,
 	//therefore there must be some way to handle it without causing problems to the gui system
-	delete m_selectedEntity;
+	TryCloseCurrentEntityGUI();
 	m_selectedEntity = new EntityGUI(GetInputManagerSafe(), *m_popupManager, entity);
 	m_selectedEntity->SetComponentsToStored();
 
 	m_selectedEntity->GetTreeGUI()->SetBounds(TOP_LEFT_POS_NORMALIZED, NormalizedPosition::BOTTOM_RIGHT);
 	m_guiTree->AddToRoot(DEFAULT_LAYER, m_selectedEntity->GetTreeGUI());
 	//Assert(false, std::format("Clicked entity:{} tree:{}", m_selectedEntity->GetTreeGUI()->ToStringBase(), m_guiTree->ToStringTree()));
+}
+bool EntityEditorGUI::HasEntitySelected() const
+{
+	return m_selectedEntity != nullptr;
+}
+bool EntityEditorGUI::TryCloseCurrentEntityGUI()
+{
+	if (!HasEntitySelected()) return false;
+
+	delete m_selectedEntity;
+	m_selectedEntity = nullptr;
 }
 
 void EntityEditorGUI::Update()

@@ -32,6 +32,8 @@ public:
 	NormalizedPosition(const float& x, const float& y);
 	NormalizedPosition(const Vec2& pos);
 	NormalizedPosition(const NormalizedValue x, const NormalizedValue y);
+	NormalizedPosition(const float x, const NormalizedValue y);
+	NormalizedPosition(const NormalizedValue x, const float y);
 
 	const Vec2 GetPos() const;
 	/// <summary>

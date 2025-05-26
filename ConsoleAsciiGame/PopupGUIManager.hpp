@@ -1,6 +1,5 @@
 #pragma once
 #include <cstdint>
-#include <map>
 #include <type_traits>
 #include <limits>
 #include "HelperFunctions.hpp"
@@ -15,9 +14,9 @@
 template<typename T>
 concept IsPopupType = std::is_base_of_v<PopupGUI, T>;
 
-using RenderPriority = std::uint8_t;
-constexpr RenderPriority HIGHEST_PRIORITY = std::numeric_limits<RenderPriority>::max();
-constexpr RenderPriority LOWEST_PRIORITY = std::numeric_limits<RenderPriority>::min();
+//using RenderPriority = std::uint8_t;
+//constexpr RenderPriority HIGHEST_PRIORITY = std::numeric_limits<RenderPriority>::max();
+//constexpr RenderPriority LOWEST_PRIORITY = std::numeric_limits<RenderPriority>::min();
 
 struct PopupGUIInfo
 {
@@ -44,7 +43,7 @@ class PopupGUIManager
 private:
 	GUIHierarchy* m_hierarchy;
 	ContainerGUI m_popupContainer;
-	std::map<RenderPriority, PopupGUIInfo, std::greater<RenderPriority>> m_popups;
+	std::vector<PopupGUIInfo> m_popups;
 public:
 	/// <summary>
 	/// Invokes when a popup is OPENED where string is the type after typeid()
@@ -81,9 +80,9 @@ private:
 
 		for (auto& popup : m_popups)
 		{
-			if (popup.second.m_GUI == nullptr) continue;
-			if (typeid(*popup.second.m_GUI).name() == typeid(T).name())
-				return &popup.second;
+			if (popup.m_GUI == nullptr) continue;
+			if (typeid(*popup.m_GUI).name() == typeid(T).name())
+				return &popup;
 		}
 		return nullptr;
 	}
@@ -145,7 +144,7 @@ public:
 	PopupGUIManager(GUIHierarchy& hierarchy);
 	~PopupGUIManager();
 
-	void AddPopup(PopupGUI* poup, const ScreenPosition& targetSize, const RenderPriority priority);
+	void AddPopup(PopupGUI* poup);
 
 	template<typename T> 
 	requires IsPopupType<T>

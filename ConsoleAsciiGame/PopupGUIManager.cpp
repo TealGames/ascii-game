@@ -26,7 +26,7 @@ PopupGUIManager::~PopupGUIManager()
 	//Assert(false, "DESTROUY");
 	if (m_popups.empty()) return;
 	for (auto& popup : m_popups)
-		delete popup.second.m_GUI;
+		delete popup.m_GUI;
 
 	m_popups = {};
 }
@@ -73,9 +73,9 @@ bool PopupGUIManager::TryClosePopup(PopupGUIInfo& popupInfo)
 }
 
 //TODO: since we init after adding popup order creation matters so priority from popups can be removed
-void PopupGUIManager::AddPopup(PopupGUI* popup, const ScreenPosition& targetSize, const RenderPriority priority)
+void PopupGUIManager::AddPopup(PopupGUI* popup)
 {
-	m_popups.emplace(priority, PopupGUIInfo(*popup));
+	m_popups.emplace_back(PopupGUIInfo(*popup));
 	//emplaced.first->second.m_GUI->Init();
 }
 
@@ -85,9 +85,9 @@ void PopupGUIManager::UpdatePopups(const float deltaTime)
 	//and therefore get checked earlier by select/click/drag events
 	for (auto& popup : m_popups)
 	{
-		if (!popup.second.IsEnabled()) continue;
+		if (!popup.IsEnabled()) continue;
 
-		popup.second.m_GUI->Update(deltaTime);
+		popup.m_GUI->Update(deltaTime);
 	}
 }
  
@@ -95,8 +95,8 @@ void PopupGUIManager::CloseAllPopups()
 {
 	for (auto& popupInfo : m_popups)
 	{
-		if (popupInfo.second.IsEnabled())
-			TryClosePopup(popupInfo.second);
+		if (popupInfo.IsEnabled())
+			TryClosePopup(popupInfo);
 	}
 }
 

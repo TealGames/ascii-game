@@ -32,6 +32,8 @@ public:
 	~EntityEditorGUI();
 
 	void SetEntityGUI(ECS::Entity& entity);
+	bool HasEntitySelected() const;
+	bool TryCloseCurrentEntityGUI();
 
 	void Update();
 	//void TryRender();

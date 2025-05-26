@@ -27,7 +27,7 @@ ComponentFieldGUI::ComponentFieldGUI(const Input::InputManager& inputManager, Po
 	const ComponentGUI& componentGUI, ComponentField& field)
 	: m_fieldInfo(&field), m_inputFields(), m_checkbox(false, GUIStyle()), m_colorPicker(popupManager, GUIStyle()), 
 	m_inputManager(&inputManager), m_componentGUI(&componentGUI),
-	m_fieldNameText(GetFieldInfo().m_FieldName, EditorStyles::GetTextStyle(TextAlignment::CenterLeft, FIELD_TEXT_FONT_FACTOR)), m_guiLayout()
+	m_fieldNameText(GetFieldInfo().m_FieldName, EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft, FIELD_TEXT_FONT_FACTOR)), m_guiLayout()
 {
 	//LogWarning(std::format("CReated component field"));
 	//LogWarning(std::format("compinent field gui addr create:{}", Utils::ToStringPointerAddress(this)));

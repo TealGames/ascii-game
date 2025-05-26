@@ -8,17 +8,18 @@
 #include <chrono> 
 #include "InputManager.hpp"
 #include "InputFieldGUI.hpp"
-#include "IRenderable.hpp"
+#include "LayoutGUI.hpp"
+#include "ContainerGUI.hpp"
 
-using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
+//using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;
 
-struct ConsoleOutputMessage
-{
-	std::string m_Message = "";
-	Color m_Color = {};
-	Time m_StartTime = {};
-};
+//struct ConsoleOutputMessage
+//{
+//	std::string m_Message = "";
+//	Color m_Color = {};
+//	Time m_StartTime = {};
+//};
 
 enum class ConsoleOutputMessageType
 {
@@ -30,16 +31,23 @@ enum class ConsoleOutputMessageType
 class GUISelectorManager;
 class GUIHierarchy;
 
-class CommandConsole : public GUIElement
+constexpr int MAX_OUTPUT_MESSAGES = 10;
+class CommandConsole
 {
 private:
 	/// <summary>
 	/// The main prompt name with the prompt info
 	/// </summary>
 	PromptCollection m_prompts;
+	float m_timeSinceOpen;
 
+	ContainerGUI m_toggleableContainer;
+	ContainerGUI m_container;
 	InputFieldGUI m_inputField;
-	std::vector<ConsoleOutputMessage> m_outputMessages;
+	LayoutGUI m_outputMessageLayout;
+	std::array<TextGUI, MAX_OUTPUT_MESSAGES> m_outputMessagesTextGuis;
+	std::uint8_t m_nextTextGuiIndex;
+	std::vector<float> m_messageCloseTimes;
 
 	const Input::InputManager& m_inputManager;
 	bool m_isEnabled;
@@ -55,7 +63,8 @@ private:
 
 	bool TryInvokePrompt();
 	Color GetColorFromMessageType(const ConsoleOutputMessageType& message);
-	
+	void SetNextMessage(const std::string& message, const Color color);
+	void RemoveBackMessage();
 public:
 	CommandConsole(const Input::InputManager& input, GUIHierarchy& hierarchy, GUISelectorManager& selector);
 
@@ -65,9 +74,9 @@ public:
 	bool HasPrompt(const std::string& promptName);
 	void DeletePrompts();
 
-	void Update(const float deltaTime) override;
+	void Update(const float deltaTime);
 	//void TryRender();
-	RenderInfo Render(const RenderInfo& renderInfo) override;
+	//RenderInfo Render(const RenderInfo& renderInfo) override;
 
 	bool IsEnabled() const;
 
@@ -84,8 +93,8 @@ public:
 	/// caused a message to be hidden
 	/// </summary>
 	/// <param name="messages"></param>
-	void LogOutputMessagesUnrestricted(const std::vector<std::string>& messages, const ConsoleOutputMessageType& messageType);
+	void LogOutputMessages(const std::vector<std::string>& messages, const ConsoleOutputMessageType& messageType);
 
-	const std::vector<ConsoleOutputMessage>& GetOutputMessages() const;
+	//const std::vector<ConsoleOutputMessage>& GetOutputMessages() const;
 };
 

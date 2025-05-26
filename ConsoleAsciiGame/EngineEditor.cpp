@@ -15,6 +15,7 @@
 static constexpr float TOP_BAR_HEIGHT = 0.03;
 static constexpr float ASSET_EDITOR_BUTTON_WIDTH = 0.2;
 static constexpr float TOGGLE_LAYOUT_WIDTH_PER_TOGGLE = 0.05;
+static const NormalizedPosition MOUSE_POS_TEXT_SIZE = {0.1, 0.05};
 
 static constexpr KeyboardKey PAUSE_TOGGLE_KEY = KEY_P;
 static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
@@ -28,13 +29,14 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 	m_displayingGameView(true),
 	m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_cameraController(camera),
 	m_physicsManager(physics), m_guiSelector(selector), m_guiTree(guiTree), m_collisionBoxSystem(collisionSystem),
-	m_commandConsole(m_inputManager, m_guiTree, m_guiSelector), m_debugInfo(),
+	m_commandConsole(m_inputManager, m_guiTree, m_guiSelector), m_debugInfo(guiTree),
 	m_popupManager(guiTree),
 	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager),
 	m_spriteEditor(m_guiTree, m_inputManager, assetManager),
 	m_overheadBarContainer(EditorStyles::EDITOR_BACKGROUND_COLOR), m_toggleLayout(LayoutType::Horizontal, SizingType::ShrinkOnly, {}),
 	m_pauseGameToggle(false, EditorStyles::GetToggleStyle()), m_editModeToggle(false, EditorStyles::GetToggleStyle()),
-	m_editModeInfo(), m_assetEditorButton(EditorStyles::GetButtonStyle(TextAlignment::Center), "AssetEditors")
+	m_editModeInfo(), m_assetEditorButton(EditorStyles::GetButtonStyle(TextAlignment::Center), "AssetEditors"),
+	m_mousePosText("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center))
 {
 
 	//scene.m_GlobalEntityManager.CreateGlobalEntity("__Editor", TransformData());
@@ -47,8 +49,20 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
 			TextAlignment::Center, GUIPadding(), 0.8));*/
 
+	m_mousePosText.SetSize(MOUSE_POS_TEXT_SIZE);
+	
 	//m_pauseGameToggle.SetSettings(toggleSettings);
 	m_editModeToggle.SetFixed(false, true);
+	m_editModeToggle.SetValueSetAction([this](const bool isChecked)-> void
+		{
+			if (isChecked) m_guiTree.AddToRoot(DEFAULT_LAYER, &m_mousePosText);
+			else
+			{
+				m_guiTree.TryRemoveElement(m_mousePosText.GetId());
+				m_mousePosText.SetText("");
+			}
+		});
+
 	m_pauseGameToggle.SetFixed(false, true);
 	m_pauseGameToggle.SetValueSetAction([this](const bool isChecked) -> void
 		{ 
@@ -71,7 +85,11 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 	m_assetEditorButton.SetClickAction([this](const ButtonGUI& button)-> void
 		{
 			m_displayingGameView = !m_displayingGameView;
-			if (m_displayingGameView) m_assetEditorButton.SetText("AssetEditors");
+			if (m_displayingGameView)
+			{
+				m_assetEditorButton.SetText("AssetEditors");
+				m_entityEditor.TryCloseCurrentEntityGUI();
+			}
 			else m_assetEditorButton.SetText("GameView");
 		});
 
@@ -123,7 +141,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 
 	m_commandConsole.AddPrompt(new CommandPrompt<>("docs", std::vector<std::string>{},
 		[this]() -> void {
-			m_commandConsole.LogOutputMessagesUnrestricted(
+			m_commandConsole.LogOutputMessages(
 				m_commandConsole.GetPromptDocumentationAll(), ConsoleOutputMessageType::Default);
 		}));
 
@@ -158,7 +176,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 			m_timeKeeper.SetTimeScale(scale);
 		}));
 
-	m_commandConsole.AddPrompt(new CommandPrompt<int>("debugmark", std::vector<std::string>{"Index"},
+	/*m_commandConsole.AddPrompt(new CommandPrompt<int>("debugmark", std::vector<std::string>{"Index"},
 		[this](const int& index) -> void {
 			if (index == -1)
 			{
@@ -179,7 +197,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 					std::to_string(index)), ConsoleOutputMessageType::Error);
 				return;
 			}
-		}));
+		}));*/
 
 	m_commandConsole.AddPrompt(new CommandPrompt<bool>("cheats", std::vector<std::string>{"CheapStatus"},
 		[&playerSystem](const bool& enableCheats) -> void {
@@ -203,17 +221,18 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 	InitConsoleCommands(playerSystem);
 
 	//Note: the init order matters because it creates the order that the objects are added to the selector
-	m_popupManager.AddPopup(new ColorPopupGUI(m_inputManager), { 100, 100 }, HIGHEST_PRIORITY);
+	m_popupManager.AddPopup(new ColorPopupGUI(m_inputManager));
 }
 
-void EngineEditor::Update(const float deltaTime, const float timeStep)
+void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDeltaTime, const float timeStep)
 {
-	m_assetEditorButton.Update(deltaTime);
-	m_popupManager.UpdatePopups(deltaTime);
+	m_assetEditorButton.Update(unscaledDeltaTime);
+	m_popupManager.UpdatePopups(unscaledDeltaTime);
+	m_commandConsole.Update(scaledDeltaTime);
 
 	if (!IsInGameView())
 	{
-		m_spriteEditor.Update(deltaTime);
+		m_spriteEditor.Update(unscaledDeltaTime);
 		return;
 	}
 
@@ -226,7 +245,7 @@ void EngineEditor::Update(const float deltaTime, const float timeStep)
 
 	//Assert(false, std::format("Entity editor update"));
 	//m_commandConsole.Update();
-	m_debugInfo.Update(deltaTime, timeStep, *activeScene, m_inputManager, mainCamera);
+	m_debugInfo.Update(unscaledDeltaTime, timeStep, *activeScene, m_inputManager, mainCamera);
 
 	//m_pauseGameToggle.Update();
 	if (m_inputManager.IsKeyPressed(PAUSE_TOGGLE_KEY))
@@ -249,14 +268,25 @@ void EngineEditor::Update(const float deltaTime, const float timeStep)
 			SelectEntityEditor(*m_editModeInfo.m_Selected);
 		}
 	}
-	//If we are in edit mode holding the down button (and not selected selectable this frame-> meaning click might correspond to selectable click not edit mode click) 
-	// we can move the selected entity to that pos
-	else if (m_editModeToggle.IsToggled() && m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsDownForTime(HELD_TIME_FOR_OBJECT_MOVE) &&
-		!m_guiSelector.SelectedSelectableThisFrame() && m_editModeInfo.m_Selected != nullptr)
+	
+	else if (m_editModeToggle.IsToggled())
 	{
-		/*Assert(false, std::format("Is down for:{} needed:{}", std::to_string(m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().GetCurrentDownTime()), 
+		//If we are in edit mode holding the down button (and not selected selectable this frame-> meaning click might correspond to selectable click not edit mode click) 
+		// we can move the selected entity to that pos
+		if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsDownForTime(HELD_TIME_FOR_OBJECT_MOVE) &&
+			!m_guiSelector.SelectedSelectableThisFrame() && m_editModeInfo.m_Selected != nullptr)
+		{
+			/*Assert(false, std::format("Is down for:{} needed:{}", std::to_string(m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().GetCurrentDownTime()), 
 			std::to_string(HELD_TIME_FOR_OBJECT_MOVE)));*/
-		m_editModeInfo.m_Selected->m_Transform.SetPos(worldClickedPos);
+			m_editModeInfo.m_Selected->m_Transform.SetPos(worldClickedPos);
+		}
+
+		const Vec2 mousePos = m_inputManager.GetMousePosition();
+		const Vec2Int rootSize = m_guiTree.GetRootSize();
+		const Vec2 mousePosNorm = Vec2(mousePos.m_X / rootSize.m_X, (rootSize.m_Y- mousePos.m_Y)/ rootSize.m_Y);
+		m_mousePosText.SetText(mousePos.ToString(2));
+		const Vec2 textSize = m_mousePosText.GetSize().GetPos();
+		m_mousePosText.SetTopLeftPos({ mousePosNorm.m_X- (textSize.m_X/2), mousePosNorm.m_Y+ textSize.m_Y});
 	}
 	m_entityEditor.Update();
 }
@@ -266,6 +296,7 @@ bool EngineEditor::IsInGameView() const
 	return m_displayingGameView;
 }
 
+/*
 bool EngineEditor::TryRender()
 {
 	if (IsInGameView())
@@ -311,3 +342,4 @@ bool EngineEditor::TryRender()
 
 	return true;
 }
+*/

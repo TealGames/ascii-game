@@ -83,6 +83,11 @@ void TextGUI::SetFontSize(const float& size)
 	m_fontData.m_Size = std::abs(size);
 }
 
+void TextGUI::SetTextColor(const Color color)
+{
+	m_color = color;
+}
+
 
 void TextGUI::SetFontFactorSize(const float& factor)
 {

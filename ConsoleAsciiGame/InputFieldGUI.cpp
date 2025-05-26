@@ -162,7 +162,11 @@ void InputFieldGUI::SetAttemptedInputDelta(const std::string& input)
 	}
 	else SetInput(m_attemptedInput + input, true);
 }
-void InputFieldGUI::ResetInput() { m_input = ""; }
+void InputFieldGUI::ResetInput() 
+{ 
+	m_input = ""; 
+	m_attemptedInput = "";
+}
 
 void InputFieldGUI::SetInput(const std::string& newInput, const bool isAttemptedInput)
 {

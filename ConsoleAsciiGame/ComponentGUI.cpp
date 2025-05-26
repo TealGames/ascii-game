@@ -23,7 +23,7 @@ constexpr static float ONE_FIELD_MAX_ENTITY_SPACE = 0.05;
 ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, const EntityGUI& entityGUI, ComponentData& component)
 	: m_inputManager(&inputManager), m_component(&component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
 	m_dropdownCheckbox(false, GUIStyle(EditorStyles::EDITOR_SECONDARY_COLOR, TextGUIStyle())),
-	m_componentNameText(GetComponentName(), EditorStyles::GetTextStyle(TextAlignment::CenterLeft)), 
+	m_componentNameText(GetComponentName(), EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft)), 
 	m_guiContainer(), m_fieldLayout(LayoutType::Vertical, SizingType::ExpandAndShrink, {0, 0.02}, EditorStyles::EDITOR_BACKGROUND_COLOR),
 	m_nameHeader(EditorStyles::EDITOR_BACKGROUND_COLOR)
 {

@@ -31,5 +31,7 @@ public:
 	bool operator>=(const NormalizedValue& other) const;
 	bool operator<(const NormalizedValue& other) const;
 	bool operator<=(const NormalizedValue& other) const;
+
+	//operator float() const;
 };
 

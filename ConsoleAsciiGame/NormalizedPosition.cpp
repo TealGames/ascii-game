@@ -26,6 +26,9 @@ NormalizedPosition::NormalizedPosition(const float& x, const float& y) : m_X(x),
 NormalizedPosition::NormalizedPosition(const NormalizedValue x, const NormalizedValue y) 
 	: m_X(x), m_Y(y) {}
 
+NormalizedPosition::NormalizedPosition(const float x, const NormalizedValue y) : NormalizedPosition(NormalizedValue(x), y) {}
+NormalizedPosition::NormalizedPosition(const NormalizedValue x, const float y) : NormalizedPosition(x, NormalizedValue(y)) {}
+
 const Vec2 NormalizedPosition::GetPos() const
 {
 	/*if (!Assert(this, IsValidPos(), std::format("Tried to retrieve normalized pos IMMUTABLE, "

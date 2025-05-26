@@ -15,18 +15,34 @@ private:
 	//TODO: for optimization reasons, this is slow
 	//std::map<GUIEventPriority, SelectableGUI*, std::greater<GUIEventPriority>> m_selectables;
 
+	/// <summary>
+	/// The current object that is selected. 
+	/// Requires a mouse release event to fire on this object in order for it to be selected
+	/// </summary>
 	SelectableGUI* m_currentSelected;
+	/// <summary>
+	/// The current object that is being dragged. 
+	/// Requires a mouse down event to fire on this object and the mouse to continue to be held down
+	/// even if moved to a different object
+	/// </summary>
 	SelectableGUI* m_currentDragged;
+	/// <summary>
+	/// The current object that is being hovered over.
+	/// Requires the mouse to be over this object regardless of any other events occuring at the same time
+	/// </summary>
+	SelectableGUI* m_currentHovered;
+
 	/// <summary>
 	/// True if the current selectable was selected THIS frame
 	/// </summary>
 	bool m_selectedThisFrame;
-	bool m_guiTreeUpdated;
+	bool m_hasGuiTreeUpdated;
 	Vec2 m_lastFrameMousePos;
 public:
 
 private:
 	void TryUpdateTree();
+	void InvokeInteractionEvents();
 	void CreateSelectableArray();
 
 	void SelectNewSelectable(SelectableGUI* selectable);
@@ -46,10 +62,11 @@ public:
 	void AddSelectable(const GUILayer layer, SelectableGUI* selectable);
 	void AddSelectables(const GUILayer layer, const std::vector<SelectableGUI*>& selectables);
 
+	bool SelectedSelectableThisFrame() const;
 	bool HasSelecatbleSelected() const;
 	const SelectableGUI* TryGetSelectableSelected() const;
-
-	bool SelectedSelectableThisFrame() const;
+	const SelectableGUI* TryGetSelectableDragged() const;
+	const SelectableGUI* TryGetSelectableHovered() const;
 
 	std::string ToStringSelectables() const;
 };

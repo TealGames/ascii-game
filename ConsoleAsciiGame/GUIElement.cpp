@@ -245,7 +245,7 @@ GUIElement* GUIElement::FindRecursiveMutable(const GUIElementID id)
 	{
 		if (child == nullptr) continue;
 
-		foundElement = FindRecursiveMutable(id);
+		foundElement = child->FindRecursiveMutable(id);
 		if (foundElement != nullptr) return foundElement;
 	}
 	return nullptr;
@@ -263,7 +263,7 @@ GUIElement* GUIElement::FindParentRecursiveMutable(const GUIElementID id, size_t
 			if (childIndex != nullptr) *childIndex = i;
 			return this;
 		}
-		foundElement= FindParentRecursiveMutable(id, childIndex);
+		foundElement= m_children[i]->FindParentRecursiveMutable(id, childIndex);
 		if (foundElement != nullptr) return foundElement;
 	}
 	return nullptr;

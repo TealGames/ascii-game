@@ -19,7 +19,7 @@ static constexpr float SLIDER_LAYOUT_SIZE = 0.5;
 constexpr static float INPUT_FIELD_TEXT_FONT_FACTOR = 0.6;
 
 ColorChannelGUI::ColorChannelGUI(const Input::InputManager& input) 
-	: m_Container(), m_Slider(input, Vec2{ 0, 1 }, EditorStyles::GetSliderStyle()), m_Text("", EditorStyles::GetTextStyle(TextAlignment::Center))
+	: m_Container(), m_Slider(input, Vec2{ 0, 1 }, EditorStyles::GetSliderStyle()), m_Text("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center))
 {
 	m_Container.SetSize({1, 0.2});
 	m_Text.SetBounds(NormalizedPosition::TOP_LEFT, { CHANNEL_TEXT_WIDTH, 0 });

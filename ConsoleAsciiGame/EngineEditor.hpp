@@ -55,6 +55,7 @@ private:
 	EntityEditorGUI m_entityEditor;
 	SpriteEditorGUI m_spriteEditor;
 
+	TextGUI m_mousePosText;
 	PanelGUI m_overheadBarContainer;
 	LayoutGUI m_toggleLayout;
 	ToggleGUI m_pauseGameToggle;
@@ -74,10 +75,10 @@ public:
 	~EngineEditor();
 
 	void Init(ECS::PlayerSystem& playerSystem);
-	void Update(const float deltaTime, const float timeStep);
+	void Update(const float unscaledDeltaTime, const float scaledDeltaTime, const float timeStep);
 
 	bool IsInGameView() const;
 
-	bool TryRender();
+	//bool TryRender();
 };
 

@@ -34,10 +34,15 @@ namespace EditorStyles
 	//-------------------------------------------------------------------
 	//			GUI STYLES
 	//-------------------------------------------------------------------
-	inline TextGUIStyle GetTextStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const Color color= EDITOR_TEXT_DEFAULT_COLOR)
+	inline TextGUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const Color color= EDITOR_TEXT_DEFAULT_COLOR)
 	{
 		return TextGUIStyle(color, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
 			alignment, GUIPadding(), factor);
+	}
+	inline TextGUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const Color color = EDITOR_TEXT_DEFAULT_COLOR)
+	{
+		return TextGUIStyle(color, FontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+			alignment, GUIPadding());
 	}
 
 	inline GUIStyle GetInputFieldStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
