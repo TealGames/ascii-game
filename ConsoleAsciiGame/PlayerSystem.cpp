@@ -6,6 +6,7 @@
 #include "raylib.h"
 #include "PositionConversions.hpp"
 #include "Scene.hpp"
+#include "EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -19,7 +20,9 @@ namespace ECS
 
 	PlayerSystem::PlayerSystem(Input::InputManager& input) : 
 		m_inputManager(input), m_cheatsEnabled(CHEATS_ENABLED_DEFAULT), m_lastFrameGrounded(false)
-	{}
+	{
+		GlobalComponentInfo::AddComponentInfo(typeid(PlayerData), ComponentInfo(RequiredComponentCheck<PhysicsBodyData>()));
+	}
 
 	void PlayerSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
 	{
@@ -30,7 +33,7 @@ namespace ECS
 		if (deltaTime <= 0) return;
 		
 		scene.OperateOnComponents<PlayerData>(
-			[this, &scene, &deltaTime, &mainCamera](PlayerData& player, ECS::Entity& entity)-> void
+			[this, &scene, &deltaTime, &mainCamera](PlayerData& player)-> void
 			{
 #ifdef ALLOW_PLAYER_CHEATS
 				if (m_cheatsEnabled && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
@@ -41,7 +44,7 @@ namespace ECS
 
 					Vector2 mousePos = GetMousePosition();
 					WorldPosition worldPos = Conversions::ScreenToWorldPosition(mainCamera, { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y) });
-					player.GetEntitySafeMutable().m_Transform.SetPos(worldPos);
+					player.GetEntitySafeMutable().GetTransformMutable().SetLocalPos(worldPos);
 				}
 #endif
 

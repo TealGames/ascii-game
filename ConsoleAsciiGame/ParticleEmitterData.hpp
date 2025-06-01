@@ -73,7 +73,7 @@ struct ParticleEmitterData : ComponentData
 	int ApproximateAverageParticles() const;
 	int CalculateMaxParticles() const;
 
-	std::vector<std::string> GetDependencyFlags() const override;
+	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 
 	std::string ToString() const override;

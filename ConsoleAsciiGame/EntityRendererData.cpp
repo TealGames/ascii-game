@@ -49,10 +49,10 @@ void EntityRendererData::InitFields()
 {
 	m_Fields = {};
 }
-std::vector<std::string> EntityRendererData::GetDependencyFlags() const
-{
-	return {};
-}
+//std::vector<std::string> EntityRendererData::GetDependencyFlags() const
+//{
+//	return {};
+//}
 
 std::string EntityRendererData::ToString() const
 {

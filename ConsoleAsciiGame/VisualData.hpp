@@ -160,7 +160,7 @@ public:
 	/// <param name="pivotPosition"></param>
 	/// <param name="transformPos"></param>
 	/// <returns></returns>
-	void AddTextPositionsToBuffer(const WorldPosition& transformPos, FragmentedTextBuffer& buffer) const;
+	void AddTextPositionsToBuffer(const WorldPosition& globalTransformPos, FragmentedTextBuffer& buffer) const;
 	const FragmentedTextBuffer& GetBuffer() const;
 	/*const Vec2& GetCharSpacing() const;
 	const Font& GetFont() const;

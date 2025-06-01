@@ -3,7 +3,7 @@
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 #include "TransformData.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "JsonSerializers.hpp"
 
 AABBIntersectionData::AABBIntersectionData() :
@@ -151,10 +151,10 @@ bool CollisionBoxData::operator==(const CollisionBoxData& other) const
 	return m_transform == other.m_transform;
 }
 
-std::vector<std::string> CollisionBoxData::GetDependencyFlags() const
-{
-	return {Utils::GetTypeName<TransformData>()};
-}
+//std::vector<std::string> CollisionBoxData::GetDependencyFlags() const
+//{
+//	return {Utils::GetTypeName<TransformData>()};
+//}
 void CollisionBoxData::InitFields()
 {
 	m_Fields = {ComponentField("Offset", &m_transformOffset)};
@@ -184,7 +184,7 @@ const WorldPosition& CollisionBoxData::GetOffset() const
 }
 const WorldPosition& CollisionBoxData::GetCurrentPos() const
 {
-	return GetTransform().GetPos();
+	return GetTransform().GetGlobalPos();
 }
 const WorldPosition& CollisionBoxData::GetGlobalMin() const
 {
@@ -489,7 +489,7 @@ void CollisionBoxData::Deserialize(const Json& json)
 {
 	m_aabb = json.at("AABB").get<Physics::AABB>();
 	m_transformOffset = json.at("Offset").get<WorldPosition>();
-	m_transform = &(GetEntitySafe().m_Transform);
+	m_transform = &(GetEntitySafe().GetTransform());
 }
 Json CollisionBoxData::Serialize()
 {

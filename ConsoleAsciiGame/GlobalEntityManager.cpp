@@ -1,18 +1,19 @@
 #include "pch.hpp"
 #include "EntityMapper.hpp"
-#include "Entity.hpp"
 #include "Scene.hpp"
 #include "GlobalEntityManager.hpp"
 #include "StringUtil.hpp"
 #include "HelperFunctions.hpp"
 #include "SceneAsset.hpp"
+#include "EntityData.hpp"
 
 
 GlobalEntityManager::GlobalEntityManager() :
-	m_globalEntities{}, m_globalEntityIds{}, m_globalEntityMapper()
+	m_globalEntities{}, //m_globalEntityIds{}, 
+	m_globalRegistry()
 {
-	m_globalEntities.reserve(MAX_ENTITIES);
-	m_globalEntityIds.reserve(MAX_ENTITIES);
+	//m_globalEntities.reserve(MAX_ENTITIES);
+	//m_globalEntityIds.reserve(MAX_ENTITIES);
 }
 
 int GlobalEntityManager::GetCount() const
@@ -25,7 +26,8 @@ std::string GlobalEntityManager::ToStringEntityData() const
 	std::vector<std::string> entityStr = {};
 	for (const auto& entity : m_globalEntities)
 	{
-		entityStr.emplace_back(entity.ToString());
+		if (entity == nullptr) continue;
+		entityStr.emplace_back(entity->ToString());
 	}
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(entityStr);
 }
@@ -36,14 +38,14 @@ std::string GlobalEntityManager::CleanName(const std::string name) const
 	return stringUtils.ToLowerCase().TrimSpaces().RemoveChar(' ').ToString();
 }
 
-EntityIDCollection::iterator GlobalEntityManager::GetGlobalEntityIteratorMutable(const ECS::EntityID& id)
-{
-	return m_globalEntityIds.find(id);
-}
-EntityIDCollection::const_iterator GlobalEntityManager::GetGlobalEntityIterator(const ECS::EntityID& id) const
-{
-	return m_globalEntityIds.find(id);
-}
+//EntityIDCollection::iterator GlobalEntityManager::GetGlobalEntityIteratorMutable(const ECS::EntityID& id)
+//{
+//	return m_globalEntityIds.find(id);
+//}
+//EntityIDCollection::const_iterator GlobalEntityManager::GetGlobalEntityIterator(const ECS::EntityID& id) const
+//{
+//	return m_globalEntityIds.find(id);
+//}
 EntityNameCollection::iterator GlobalEntityManager::GetGlobalEntityIteratorMutable(const std::string& name)
 {
 	std::string cleanedName = CleanName(name);
@@ -55,14 +57,14 @@ EntityNameCollection::const_iterator GlobalEntityManager::GetGlobalEntityIterato
 	return m_globalEntityNames.find(cleanedName);
 }
 
-bool GlobalEntityManager::IsValidIterator(const EntityIDCollection::iterator& iterator)
-{
-	return iterator != m_globalEntityIds.end();
-}
-bool GlobalEntityManager::IsValidIterator(const EntityIDCollection::const_iterator& iterator) const
-{
-	return iterator != m_globalEntityIds.end();
-}
+//bool GlobalEntityManager::IsValidIterator(const EntityIDCollection::iterator& iterator)
+//{
+//	return iterator != m_globalEntityIds.end();
+//}
+//bool GlobalEntityManager::IsValidIterator(const EntityIDCollection::const_iterator& iterator) const
+//{
+//	return iterator != m_globalEntityIds.end();
+//}
 bool GlobalEntityManager::IsValidIterator(const EntityNameCollection::iterator& iterator)
 {
 	return iterator != m_globalEntityNames.end();
@@ -74,7 +76,7 @@ bool GlobalEntityManager::IsValidIterator(const EntityNameCollection::const_iter
 
 bool GlobalEntityManager::HasGlobalEntity(const ECS::EntityID& id) const
 {
-	return IsValidIterator(GetGlobalEntityIterator(id));
+	return m_globalRegistry.HasEntity(id);
 }
 bool GlobalEntityManager::HasGlobalEntity(const std::string& name, const bool& cleanName) const
 {
@@ -85,7 +87,7 @@ bool GlobalEntityManager::HasGlobalEntity(const std::string& name) const
 	return HasGlobalEntity(name, true);
 }
 
-ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, const TransformData& transform)
+EntityData& GlobalEntityManager::CreateGlobalEntity(const std::string& name, const TransformData& transform)
 {
 	std::string cleanedName = CleanName(name);
 	//Since we want cleaned name to use in error message, we choose to not clean second time when checking for entity
@@ -93,57 +95,37 @@ ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, co
 		std::format("Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
 		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName));
 
-	ECS::Entity& createdEntity= m_globalEntities.emplace_back(name, m_globalEntityMapper, transform);
-	createdEntity.SetScene(ECS::Entity::GLOBAL_SCENE_NAME);
-	m_globalEntityIds.emplace(createdEntity.m_Id, &(createdEntity));
+	EntityData* createdEntity= m_globalEntities.emplace_back(m_globalRegistry.CreateNewEntity(name, transform));
+	createdEntity->m_SceneName = EntityData::GLOBAL_SCENE_NAME;
+	//m_globalEntityIds.emplace(createdEntity->GetId(), &(createdEntity));
 	m_globalEntityNames.emplace(cleanedName, &(createdEntity));
 
-	return createdEntity;
+	return *createdEntity;
 }
 
-ECS::Entity& GlobalEntityManager::CreateGlobalEntity(const std::string& name, TransformData&& transform)
+EntityData* GlobalEntityManager::TryGetGlobalEntityMutable(const ECS::EntityID& id)
 {
-	std::string cleanedName = CleanName(name);
-	//Since we want cleaned name to use in error message, we choose to not clean second time when checking for entity
-	Assert(this, !HasGlobalEntity(cleanedName, false), 
-		std::format("Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
-		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName));
-
-	ECS::Entity& createdEntity= m_globalEntities.emplace_back(name, m_globalEntityMapper, std::move(transform));
-	createdEntity.SetScene(ECS::Entity::GLOBAL_SCENE_NAME);
-	m_globalEntityIds.emplace(createdEntity.m_Id, &(createdEntity));
-	m_globalEntityNames.emplace(cleanedName, &(createdEntity));
-
-	return createdEntity;
+	return m_globalRegistry.TryGetEntityMutable(id);
 }
-
-ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const ECS::EntityID& id)
-{
-	auto iterator = GetGlobalEntityIteratorMutable(id);
-	if (IsValidIterator(iterator)) return iterator->second;
-	return nullptr;
-}
-ECS::Entity* GlobalEntityManager::TryGetGlobalEntityMutable(const std::string& name)
+EntityData* GlobalEntityManager::TryGetGlobalEntityMutable(const std::string& name)
 {
 	auto iterator = GetGlobalEntityIteratorMutable(name);
 	if (IsValidIterator(iterator)) return iterator->second; 
 	return nullptr;
 }
 
-const ECS::Entity* GlobalEntityManager::TryGetGlobalEntity(const ECS::EntityID& id) const
+const EntityData* GlobalEntityManager::TryGetGlobalEntity(const ECS::EntityID& id) const
 {
-	auto iterator = GetGlobalEntityIterator(id);
-	if (IsValidIterator(iterator)) return iterator->second;
-	return nullptr;
+	return m_globalRegistry.TryGetEntity(id);
 }
-const ECS::Entity* GlobalEntityManager::TryGetGlobalEntity(const std::string& name) const
+const EntityData* GlobalEntityManager::TryGetGlobalEntity(const std::string& name) const
 {
 	auto iterator = GetGlobalEntityIterator(name);
 	if (IsValidIterator(iterator)) return iterator->second;
 	return nullptr;
 }
 
-const std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntities() const
+const std::vector<EntityData*>& GlobalEntityManager::GetAllGlobalEntities() const
 {
 	return m_globalEntities;
 	/*std::vector<const ECS::Entity*> entities = {};
@@ -154,7 +136,7 @@ const std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntities() cons
 	return entities;*/
 }
 
-std::vector<ECS::Entity>& GlobalEntityManager::GetAllGlobalEntitiesMutable()
+std::vector<EntityData*>& GlobalEntityManager::GetAllGlobalEntitiesMutable()
 {
 	return m_globalEntities;
 }

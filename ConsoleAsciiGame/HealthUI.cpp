@@ -2,7 +2,7 @@
 #include "HealthUI.hpp"
 #include "GameState.hpp"
 #include "GlobalEntityManager.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "EntityRendererData.hpp"
 #include "Debug.hpp"
 
@@ -26,7 +26,7 @@ namespace Game
 
 			for (size_t i = 0; i < GameState::MAX_HEALTH; i++)
 			{
-				ECS::Entity& healthUI = globalEntities.CreateGlobalEntity("Health" + std::to_string(i), TransformData());
+				EntityData& healthUI = globalEntities.CreateGlobalEntity("Health" + std::to_string(i), TransformData());
 				const NormalizedPosition healthPosRelative = NormalizedPosition(HEALTH_START_POS_RELATIVE.GetPos().m_X +
 					HELATH_DELTA_X_RELATIVE * i, HEALTH_START_POS_RELATIVE.GetPos().m_Y);
 

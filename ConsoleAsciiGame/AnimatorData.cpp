@@ -58,10 +58,10 @@ void AnimatorData::InitFields()
 	m_Fields = { ComponentField("Loop", &m_Loop), ComponentField("Speed", 
 		(std::function<void(float)>)[this](float speed)->void {SetAnimationSpeed(speed); }, &m_AnimationSpeed) };
 }
-std::vector<std::string> AnimatorData::GetDependencyFlags() const
-{
-	return {};
-}
+//std::vector<std::string> AnimatorData::GetDependencyFlags() const
+//{
+//	return {};
+//}
 
 void AnimatorData::Deserialize(const Json& json)
 {

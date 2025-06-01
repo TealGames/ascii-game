@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
-#include "entt/entt.hpp"
-#include "Entity.hpp"
+#include "EntityRegistry.hpp"
 #include "CameraData.hpp"
+#include "EntityData.hpp"
 
 class Scene;
 namespace ECS
@@ -26,48 +26,48 @@ namespace ECS
 	/// <param name="entityFromIDFunc"></param>
 	/// <param name="action"></param>
 	template<typename T>
-	requires ECS::IsComponent<T>
-	void OperateOnActiveComponents(entt::registry& registry, const std::function<ECS::Entity*(const ECS::EntityID&)>& entityFromIDFunc,
-		const std::function<void(T&, ECS::Entity&)>& action)
+	requires std::is_base_of_v<ComponentData, T>
+	void OperateOnActiveComponents(EntityRegistry& registry, const std::function<void(T&)>& action)
 	{
 		auto view = registry.view<T>();
 		for (auto entityId : view)
 		{
-			ECS::Entity* entityPtr = entityFromIDFunc(entityId);
-			if (!Assert(entityPtr != nullptr, std::format("Tried to operate on component type: {} "
-				"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
-				typeid(T).name(), ECS::Entity::ToString(entityId))))
-				return;
-
-			if (!entityPtr->m_Active) continue;
-
-			T* component = &(view.get<T>(entityId));
+			T* component = registry.TryGetComponentMutable<T>(entityId);
 			ComponentData* componentBase = static_cast<ComponentData*>(component);
-			if (!componentBase->m_IsEnabled) continue;
+			if (componentBase == nullptr || !componentBase->m_IsEnabled) continue;
+
+			EntityData* entityPtr = componentBase->GetEntitySafeMutable();
+			if (entityPtr == nullptr)
+			{
+				Assert(false, std::format("Attempted to operate on active components of type:{} "
+					"from multi body system but component has no entity ptr!", Utils::GetTypeName<T>()));
+				return;
+			}
+			if (!entityPtr->m_Active) continue;
 
 			action(*component, *entityPtr);
 		}
 	}
 
 	template<typename T>
-	requires ECS::IsComponent<T>
-	void GetRegistryComponentsMutable(entt::registry& registry, const std::function<ECS::Entity*(const ECS::EntityID&)>& entityFromIDFunc, 
-		std::vector<T*>& inputVector)
+	requires std::is_base_of_v<ComponentData, T>
+	void GetRegistryComponentsMutable(EntityRegistry& registry, std::vector<T*>& inputVector)
 	{
 		auto view = registry.view<T>();
 		for (auto entityId : view)
 		{
-			ECS::Entity* entityPtr = entityFromIDFunc(entityId);
-			if (!Assert(entityPtr != nullptr, std::format("Tried to get components of type: {} "
-				"but failed to retrieve entity with ID: {} (it probably does not exist in the scene)",
-				typeid(T).name(), ECS::Entity::ToString(entityId))))
-				return;
-
-			if (!entityPtr->m_Active) continue;
-
-			T* component = &(view.get<T>(entityId));
+			T* component = registry.TryGetComponentMutable<T>(entityId);
 			ComponentData* componentBase = static_cast<ComponentData*>(component);
-			if (!componentBase->m_IsEnabled) continue;
+			if (componentBase==nullptr || !componentBase->m_IsEnabled) continue;
+
+			EntityData* entityPtr = componentBase->GetEntitySafeMutable();
+			if (entityPtr == nullptr)
+			{
+				Assert(false, std::format("Attempted to get registry components of type:{} "
+					"from multi body system but component has no entity ptr!", Utils::GetTypeName<T>()));
+				return;
+			}
+			if (!entityPtr->m_Active) continue;
 
 			inputVector.push_back(component);
 		}

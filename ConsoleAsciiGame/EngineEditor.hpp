@@ -29,7 +29,7 @@ class GUISelectorManager;
 
 struct EditModeInfo
 {
-	ECS::Entity* m_Selected;
+	EntityData* m_Selected;
 
 	EditModeInfo();
 };
@@ -37,7 +37,7 @@ struct EditModeInfo
 class EngineEditor //: public IBasicRenderable
 {
 private:
-	ECS::Entity* m_editorObj;
+	EntityData* m_editorObj;
 
 	TimeKeeper& m_timeKeeper;
 	const Input::InputManager& m_inputManager;
@@ -67,7 +67,7 @@ private:
 
 private:
 	void InitConsoleCommands(ECS::PlayerSystem& playerSystem);
-	void SelectEntityEditor(ECS::Entity& entity);
+	void SelectEntityEditor(EntityData& entity);
 
 public:
 	EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,

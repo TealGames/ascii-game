@@ -5,6 +5,7 @@
 #include "AnimatorData.hpp"
 #include "HelperFunctions.hpp"
 #include "Scene.hpp"
+#include "EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -22,7 +23,7 @@ namespace ECS
 		if (deltaTime <= 0) return;
 
 		scene.OperateOnComponents<AnimatorData>(
-			[this, &scene, &deltaTime](AnimatorData& data, ECS::Entity& entity)-> void
+			[this, &scene, &deltaTime](AnimatorData& data)-> void
 			{
 				if (data.m_NormalizedTime >= data.GetTimeLength() && !data.GetDoLoop()) return;
 
@@ -34,7 +35,7 @@ namespace ECS
 
 				for (auto& property : data.m_Properties)
 				{
-					std::visit([this, &property, &data, &entity](auto&& value) -> void
+					std::visit([this, &property, &data](auto&& value) -> void
 						{
 							using PropertyConvertedType = std::remove_reference_t<decltype(value)>;
 							using ExtractedType = AnimationPropertyType<PropertyConvertedType>::Type;
@@ -55,7 +56,7 @@ namespace ECS
 								std::optional<size_t> newIndex = TryGetKeyFrameAtTime<ExtractedType>(data, *maybeProperty, data.m_NormalizedTime);
 								if (!Assert(this, newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
 									"and end time: {} on entity: {} but failed!", std::to_string(data.m_NormalizedTime),
-									std::to_string(data.GetTimeLength()), entity.GetName())))
+									std::to_string(data.GetTimeLength()), data.GetEntitySafe().m_Name)))
 									return;
 
 								maybeProperty->m_KeyframeIndex = newIndex.value();
@@ -74,7 +75,7 @@ namespace ECS
 							else
 							{
 								LogError(this, std::format("Tried to update property in animator for entity:{} "
-									"but could not find any Type specific actions to take for it (probably due to not defining actions for this type)", entity.GetName()));
+									"but could not find any Type specific actions to take for it (probably due to not defining actions for this type)", data.GetEntitySafe().m_Name));
 							}
 						}, property);
 				}

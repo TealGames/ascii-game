@@ -1,7 +1,7 @@
 #pragma once
-#include "GUIElement.hpp"
+#include "ComponentData.hpp"
 
-class ContainerGUI : public GUIElement
+class ContainerGUI : public ComponentData
 {
 private:
 public:
@@ -10,6 +10,10 @@ private:
 public:
 	ContainerGUI();
 
-	void Update(const float deltaTime) override;
-	RenderInfo Render(const RenderInfo& renderInfo) override;
+	void InitFields() override;
+
+	std::string ToString() const override;
+
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };

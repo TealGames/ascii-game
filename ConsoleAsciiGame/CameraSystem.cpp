@@ -1,5 +1,4 @@
 #include "pch.hpp"
-#include "Entity.hpp"
 #include "CameraSystem.hpp"
 #include "Updateable.hpp"
 #include "Component.hpp"
@@ -10,6 +9,8 @@
 #include "HelperFunctions.hpp"
 #include "RaylibUtils.hpp"
 #include "Scene.hpp"
+#include "EntityData.hpp"
+#include "GlobalComponentInfo.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -24,11 +25,11 @@ namespace ECS
 	CameraSystem::CameraSystem(ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer) :
         m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
 	{
+        GlobalComponentInfo::AddComponentInfo(typeid(CameraData), ComponentInfo(DeppendencyType::Entity));
         //LogWarning(std::format("CREATED CAMERA SYSTEM: {}", std::to_string(colliderBuffer!=nullptr)));
 	}
 
-    void CameraSystem::SystemUpdate(Scene& scene, CameraData& data,
-        ECS::Entity& mainCamera, const float& deltaTime)
+    void CameraSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("CameraSystem::SystemUpdate");
@@ -38,43 +39,43 @@ namespace ECS
 
         //TODO: somthing was wrong with dirty counting )(most likely) so the optimization was not working
         //so instead use dirty from entities not from componentns
-        if (CACHE_LAST_BUFFER && !scene.HasDirtyComponents() && !data.m_LastFrameBuffer.empty())
+        if (CACHE_LAST_BUFFER && !scene.HasDirtyComponents() && !mainCamera.m_LastFrameBuffer.empty())
         {
             //Log("NO camera render update");
-            m_currentFrameBuffer = data.m_LastFrameBuffer;
+            m_currentFrameBuffer = mainCamera.m_LastFrameBuffer;
             //Rendering::RenderBuffer(data.m_LastFrameBuffer.value());
             return;
         }
 
         scene.IncreaseFrameDirtyComponentCount();
-        if (!data.m_CameraSettings.HasNoFollowTarget()) UpdateCameraPosition(data, mainCamera);
+        if (!mainCamera.m_CameraSettings.HasNoFollowTarget()) UpdateCameraPosition(mainCamera);
        /* Rendering::RenderBuffer(TextBuffer(5, 5, TextChar(BLUE, 'V')));
         data.m_LastFrameBuffer = TextBuffer(5, 5, TextChar(BLUE, 'V'));
         data.m_LastFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);*/
         //return;
 
-        CollapseLayersWithinViewport(scene, data, mainCamera);
+        CollapseLayersWithinViewport(scene, mainCamera);
         //m_currentFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);
-        if (CACHE_LAST_BUFFER) data.m_LastFrameBuffer = m_currentFrameBuffer;
+        if (CACHE_LAST_BUFFER) mainCamera.m_LastFrameBuffer = m_currentFrameBuffer;
     }
 
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
-    void CameraSystem::UpdateCameraPosition(CameraData& cameraData, ECS::Entity& mainCamera)
+    void CameraSystem::UpdateCameraPosition(CameraData& cameraData)
     {
         /*Log(std::format("Main camera trans: {} follow trans: {}", mainCamera.m_Transform.m_Pos.ToString(), 
             std::to_string(cameraData.m_CameraSettings.m_FollowTarget!=nullptr)));*/
         //Log(std::format("Main camera trans: {} follow trans: ", mainCamera.m_Transform.m_Pos.ToString()));
-        mainCamera.m_Transform.SetPos(cameraData.m_CameraSettings.m_FollowTarget->m_Transform.GetPos());
+        cameraData.GetEntitySafeMutable().GetTransformMutable().SetLocalPos(cameraData.m_CameraSettings.m_FollowTarget->GetTransform().GetLocalPos());
     }
 
     bool CameraSystem::IsWithinViewport(const CameraData& camera, const WorldPosition& pos) const
     {
-        WorldPosition bottomLeftPos = camera.m_Entity->m_Transform.GetPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
-        WorldPosition topRightPos = camera.m_Entity->m_Transform.GetPos() + (camera.m_CameraSettings.m_WorldViewportSize / 2);
+        WorldPosition bottomLeftPos = camera.GetEntitySafe().GetTransform().GetLocalPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
+        WorldPosition topRightPos = camera.GetEntitySafe().GetTransform().GetLocalPos() + (camera.m_CameraSettings.m_WorldViewportSize / 2);
         return bottomLeftPos.m_X <= pos.m_X && pos.m_X <= topRightPos.m_X && bottomLeftPos.m_Y <= pos.m_Y && pos.m_Y <= topRightPos.m_Y;
     }
 
-    void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData, ECS::Entity& mainCamera)
+    void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData)
     {
         //TODO: this is cuainsg some performance rpboelms
         m_currentFrameBuffer.clear();

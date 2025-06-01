@@ -1,5 +1,5 @@
 #pragma once
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "ComponentReference.hpp"
 
 struct ComponentFieldReference
@@ -12,9 +12,9 @@ struct ComponentFieldReference
 
 	ComponentFieldReference();
 	ComponentFieldReference(ComponentData* componentData, const std::string& fieldName);
-	ComponentFieldReference(ECS::Entity& entity, const std::string& componentName, const std::string& fieldName);
+	ComponentFieldReference(EntityData& entity, const std::string& componentName, const std::string& fieldName);
 
-	const ECS::Entity& GetEntitySafe() const;
+	const EntityData& GetEntitySafe() const;
 	const ComponentField& GetComponentFieldSafe() const;
 
 	ComponentField& GetComponentFieldSafeMutable();

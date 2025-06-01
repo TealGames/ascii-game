@@ -7,30 +7,31 @@
 #include <memory>
 #include <type_traits>
 #include <algorithm>
-#include <entt/entt.hpp>
 #include <tuple>
 #include "HelperFunctions.hpp"
-#include "TransformData.hpp"
 #include "ComponentType.hpp"
 #include "Debug.hpp"
 #include "IValidateable.hpp"
+#include "EntityID.hpp"
+
+class TransformData;
+class EntityData;
 
 namespace ECS
 {
-	template<typename T>
-	concept IsComponent = std::is_base_of_v<ComponentData, T>;
+	class EntityRegistry;
 
 	template<typename T>
-	requires IsComponent<T>
+	requires std::is_base_of_v<ComponentData, T>
 	struct EntityComponentPair
 	{
 		//Note: the types are pointers so this object
 		//can easily be copied into things like optional, vector, etc
 
-		ECS::Entity* m_Entity;
+		EntityData* m_Entity;
 		T* m_Data;
 
-		EntityComponentPair(ECS::Entity& entity, T& data) :
+		EntityComponentPair(EntityData& entity, T& data) :
 			m_Entity(&entity), m_Data(&data) {}
 	};
 
@@ -39,12 +40,12 @@ namespace ECS
 			 && Utils::AllSameBaseType<ComponentData, Args...>
 	struct EntityComponents
 	{
-		ECS::Entity* m_Entity;
+		EntityData* m_Entity;
 
 		using TupleType = std::tuple<typename Utils::ToPointerType<Args>::Type...>;
 		TupleType m_Data;
 
-		EntityComponents(ECS::Entity& entity, Args&... data) 
+		EntityComponents(EntityData& entity, Args&... data)
 			: m_Entity(&entity), m_Data(std::make_tuple(&data...)) 
 		{
 		}
@@ -57,39 +58,30 @@ namespace ECS
 	};
 
 	//using ComponentCollectionType = std::unordered_map<ComponentType, ComponentID>;
-	using EntityID = entt::entity;
+
 	class Entity : public IValidateable
 	{
 	private:
 		//EntityMapper& m_entityMapper;
-		entt::registry& m_entityMapper;
+		EntityRegistry* m_registry;
 		//ComponentCollectionType m_componentIDs;
 
-		std::string m_name;
 		//TODO: perhaps we should also make a custom type that stores the actual type contained
 		//or maybe we can contain that data based on what index it is at?
-		std::vector<ComponentData*> m_components;
 
-		std::string m_sceneName;
 	public:
 		//TODO: maybe replace id with GUID (UIUD is available in boost library)k
 		//const EntityID m_Id;
 		const EntityID m_Id;
-		TransformData& m_Transform;
 
 		//TODO: could we maybe comine all entity falgs into one bool/ enum
 
-		bool m_Active;
-		/// <summary>
-		/// If true, will be serialized in the scene asset so it can be deserialized
-		/// again with the same data between gameplay sessions
-		/// </summary>
-		bool m_IsSerializable;
+		
 
-		//TODO: is this really the best location for something like this?
-		static const char* GLOBAL_SCENE_NAME;
 
 	private:
+		EntityData& GetEntityDataMutable();
+		const EntityData& GetEntityData() const;
 
 	public:
 		/// <summary>
@@ -97,9 +89,13 @@ namespace ECS
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="objectId"></param>
-		Entity(const std::string& name, entt::registry& mapper, const TransformData& transform);
+		Entity(EntityRegistry& mapper, const EntityID id);
+
+		//EntityRegistry& GetRegistryMutable();
+		//const EntityRegistry& GetRegistry() const;
 
 		std::string GetName() const;
+		TransformData& GetTransformMutable();
 
 		/// <summary>
 		/// Will set the scene name as the name specified. Note: since it has no reference to a scene,
@@ -111,16 +107,16 @@ namespace ECS
 		bool IsGlobal() const;
 
 		template<typename T, typename... Args>
-		requires IsComponent<T>
+		requires std::is_base_of_v<ComponentData, T>
 		T& AddComponent(Args&&... args)
 		{
 			if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
 				"but it already has this type (and duplicates are not allowed)", typeid(T).name(),
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
-			T& result= m_entityMapper.emplace<T>(m_Id, std::forward<Args>(args)...);
+			T& result= m_registry.emplace<T>(m_Id, std::forward<Args>(args)...);
 			ComponentData* componentData = &result;
-			componentData->m_Entity = this;
+			componentData->m_entity = this;
 			componentData->InitFields();
 
 			m_components.emplace_back(componentData);
@@ -133,16 +129,16 @@ namespace ECS
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 		template<typename T>
-		requires IsComponent<T> && std::is_default_constructible_v<T>
+		requires std::is_base_of_v<ComponentData, T> && std::is_default_constructible_v<T>
 		T& AddComponent()
 		{
 			if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
 				"but it already has this type (and duplicates are not allowed)", typeid(T).name(), 
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
-			T& result= m_entityMapper.emplace<T>(m_Id);
+			T& result= m_registry.emplace<T>(m_Id);
 			ComponentData* componentData = &result;
-			componentData->m_Entity = this;
+			componentData->m_entity = this;
 			componentData->InitFields();
 
 			m_components.emplace_back(componentData);
@@ -156,16 +152,16 @@ namespace ECS
 		/// <param name="component"></param>
 		/// <returns></returns>
 		template<typename T>
-		requires IsComponent<T>
+		requires std::is_base_of_v<ComponentData, T>
 		T& AddComponent(const T& component)
 		{
 			if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
 				"but it already has this type (and duplicates are not allowed)", typeid(T).name(),
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
-			T& result = m_entityMapper.emplace_or_replace<T>(m_Id, component);
+			T& result = m_registry.emplace_or_replace<T>(m_Id, component);
 			ComponentData* componentData = &result;
-			componentData->m_Entity = this;
+			componentData->m_entity = this;
 			componentData->InitFields();
 
 			m_components.emplace_back(componentData);
@@ -173,12 +169,12 @@ namespace ECS
 		}
 
 		template<typename T>
-		requires IsComponent<T>
+		requires std::is_base_of_v<ComponentData, T>
 		bool HasComponent() const
 		{
 			//TODO: maybe try checking if checking vector of all this entity's component
 			//names is faster than doing try get
-			return m_entityMapper.try_get<T>(m_Id) != nullptr;
+			return m_registry.try_get<T>(m_Id) != nullptr;
 		}
 
 		/// <summary>
@@ -204,40 +200,29 @@ namespace ECS
 			return false;
 		}*/
 
-		bool HasComponent(const std::string& targetComponentName) const
-		{
-			if (targetComponentName.empty()) return false;
-
-			for (const auto& component : m_components)
-			{
-				if (TryGetComponentName(component)==targetComponentName)
-					return true;
-			}
-			return false;
-		}
 
 		template<typename T>
-		requires IsComponent<T>
+		requires std::is_base_of_v<ComponentData, T>
 		T* TryGetComponentMutable()
 		{
-			return m_entityMapper.try_get<T>(m_Id);
+			return m_registry.try_get<T>(m_Id);
 		}
 
 		template<typename T>
-		requires IsComponent<T>
+		requires std::is_base_of_v<ComponentData, T>
 		const T* TryGetComponent() const
 		{
-			return m_entityMapper.try_get<T>(m_Id);
+			return m_registry.try_get<T>(m_Id);
 		}
 
-		const ComponentData* TryGetComponentAtIndex(const size_t& index) const;
+		/*const ComponentData* TryGetComponentAtIndex(const size_t& index) const;
 		ComponentData* TryGetComponentAtIndexMutable(const size_t& index);
 
 		const ComponentData* TryGetComponentWithName(const std::string& name) const;
 		ComponentData* TryGetComponentWithNameMutable(const std::string& name);
 
 		size_t TryGetIndexOfComponent(const ComponentData* component) const;
-		size_t TryGetIndexOfComponent(const std::string& componentName) const;
+		size_t TryGetIndexOfComponent(const std::string& componentName) const;*/
 
 		std::string TryGetComponentName(const ComponentData* component) const;
 

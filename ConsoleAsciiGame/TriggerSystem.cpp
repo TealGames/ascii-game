@@ -2,6 +2,7 @@
 #include "TriggerSystem.hpp"
 #include "TriggerData.hpp"
 #include "Scene.hpp"
+#include "GlobalComponentInfo.hpp"
 
 
 #ifdef ENABLE_PROFILER
@@ -10,7 +11,11 @@
 
 namespace ECS
 {
-	TriggerSystem::TriggerSystem() {}
+	TriggerSystem::TriggerSystem() 
+	{
+		GlobalComponentInfo::AddComponentInfo(typeid(TriggerData),
+			ComponentInfo(DeppendencyType::None, {}, RequiredComponentCheck<CollisionBoxData>()));
+	}
 
 	void TriggerSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
 	{
@@ -19,7 +24,7 @@ namespace ECS
 #endif 
 
 		scene.OperateOnComponents<TriggerData>(
-			[this, &scene, &deltaTime](TriggerData& data, ECS::Entity& entity)-> void
+			[this, &scene, &deltaTime](TriggerData& data)-> void
 			{
 				const auto& onEnterBodies = data.GetCollisionBox().GetCollisionEnterBoxes();
 				//LogError(std::format("Found enter bodies: {}", std::to_string(data.GetCollisionBox().GetAllCollisionBoxes().size())));

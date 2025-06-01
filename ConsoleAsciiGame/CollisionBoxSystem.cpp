@@ -2,6 +2,7 @@
 #include "CollisionBoxSystem.hpp"
 #include "Scene.hpp"
 #include "PositionConversions.hpp"
+#include "EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -45,7 +46,7 @@ namespace ECS
 			minBodyDisplacement = {};
 			minBodyDisplacementVec = {};
 
-			bounds.emplace_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntitySafe().GetName(), boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
+			bounds.emplace_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntitySafe().m_Name, boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
 			if (RENDER_COLLIDER_OUTLINES)
 			{
 				/*if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
@@ -146,7 +147,7 @@ namespace ECS
 		std::vector<CollisionBoxData*> bodiesFound = {};
 
 		scene.OperateOnComponents<CollisionBoxData>(
-			[&bodiesFound, &worldPos](CollisionBoxData& box, ECS::Entity& entity) -> void
+			[&bodiesFound, &worldPos](CollisionBoxData& box) -> void
 			{
 				if (box.DoIntersect(worldPos))
 				{

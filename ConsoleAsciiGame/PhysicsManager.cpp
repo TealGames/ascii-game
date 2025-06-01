@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "PhysicsManager.hpp"
 #include "SceneManager.hpp"
+#include "EntityData.hpp"
 
 namespace Physics
 {

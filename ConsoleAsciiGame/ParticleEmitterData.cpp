@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ParticleEmitterData.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include <functional>
 #include "JsonSerializers.hpp"
 
@@ -31,7 +31,7 @@ ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTi
 
 WorldPosition ParticleEmitterData::GetOriginWorldPos() const
 {
-	return GetEntitySafe().m_Transform.GetPos() + m_originTransformOffset;
+	return GetEntitySafe().GetTransform().GetGlobalPos() + m_originTransformOffset;
 }
 void ParticleEmitterData::SetSpawnRate(const float& value)
 {
@@ -56,10 +56,10 @@ void ParticleEmitterData::InitFields()
 		SetSpawnRate(newVal); 
 	}, &m_spawnRate)};
 }
-std::vector<std::string> ParticleEmitterData::GetDependencyFlags() const
-{
-	return {};
-}
+//std::vector<std::string> ParticleEmitterData::GetDependencyFlags() const
+//{
+//	return {};
+//}
 
 std::string ParticleEmitterData::ToString() const
 {

@@ -2,7 +2,7 @@
 #include <vector>	
 #include "IRenderable.hpp"
 #include "InputManager.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "ComponentGUI.hpp"
 #include "ToggleGUI.hpp"
 #include "ITreeGUIConstructible.hpp"
@@ -19,7 +19,7 @@ private:
 	const Input::InputManager* m_inputManager;
 	LayoutGUI m_guiLayout;
 	PanelGUI m_entityHeader;
-	ECS::Entity* m_entity;
+	EntityData* m_entity;
 
 	std::vector<ComponentGUI> m_componentGUIs;
 	TextGUI m_entityNameText;
@@ -29,7 +29,7 @@ public:
 private:
 public:
 	EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, 
-		const AssetManagement::AssetManager& assetManager, ECS::Entity& entity);
+		const AssetManagement::AssetManager& assetManager, EntityData& entity);
 	~EntityGUI();
 
 	void Update();
@@ -38,6 +38,6 @@ public:
 
 	GUIElement* GetTreeGUI() override;
 
-	const ECS::Entity& GetEntity() const;
+	const EntityData& GetEntity() const;
 };
 

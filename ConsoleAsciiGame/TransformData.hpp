@@ -8,9 +8,9 @@ const Vec2 NULL_POS = Vec2{ -1, -1 };
 class TransformData : public ComponentData
 {
 private:
-	Vec2 m_Pos;
-	Vec2 m_LastPos;
-	Vec2 m_LastFramePos;
+	Vec2 m_localPos;
+	//Vec2 m_lastLocalPos;
+	Vec2 m_localPosLastFrame;
 
 public:
 
@@ -21,23 +21,22 @@ public:
 	TransformData(const Vec2& pos);
 
 	//TODO: these position setting functions should get moved into transform
-	void SetPos(const Vec2& newPos);
-	void SetPosX(const float& newX);
-	void SetPosY(const float& newY);
+	void SetLocalPos(const Vec2& newPos);
+	void SetLocalPosX(const float& newX);
+	void SetLocalPosY(const float& newY);
 
-	void SetPosDeltaX(const float& xDelta);
-	void SetPosDeltaY(const float& yDelta);
-	void SetPosDelta(const Vec2& moveDelta);
+	void SetLocalPosDeltaX(const float& xDelta);
+	void SetLocalPosDeltaY(const float& yDelta);
+	void SetLocalPosDelta(const Vec2& moveDelta);
 
-	Vec2 GetPos() const;
-	Vec2 GetLastPos() const;
-	Vec2 GetLastFramePos() const;
-	
-	void SetLastFramePos(const Vec2& vec);
-
+	Vec2 GetLocalPos() const;
+	Vec2 GetGlobalPos() const;
+	//Vec2 GetLastPos() const;
+	Vec2 GetLocalPosLastFrame() const;
+	void SetLocalPosLastFrame(const Vec2& vec);
 	bool HasMovedThisFrame() const;
 
-	std::vector<std::string> GetDependencyFlags() const override;
+	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 	std::string ToString() const override;
 

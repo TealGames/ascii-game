@@ -14,6 +14,7 @@
 #include "PhysicsBodyData.hpp"
 #include "TransformData.hpp"
 #include "StringUtil.hpp"
+#include "EntityData.hpp"
 
 #include "nlohmann/json.hpp"
 #include "JsonUtils.hpp"
@@ -32,8 +33,9 @@ const std::string Scene::SCENE_FILE_PREFIX = "scene_";
 
 Scene::Scene(const std::string& sceneName, GlobalEntityManager* manager) :
 	m_layers{}, m_sceneName(sceneName), //m_scenePath(scenePath),
-	m_localEntities(), m_localEntityIdLookup(), m_localEntityNameLookup(),//m_globalEntityLookup(globalEntities),
-	m_currentFrameDirtyComponents(0), m_entityMapper(),
+	m_localRootEntities(), //m_localEntityIdLookup(), 
+	//m_localEntityNameLookup(),//m_globalEntityLookup(globalEntities),
+	m_currentFrameDirtyComponents(0), m_registry(),
 	//m_mainCamera(nullptr),
 	m_globalEntities(manager)
 {
@@ -47,9 +49,9 @@ Scene::Scene(const std::string& sceneName, GlobalEntityManager* manager) :
 
 		//m_sceneName = ExtractSceneName(scenePath);
 
-	m_localEntities.reserve(MAX_ENTITIES);
-	m_localEntityNameLookup.reserve(MAX_ENTITIES);
-	m_localEntityIdLookup.reserve(MAX_ENTITIES);
+	//m_localEntities.reserve(MAX_ENTITIES);
+	//m_localEntityNameLookup.reserve(MAX_ENTITIES);
+	//m_localEntityIdLookup.reserve(MAX_ENTITIES);
 
 	//TODO: make it so that layers are not specific to a scene meaning the names are created in a spearate manager or elsewhere
 	//and then during this constructor they are passed and craeted so each scene has the same layers, but their own instances
@@ -451,14 +453,14 @@ void Scene::ResetAllLayers()
 	for (auto& layer : m_layers) layer.second.ResetToDefault();
 }
 
-EntityIDCollection::iterator Scene::GetLocalEntityIterator(const ECS::EntityID& id)
-{
-	return m_localEntityIdLookup.find(id);
-}
-EntityNameCollection::iterator Scene::GetLocalEntityIterator(const std::string& name)
-{
-	return m_localEntityNameLookup.find(name);
-}
+//EntityIDCollection::iterator Scene::GetLocalEntityIterator(const ECS::EntityID& id)
+//{
+//	return m_localEntityIdLookup.find(id);
+//}
+//EntityNameCollection::iterator Scene::GetLocalEntityIterator(const std::string& name)
+//{
+//	return m_localEntityNameLookup.find(name);
+//}
 
 //class CameraData;
 //void Scene::SetMainCamera(ECS::Entity& cameraEntity)
@@ -494,7 +496,7 @@ EntityNameCollection::iterator Scene::GetLocalEntityIterator(const std::string& 
 
 int Scene::GetEntityCount() const
 {
-	return m_localEntities.size() + TryGetGlobalEntityManager().GetCount();
+	return m_localRootEntities.size() + TryGetGlobalEntityManager().GetCount();
 	/*return m_entityMapper.va + m_globalEntities.GetCount();*/
 }
 
@@ -503,75 +505,60 @@ bool Scene::HasEntities() const
 	return GetEntityCount() > 0;
 }
 
-const std::vector<const ECS::Entity*> Scene::GetAllEntities() const
+std::vector<const EntityData*> Scene::GetAllEntities() const
 {
-	std::vector<const ECS::Entity*> entities = GetLocalEntities();
+	std::vector<const EntityData*> entities = GetLocalEntities();
 
 	for (const auto& globalEntity : TryGetGlobalEntityManager().GetAllGlobalEntities())
-		entities.push_back(&globalEntity);
+		entities.push_back(globalEntity);
 	
 	return entities;
 }
 
-const std::vector<const ECS::Entity*> Scene::GetLocalEntities() const
+std::vector<const EntityData*> Scene::GetLocalEntities() const
 {
-	std::vector<const ECS::Entity*> entities = {};
-	for (const auto& localEntity : m_localEntities)
-		entities.push_back(&localEntity);
+	std::vector<const EntityData*> entities = {};
+	for (const auto& localEntity : m_localRootEntities)
+		entities.push_back(localEntity);
 
 	return entities;
 }
-const std::vector<ECS::Entity*> Scene::GetLocalEntitiesMutable()
+std::vector<EntityData*> Scene::GetLocalEntitiesMutable()
 {
-	std::vector<ECS::Entity*> entities = {};
-	for (auto& localEntity : m_localEntities)
-		entities.push_back(&localEntity);
+	std::vector<EntityData*> entities = {};
+	for (auto& localEntity : m_localRootEntities)
+		entities.push_back(localEntity);
 
 	return entities;
 }
 
-std::vector<ECS::Entity*> Scene::GetAllEntitiesMutable()
+std::vector<EntityData*> Scene::GetAllEntitiesMutable()
 {
-	std::vector<ECS::Entity*> entities = {};
+	std::vector<EntityData*> entities = {};
 	for (auto& entity : TryGetGlobalEntityManagerMutable().GetAllGlobalEntitiesMutable())
 	{
-		entities.push_back(&entity);
+		entities.push_back(entity);
 	}
 
-	for (auto& entity : m_localEntities)
+	for (auto& entity : m_localRootEntities)
 	{
-		entities.push_back(&entity);
+		entities.push_back(entity);
 	}
 	return entities;
 }
 
-ECS::Entity& Scene::CreateEntity(const std::string& name, TransformData& transform)
+EntityData& Scene::CreateEntity(const std::string& name, const TransformData& transform)
 {
-	ECS::Entity& addedEntity= m_localEntities.emplace_back(name, m_entityMapper, transform);
-	//addedEntity.m_Transform.m_Entity = &(addedEntity);
-	addedEntity.SetScene(m_sceneName);
+	EntityData& createdEntity = m_registry.CreateNewEntity(name, transform);
+	m_localRootEntities.emplace_back(&createdEntity);
+	createdEntity.m_SceneName= m_sceneName;
 
-	m_localEntityNameLookup.emplace(addedEntity.GetName(), &(addedEntity));
-	m_localEntityIdLookup.emplace(addedEntity.m_Id, &(addedEntity));
-
-	return addedEntity;
-}
-
-ECS::Entity& Scene::CreateEntity(const std::string& name, TransformData&& transform)
-{
-	ECS::Entity& addedEntity = m_localEntities.emplace_back(name, m_entityMapper, std::move(transform));
-	//addedEntity.m_Transform.m_Entity = &(addedEntity);
-	addedEntity.SetScene(m_sceneName);
-
-	m_localEntityNameLookup.emplace(addedEntity.GetName(), &(addedEntity));
-	m_localEntityIdLookup.emplace(addedEntity.m_Id, &(addedEntity));
-
-	return addedEntity;
+	return createdEntity;
 }
 
 bool Scene::HasEntity(const ECS::EntityID& id)
 {
-	return m_entityMapper.valid(id) || TryGetGlobalEntityManager().HasGlobalEntity(id);
+	return m_registry.IsValidID(id) || TryGetGlobalEntityManager().HasGlobalEntity(id);
 	//bool isLocal = GetLocalEntityIterator(id) != m_localEntityLookup.end();
 	//if (isLocal) return true;
 
@@ -582,52 +569,53 @@ bool Scene::HasEntity(const ECS::EntityID& id)
 //and would probably be best if we create them on the heap probably to extend memory lifetime
 
 //TODO: also maybe consider managing what objects are required to be in a scene, like a camera
-ECS::Entity* Scene::TryGetEntityMutable(const ECS::EntityID& id)
+EntityData* Scene::TryGetEntityMutable(const ECS::EntityID& id)
 {
-	auto localIt = GetLocalEntityIterator(id);
-	if (localIt != m_localEntityIdLookup.end()) return localIt->second;
+	//Note: even though we only have local root entities, all entity data for this scene INCLUDING ROOT CHILDREN
+	//must still be stored in the registry, so it is a quick O(1) search
+	EntityData* localEntity = m_registry.TryGetEntityMutable(id);
+	if (localEntity != nullptr) return localEntity;
 
-	auto globalIt = TryGetGlobalEntityManagerMutable().GetGlobalEntityIteratorMutable(id);
-	if (TryGetGlobalEntityManagerMutable().IsValidIterator(globalIt)) return globalIt->second;
-
-	return nullptr;
+	localEntity= TryGetGlobalEntityManagerMutable().TryGetGlobalEntityMutable(id);
+	return localEntity;
 }
 
-ECS::Entity* Scene::TryGetEntityMutable(const std::string& name, const bool& ignoreCase)
+EntityData* Scene::TryGetEntityMutable(const std::string& name, const bool& ignoreCase)
 {
-	std::string targetName = ignoreCase ? Utils::StringUtil(name).ToLowerCase().ToString() : name;
+	const std::string targetName = ignoreCase ? Utils::StringUtil(name).ToLowerCase().ToString() : name;
 	std::string currentLowercaseName = "";
 	//LogError(std::format("Trying to look for entity: {} -> {} ignorecase: {}", name, targetName, std::to_string(ignoreCase)));
-	for (auto& localEntity : m_localEntities)
+	for (auto& localEntity : m_localRootEntities)
 	{
+		if (localEntity == nullptr) continue;
 		if (ignoreCase)
 		{
-			currentLowercaseName = Utils::StringUtil(localEntity.GetName()).ToLowerCase().ToString();
+			currentLowercaseName = Utils::StringUtil(localEntity->m_Name).ToLowerCase().ToString();
 			/*LogError(std::format("Found local entity with name:{} when looking:{} ==: {}",
 				currentLowercaseName, targetName, std::to_string(currentLowercaseName== targetName)));*/
-			if (currentLowercaseName == targetName) return &localEntity;
+			if (currentLowercaseName == targetName) return localEntity;
 		}
-		else if (localEntity.GetName() == targetName)
-			return &localEntity;
+		else if (localEntity->m_Name == targetName)
+			return localEntity;
 	}
 	//Note: we do NOT need to do ignore case for global entities since they already have unique
 	//names so their names already are cleaned to be as simple as possible
-	return  TryGetGlobalEntityManagerMutable().TryGetGlobalEntityMutable(name);
+	return TryGetGlobalEntityManagerMutable().TryGetGlobalEntityMutable(targetName);
 }
 
-const ECS::Entity* Scene::TryGetEntity(const std::string& name, const bool& ignoreCase) const
+const EntityData* Scene::TryGetEntity(const std::string& name, const bool& ignoreCase) const
 {
 	std::string targetName = ignoreCase ? Utils::StringUtil(name).ToLowerCase().ToString() : name;
 	std::string currentLowercaseName = "";
-	for (auto& localEntity : m_localEntities)
+	for (auto& localEntity : m_localRootEntities)
 	{
 		if (ignoreCase)
 		{
-			currentLowercaseName = Utils::StringUtil(localEntity.GetName()).ToLowerCase().ToString();
-			if (currentLowercaseName == targetName) return &localEntity;
+			currentLowercaseName = Utils::StringUtil(localEntity->m_Name).ToLowerCase().ToString();
+			if (currentLowercaseName == targetName) return localEntity;
 		}
-		else if (localEntity.GetName() == targetName)
-			return &localEntity;
+		else if (localEntity->m_Name == targetName)
+			return localEntity;
 	}
 	//Note: we do NOT need to do ignore case for global entities since they already have unique
 	//names so their names already are cleaned to be as simple as possible
@@ -651,9 +639,10 @@ std::string Scene::ToStringLayers() const
 std::string Scene::ToStringEntityData() const
 {
 	std::vector<std::string> sceneStr = {};
-	for (const auto& entity : m_localEntities)
+	for (const auto& entity : m_localRootEntities)
 	{
-		sceneStr.push_back(entity.ToString());
+		if (entity == nullptr) continue;
+		sceneStr.push_back(entity->ToString());
 	}
 	return std::format("[\n-----GLOBALS----: {} \n----Local-----: {}]", 
 		TryGetGlobalEntityManager().ToStringEntityData(), 
@@ -693,14 +682,16 @@ bool Scene::HasDirtyComponents() const
 bool Scene::Validate()
 {
 	bool passesValidation = true;
-	for (auto& entity : m_localEntities)
+	for (auto& entity : m_localRootEntities)
 	{
-		if (!entity.Validate()) passesValidation = false;
+		if (entity == nullptr) continue;
+		if (!entity->Validate()) passesValidation = false;
 	}
 
 	for (auto& entity : TryGetGlobalEntityManagerMutable().GetAllGlobalEntitiesMutable())
 	{
-		if (!entity.Validate()) passesValidation = false;
+		if (entity == nullptr) continue;
+		if (!entity->Validate()) passesValidation = false;
 	}
 
 	return passesValidation;
@@ -721,7 +712,8 @@ std::string Scene::ToString() const
 	currentEntitiesStr.clear();
 	for (const auto& entity : TryGetGlobalEntityManager().GetAllGlobalEntities())
 	{
-		currentEntitiesStr.push_back(entity.ToString());
+		if (entity == nullptr) continue;
+		currentEntitiesStr.push_back(entity->ToString());
 	}
 	std::string globalEntitiesStr = Utils::ToStringIterable<std::vector<std::string>, std::string>(currentEntitiesStr);
 	

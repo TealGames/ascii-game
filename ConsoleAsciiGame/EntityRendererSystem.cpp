@@ -8,6 +8,7 @@
 #include "HelperFunctions.hpp"
 #include "PositionConversions.hpp"
 #include "Scene.hpp"
+#include "EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -32,7 +33,7 @@ namespace ECS
 
 		std::vector<FragmentedTextBuffer*> affectedLayerBuffers = {};
 		scene.OperateOnComponents<EntityRendererData>(
-			[this, &scene, &affectedLayerBuffers](EntityRendererData& data, ECS::Entity& entity)-> void
+			[this, &scene, &affectedLayerBuffers](EntityRendererData& data)-> void
 			{
 				//if(entity.GetName()== "Background") Assert(false, std::format("Entity:{} has visual:{}", entity.GetName(), data.m_VisualData.ToString()));
 
@@ -48,7 +49,7 @@ namespace ECS
 				//return;
 
 				if (!Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
-					"but entity's render data: {} has no render layers", entity.GetName()))) return;
+					"but entity's render data: {} has no render layers", data.GetEntitySafe().m_Name))) return;
 
 				/*
 				if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !entity.m_Transform.HasMovedThisFrame() &&
@@ -74,9 +75,9 @@ namespace ECS
 				for (auto& buffer : affectedLayerBuffers)
 				{
 					if (!Assert(buffer != nullptr, std::format("Tried to update render system "
-						"but entity's render data: {} found a NULL render layer buffer", entity.GetName()))) return;
+						"but entity's render data: {} found a NULL render layer buffer", data.GetEntitySafe().m_Name))) return;
 
-					AddTextToBuffer(*buffer, data, entity);
+					AddTextToBuffer(*buffer, data);
 					//LogWarning(std::format("Entity: {} has been added to buffer. new buffer: {}", entity.m_Name, ToString(*buffer)));
 				}
 				data.m_MutatedThisFrame = false;
@@ -89,10 +90,10 @@ namespace ECS
 		return data.GetVisualData().ToString();
 	}
 
-	void EntityRendererSystem::AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data, const Entity& entity)
+	void EntityRendererSystem::AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data)
 	{
 		//TODO: should this really be a function of visual data and should we expose the buffer directly from the scene like this
-		data.GetVisualData().AddTextPositionsToBuffer(entity.m_Transform.GetPos(), buffer);
+		data.GetVisualData().AddTextPositionsToBuffer(data.GetEntitySafe().GetTransform().GetGlobalPos(), buffer);
 	}
 }
 

@@ -559,9 +559,9 @@ Json TrySerializeAssets(const std::vector<const Asset*>& assets)
 	return assetsSerialized;
 }
 
-ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)
+EntityData* TryDeserializeEntity(const Json& json, const bool& isOptional)
 {
-	std::function<ECS::Entity*(const Json&)> deserializationAction = [](const Json& json)-> ECS::Entity*
+	std::function<EntityData*(const Json&)> deserializationAction = [](const Json& json)-> EntityData*
 		{
 			try
 			{
@@ -570,7 +570,7 @@ ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)
 					"but parser does not contain valid scene manager")))
 					return nullptr;
 
-				if (serializedEntity.m_SceneName == ECS::Entity::GLOBAL_SCENE_NAME)
+				if (serializedEntity.m_SceneName == EntityData::GLOBAL_SCENE_NAME)
 				{
 					return SceneManager->m_GlobalEntityManager.TryGetGlobalEntityMutable(serializedEntity.m_EntityName);
 				}
@@ -580,7 +580,7 @@ ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)
 					"but no scene matches that name", serializedEntity.m_SceneName)))
 					return nullptr;
 
-				ECS::Entity* maybeEntity = maybeScene->TryGetEntityMutable(serializedEntity.m_EntityName);
+				EntityData* maybeEntity = maybeScene->TryGetEntityMutable(serializedEntity.m_EntityName);
 				if (maybeEntity == nullptr)
 				{
 					if (!Assert(maybeScene->GetEntityCount() > 0, std::format("Tried to deserialize entity with non glboal scene:'{}', "
@@ -604,9 +604,9 @@ ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)
 
 	if (isOptional)
 	{
-		std::optional<ECS::Entity*> maybeEntity = TryDeserializeOptional<ECS::Entity*>(json,
+		std::optional<EntityData*> maybeEntity = TryDeserializeOptional<EntityData*>(json,
 			//We try to find entity based on its scene name (or whether it is global)
-			[&deserializationAction](const Json& json)-> std::optional<ECS::Entity*>
+			[&deserializationAction](const Json& json)-> std::optional<EntityData*>
 			{
 				return deserializationAction(json);
 			});
@@ -619,7 +619,7 @@ ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)
 		return maybeEntity.value();
 	}
 
-	ECS::Entity* entityPtr = deserializationAction(json);
+	EntityData* entityPtr = deserializationAction(json);
 	if (!Assert(entityPtr != nullptr, std::format("Tried to deserialize entity for json:{} "
 		"but the resulting entity is NULLPTR which is not allowed since it was called as NON OPTIONAL",
 		JsonUtils::ToStringProperties(json))))
@@ -627,14 +627,14 @@ ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional)
 
 	return entityPtr;
 }
-Json TrySerializeEntity(const ECS::Entity* entity, const bool& isOptional)
+Json TrySerializeEntity(const EntityData* entity, const bool& isOptional)
 {
 	if (isOptional)
 	{
-		Json json= TrySerializeOptional<const ECS::Entity*>(entity == nullptr ? std::nullopt : std::make_optional(entity),
-			[](const ECS::Entity* entity)->Json
+		Json json= TrySerializeOptional<const EntityData*>(entity == nullptr ? std::nullopt : std::make_optional(entity),
+			[](const EntityData* entity)->Json
 			{
-				return SerializableEntity(entity->GetSceneName(), entity->GetName());
+				return SerializableEntity(entity->m_SceneName, entity->m_Name);
 			});
 
 		//Assert(false, std::format("Serialized optioan entity: {} is:{}", entity!=nullptr? entity->ToString() : "NULL", JsonUtils::ToStringProperties(json)));
@@ -645,7 +645,7 @@ Json TrySerializeEntity(const ECS::Entity* entity, const bool& isOptional)
 		"NULL even with a NON OPTIOANL functional call")))
 		return {};
 
-	return SerializableEntity{entity->GetSceneName(), entity->GetName(), };
+	return SerializableEntity{entity->m_SceneName, entity->m_Name};
 }
 
 void from_json(const Json& json, SerializableComponent& serializableComponent)

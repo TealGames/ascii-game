@@ -8,9 +8,9 @@
 constexpr static float TITLE_FONT_SIZE = 20;
 constexpr float ACTIVE_TOGGLE_SPACE = 0.15;
 
-EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, const AssetManagement::AssetManager& assetManager, ECS::Entity& entity)
+EntityGUI::EntityGUI(const Input::InputManager& manager, PopupGUIManager& popupManager, const AssetManagement::AssetManager& assetManager, EntityData& entity)
 	: m_inputManager(&manager), m_entity(&entity), m_componentGUIs(), 
-	m_entityNameText(std::format("{}{}", m_entity->GetName(), m_entity->IsGlobal()? "(G)" : ""), EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft)),
+	m_entityNameText(std::format("{}{}", m_entity->m_Name, m_entity->IsGlobal()? "(G)" : ""), EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft)),
 	m_activeToggle(m_entity->m_Active, EditorStyles::GetToggleStyle()),
 	m_guiLayout(LayoutType::Vertical, SizingType::ShrinkOnly), m_entityHeader(EditorStyles::EDITOR_PRIMARY_COLOR)
 {
@@ -137,7 +137,7 @@ ScreenPosition EntityGUI::Render(const RenderInfo& renderInfo)
 }
 */
 
-const ECS::Entity& EntityGUI::GetEntity() const
+const EntityData& EntityGUI::GetEntity() const
 {
 	if (!Assert(this, m_entity != nullptr, std::format("Tried to get entity from entity GUI it is in an invalid state")))
 		throw std::invalid_argument("Invalid entity gui entity state");

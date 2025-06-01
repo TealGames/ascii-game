@@ -2,14 +2,11 @@
 #include "WorldPosition.hpp"
 #include "ScreenPosition.hpp"
 
-namespace ECS
-{
-	class Entity;
-}
+class EntityData;
 
 struct CameraSettings
 {
-	const ECS::Entity* m_FollowTarget;
+	const EntityData* m_FollowTarget;
 
 	//Aspect ratio of the viewport in [WIDTH, HEIGHT]
 	Vec2Int m_AspectRatio;
@@ -22,14 +19,14 @@ struct CameraSettings
 	WorldPosition m_WorldViewportSize;
 
 	CameraSettings();
-	CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const ECS::Entity* followTarget=nullptr);
+	CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const EntityData* followTarget=nullptr);
 
 	bool HasNoFollowTarget() const;
 	WorldPosition CalculateViewportSize() const;
 	void UpdateViewportSize();
 
 	void SetFollowNoTarget();
-	void SetFollowTarget(const ECS::Entity& entity);
+	void SetFollowTarget(const EntityData& entity);
 
 	std::string ToString() const;
 };

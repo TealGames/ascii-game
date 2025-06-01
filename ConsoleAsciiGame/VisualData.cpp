@@ -417,7 +417,7 @@ void VisualData::AddTextPositionsToBufferAdaptive(const WorldPosition& transform
 }
 */
 
-void VisualData::AddTextPositionsToBuffer(const WorldPosition& transformPos, FragmentedTextBuffer& buffer) const
+void VisualData::AddTextPositionsToBuffer(const WorldPosition& globalTransformPos, FragmentedTextBuffer& buffer) const
 {
 	for (const auto& charPos : m_buffer)
 	{
@@ -426,7 +426,7 @@ void VisualData::AddTextPositionsToBuffer(const WorldPosition& transformPos, Fra
 			return;
 
 		buffer.push_back(charPos);
-		buffer.back().m_Pos = buffer.back().m_Pos+ transformPos;
+		buffer.back().m_Pos = buffer.back().m_Pos+ globalTransformPos;
 	}
 	/*if (m_charAreaType == CharAreaType::Predefined) AddTextPositionsToBufferPredefined(transformPos, buffer);
 	else if (m_charAreaType == CharAreaType::Adaptive) AddTextPositionsToBufferAdaptive(transformPos, buffer);

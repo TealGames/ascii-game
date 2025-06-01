@@ -7,7 +7,7 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
-#include <entt/entt.hpp>
+#include "EntityRegistry.hpp"
 #include "Point2DInt.hpp"
 #include "TextBuffer.hpp"
 #include "RenderLayer.hpp"
@@ -22,22 +22,25 @@
 
 //using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
 //TODO: perhaps we should consolidate the string and local entity collection into one to not take up as much memory
-using EntityNameCollection = std::unordered_map<std::string, ECS::Entity*>;
-using EntityIDCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
-constexpr std::uint8_t MAX_ENTITIES = 100;
+//using EntityNameCollection = std::unordered_map<std::string, EntityData*>;
+//using EntityIDCollection = std::unordered_map<ECS::EntityID, EntityData*>;
+//constexpr std::uint8_t MAX_ENTITIES = 100;
+
+class EntityData;
+
 class Scene : public IValidateable
 {
 private:
 	std::string m_sceneName;
 	std::unordered_map<RenderLayerType, RenderLayer> m_layers;
 
-	entt::registry m_entityMapper;
+	ECS::EntityRegistry m_registry;
 	//This is where all the LOCAL entities are stored 
-	// (ones that exist solely within this scene)
-	std::vector<ECS::Entity> m_localEntities;
+	// (ones that exist solely within this scene) and ONLY the root entities (no descendants/children)
+	std::vector<EntityData*> m_localRootEntities;
 	//This is for fast entity lookup by id for local entities
-	EntityNameCollection m_localEntityNameLookup;
-	EntityIDCollection m_localEntityIdLookup;
+	//EntityNameCollection m_localEntityNameLookup;
+	//EntityIDCollection m_localEntityIdLookup;
 
 	//TODO: check if just removing this abstract and having the scene receive
 	//the global entities directly might increase performance
@@ -74,8 +77,8 @@ private:
 	/// <param name="id"></param>
 	/// <returns></returns>
 	EntityCollection::iterator GetEntityIterator(const EntityID& id);*/
-	EntityIDCollection::iterator GetLocalEntityIterator(const ECS::EntityID& id);
-	EntityNameCollection::iterator GetLocalEntityIterator(const std::string& name);
+	//EntityIDCollection::iterator GetLocalEntityIterator(const ECS::EntityID& id);
+	//EntityNameCollection::iterator GetLocalEntityIterator(const std::string& name);
 
 	/*bool IsGlobalEntity(const EntityID& id) const;*/
 
@@ -135,20 +138,19 @@ public:
 	/// Will return all entities in the scene as immutable (including global and local entities)
 	/// </summary>
 	/// <returns></returns>
-	const std::vector<const ECS::Entity*> GetAllEntities() const;
-	std::vector<ECS::Entity*> GetAllEntitiesMutable();
-	const std::vector<const ECS::Entity*> GetLocalEntities() const;
-	const std::vector<ECS::Entity*> GetLocalEntitiesMutable();
+	std::vector<const EntityData*> GetAllEntities() const;
+	std::vector<EntityData*> GetAllEntitiesMutable();
+	std::vector<const EntityData*> GetLocalEntities() const;
+	std::vector<EntityData*> GetLocalEntitiesMutable();
 	
-	ECS::Entity& CreateEntity(const std::string& name, TransformData& transform);
-	ECS::Entity& CreateEntity(const std::string& name, TransformData&& transform);
+	EntityData& CreateEntity(const std::string& name, const TransformData& transform);
 	bool HasEntity(const ECS::EntityID& id);
 	/// <summary>
 	/// Will try to find an entity within the scene (global or local)
 	/// </summary>
 	/// <param name="id"></param>
 	/// <returns></returns>
-	ECS::Entity* TryGetEntityMutable(const ECS::EntityID& id);
+	EntityData* TryGetEntityMutable(const ECS::EntityID& id);
 
 	/// <summary>
 	/// A overloaded version of the entity id function. 
@@ -156,43 +158,23 @@ public:
 	/// </summary>
 	/// <param name="name"></param>
 	/// <returns></returns>
-	ECS::Entity* TryGetEntityMutable(const std::string& name, const bool& ignoreCase= false);
+	EntityData* TryGetEntityMutable(const std::string& name, const bool& ignoreCase= false);
 
-	const ECS::Entity* TryGetEntity(const std::string& name, const bool& ignoreCase = false) const;
+	const EntityData* TryGetEntity(const std::string& name, const bool& ignoreCase = false) const;
 
 	template<typename T>
-	requires ECS::IsComponent<T>
-	void OperateOnComponents(const std::function<void(T&, ECS::Entity&)> action)
+	requires std::is_base_of_v<ComponentData, T>
+	void OperateOnComponents(const std::function<void(T&)> action)
 	{
-		/*auto view = m_entityMapper.view<T>();
-		for (auto entityId : view)
-		{
-			ECS::Entity* entityPtr = TryGetEntityMutable(entityId);
-			if (!Assert(this, entityPtr != nullptr, std::format("Tried to operate on component type: {} "
-				"but failed to retrieve entity with ID: (it probably does not exist in the scene)",
-				typeid(T).name()))) return;
-
-			action(view.get<T>(entityId), *entityPtr);
-		}*/
-		ECS::OperateOnActiveComponents<T>(m_entityMapper,
-			[this](const ECS::EntityID id)->ECS::Entity*
-			{
-				return TryGetEntityMutable(id);
-			}, action);
-
+		ECS::OperateOnActiveComponents<T>(m_registry, action);
 		TryGetGlobalEntityManagerMutable().OperateOnComponents<T>(action);
 	}
 
 	template<typename T>
-	requires ECS::IsComponent<T>
+	requires std::is_base_of_v<ComponentData, T>
 	void GetComponentsMutable(std::vector<T*>& inputVector)
 	{
-		ECS::GetRegistryComponentsMutable<T>(m_entityMapper,
-			[this](const ECS::EntityID id)->ECS::Entity*
-			{
-				return TryGetEntityMutable(id);
-			}, inputVector);
-
+		ECS::GetRegistryComponentsMutable<T>(m_registry, inputVector);
 		TryGetGlobalEntityManagerMutable().GetComponents<T>(inputVector);
 	}
 

@@ -28,7 +28,7 @@ public:
 	//void SetVisualDataDeltas(const VisualDataPositions& positions);
 	void OverrideVisualData(const VisualData& newVisual);
 
-	std::vector<std::string> GetDependencyFlags() const override;
+	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 
 	std::string ToString() const override;

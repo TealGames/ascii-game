@@ -7,7 +7,7 @@
 #include "TextArray.hpp"
 #include "SerializableEntity.hpp"
 #include "ComponentData.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "AnimatorData.hpp"
 #include "SpriteAnimation.hpp"
 #include "ComponentFieldReference.hpp"
@@ -137,8 +137,8 @@ std::vector<T*> TryDeserializeTypeAssets(const Json& json)
 void from_json(const Json& json, SerializableEntity& serializableEntity);
 void to_json(Json& json, const SerializableEntity& serializableEntity);
 
-ECS::Entity* TryDeserializeEntity(const Json& json, const bool& isOptional = false);
-Json TrySerializeEntity(const ECS::Entity* entity, const bool& isOptional = false);
+EntityData* TryDeserializeEntity(const Json& json, const bool& isOptional = false);
+Json TrySerializeEntity(const EntityData* entity, const bool& isOptional = false);
 
 void from_json(const Json& json, SerializableComponent& serializableComponent);
 void to_json(Json& json, const SerializableComponent& serializableComponent);
@@ -147,8 +147,8 @@ void from_json(const Json& json, ComponentReference& fieldReference);
 void to_json(Json& json, const ComponentReference& fieldReference);
 
 template<typename T>
-requires (!std::is_pointer_v<T> && ECS::IsComponent<T>)
-T* TryDeserializeComponent(const Json& json, ECS::Entity& entitySelf, const bool& isOptional = false)
+requires (!std::is_pointer_v<T> && std::is_base_of_v<ComponentData, T>)
+T* TryDeserializeComponent(const Json& json, EntityData& entitySelf, const bool& isOptional = false)
 {
 	SerializableComponent serializableComponent = json.get<SerializableComponent>();
 	if (serializableComponent.IsComponentOfEntitySelf()) 
@@ -158,7 +158,7 @@ T* TryDeserializeComponent(const Json& json, ECS::Entity& entitySelf, const bool
 		{
 			try
 			{
-				ECS::Entity* entity = TryDeserializeEntity(json);
+				EntityData* entity = TryDeserializeEntity(json);
 				if (!Assert(entity != nullptr, std::format("Tried to deserialize component from json:{} but failed to retrieve entity",
 					JsonUtils::ToStringProperties(json))))
 					return nullptr;
@@ -216,8 +216,8 @@ T* TryDeserializeComponent(const Json& json, ECS::Entity& entitySelf, const bool
 /// <param name="isOptional"></param>
 /// <returns></returns>
 template<typename T>
-requires (!std::is_pointer_v<T>&& ECS::IsComponent<T>)
-T* TryDeserializeComponentSelf(const Json& json, ECS::Entity& selfEntity, const bool& isOptional = false)
+requires (!std::is_pointer_v<T>&& std::is_base_of_v<ComponentData, T>)
+T* TryDeserializeComponentSelf(const Json& json, EntityData& selfEntity, const bool& isOptional = false)
 {
 	std::function<T*(const Json&)> deserializationAction = [&selfEntity](const Json& json)->T*
 		{
@@ -257,11 +257,11 @@ T* TryDeserializeComponentSelf(const Json& json, ECS::Entity& selfEntity, const 
 }
 
 template<typename T>
-requires (!std::is_pointer_v<T> && ECS::IsComponent<T>)
+requires (!std::is_pointer_v<T> && std::is_base_of_v<ComponentData, T>)
 Json TrySerializeComponent(const T* component, const bool& isOptional = false)
 {
 	const ComponentData* componentBase = static_cast<const ComponentData*>(component);
-	const ECS::Entity& entity = componentBase->GetEntitySafe();
+	const EntityData& entity = componentBase->GetEntitySafe();
 	const std::string componentName = entity.TryGetComponentName(componentBase);
 
 	if (isOptional)
@@ -281,8 +281,8 @@ Json TrySerializeComponent(const T* component, const bool& isOptional = false)
 }
 
 template<typename T>
-requires (!std::is_pointer_v<T>&& ECS::IsComponent<T>)
-Json TrySerializeComponentSelf(const T* component, ECS::Entity& selfEntity, const bool& isOptional = false)
+requires (!std::is_pointer_v<T>&& std::is_base_of_v<ComponentData, T>)
+Json TrySerializeComponentSelf(const T* component, EntityData& selfEntity, const bool& isOptional = false)
 {
 	const std::string componentName = Utils::GetTypeName<T>();
 

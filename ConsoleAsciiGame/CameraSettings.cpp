@@ -2,11 +2,11 @@
 #include "pch.hpp"
 
 #include "CameraSettings.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 
 CameraSettings::CameraSettings() : CameraSettings(Vec2Int{1,1}, 20, nullptr) {}
 
-CameraSettings::CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const ECS::Entity* followTarget)
+CameraSettings::CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const EntityData* followTarget)
     : m_AspectRatio(aspectRatio), m_LensSize(lensSize), m_WorldViewportSize(CalculateViewportSize()),
     m_FollowTarget(followTarget) {}
 
@@ -14,7 +14,7 @@ void CameraSettings::SetFollowNoTarget()
 {
     m_FollowTarget = nullptr;
 }
-void CameraSettings::SetFollowTarget(const ECS::Entity& entity)
+void CameraSettings::SetFollowTarget(const EntityData& entity)
 {
     m_FollowTarget = &entity;
 }

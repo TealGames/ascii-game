@@ -3,7 +3,7 @@
 
 #include "TransformData.hpp"
 #include "Debug.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "JsonSerializers.hpp"
 
 TransformData::TransformData() : TransformData(Vec2{}) {}
@@ -15,93 +15,92 @@ TransformData::TransformData(const Json& json) : TransformData()
 
 TransformData::TransformData(const Vec2& pos) :
 	ComponentData(),
-	m_Pos(pos), m_LastPos(NULL_POS), m_LastFramePos(NULL_POS)
+	m_localPos(pos), m_localPosLastFrame(NULL_POS)
 {
 	
 }
 
-void TransformData::SetPos(const Vec2& newPos)
+void TransformData::SetLocalPos(const Vec2& newPos)
 {
-	m_LastPos = m_Pos;
-	SetPosX(newPos.m_X);
-	SetPosY(newPos.m_Y);
+	SetLocalPosX(newPos.m_X);
+	SetLocalPosY(newPos.m_Y);
 }
 
-void TransformData::SetPosX(const float& newX)
+void TransformData::SetLocalPosX(const float& newX)
 {
-	m_Pos.m_X = newX;
+	m_localPos.m_X = newX;
 }
 
-void TransformData::SetPosY(const float& newY)
+void TransformData::SetLocalPosY(const float& newY)
 {
-	m_Pos.m_Y = newY;
+	m_localPos.m_Y = newY;
 }
 
-void TransformData::SetPosDeltaX(const float& xDelta)
+void TransformData::SetLocalPosDeltaX(const float& xDelta)
 {
-	SetPosX(m_Pos.m_X + xDelta);
+	SetLocalPosX(m_localPos.m_X + xDelta);
 }
 
-void TransformData::SetPosDeltaY(const float& yDelta)
+void TransformData::SetLocalPosDeltaY(const float& yDelta)
 {
-	SetPosY(m_Pos.m_Y + yDelta);
+	SetLocalPosY(m_localPos.m_Y + yDelta);
 }
 
-void TransformData::SetPosDelta(const Vec2& moveDelta)
+void TransformData::SetLocalPosDelta(const Vec2& moveDelta)
 {
-	SetPosDeltaX(moveDelta.m_X);
-	SetPosDeltaY(moveDelta.m_Y);
+	SetLocalPosDeltaX(moveDelta.m_X);
+	SetLocalPosDeltaY(moveDelta.m_Y);
 }
 
-Vec2 TransformData::GetPos() const
+Vec2 TransformData::GetLocalPos() const
 {
-	return m_Pos;
+	return m_localPos;
 }
-Vec2 TransformData::GetLastPos() const
+Vec2 TransformData::GetGlobalPos() const
 {
-	return m_LastPos;
+	const EntityData* parentEntity = GetEntitySafe().GetParent();
+	return parentEntity != nullptr ? parentEntity->GetTransform().GetGlobalPos() + m_localPos : m_localPos;
 }
-Vec2 TransformData::GetLastFramePos() const
+Vec2 TransformData::GetLocalPosLastFrame() const
 {
-	return m_LastFramePos;
+	return m_localPosLastFrame;
 }
 
-void TransformData::SetLastFramePos(const Vec2& pos)
+void TransformData::SetLocalPosLastFrame(const Vec2& pos)
 {
-	m_LastFramePos = pos;
+	m_localPosLastFrame = pos;
 }
 
 bool TransformData::HasMovedThisFrame() const
 {
-	return m_LastFramePos == NULL_POS || m_Pos != m_LastFramePos;
+	return m_localPosLastFrame == NULL_POS || m_localPos != m_localPosLastFrame;
 }
 
 void TransformData::InitFields()
 {
-	m_Fields = { ComponentField("Pos", [this](Vec2 newPos)-> void { SetPos(newPos); }, &m_Pos) };
+	m_Fields = { ComponentField("Pos", [this](Vec2 newPos)-> void { SetLocalPos(newPos); }, &m_localPos) };
 	/*Assert(false, std::format("Tried to create field AT TRANFOEMR for: {} but wtih value: {} ACTUAL{}",
 		GetEntitySafe().m_Name, std::get<Vec2*>(m_Fields[0].m_Value)->ToString(), m_Pos.ToString()));*/
 		/*Assert(false, std::format("Tried to create field AT TRANFOEMR for: {} but wtih value: {} ACTUAL{}",
 			GetEntitySafe().m_Name, std::get<Vec2*>(m_Fields[0].m_Value)->ToString(), m_Pos.ToString()));*/
 	//Assert(false, std::format("Created value: {}", std::get<Vec2*>(m_Fields[0].m_Value)->ToString()));
 }
-std::vector<std::string> TransformData::GetDependencyFlags() const
-{
-	return {};
-}
+//std::vector<std::string> TransformData::GetDependencyFlags() const
+//{
+//	return {};
+//}
 
 void TransformData::Deserialize(const Json& json)
 {
-	m_Pos = json.at("Pos").get<Vec2>();
-	m_LastPos = json.at("LastPos").get<Vec2>();
-	m_LastFramePos = json.at("LastFramePos").get<Vec2>();
+	m_localPos = json.at("Pos").get<Vec2>();
+	m_localPosLastFrame = json.at("LastFramePos").get<Vec2>();
 }
 Json TransformData::Serialize()
 {
-	return { {"Pos", m_Pos}, {"LastPos", m_LastPos}, {"LastFramePos", m_LastFramePos}};
+	return { {"Pos", m_localPos}, {"LastFramePos", m_localPosLastFrame}};
 }
 
 std::string TransformData::ToString() const
 {
-	return std::format("[<Transform> Pos: {}]", m_Pos.ToString());
+	return std::format("[<Transform> Pos: {}]", m_localPos.ToString());
 }

@@ -27,10 +27,10 @@ void PlayerData::InitFields()
 {
 	m_Fields = {ComponentField("MoveXSpeed", &m_xMoveSpeed)};
 }
-std::vector<std::string> PlayerData::GetDependencyFlags() const
-{
-	return {Utils::GetTypeName<PhysicsBodyData>()};
-}
+//std::vector<std::string> PlayerData::GetDependencyFlags() const
+//{
+//	return {Utils::GetTypeName<PhysicsBodyData>()};
+//}
 
 void PlayerData::TrySetInitialJumpSpeed()
 {

@@ -1,14 +1,13 @@
 #pragma once
 #include <vector>
-#include "IRenderable.hpp"
 #include <cstdint>
 #include "RelativeGUIRect.hpp"
 #include "Event.hpp"
 #include "HelperMacros.hpp"
 #include "RelativeGUIPadding.hpp"
 #include "GUIRect.hpp"
-
-using GUIElementID = std::uint16_t;
+#include "ComponentData.hpp"
+#include "RenderInfo.hpp"
 
 enum class GUIElementFlags : std::uint8_t
 {
@@ -41,13 +40,11 @@ FLAG_ENUM_OPERATORS(GUIElementFlags)
 ///	   This is best when you do not need specific placements and/or you need placements that cannot be done with existing components, allowing
 ///	   for a more customized look to the UI. NOTE: IN THIS CASE ALL SELECTALBES NEED TO BE REGISTERED IF THEY ARE NOT ADDED TO THE UI TREE
 /// </summary>
-class GUIElement : public IRenderable
+class GUIElement : public ComponentData
 {
 private:
-	GUIElementID m_id;
+
 	RelativeGUIRect m_relativeRect;
-	std::vector<GUIElement*> m_children;
-	GUIElement* m_parent;
 	GUIElementFlags m_flags;
 
 	GUIRect m_lastRenderInfo;
@@ -60,10 +57,8 @@ private:
 
 public:
 	//Event<void, GUIElement*> m_OnSizeUpdated;
-	Event<void, GUIElement*> m_OnFarthestChildElementAttached;
 
 private:
-	static GUIElementID GenerateId();
 	/// <summary>
 	/// A less safe version of size settings that has less checks and assumes new size is valid
 	/// It is most often used to get around checks/for performance
@@ -71,15 +66,12 @@ private:
 	/// <param name="vec"></param>
 	void SetSizeUnsafe(const Vec2& size);
 
-	RenderInfo CalculateChildRenderInfo(const RenderInfo& thisRenderInfo) const;
-
 public:
 	GUIElement();
 	GUIElement(const RelativeGUIRect& relativeRect);
 	GUIElement(const NormalizedPosition& size);
 	~GUIElement() = default;
 
-	GUIElementID GetId() const;
 	void SetFixed(const bool horizontal, const bool vertical);
 	bool IsFixedVertical() const;
 	bool IsFixedHorizontal() const;
@@ -98,52 +90,17 @@ public:
 	void TryCenter(const bool centerX, const bool centerY);
 
 	void SetPadding(const RelativeGUIPadding& padding);
-	const RelativeGUIPadding& GetPadding();
+	const RelativeGUIPadding& GetPadding() const;
 	RelativeGUIPadding& GetPaddingMutable();
 
 	NormalizedPosition GetSize() const;
 	const RelativeGUIRect& GetRect() const;
 	RelativeGUIRect& GetRectMutable();
 
-	GUIElement* GetParentMutable();
-	const GUIElement* GetParent() const;
-
-	/// <summary>
-	/// Adds the element as a child and returns its child index
-	/// </summary>
-	/// <param name="element"></param>
-	/// <returns></returns>
-	size_t PushChild(GUIElement* element);
-	GUIElement* TryPopChildAt(const size_t index);
-	std::vector<GUIElement*> TryPopChildren(const size_t& startIndex, const size_t& count);
-	std::vector<GUIElement*> PopAllChildren();
-
-	std::vector<GUIElement*>& GetChildrenMutable();
-	const std::vector<GUIElement*>& GetChildren() const;
-	GUIElement* TryGetChildAtMutable(const size_t index);
-	GUIElement* TryGetChildMutable(const GUIElementID id);
-	/// <summary>
-	/// Will attempt to find the element from ID starting with THIS id and searching
-	/// recursively through all of the children
-	/// </summary>
-	/// <param name="id"></param>
-	/// <returns></returns>
-	GUIElement* FindRecursiveMutable(const GUIElementID id);
-	/// <summary>
-	/// Will attempt to find the element that contains a child with the id, beginning with this
-	/// parent element. Child index is an out argument that will contain the index of the child of the parent (if found)
-	/// </summary>
-	/// <param name="id"></param>
-	/// <param name="childIndex"></param>
-	/// <returns></returns>
-	GUIElement* FindParentRecursiveMutable(const GUIElementID id, size_t* childIndex = nullptr);
-
-	size_t GetChildCount() const;
-
 	virtual void Update(const float deltaTime) = 0;
-	void UpdateRecursive(const float deltaTime);
+	//void UpdateRecursive(const float deltaTime);
 
-	RenderInfo CalculateRenderInfo(const RenderInfo& parentInfo) const;
+	void SetLastFrameRect(const GUIRect& rect);
 	const GUIRect& GetLastFrameRect() const;
 	/// <summary>
 	/// Will render the current element and return how much space/what top left pos was ACTUALLY used
@@ -151,10 +108,16 @@ public:
 	/// <param name="renderInfo"></param>
 	/// <returns></returns>
 	virtual RenderInfo Render(const RenderInfo& parentInfo) = 0;
-	void RenderRecursive(const RenderInfo& renderInfo);
+	//void RenderRecursive(const RenderInfo& renderInfo);
 
-	std::string ToStringBase() const;
-	std::string ToStringRecursive(std::string startNewLine) const;
+	//std::vector<std::string> GetDependencyFlags() const override;
+	void InitFields() override;
+
+	std::string ToString() const override;
+
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
+	//std::string ToStringRecursive(std::string startNewLine) const;
 
 	/// <summary>
 	/// Will calculate the total space/top left pos used for rendering for the given child at index

@@ -2,7 +2,7 @@
 #include "DebugInfo.hpp"
 #include "Globals.hpp"
 #include "Scene.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "PhysicsBodyData.hpp"
 #include "PlayerData.hpp"
 #include "CameraData.hpp"
@@ -101,7 +101,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scen
 	SetProperty("DeltaTime", std::format("{} s", std::to_string(deltaTime)));
 	SetProperty("TimeStep", std::format("{} s", std::to_string(timeStep)));
 
-	const ECS::Entity* playerEntity = activeScene.TryGetEntity("player", true);
+	const EntityData* playerEntity = activeScene.TryGetEntity("player", true);
 	if (!Assert(this, playerEntity != nullptr, std::format("Tried to update properties"
 		"for debug info but player could not be in active scene")))
 		return;
@@ -112,7 +112,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scen
 	const PhysicsBodyData* maybePhysics = playerEntity->TryGetComponent<PhysicsBodyData>();
 	const PlayerData* maybePlayer = playerEntity->TryGetComponent<PlayerData>();
 	SetProperty("Input", std::format("{}", maybePlayer->GetFrameInput().ToString()));
-	SetProperty("PlayerPos", std::format("{} m", playerEntity->m_Transform.GetPos().ToString()));
+	SetProperty("PlayerGPos", std::format("{} m", playerEntity->GetTransform().GetGlobalPos().ToString()));
 	SetProperty("PlayerVel", std::format("{} m/s", maybePhysics->GetVelocity().ToString(3, VectorForm::Component)));
 	SetProperty("PlayerAcc", std::format("{} m/s2", maybePhysics->GetAcceleration().ToString(3, VectorForm::Component)));
 	SetProperty("Grounded:", std::format("{}", std::to_string(maybePlayer->GetIsGrounded())));

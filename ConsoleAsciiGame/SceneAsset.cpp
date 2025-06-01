@@ -16,6 +16,8 @@
 #include "AssetManager.hpp"
 #include "IOHandler.hpp"
 #include "VisualDataParser.hpp"
+#include "GlobalComponentInfo.hpp"
+#include "EntityData.hpp"
 
 const std::string SceneAsset::EXTENSION = ".json";
 const std::string SceneAsset::LEVEL_EXTENSION = ".level";
@@ -83,7 +85,7 @@ void SceneAsset::UpdateAssetFromFile()
 	std::string entityName = "";
 
 	bool isTransformComponent = false;
-	ECS::Entity* currentEntity = nullptr;
+	EntityData* currentEntity = nullptr;
 	ComponentData* componentCreated = nullptr;
 
 	//Note: we want this to be a deque since it has queue-like behavior, but we still need indexing
@@ -182,8 +184,8 @@ void SceneAsset::UpdateAssetFromFile()
 				"This could mean the correct component was identified but it was not successfully added to the entity")))
 				return;
 
-			auto componentDependencies = componentCreated->GetComponentDependencies();
-			if (!componentCreated->HasDependencies())
+			//auto componentDependencies = componentCreated->GetComponentDependencies();
+			if (!GlobalComponentInfo::DoesComponentHaveDependencies(componentCreated))
 			{
 				componentCreated->Deserialize(currentComponentJson);
 				LogError(std::format("Created {} component: {}", Utils::FormatTypeName(typeid(*componentCreated).name()), componentCreated->ToString()));
@@ -202,8 +204,8 @@ void SceneAsset::UpdateAssetFromFile()
 						//LogError(std::format("Created {} component: {}", Utils::FormatTypeName(typeid(*componentCreated).name()), componentCreated->ToString()));
 					};
 
-				if (componentCreated->DependsOnAnySiblingComponent()) delayedSiblingDependencies.push_back(std::make_tuple(delayedAction, componentCreated));
-				else if (componentCreated->DependsOnEntity()) delayedEntityDependencies.AddListener(delayedAction);
+				if (GlobalComponentInfo::DoesComponentDependOnComponent(componentCreated)) delayedSiblingDependencies.push_back(std::make_tuple(delayedAction, componentCreated));
+				else if (GlobalComponentInfo::DoesComponentDependOnEntity(componentCreated)) delayedEntityDependencies.AddListener(delayedAction);
 			}
 		}
 
@@ -223,7 +225,7 @@ void SceneAsset::UpdateAssetFromFile()
 			for (int i= delayedSiblingDependencies.size()-1; i>=0; i--)
 			{
 				const ComponentData* delayedComponent = std::get<1>(delayedSiblingDependencies[i]);
-				if (!delayedComponent->DoesEntityHaveComponentDependencies())
+				if (!GlobalComponentInfo::DoesComponentHaveComponentDependencies(delayedComponent))
 				{
 					auto funcPairCopy = delayedSiblingDependencies[i];
 					delayedSiblingDependencies.erase(delayedSiblingDependencies.begin() + i);
@@ -262,7 +264,7 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 	{
 		if (entity == nullptr || !entity->m_IsSerializable) continue;
 		currentEntityJson = {};
-		currentEntityJson["Name"] = entity->GetName();
+		currentEntityJson["Name"] = entity->m_Name;
 
 		for (auto& component : entity->GetAllComponentsMutable())
 		{
@@ -324,20 +326,20 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 				else
 				{
 					Assert(false, std::format("Tried to SERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
-						"but no component by that name exists!", componentName, entity->GetName(), GetPathCopy().string()));
+						"but no component by that name exists!", componentName, entity->m_Name, GetPathCopy().string()));
 					return;
 				}
 			}
 			catch (const std::exception& e)
 			{
 				LogError(this, std::format("Tried to serialize scene asset but ran into error while converting component"
-					"of type : {} for entity : {}. Error : {}", componentName, entity->GetName(), e.what()));
+					"of type : {} for entity : {}. Error : {}", componentName, entity->m_Name, e.what()));
 				return;
 			}
 			LogError(std::format("Created component json:{}", JsonUtils::ToStringProperties(serializedComponentJson)));
 
 			if (!Assert(this, !serializedComponentJson.empty(), std::format("Tried to deserialize scene asset for entity:{} "
-				"at component:{} but its component json is empty!", entity->GetName(), componentName)))
+				"at component:{} but its component json is empty!", entity->m_Name, componentName)))
 				return;
 
 			currentComponentJson.insert(serializedComponentJson.begin(), serializedComponentJson.end());
@@ -369,14 +371,14 @@ bool SceneAsset::TryLoadLevelBackground()
 		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_BACKGROUND_PROPERTY_NAME)), backgroundVisual.ToString())))
 		return false;
 
-	ECS::Entity& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformData(Vec2{ 0,-10 }));
+	EntityData& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformData(Vec2{ 0,-10 }));
 	backgroundEntity.m_IsSerializable = false;
 	EntityRendererData& backgroundRenderer = backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
 
 	/*LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().ToString()));
 	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));*/
 
-	CollisionBoxData& collisionBox = backgroundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(backgroundEntity.m_Transform, backgroundVisual.GetWorldSize(), { 0,0 }));
+	CollisionBoxData& collisionBox = backgroundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(backgroundEntity.GetTransform(), backgroundVisual.GetWorldSize(), {0,0}));
 	PhysicsBodyData& physicsBody = backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(collisionBox, 10));
 	physicsBody.SetConstraint(MoveContraints(true, true));
 	/*LogWarning(std::format("Created Physics body: {} visual size: {}", physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), 

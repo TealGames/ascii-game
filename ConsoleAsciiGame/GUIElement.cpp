@@ -2,25 +2,13 @@
 #include "GUIElement.hpp"
 #include "Debug.hpp"
 #include "HelperFunctions.hpp"
-
-static constexpr bool DRAW_RENDER_BOUNDS = false;
+#include "EntityData.hpp"
 
 GUIElement::GUIElement() : GUIElement(RelativeGUIRect()) {}
 GUIElement::GUIElement(const NormalizedPosition& size) : GUIElement(RelativeGUIRect(size)) {}
-GUIElement::GUIElement(const RelativeGUIRect& relativeRect) 
-	: m_children(), m_parent(nullptr), m_id(GenerateId()), m_relativeRect(relativeRect), m_OnFarthestChildElementAttached(), m_flags() {}
+GUIElement::GUIElement(const RelativeGUIRect& relativeRect)
+	: m_relativeRect(relativeRect), m_flags(), m_lastRenderInfo(), m_padding() {}
 
-GUIElementID GUIElement::GenerateId()
-{
-	static GUIElementID id = 0;
-	if (id == std::numeric_limits< GUIElementID>::max())
-	{
-		LogError(std::format("Attempted to generate next gui element id but reached max value"));
-		return -1;
-	}
-	return id++;
-}
-GUIElementID GUIElement::GetId() const { return m_id; };
 
 void GUIElement::SetFixed(const bool horizontal, const bool vertical) 
 { 
@@ -59,9 +47,9 @@ void GUIElement::SetSizeUnsafe(const Vec2& size)
 	bool isFixedHorizontal = false;
 	bool isFixedVertical = false;
 
-	if (!m_children.empty())
+	if (GetEntitySafe().GetChildCount() > 0)
 	{
-		for (auto& child : m_children)
+		for (auto& child : GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
 		{
 			if (child == nullptr) continue;
 
@@ -91,12 +79,12 @@ void GUIElement::SetSize(const NormalizedPosition& size)
 	if (IsFixedHorizontal() && size.GetX() != currSize.m_X)
 	{
 		Assert(false, std::format("Attempted to set the size of gui element:{} to:{} but it is fixed HORIZONTALLY "
-			"so x size cannot be modified unless the HORIZONTAL lock is set to FALSE", ToStringBase(), size.ToString()));
+			"so x size cannot be modified unless the HORIZONTAL lock is set to FALSE", ToString(), size.ToString()));
 	}
 	if (IsFixedVertical() && size.GetY() != currSize.m_Y)
 	{
 		Assert(false, std::format("Attempted to set the size of gui element:{} to:{} but it is fixed VERTICALLY "
-			"so x size cannot be modified unless the VERTICAL lock is set to FALSE", ToStringBase(), size.ToString()));
+			"so x size cannot be modified unless the VERTICAL lock is set to FALSE", ToString(), size.ToString()));
 	}
 
 	SetSizeUnsafe(size.GetPos());
@@ -137,7 +125,7 @@ void GUIElement::SetPadding(const RelativeGUIPadding& padding)
 {
 	m_padding = padding;
 }
-const RelativeGUIPadding& GUIElement::GetPadding()
+const RelativeGUIPadding& GUIElement::GetPadding() const
 {
 	return m_padding;
 }
@@ -159,219 +147,41 @@ RelativeGUIRect& GUIElement::GetRectMutable()
 	return m_relativeRect;
 }
 
-GUIElement* GUIElement::GetParentMutable()
+void GUIElement::SetLastFrameRect(const GUIRect& rect)
 {
-	return m_parent;
-}
-const GUIElement* GUIElement::GetParent() const
-{
-	return m_parent;
+	m_lastRenderInfo = rect;
 }
 
-size_t GUIElement::PushChild(GUIElement* element)
-{
-	if (element == nullptr)
-	{
-		Assert(false, std::format("Attempted to push NULL child to element:{}", ToStringBase()));
-		return 0;
-	}
-
-	GUIElement* createdElement= m_children.emplace_back(element);
-	createdElement->m_parent = this;
-	//Note: we store index before event in case event triggers additional
-	//children creation that might ruin the result of this function
-	const size_t childIndex = GetChildCount() - 1;
-
-	GUIElement* currEl = this;
-	while (currEl->m_parent != nullptr)
-	{
-		currEl = currEl->m_parent;
-	}
-	currEl->m_OnFarthestChildElementAttached.Invoke(this);
-	return childIndex;
-}
-GUIElement* GUIElement::TryPopChildAt(const size_t index)
-{
-	if (index >= m_children.size()) return nullptr;
-
-	GUIElement* popped = m_children[index];
-	m_children.erase(m_children.begin() + index);
-	return popped;
-}
-std::vector<GUIElement*> GUIElement::TryPopChildren(const size_t& startIndex, const size_t& count)
-{
-	std::vector<GUIElement*> poppedChildren = {};
-	for (size_t i = std::min(startIndex + count, m_children.size())-1; i>= startIndex; i--)
-	{
-		poppedChildren.push_back(TryPopChildAt(i));
-	}
-	return poppedChildren;
-}
-std::vector<GUIElement*> GUIElement::PopAllChildren()
-{
-	std::vector<GUIElement*> childrenCopy = m_children;
-	m_children.clear();
-	return childrenCopy;
-}
-
-std::vector<GUIElement*>& GUIElement::GetChildrenMutable() { return m_children; }
-const std::vector<GUIElement*>& GUIElement::GetChildren() const { return m_children; }
-
-GUIElement* GUIElement::TryGetChildAtMutable(const size_t index)
-{
-	if (index >= m_children.size()) return nullptr;
-	return m_children[index];
-}
-GUIElement* GUIElement::TryGetChildMutable(const GUIElementID id)
-{
-	if (m_children.empty()) return nullptr;
-
-	//Note: we go backwards in case we decide later we want to remove invalid children
-	for (int i=m_children.size()-1; i>=0; i--)
-	{
-		if (m_children[i] == nullptr) continue;
-		if (m_children[i]->GetId() == id)
-			return m_children[i];
-	}
-	return nullptr;
-}
-GUIElement* GUIElement::FindRecursiveMutable(const GUIElementID id)
-{
-	if (m_id == id) return this;
-	if (m_children.empty()) return nullptr;
-
-	GUIElement* foundElement = nullptr;
-	for (auto& child : m_children)
-	{
-		if (child == nullptr) continue;
-
-		foundElement = child->FindRecursiveMutable(id);
-		if (foundElement != nullptr) return foundElement;
-	}
-	return nullptr;
-}
-GUIElement* GUIElement::FindParentRecursiveMutable(const GUIElementID id, size_t* childIndex)
-{
-	if (m_children.empty()) return nullptr;
-
-	GUIElement* foundElement = nullptr;
-	for (size_t i=0; i<m_children.size(); i++)
-	{
-		if (m_children[i] == nullptr) continue;
-		if (m_children[i]->m_id == id)
-		{
-			if (childIndex != nullptr) *childIndex = i;
-			return this;
-		}
-		foundElement= m_children[i]->FindParentRecursiveMutable(id, childIndex);
-		if (foundElement != nullptr) return foundElement;
-	}
-	return nullptr;
-}
-size_t GUIElement::GetChildCount() const { return m_children.size(); }
-
-RenderInfo GUIElement::CalculateRenderInfo(const RenderInfo& parentInfo) const
-{
-	return RenderInfo(parentInfo.m_TopLeftPos + GetSizeFromFactor(Abs(m_relativeRect.GetTopLeftPos().GetPos() -
-		NormalizedPosition::TOP_LEFT), parentInfo.m_RenderSize), m_relativeRect.GetSize(parentInfo.m_RenderSize));
-}
-RenderInfo GUIElement::CalculateChildRenderInfo(const RenderInfo& thisRenderInfo) const
-{
-	if (!m_padding.HasNonZeroPadding()) return thisRenderInfo;
-
-	const ScreenPosition paddingTopLeft = ScreenPosition(m_padding.m_Left.GetValue() * thisRenderInfo.m_RenderSize.m_X, 
-														 m_padding.m_Top.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
-	const ScreenPosition paddingBottomRight = ScreenPosition(m_padding.m_Right.GetValue() * thisRenderInfo.m_RenderSize.m_X, 
-															 m_padding.m_Bottom.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
-	if (m_padding.HasNonZeroPadding())
-	{
-		//Assert(false, std::format("NOn zero padding tTL:{} bR:{} padding:{}", paddingTopLeft.ToString(), paddingBottomRight.ToString(), m_padding.ToString()));
-	}
-
-	return RenderInfo(thisRenderInfo.m_TopLeftPos + paddingTopLeft, thisRenderInfo.m_RenderSize- paddingTopLeft - paddingBottomRight);
-}
-
-void GUIElement::UpdateRecursive(const float deltaTime)
-{
-	//If we have invalid rect, we set to max size to ensure rendering works
-	const Vec2 size = m_relativeRect.GetSize().GetPos();
-	if (Utils::ApproximateEqualsF(size.m_X, 0) || Utils::ApproximateEqualsF(size.m_Y, 0))
-	{
-		RelativeGUIRect before = m_relativeRect;
-		//Assert(false, std::format("Tried to set panel:{} of size:{} to max", std::to_string(m_id), m_relativeRect.GetSize().ToString()));
-		m_relativeRect.SetMaxSize();
-		//LogWarning(std::format("Changed x for rect of id:{} to:{} -> {}", std::to_string(m_id), before.ToString(), m_relativeRect.ToString()));
-	}
-	 
-	Update(deltaTime);
-
-	if (m_children.empty()) return;
-	for (size_t i = 0; i < m_children.size(); i++)
-	{
-		if (m_children[i] == nullptr) continue;
-		m_children[i]->UpdateRecursive(deltaTime);
-	}
-}
-
-void GUIElement::RenderRecursive(const RenderInfo& parentInfo)
-{
-	//We get this render info based on this relative pos
-	const RenderInfo thisRenderInfo = CalculateRenderInfo(parentInfo);
-	m_lastRenderInfo = GUIRect(thisRenderInfo.m_TopLeftPos, thisRenderInfo.m_RenderSize);
-
-	if (DRAW_RENDER_BOUNDS) DrawRectangleLines(thisRenderInfo.m_TopLeftPos.m_X, thisRenderInfo.m_TopLeftPos.m_Y, 
-		thisRenderInfo.m_RenderSize.m_X, thisRenderInfo.m_RenderSize.m_Y, YELLOW);
-
-	//LogWarning(std::format("Rendering id:{} at:{}", std::to_string(m_id), thisRenderInfo.ToString()));
-	Render(thisRenderInfo);
-	/*LogError(std::format("Rendering element calculated from parent info:{} rect:{} current info:{}", 
-		renderInfo.ToString(), m_relativeRect.ToString(), thisRenderInfo.ToString()));*/
-
-	if (m_children.empty()) return;
-
-	const RenderInfo childRenderInfo = CalculateChildRenderInfo(thisRenderInfo);
-	/*if (m_padding.HasNonZeroPadding())
-	{
-		Assert(false, std::format("Padding:{} this render:{} child render:{}", 
-			m_padding.ToString(), thisRenderInfo.ToString(), childRenderInfo.ToString()));
-	}*/
-
-	for (size_t i=0; i<m_children.size(); i++)
-	{
-		if (m_children[i] == nullptr) continue;
-		//Note: we assume space reserved for this element is the space it actually 
-		//used for render (and thus can be used for children) because we do not want size
-		//changes during render especially becuase of normalized vs in-game space coordinates
-		m_children[i]->RenderRecursive(childRenderInfo);
-	}
-}
 const GUIRect& GUIElement::GetLastFrameRect() const
 {
 	return m_lastRenderInfo;
 }
 
-std::string GUIElement::ToStringBase() const
+//std::vector<std::string> GUIElement::GetDependencyFlags() const
+//{
+//	return {};
+//}
+void GUIElement::InitFields()
 {
-	return std::format("[Id:{} Type:{} TL:{} BR:{} Size:{}]", std::to_string(m_id), 
-		Utils::FormatTypeName(typeid(*this).name()), m_relativeRect.GetTopLeftPos().ToString(), 
+	m_Fields = {};
+}
+
+std::string GUIElement::ToString() const
+{
+	return std::format("[Id:{} Type:{} TL:{} BR:{} Size:{}]", GetEntitySafe().ToStringId(),
+		Utils::FormatTypeName(typeid(*this).name()), m_relativeRect.GetTopLeftPos().ToString(),
 		m_relativeRect.GetBottomRighttPos().ToString(), GetSize().ToString());
 }
 
-std::string GUIElement::ToStringRecursive(std::string startNewLine) const
+void GUIElement::Deserialize(const Json& json)
 {
-	std::string result = "";
-	result += std::format("\n{}-> {}", startNewLine, ToStringBase());
-
-	if (m_children.empty()) return result;
-
-	startNewLine += "    ";
-	for (size_t i = 0; i < m_children.size(); i++)
-	{
-		if (m_children[i] == nullptr) continue;
-		result += m_children[i]->ToStringRecursive(startNewLine);
-	}
-
-	return result;
+	//TODO: implmenet
+	return;
+}
+Json GUIElement::Serialize()
+{
+	//TOOO: implement
+	return {};
 }
 //RenderInfo GUIElement::CalculateChildRenderInfo(const RenderInfo& parentInfo, const size_t childIndex) const
 //{

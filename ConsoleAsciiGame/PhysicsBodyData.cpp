@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "PhysicsBodyData.hpp"
 #include "HelperFunctions.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include <limits>
 #include <optional>
 #include "JsonSerializers.hpp"
@@ -89,7 +89,7 @@ const Physics::PhysicsWorld& PhysicsBodyData::GetPhysicsWorldSafe()
 {
 	if (!Assert(this, m_physicsSimulation != nullptr,
 		std::format("Tried to get physics world of body: '{}' "
-			"but it is NULL", m_Entity->GetName())))
+			"but it is NULL", GetEntitySafe().m_Name)))
 		throw std::invalid_argument("Failed to retrieve physics world");
 
 	return *m_physicsSimulation;
@@ -192,7 +192,7 @@ bool PhysicsBodyData::HasAnyConstraints() const
 const CollisionBoxData& PhysicsBodyData::GetCollisionBox() const
 {
 	if (!Assert(this, m_collider!=nullptr, std::format("Tried to get collider data for entity:{} but was NULL", 
-		GetEntitySafe().GetName())))
+		GetEntitySafe().m_Name)));
 		throw std::invalid_argument("Invalid Collision Box data");
 
 	return *m_collider;

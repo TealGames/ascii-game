@@ -1,8 +1,7 @@
 #include "pch.hpp"
-
 #include "CameraData.hpp"
 #include "JsonSerializers.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 
 CameraData::CameraData() : CameraData(CameraSettings()) {}
 
@@ -18,10 +17,10 @@ void CameraData::InitFields()
 {
 	m_Fields= { ComponentField("LensSize", &m_CameraSettings.m_LensSize) };
 }
-std::vector<std::string> CameraData::GetDependencyFlags() const
-{
-	return {ENTITY_DEPENDENCY_FLAG};
-}
+//std::vector<std::string> CameraData::GetDependencyFlags() const
+//{
+//	return {ENTITY_DEPENDENCY_FLAG};
+//}
 
 std::string CameraData::ToString() const
 {
@@ -35,7 +34,7 @@ void CameraData::Deserialize(const Json& json)
 	m_CameraSettings.m_LensSize = json.at("LensSize").get<float>();
 	m_CameraSettings.UpdateViewportSize();
 
-	ECS::Entity* maybeFollowTarget = TryDeserializeEntity(json.at("FollowTarget"), true);
+	EntityData* maybeFollowTarget = TryDeserializeEntity(json.at("FollowTarget"), true);
 
 	if (maybeFollowTarget != nullptr) m_CameraSettings.SetFollowTarget(*maybeFollowTarget);
 	else m_CameraSettings.SetFollowNoTarget();

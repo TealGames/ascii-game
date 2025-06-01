@@ -27,10 +27,10 @@ const CollisionBoxData& TriggerData::GetCollisionBox() const
 	return *m_collider;
 }
 
-std::vector<std::string> TriggerData::GetDependencyFlags() const
-{
-	return { Utils::GetTypeName<CollisionBoxData>()};
-}
+//std::vector<std::string> TriggerData::GetDependencyFlags() const
+//{
+//	return { Utils::GetTypeName<CollisionBoxData>()};
+//}
 void TriggerData::InitFields()
 {
 	m_Fields = {};

@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "CollisionRegistry.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "Debug.hpp"
 
 static constexpr char COLLISION_KEY_SEPARATOR = '|';
@@ -22,7 +22,7 @@ CollisionRegistry::CollisionRegistry() : m_collisions() {}
 
 std::string CollisionRegistry::CreateCollisionKey(const CollisionBoxData& boxA, const CollisionBoxData& boxB) const
 {
-	return boxA.GetEntitySafe().GetName() + COLLISION_KEY_SEPARATOR + boxB.GetEntitySafe().GetName();
+	return boxA.GetEntitySafe().m_Name + COLLISION_KEY_SEPARATOR + boxB.GetEntitySafe().m_Name;
 }
 
 /*

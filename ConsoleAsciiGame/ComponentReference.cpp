@@ -18,7 +18,7 @@ ComponentReference::ComponentReference(ComponentData* componentData)
 		m_Entity->ToString(), std::to_string(m_ComponentIndex))))
 		return;
 }
-ComponentReference::ComponentReference(ECS::Entity& entity, const size_t& componentIndex) 
+ComponentReference::ComponentReference(EntityData& entity, const size_t& componentIndex)
 	: m_Entity(&entity), m_ComponentIndex(componentIndex)
 {
 	if (!Assert(this, m_Entity != nullptr, std::format("Tried to construct a component reference with entity:{} "
@@ -32,7 +32,7 @@ ComponentReference::ComponentReference(ECS::Entity& entity, const size_t& compon
 		return;
 }
 
-ComponentReference::ComponentReference(ECS::Entity& entity, const std::string& componentName) :
+ComponentReference::ComponentReference(EntityData& entity, const std::string& componentName) :
 	m_Entity(&entity), m_ComponentIndex(-1)
 {
 	m_ComponentIndex = m_Entity->TryGetIndexOfComponent(componentName);
@@ -43,7 +43,7 @@ ComponentReference::ComponentReference(ECS::Entity& entity, const std::string& c
 		return;
 }
 
-const ECS::Entity& ComponentReference::GetEntitySafe() const
+const EntityData& ComponentReference::GetEntitySafe() const
 {
 	if (!Assert(this, m_Entity != nullptr, std::format("Tried to get entity from component "
 		"reference but it is null")))

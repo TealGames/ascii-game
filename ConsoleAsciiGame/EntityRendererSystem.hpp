@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <optional>
-#include "raylib.h"
 #include "TextBuffer.hpp"
 #include "Array2DPosition.hpp"
 #include "Component.hpp"
@@ -19,7 +18,7 @@ namespace ECS
 	public:
 
 	private:
-		void AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data, const Entity& entity);
+		void AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data);
 
 	public:
 		EntityRendererSystem();

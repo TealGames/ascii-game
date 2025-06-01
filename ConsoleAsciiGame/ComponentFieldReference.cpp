@@ -30,7 +30,7 @@ ComponentFieldReference::ComponentFieldReference(ComponentData* componentData, c
 		m_ComponentRef.ToString(), fieldName, typeid(*componentData).name()));
 }
 
-ComponentFieldReference::ComponentFieldReference(ECS::Entity& entity, const std::string& componentName, const std::string& fieldName)
+ComponentFieldReference::ComponentFieldReference(EntityData& entity, const std::string& componentName, const std::string& fieldName)
 	: m_ComponentRef(entity, componentName), m_FieldRef(nullptr) //m_Entity(&entity), m_ComponentIndex(componentIndex)
 {
 	/*
@@ -51,7 +51,7 @@ ComponentFieldReference::ComponentFieldReference(ECS::Entity& entity, const std:
 		m_ComponentRef.ToString(), fieldName, typeid(*data).name()));
 }
 
-const ECS::Entity& ComponentFieldReference::GetEntitySafe() const
+const EntityData& ComponentFieldReference::GetEntitySafe() const
 {
 	/*
 	if (!Assert(this, m_Entity != nullptr, std::format("Tried to get entity from component "

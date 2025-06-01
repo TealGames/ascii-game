@@ -36,7 +36,7 @@ enum class SizingType
 	ExpandAndShrink,
 };
 
-class LayoutGUI : public GUIElement
+class LayoutGUI : public ComponentData
 {
 private:
 	LayoutType m_type;

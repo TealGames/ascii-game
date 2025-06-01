@@ -12,7 +12,6 @@ namespace ECS
 
 	private:
 	public:
-		virtual void SystemUpdate(Scene& scene, T& component, 
-			ECS::Entity& entity, const float& deltaTime) = 0;
+		virtual void SystemUpdate(Scene& scene, T& component, const float& deltaTime) = 0;
 	};
 }

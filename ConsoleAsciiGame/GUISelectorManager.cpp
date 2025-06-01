@@ -19,11 +19,10 @@ void GUISelectorManager::CreateSelectableArray()
 	m_selectableLayers.clear();
 
 	size_t i = 0;
-	m_hierarchy.ExecuteOnAllElementsDescending([this, &i](GUILayer layer, GUIElement* element) -> void
+	m_hierarchy.ExecuteOnAllElementsDescending([this, &i](GUILayer layer, GUIElement& element) -> void
 		{
-			if (element == nullptr) return;
 			//LogWarning(std::format("Bool is element:{} selectable:", element->ToStringBase()));
-			if (element->IsSelectionEventBlocker()) AddSelectionEventBlocker(layer, i, element);
+			if (element.IsSelectionEventBlocker()) AddSelectionEventBlocker(layer, i, element);
 			else if (SelectableGUI* selectable = dynamic_cast<SelectableGUI*>(element))
 			{
 				AddSelectable(layer, selectable);

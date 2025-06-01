@@ -29,16 +29,19 @@ enum class HighestDependecyLevel
 /// </summary>
 constexpr const char* ENTITY_DEPENDENCY_FLAG = "Entity";
 
-namespace ECS
-{
-	class Entity;
-}
+class EntityData;
+namespace ECS { class EntityID; }
+class TransformData;
 
-class ComponentData: public IJsonSerializable, public IValidateable
+class ComponentData
 {
 private:
+	//Guaranteed to not be nullptr (but cant be a ref to allow it to be set
+	//not on construction without the need to have it as constructor arg
+	EntityData* m_entity;
 	//HighestDependecyLevel m_dependencyLevel;
 public:
+	friend class EntityData;
 	/// <summary>
 	///	If true, it signifies that this component data has been mutatated this frame. 
 	/// This flag is useful for component systems that may use last frame buffers for
@@ -46,29 +49,28 @@ public:
 	/// this past frame
 	/// </summary>
 	bool m_MutatedThisFrame;
-
 	/// <summary>
 	/// If true, component is enabled, otherwise it is disabled. 
 	/// Note: this does not change anything directly as components need to check this 
 	/// flag themselves
 	/// </summary>
 	bool m_IsEnabled;
-
-	//Guaranteed to not be nullptr (but cant be a ref to allow it to be set
-	//not on construction without the need to have it as constructor arg
-	ECS::Entity* m_Entity;
-
+	//TODO: the fields for a component should be placed into a registry
 	std::vector<ComponentField> m_Fields;
 
 private:
 public:
 	ComponentData();
 	virtual ~ComponentData() = default;
-	ECS::Entity& GetEntitySafeMutable();
-	const ECS::Entity& GetEntitySafe() const;
+
+	EntityData& GetEntitySafeMutable();
+	const EntityData& GetEntitySafe() const;
+	TransformData& GetTransformMutable();
+	const TransformData& GetTransform() const;
+
+	ECS::EntityID GetEntityID() const;
 
 	std::vector<ComponentField>& GetFieldsMutable();
-
 	/// <summary>
 	/// A function that creates the fields that can be used by outside sources.
 	/// Note: this must be separate from constructor because base class constructor defaults initializes them
@@ -82,15 +84,15 @@ public:
 	std::string ToStringFields() const;
 
 	//HighestDependecyLevel GetDependencyLevel() const;
-	virtual std::vector<std::string> GetDependencyFlags() const = 0;
-	bool DependsOnEntity() const;
+	//virtual std::vector<std::string> GetDependencyFlags() const = 0;
+	/*bool DependsOnEntity() const;
 	bool DependsOnAnySiblingComponent() const;
 	bool HasDependencies() const;
 	bool DoesEntityHaveComponentDependencies() const;
 
-	std::vector<std::string> GetComponentDependencies() const;
+	std::vector<std::string> GetComponentDependencies() const;*/
 
-	template<typename T>
+	/*template<typename T>
 	bool DependsOnSiblingComponent() const
 	{
 		if (!DependsOnAnySiblingComponent()) return false;
@@ -102,12 +104,12 @@ public:
 				return true;
 		}
 		return false;
-	}
+	}*/
 
 	virtual void Deserialize(const Json& json) = 0;
 	virtual Json Serialize() = 0;
 
-	virtual bool Validate() override;
+	virtual bool Validate();
 
 	virtual std::string ToString() const;
 };

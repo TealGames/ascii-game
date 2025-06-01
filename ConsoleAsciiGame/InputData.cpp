@@ -2,8 +2,7 @@
 #include "pch.hpp"
 #include "InputData.hpp"	
 #include "Debug.hpp"
-#include "Entity.hpp"
-#include "Debug.hpp"
+#include "EntityData.hpp"
 
 InputData::InputData() : ComponentData(),
 	m_actions() {}
@@ -12,7 +11,7 @@ void InputData::AddAction(const Input::InputAction& action)
 {
 	if (!Assert(this, m_actions.find(action.m_Name) != m_actions.end(), std::format("Tried to add the input action: {}"
 		" to input data of entity: '{}', but that action already exists for this input data!",
-		action.m_Name, GetEntitySafe().GetName())))
+		action.m_Name, GetEntitySafe().m_Name)))
 		return;
 
 	m_actions.emplace(action.m_Name, action);
@@ -33,10 +32,10 @@ void InputData::InitFields()
 {
 	m_Fields= {};
 }
-std::vector<std::string> InputData::GetDependencyFlags() const
-{
-	return {};
-}
+//std::vector<std::string> InputData::GetDependencyFlags() const
+//{
+//	return {};
+//}
 
 //void InputData::SetInputManager(Input::InputManager& manager)
 //{

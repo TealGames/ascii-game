@@ -150,7 +150,7 @@ public:
 	std::string ToStringCollidingBodies() const;
 	*/
 
-	std::vector<std::string> GetDependencyFlags() const override;
+	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 	std::string ToString() const override;
 

@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "Entity.hpp"
 #include "ComponentData.hpp"
 #include "Debug.hpp"
+#include "EntityData.hpp"
 
 ComponentData::ComponentData() 
-	: m_MutatedThisFrame(false), m_IsEnabled(true), m_Entity(nullptr), m_Fields() //m_dependencyLevel(dependency)
+	: m_MutatedThisFrame(false), m_IsEnabled(true), m_entity(nullptr), m_Fields() //m_dependencyLevel(dependency)
 {
 }
 
@@ -13,56 +13,60 @@ ComponentData::ComponentData()
 //	return m_dependencyLevel;
 //}
 
-bool ComponentData::DependsOnEntity() const
-{
-	auto dependencies = GetDependencyFlags();
-	return !dependencies.empty() && dependencies[0] == ENTITY_DEPENDENCY_FLAG;
-}
-bool ComponentData::DependsOnAnySiblingComponent() const
-{
-	auto dependencies = GetDependencyFlags();
-	return !dependencies.empty() && dependencies[0] != ENTITY_DEPENDENCY_FLAG;
-}
-bool ComponentData::HasDependencies() const
-{
-	auto dependencies = GetDependencyFlags();
-	return !dependencies.empty();
-}
-std::vector<std::string> ComponentData::GetComponentDependencies() const
-{
-	if (DependsOnAnySiblingComponent()) return GetDependencyFlags();
-	return {};
-}
-bool ComponentData::DoesEntityHaveComponentDependencies() const
-{
-	if (!DependsOnAnySiblingComponent()) return false;
+//bool ComponentData::DependsOnEntity() const
+//{
+//	auto dependencies = GetDependencyFlags();
+//	return !dependencies.empty() && dependencies[0] == ENTITY_DEPENDENCY_FLAG;
+//}
+//bool ComponentData::DependsOnAnySiblingComponent() const
+//{
+//	auto dependencies = GetDependencyFlags();
+//	return !dependencies.empty() && dependencies[0] != ENTITY_DEPENDENCY_FLAG;
+//}
+//bool ComponentData::HasDependencies() const
+//{
+//	auto dependencies = GetDependencyFlags();
+//	return !dependencies.empty();
+//}
+//std::vector<std::string> ComponentData::GetComponentDependencies() const
+//{
+//	if (DependsOnAnySiblingComponent()) return GetDependencyFlags();
+//	return {};
+//}
+//bool ComponentData::DoesEntityHaveComponentDependencies() const
+//{
+//	if (!DependsOnAnySiblingComponent()) return false;
+//
+//	const EntityData& thisEntity = GetEntitySafe();
+//	for (const auto& compDependency : GetDependencyFlags())
+//	{
+//		if (!thisEntity.HasComponent(compDependency))
+//			return false;
+//	}
+//	return true;
+//}
 
-	const ECS::Entity& thisEntity = GetEntitySafe();
-	for (const auto& compDependency : GetDependencyFlags())
-	{
-		if (!thisEntity.HasComponent(compDependency))
-			return false;
-	}
-	return true;
-}
-
-ECS::Entity& ComponentData::GetEntitySafeMutable()
+EntityData& ComponentData::GetEntitySafeMutable()
 {
-	if (!Assert(this, m_Entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
+	if (!Assert(this, m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
 		"(it means a function creating or adding component probably did not update this setting)")))
 		throw std::invalid_argument("Tried to retrieve invalid entity with component");
 
-	return *m_Entity;
+	return *m_entity;
 }
 
-const ECS::Entity& ComponentData::GetEntitySafe() const
+const EntityData& ComponentData::GetEntitySafe() const
 {
-	if (!Assert(this, m_Entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
+	if (!Assert(this, m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
 		"(it means a function creating or adding component probably did not update this setting)")))
 		throw std::invalid_argument("Tried to retrieve invalid entity with component");
 
-	return *m_Entity;
+	return *m_entity;
 }
+
+TransformData& ComponentData::GetTransformMutable() { return GetEntitySafeMutable().GetTransformMutable(); }
+const TransformData& ComponentData::GetTransform() const { return GetEntitySafe().GetTransform(); }
+ECS::EntityID ComponentData::GetEntityID() const { return GetEntitySafe().GetId(); }
 
 void ComponentData::InitFields()
 {
@@ -115,5 +119,5 @@ bool ComponentData::Validate()
 
 std::string ComponentData::ToString() const
 {
-	return std::format("[BaseComp Entity:{}]", GetEntitySafe().GetName());
+	return std::format("[BaseComp Entity:{}]", GetEntitySafe().m_Name);
 }

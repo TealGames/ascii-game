@@ -3,74 +3,106 @@
 #include "Debug.hpp"
 #include <queue>
 #include <vector>
+#include "GlobalEntityManager.hpp"
 
-GUIHierarchy::GUIHierarchy(const Vec2Int rootCanvasSize) 
-	: m_rootSize(rootCanvasSize), m_layerRoots({}), m_OnElementAdded(), m_OnElementRemoved()
+static constexpr bool DRAW_RENDER_BOUNDS = false;
+
+GUIHierarchy::GUIHierarchy(GlobalEntityManager& globalEntityManager, const Vec2Int rootCanvasSize)
+	: m_uiRoot(nullptr), m_rootSize(rootCanvasSize), m_layerRoots({}), m_OnElementAdded(), m_OnElementRemoved()
 {
 	//m_rootElements.reserve(TOP_LAYER);
-	m_rootElements.reserve(MAX_LAYERS);
+	EntityData& uiRootEntity= globalEntityManager.CreateGlobalEntity(ROOT_UI_ENTITY_NAME, TransformData());
+	m_uiRoot = &(uiRootEntity.AddComponent<GUIElement>());
+	//m_rootElements.reserve(MAX_LAYERS);
 }
 
-GUIElementLayersCollection::iterator GUIHierarchy::CreateNewLayer(const GUILayer layer)
+bool GUIHierarchy::IsValidLayer(const GUILayer layer, const bool logError) const
 {
-	LogWarning(std::format("creating new layer:{} full tree:{}", std::to_string(layer), ToStringTree()));
+	const bool isValid= layer <= TOP_LAYER;
+	if (logError)
+	{
+		Assert(this, false, std::format("Attempted to use a gui layer:{} "
+			"but the underlying layer value is invalid", std::to_string(layer)));
+	}
+	return isValid;
+}
 
-	auto layerIt = m_layerRoots.find(layer);
-	if (layerIt != m_layerRoots.end())
+GUIElement* GUIHierarchy::CreateNewLayer(const GUILayer layer)
+{
+	if (!IsValidLayer(layer, true)) return nullptr;
+	if (m_layerRoots[layer]!=nullptr)
 	{
 		Assert(false, std::format("Attempted to create a new layer:{} in gui hierarchy "
 			"but that layer has already been created", std::to_string(layer)));
-		return layerIt;
+		return nullptr;
 	}
 
-	m_rootElements.emplace_back(ContainerGUI());
-	m_rootElements.back().m_OnFarthestChildElementAttached.AddListener([this](GUIElement* el)-> void
+	EntityData& layerRoot= m_uiRoot->GetEntitySafeMutable().CreateChild(std::format("Layer{}", std::to_string(layer)), TransformData());
+	GUIElement& rootElement = layerRoot.AddComponent<GUIElement>();
+	m_layerRoots[layer] = &rootElement;
+
+	layerRoot.m_OnFarthestChildElementAttached.AddListener([this](EntityData* entity)-> void
 		{
-			if (el == nullptr)
+			if (entity == nullptr)
 			{
 				Assert(false, std::format("Invoked new gui element added with null element"));
 				return;
 			}
 
-			m_OnElementAdded.Invoke(el);
+			//Note: gui elements require their placement only in other gui elements, so we can guarantee they are gui elements
+			m_OnElementAdded.Invoke(entity->TryGetComponentMutable<GUIElement>());
 		});
 
-	return m_layerRoots.emplace(layer, &m_rootElements.back()).first;
+	return &rootElement;
 }
-bool GUIHierarchy::IsLayerRootID(const GUIElementID id) const
+bool GUIHierarchy::IsLayerRootID(const ECS::EntityID id) const
 {
 	//TODO: we could speed up this search if we reserve each layer with its own range
 	
 	//NOTE: we could go through the root of each layer OR we can just look at cached
 	//root elements, but we do root elements since they are faster to access
-	if (m_rootElements.empty()) return false;
+	if (m_uiRoot->GetEntitySafe().GetChildCount()==0) return false;
 
-	for (const auto& rootElement : m_rootElements)
+	for (const auto& rootElement : m_layerRoots)
 	{
-		if (rootElement.GetId() == id)
+		if (rootElement->GetEntitySafe().GetId() == id)
 			return true;
 	}
 	return false;
 }
 
-GUIElement* GUIHierarchy::FindMutable(const GUIElementID id)
+GUIElement* GUIHierarchy::FindMutable(const ECS::EntityID id)
 {
 	//TODO: there could be a speed up by having each layer be reserved some amounts of ids so we dont have to search all layers
 	GUIElement* foundElement = nullptr;
-	for (auto& layer : m_layerRoots)
+	for (size_t i=0; i<m_layerRoots.size(); i++)
 	{
-		foundElement = layer.second->FindRecursiveMutable(id);
+		if (m_layerRoots[i] == nullptr)
+		{
+			Assert(false, std::format("Tried to find gui element with id:{} MUTABLE"
+				"but encountered lyaer root:{} that is null", EntityData::ToString(id), std::to_string(i)));
+			return nullptr;
+		}
+
+		foundElement = m_layerRoots[i]->GetEntitySafeMutable().FindComponentRecursiveMutable<GUIElement>(id);
 		if (foundElement != nullptr) return foundElement;
 	}
 	return nullptr;
 }
-GUIElement* GUIHierarchy::FindParentMutable(const GUIElementID id, size_t* foundChildIndex)
+GUIElement* GUIHierarchy::FindParentMutable(const ECS::EntityID id, size_t* foundChildIndex)
 {
-	GUIElement* foundElement = nullptr;
-	for (auto& layer : m_layerRoots)
+	GUIElement* foundEntity= nullptr;
+	for (size_t i = 0; i < m_layerRoots.size(); i++)
 	{
-		foundElement = layer.second->FindParentRecursiveMutable(id, foundChildIndex);
-		if (foundElement != nullptr) return foundElement;
+		if (m_layerRoots[i] == nullptr)
+		{
+			Assert(false, std::format("Tried to find gui element parent with id:{} MUTABLE"
+				"but encountered lyaer root:{} that is null", EntityData::ToString(id), std::to_string(i)));
+			return nullptr;
+		}
+
+		foundEntity = m_layerRoots[i]->GetEntitySafeMutable().FindParentComponentRecursiveMutable<GUIElement>(id, foundChildIndex);
+		if (foundEntity != nullptr) return foundEntity;
 	}
 	return nullptr;
 }
@@ -83,34 +115,23 @@ std::vector<GUIElement*> GUIHierarchy::GetLayerRootsMutable(const bool topLayerF
 
 	if (topLayerFirst)
 	{
-		auto it = --m_layerRoots.end();
-		while (true)
-		{
-			layers.push_back(it->second);
-			if (it == m_layerRoots.begin()) return layers;
-
-			it--;
-		}
+		for (int i = m_layerRoots.size() - 1; i >= 0; i--)
+			layers.push_back(m_layerRoots[i]);
 	}
 	else
 	{
 		for (auto& layer : m_layerRoots)
-			layers.push_back(layer.second);
+			layers.push_back(layer);
 	}
 	return layers;
 }
 
-const Vec2Int GUIHierarchy::GetRootSize() const
+const Vec2Int GUIHierarchy::GetRootSize() const { return m_rootSize; }
+const GUIElement* GUIHierarchy::GetRootElement() const { return m_uiRoot; }
+const GUIElement* GUIHierarchy::GetLayerRootElement(const GUILayer layer) const
 {
-	return m_rootSize;
-}
-const GUIElement* GUIHierarchy::GetRootElement(const GUILayer layer) const
-{
-	auto layerIt = m_layerRoots.find(layer);
-	if (layerIt == m_layerRoots.end())
-		return nullptr;
-
-	return layerIt->second;
+	if (!IsValidLayer(layer, true)) return nullptr;
+	return m_layerRoots[layer];
 }
 
 //void GUIHierarchy::SetRoot(const GUILayer layer, GUIElement* root)
@@ -123,81 +144,95 @@ const GUIElement* GUIHierarchy::GetRootElement(const GUILayer layer) const
 //}
 void GUIHierarchy::AddToRoot(const GUILayer layer, GUIElement* element)
 {
+	if (!IsValidLayer(layer, true)) return;
 	//Note: we could use the existing functions to accomplish this, but we can make assumptions
 	//can speed up some of the process here
 	if (element == nullptr)
 	{
-		Assert(false, std::format("Tried to add element to root of gui hierarchy but element is NULL"));
+		Assert(this, false, std::format("Tried to add element to root of gui hierarchy but element is NULL"));
 		return;
 	}
 
-	auto layerIt = m_layerRoots.find(layer);
-	if (layerIt == m_layerRoots.end())
-		layerIt = CreateNewLayer(layer);
+	if (m_layerRoots[layer]==nullptr) CreateNewLayer(layer);
 
-	if (layerIt->second == nullptr)
-	{
-		Assert(false, std::format("Tried to add element to root of gui hierarchy but root is null"));
-		return;
-	}
-
-	layerIt->second->PushChild(element);
+	m_layerRoots[layer]->GetEntitySafeMutable().PushChild(element->GetEntitySafeMutable());
 	//m_OnElementAdded.Invoke(element);
 }
-
-bool GUIHierarchy::TryAddElementAsChild(const GUIElementID parentId, GUIElement* element)
-{
-	if (element == nullptr)
-	{
-		Assert(false, std::format("Tried to add element as child to root of gui hierarchy but element is NULL"));
-		return false;
-	}
-
-	GUIElement* foundElement = FindMutable(parentId);
-	if (foundElement == nullptr) return false;
-
-	foundElement->PushChild(element);
-	//m_OnElementAdded.Invoke(element);
-	return true;
-}
-GUIElement* GUIHierarchy::TryRemoveElementChildren(const GUIElementID id)
-{
-	GUIElement* foundElement = FindMutable(id);
-	if (foundElement == nullptr) return nullptr;
-
-	for (const auto& child : foundElement->PopAllChildren())
-		m_OnElementRemoved.Invoke(child);
-
-	return foundElement;
-}
-GUIElement* GUIHierarchy::TryRemoveElement(const GUIElementID id)
+GUIElement* GUIHierarchy::RemoveFromRoot(const GUILayer layer, const ECS::EntityID id)
 {
 	if (IsLayerRootID(id))
 	{
 		Assert(this, false, std::format("Tried to remove element with id:'{}' from hierarchy, "
-			"but it is a layer root element and those cannot be removed", std::to_string(id)));
+			"but it is a layer root element and those cannot be removed", EntityData::ToString(id)));
+		return nullptr;
+	}
+	if (m_layerRoots[layer] == nullptr)
+	{
+		Assert(this, false, std::format("Attempted to remove element from layer:{} "
+			"root with id:{} but that layer has no root", std::to_string(layer), EntityData::ToString(id)));
 		return nullptr;
 	}
 
-	//Note: since we need to find the parent in order to know shat child to remove (since we have to be a level up
-	//to know what child to remove since we do NOT want to remove all children) it will be impossible
-	//to remove the layer roots since those do not have any parents
-	size_t childIndex = 0;
-	GUIElement* foundElement = FindParentMutable(id, &childIndex);
-	if (foundElement == nullptr) return nullptr;
-
-	GUIElement* childPopped= foundElement->TryPopChildAt(childIndex);
-	m_OnElementRemoved.Invoke(childPopped);
-	return childPopped;
+	return m_layerRoots[layer]->GetEntitySafeMutable().TryPopChildAs<GUIElement>(id);
 }
+//bool GUIHierarchy::TryAddElementAsChild(const ECS::EntityID parentId, GUIElement& element)
+//{
+//	GUIElement* foundElement = FindMutable(parentId);
+//	if (foundElement == nullptr) return false;
+//
+//	foundElement->GetEntitySafeMutable().PushChild(element.GetEntitySafeMutable());
+//	//m_OnElementAdded.Invoke(element);
+//	return true;
+//}
+//GUIElement* GUIHierarchy::TryRemoveElementChildren(const ECS::EntityID id)
+//{
+//	GUIElement* foundElement = FindMutable(id);
+//	if (foundElement == nullptr) return nullptr;
+//
+//	GUIElement* childAsEleemnt = nullptr;
+//	for (auto& child : foundElement->GetEntitySafeMutable().PopAllChildren())
+//	{
+//		childAsEleemnt = child->TryGetComponentMutable<GUIElement>();
+//		if (childAsEleemnt == nullptr) continue;
+//
+//		m_OnElementRemoved.Invoke(childAsEleemnt);
+//	}
+//
+//	return foundElement;
+//}
+//GUIElement* GUIHierarchy::TryRemoveElement(const ECS::EntityID id)
+//{
+//	if (IsLayerRootID(id))
+//	{
+//		Assert(this, false, std::format("Tried to remove element with id:'{}' from hierarchy, "
+//			"but it is a layer root element and those cannot be removed", EntityData::ToString(id)));
+//		return nullptr;
+//	}
+//
+//	//Note: since we need to find the parent in order to know shat child to remove (since we have to be a level up
+//	//to know what child to remove since we do NOT want to remove all children) it will be impossible
+//	//to remove the layer roots since those do not have any parents
+//	size_t childIndex = 0;
+//	GUIElement* foundElement = FindParentMutable(id, &childIndex);
+//	if (foundElement == nullptr) return nullptr;
+//
+//	EntityData* childPopped = foundElement->GetEntitySafeMutable().TryPopChildAt(childIndex);
+//	if (childPopped == nullptr) return nullptr;
+//
+//	GUIElement* childAsElement = childPopped->GetEntitySafeMutable().TryGetComponentMutable<GUIElement>();
+//	if (childAsElement == nullptr) return nullptr;
+//
+//	m_OnElementRemoved.Invoke(childAsElement);
+//	return childAsElement;
+//}
 void GUIHierarchy::ClearLayer(const GUILayer layer)
 {
-	auto layerIt = m_layerRoots.find(layer);
-	if (layerIt == m_layerRoots.end()) return;
+	if (!IsValidLayer(layer, true)) return;
+	if (m_layerRoots[layer] == nullptr) return;
 
-	layerIt->second->PopAllChildren();
+	m_layerRoots[layer]->GetEntitySafeMutable().PopAllChildren();
 }
-//GUIElement* GUIHierarchy::TryGetElementMutablw(const GUILayer layer, const GUIElementID id)
+//GUIElement* GUIHierarchy::TryGetElementMutablw(const GUILayer layer, const ECS::EntityID id)
 //{
 //	auto layerIt = m_layerRoots.find(layer);
 //	if (layerIt == m_layerRoots.end()) return nullptr;
@@ -205,7 +240,7 @@ void GUIHierarchy::ClearLayer(const GUILayer layer)
 //	return layerIt->second->TryGetElementRecursiveMutable(id);
 //}
 
-void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILayer, GUIElement*)>& action)
+void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILayer, GUIElement&)>& action)
 {
 	if (!action) return;
 
@@ -213,26 +248,33 @@ void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILa
 	GUIElement* currElement= nullptr;
 	std::vector<GUIElement*> layerElements = {};
 
-	auto it = --m_layerRoots.end();
+	int i = m_layerRoots.size() - 1;
 	//Top layer first means we go backwards
-	while (true)
+	while (i>=0)
 	{
 		bfsQueue = {};
 		layerElements = {};
-		bfsQueue.push(it->second);
+
+		while (i>=0 && m_layerRoots[i] == nullptr) i--;
+		if (i < 0) return;
+
+		bfsQueue.push(m_layerRoots[i]);
 		while (!bfsQueue.empty())
 		{
 			currElement = bfsQueue.front();
 			//LogWarning(std::format("Going throguh elkements descending el:{}", currElement->ToStringBase()));
 			//NOTE: we do NOT want to execute actions on the root elements because then we can 
 			//have acess to root and make undesired changes that should not be allowed
-			if (!IsLayerRootID(currElement->GetId())) 
+			if (!IsLayerRootID(currElement->GetEntitySafe().GetId())) 
 				layerElements.push_back(currElement);
 
 			bfsQueue.pop();
 
-			for (auto& child : currElement->GetChildrenMutable())
+			for (auto& child : currElement->GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
+			{
+				if (child == nullptr) continue;
 				bfsQueue.push(child);
+			}
 		}
 
 		if (!layerElements.empty())
@@ -242,32 +284,53 @@ void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILa
 			for (int i = layerElements.size() - 1; i >= 0; i--)
 			{
 				if (layerElements[i] == nullptr) continue;
-				action(it->first, layerElements[i]);
+				action(static_cast<GUILayer>(i), *layerElements[i]);
 			}
 		}
 		
-		if (it == m_layerRoots.begin()) return;
-		it--;
+		i--;
 	}
 }
 
-bool GUIHierarchy::TryCalculateElementRenderInfoHelper(const GUIElementID targetId, const RenderInfo& parentInfo,
+RenderInfo GUIHierarchy::CalculateRenderInfo(const GUIElement& element, const RenderInfo& parentInfo) const
+{
+	return RenderInfo(parentInfo.m_TopLeftPos + GetSizeFromFactor(Abs(element.GetRect().GetTopLeftPos().GetPos() -
+		NormalizedPosition::TOP_LEFT), parentInfo.m_RenderSize), element.GetRect().GetSize(parentInfo.m_RenderSize));
+}
+RenderInfo GUIHierarchy::CalculateChildRenderInfo(const GUIElement& element, const RenderInfo& thisRenderInfo) const
+{
+	const RelativeGUIPadding& padding = element.GetPadding();
+	if (!padding.HasNonZeroPadding()) return thisRenderInfo;
+
+	const ScreenPosition paddingTopLeft = ScreenPosition(padding.m_Left.GetValue() * thisRenderInfo.m_RenderSize.m_X,
+		padding.m_Top.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
+	const ScreenPosition paddingBottomRight = ScreenPosition(padding.m_Right.GetValue() * thisRenderInfo.m_RenderSize.m_X,
+		padding.m_Bottom.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
+	//if (padding.HasNonZeroPadding())
+	//{
+	//	//Assert(false, std::format("NOn zero padding tTL:{} bR:{} padding:{}", paddingTopLeft.ToString(), paddingBottomRight.ToString(), m_padding.ToString()));
+	//}
+
+	return RenderInfo(thisRenderInfo.m_TopLeftPos + paddingTopLeft, thisRenderInfo.m_RenderSize - paddingTopLeft - paddingBottomRight);
+}
+
+bool GUIHierarchy::TryCalculateElementRenderInfoHelper(const ECS::EntityID targetId, const RenderInfo& parentInfo,
 	GUIElement& currentElement, RenderInfo& outInfo) const
 {
-	if (currentElement.GetId() == targetId)
+	if (currentElement.GetEntitySafe().GetId() == targetId)
 	{
-		outInfo = currentElement.CalculateRenderInfo(parentInfo);
+		outInfo = CalculateRenderInfo(currentElement, parentInfo);
 		return true;
 	}
 
-	if (currentElement.GetChildCount() == 0) return false;
+	if (currentElement.GetEntitySafe().GetChildCount() == 0) return false;
 
 	bool elementWasFound = false;
-	for (auto& child : currentElement.GetChildrenMutable())
+	for (auto& child : currentElement.GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
 	{
 		if (child == nullptr) continue;
 
-		elementWasFound= TryCalculateElementRenderInfoHelper(targetId, currentElement.CalculateRenderInfo(parentInfo), *child, outInfo);
+		elementWasFound= TryCalculateElementRenderInfoHelper(targetId, CalculateRenderInfo(currentElement, parentInfo), *child, outInfo);
 		if (elementWasFound) return true;
 	}
 
@@ -278,12 +341,12 @@ RenderInfo GUIHierarchy::TryCalculateElementRenderInfoExisting(const GUIElement&
 {
 	RenderInfo result = {};
 	bool wasFound = false;
-	for (const auto& layerRoot : m_layerRoots)
+	for (size_t i=0; i<m_layerRoots.size(); i++)
 	{
-		if (layerRoot.second == nullptr) continue;
-		if (layerRoot.second->GetChildCount() == 0) continue;
+		if (m_layerRoots[i] == nullptr) continue;
+		if (m_layerRoots[i]->GetEntitySafe().GetChildCount() == 0) continue;
 
-		wasFound = TryCalculateElementRenderInfoHelper(element.GetId(), GetRootRenderInfo(), *layerRoot.second, result);
+		wasFound = TryCalculateElementRenderInfoHelper(element.GetEntitySafe().GetId(), GetRootRenderInfo(), *m_layerRoots[i], result);
 		if (wasFound) return result;
 	}
 
@@ -291,9 +354,30 @@ RenderInfo GUIHierarchy::TryCalculateElementRenderInfoExisting(const GUIElement&
 }
 RenderInfo GUIHierarchy::TryCalculateElementRenderInfoFromRoot(const GUIElement& element)
 {
-	return element.CalculateRenderInfo(GetRootRenderInfo());
+	return CalculateRenderInfo(element, GetRootRenderInfo());
 }
 
+void GUIHierarchy::UpdateElementHelper(const float deltaTime, GUIElement& element)
+{
+	//If we have invalid rect, we set to max size to ensure rendering works
+	const Vec2 size = element.GetRect().GetSize().GetPos();
+	if (Utils::ApproximateEqualsF(size.m_X, 0) || Utils::ApproximateEqualsF(size.m_Y, 0))
+	{
+		//RelativeGUIRect before = m_relativeRect;
+		//Assert(false, std::format("Tried to set panel:{} of size:{} to max", std::to_string(m_id), m_relativeRect.GetSize().ToString()));
+		element.SetMaxSize();
+		//LogWarning(std::format("Changed x for rect of id:{} to:{} -> {}", std::to_string(m_id), before.ToString(), m_relativeRect.ToString()));
+	}
+
+	element.Update(deltaTime);
+
+	if (element.GetEntitySafe().GetChildCount()==0) return;
+	for (auto& child : element.GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
+	{
+		if (child == nullptr) continue;
+		UpdateElementHelper(deltaTime, *child);
+	}
+}
 void GUIHierarchy::UpdateAll(const float deltaTime)
 {
 	try
@@ -301,20 +385,21 @@ void GUIHierarchy::UpdateAll(const float deltaTime)
 		LogWarning(std::format("Before update:{}", ToStringTree()));
 
 		//Since we are in increasing order and lower number -> farther in background
-		for (auto& rootEl : m_rootElements)
+		for(size_t i = 0; i < m_layerRoots.size(); i++)
 		{
 			/*LogWarning(std::format("Attempting [{}/{}] to updarte layer root:{}. hierarcxhy:{}", std::to_string(i), std::to_string(m_layerRoots.size()),
 				m_layerRoots[i]!=nullptr? m_layerRoots[i]->ToStringBase() : "NULL", ToStringTree()));*/
-			//if (m_layerRoots[i] == nullptr) continue;
-			//{
-			//	Assert(false, std::format("Tried to update all gui elements in hierarchy, "
-			//		"but layer root was null"));
-			//	return;
-			//}
+				//if (m_layerRoots[i] == nullptr) continue;
+				//{
+				//	Assert(false, std::format("Tried to update all gui elements in hierarchy, "
+				//		"but layer root was null"));
+				//	return;
+				//}
+			if (m_layerRoots[i] == nullptr) continue;
+			if (m_layerRoots[i]->GetEntitySafe().GetChildCount() == 0) continue;
 
-			if (rootEl.GetChildCount() == 0) continue;
+			UpdateElementHelper(deltaTime, *m_layerRoots[i]);
 
-			rootEl.UpdateRecursive(deltaTime);
 			LogWarning(std::format("Once finished update tree:{}", ToStringTree()));
 		}
 	}
@@ -333,6 +418,36 @@ RenderInfo GUIHierarchy::GetRootRenderInfo() const
 	return RenderInfo(ScreenPosition(0, 0), m_rootSize);
 }
 
+void GUIHierarchy::RenderElementHelper(const RenderInfo& parentInfo, GUIElement& element)
+{
+	//We get this render info based on this relative pos
+	const RenderInfo thisRenderInfo = CalculateRenderInfo(element, parentInfo);
+
+	if (DRAW_RENDER_BOUNDS) DrawRectangleLines(thisRenderInfo.m_TopLeftPos.m_X, thisRenderInfo.m_TopLeftPos.m_Y,
+		thisRenderInfo.m_RenderSize.m_X, thisRenderInfo.m_RenderSize.m_Y, YELLOW);
+
+	element.Render(thisRenderInfo);
+	/*LogError(std::format("Rendering element calculated from parent info:{} rect:{} current info:{}",
+		renderInfo.ToString(), m_relativeRect.ToString(), thisRenderInfo.ToString()));*/
+
+	if (element.GetEntitySafe().GetChildCount()==0) return;
+
+	const RenderInfo childRenderInfo = CalculateChildRenderInfo(element, thisRenderInfo);
+	/*if (m_padding.HasNonZeroPadding())
+	{
+		Assert(false, std::format("Padding:{} this render:{} child render:{}",
+			m_padding.ToString(), thisRenderInfo.ToString(), childRenderInfo.ToString()));
+	}*/
+
+	for (auto& child : element.GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
+	{
+		if (child == nullptr) continue;
+		//Note: we assume space reserved for this element is the space it actually 
+		//used for render (and thus can be used for children) because we do not want size
+		//changes during render especially becuase of normalized vs in-game space coordinates
+		RenderElementHelper(childRenderInfo, *child);
+	}
+}
 void GUIHierarchy::RenderAll()
 {
 	//TODO: this could probably be optimized if there are no changes allowed during runtime
@@ -341,12 +456,13 @@ void GUIHierarchy::RenderAll()
 	try
 	{
 		//Since we are in increasing order and lower number -> farther in background
-		for (auto& rootEl : m_rootElements)
+		for (size_t i = 0; i < m_layerRoots.size(); i++)
 		{
-			if (rootEl.GetChildCount() == 0) continue;
+			if (m_layerRoots[i] == nullptr) continue;
+			if (m_layerRoots[i]->GetEntitySafe().GetChildCount() == 0) continue;
 
 			//Note: the top left pos is (0, 0) when rendering and y increases as you go down
-			rootEl.RenderRecursive(GetRootRenderInfo());
+			RenderElementHelper(GetRootRenderInfo(), *m_layerRoots[i]);
 		}
 		//Assert(false, std::format("Reender all rec"));
 	}
@@ -357,16 +473,32 @@ void GUIHierarchy::RenderAll()
 	}
 }
 
+std::string GUIHierarchy::ToStringElementHelper(std::string startNewLine, const GUIElement& element) const
+{
+	std::string result = "";
+	result += std::format("\n{}-> {}", startNewLine, element.ToString());
+
+	if (element.GetEntitySafe().GetChildCount()==0) return result;
+
+	startNewLine += "    ";
+	for (const auto& child : element.GetEntitySafe().GetChildrenOfType<GUIElement>())
+	{
+		if (child == nullptr) continue;
+		result += ToStringElementHelper(startNewLine, *child);
+	}
+
+	return result;
+}
+
 std::string GUIHierarchy::ToStringTree() const
 {
-	std::string result = std::format("\n[Roots Defined:{}, Layers:{}]", 
-		std::to_string(m_rootElements.size()), std::to_string(m_layerRoots.size()));
+	std::string result = std::format("\n[Layers:{}]", std::to_string(m_layerRoots.size()));
 
-	for (const auto& layer : m_layerRoots)
+	for (size_t i = 0; i < m_layerRoots.size(); i++)
 	{
-		result += std::format("\n\nLayer{}{}:{}", std::to_string(layer.first),
-			layer.first== BOTTOM_LAYER? "(BOTTOM)" : "",
-			layer.second!=nullptr? layer.second->ToStringRecursive("") : "NULL");
+		result += std::format("\n\nLayer{}{}:{}", std::to_string(i),
+			i== BOTTOM_LAYER? "(BOTTOM)" : "",
+			m_layerRoots[i]!=nullptr? ToStringElementHelper("", *m_layerRoots[i]) : "NULL");
 	}
 	return result;
 }

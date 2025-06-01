@@ -4,8 +4,8 @@
 #include "PhysicsWorld.hpp"
 #include "PositionConversions.hpp"
 #include "HelperFunctions.hpp"
-#include "CameraData.hpp"
 #include "Scene.hpp"
+#include "GlobalComponentInfo.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -16,7 +16,11 @@ namespace ECS
 	static constexpr bool DRAW_BODY_VELOCITY_VECTORS = true;
 
 	PhysicsBodySystem::PhysicsBodySystem(Physics::PhysicsManager& physicsManager) 
-		: m_lineBuffer(), m_physicsManager(physicsManager) {}
+		: m_lineBuffer(), m_physicsManager(physicsManager) 
+	{
+		GlobalComponentInfo::AddComponentInfo(typeid(PhysicsBodySystem), 
+			ComponentInfo(DeppendencyType::None, {}, RequiredComponentCheck<CollisionBoxData>()));
+	}
 
 	void PhysicsBodySystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
 	{
@@ -31,7 +35,7 @@ namespace ECS
 		m_lineBuffer.clear();
 
 		auto& bodies = m_physicsManager.GetPhysicsWorldMutable().GetBodiesMutable();
-		ECS::Entity* entity = nullptr;
+		EntityData* entity = nullptr;
 		for (auto& body : bodies)
 		{
 			if (body == nullptr) continue;
@@ -41,8 +45,8 @@ namespace ECS
 			float velocityMagnitude = body->GetVelocity().GetMagnitude();
 			if (DRAW_BODY_VELOCITY_VECTORS && !Utils::ApproximateEqualsF(velocityMagnitude, 0))
 			{
-				m_lineBuffer.emplace_back(entity->m_Transform.GetPos(),
-					GetVectorEndPoint(entity->m_Transform.GetPos(), body->GetVelocity()));
+				m_lineBuffer.emplace_back(entity->GetTransformMutable().GetGlobalPos(),
+					GetVectorEndPoint(entity->GetTransformMutable().GetGlobalPos(), body->GetVelocity()));
 			}
 		}
 	}

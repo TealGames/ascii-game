@@ -140,7 +140,7 @@ public:
 	/// <returns></returns>
 	Vec2 GetAABBDirection(const CollisionBoxData& otherBox, const bool& considerCollisions = true) const;
 
-	std::vector<std::string> GetDependencyFlags() const override;
+	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 	std::string ToString() const override;
 	std::string ToStringRelative() const;

@@ -17,6 +17,7 @@
 #include "RaylibUtils.hpp"
 #include "AssetManager.hpp"
 #include "SpriteAnimationAsset.hpp"
+#include "EntityData.hpp"
 
 namespace GlobalCreator
 {
@@ -32,8 +33,8 @@ namespace GlobalCreator
 		//LogError(std::format("Is valid preset font:{}", std::to_string(RaylibUtils::IsValidFont(visualPreset.m_Font))));
 
 
-		ECS::Entity& playerEntity = globalsManager.CreateGlobalEntity("player", TransformData(Vec2{ 10, 5 }));
-		CollisionBoxData& playerCollider = playerEntity.AddComponent<CollisionBoxData>(CollisionBoxData(playerEntity.m_Transform, Vec2(2, 2), Vec2(0, 0)));
+		EntityData& playerEntity = globalsManager.CreateGlobalEntity("player", TransformData(Vec2{ 10, 5 }));
+		CollisionBoxData& playerCollider = playerEntity.AddComponent<CollisionBoxData>(CollisionBoxData(playerEntity.GetTransform(), Vec2(2, 2), Vec2(0, 0)));
 		/*Assert(false, std::format("Created player collider:{} min:{} max:{}", playerCollider.ToStringRelative(), 
 			playerCollider.GetGlobalMin().ToString(), playerCollider.GetGlobalMax().ToString()));*/
 
@@ -81,12 +82,12 @@ namespace GlobalCreator
 
 		//m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
 
-		ECS::Entity& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
+		EntityData& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
 		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
 		cameraController.TryRegisterCamera(cameraData);
 
-		ECS::Entity& trigger = globalsManager.CreateGlobalEntity("Trigger", TransformData(Vec2{15, 0}));
-		CollisionBoxData& triggerCollider = trigger.AddComponent<CollisionBoxData>(CollisionBoxData(trigger.m_Transform, Vec2(5, 5), Vec2(0, 0)));
+		EntityData& trigger = globalsManager.CreateGlobalEntity("Trigger", TransformData(Vec2{15, 0}));
+		CollisionBoxData& triggerCollider = trigger.AddComponent<CollisionBoxData>(CollisionBoxData(trigger.GetTransform(), Vec2(5, 5), Vec2(0, 0)));
 		TriggerData& triggerData= trigger.AddComponent<TriggerData>(TriggerData(triggerCollider));
 		//triggerData.m_OnExit.AddListener([](const CollisionBoxData* enteredBody)-> void { LogError(std::format("EXIITNG"), true, false, false, true); });
 		//triggerData.m_OnEnter.AddListener([](const CollisionBoxData* enteredBody)-> void { LogError(std::format("ENTERING"), true, false, false, true); });

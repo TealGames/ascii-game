@@ -58,7 +58,7 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 			if (isChecked) m_guiTree.AddToRoot(DEFAULT_LAYER, &m_mousePosText);
 			else
 			{
-				m_guiTree.TryRemoveElement(m_mousePosText.GetId());
+				m_guiTree.TryRemoveElement(m_mousePosText.GetEntityId());
 				m_mousePosText.SetText("");
 			}
 		});
@@ -121,15 +121,15 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 
 	m_commandConsole.AddPrompt(new CommandPrompt<std::string, float, float>("setpos", { "EntityName", "PosX", "PosY" },
 		[this](const std::string& entityName, const float& x, const float& y) -> void {
-			if (ECS::Entity* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
+			if (EntityData* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
 			{
-				entity->m_Transform.SetPos({ x, y });
+				entity->GetTransformMutable().SetLocalPos({x, y});
 			}
 		}));
 
 	m_commandConsole.AddPrompt(new CommandPrompt<std::string>("editor", { "EntityName" },
 		[this](const std::string& entityName) -> void {
-			if (ECS::Entity* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
+			if (EntityData* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
 			{
 				//Assert(false, std::format("Sending entity: {}", entity->m_Name));
 				m_entityEditor.SetEntityGUI(*entity);
@@ -210,7 +210,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 		}));
 }
 
-void EngineEditor::SelectEntityEditor(ECS::Entity& entity)
+void EngineEditor::SelectEntityEditor(EntityData& entity)
 {
 	m_entityEditor.SetEntityGUI(*m_editModeInfo.m_Selected);
 	m_popupManager.CloseAllPopups();
@@ -278,7 +278,7 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		{
 			/*Assert(false, std::format("Is down for:{} needed:{}", std::to_string(m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().GetCurrentDownTime()), 
 			std::to_string(HELD_TIME_FOR_OBJECT_MOVE)));*/
-			m_editModeInfo.m_Selected->m_Transform.SetPos(worldClickedPos);
+			m_editModeInfo.m_Selected->GetTransformMutable().SetLocalPos(worldClickedPos);
 		}
 
 		const Vec2 mousePos = m_inputManager.GetMousePosition();

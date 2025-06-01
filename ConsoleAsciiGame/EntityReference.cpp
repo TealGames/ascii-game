@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "EntityReference.hpp"
 
-EntityReference::EntityReference(ECS::Entity& entity, Scene* scene)
+EntityReference::EntityReference(EntityData& entity, Scene* scene)
 	: m_Entity(entity), m_Scene(scene) {}
 
 bool EntityReference::IsGlobal() const
@@ -11,12 +11,12 @@ bool EntityReference::IsGlobal() const
 
 std::string EntityReference::GetSceneName() const
 {
-	if (IsGlobal()) return ECS::Entity::GLOBAL_SCENE_NAME;
+	if (IsGlobal()) return EntityData::GLOBAL_SCENE_NAME;
 	return m_Scene->GetName();
 }
 
 bool EntityReference::MatchesScene(const ComponentData* component)
 {
 	if (component == nullptr) return false;
-	return m_Scene->GetName() == component->GetEntitySafe().GetSceneName();
+	return m_Scene->GetName() == component->GetEntitySafe().m_SceneName;
 }

@@ -23,7 +23,7 @@
 #include "JsonSerializers.hpp"
 #include "GlobalCreator.hpp"
 #include "GlobalColorCodes.hpp"
-
+#include "EntityData.hpp"
 #include "Fig.hpp"
 
 namespace Core
@@ -90,6 +90,16 @@ namespace Core
 	//and thus we can then update the gui element with the value, similar to how gui receive events on their update when to set internal value. This way, we do not force update every frame
 	//TODO: add a tooltip system when hovering over elements that builds on the popup system already in place for gui systems
 	//TODO: instead of doing mouse button, mouse left button, abstract into a event profile for special bindings for each type of action
+	//TODO: make certain components require other components before they are added via entity data
+	//TODO: check which is faster: getting global pos for transform via parent/entitydata recursion OR getting pointer to parent global pos after entity is set
+	//TODO: since entity data is a component it has the ability to retrieve entity (aka itself) but it is NEVER set and can be nullptr. Therefore we must find a way for all components to either get an interface
+	//that requires the get entity data safe function to be implemented because we CANNOT allow invalid function to exist on entity data
+	//TODO: in order to allow similar caching of transform, maybe make gui element inherit from transform so that we can use it from entity
+	//TODO: make a place, whether static storage or some registry that sotres component dependencies, what other components are required
+	//TODO: optimize searching/non contiguous traversal of entities/components such as within guihierarchy by reserved ids within certain areas for faster lookup, entity data children such as binary search
+	//for the children ids and others
+	//TODO: since global pos is acceseed frequentyl figure out optimization (preferablly on components themselves) so they can access global pos without doing recursion
+	//TODO: extracting int/float consider case where number is out of range
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -130,7 +140,7 @@ namespace Core
 		m_cameraController(),
 		m_physicsManager(m_sceneManager, m_collisionRegistry),
 		m_guiSelectorManager(m_inputManager, m_uiTree),
-		m_uiTree({SCREEN_WIDTH, SCREEN_HEIGHT}),
+		m_uiTree(m_sceneManager.m_GlobalEntityManager,{SCREEN_WIDTH, SCREEN_HEIGHT}),
 		m_transformSystem(),
 		m_uiSystem(),
 		m_entityRendererSystem(),
@@ -272,8 +282,8 @@ namespace Core
 			m_cameraController.UpdateActiveCamera();
 			CameraData& mainCamera = m_cameraController.GetActiveCameraMutable();
 
-			std::string cameraSceneName = mainCamera.GetEntitySafe().GetSceneName();
-			if (!Assert(this, cameraSceneName == ECS::Entity::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
+			std::string cameraSceneName = mainCamera.GetEntitySafe().m_SceneName;
+			if (!Assert(this, cameraSceneName == EntityData::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
 				std::format("Tried to get active camera:{} during update loop, "
 					"but that camera is not in the active scene OR global storage (main camera scene:{}, active scene:{})", mainCamera.ToString(),
 					cameraSceneName, activeScene->GetName())))
@@ -301,7 +311,7 @@ namespace Core
 			m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 			m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 			m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
-			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, mainCamera.GetEntitySafeMutable(), unscaledDeltaTime);
+			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 			m_gameManager.GameUpdate();
 
 			m_guiSelectorManager.Update();

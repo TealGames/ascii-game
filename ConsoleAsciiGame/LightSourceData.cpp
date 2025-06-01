@@ -35,10 +35,10 @@ void LightSourceData::InitFields()
 	m_Fields = {ComponentField("FalloffStrength", &m_FalloffStrength), 
 		ComponentField("Radius", &m_LightRadius), ComponentField("Intensity", &m_Intensity), ComponentField("Color", &test)};
 }
-std::vector<std::string> LightSourceData::GetDependencyFlags() const
-{
-	return {};
-}
+//std::vector<std::string> LightSourceData::GetDependencyFlags() const
+//{
+//	return {};
+//}
 
 std::string LightSourceData::ToString() const
 {

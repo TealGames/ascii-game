@@ -1,8 +1,7 @@
 #include "pch.hpp"
 #include "PhysicsWorld.hpp"
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "ProfilerTimer.hpp"
-#include "Point2D.hpp"
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 #include "CollisionBoxData.hpp"
@@ -92,7 +91,8 @@ namespace Physics
 				//apply any methods of collision resolution (but we still need to know they are colliding 
 				//for things like grounded checks/gravity)
 				
-				const Vec2 incomingBToADir = GetVector(bodyB->GetEntitySafe().m_Transform.GetPos(), bodyA->GetEntitySafe().m_Transform.GetPos()).GetYAsVector();
+				//TODO: using global pos everywere is expensive, perhaps we can optimize by checking parents first?
+				const Vec2 incomingBToADir = GetVector(bodyB->GetEntitySafe().GetTransform().GetGlobalPos(), bodyA->GetEntitySafe().GetTransform().GetGlobalPos()).GetYAsVector();
 				const float dotProductBofA = DotProduct(incomingBToADir, bodyB->GetVelocity());
 				/*LogError(std::format("touching:{} DOT BETWEEN B-> A:{} bodyB vel:{} is:{}", std::to_string(collisionData.m_IntersectionData.IsTouchingIntersection()), incomingBToADir.ToString(),
 					bodyB->GetVelocity().ToString(), std::to_string(dotProductBofA)));*/
@@ -125,7 +125,7 @@ namespace Physics
 
 			PhysicsBodyData& body = *(m_bodies[i]);
 			const CollisionBoxData& box = m_bodies[i]->GetCollisionBox();
-			ECS::Entity& bodyAEntity = body.GetEntitySafeMutable();
+			EntityData& bodyAEntity = body.GetEntitySafeMutable();
 
 			KinematicUpdate(deltaTime, bodyAEntity, body, box);
 
@@ -228,8 +228,8 @@ namespace Physics
 
 	void PhysicsWorld::ResolveCollision(CollisionPair& collision, PhysicsBodyData* bodyA, PhysicsBodyData* bodyB)
 	{
-		ECS::Entity& entityA = collision.m_CollisionBoxA->GetEntitySafeMutable();
-		ECS::Entity& entityB = collision.m_CollisionBoxB->GetEntitySafeMutable();
+		EntityData& entityA = collision.m_CollisionBoxA->GetEntitySafeMutable();
+		EntityData& entityB = collision.m_CollisionBoxB->GetEntitySafeMutable();
 
 		if (!Assert(this, bodyA != nullptr && bodyB != nullptr, std::format("Tried to resolve collision:{} body bodyA and/or bodyB "
 			"has no physicsBody", collision.ToString())))
@@ -287,8 +287,7 @@ namespace Physics
 		return;
 	}
 
-	void PhysicsWorld::KinematicUpdate(const float& deltaTime, ECS::Entity& entity, PhysicsBodyData& body, 
-		const CollisionBoxData& box)
+	void PhysicsWorld::KinematicUpdate(const float& deltaTime, EntityData& entity, PhysicsBodyData& body, const CollisionBoxData& box)
 	{
 		body.SetIsGrounded(m_collisionRegistry.IsCollidingInDirs(box,
 			{ MoveDirection::South, MoveDirection::Southeast, MoveDirection::Southwest }, true));
@@ -320,7 +319,7 @@ namespace Physics
 		if (body.HasYConstraint()) moveY = 0;
 
 		//LogWarning(std::format("ENTITY SETTING POS: {}", std::to_string(xVelocity), std::to_string(yVelocity)));
-		entity.m_Transform.SetPosDelta(Vec2(moveX, moveY));
+		entity.GetTransformMutable().SetLocalPosDelta(Vec2(moveX, moveY));
 
 		//if (gravitySet) LogError(std::format("graivyt set for:{} new a:{} new v:{}", entity.GetName(), body.GetAcceleration().ToString(), body.GetVelocity().ToString()), true, false, false, true);
 
@@ -331,7 +330,7 @@ namespace Physics
 			*/
 	}
 
-	void PhysicsWorld::PushMovedBodyOut(ECS::Entity& entityA, ECS::Entity& entityB,
+	void PhysicsWorld::PushMovedBodyOut(EntityData& entityA, EntityData& entityB,
 		PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const CollisionPair& collision)
 	{
 		//If A has constraints or both have constraints (since it is first choice A will get choosen)
@@ -351,7 +350,7 @@ namespace Physics
 		else if (bodyA.HasAnyConstraints()) isMoveEntityB = true;
 		else isMoveEntityB = false;
 
-		ECS::Entity* movedEntity = isMoveEntityB ? &entityB : &entityA;
+		EntityData* movedEntity = isMoveEntityB ? &entityB : &entityA;
 
 		//Note: the pentration depth will be the same for both bodies (they might just have different signs)
 		const bool xIsMin = std::abs(collision.m_IntersectionData.m_Depth.m_X) < std::abs(collision.m_IntersectionData.m_Depth.m_Y) 
@@ -365,8 +364,8 @@ namespace Physics
 			LogError(std::format("Move delta:{} for collision:{} BMOVED:{} entityB:{}", std::to_string(moveDelta), 
 				collision.ToString(), std::to_string(isMoveEntityB), entityB.GetName()));*/
 
-		if (xIsMin) movedEntity->m_Transform.SetPosDeltaX(moveDelta);
-		else movedEntity->m_Transform.SetPosDeltaY(moveDelta);
+		if (xIsMin) movedEntity->GetTransformMutable().SetLocalPosDeltaX(moveDelta);
+		else movedEntity->GetTransformMutable().SetLocalPosDeltaY(moveDelta);
 
 		//Whichever one got moved out should not have any further movement to prevent potential jittering
 		//PhysicsBodyData& movedBody = aMovedLastFrame ? bodyA : bodyB;
@@ -375,7 +374,7 @@ namespace Physics
 		//bodyB.SetAcceleration(Vec2::ZERO);
 	}
 
-	void PhysicsWorld::ApplyImpulse(ECS::Entity& entityA, ECS::Entity& entityB,
+	void PhysicsWorld::ApplyImpulse(EntityData& entityA, EntityData& entityB,
 		PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& intersectionData)
 	{
 		//Assert(false, std::format("Intersection is:{}", collision.m_IntersectionData.ToString()));
@@ -459,7 +458,7 @@ namespace Physics
 	}
 
 	//PRECONDITION: we assume that one of the bodies is NOT constrained
-	void PhysicsWorld::SetVelocitiesFromRestitution(ECS::Entity& entityA, ECS::Entity& entityB,
+	void PhysicsWorld::SetVelocitiesFromRestitution(EntityData& entityA, EntityData& entityB,
 		PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& intersectionData, 
 		const EntityType updateEntityType)
 	{
@@ -547,9 +546,8 @@ namespace Physics
 		
 		for (auto& body : m_bodies)
 		{
-			const AABB& currentBounds = body->GetCollisionBox().GetAABB();
-			boundsWorldMin = currentBounds.GetGlobalMin(body->GetEntitySafe().m_Transform.GetPos());
-			boundsWorldMax= currentBounds.GetGlobalMax(body->GetEntitySafe().m_Transform.GetPos());
+			boundsWorldMin = body->GetCollisionBox().GetGlobalMin();
+			boundsWorldMax= body->GetCollisionBox().GetGlobalMax();
 
 			//TODO: perhaps optimizations could be made by checking to see if distance is too big to make it to this collider
 			//so we can just continue

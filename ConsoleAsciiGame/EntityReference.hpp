@@ -1,14 +1,14 @@
 #pragma once
 #include <string>
-#include "Entity.hpp"
+#include "EntityData.hpp"
 #include "Scene.hpp"
 
 struct EntityReference
 {
-	ECS::Entity& m_Entity;
+	EntityData& m_Entity;
 	Scene* m_Scene;
 
-	EntityReference(ECS::Entity& entity, Scene* scene);
+	EntityReference(EntityData& entity, Scene* scene);
 
 	bool IsGlobal() const;
 	std::string GetSceneName() const;

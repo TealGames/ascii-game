@@ -2,10 +2,7 @@
 #include <vector>
 #include "UIObjectData.hpp"
 
-namespace ECS
-{
-	class Entity;
-}
+class EntityData;
 class GameState;
 class GlobalEntityManager;
 
@@ -16,7 +13,7 @@ namespace Game
 		class HealthUI
 		{
 		private:
-			std::vector<ECS::Entity*> m_health;
+			std::vector<EntityData*> m_health;
 		public:
 
 		private:

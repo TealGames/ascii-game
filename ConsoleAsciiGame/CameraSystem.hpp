@@ -29,7 +29,7 @@ namespace ECS
 	public:
 
 	private:
-		void CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData, ECS::Entity& mainCamera);
+		void CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData);
 
 		bool IsWithinViewport(const CameraData& camera, const WorldPosition& pos) const;
 
@@ -45,10 +45,9 @@ namespace ECS
 		CameraSystem(ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer);
 		//Camera(Transform& transform, const Vec2Int& viewportSize);
 
-		void UpdateCameraPosition(CameraData& cameraData, ECS::Entity& entity);
+		void UpdateCameraPosition(CameraData& cameraData);
 
-		void SystemUpdate(Scene& scene, CameraData& component,
-			ECS::Entity& entity, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraData& component, const float& deltaTime) override;
 
 		const FragmentedTextBuffer& GetCurrentFrameBuffer() const;
 		const ColliderOutlineBuffer* GetCurrentColliderOutlineBuffer() const;

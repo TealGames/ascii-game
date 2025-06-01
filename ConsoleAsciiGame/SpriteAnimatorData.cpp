@@ -65,10 +65,10 @@ void SpriteAnimatorData::InitFields()
 	m_Fields = {};
 }
 
-std::vector<std::string> SpriteAnimatorData::GetDependencyFlags() const
-{
-	return {};
-}
+//std::vector<std::string> SpriteAnimatorData::GetDependencyFlags() const
+//{
+//	return {};
+//}
 
 void SpriteAnimatorData::Deserialize(const Json& json)
 {

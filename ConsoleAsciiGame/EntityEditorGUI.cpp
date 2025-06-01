@@ -30,7 +30,7 @@ const Input::InputManager& EntityEditorGUI::GetInputManagerSafe() const
 	return *m_inputManager;
 }
 
-void EntityEditorGUI::SetEntityGUI(ECS::Entity& entity)
+void EntityEditorGUI::SetEntityGUI(EntityData& entity)
 {
 	if (HasEntitySelected() && m_selectedEntity->GetEntity() == entity)
 		return;

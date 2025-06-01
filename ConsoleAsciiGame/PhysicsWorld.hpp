@@ -81,7 +81,7 @@ namespace Physics
 		/// <returns></returns>
 		void ResolveCollision(CollisionPair& collision, PhysicsBodyData* bodyA, PhysicsBodyData* bodyB);
 
-		void KinematicUpdate(const float& deltaTime, ECS::Entity& entity, 
+		void KinematicUpdate(const float& deltaTime, EntityData& entity,
 			PhysicsBodyData& body, const CollisionBoxData& collider);
 
 		/// <summary>
@@ -94,7 +94,7 @@ namespace Physics
 		/// <param name="bodyA"></param>
 		/// <param name="bodyB"></param>
 		/// <param name="collision"></param>
-		void PushMovedBodyOut(ECS::Entity& entityA, ECS::Entity& entityB, 
+		void PushMovedBodyOut(EntityData& entityA, EntityData& entityB,
 			PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const CollisionPair& collision);
 
 		/// <summary>
@@ -108,7 +108,7 @@ namespace Physics
 		/// <param name="bodyA"></param>
 		/// <param name="bodyB"></param>
 		/// <param name="data"></param>
-		void ApplyImpulse(ECS::Entity& entityA, ECS::Entity& entityB,
+		void ApplyImpulse(EntityData& entityA, EntityData& entityB,
 			PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& data);
 
 		/// <summary>
@@ -123,7 +123,7 @@ namespace Physics
 		/// <param name="bodyB"></param>
 		/// <param name="data"></param>
 		/// <param name="updateEntityType"></param>
-		void SetVelocitiesFromRestitution(ECS::Entity& entityA, ECS::Entity& entityB,
+		void SetVelocitiesFromRestitution(EntityData& entityA, EntityData& entityB,
 			PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& data, 
 			const EntityType updateEntityType);
 
