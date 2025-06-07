@@ -1,14 +1,14 @@
 #pragma once
 #include "ComponentData.hpp"
 
-class ContainerGUI : public ComponentData
+class UIContainer : public Component
 {
 private:
 public:
 
 private:
 public:
-	ContainerGUI();
+	UIContainer();
 
 	void InitFields() override;
 

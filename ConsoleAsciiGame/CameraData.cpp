@@ -11,7 +11,7 @@ CameraData::CameraData(const Json& json) : CameraData()
 }
 
 CameraData::CameraData(const CameraSettings& cameraSettings) :
-	ComponentData(), m_CameraSettings(cameraSettings), m_LastFrameBuffer() {}
+	Component(), m_CameraSettings(cameraSettings), m_LastFrameBuffer() {}
 
 void CameraData::InitFields()
 {

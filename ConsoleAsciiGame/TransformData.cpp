@@ -14,7 +14,7 @@ TransformData::TransformData(const Json& json) : TransformData()
 }
 
 TransformData::TransformData(const Vec2& pos) :
-	ComponentData(),
+	Component(),
 	m_localPos(pos), m_localPosLastFrame(NULL_POS)
 {
 	

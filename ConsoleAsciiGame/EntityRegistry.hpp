@@ -2,7 +2,7 @@
 #include "EntityID.hpp"
 #include <entt/entt.hpp>
 
-class ComponentData;
+class Component;
 class EntityData;
 class TransformData;
 
@@ -17,7 +17,7 @@ namespace ECS
 
 	private:
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		bool PassesHasComponentCheck(const EntityID id) const
 		{
 			if (HasComponent<T>())
@@ -41,7 +41,7 @@ namespace ECS
 		bool HasEntity(const EntityID& id) const;
 
 		template<typename T, typename... Args>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		T& AddComponent(const EntityID entityId, Args&&... args)
 		{
 			if (!PassesHasComponentCheck<T>(entityId))
@@ -56,7 +56,7 @@ namespace ECS
 		/// <param name="component"></param>
 		/// <returns></returns>
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		T& AddComponent(const EntityID entityId, const T& component)
 		{
 			if (!PassesHasComponentCheck<T>(entityId))
@@ -71,7 +71,7 @@ namespace ECS
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>&& std::is_default_constructible_v<T>
+		requires std::is_base_of_v<Component, T>&& std::is_default_constructible_v<T>
 		T& AddComponent(const EntityID entityId) { return AddComponent<T>(entityId, T()); }
 
 		/// <summary>
@@ -82,7 +82,7 @@ namespace ECS
 		/// <param name="entityId"></param>
 		/// <returns></returns>
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		T* TrySetComponent(const EntityID entityId, const T& component)
 		{
 			T* component = TryGetComponentMutable<T>(entityId);
@@ -92,28 +92,28 @@ namespace ECS
 			return component;
 		}
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		T* AddOrSetComponent(const EntityID entityId, const T& component)
 		{
 			return m_registry.emplace_or_replace(entityId, component);
 		}
 
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		bool HasComponent(const EntityID entityId) const
 		{
 			return m_registry.try_get<T>(entityId) != nullptr;
 		}
 
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		T* TryGetComponentMutable(const EntityID entityId)
 		{
 			return m_registry.try_get<T>(entityId);
 		}
 
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		const T* TryGetComponent(const EntityID entityId) const
 		{
 			return m_registry.try_get<T>(entityId);

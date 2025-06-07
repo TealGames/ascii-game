@@ -6,7 +6,7 @@
 ComponentFieldReference::ComponentFieldReference()
 	: m_ComponentRef(), m_FieldRef(nullptr) {}//m_Entity(nullptr), m_ComponentRef() {}, m_ComponentIndex(-1), m_FieldRef(nullptr) {}
 
-ComponentFieldReference::ComponentFieldReference(ComponentData* componentData, const std::string& fieldName)
+ComponentFieldReference::ComponentFieldReference(Component* componentData, const std::string& fieldName)
 	: m_ComponentRef(componentData), m_FieldRef(nullptr)//m_Entity(&(componentData->GetEntitySafeMutable())), m_ComponentRef(), m_FieldRef(nullptr), m_ComponentIndex(-1)
 {
 	/*if (!Assert(this, m_Entity != nullptr, std::format("Tried to construct a component field reference with component data: {} "
@@ -39,7 +39,7 @@ ComponentFieldReference::ComponentFieldReference(EntityData& entity, const std::
 		return;
 	*/
 
-	ComponentData* data = m_ComponentRef.GetComponentDataMutable();
+	Component* data = m_ComponentRef.GetComponentDataMutable();
 	if (!Assert(this, data!=nullptr, std::format("Tried to construct a component field reference with component:{} "
 		"and field:{} but could not retrieve component for type:{}!", m_ComponentRef.ToString(), fieldName, componentName)))
 		return;
@@ -88,7 +88,7 @@ ComponentField& ComponentFieldReference::GetComponentFieldSafeMutable()
 	return *m_FieldRef;
 }
 
-ComponentData* ComponentFieldReference::GetComponentDataMutable()
+Component* ComponentFieldReference::GetComponentDataMutable()
 {
 	//return m_Entity->TryGetComponentAtIndexMutable(m_ComponentIndex);
 	return m_ComponentRef.GetComponentDataMutable();

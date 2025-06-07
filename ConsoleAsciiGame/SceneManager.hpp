@@ -64,8 +64,8 @@ namespace SceneManagement
 		const Scene* TryGetScene(const std::string& sceneName) const;
 		Scene* TryGetSceneMutable(const size_t& sceneIndex);
 
-		const ECS::Entity* TryGetEntity(const std::string& sceneName, const std::string& entityName) const;
-		ECS::Entity* TryGetEntityMutable(const std::string& sceneName, const std::string& entityName);
+		const EntityData* TryGetEntity(const std::string& sceneName, const std::string& entityName) const;
+		EntityData* TryGetEntityMutable(const std::string& sceneName, const std::string& entityName);
 
 		bool ValidateAllScenes();
 	};

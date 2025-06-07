@@ -18,7 +18,7 @@ const float DEBUG_AREA_HIGHER_PER_PROPERTY = 0.02;
 constexpr float TEXT_SIZE = 11;
 
 DebugInfo::DebugInfo(GUIHierarchy& hierarchy) :
-	m_textGuis(Utils::ConstructArray<TextGUI, DEBUG_PROPERTIES_COUNT>("", EditorStyles::GetTextStyleSetSize(TextAlignment::CenterLeft, TEXT_SIZE))),
+	m_textGuis(Utils::ConstructArray<UITextComponent, DEBUG_PROPERTIES_COUNT>("", EditorStyles::GetTextStyleSetSize(TextAlignment::CenterLeft, TEXT_SIZE))),
 	m_layout(LayoutType::Vertical, SizingType::ExpandAndShrink),
 	m_nextIndex(0), m_mouseDebugData(std::nullopt), m_isEnabled(false)
 {

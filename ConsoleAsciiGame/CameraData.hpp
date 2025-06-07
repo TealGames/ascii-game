@@ -6,7 +6,7 @@
 #include "TextBuffer.hpp"
 #include <vector>
 
-class CameraData : public ComponentData
+class CameraData : public Component
 {
 public:
 	CameraSettings m_CameraSettings;

@@ -7,8 +7,7 @@
 #include "raylib.h"
 #include "GUIRect.hpp"
 #include "GUIStyle.hpp"
-#include "SelectableGUI.hpp"
-#include "TextGUI.hpp"
+#include "UISelectableData.hpp"
 
 enum class InputFieldType
 {
@@ -69,9 +68,12 @@ constexpr InputFieldFlag operator~(const InputFieldFlag& op)
 	return static_cast<InputFieldFlag>(~static_cast<InputFieldFlagIntegralType>(op));
 }
 
+class UITextComponent;
+class UIPanel;
+
 using InputFieldAction = std::function<void(std::string input)>;
 using InputFieldKeyActions = std::unordered_map<KeyboardKey, InputFieldAction>;
-class InputFieldGUI : public SelectableGUI
+class UIInputField : public UISelectableData
 {
 private:
 	InputFieldType m_type;
@@ -79,7 +81,8 @@ private:
 	std::string m_input;
 	std::string m_lastInput;
 	std::string m_attemptedInput;
-	TextGUI m_textGUI;
+	UITextComponent* m_textGUI;
+	UIPanel* m_background;
 	InputFieldFlag m_inputFlags;
 
 	//bool m_isSelected;
@@ -110,12 +113,14 @@ private:
 	std::string GetDisplayAttemptedInput() const;
 	void SetInput(const std::string& newInput, const bool isAttemptedInput);
 
+	void UpdateInput(const float deltaTime);
+
 public:
 	//InputField();
-	InputFieldGUI(const Input::InputManager& manager, const InputFieldType& type, 
+	UIInputField(const Input::InputManager& manager, const InputFieldType& type, 
 		const InputFieldFlag& flags, const GUIStyle& settings, 
 		const InputFieldAction& submitAction=nullptr, const InputFieldKeyActions& keyPressActions = {});
-	~InputFieldGUI();
+	~UIInputField();
 
 	void Update(const float deltaTime) override;
 
@@ -147,5 +152,11 @@ public:
 
 	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 	//const GUIRect& GetLastRenderRect() const;
+
+	void InitFields() override;
+	std::string ToString() const override;
+
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };
 

@@ -141,8 +141,9 @@ namespace Core
 		m_physicsManager(m_sceneManager, m_collisionRegistry),
 		m_guiSelectorManager(m_inputManager, m_uiTree),
 		m_uiTree(m_sceneManager.m_GlobalEntityManager,{SCREEN_WIDTH, SCREEN_HEIGHT}),
+		m_renderer(),
 		m_transformSystem(),
-		m_uiSystem(),
+		m_uiRenderSystem(m_renderer),
 		m_entityRendererSystem(),
 		m_lightSystem(m_entityRendererSystem),
 		//m_inputSystem(m_inputManager),
@@ -176,6 +177,8 @@ namespace Core
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
 		m_sceneManager.LoadAllScenes();
+		//TODO: find a way to do this more procedurally
+		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {StartAll(); });
 		EngineLog("LOADED ALL SCENES");
 
 		if (!Assert(this, m_sceneManager.TrySetActiveScene(0),
@@ -233,6 +236,7 @@ namespace Core
 		ValidateAll();
 
 		LogWarning(std::format("Tree hierarcxhy: {}", m_uiTree.ToStringTree()));
+		StartAll();
 	}
 
 	Engine::~Engine()
@@ -247,6 +251,15 @@ namespace Core
 		m_cameraController.Validate();
 		m_gameManager.GameValidate();
 		EngineLog("FINISHED VALIDATION");
+	}
+	void Engine::StartAll()
+	{
+		Scene* newScene = m_sceneManager.GetActiveSceneMutable();
+		if (!Assert(this, newScene != nullptr, "Tried to call start on all systems but there "
+			"are no scenes set as active right now"))
+			return;
+
+		m_uiRenderSystem.Start(*newScene);
 	}
 
 	void Engine::EngineLog(const std::string& log) const
@@ -271,8 +284,8 @@ namespace Core
 		if (m_editor.IsInGameView())
 		{
 			Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
-			if (!Assert(this, activeScene != nullptr, std::format("Tried to update the active scene but there "
-				"are none set as active right now", activeScene->GetName())))
+			if (!Assert(this, activeScene != nullptr, "Tried to update the active scene but there "
+				"are none set as active right now"))
 				return ERROR_CODE;
 
 			if (!Assert(this, activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
@@ -299,7 +312,7 @@ namespace Core
 			//Note: technically transform system should be using scaled time but since it is possible to change pos
 			//even when time is stopped we need to make sure it updates just in case
 			m_transformSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
-			m_uiSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
+			//m_uiSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 
 			m_playerSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 			m_collisionBoxSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
@@ -321,8 +334,9 @@ namespace Core
 			frameBuffer = &m_cameraSystem.GetCurrentFrameBuffer();
 			Assert(this, frameBuffer!=nullptr && !frameBuffer->empty(), std::format("Tried to render buffer from camera output, but it has no data"));
 
-			Rendering::RenderBuffer(frameBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(),
-				m_cameraSystem.GetCurrentLineBuffer(), &m_uiTree);
+			/*Rendering::RenderBuffer(frameBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(),
+				m_cameraSystem.GetCurrentLineBuffer(), &m_uiTree);*/
+			m_renderer.RenderQueue();
 
 			m_transformSystem.UpdateLastFramePos(*activeScene);
 		}
@@ -332,7 +346,8 @@ namespace Core
 			m_uiTree.UpdateAll(unscaledDeltaTime);
 			m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
 
-			Rendering::RenderBuffer(nullptr, nullptr, nullptr, &m_uiTree);
+			//Rendering::RenderBuffer(nullptr, nullptr, nullptr, &m_uiTree);
+			m_renderer.RenderQueue();
 		}
 		
 		m_timeKeeper.UpdateTimeEnd();

@@ -133,7 +133,7 @@ namespace ECS
 		return -1;
 	}*/
 
-	std::string Entity::TryGetComponentName(const ComponentData* component) const
+	std::string Entity::TryGetComponentName(const Component* component) const
 	{
 		return Utils::FormatTypeName(typeid(*component).name());
 	}

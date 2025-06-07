@@ -1,12 +1,14 @@
 #include <optional>
 #include <cstdint>
 #include "pch.hpp"
-#include "InputFieldGUI.hpp"
+#include "UIInputField.hpp"
 #include "Debug.hpp"
 #include "StringUtil.hpp"
 #include "Globals.hpp"
 #include "Vec2Int.hpp"
 #include "RaylibUtils.hpp"
+#include "UITextComponent.hpp"
+#include "UIPanel.hpp"
 
 static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
 static constexpr KeyboardKey ESCAPE_KEY = KEY_COMMA;
@@ -27,11 +29,11 @@ std::string ToString(const InputFieldType& type)
 	return "";
 }
 
-InputFieldGUI::InputFieldGUI(const Input::InputManager& manager, const InputFieldType& type, 
+UIInputField::UIInputField(const Input::InputManager& manager, const InputFieldType& type, 
 	const InputFieldFlag& flags, const GUIStyle& settings, 
 	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
-	: SelectableGUI(), m_inputManager(&manager), m_type(type), m_input(), m_lastInput(), 
-	m_textGUI("", settings.m_TextSettings), m_inputFlags(flags), m_submitAction(submitAction),
+	: UISelectableData(), m_inputManager(&manager), m_type(type), m_input(), m_lastInput(), 
+	m_textGUI(nullptr), m_background(nullptr), m_inputFlags(flags), m_submitAction(submitAction),
 	m_keyActions(keyPressActions), m_settings(settings), m_lastRenderRect()
 {
 	//LogError("Creating Input FIeld");
@@ -49,12 +51,12 @@ InputFieldGUI::InputFieldGUI(const Input::InputManager& manager, const InputFiel
 //	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
 //	:InputFieldGUI(&manager, type, flags, settings, submitAction, keyPressActions) {}
 
-InputFieldGUI::~InputFieldGUI()
+UIInputField::~UIInputField()
 {
 	//LogError("Input field destroyed");
 }
 
-const Input::InputManager& InputFieldGUI::GetInputManager() const
+const Input::InputManager& UIInputField::GetInputManager() const
 {
 	if (!Assert(this, m_inputManager != nullptr,
 		std::format("Tried to retreive input manager from input field but it is NULLPTR")))
@@ -64,12 +66,12 @@ const Input::InputManager& InputFieldGUI::GetInputManager() const
 	return *m_inputManager;
 }
 
-std::string InputFieldGUI::CleanInput(const std::string& input) const
+std::string UIInputField::CleanInput(const std::string& input) const
 {
 	return Utils::StringUtil(input).RemoveSpaces().ToString();
 }
 
-void InputFieldGUI::Update(const float deltaTime)
+void UIInputField::UpdateInput(const float deltaTime)
 {
 	if (IsSelected() && GetInputManager().GetInputKey(ESCAPE_KEY)->GetState().IsReleased())
 	{
@@ -89,8 +91,9 @@ void InputFieldGUI::Update(const float deltaTime)
 				key.second(GetInput());
 		}
 	}
-
+	
 	if (HasFlag(InputFieldFlag::UserUIReadonly)) return;
+
 
 	//THE FOLLOWING LOGIC IS FOR SELECTING/WRITING TO SELECTABLE FROM UI BASED ON PLAYER INPUT:
 	if (GetInputManager().IsKeyReleased(SUBMIT_KEY))
@@ -105,10 +108,10 @@ void InputFieldGUI::Update(const float deltaTime)
 
 		if (!HasFlag(InputFieldFlag::KeepSelectedOnSubmit)) Deselect();
 		
-		LogError(std::format("Before submit action input field type is: {}", ToString(GetFieldType())));
+		LogError(std::format("Before submit action input field type is: {}", ::ToString(GetFieldType())));
 		if (m_submitAction != nullptr) m_submitAction(GetInput());
 		
-		LogError(std::format("AFTER submit action input field type is: {}", ToString(GetFieldType())));
+		LogError(std::format("AFTER submit action input field type is: {}", ::ToString(GetFieldType())));
 		return;
 	}
 	else if (GetInputManager().IsKeyReleased(DELETE_KEY) && !m_attemptedInput.empty())
@@ -124,16 +127,29 @@ void InputFieldGUI::Update(const float deltaTime)
 	//if (keysPressed == "." && m_type == InputFieldType::Float) Assert(false, std::format("FOUND DOT"));
 	SetAttemptedInputDelta(keysPressed);
 }
+void UIInputField::Update(const float deltaTime)
+{
+	if (m_textGUI == nullptr) return;
+	UpdateInput(deltaTime);
+	
+	std::string inputStr = IsSelected() && !HasFlag(InputFieldFlag::UserUIReadonly) ? GetDisplayAttemptedInput() : GetDisplayInput();
+	m_textGUI->SetText(inputStr);
+}
 
-void InputFieldGUI::SetSubmitAction(const InputFieldAction& action) { m_submitAction = action; }
-void InputFieldGUI::SetKeyPressAction(const KeyboardKey key, const InputFieldAction& action)
+void UIInputField::SetSubmitAction(const InputFieldAction& action) { m_submitAction = action; }
+void UIInputField::SetKeyPressAction(const KeyboardKey key, const InputFieldAction& action)
 {
 	m_keyActions.emplace(key, action);
 }
 
-void InputFieldGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }
+void UIInputField::SetSettings(const GUIStyle& settings) 
+{ 
+	m_settings = settings; 
+	if (m_textGUI != nullptr) m_textGUI->SetSettings(settings.m_TextSettings);
+	if (m_background != nullptr) m_background->SetColor(settings.m_BackgroundColor);
+}
 
-void InputFieldGUI::SetAttemptedInputDelta(const std::string& input)
+void UIInputField::SetAttemptedInputDelta(const std::string& input)
 {
 	std::string cleanedInput = CleanInput(input);
 
@@ -162,13 +178,13 @@ void InputFieldGUI::SetAttemptedInputDelta(const std::string& input)
 	}
 	else SetInput(m_attemptedInput + input, true);
 }
-void InputFieldGUI::ResetInput() 
+void UIInputField::ResetInput() 
 { 
 	m_input = ""; 
 	m_attemptedInput = "";
 }
 
-void InputFieldGUI::SetInput(const std::string& newInput, const bool isAttemptedInput)
+void UIInputField::SetInput(const std::string& newInput, const bool isAttemptedInput)
 {
 	if (newInput.empty()) return;
 	if (newInput == m_input) return;
@@ -193,30 +209,30 @@ void InputFieldGUI::SetInput(const std::string& newInput, const bool isAttempted
 	//Assert(false, std::format("Override input with; {} newinput: {}", m_input, newInput));
 }
 
-void InputFieldGUI::OverrideInput(const std::string& input)
+void UIInputField::OverrideInput(const std::string& input)
 {
 	SetInput(input, false);
 }
 
-const InputFieldType& InputFieldGUI::GetFieldType() const { return m_type; }
+const InputFieldType& UIInputField::GetFieldType() const { return m_type; }
 
-std::string InputFieldGUI::GetDisplayInput() const
+std::string UIInputField::GetDisplayInput() const
 {
 	if (HasFlag(InputFieldFlag::ShowCaret)) return m_input + "_";
 	return m_input;
 }
-std::string InputFieldGUI::GetDisplayAttemptedInput() const
+std::string UIInputField::GetDisplayAttemptedInput() const
 {
 	if (HasFlag(InputFieldFlag::ShowCaret)) return m_attemptedInput + "_";
 	return m_attemptedInput;
 }
 
-const std::string& InputFieldGUI::GetInput() const { return m_input; }
-const std::string& InputFieldGUI::GetLastInput() const { return m_lastInput; }
-int InputFieldGUI::GetIntInput() const { return std::stoi(m_input); }
-float InputFieldGUI::GetFloatInput() const { return std::stof(m_input); }
+const std::string& UIInputField::GetInput() const { return m_input; }
+const std::string& UIInputField::GetLastInput() const { return m_lastInput; }
+int UIInputField::GetIntInput() const { return std::stoi(m_input); }
+float UIInputField::GetFloatInput() const { return std::stof(m_input); }
 
-bool InputFieldGUI::HasFlag(const InputFieldFlag& flag) const
+bool UIInputField::HasFlag(const InputFieldFlag& flag) const
 {
 	return Utils::HasFlagAll(m_inputFlags, flag);
 }
@@ -225,14 +241,13 @@ RenderInfo InputFieldGUI::ElementRender(const RenderInfo& renderInfo)
 {
 	//Assert(false, std::format("drawing field gui at:{}", renderInfo.ToString()));
 	DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y, renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, m_settings.m_BackgroundColor);
-	std::string inputStr = IsSelected() && !HasFlag(InputFieldFlag::UserUIReadonly) ? GetDisplayAttemptedInput() : GetDisplayInput();
-	LogError(std::format("Input str for render:{}", inputStr));
-	//Assert(false, std::format("Found input: {}", inputStr));
 	
-	m_textGUI.SetText(inputStr);
+	//LogError(std::format("Input str for render:{}", inputStr));
+	//Assert(false, std::format("Found input: {}", inputStr));
+
 
 	LogError("hello");
-	m_textGUI.Render(renderInfo);
+	//m_textGUI.Render(renderInfo);
 
 	//Vector2 textStartPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
 	//const float fontSize = m_settings.m_TextSettings.GetFontSize(renderSize);
@@ -255,6 +270,27 @@ RenderInfo InputFieldGUI::ElementRender(const RenderInfo& renderInfo)
 	
 	//LogError(std::format("Updating input field rect to: {}", m_lastRenderRect.ToString()));
 	return renderInfo;
+}
+
+void UIInputField::InitFields()
+{
+	m_Fields = {};
+}
+
+std::string UIInputField::ToString() const
+{
+	return std::format("[UIInputField]");
+}
+
+void UIInputField::Deserialize(const Json& json)
+{
+	//TODO: implement
+	return;
+}
+Json UIInputField::Serialize()
+{
+	//TOD: implement
+	return {};
 }
 
 //const GUIRect& InputField::GetLastRenderRect() const

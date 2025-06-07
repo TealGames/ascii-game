@@ -29,7 +29,7 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUIHierarchy& h
 		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit, 
 		EditorStyles::GetInputFieldStyle(TextAlignment::TopLeft)),
 	m_outputMessageLayout(LayoutType::Vertical, SizingType::ExpandAndShrink), m_toggleableContainer(), m_container(),
-	m_outputMessagesTextGuis(Utils::ConstructArray<TextGUI, MAX_OUTPUT_MESSAGES>("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))),
+	m_outputMessagesTextGuis(Utils::ConstructArray<UITextComponent, MAX_OUTPUT_MESSAGES>("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))),
 	m_nextTextGuiIndex(0), m_timeSinceOpen(0), m_isEnabled(false)
 {
 	//GUIStyle fieldSettings = GUIStyle(GRAY, TextGUIStyle(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), 

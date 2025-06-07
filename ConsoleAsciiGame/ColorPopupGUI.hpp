@@ -1,20 +1,20 @@
 #pragma once
 #include "PopupGUI.hpp"
-#include "InputFieldGUI.hpp"
-#include "SliderGUI.hpp"
-#include "LayoutGUI.hpp"
+#include "UIInputField.hpp"
+#include "UISliderComponent.hpp"
+#include "UILayout.hpp"
 #include <array>
 #include "Color.hpp"
-#include "ContainerGUI.hpp"
+#include "UIContainer.hpp"
 
 class GUISelectorManager;
 namespace Input { class InputManager; }
 
 struct ColorChannelGUI
 {
-	ContainerGUI m_Container;
-	SliderGUI m_Slider;
-	TextGUI m_Text;
+	UIContainer m_Container;
+	UISliderComponent m_Slider;
+	UITextComponent m_Text;
 
 	ColorChannelGUI(const Input::InputManager& input);
 
@@ -25,8 +25,8 @@ struct ColorChannelGUI
 class ColorPopupGUI : public PopupGUI
 {
 private:
-	LayoutGUI m_sliderLayout;
-	InputFieldGUI m_hexField;
+	UILayout m_sliderLayout;
+	UIInputField m_hexField;
 
 	std::array<ColorChannelGUI, 3> m_rgbChannels;
 public:

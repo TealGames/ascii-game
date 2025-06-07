@@ -17,7 +17,7 @@ std::string ToString(const TriggerType& trigger)
 TriggerData::TriggerData() : TriggerData(nullptr) {}
 TriggerData::TriggerData(const CollisionBoxData& collider) : TriggerData(&collider) {}
 TriggerData::TriggerData(const CollisionBoxData* collider) : 
-	ComponentData(), m_collider(collider), m_triggerType(TriggerType::Default), m_OnEnter(), m_OnExit() {}
+	Component(), m_collider(collider), m_triggerType(TriggerType::Default), m_OnEnter(), m_OnExit() {}
 
 const CollisionBoxData& TriggerData::GetCollisionBox() const
 {

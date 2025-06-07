@@ -1,49 +1,42 @@
 #include "pch.hpp"
-#include "LayoutGUI.hpp"
+#include "UILayout.hpp"
 #include "Debug.hpp"
+#include "EntityData.hpp"
+#include "UITransformData.hpp"
 
-LayoutGUI::LayoutGUI(const LayoutType type, const SizingType sizing, const NormalizedPosition spacing, const Color background)
-	: m_type(type), m_sizingType(sizing), m_spacing(spacing), m_backgroundColor(background) {}
+UILayout::UILayout(const LayoutType type, const SizingType sizing, const NormalizedPosition spacing)
+	: m_type(type), m_sizingType(sizing), m_spacing(spacing) {}
 
-void LayoutGUI::AddLayoutElement(GUIElement* element)
+void UILayout::AddLayoutElement(EntityData& element)
 {
-	PushChild(element);
+	GetEntitySafeMutable().PushChild(element);
 	//TODO: an optimization could be to update the size of this newly pushed child
 	//and if we know whether internal state of gui element changed, we can prevent
 	//unnecessary layout updates
 }
-void LayoutGUI::RemoveLayoutElements(const size_t& childStartIndex, const size_t& count)
+void UILayout::RemoveLayoutElements(const size_t& childStartIndex, const size_t& count)
 {
-	TryPopChildren(childStartIndex, count);
+	GetEntitySafeMutable().TryPopChildren(childStartIndex, count);
 }
 
-Vec2 LayoutGUI::GetTotalSizeUsed() const
+Vec2 UILayout::GetTotalSizeUsed() const
 {
 	Vec2 size = {};
-	for (const auto& child : GetChildren())
+	for (const auto& child : GetEntitySafe().GetChildrenOfType<UITransformData>())
 	{
 		size += child->GetSize().GetPos();
 	}
 	return size;
 }
 
-void LayoutGUI::Update(const float deltaTime) 
+void UILayout::Update(const float deltaTime) 
 {
 	LayoutUpdate();
 }
-RenderInfo LayoutGUI::Render(const RenderInfo& renderInfo)
-{
-	if (m_backgroundColor.a > 0.01)
-	{
-		DrawRectangle(renderInfo.m_TopLeftPos.m_X, renderInfo.m_TopLeftPos.m_Y,
-			renderInfo.m_RenderSize.m_X, renderInfo.m_RenderSize.m_Y, m_backgroundColor);
-	}
-	return renderInfo;
-}
 
-void LayoutGUI::LayoutUpdate()
+void UILayout::LayoutUpdate()
 {
-	if (GetChildCount() == 0) return;
+	if (GetEntitySafe().GetChildCount() == 0) return;
 
 	//SetMaxSize();
 	Vec2 totalElementSizeUsed = {};
@@ -52,7 +45,7 @@ void LayoutGUI::LayoutUpdate()
 
 	float currentRowLenNorm = 0;
 	int gridRows = 0;
-	for (const auto& child : GetChildrenMutable())
+	for (const auto& child : GetEntitySafe().GetChildrenOfType<UITransformData>())
 	{
 		currentSize = child->GetSize();
 		
@@ -84,9 +77,10 @@ void LayoutGUI::LayoutUpdate()
 	//If we have no sizing, we leave the size factor as one
 	if (m_sizingType != SizingType::None)
 	{
+		const size_t childCount = GetEntitySafe().GetChildCount();
 		//We base size factor off of remaining horizontal space after removing x spacing and how much total elements x size (without spaces) goes over that limit
-		if (m_type == LayoutType::Horizontal) sizeFactor = (NormalizedPosition::MAX - m_spacing.GetX() * (GetChildCount() - 1)) / totalElementSizeUsed.m_X;
-		else if (m_type == LayoutType::Vertical) sizeFactor = (NormalizedPosition::MAX - m_spacing.GetY() * (GetChildCount() - 1)) / totalElementSizeUsed.m_Y;
+		if (m_type == LayoutType::Horizontal) sizeFactor = (NormalizedPosition::MAX - m_spacing.GetX() * (childCount - 1)) / totalElementSizeUsed.m_X;
+		else if (m_type == LayoutType::Vertical) sizeFactor = (NormalizedPosition::MAX - m_spacing.GetY() * (childCount - 1)) / totalElementSizeUsed.m_Y;
 		//Since grid does not have vertical elements the same as total children, we use total grid rows
 		else sizeFactor = (NormalizedPosition::MAX - m_spacing.GetY() * (gridRows - 1)) / totalElementSizeUsed.m_Y;
 
@@ -102,7 +96,7 @@ void LayoutGUI::LayoutUpdate()
 	if (m_sizingType == SizingType::ShrinkChildren && totalSizeNorm.GetY() > GetSize().GetY())
 		sizeFactorY = GetSize().GetY() / totalSizeNorm.GetY();*/
 
-	const auto& children = GetChildrenMutable();
+	const auto& children = GetEntitySafeMutable().GetChildrenOfTypeMutable<UITransformData>();
 	for (size_t i=0; i<children.size(); i++)
 	{
 		if (children[i] == nullptr) continue;
@@ -111,7 +105,7 @@ void LayoutGUI::LayoutUpdate()
 		{
 			LogError(std::format("Tried to update layout of id:{} but current pos norm:{} "
 				"reached a point where size would be 0. Size factor:{} totalSizeNorm:{}",
-				std::to_string(GetId()), currentPosNorm.ToString(), std::to_string(sizeFactor), totalElementSizeUsed.ToString()));
+				GetEntitySafe().ToStringId(), currentPosNorm.ToString(), std::to_string(sizeFactor), totalElementSizeUsed.ToString()));
 
 			//Note: sizing sizing of none allows for elements that do not fit, we just ignore those and can leave without any errors
 			if (m_sizingType != SizingType::None) throw std::invalid_argument("Invalid layout state");
@@ -152,9 +146,30 @@ void LayoutGUI::LayoutUpdate()
 			//LogError(std::format("Checking layout child:{} next line width:{} posNorm:{}", children[i]->ToStringBase(), std::to_string(nextLineWidth), currentPosNorm.ToString()));
 		}
 
-		LogError(std::format("While doing layout update for:{} child:{} old rect:{} new:{} size factor:{} spacing:{}", ToStringBase(), 
-			std::to_string(children[i]->GetId()), before.ToString(), children[i]->GetRect().ToString(), std::to_string(sizeFactor), m_spacing.ToString()));
+		LogError(std::format("While doing layout update for:{} child:{} old rect:{} new:{} size factor:{} spacing:{}", ToString(), 
+			children[i]->GetEntitySafe().ToStringId(), before.ToString(), children[i]->GetRect().ToString(), std::to_string(sizeFactor), m_spacing.ToString()));
 	}
 
 	//Assert(false, std::format("END"));
+}
+
+void UILayout::InitFields()
+{
+	m_Fields = {};
+}
+
+std::string UILayout::ToString() const
+{
+	return std::format("[UILayout]");
+}
+
+void UILayout::Deserialize(const Json& json)
+{
+	//TODO: implement
+	return;
+}
+Json UILayout::Serialize()
+{
+	//TOD: implement
+	return {};
 }

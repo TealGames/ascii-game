@@ -12,7 +12,7 @@ MoveContraints::MoveContraints(const bool constrainX, const bool constrainY)
 
 PhysicsBodyData::PhysicsBodyData(const CollisionBoxData* coliisionBox, const float& mass, 
 	const float& gravity, const float& terminalYVelocity)
-	: ComponentData(),
+	: Component(),
 	m_mass(std::abs(mass)), //m_aabb(CreateAABB(boundingBoxSize, transformOffset)),
 	//m_collider(GetEntitySafe().m_Transform, boundingBoxSize, transformOffset),
 	//m_collider(transform, boundingBoxSize, transformOffset),

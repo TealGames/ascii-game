@@ -19,7 +19,7 @@ struct LightMapChar
 	std::string ToString() const;
 };
 
-struct LightSourceData : public ComponentData
+struct LightSourceData : public Component
 {
 	std::uint8_t m_LightRadius;
 	//The layers which the light will apply its effect to

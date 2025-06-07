@@ -2,12 +2,12 @@
 #include <string>
 #include <vector>
 #include "ITreeGUIConstructible.hpp"
-#include "LayoutGUI.hpp"
-#include "ContainerGUI.hpp"
+#include "UILayout.hpp"
+#include "UIContainer.hpp"
 #include "ComponentData.hpp"
 #include "ComponentFieldGUI.hpp"
 #include "InputManager.hpp"
-#include "ToggleGUI.hpp"
+#include "UIToggleComponent.hpp"
 #include "PanelGUI.hpp"
 
 class EntityGUI;
@@ -20,17 +20,17 @@ class ComponentGUI : public ITreeGUIConstructible
 {
 private:
 	const Input::InputManager* m_inputManager;
-	ContainerGUI m_guiContainer;
-	LayoutGUI m_fieldLayout;
-	PanelGUI m_nameHeader;
-	ComponentData* m_component;
+	UIContainer m_guiContainer;
+	UILayout m_fieldLayout;
+	UIPanel m_nameHeader;
+	Component* m_component;
 	std::vector<ComponentFieldGUI> m_fieldGUIs;
 
 	const TextureAsset* m_dropdownToggledTexture;
 	const TextureAsset* m_dropdownDefaultTexture;
 
-	ToggleGUI m_dropdownCheckbox;
-	TextGUI m_componentNameText;
+	UIToggleComponent m_dropdownCheckbox;
+	UITextComponent m_componentNameText;
 
 	const EntityGUI* m_entityGUI;
 public:
@@ -40,7 +40,7 @@ private:
 
 public:
 	ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, 
-		const AssetManagement::AssetManager& m_assetManager, const EntityGUI& entityGUI, ComponentData& component);
+		const AssetManagement::AssetManager& m_assetManager, const EntityGUI& entityGUI, Component& component);
 	~ComponentGUI();
 	
 	//void Init();

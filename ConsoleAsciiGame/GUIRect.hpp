@@ -7,10 +7,12 @@
 class GUIRect
 {
 private:
-	ScreenPosition m_topLeftPos;
+public:
+	ScreenPosition m_TopLeftPos;
 	//Vec2Int m_size;
-	ScreenPosition m_bottomRightPos;
+	ScreenPosition m_BottomRightPos;
 
+private:
 public:
 	GUIRect();
 	GUIRect(const ScreenPosition& topLeftPos, const Vec2Int& size);
@@ -19,8 +21,6 @@ public:
 	bool ContainsPos(const ScreenPosition& pos) const;
 	bool ContainsPos(const WorldPosition& pos) const;
 
-	const ScreenPosition& GetTopleftPos() const;
-	const ScreenPosition& GetBottomRightPos() const;
 	Vec2Int GetSize() const;
 
 	void SetTopLeftPos(const ScreenPosition& pos);

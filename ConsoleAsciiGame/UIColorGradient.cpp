@@ -1,23 +1,23 @@
 #include "pch.hpp"
-#include "ColorGradientGUI.hpp"
+#include "UIColorGradient.hpp"
 #include "raylib.h"
 
-ColorGradientGUI::ColorGradientGUI(const ColorGradient& gradient) : m_gradient(gradient) {}
+UIColorGradient::UIColorGradient(const ColorGradient& gradient) : m_gradient(gradient) {}
 
-void ColorGradientGUI::SetGradient(const ColorGradient& gradient)
+void UIColorGradient::SetGradient(const ColorGradient& gradient)
 {
 	m_gradient = gradient;
 }
-const ColorGradient& ColorGradientGUI::GetGradient() const
+const ColorGradient& UIColorGradient::GetGradient() const
 {
 	return m_gradient;
 }
 
-void ColorGradientGUI::Update(const float deltaTime)
+void UIColorGradient::Update(const float deltaTime)
 {
 }
 
-RenderInfo ColorGradientGUI::ElementRender(const RenderInfo& renderInfo)
+RenderInfo UIColorGradient::ElementRender(const RenderInfo& renderInfo)
 {
 	//TODO: finish implementing
 	Color startColor = m_gradient.GetFirstColor(false);

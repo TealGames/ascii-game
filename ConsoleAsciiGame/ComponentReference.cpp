@@ -5,7 +5,7 @@
 ComponentReference::ComponentReference() 
 	: m_Entity(nullptr), m_ComponentIndex(-1) {}
 
-ComponentReference::ComponentReference(ComponentData* componentData) 
+ComponentReference::ComponentReference(Component* componentData) 
 	: m_Entity(&(componentData->GetEntitySafeMutable())), m_ComponentIndex(-1)
 {
 	if (!Assert(this, m_Entity != nullptr, std::format("Tried to construct a component reference with component data: {} "
@@ -26,7 +26,7 @@ ComponentReference::ComponentReference(EntityData& entity, const size_t& compone
 		entity.ToString(), std::to_string(m_ComponentIndex))))
 		return;
 
-	ComponentData* data = m_Entity->TryGetComponentAtIndexMutable(m_ComponentIndex);
+	Component* data = m_Entity->TryGetComponentAtIndexMutable(m_ComponentIndex);
 	if (!Assert(this, data != nullptr, std::format("Tried to construct a component reference with entity: {} "
 		"but could not retrieve component at index:{}!", m_Entity->ToString(), std::to_string(m_ComponentIndex))))
 		return;
@@ -53,14 +53,14 @@ const EntityData& ComponentReference::GetEntitySafe() const
 		
 	return *m_Entity;
 }
-ComponentData* ComponentReference::GetComponentDataMutable()
+Component* ComponentReference::GetComponentDataMutable()
 {
 	return m_Entity->TryGetComponentAtIndexMutable(m_ComponentIndex);
 }
 
 std::string ComponentReference::GetComponentName() const
 {
-	const ComponentData* componentData = m_Entity->TryGetComponentAtIndex(m_ComponentIndex);
+	const Component* componentData = m_Entity->TryGetComponentAtIndex(m_ComponentIndex);
 	return Utils::FormatTypeName(typeid(*componentData).name());
 }
 

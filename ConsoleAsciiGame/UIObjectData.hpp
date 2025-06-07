@@ -2,7 +2,7 @@
 #include "ComponentData.hpp"
 #include "NormalizedPosition.hpp"
 
-class UIObjectData : public ComponentData
+class UIObjectData : public Component
 {
 private:
 	/// <summary>

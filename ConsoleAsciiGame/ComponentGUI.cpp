@@ -23,7 +23,7 @@ constexpr static float ONE_FIELD_MAX_ENTITY_SPACE = 0.05;
 //static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
 
 ComponentGUI::ComponentGUI(const Input::InputManager& inputManager, PopupGUIManager& popupManager, 
-	const AssetManagement::AssetManager& m_assetManager, const EntityGUI& entityGUI, ComponentData& component)
+	const AssetManagement::AssetManager& m_assetManager, const EntityGUI& entityGUI, Component& component)
 	: m_inputManager(&inputManager), m_component(&component), m_fieldGUIs(), m_entityGUI(&entityGUI), 
 	m_dropdownDefaultTexture(m_assetManager.TryGetTypeAsset<TextureAsset>("dropdown_icon_default")), 
 	m_dropdownToggledTexture(m_assetManager.TryGetTypeAsset<TextureAsset>("dropdown_icon_toggled")),

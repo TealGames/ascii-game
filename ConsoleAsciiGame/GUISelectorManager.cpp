@@ -19,11 +19,11 @@ void GUISelectorManager::CreateSelectableArray()
 	m_selectableLayers.clear();
 
 	size_t i = 0;
-	m_hierarchy.ExecuteOnAllElementsDescending([this, &i](GUILayer layer, GUIElement& element) -> void
+	m_hierarchy.ExecuteOnAllElementsDescending([this, &i](GUILayer layer, UITransformData& element) -> void
 		{
 			//LogWarning(std::format("Bool is element:{} selectable:", element->ToStringBase()));
 			if (element.IsSelectionEventBlocker()) AddSelectionEventBlocker(layer, i, element);
-			else if (SelectableGUI* selectable = dynamic_cast<SelectableGUI*>(element))
+			else if (UISelectableData* selectable = element.GetEntitySafeMutable().TryGetComponentMutable<UISelectableData>())
 			{
 				AddSelectable(layer, selectable);
 				//LogWarning(std::format("YES"));
@@ -47,7 +47,7 @@ void GUISelectorManager::Init()
 	CreateSelectableArray();
 
 	//TODO: this is slow and not very good solution to have to recreate selectable array on every addition/removal
-	m_hierarchy.m_OnElementAdded.AddListener([this](const GUIElement* element)-> void
+	m_hierarchy.m_OnElementAdded.AddListener([this](const UITransformData* element)-> void
 		{
 			//static size_t i = 0;
 
@@ -60,17 +60,17 @@ void GUISelectorManager::Init()
 			i++;*/
 		});
 
-	m_hierarchy.m_OnElementRemoved.AddListener([this](const GUIElement* element)-> void
+	m_hierarchy.m_OnElementRemoved.AddListener([this](const UITransformData* element)-> void
 		{
 			//CreateSelectableArray();
 			m_hasGuiTreeUpdated = true;
 		});
 }
 
-void GUISelectorManager::SelectNewSelectable(SelectableGUI* selectable)
+void GUISelectorManager::SelectNewSelectable(UISelectableData* selectable)
 {
 	if (selectable == nullptr) return;
-	LogWarning(std::format("SELEC NEW SELECTABLE:{}", selectable->ToStringBase()));
+	LogWarning(std::format("SELEC NEW SELECTABLE:{}", selectable->ToString()));
 
 	DeselectCurrentSelectable();
 	selectable->Select();
@@ -78,12 +78,12 @@ void GUISelectorManager::SelectNewSelectable(SelectableGUI* selectable)
 	//Assert(false, std::format("SHOULD SELECTE NEW ONE AT: {}", selectable->GetLastFrameRect().ToString()));
 }
 
-void GUISelectorManager::ClickSelectable(SelectableGUI* selectable)
+void GUISelectorManager::ClickSelectable(UISelectableData* selectable)
 {
 	//Assert(false, std::format("CLICKIGN ON SELECTABLE"));
 	if (selectable == nullptr) return;
 	selectable->Click();
-	LogWarning(std::format("CLICK SELECTABLE:{} tree:{}", selectable->ToStringBase(), m_hierarchy.ToStringTree()));
+	LogWarning(std::format("CLICK SELECTABLE:{} tree:{}", selectable->ToString(), m_hierarchy.ToStringTree()));
 	LogError(std::format("click selectable ADDR:{}", Utils::ToStringPointerAddress(selectable)));
 }
 
@@ -94,7 +94,7 @@ void GUISelectorManager::StopCurrentHovering()
 	m_currentHovered = nullptr;
 }
 
-void GUISelectorManager::SetNewHoveredSelectable(SelectableGUI* selectable)
+void GUISelectorManager::SetNewHoveredSelectable(UISelectableData* selectable)
 {
 	if (selectable == nullptr) return;
 
@@ -145,6 +145,7 @@ void GUISelectorManager::InvokeInteractionEvents()
 	const Input::KeyState selectKeyState = m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetState();
 
 	const Vec2 mousePos = m_inputManager.GetMousePosition();
+	const ScreenPosition screenMousePos = ScreenPosition(mousePos.m_X, mousePos.m_Y);
 	const Vec2 mouseDelta = mousePos - m_lastFrameMousePos;
 	//m_lastFrameMousePos = mousePos;
 
@@ -199,7 +200,7 @@ void GUISelectorManager::InvokeInteractionEvents()
 				/*LogError(std::format("checking selectable:{} last rect:{} contains pos:{}->{}", selectable->ToStringBase(),
 					selectable->GetLastFrameRect().ToString(), mousePos.ToString(), std::to_string(selectable->GetLastFrameRect().ContainsPos(mousePos))));*/
 
-			if (!selectable->GetLastFrameRect().ContainsPos(mousePos)) continue;
+			if (!selectable->RectContainsPos(screenMousePos)) continue;
 
 			if (hasNewHoverPos)
 			{
@@ -245,7 +246,7 @@ void GUISelectorManager::InvokeInteractionEvents()
 		Assert(false, std::format("After event CLICKED:{} \n\n selectavle tree:{} \n\ngui tree:{}", mousePos.ToString(), ToStringSelectables(), m_hierarchy.ToStringTree()));
 }
 
-void GUISelectorManager::AddSelectable(const GUILayer layer, SelectableGUI* selectable)
+void GUISelectorManager::AddSelectable(const GUILayer layer, UISelectableData* selectable)
 {
 	if (selectable == nullptr)
 	{
@@ -256,23 +257,23 @@ void GUISelectorManager::AddSelectable(const GUILayer layer, SelectableGUI* sele
 	auto it = m_selectableLayers.find(layer);
 
 	if (it == m_selectableLayers.end())
-		m_selectableLayers.emplace(layer, std::vector<SelectableGUI*>{ selectable});
+		m_selectableLayers.emplace(layer, std::vector<UISelectableData*>{ selectable});
 	else it->second.push_back(selectable);
 }
-void GUISelectorManager::AddSelectables(const GUILayer layer, const std::vector<SelectableGUI*>& selectables)
+void GUISelectorManager::AddSelectables(const GUILayer layer, const std::vector<UISelectableData*>& selectables)
 {
 	for (const auto& selectable : selectables)
 		AddSelectable(layer, selectable);
 }
 
-void GUISelectorManager::AddSelectionEventBlocker(const GUILayer layer, const size_t elementIndex, const GUIElement* element)
+void GUISelectorManager::AddSelectionEventBlocker(const GUILayer layer, const size_t elementIndex, const UITransformData& element)
 {
 	auto it = m_selectableLayers.find(layer);
 	//TODO: it might not be a good idea to have nullptr as the placeholder for event blockers in case selectables are null by accident
 
 	//Note: NULLPTR is a placeholder for event blockers
 	if (it == m_selectableLayers.end())
-		m_selectableLayers.emplace(layer, std::vector<SelectableGUI*>{ nullptr});
+		m_selectableLayers.emplace(layer, std::vector<UISelectableData*>{ nullptr});
 	else it->second.push_back(nullptr);
 
 	m_selectionEventBlockers.emplace(elementIndex, element);
@@ -284,9 +285,9 @@ bool GUISelectorManager::IsEventBlocker(const size_t index) const
 
 bool GUISelectorManager::SelectedSelectableThisFrame() const { return m_selectedThisFrame; }
 bool GUISelectorManager::HasSelecatbleSelected() const { return m_currentSelected != nullptr; }
-const SelectableGUI* GUISelectorManager::TryGetSelectableSelected() const { return m_currentSelected; }
-const SelectableGUI* GUISelectorManager::TryGetSelectableDragged() const { return m_currentDragged; }
-const SelectableGUI* GUISelectorManager::TryGetSelectableHovered() const { return m_currentHovered; }
+const UISelectableData* GUISelectorManager::TryGetSelectableSelected() const { return m_currentSelected; }
+const UISelectableData* GUISelectorManager::TryGetSelectableDragged() const { return m_currentDragged; }
+const UISelectableData* GUISelectorManager::TryGetSelectableHovered() const { return m_currentHovered; }
 
 
 std::string GUISelectorManager::ToStringSelectableTypes() const
@@ -325,7 +326,7 @@ std::string GUISelectorManager::ToStringSelectables() const
 				if (IsEventBlocker(i)) selectabeList.push_back("[EVENT BLOCKER]");
 				else selectabeList.push_back("[NULL]");
 			}
-			else selectabeList.push_back(selectable->ToStringBase());
+			else selectabeList.push_back(selectable->ToString());
 		}
 		layersList.back() += Utils::ToStringIterable(selectabeList);
 		layersList.back().push_back(']');

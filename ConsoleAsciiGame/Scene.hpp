@@ -163,7 +163,7 @@ public:
 	const EntityData* TryGetEntity(const std::string& name, const bool& ignoreCase = false) const;
 
 	template<typename T>
-	requires std::is_base_of_v<ComponentData, T>
+	requires std::is_base_of_v<Component, T>
 	void OperateOnComponents(const std::function<void(T&)> action)
 	{
 		ECS::OperateOnActiveComponents<T>(m_registry, action);
@@ -171,7 +171,7 @@ public:
 	}
 
 	template<typename T>
-	requires std::is_base_of_v<ComponentData, T>
+	requires std::is_base_of_v<Component, T>
 	void GetComponentsMutable(std::vector<T*>& inputVector)
 	{
 		ECS::GetRegistryComponentsMutable<T>(m_registry, inputVector);

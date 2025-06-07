@@ -8,12 +8,12 @@ struct ComponentReference
 	size_t m_ComponentIndex;
 
 	ComponentReference();
-	ComponentReference(ComponentData* componentData);
+	ComponentReference(Component* componentData);
 	ComponentReference(EntityData& entity, const size_t& componentIndex);
 	ComponentReference(EntityData& entity, const std::string& componentName);
 
 	const EntityData& GetEntitySafe() const;
-	ComponentData* GetComponentDataMutable();
+	Component* GetComponentDataMutable();
 	std::string GetComponentName() const;
 
 	std::string ToString() const;

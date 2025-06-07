@@ -1,18 +1,25 @@
 #pragma once
-#include "SelectableGUI.hpp"
-#include "IRenderable.hpp"
+#include "UISelectableData.hpp"
 #include "GUIStyle.hpp"
 #include "Event.hpp"
 
+class UIPanel;
+class UIRenderer;
+class UITransformData;
 class GUISelectorManager;
 namespace Input { class InputManager; }
-class SliderGUI : public SelectableGUI
+
+class UISliderComponent : public UISelectableData
 {
 private:
 	const Input::InputManager* m_inputManager;
 	GUIStyle m_settings;
 	Vec2 m_minMaxValues;
 	float m_value;
+
+	UIRendererData* m_renderer;
+	UIPanel* m_backgroundPanel;
+	UITransformData* m_sliderHandle;
 public:
 	Event<void, float> m_OnValueSet;
 
@@ -23,7 +30,7 @@ private:
 	/// <returns></returns>
 	float GetValueNormalized() const;
 public:
-	SliderGUI(const Input::InputManager& inputManager, 
+	UISliderComponent(const Input::InputManager& inputManager, 
 		const Vec2 minMaxValues, const GUIStyle& settings);
 
 	void SetSettings(const GUIStyle& settings);
@@ -38,6 +45,6 @@ public:
 	int GetMaxValueInt() const;
 	float GetValue() const;
 
-	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
+	//RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 };
 

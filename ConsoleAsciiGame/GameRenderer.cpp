@@ -1,6 +1,7 @@
 //NOT USED
 #include "pch.hpp"
 #include <optional>
+#include <queue>
 #include "Globals.hpp"
 
 #include "GameRenderer.hpp"
@@ -14,81 +15,13 @@
 namespace Rendering
 {
     constexpr bool DONT_RENDER_NON_UTILS = false;
+    std::vector<RenderCall> RenderCalls;
+    std::vector<TextCallData> TextData;
+    std::vector<TextureCallData> TextureData;
 
-    void RenderBuffer(const FragmentedTextBuffer& buffer, const RenderInfo& renderInfo)
-    {
-#ifdef ENABLE_PROFILER
-        ProfilerTimer timer("GameRenderer::RenderBuffer");
-#endif 
+    Renderer::Renderer() {}
 
-       // //Log(std::format("Rendering buffer: {}", buffer.ToString()));
-       // if (!Assert(buffer.GetWidth() != 0 && buffer.GetHeight() != 0,
-       //     std::format("Tried to render a buffer with GameRenderer that has width and/or height of 0")))
-       //     return;
-
-       // BeginDrawing();
-
-       // ClearBackground(BLACK);
-       // RaylibUtils::DrawFPSCounter();
-       ///* DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);*/
-       // if (DONT_RENDER_NON_UTILS)
-       // {
-       //     EndDrawing();
-       //     return;
-       // }
-       //
-       // //TODO: perhaps we should not calculate the best fit char area, but rather have a consistent size to allow
-       // //different scene sizes to appear the same with character area
-       // int totalUsableWidth = renderInfo.m_ScreenSize.m_X - (2 * renderInfo.m_Padding.m_X);
-       // int totalUsableHeight = renderInfo.m_ScreenSize.m_Y - (2 * renderInfo.m_Padding.m_Y);
-
-       // Utils::Point2DInt charArea;
-       // if (renderInfo.m_CharSpacing.has_value()) charArea = renderInfo.m_CharSpacing.value();
-       // else charArea = { totalUsableWidth / buffer.GetWidth(), totalUsableHeight / buffer.GetHeight() };
-       // /* std::cout << std::format("Out of total screen: W{}x H{} usable is W{} x H{} with char area: w{} h{}",
-       //      std::to_string(SCREEN_WIDTH), std::to_string(SCREEN_HEIGHT), std::to_string(totalUsableWidth), std::to_string(totalUsableHeight),
-       //      std::to_string(charArea.m_X), std::to_string(charArea.m_Y)) << std::endl;*/
-
-       // int x = renderInfo.m_Padding.m_X;
-       // int y = renderInfo.m_Padding.m_Y;
-       // if (renderInfo.m_CenterBuffer)
-       // {
-       //     int widthLeft = totalUsableWidth - (charArea.m_X* buffer.GetWidth());
-       //     int heightLeft = totalUsableHeight - (charArea.m_Y*buffer.GetHeight());
-
-       //     x += (widthLeft/2);
-       //     y += (heightLeft /2);
-       // }
-       // //Log(std::format("CHAR AREA: {}", charArea.ToString()));
-
-       // char drawStr[2] = { '1', '\0' };
-       //
-       // //TODO: instead of drawing text directly and separeately maybe look into
-       // //having the buffer be a texture and drawing the text there rather and then redenderign the texture each frame
-       // //since text is not optimized very well in raylib
-       // int startX = x;
-       // for (int r = 0; r < buffer.GetHeight(); r++)
-       // {
-       //     for (int c = 0; c < buffer.GetWidth(); c++)
-       //     {
-       //         const TextChar& currentChar = buffer.GetAtUnsafe({ r, c });
-       //         drawStr[0] = currentChar.m_Char;
-       //         if (drawStr[0] != EMPTY_CHAR_PLACEHOLDER)
-       //         {
-       //             DrawText(drawStr, x, y, renderInfo.m_FontSize, currentChar.m_Color);
-       //         }
-       //        /*Log(std::format("Drawing character: {} at pos: {} with color: {}", 
-       //             Utils::ToString(drawStr[0]), Utils::Point2DInt(r, c).ToString(), RaylibUtils::ToString(buffer.GetAt({ r, c })->m_Color)));*/
-       //         x += charArea.m_X;
-       //     }
-
-       //     y += charArea.m_Y;
-       //     x = startX;
-       // }
-
-       // EndDrawing();
-    }
-
+    /*
     void RenderBuffer(const FragmentedTextBuffer* buffer, const ColliderOutlineBuffer* outlineBuffer,
         const LineBuffer* lineBuffer, GUIHierarchy* hierarchy)
     {
@@ -98,7 +31,7 @@ namespace Rendering
         BeginDrawing();
 
         ClearBackground(BLACK);
-        /* DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);*/
+        //DrawText(std::format("FPS: {}", GetFPS()).c_str(), 5, 5, 24, WHITE);
         if (DONT_RENDER_NON_UTILS)
         {
             EndDrawing();
@@ -129,8 +62,8 @@ namespace Rendering
             {
                 DrawRectangleLines(rectangle.m_Position.m_X, rectangle.m_Position.m_Y, 
                     rectangle.m_Size.XAsInt(), rectangle.m_Size.YAsInt(), EditorStyles::COLLIDER_OUTLINE_COLOR);
-              /*  LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}", 
-                    rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
+              //LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}", 
+              //rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));
             }
         }
 
@@ -139,57 +72,10 @@ namespace Rendering
             for (const auto& line : *lineBuffer)
             {
                 DrawLine(line.m_StartPos.m_X, line.m_StartPos.m_Y, line.m_EndPos.m_X, line.m_EndPos.m_Y, EditorStyles::LINE_COLOR);
-                /*  LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}",
-                      rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));*/
+                //LogWarning(std::format("Rectangle of sixe: {} is being drawn at; {}",
+                //rectangle.m_Size.ToString(), rectangle.m_Position.ToString()));
             }
         }
-
-        /*if (debugInfo != nullptr)
-        {
-            Vector2 startPos = {5, 5};
-            Vector2 currentPos = startPos;
-            Vector2 currentSize = {};
-
-            Color defaultColor = DEBUG_TEXT_COLOR;
-            Color currentColor = defaultColor;
-
-            const auto& highlightedIndices = debugInfo->GetHighlightedIndicesSorted();
-            if (!highlightedIndices.empty()) defaultColor.a = 100;
-
-            size_t currentIndex = 0;
-            size_t currentCollectionIndex = 0;
-            size_t nextHighlightedIndex = !highlightedIndices.empty() ? highlightedIndices[currentCollectionIndex] : -1;
-
-            for (const auto& text : debugInfo->GetText())
-            {
-                if (!highlightedIndices.empty() && currentIndex == nextHighlightedIndex)
-                {
-                    currentColor = DEBUG_HIGHLIGHTED_TEXT_COLOR;
-                    currentCollectionIndex++;
-                    if (currentCollectionIndex < highlightedIndices.size())
-                    {
-                        nextHighlightedIndex = highlightedIndices[currentCollectionIndex];
-                    }
-                }
-                else currentColor = defaultColor;
-
-                currentSize = MeasureTextEx(GetGlobalFont(), text.c_str(), DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X);
-                DrawTextEx(GetGlobalFont(), text.c_str(), currentPos, DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, currentColor);
-
-                currentPos.y += currentSize.y + DEBUG_INFO_CHAR_SPACING.m_Y;
-                currentIndex++;
-            }
-
-           auto maybeMouseData = debugInfo->GetMouseDebugData();
-            if (maybeMouseData.has_value())
-            {
-                std::string textAsStr = std::format("{}", maybeMouseData.value().m_MouseWorldPos.ToString(2));
-                const char* text = textAsStr.c_str();
-                DrawTextEx(GetGlobalFont(), text, RaylibUtils::ToRaylibVector(maybeMouseData.value().m_MouseTextScreenPos), 
-                    DEBUG_INFO_FONT_SIZE, DEBUG_INFO_CHAR_SPACING.m_X, WHITE);
-
-            } 
-        }*/
 
         //Draws the center screen indicator
         const float CENTER_CIRCLE_RADIUS = 5;
@@ -198,17 +84,60 @@ namespace Rendering
         const WorldPosition centerPos = {(float)SCREEN_WIDTH/2, (float)SCREEN_HEIGHT/2};
         DrawCircle(centerPos.m_X, centerPos.m_Y, CENTER_CIRCLE_RADIUS, circleColor);
 
-        /*if (console != nullptr) console->TryRender();
-        if (editor != nullptr) editor->TryRender();*/
+        //if (console != nullptr) console->TryRender();
+       // if (editor != nullptr) editor->TryRender();
         if (hierarchy!=nullptr) hierarchy->RenderAll();
-       /* for (size_t i=0; i<renderables.size(); i++)
-        {
-            if (renderables[i] == nullptr) continue;
-            if (!Assert(renderables[i]->TryRender(), std::format("Tried to render renderable at index:{} "
-                "of renderer but failed", std::to_string(i))))
-                continue;
-        }*/
 
+        EndDrawing();
+    }
+    */
+
+    void Renderer::AddCircleCall(const ScreenPosition& pos, const float radius, const Color color)
+    {
+        RenderCalls.push_back(CircleCall{ pos, radius, color });
+    }
+    void Renderer::AddRectangleCall(const ScreenPosition& pos, const Vec2Int& size, const Color color)
+    {
+        RenderCalls.push_back(RectCall{ pos, size, color });
+    }
+    void Renderer::AddTextureCall(const ScreenPosition& pos, const Texture& tex, const float rotation, const float scale, const Color color)
+    {
+        TextureData.emplace_back(tex, rotation, scale);
+        RenderCalls.push_back(TextureCall{ pos, static_cast<TextureID>(TextureData.size()-1), color});
+    }
+    void Renderer::AddTextCall(const ScreenPosition& pos, const Font& font, const char* text, const float size, const float spacing, const Color color)
+    {
+        TextData.emplace_back(font, text, size, spacing);
+        RenderCalls.push_back(TextCall{ pos, static_cast<TextID>(TextData.size() - 1), color });
+    }
+
+    void Renderer::RenderQueue()
+    {
+#ifdef ENABLE_PROFILER
+        ProfilerTimer timer("GameRenderer::RenderBuffer");
+#endif 
+        BeginDrawing();
+        for (const auto& call : RenderCalls)
+        {
+            if (const CircleCall* c= std::get_if<CircleCall>(&call))
+            {
+                DrawCircle(c->m_Pos.m_X, c->m_Pos.m_Y, c->m_Radius, c->m_Color);
+            }
+            else if (const RectCall* c = std::get_if<RectCall>(&call))
+            {
+                DrawRectangle(c->m_Pos.m_X, c->m_Pos.m_Y, c->m_Size.m_X, c->m_Pos.m_Y, c->m_Color);
+            }
+            else if (const TextureCall* c = std::get_if<TextureCall>(&call))
+            {
+                TextureCallData& texData = TextureData[c->m_Id];
+                DrawTextureEx(texData.m_Tex, RaylibUtils::ToRaylibVector(c->m_Pos), texData.m_Rotation, texData.m_Scale, c->m_Color);
+            }
+            else if (const TextCall* c = std::get_if<TextCall>(&call))
+            {
+                TextCallData& textData = TextData[c->m_Id];
+                DrawTextEx(textData.m_Font, textData.m_Text, RaylibUtils::ToRaylibVector(c->m_Pos), textData.m_FontSize, textData.m_Spacing, c->m_Color);
+            }   
+        }
         EndDrawing();
     }
 }

@@ -6,13 +6,14 @@
 #include "HelperMacros.hpp"
 #include "HelperFunctions.hpp"
 
-class SelectableGUI;
+class UIRendererData;
+class UISelectableData;
 
-using SelectableInteractEvent = Event<void, SelectableGUI*>;
+using SelectableInteractEvent = Event<void, UISelectableData*>;
 /// <summary>
 /// Where float is the total drag time and the vec2 is the move delta
 /// </summary>
-using SelectableDragEvent = Event<void, SelectableGUI*, float, Vec2>;
+using SelectableDragEvent = Event<void, UISelectableData*, float, Vec2>;
 
 enum class InteractionEventFlags : std::uint8_t
 {
@@ -32,11 +33,12 @@ enum class InteractionRenderFlags : std::uint8_t
 };
 FLAG_ENUM_OPERATORS(InteractionRenderFlags)
 
-class SelectableGUI : public ISelectable, public GUIElement
+class UISelectableData : public Component
 {
 private:
 	//GUIRect m_lastFrameRect;
 	//GUISelectorManager* m_selectorManager;
+	UIRendererData* m_renderer;
 
 	bool m_isSelected;
 	bool m_isHovered;
@@ -67,13 +69,13 @@ protected:
 	/*void SetLastFramneRect(const GUIRect& newRect);
 	GUIRect& GetLastFrameRectMutable();*/
 
-	void DrawDisabledOverlay(const RenderInfo& renderInfo) const;
-	void DrawHoverOverlay(const RenderInfo& renderInfo) const;
+	void DrawDisabledOverlay(const GUIRect& rect);
+	void DrawHoverOverlay(const GUIRect& rect);
 
 public:
-	SelectableGUI(const InteractionEventFlags eventFlags= DEFAULT_EVENT_FLAGS, 
+	UISelectableData(const InteractionEventFlags eventFlags= DEFAULT_EVENT_FLAGS, 
 				  const InteractionRenderFlags renderFlags= DEFAULT_RENDER_FLAGS);
-	~SelectableGUI();
+	~UISelectableData();
 
 	void Select();
 	void Deselect();
@@ -84,6 +86,7 @@ public:
 	bool IsHoveredOver() const;
 	bool IsSelected() const;
 	bool IsDraggedForTime(const float time) const;
+	bool RectContainsPos(const ScreenPosition& pos) const;
 
 	void UpdateDrag(const Vec2 mouseDelta, const float time);
 	void ClearDragTime();
@@ -95,8 +98,13 @@ public:
 
 	//const GUIRect GetLastFrameRect() const;
 
-	virtual void Update(const float deltaTime) override;
-	RenderInfo Render(const RenderInfo& renderInfo) final override;
-	virtual RenderInfo ElementRender(const RenderInfo& renderInfo) = 0;
+	virtual void Update(const float deltaTime);
+	GUIRect RenderOverlay(const GUIRect& elementRendered);
+
+	virtual void InitFields() override;
+	virtual std::string ToString() const override;
+
+	virtual void Deserialize(const Json& json) override;
+	virtual Json Serialize() override;
 };
 

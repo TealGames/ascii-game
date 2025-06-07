@@ -4,7 +4,7 @@
 #include "HelperFunctions.hpp"
 #include "SpriteAnimationAsset.hpp"
 
-SpriteAnimatorData::SpriteAnimatorData() : ComponentData(), m_animations(), m_playingAnimation(nullptr) {}
+SpriteAnimatorData::SpriteAnimatorData() : Component(), m_animations(), m_playingAnimation(nullptr) {}
 SpriteAnimatorData::SpriteAnimatorData(const Json& json) : SpriteAnimatorData()
 {
 	Deserialize(json);

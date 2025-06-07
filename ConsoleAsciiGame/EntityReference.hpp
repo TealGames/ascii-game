@@ -13,6 +13,6 @@ struct EntityReference
 	bool IsGlobal() const;
 	std::string GetSceneName() const;
 
-	bool MatchesScene(const ComponentData* component);
+	bool MatchesScene(const Component* component);
 };
 

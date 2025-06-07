@@ -4,7 +4,7 @@
 #include "Debug.hpp"
 #include "EntityData.hpp"
 
-InputData::InputData() : ComponentData(),
+InputData::InputData() : Component(),
 	m_actions() {}
 
 void InputData::AddAction(const Input::InputAction& action)

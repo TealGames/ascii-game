@@ -86,11 +86,11 @@ void SceneAsset::UpdateAssetFromFile()
 
 	bool isTransformComponent = false;
 	EntityData* currentEntity = nullptr;
-	ComponentData* componentCreated = nullptr;
+	Component* componentCreated = nullptr;
 
 	//Note: we want this to be a deque since it has queue-like behavior, but we still need indexing
 	//so it must be double ended, and cannot be a hashmap for this reason
-	std::deque<std::tuple<std::function<void()>, ComponentData*>> delayedSiblingDependencies;
+	std::deque<std::tuple<std::function<void()>, Component*>> delayedSiblingDependencies;
 	Event<void> delayedEntityDependencies;
 
 	//NOTE: all entities extracted will be local (since globals are not associated with any single scene)
@@ -224,7 +224,7 @@ void SceneAsset::UpdateAssetFromFile()
 			//(the start) when that component is hopefully added by then and component deserialization function works
 			for (int i= delayedSiblingDependencies.size()-1; i>=0; i--)
 			{
-				const ComponentData* delayedComponent = std::get<1>(delayedSiblingDependencies[i]);
+				const Component* delayedComponent = std::get<1>(delayedSiblingDependencies[i]);
 				if (!GlobalComponentInfo::DoesComponentHaveComponentDependencies(delayedComponent))
 				{
 					auto funcPairCopy = delayedSiblingDependencies[i];

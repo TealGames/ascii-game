@@ -12,7 +12,7 @@ AnimatorData::AnimatorData(const Json& json) : AnimatorData()
 }
 
 AnimatorData::AnimatorData(const std::vector<AnimationPropertyVariant>& properties, const float& animationTime, const float& speed, const bool& loop) :
-	ComponentData(),
+	Component(),
 	m_Properties(properties), m_AnimationSpeed(speed), m_NormalizedTime(0), m_KeyframeIndex(0), m_AnimationLength(animationTime), m_Loop(loop)
 {
 	if (!Assert(this, !Utils::ApproximateEqualsF(m_AnimationSpeed, 0),

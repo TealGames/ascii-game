@@ -3,12 +3,12 @@
 #include "EntityData.hpp"
 #include "ComponentData.hpp"
 
-ComponentInfo::ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies) 
-	: ComponentInfo(dependency, componentDependencies, nullptr) {}
-ComponentInfo::ComponentInfo(const ValidationAction& validationAction)
-	:ComponentInfo(DeppendencyType::None, {}, validationAction) {}
-ComponentInfo::ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies, const ValidationAction& validationAction) :
-	m_DependencyType(dependency), m_DependentComponents(componentDependencies), m_ComponentRequirementCheck(validationAction) {}
+ComponentInfo::ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies, const ComponentAddAction& postAddAction)
+	: ComponentInfo(dependency, componentDependencies, nullptr, postAddAction) {}
+ComponentInfo::ComponentInfo(const ValidationAction& validationAction, const ComponentAddAction& postAddAction)
+	: ComponentInfo(DeppendencyType::None, {}, validationAction, postAddAction) {}
+ComponentInfo::ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies, const ValidationAction& validationAction, const ComponentAddAction& postAddAction) :
+	m_DependencyType(dependency), m_DependentComponents(componentDependencies), m_ComponentRequirementCheck(validationAction), m_ComponentPostAddAction(postAddAction) {}
 
 namespace GlobalComponentInfo
 {
@@ -30,7 +30,7 @@ namespace GlobalComponentInfo
 		m_ComponentInfo.emplace(&componentType, info);
 	}
 
-	ComponentInfoCollection::const_iterator GetComponentInfo(const ComponentData* component)
+	ComponentInfoCollection::const_iterator GetComponentInfo(const Component* component)
 	{
 		return m_ComponentInfo.find(&typeid(*component));
 	}
@@ -46,6 +46,14 @@ namespace GlobalComponentInfo
 		if (!infoIt->second.m_ComponentRequirementCheck) return true;
 
 		return infoIt->second.m_ComponentRequirementCheck(entity);
+	}
+
+	bool InvokePostAddAction(EntityData& entity, const type_info& targetComponent)
+	{
+		auto infoIt = GetComponentInfo(targetComponent);
+		if (infoIt == m_ComponentInfo.cend() || !infoIt->second.m_ComponentPostAddAction) return false;
+	
+		infoIt->second.m_ComponentPostAddAction(entity);
 	}
 
 	/*bool DoesEntityHaveRequiredComponentsForComponent(const EntityData& entity, const type_info& targetComponent, 
@@ -87,7 +95,7 @@ namespace GlobalComponentInfo
 		}
 		return true;
 	}*/
-	bool DoesComponentHaveDependencyType(const ComponentData* component, const DeppendencyType type)
+	bool DoesComponentHaveDependencyType(const Component* component, const DeppendencyType type)
 	{
 		auto infoIt = m_ComponentInfo.find(&typeid(*component));
 		//If we can not find a profile and the depdency type is None, we can return true 
@@ -98,26 +106,26 @@ namespace GlobalComponentInfo
 			else return false;
 		}
 	}
-	bool DoesComponentHaveDependencies(const ComponentData* component)
+	bool DoesComponentHaveDependencies(const Component* component)
 	{
 		if (component == nullptr) return false;
 		auto infoIt = GetComponentInfo(component);
 		return infoIt != m_ComponentInfo.cend() && infoIt->second.m_DependencyType != DeppendencyType::None;
 	}
-	bool DoesComponentDependOnEntity(const ComponentData* component)
+	bool DoesComponentDependOnEntity(const Component* component)
 	{
 		if (component == nullptr) return false;
 		auto infoIt = GetComponentInfo(component);
 		return infoIt != m_ComponentInfo.cend() && infoIt->second.m_DependencyType == DeppendencyType::Entity;
 	}
-	bool DoesComponentDependOnComponent(const ComponentData* component)
+	bool DoesComponentDependOnComponent(const Component* component)
 	{
 		if (component == nullptr) return false;
 		auto infoIt = GetComponentInfo(component);
 		return infoIt != m_ComponentInfo.cend() && infoIt->second.m_DependencyType == DeppendencyType::Component;
 	}
 
-	bool DoesComponentHaveComponentDependencies(const ComponentData* component)
+	bool DoesComponentHaveComponentDependencies(const Component* component)
 	{
 		if (component == nullptr) return true;
 

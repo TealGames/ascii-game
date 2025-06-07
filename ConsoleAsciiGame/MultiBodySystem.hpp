@@ -26,14 +26,14 @@ namespace ECS
 	/// <param name="entityFromIDFunc"></param>
 	/// <param name="action"></param>
 	template<typename T>
-	requires std::is_base_of_v<ComponentData, T>
+	requires std::is_base_of_v<Component, T>
 	void OperateOnActiveComponents(EntityRegistry& registry, const std::function<void(T&)>& action)
 	{
 		auto view = registry.view<T>();
 		for (auto entityId : view)
 		{
 			T* component = registry.TryGetComponentMutable<T>(entityId);
-			ComponentData* componentBase = static_cast<ComponentData*>(component);
+			Component* componentBase = static_cast<Component*>(component);
 			if (componentBase == nullptr || !componentBase->m_IsEnabled) continue;
 
 			EntityData* entityPtr = componentBase->GetEntitySafeMutable();
@@ -50,14 +50,14 @@ namespace ECS
 	}
 
 	template<typename T>
-	requires std::is_base_of_v<ComponentData, T>
+	requires std::is_base_of_v<Component, T>
 	void GetRegistryComponentsMutable(EntityRegistry& registry, std::vector<T*>& inputVector)
 	{
 		auto view = registry.view<T>();
 		for (auto entityId : view)
 		{
 			T* component = registry.TryGetComponentMutable<T>(entityId);
-			ComponentData* componentBase = static_cast<ComponentData*>(component);
+			Component* componentBase = static_cast<Component*>(component);
 			if (componentBase==nullptr || !componentBase->m_IsEnabled) continue;
 
 			EntityData* entityPtr = componentBase->GetEntitySafeMutable();

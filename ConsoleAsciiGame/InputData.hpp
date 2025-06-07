@@ -7,7 +7,7 @@
 #include "InputAction.hpp"
 #include "InputManager.hpp"
 
-class InputData : public ComponentData
+class InputData : public Component
 {
 private:
 	//Input::InputManager* m_inputManager;

@@ -82,7 +82,7 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 
 	//m_assetEditorButton.SetSettings(buttonSettings);
 	m_assetEditorButton.SetBounds(NormalizedPosition::TOP_LEFT, { ASSET_EDITOR_BUTTON_WIDTH, 0 });
-	m_assetEditorButton.SetClickAction([this](const ButtonGUI& button)-> void
+	m_assetEditorButton.SetClickAction([this](const UIButton& button)-> void
 		{
 			m_displayingGameView = !m_displayingGameView;
 			if (m_displayingGameView)

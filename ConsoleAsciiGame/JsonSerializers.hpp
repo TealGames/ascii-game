@@ -147,7 +147,7 @@ void from_json(const Json& json, ComponentReference& fieldReference);
 void to_json(Json& json, const ComponentReference& fieldReference);
 
 template<typename T>
-requires (!std::is_pointer_v<T> && std::is_base_of_v<ComponentData, T>)
+requires (!std::is_pointer_v<T> && std::is_base_of_v<Component, T>)
 T* TryDeserializeComponent(const Json& json, EntityData& entitySelf, const bool& isOptional = false)
 {
 	SerializableComponent serializableComponent = json.get<SerializableComponent>();
@@ -163,7 +163,7 @@ T* TryDeserializeComponent(const Json& json, EntityData& entitySelf, const bool&
 					JsonUtils::ToStringProperties(json))))
 					return nullptr;
 
-				ComponentData* componentData = entity->TryGetComponentWithNameMutable(serializableComponent.m_ComponentName);
+				Component* componentData = entity->TryGetComponentWithNameMutable(serializableComponent.m_ComponentName);
 				if (!Assert(componentData != nullptr, std::format("Tried to deserialzie component from json:{} but failed to retrieve component at index:{}",
 					JsonUtils::ToStringProperties(json), serializableComponent.m_ComponentName)))
 					return nullptr;
@@ -216,7 +216,7 @@ T* TryDeserializeComponent(const Json& json, EntityData& entitySelf, const bool&
 /// <param name="isOptional"></param>
 /// <returns></returns>
 template<typename T>
-requires (!std::is_pointer_v<T>&& std::is_base_of_v<ComponentData, T>)
+requires (!std::is_pointer_v<T>&& std::is_base_of_v<Component, T>)
 T* TryDeserializeComponentSelf(const Json& json, EntityData& selfEntity, const bool& isOptional = false)
 {
 	std::function<T*(const Json&)> deserializationAction = [&selfEntity](const Json& json)->T*
@@ -257,10 +257,10 @@ T* TryDeserializeComponentSelf(const Json& json, EntityData& selfEntity, const b
 }
 
 template<typename T>
-requires (!std::is_pointer_v<T> && std::is_base_of_v<ComponentData, T>)
+requires (!std::is_pointer_v<T> && std::is_base_of_v<Component, T>)
 Json TrySerializeComponent(const T* component, const bool& isOptional = false)
 {
-	const ComponentData* componentBase = static_cast<const ComponentData*>(component);
+	const Component* componentBase = static_cast<const Component*>(component);
 	const EntityData& entity = componentBase->GetEntitySafe();
 	const std::string componentName = entity.TryGetComponentName(componentBase);
 
@@ -281,7 +281,7 @@ Json TrySerializeComponent(const T* component, const bool& isOptional = false)
 }
 
 template<typename T>
-requires (!std::is_pointer_v<T>&& std::is_base_of_v<ComponentData, T>)
+requires (!std::is_pointer_v<T>&& std::is_base_of_v<Component, T>)
 Json TrySerializeComponentSelf(const T* component, EntityData& selfEntity, const bool& isOptional = false)
 {
 	const std::string componentName = Utils::GetTypeName<T>();

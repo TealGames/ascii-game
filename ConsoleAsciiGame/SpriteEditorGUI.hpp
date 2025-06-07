@@ -1,7 +1,7 @@
 #pragma once
 #include "ITreeGUIConstructible.hpp"
-#include "ButtonGUI.hpp"
-#include "ContainerGUI.hpp"
+#include "UIButton.hpp"
+#include "UIContainer.hpp"
 
 class GUIHierarchy;
 namespace AssetManagement { class AssetManager; }
@@ -13,7 +13,7 @@ private:
 	AssetManagement::AssetManager* m_assetManager;
 	const Input::InputManager* m_inputManager;
 
-	ContainerGUI m_guiContainer;
+	UIContainer m_guiContainer;
 	//ButtonGUI m_saveButton;
 public:
 

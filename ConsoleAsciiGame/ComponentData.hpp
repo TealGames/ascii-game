@@ -33,7 +33,7 @@ class EntityData;
 namespace ECS { class EntityID; }
 class TransformData;
 
-class ComponentData
+class Component
 {
 private:
 	//Guaranteed to not be nullptr (but cant be a ref to allow it to be set
@@ -60,8 +60,8 @@ public:
 
 private:
 public:
-	ComponentData();
-	virtual ~ComponentData() = default;
+	Component();
+	virtual ~Component() = default;
 
 	EntityData& GetEntitySafeMutable();
 	const EntityData& GetEntitySafe() const;

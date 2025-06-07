@@ -1,15 +1,14 @@
 #pragma once
 #include "raylib.h"
 #include <functional>
-#include "SelectableGUI.hpp"
-#include "IRenderable.hpp"
+#include "UISelectableData.hpp"
 #include "GUIStyle.hpp"
 #include "GUIRect.hpp"
 
 class TextureAsset;
 
 using ToggleAction = std::function<void(bool isChecked)>;
-class ToggleGUI : public SelectableGUI
+class UIToggleComponent : public UISelectableData
 {
 private:
 	/// <summary>
@@ -26,9 +25,9 @@ public:
 private:
 	void DrawOverlayTexture(const float targetWidth, const float targetHeight, const Vector2& topLeftPos);
 public:
-	ToggleGUI(const bool& startValue, const GUIStyle& settings, 
+	UIToggleComponent(const bool& startValue, const GUIStyle& settings, 
 		const ToggleAction& valueSetAction=nullptr, const TextureAsset* overlayTexture=nullptr);
-	~ToggleGUI();
+	~UIToggleComponent();
 
 	void SetSettings(const GUIStyle& settings);
 	void SetOverlayTexture(const TextureAsset& asset);
@@ -41,5 +40,11 @@ public:
 	void SetValueSetAction(const ToggleAction& action);
 
 	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
+
+	void InitFields() override;
+	std::string ToString() const override;
+
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };
 

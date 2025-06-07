@@ -7,9 +7,9 @@
 #include <queue>
 #include <chrono> 
 #include "InputManager.hpp"
-#include "InputFieldGUI.hpp"
-#include "LayoutGUI.hpp"
-#include "ContainerGUI.hpp"
+#include "UIInputField.hpp"
+#include "UILayout.hpp"
+#include "UIContainer.hpp"
 
 //using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;
@@ -41,11 +41,11 @@ private:
 	PromptCollection m_prompts;
 	float m_timeSinceOpen;
 
-	ContainerGUI m_toggleableContainer;
-	ContainerGUI m_container;
-	InputFieldGUI m_inputField;
-	LayoutGUI m_outputMessageLayout;
-	std::array<TextGUI, MAX_OUTPUT_MESSAGES> m_outputMessagesTextGuis;
+	UIContainer m_toggleableContainer;
+	UIContainer m_container;
+	UIInputField m_inputField;
+	UILayout m_outputMessageLayout;
+	std::array<UITextComponent, MAX_OUTPUT_MESSAGES> m_outputMessagesTextGuis;
 	std::uint8_t m_nextTextGuiIndex;
 	std::vector<float> m_messageCloseTimes;
 

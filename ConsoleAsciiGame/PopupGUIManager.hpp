@@ -7,7 +7,7 @@
 #include "PopupGUI.hpp"
 #include "Event.hpp"
 #include "GUIRect.hpp"
-#include "ContainerGUI.hpp"
+#include "UIContainer.hpp"
 #include "GUIHierarchy.hpp"
 #include "HelperMacros.hpp"
 
@@ -42,7 +42,7 @@ class PopupGUIManager
 {
 private:
 	GUIHierarchy* m_hierarchy;
-	ContainerGUI m_popupContainer;
+	UIContainer m_popupContainer;
 	std::vector<PopupGUIInfo> m_popups;
 public:
 	/// <summary>

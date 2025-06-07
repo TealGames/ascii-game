@@ -1,7 +1,7 @@
 #pragma once
 #include "raylib.h"
 #include "FontData.hpp"
-#include "TextGUI.hpp"
+#include "UITextComponent.hpp"
 #include "GUIPadding.hpp"
 
 class TextGUIStyle
@@ -16,9 +16,9 @@ public:
 
 public:
 	TextGUIStyle();
-	TextGUIStyle(const Color& textColor, const FontProperties& fontData, const TextAlignment& alignment=TextGUI::DEFAULT_ALIGNMENT, 
-		const GUIPadding& padding= TextGUI::DEFAULT_PADDING, const float& factor= TextGUI::NULL_FONT_FACTOR,
-		const bool& fitToArea= TextGUI::DEFAULT_FIT_TO_AREA);
+	TextGUIStyle(const Color& textColor, const FontProperties& fontData, const TextAlignment& alignment=UITextComponent::DEFAULT_ALIGNMENT, 
+		const GUIPadding& padding= UITextComponent::DEFAULT_PADDING, const float& factor= UITextComponent::NULL_FONT_FACTOR,
+		const bool& fitToArea= UITextComponent::DEFAULT_FIT_TO_AREA);
 };
 
  

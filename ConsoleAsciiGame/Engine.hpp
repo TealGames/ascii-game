@@ -21,7 +21,7 @@
 #include "TriggerSystem.hpp"
 #include "CollisionBoxSystem.hpp"
 #include "ParticleEmitterSystem.hpp"
-#include "UIObjectSystem.hpp"
+#include "UIRendererSystem.hpp"
 #include "CameraController.hpp"
 #include "CollisionRegistry.hpp"
 #include "TimeKeeper.hpp"
@@ -30,6 +30,7 @@
 #include "GUIHierarchy.hpp"
 #include "GUISelectorManager.hpp"
 #include "EngineEditor.hpp"
+#include "GameRenderer.hpp"
 
 namespace Core
 {
@@ -46,11 +47,11 @@ namespace Core
 		Input::InputManager m_inputManager;
 		GUISelectorManager m_guiSelectorManager;
 		GUIHierarchy m_uiTree;
+		Rendering::Renderer m_renderer;
 
 		//TODO: there has to be a way that does not involve us writing every possible system
 		ECS::TransformSystem m_transformSystem;
 		ECS::CameraSystem m_cameraSystem;
-		ECS::UIObjectSystem m_uiSystem;
 		ECS::LightSourceSystem m_lightSystem;
 		//ECS::InputSystem m_inputSystem;
 		ECS::EntityRendererSystem m_entityRendererSystem;
@@ -61,6 +62,8 @@ namespace Core
 		ECS::PlayerSystem m_playerSystem;
 		ECS::ParticleEmitterSystem m_particleEmitterSystem;
 		ECS::TriggerSystem m_triggerSystem;
+
+		ECS::UIRenderSystem m_uiRenderSystem;
 
 		//std::optional<ECS::EntityComponents<PlayerData, PhysicsBodyData>> m_playerInfo;
 		//std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;
@@ -75,6 +78,7 @@ namespace Core
 
 	private:
 		void ValidateAll();
+		void StartAll();
 		void Destroy();
 
 		/// <summary>

@@ -89,21 +89,21 @@ bool EntityData::HasComponent(const std::type_info& typeInfo) const
 	}
 	return false;
 }
-const ComponentData* EntityData::TryGetComponentAtIndex(const size_t& index) const
+const Component* EntityData::TryGetComponentAtIndex(const size_t& index) const
 {
 	if (index < 0 || index >= m_components.size())
 		return nullptr;
 
 	return m_components[index];
 }
-ComponentData* EntityData::TryGetComponentAtIndexMutable(const size_t& index)
+Component* EntityData::TryGetComponentAtIndexMutable(const size_t& index)
 {
 	if (index < 0 || index >= m_components.size())
 		return nullptr;
 
 	return m_components[index];
 }
-const ComponentData* EntityData::TryGetComponentWithName(const std::string& name) const
+const Component* EntityData::TryGetComponentWithName(const std::string& name) const
 {
 	for (const auto& component : m_components)
 	{
@@ -113,7 +113,7 @@ const ComponentData* EntityData::TryGetComponentWithName(const std::string& name
 	}
 	return nullptr;
 }
-ComponentData* EntityData::TryGetComponentWithNameMutable(const std::string& name)
+Component* EntityData::TryGetComponentWithNameMutable(const std::string& name)
 {
 	for (auto& component : m_components)
 	{
@@ -123,7 +123,7 @@ ComponentData* EntityData::TryGetComponentWithNameMutable(const std::string& nam
 	}
 	return nullptr;
 }
-size_t EntityData::TryGetIndexOfComponent(const ComponentData* targetComponent) const
+size_t EntityData::TryGetIndexOfComponent(const Component* targetComponent) const
 {
 	size_t index = 0;
 	for (const auto& component : m_components)
@@ -149,15 +149,15 @@ size_t EntityData::TryGetIndexOfComponent(const std::string& componentName) cons
 	}
 	return -1;
 }
-std::string EntityData::TryGetComponentName(const ComponentData* component) const
+std::string EntityData::TryGetComponentName(const Component* component) const
 {
 	return Utils::FormatTypeName(typeid(*component).name());
 }
-const std::type_info& EntityData::GetComponentType(const ComponentData* component) const
+const std::type_info& EntityData::GetComponentType(const Component* component) const
 {
 	return typeid(*component);
 }
-const std::vector<ComponentData*>& EntityData::GetAllComponentsMutable() const
+const std::vector<Component*>& EntityData::GetAllComponentsMutable() const
 {
 	return m_components;
 }

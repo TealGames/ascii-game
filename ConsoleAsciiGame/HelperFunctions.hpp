@@ -403,6 +403,7 @@ namespace Utils
 	}
 
 	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits);
+	const 
 	void ClearSTDCIN();
 
 	bool ContainsIntegralValues(const std::string& input, const bool includeNegativeSign=false);

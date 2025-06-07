@@ -18,7 +18,7 @@ enum class TriggerType
 };
 std::string ToString(const TriggerType& trigger);
 
-class TriggerData : public ComponentData
+class TriggerData : public Component
 {
 private:
 	const CollisionBoxData* m_collider;

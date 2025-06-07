@@ -3,7 +3,7 @@
 #include "Debug.hpp"
 #include "EntityData.hpp"
 
-ComponentData::ComponentData() 
+Component::Component() 
 	: m_MutatedThisFrame(false), m_IsEnabled(true), m_entity(nullptr), m_Fields() //m_dependencyLevel(dependency)
 {
 }
@@ -46,7 +46,7 @@ ComponentData::ComponentData()
 //	return true;
 //}
 
-EntityData& ComponentData::GetEntitySafeMutable()
+EntityData& Component::GetEntitySafeMutable()
 {
 	if (!Assert(this, m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
 		"(it means a function creating or adding component probably did not update this setting)")))
@@ -55,7 +55,7 @@ EntityData& ComponentData::GetEntitySafeMutable()
 	return *m_entity;
 }
 
-const EntityData& ComponentData::GetEntitySafe() const
+const EntityData& Component::GetEntitySafe() const
 {
 	if (!Assert(this, m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
 		"(it means a function creating or adding component probably did not update this setting)")))
@@ -64,26 +64,26 @@ const EntityData& ComponentData::GetEntitySafe() const
 	return *m_entity;
 }
 
-TransformData& ComponentData::GetTransformMutable() { return GetEntitySafeMutable().GetTransformMutable(); }
-const TransformData& ComponentData::GetTransform() const { return GetEntitySafe().GetTransform(); }
-ECS::EntityID ComponentData::GetEntityID() const { return GetEntitySafe().GetId(); }
+TransformData& Component::GetTransformMutable() { return GetEntitySafeMutable().GetTransformMutable(); }
+const TransformData& Component::GetTransform() const { return GetEntitySafe().GetTransform(); }
+ECS::EntityID Component::GetEntityID() const { return GetEntitySafe().GetId(); }
 
-void ComponentData::InitFields()
+void Component::InitFields()
 {
 	return;
 }
 
-std::vector<ComponentField>& ComponentData::GetFieldsMutable()
+std::vector<ComponentField>& Component::GetFieldsMutable()
 {
 	return m_Fields;
 }
 
-const std::vector<ComponentField>& ComponentData::GetFields() const
+const std::vector<ComponentField>& Component::GetFields() const
 {
 	return m_Fields;
 }
 
-ComponentField* ComponentData::TryGetFieldMutable(const std::string& name)
+ComponentField* Component::TryGetFieldMutable(const std::string& name)
 {
 	for (auto& field : m_Fields)
 	{
@@ -92,7 +92,7 @@ ComponentField* ComponentData::TryGetFieldMutable(const std::string& name)
 	}
 	return nullptr;
 }
-const ComponentField* ComponentData::TryGetField(const std::string& name) const
+const ComponentField* Component::TryGetField(const std::string& name) const
 {
 	for (const auto& field : m_Fields)
 	{
@@ -102,7 +102,7 @@ const ComponentField* ComponentData::TryGetField(const std::string& name) const
 	return nullptr;
 }
 
-std::string ComponentData::ToStringFields() const
+std::string Component::ToStringFields() const
 {
 	std::vector<std::string> fieldStrings = {};
 	for (const auto& field : m_Fields)
@@ -112,12 +112,12 @@ std::string ComponentData::ToStringFields() const
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(fieldStrings);
 }
 
-bool ComponentData::Validate()
+bool Component::Validate()
 {
 	return true;
 }
 
-std::string ComponentData::ToString() const
+std::string Component::ToString() const
 {
 	return std::format("[BaseComp Entity:{}]", GetEntitySafe().m_Name);
 }

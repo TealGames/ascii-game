@@ -2,7 +2,7 @@
 #include <functional>
 
 class EntityData;
-class ComponentData;
+class Component;
 
 /// <summary>
 	/// In order for the component to be added, the type of relationship the required component must have in relation
@@ -50,6 +50,7 @@ enum class DeppendencyType
 
 using TypeCollection = std::vector<const std::type_info*>;
 using ValidationAction = std::function<bool(EntityData& entity)>;
+using ComponentAddAction = std::function<void(EntityData& entity)>;
 struct ComponentInfo
 {
 	//RequiredComponentType m_RequiredType;
@@ -58,21 +59,22 @@ struct ComponentInfo
 	TypeCollection m_DependentComponents;
 
 	ValidationAction m_ComponentRequirementCheck;
+	ComponentAddAction m_ComponentPostAddAction;
 
 	/*ComponentInfo(const RequiredComponentType requiredType, const TypeCollection& required);
 	ComponentInfo(const DeppendencyType dependencyType, const TypeCollection& dependentComponents = {});
 	ComponentInfo(const RequiredComponentType requiredType, const TypeCollection& required,
 		const DeppendencyType dependencyType, const TypeCollection& dependentComponents);*/
 	ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies, 
-		const ValidationAction& validationAction);
-	ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies = {});
-	ComponentInfo(const ValidationAction& validationAction);
+		const ValidationAction& validationAction, const ComponentAddAction& postAddAction=nullptr);
+	ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies = {}, const ComponentAddAction& postAddAction = nullptr);
+	ComponentInfo(const ValidationAction& validationAction, const ComponentAddAction& postAddAction = nullptr);
 };
 using ComponentInfoCollection = std::unordered_map<const std::type_info*, ComponentInfo>;
 
 namespace GlobalComponentInfo
 {
-	ComponentInfoCollection::const_iterator GetComponentInfo(const ComponentData* component);
+	ComponentInfoCollection::const_iterator GetComponentInfo(const Component* component);
 	ComponentInfoCollection::const_iterator GetComponentInfo(const std::type_info& typeInfo);
 
 	void AddComponentInfo(const std::type_info& componentType, const ComponentInfo& info);
@@ -85,22 +87,24 @@ namespace GlobalComponentInfo
 	/// <returns></returns>
 	bool PassesComponentRequirementCheck(EntityData& entity, const type_info& targetComponent);
 
+	bool InvokePostAddAction(EntityData& entity, const type_info& targetComponent);
+
 	/// <summary>
 	/// Return true if the component has the dependency type specified
 	/// </summary>
 	/// <param name="component"></param>
 	/// <param name="type"></param>
 	/// <returns></returns>
-	bool DoesComponentHaveDependencyType(const ComponentData* component, const DeppendencyType type);
-	bool DoesComponentHaveDependencies(const ComponentData* component);
-	bool DoesComponentDependOnEntity(const ComponentData* component);
-	bool DoesComponentDependOnComponent(const ComponentData* component);
+	bool DoesComponentHaveDependencyType(const Component* component, const DeppendencyType type);
+	bool DoesComponentHaveDependencies(const Component* component);
+	bool DoesComponentDependOnEntity(const Component* component);
+	bool DoesComponentDependOnComponent(const Component* component);
 	
 	/// <summary>
 	/// Return true if the component DOES NOT HAVE a component dependency OR if it does and all those dependencies are fulfilled
 	/// </summary>
 	/// <param name="component"></param>
 	/// <returns></returns>
-	bool DoesComponentHaveComponentDependencies(const ComponentData* component);
+	bool DoesComponentHaveComponentDependencies(const Component* component);
 }
 

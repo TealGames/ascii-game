@@ -18,7 +18,7 @@ ParticleEmitterData::ParticleEmitterData() : ParticleEmitterData('A', FloatRange
 ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
 	const FontProperties& fontData, const RenderLayerType& renderLayers,
 	const WorldPosition& transformOffset, const FloatRange& speedRange, const float& spawnRate)
-	: ComponentData(), 
+	: Component(), 
 	m_Char(c), m_normalizedTime(0), m_lifetimeColor(colorOverTime), 
 	m_lifetimeRange(lifeTimeRange), 
 	//m_particles(std::min(static_cast<int>(MAX_PARTICLES), static_cast<int>(std::ceil(spawnRate* m_lifetimeRange.m_Max)))),

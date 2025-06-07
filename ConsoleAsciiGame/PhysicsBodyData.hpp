@@ -29,7 +29,7 @@ struct MoveContraints
 };
 
 //class CollisionBoxData;
-class PhysicsBodyData : public ComponentData
+class PhysicsBodyData : public Component
 {
 private:
 	//The bounding box of the rigidbody that is used for collisions

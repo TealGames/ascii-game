@@ -11,14 +11,14 @@ struct ComponentFieldReference
 	ComponentField* m_FieldRef;
 
 	ComponentFieldReference();
-	ComponentFieldReference(ComponentData* componentData, const std::string& fieldName);
+	ComponentFieldReference(Component* componentData, const std::string& fieldName);
 	ComponentFieldReference(EntityData& entity, const std::string& componentName, const std::string& fieldName);
 
 	const EntityData& GetEntitySafe() const;
 	const ComponentField& GetComponentFieldSafe() const;
 
 	ComponentField& GetComponentFieldSafeMutable();
-	ComponentData* GetComponentDataMutable();
+	Component* GetComponentDataMutable();
 
 	std::string GetFieldName() const;
 };

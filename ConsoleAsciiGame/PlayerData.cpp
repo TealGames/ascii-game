@@ -13,7 +13,7 @@ PlayerData::PlayerData(const Json& json) : PlayerData()
 	Deserialize(json);
 }
 PlayerData::PlayerData(PhysicsBodyData* body, const float& moveSpeed, const float& maxJumpHeight) : 
-	ComponentData(),
+	Component(),
 	m_body(body), m_xMoveSpeed(std::abs(moveSpeed)), m_maxJumpHeight(maxJumpHeight), m_initialJumpSpeed()
 {
 	//if (m_maxJumpHeight>0) m_initialJumpSpeed = CalculateInitialJumpSpeed();

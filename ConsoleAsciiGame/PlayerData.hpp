@@ -3,7 +3,7 @@
 #include "PhysicsBodyData.hpp"
 #include "Vec2.hpp"
 
-class PlayerData : public ComponentData
+class PlayerData : public Component
 {
 private:
 	PhysicsBodyData* m_body;

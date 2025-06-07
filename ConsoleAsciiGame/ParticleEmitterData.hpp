@@ -31,7 +31,7 @@ struct Particle
 	void SetColorFromAliveTime(const ColorGradient& color);
 };
 
-struct ParticleEmitterData : ComponentData
+struct ParticleEmitterData : Component
 {
 	WorldPosition m_originTransformOffset;
 

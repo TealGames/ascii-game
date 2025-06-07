@@ -3,29 +3,13 @@
 #include <cstdint>
 #include "RelativeGUIRect.hpp"
 #include "Event.hpp"
-#include "HelperMacros.hpp"
+
 #include "RelativeGUIPadding.hpp"
 #include "GUIRect.hpp"
 #include "ComponentData.hpp"
 #include "RenderInfo.hpp"
 
-enum class GUIElementFlags : std::uint8_t
-{
-	/// <summary>
-	///Means the total normalized dimensions relative to the canvas will stay the same, but the size will NOT update with the 
-	/// parent. Note: this means it WILL size down/up based on canvas size changes since the dimensions are still as percents, but
-	/// if the parent size changes, it will maintain the original dimensions by updating to the corresponding values of the parent size
-	/// </summary>
-	FixedHorizontal =		1 << 0,
-	FixedVertical	=		1 << 1,
-	/// <summary>
-	/// Although it is not a selectable, nonselectables CAN block events from propagating further
-	/// and can prevent lower level selectables from receiving their events. This is most useful
-	/// for overlays or other types of popups and dialogs that may block lower elements completely
-	/// </summary>
-	BlockSelectionEvents=	1 << 2,
-};
-FLAG_ENUM_OPERATORS(GUIElementFlags)
+
 
 /// <summary>
 /// A base class for gui elements whether basic types like input fields, text, buttons or containers.
@@ -40,20 +24,13 @@ FLAG_ENUM_OPERATORS(GUIElementFlags)
 ///	   This is best when you do not need specific placements and/or you need placements that cannot be done with existing components, allowing
 ///	   for a more customized look to the UI. NOTE: IN THIS CASE ALL SELECTALBES NEED TO BE REGISTERED IF THEY ARE NOT ADDED TO THE UI TREE
 /// </summary>
-class GUIElement : public ComponentData
+class GUIElement : public Component
 {
 private:
 
-	RelativeGUIRect m_relativeRect;
-	GUIElementFlags m_flags;
-
 	GUIRect m_lastRenderInfo;
 
-	/// <summary>
-	/// This is how much the CHILDREN AREA is padded within this element. 
-	/// Values are relative to THIS ELEMENT"S SIZE
-	/// </summary>
-	RelativeGUIPadding m_padding;
+	
 
 public:
 	//Event<void, GUIElement*> m_OnSizeUpdated;

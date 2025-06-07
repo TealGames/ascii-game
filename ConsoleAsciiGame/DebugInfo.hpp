@@ -4,9 +4,9 @@
 #include <optional>
 #include "WorldPosition.hpp"
 #include "ScreenPosition.hpp"
-#include "TextGUI.hpp"
-#include "ContainerGUI.hpp"
-#include "LayoutGUI.hpp"
+#include "UITextComponent.hpp"
+#include "UIContainer.hpp"
+#include "UILayout.hpp"
 #include "raylib.h"
 
 class Scene;
@@ -27,9 +27,9 @@ constexpr int DEBUG_PROPERTIES_COUNT = 10;
 class DebugInfo //: public IBasicRenderable
 {
 private:
-	ContainerGUI m_container;
-	LayoutGUI m_layout;
-	std::array<TextGUI, DEBUG_PROPERTIES_COUNT> m_textGuis;
+	UIContainer m_container;
+	UILayout m_layout;
+	std::array<UITextComponent, DEBUG_PROPERTIES_COUNT> m_textGuis;
 	size_t m_nextIndex;
 	//std::vector<std::size_t> m_highlightedIndices;
 

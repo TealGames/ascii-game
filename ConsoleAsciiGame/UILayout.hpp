@@ -1,6 +1,4 @@
 #pragma once
-#include "GUIElement.hpp"
-#include "raylib.h"
 
 enum class LayoutType
 {
@@ -36,25 +34,32 @@ enum class SizingType
 	ExpandAndShrink,
 };
 
-class LayoutGUI : public ComponentData
+class UITransformData;
+class EntityData;
+class UILayout : public Component
 {
 private:
 	LayoutType m_type;
 	SizingType m_sizingType;
 	NormalizedPosition m_spacing; 
-	Color m_backgroundColor;
 public:
 
 private:
 	void LayoutUpdate();
 public:
-	LayoutGUI(const LayoutType type, const SizingType sizing, const NormalizedPosition spacing = {}, const Color background = {});
+	UILayout(const LayoutType type, const SizingType sizing, const NormalizedPosition spacing = {});
 
-	void AddLayoutElement(GUIElement* element);
+	void AddLayoutElement(EntityData& element);
 	void RemoveLayoutElements(const size_t& childStartIndex, const size_t& count);
 	Vec2 GetTotalSizeUsed() const;
 
-	void Update(const float deltaTime) override;
-	RenderInfo Render(const RenderInfo& renderInfo) override;
+	void Update(const float deltaTime);
+
+	void InitFields() override;
+	std::string ToString() const override;
+
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
+	//RenderInfo Render(const RenderInfo& renderInfo) override;
 };
 

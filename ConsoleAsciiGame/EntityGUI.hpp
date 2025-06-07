@@ -4,9 +4,9 @@
 #include "InputManager.hpp"
 #include "EntityData.hpp"
 #include "ComponentGUI.hpp"
-#include "ToggleGUI.hpp"
+#include "UIToggleComponent.hpp"
 #include "ITreeGUIConstructible.hpp"
-#include "LayoutGUI.hpp"
+#include "UILayout.hpp"
 #include "PanelGUI.hpp"
 
 class GUIHierarchy;
@@ -17,13 +17,13 @@ class EntityGUI : public ITreeGUIConstructible
 {
 private:
 	const Input::InputManager* m_inputManager;
-	LayoutGUI m_guiLayout;
-	PanelGUI m_entityHeader;
+	UILayout m_guiLayout;
+	UIPanel m_entityHeader;
 	EntityData* m_entity;
 
 	std::vector<ComponentGUI> m_componentGUIs;
-	TextGUI m_entityNameText;
-	ToggleGUI m_activeToggle;
+	UITextComponent m_entityNameText;
+	UIToggleComponent m_activeToggle;
 public: 
 
 private:

@@ -7,7 +7,7 @@
 class SpriteAnimationAsset;
 class SpriteAnimation;
 
-class SpriteAnimatorData : public ComponentData
+class SpriteAnimatorData : public Component
 {
 private:
 	//TODO: replace with sparse set for optimization

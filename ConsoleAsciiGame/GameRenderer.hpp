@@ -1,10 +1,7 @@
 #pragma once
 #include <optional>
 #include <cstdint>
-#include "Point2DInt.hpp"
-#include "TextBuffer.hpp"
-#include "LineBuffer.hpp"
-#include "ColliderOutlineBuffer.hpp"
+#include "RenderCall.hpp"
 
 class GUIHierarchy;
 class DebugInfo;
@@ -13,14 +10,20 @@ class EntityEditorGUI;
 
 namespace Rendering
 {
-    struct RenderInfo
+    class Renderer
     {
-        std::optional<Utils::Point2DInt> m_CharSpacing;
-        Utils::Point2DInt m_Padding;
-        Utils::Point2DInt m_ScreenSize;
-        std::uint16_t m_FontSize;
-        bool m_CenterBuffer;
+    private:
+    public:
+
+    private:
+    public:
+        Renderer();
+
+        void AddCircleCall(const ScreenPosition& pos, const float radius, const Color color);
+        void AddRectangleCall(const ScreenPosition& pos, const Vec2Int& size, const Color color);
+        void AddTextureCall(const ScreenPosition& pos, const Texture& tex, const float rotation, const float scale, const Color color);
+        void AddTextCall(const ScreenPosition& pos, const Font& font, const char* text, const float size, const float spacing, const Color color);
+
+        void RenderQueue();
     };
-    void RenderBuffer(const FragmentedTextBuffer* layerBuffers, const ColliderOutlineBuffer* outlineBuffer= nullptr,
-        const LineBuffer* lineBuffer = nullptr, GUIHierarchy* hierarchy=nullptr);
 }

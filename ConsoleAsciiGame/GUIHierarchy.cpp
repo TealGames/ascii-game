@@ -4,15 +4,18 @@
 #include <queue>
 #include <vector>
 #include "GlobalEntityManager.hpp"
+//#include "EntityData.hpp"
 
 static constexpr bool DRAW_RENDER_BOUNDS = false;
 
-GUIHierarchy::GUIHierarchy(GlobalEntityManager& globalEntityManager, const Vec2Int rootCanvasSize)
-	: m_uiRoot(nullptr), m_rootSize(rootCanvasSize), m_layerRoots({}), m_OnElementAdded(), m_OnElementRemoved()
+GUIHierarchy::GUIHierarchy(const ECS::UITransformSystem& uiTransformSystem, ECS::UIRenderSystem& uiRenderSystem,
+	GlobalEntityManager& globalEntityManager, const Vec2Int rootCanvasSize)
+	: m_uiTransformSystem(&uiTransformSystem), m_uiRenderSystem(&uiRenderSystem), 
+	m_uiRoot(nullptr), m_rootSize(rootCanvasSize), m_layerRoots({}), m_OnElementAdded(), m_OnElementRemoved()
 {
 	//m_rootElements.reserve(TOP_LAYER);
 	EntityData& uiRootEntity= globalEntityManager.CreateGlobalEntity(ROOT_UI_ENTITY_NAME, TransformData());
-	m_uiRoot = &(uiRootEntity.AddComponent<GUIElement>());
+	m_uiRoot = &(uiRootEntity.AddComponent<UITransformData>());
 	//m_rootElements.reserve(MAX_LAYERS);
 }
 
@@ -27,7 +30,7 @@ bool GUIHierarchy::IsValidLayer(const GUILayer layer, const bool logError) const
 	return isValid;
 }
 
-GUIElement* GUIHierarchy::CreateNewLayer(const GUILayer layer)
+UITransformData* GUIHierarchy::CreateNewLayer(const GUILayer layer)
 {
 	if (!IsValidLayer(layer, true)) return nullptr;
 	if (m_layerRoots[layer]!=nullptr)
@@ -38,7 +41,7 @@ GUIElement* GUIHierarchy::CreateNewLayer(const GUILayer layer)
 	}
 
 	EntityData& layerRoot= m_uiRoot->GetEntitySafeMutable().CreateChild(std::format("Layer{}", std::to_string(layer)), TransformData());
-	GUIElement& rootElement = layerRoot.AddComponent<GUIElement>();
+	UITransformData& rootElement = layerRoot.AddComponent<UITransformData>();
 	m_layerRoots[layer] = &rootElement;
 
 	layerRoot.m_OnFarthestChildElementAttached.AddListener([this](EntityData* entity)-> void
@@ -50,7 +53,7 @@ GUIElement* GUIHierarchy::CreateNewLayer(const GUILayer layer)
 			}
 
 			//Note: gui elements require their placement only in other gui elements, so we can guarantee they are gui elements
-			m_OnElementAdded.Invoke(entity->TryGetComponentMutable<GUIElement>());
+			m_OnElementAdded.Invoke(entity->TryGetComponentMutable<UITransformData>());
 		});
 
 	return &rootElement;
@@ -71,10 +74,10 @@ bool GUIHierarchy::IsLayerRootID(const ECS::EntityID id) const
 	return false;
 }
 
-GUIElement* GUIHierarchy::FindMutable(const ECS::EntityID id)
+UITransformData* GUIHierarchy::FindMutable(const ECS::EntityID id)
 {
 	//TODO: there could be a speed up by having each layer be reserved some amounts of ids so we dont have to search all layers
-	GUIElement* foundElement = nullptr;
+	UITransformData* foundElement = nullptr;
 	for (size_t i=0; i<m_layerRoots.size(); i++)
 	{
 		if (m_layerRoots[i] == nullptr)
@@ -84,14 +87,14 @@ GUIElement* GUIHierarchy::FindMutable(const ECS::EntityID id)
 			return nullptr;
 		}
 
-		foundElement = m_layerRoots[i]->GetEntitySafeMutable().FindComponentRecursiveMutable<GUIElement>(id);
+		foundElement = m_layerRoots[i]->GetEntitySafeMutable().FindComponentRecursiveMutable<UITransformData>(id);
 		if (foundElement != nullptr) return foundElement;
 	}
 	return nullptr;
 }
-GUIElement* GUIHierarchy::FindParentMutable(const ECS::EntityID id, size_t* foundChildIndex)
+UITransformData* GUIHierarchy::FindParentMutable(const ECS::EntityID id, size_t* foundChildIndex)
 {
-	GUIElement* foundEntity= nullptr;
+	UITransformData* foundEntity= nullptr;
 	for (size_t i = 0; i < m_layerRoots.size(); i++)
 	{
 		if (m_layerRoots[i] == nullptr)
@@ -101,16 +104,16 @@ GUIElement* GUIHierarchy::FindParentMutable(const ECS::EntityID id, size_t* foun
 			return nullptr;
 		}
 
-		foundEntity = m_layerRoots[i]->GetEntitySafeMutable().FindParentComponentRecursiveMutable<GUIElement>(id, foundChildIndex);
+		foundEntity = m_layerRoots[i]->GetEntitySafeMutable().FindParentComponentRecursiveMutable<UITransformData>(id, foundChildIndex);
 		if (foundEntity != nullptr) return foundEntity;
 	}
 	return nullptr;
 }
 
-std::vector<GUIElement*> GUIHierarchy::GetLayerRootsMutable(const bool topLayerFirst)
+std::vector<UITransformData*> GUIHierarchy::GetLayerRootsMutable(const bool topLayerFirst)
 {
 	if (m_layerRoots.empty()) return {};
-	std::vector<GUIElement*> layers = {};
+	std::vector<UITransformData*> layers = {};
 
 
 	if (topLayerFirst)
@@ -127,8 +130,8 @@ std::vector<GUIElement*> GUIHierarchy::GetLayerRootsMutable(const bool topLayerF
 }
 
 const Vec2Int GUIHierarchy::GetRootSize() const { return m_rootSize; }
-const GUIElement* GUIHierarchy::GetRootElement() const { return m_uiRoot; }
-const GUIElement* GUIHierarchy::GetLayerRootElement(const GUILayer layer) const
+const UITransformData* GUIHierarchy::GetRootElement() const { return m_uiRoot; }
+const UITransformData* GUIHierarchy::GetLayerRootElement(const GUILayer layer) const
 {
 	if (!IsValidLayer(layer, true)) return nullptr;
 	return m_layerRoots[layer];
@@ -142,7 +145,7 @@ const GUIElement* GUIHierarchy::GetLayerRootElement(const GUILayer layer) const
 //	if (rootIt == m_layerRoots.end()) rootIt = CreateNewLayer(layer);
 //	rootIt->second = root;
 //}
-void GUIHierarchy::AddToRoot(const GUILayer layer, GUIElement* element)
+void GUIHierarchy::AddToRoot(const GUILayer layer, UITransformData* element)
 {
 	if (!IsValidLayer(layer, true)) return;
 	//Note: we could use the existing functions to accomplish this, but we can make assumptions
@@ -158,7 +161,7 @@ void GUIHierarchy::AddToRoot(const GUILayer layer, GUIElement* element)
 	m_layerRoots[layer]->GetEntitySafeMutable().PushChild(element->GetEntitySafeMutable());
 	//m_OnElementAdded.Invoke(element);
 }
-GUIElement* GUIHierarchy::RemoveFromRoot(const GUILayer layer, const ECS::EntityID id)
+UITransformData* GUIHierarchy::RemoveFromRoot(const GUILayer layer, const ECS::EntityID id)
 {
 	if (IsLayerRootID(id))
 	{
@@ -173,7 +176,7 @@ GUIElement* GUIHierarchy::RemoveFromRoot(const GUILayer layer, const ECS::Entity
 		return nullptr;
 	}
 
-	return m_layerRoots[layer]->GetEntitySafeMutable().TryPopChildAs<GUIElement>(id);
+	return m_layerRoots[layer]->GetEntitySafeMutable().TryPopChildAs<UITransformData>(id);
 }
 //bool GUIHierarchy::TryAddElementAsChild(const ECS::EntityID parentId, GUIElement& element)
 //{
@@ -240,13 +243,13 @@ void GUIHierarchy::ClearLayer(const GUILayer layer)
 //	return layerIt->second->TryGetElementRecursiveMutable(id);
 //}
 
-void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILayer, GUIElement&)>& action)
+void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILayer, UITransformData&)>& action)
 {
 	if (!action) return;
 
-	std::queue<GUIElement*> bfsQueue = {};
-	GUIElement* currElement= nullptr;
-	std::vector<GUIElement*> layerElements = {};
+	std::queue<UITransformData*> bfsQueue = {};
+	UITransformData* currElement= nullptr;
+	std::vector<UITransformData*> layerElements = {};
 
 	int i = m_layerRoots.size() - 1;
 	//Top layer first means we go backwards
@@ -270,7 +273,7 @@ void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILa
 
 			bfsQueue.pop();
 
-			for (auto& child : currElement->GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
+			for (auto& child : currElement->GetEntitySafeMutable().GetChildrenOfTypeMutable<UITransformData>())
 			{
 				if (child == nullptr) continue;
 				bfsQueue.push(child);
@@ -292,72 +295,72 @@ void GUIHierarchy::ExecuteOnAllElementsDescending(const std::function<void(GUILa
 	}
 }
 
-RenderInfo GUIHierarchy::CalculateRenderInfo(const GUIElement& element, const RenderInfo& parentInfo) const
-{
-	return RenderInfo(parentInfo.m_TopLeftPos + GetSizeFromFactor(Abs(element.GetRect().GetTopLeftPos().GetPos() -
-		NormalizedPosition::TOP_LEFT), parentInfo.m_RenderSize), element.GetRect().GetSize(parentInfo.m_RenderSize));
-}
-RenderInfo GUIHierarchy::CalculateChildRenderInfo(const GUIElement& element, const RenderInfo& thisRenderInfo) const
-{
-	const RelativeGUIPadding& padding = element.GetPadding();
-	if (!padding.HasNonZeroPadding()) return thisRenderInfo;
+//RenderInfo GUIHierarchy::CalculateRenderInfo(const GUIElement& element, const RenderInfo& parentInfo) const
+//{
+//	return RenderInfo(parentInfo.m_TopLeftPos + GetSizeFromFactor(Abs(element.GetRect().GetTopLeftPos().GetPos() -
+//		NormalizedPosition::TOP_LEFT), parentInfo.m_RenderSize), element.GetRect().GetSize(parentInfo.m_RenderSize));
+//}
+//RenderInfo GUIHierarchy::CalculateChildRenderInfo(const GUIElement& element, const RenderInfo& thisRenderInfo) const
+//{
+//	const RelativeGUIPadding& padding = element.GetPadding();
+//	if (!padding.HasNonZeroPadding()) return thisRenderInfo;
+//
+//	const ScreenPosition paddingTopLeft = ScreenPosition(padding.m_Left.GetValue() * thisRenderInfo.m_RenderSize.m_X,
+//		padding.m_Top.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
+//	const ScreenPosition paddingBottomRight = ScreenPosition(padding.m_Right.GetValue() * thisRenderInfo.m_RenderSize.m_X,
+//		padding.m_Bottom.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
+//	//if (padding.HasNonZeroPadding())
+//	//{
+//	//	//Assert(false, std::format("NOn zero padding tTL:{} bR:{} padding:{}", paddingTopLeft.ToString(), paddingBottomRight.ToString(), m_padding.ToString()));
+//	//}
+//
+//	return RenderInfo(thisRenderInfo.m_TopLeftPos + paddingTopLeft, thisRenderInfo.m_RenderSize - paddingTopLeft - paddingBottomRight);
+//}
 
-	const ScreenPosition paddingTopLeft = ScreenPosition(padding.m_Left.GetValue() * thisRenderInfo.m_RenderSize.m_X,
-		padding.m_Top.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
-	const ScreenPosition paddingBottomRight = ScreenPosition(padding.m_Right.GetValue() * thisRenderInfo.m_RenderSize.m_X,
-		padding.m_Bottom.GetValue() * thisRenderInfo.m_RenderSize.m_Y);
-	//if (padding.HasNonZeroPadding())
-	//{
-	//	//Assert(false, std::format("NOn zero padding tTL:{} bR:{} padding:{}", paddingTopLeft.ToString(), paddingBottomRight.ToString(), m_padding.ToString()));
-	//}
-
-	return RenderInfo(thisRenderInfo.m_TopLeftPos + paddingTopLeft, thisRenderInfo.m_RenderSize - paddingTopLeft - paddingBottomRight);
-}
-
-bool GUIHierarchy::TryCalculateElementRenderInfoHelper(const ECS::EntityID targetId, const RenderInfo& parentInfo,
-	GUIElement& currentElement, RenderInfo& outInfo) const
+bool GUIHierarchy::TryCalculateElementRectHelper(const ECS::EntityID targetId, const GUIRect& parentInfo,
+	UITransformData& currentElement, GUIRect& outInfo) const
 {
 	if (currentElement.GetEntitySafe().GetId() == targetId)
 	{
-		outInfo = CalculateRenderInfo(currentElement, parentInfo);
+		outInfo = m_uiTransformSystem->CalculateRect(currentElement, parentInfo);
 		return true;
 	}
 
 	if (currentElement.GetEntitySafe().GetChildCount() == 0) return false;
 
 	bool elementWasFound = false;
-	for (auto& child : currentElement.GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
+	for (auto& child : currentElement.GetEntitySafeMutable().GetChildrenOfTypeMutable<UITransformData>())
 	{
 		if (child == nullptr) continue;
 
-		elementWasFound= TryCalculateElementRenderInfoHelper(targetId, CalculateRenderInfo(currentElement, parentInfo), *child, outInfo);
+		elementWasFound= TryCalculateElementRectHelper(targetId, m_uiTransformSystem->CalculateChildRect(currentElement, parentInfo), *child, outInfo);
 		if (elementWasFound) return true;
 	}
 
 	return false;
 }
 
-RenderInfo GUIHierarchy::TryCalculateElementRenderInfoExisting(const GUIElement& element) const
+GUIRect GUIHierarchy::TryCalculateElementRenderInfoExisting(const UITransformData& element) const
 {
-	RenderInfo result = {};
+	GUIRect result = {};
 	bool wasFound = false;
 	for (size_t i=0; i<m_layerRoots.size(); i++)
 	{
 		if (m_layerRoots[i] == nullptr) continue;
 		if (m_layerRoots[i]->GetEntitySafe().GetChildCount() == 0) continue;
 
-		wasFound = TryCalculateElementRenderInfoHelper(element.GetEntitySafe().GetId(), GetRootRenderInfo(), *m_layerRoots[i], result);
+		wasFound = TryCalculateElementRectHelper(element.GetEntitySafe().GetId(), GetRootRect(), *m_layerRoots[i], result);
 		if (wasFound) return result;
 	}
 
 	return result;
 }
-RenderInfo GUIHierarchy::TryCalculateElementRenderInfoFromRoot(const GUIElement& element)
+GUIRect GUIHierarchy::TryCalculateElementRenderInfoFromRoot(const UITransformData& element)
 {
-	return CalculateRenderInfo(element, GetRootRenderInfo());
+	return m_uiTransformSystem->CalculateRect(element, GetRootRect());
 }
 
-void GUIHierarchy::UpdateElementHelper(const float deltaTime, GUIElement& element)
+void GUIHierarchy::UpdateElementHelper(const float deltaTime, UITransformData& element)
 {
 	//If we have invalid rect, we set to max size to ensure rendering works
 	const Vec2 size = element.GetRect().GetSize().GetPos();
@@ -369,10 +372,10 @@ void GUIHierarchy::UpdateElementHelper(const float deltaTime, GUIElement& elemen
 		//LogWarning(std::format("Changed x for rect of id:{} to:{} -> {}", std::to_string(m_id), before.ToString(), m_relativeRect.ToString()));
 	}
 
-	element.Update(deltaTime);
+	//element.Update(deltaTime);
 
 	if (element.GetEntitySafe().GetChildCount()==0) return;
-	for (auto& child : element.GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
+	for (auto& child : element.GetEntitySafeMutable().GetChildrenOfTypeMutable<UITransformData>())
 	{
 		if (child == nullptr) continue;
 		UpdateElementHelper(deltaTime, *child);
@@ -413,39 +416,43 @@ void GUIHierarchy::UpdateAll(const float deltaTime)
 	//Assert(false, std::format("After first update tree:{}", ToStringTree()));
 }
 
-RenderInfo GUIHierarchy::GetRootRenderInfo() const
+GUIRect GUIHierarchy::GetRootRect() const
 {
-	return RenderInfo(ScreenPosition(0, 0), m_rootSize);
+	return GUIRect(ScreenPosition(0, 0), m_rootSize);
 }
 
-void GUIHierarchy::RenderElementHelper(const RenderInfo& parentInfo, GUIElement& element)
+void GUIHierarchy::RenderElementHelper(UIRendererData& renderer, const GUIRect& parentInfo)
 {
+	UITransformData& transform = *(renderer.GetEntitySafeMutable().TryGetComponentMutable<UITransformData>());
 	//We get this render info based on this relative pos
-	const RenderInfo thisRenderInfo = CalculateRenderInfo(element, parentInfo);
+	const GUIRect thisRenderRect = m_uiTransformSystem->CalculateRect(transform, parentInfo);
 
-	if (DRAW_RENDER_BOUNDS) DrawRectangleLines(thisRenderInfo.m_TopLeftPos.m_X, thisRenderInfo.m_TopLeftPos.m_Y,
-		thisRenderInfo.m_RenderSize.m_X, thisRenderInfo.m_RenderSize.m_Y, YELLOW);
+	/*if (DRAW_RENDER_BOUNDS) DrawRectangleLines(thisRenderInfo.m_TopLeftPos.m_X, thisRenderInfo.m_TopLeftPos.m_Y,
+		thisRenderInfo.GetSize().m_X, thisRenderInfo.GetSize().m_Y, YELLOW);*/
 
-	element.Render(thisRenderInfo);
+	const GUIRect actualRenderedArea= m_uiRenderSystem->RenderUIEntity(renderer, parentInfo);
+	renderer.SetLastRenderRect(actualRenderedArea);
 	/*LogError(std::format("Rendering element calculated from parent info:{} rect:{} current info:{}",
 		renderInfo.ToString(), m_relativeRect.ToString(), thisRenderInfo.ToString()));*/
 
-	if (element.GetEntitySafe().GetChildCount()==0) return;
+	if (transform.GetEntitySafe().GetChildCount()==0) return;
 
-	const RenderInfo childRenderInfo = CalculateChildRenderInfo(element, thisRenderInfo);
+	const GUIRect childRenderRect = m_uiTransformSystem->CalculateChildRect(transform, thisRenderRect);
 	/*if (m_padding.HasNonZeroPadding())
 	{
 		Assert(false, std::format("Padding:{} this render:{} child render:{}",
 			m_padding.ToString(), thisRenderInfo.ToString(), childRenderInfo.ToString()));
 	}*/
 
-	for (auto& child : element.GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
+	//TODO: this is really slow to have to check every element in the ui tree if it has the renderer. we 
+	//should instead cache a different renderer tree for optimization
+	for (auto& child : transform.GetEntitySafeMutable().GetChildrenOfTypeMutable<UIRendererData>())
 	{
 		if (child == nullptr) continue;
 		//Note: we assume space reserved for this element is the space it actually 
 		//used for render (and thus can be used for children) because we do not want size
 		//changes during render especially becuase of normalized vs in-game space coordinates
-		RenderElementHelper(childRenderInfo, *child);
+		RenderElementHelper(*child, childRenderRect);
 	}
 }
 void GUIHierarchy::RenderAll()
@@ -462,7 +469,8 @@ void GUIHierarchy::RenderAll()
 			if (m_layerRoots[i]->GetEntitySafe().GetChildCount() == 0) continue;
 
 			//Note: the top left pos is (0, 0) when rendering and y increases as you go down
-			RenderElementHelper(GetRootRenderInfo(), *m_layerRoots[i]);
+			if (UIRendererData* renderer= m_layerRoots[i]->GetEntitySafeMutable().TryGetComponentMutable<UIRendererData>())
+				RenderElementHelper(*renderer, GetRootRect());
 		}
 		//Assert(false, std::format("Reender all rec"));
 	}
@@ -473,7 +481,7 @@ void GUIHierarchy::RenderAll()
 	}
 }
 
-std::string GUIHierarchy::ToStringElementHelper(std::string startNewLine, const GUIElement& element) const
+std::string GUIHierarchy::ToStringElementHelper(std::string startNewLine, const UITransformData& element) const
 {
 	std::string result = "";
 	result += std::format("\n{}-> {}", startNewLine, element.ToString());
@@ -481,7 +489,7 @@ std::string GUIHierarchy::ToStringElementHelper(std::string startNewLine, const 
 	if (element.GetEntitySafe().GetChildCount()==0) return result;
 
 	startNewLine += "    ";
-	for (const auto& child : element.GetEntitySafe().GetChildrenOfType<GUIElement>())
+	for (const auto& child : element.GetEntitySafe().GetChildrenOfType<UITransformData>())
 	{
 		if (child == nullptr) continue;
 		result += ToStringElementHelper(startNewLine, *child);

@@ -216,14 +216,14 @@ namespace SceneManagement
 		return &(m_activeScene->GetSceneMutable());
 	}
 
-	const ECS::Entity* SceneManager::TryGetEntity(const std::string& sceneName, const std::string& entityName) const
+	const EntityData* SceneManager::TryGetEntity(const std::string& sceneName, const std::string& entityName) const
 	{
 		const Scene* maybeScene = TryGetScene(sceneName);
 		if (maybeScene == nullptr) return nullptr;
 
 		return maybeScene->TryGetEntity(entityName);
 	}
-	ECS::Entity* SceneManager::TryGetEntityMutable(const std::string& sceneName, const std::string& entityName)
+	EntityData* SceneManager::TryGetEntityMutable(const std::string& sceneName, const std::string& entityName)
 	{
 		Scene* maybeScene = TryGetSceneMutable(sceneName);
 		if (maybeScene == nullptr) return nullptr;

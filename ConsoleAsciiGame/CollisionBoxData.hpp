@@ -40,7 +40,7 @@ struct CollidingBoxInfo
 
 class TransformData;
 using CollidingInfoCollection = std::vector<CollidingBoxInfo>;
-class CollisionBoxData : public ComponentData
+class CollisionBoxData : public Component
 {
 private:
 	Physics::AABB m_aabb;

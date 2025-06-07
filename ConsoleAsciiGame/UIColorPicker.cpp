@@ -1,27 +1,29 @@
 #include "pch.hpp"
-#include "ColorPickerGUI.hpp"
+#include "UIColorPicker.hpp"
 #include "RaylibUtils.hpp"
 #include "Debug.hpp"
 #include "ColorPopupGUI.hpp"
 #include "PopupGUIManager.hpp"
 #include "HelperFunctions.hpp"
+#include "UIPanel.hpp"
 
-ColorPickerGUI::ColorPickerGUI(PopupGUIManager& popupManager, const GUIStyle& settings)
-	: SelectableGUI(), m_color(), m_popupManager(&popupManager), m_valueSetCallback() //m_settings(settings), 
+UIColorPickerData::UIColorPickerData() : UIColorPickerData(GUIStyle()) {}
+UIColorPickerData::UIColorPickerData(const GUIStyle& settings)
+	: UISelectableData(), m_color(), m_popupManager(nullptr), m_valueSetCallback(), m_renderer(nullptr), m_fieldPanel(nullptr) //m_settings(settings), 
 {
 	//LogWarning(std::format("coloc picker addr create:{}", Utils::ToStringPointerAddress(this)));
-	m_OnSelect.AddListener([this](SelectableGUI* gui)-> void
+	m_OnSelect.AddListener([this](UISelectableData* gui)-> void
 		{
 			//Assert(false, "PISS");
 			//LogWarning(std::format("color picker call addr:{}", Utils::ToStringPointerAddress(this)));
 			ColorPopupGUI* popup = nullptr; 
-			const bool isEnabled= m_popupManager->TryTogglePopupAt<ColorPopupGUI>(GetLastFrameRect(), 
+			const bool isEnabled= m_popupManager->TryTogglePopupAt<ColorPopupGUI>(m_renderer->GetLastRenderRect(),
 				PopupPositionFlags::BelowRect | PopupPositionFlags::CenteredXToRect, &popup);
 
 			if (popup==nullptr)
 			{
 				Assert(false, std::format("Attempted to popup color popup gui after clicking "
-					"color picker GUI:{} but popup failed to appear", ToStringBase()));
+					"color picker GUI:{} but popup failed to appear", ToString()));
 			}
 
 			if (isEnabled) popup->SetColor(GetColor());
@@ -44,19 +46,42 @@ ColorPickerGUI::ColorPickerGUI(PopupGUIManager& popupManager, const GUIStyle& se
 	//Assert(false, std::format(0))
 }
 
-void ColorPickerGUI::SetValueSetAction(const ColorPickerAction& action)
+void UIColorPickerData::SetValueSetAction(const ColorPickerAction& action)
 {
 	m_valueSetCallback = action;
 }
 
-void ColorPickerGUI::SetColor(const Utils::Color color) 
+void UIColorPickerData::SetColor(const Utils::Color color) 
 { 
 	m_color = color; 
+	if (m_fieldPanel != nullptr) m_fieldPanel->SetColor(RaylibUtils::ToRaylibColor(m_color));
 	if (m_valueSetCallback) m_valueSetCallback(m_color);
 }
 //void ColorPickerGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }
-Utils::Color ColorPickerGUI::GetColor() const { return m_color; }
+Utils::Color UIColorPickerData::GetColor() const { return m_color; }
+const UIPanel* UIColorPickerData::GetFieldPanel() const { return m_fieldPanel; }
 
+void UIColorPickerData::InitFields()
+{
+	m_Fields = {};
+}
+std::string UIColorPickerData::ToString() const
+{
+	return std::format("[UIColorPicker]");
+}
+
+void UIColorPickerData::Deserialize(const Json& json)
+{
+	//TODO: implement
+	return;
+}
+Json UIColorPickerData::Serialize()
+{
+	//TODO: implement
+	return {};
+}
+
+/*
 RenderInfo ColorPickerGUI::ElementRender(const RenderInfo& renderInfo)
 {
 	//Assert(false, std::format("settings size: {} render info:{}", m_settings.m_Size.ToString(), renderInfo.m_RenderSize.ToString()));
@@ -71,3 +96,4 @@ RenderInfo ColorPickerGUI::ElementRender(const RenderInfo& renderInfo)
 
 	return renderInfo;
 }
+*/

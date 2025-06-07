@@ -12,7 +12,7 @@ EntityRendererData::EntityRendererData(const Json& json) : EntityRendererData()
 }
 
 EntityRendererData::EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers) :
-	ComponentData(), m_VisualData(visualData), m_renderLayers(renderLayers)//, m_LastFrameVisualData(),
+	Component(), m_VisualData(visualData), m_renderLayers(renderLayers)//, m_LastFrameVisualData(),
 {
 
 }

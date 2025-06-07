@@ -1,12 +1,14 @@
 #pragma once
-#include "GUIElement.hpp"
+#include "ComponentData.hpp"
 #include <string>
 #include "FontData.hpp"
 #include "raylib.h"
 #include "ScreenPosition.hpp"
 #include <cstdint>
 #include "GUIPadding.hpp"
+#include "GUIRect.hpp"
 
+class UIRendererData;
 class TextGUIStyle;
 
 enum class TextAlignment : std::uint8_t
@@ -62,9 +64,11 @@ bool IsMiddleVerticalAlignment(const TextAlignment& alignment);
 /// <returns></returns>
 bool IsRightAlignment(const TextAlignment& alignment);
 
-class TextGUI : public GUIElement
+class UITextComponent : public Component
 {
 private:
+	UIRendererData* m_renderer;
+
 	std::string m_text;
 	FontProperties m_fontData;
 	Color m_color;
@@ -125,7 +129,7 @@ private:
 	/// <param name="renderInfo"></param>
 	/// <param name="textRectArea"></param>
 	/// <returns></returns>
-	ScreenPosition CalculateTopLeftPos(const RenderInfo& renderInfo, const Vector2& fullTextArea) const;
+	ScreenPosition CalculateTopLeftPos(const GUIRect& renderInfo, const Vector2& fullTextArea) const;
 
 	/// <summary>
 	/// Returns the amount of ACTUAL usable space from rendering information
@@ -133,16 +137,16 @@ private:
 	/// </summary>
 	/// <param name="renderInfo"></param>
 	/// <returns></returns>
-	Vec2 CalculateUsableSpace(const RenderInfo& renderInfo) const;
+	Vec2 CalculateUsableSpace(const GUIRect& renderInfo) const;
 
 private:
-	TextGUI(const std::string text, const FontProperties& font, const GUIPadding& padding,
+	UITextComponent(const std::string text, const FontProperties& font, const GUIPadding& padding,
 		const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea);
 
 public:
-	TextGUI();
-	TextGUI(const std::string text, const FontProperties& font, const Color& color);
-	TextGUI(const std::string& text, const TextGUIStyle& settings);
+	UITextComponent();
+	UITextComponent(const std::string text, const FontProperties& font, const Color& color);
+	UITextComponent(const std::string& text, const TextGUIStyle& settings);
 
 	void SetSettings(const TextGUIStyle& settings);
 
@@ -185,10 +189,13 @@ public:
 	void SetPaddingLeft(const float& padding);
 	void SetPadding(const GUIPadding& padding);
 
-	void Update(const float deltaTime) override;
-	RenderInfo Render(const RenderInfo& renderInfo) override;
-	ScreenPosition CalculateSize(const RenderInfo& renderInfo) const;
+	//RenderInfo Render(const RenderInfo& renderInfo) override;
+	GUIRect Render(const GUIRect& rect);
 
-	std::string ToString() const;
+	void InitFields() override;
+	std::string ToString() const override;
+
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };
 

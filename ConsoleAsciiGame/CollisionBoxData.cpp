@@ -35,7 +35,7 @@ std::string ToString(const CollisionFlag flag)
 CollidingBoxInfo::CollidingBoxInfo(const CollisionBoxData& box, const CollisionFlag& flag) : m_Box(&box), m_Flag(flag) {}
 
 CollisionBoxData::CollisionBoxData(const TransformData* transform, const Vec2& size, const WorldPosition& transformOffset) :
-	ComponentData(), m_transform(transform), m_aabb(size), m_transformOffset(transformOffset), m_collidingBoxes() {}
+	Component(), m_transform(transform), m_aabb(size), m_transformOffset(transformOffset), m_collidingBoxes() {}
 
 CollisionBoxData::CollisionBoxData(const TransformData& transform, const Vec2& size, const WorldPosition& transformOffset) :
 	CollisionBoxData(&transform, size, transformOffset) {}

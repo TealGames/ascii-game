@@ -23,7 +23,7 @@ LightSourceData::LightSourceData(const Json& json) : LightSourceData()
 }
 LightSourceData::LightSourceData(const std::uint8_t& lightRadius, const RenderLayerType& affectedLayers, const ColorGradient& colorFilter,
 	const std::uint8_t& intensity, const float& falloff) :
-	ComponentData(), 
+	Component(), 
 	m_LightRadius(lightRadius), m_GradientFilter(colorFilter), m_AffectedLayers(affectedLayers),
 	m_Intensity(intensity), m_FalloffStrength(falloff), test()//, m_LastFrameData{}
 {

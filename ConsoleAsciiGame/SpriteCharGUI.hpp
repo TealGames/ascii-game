@@ -1,7 +1,7 @@
 #pragma once
 #include "TextBuffer.hpp"
 #include "IRenderable.hpp"
-#include "InputFieldGUI.hpp"
+#include "UIInputField.hpp"
 
 class GUISelectorManager;
 namespace Input { class InputManager; }
@@ -9,7 +9,7 @@ namespace Input { class InputManager; }
 class SpriteCharGUI : public IRenderable
 {
 private:	
-	InputFieldGUI m_charField;
+	UIInputField m_charField;
 
 public:
 

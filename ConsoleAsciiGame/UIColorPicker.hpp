@@ -1,5 +1,5 @@
 #pragma once
-#include "SelectableGUI.hpp"
+#include "UISelectableData.hpp"
 #include "IRenderable.hpp"
 #include "GUIStyle.hpp"
 #include "Color.hpp"
@@ -8,11 +8,14 @@
 class PopupGUIManager;
 namespace Input { class InputManager; }
 
+class UIPanel;
 using ColorPickerAction = std::function<void(Utils::Color)>;
-class ColorPickerGUI :  public SelectableGUI
+class UIColorPickerData :  public UISelectableData
 {
 private:
 	PopupGUIManager* m_popupManager;
+	UIRendererData* m_renderer;
+	UIPanel* m_fieldPanel;
 	//GUIStyle m_settings;
 	Utils::Color m_color;
 
@@ -21,14 +24,21 @@ public:
 
 private:
 public:
-	ColorPickerGUI(PopupGUIManager& popupManager, const GUIStyle& settings);
+	UIColorPickerData();
+	UIColorPickerData(const GUIStyle& settings);
 
 	void SetColor(const Utils::Color color);
 	//void SetSettings(const GUIStyle& settings);
 	void SetValueSetAction(const ColorPickerAction& action);
 
 	Utils::Color GetColor() const;
+	const UIPanel* GetFieldPanel() const;
 
-	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
+	void InitFields() override;
+	std::string ToString() const override;
+
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
+	//RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 };
 

@@ -5,7 +5,7 @@
 //Since negative positions are not allowed
 const Vec2 NULL_POS = Vec2{ -1, -1 };
 
-class TransformData : public ComponentData
+class TransformData : public Component
 {
 private:
 	Vec2 m_localPos;

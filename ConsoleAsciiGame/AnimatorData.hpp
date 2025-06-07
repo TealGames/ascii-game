@@ -86,7 +86,7 @@ struct AnimationProperty
 //
 //using AnimationPropertyVariant = GeneratedVariant<int, float, std::uint8_t>;
 using AnimationPropertyVariant = std::variant<AnimationProperty<int>, AnimationProperty<float>, AnimationProperty<std::uint8_t>>;
-class AnimatorData : public ComponentData
+class AnimatorData : public Component
 {
 private:
 	bool m_Loop;

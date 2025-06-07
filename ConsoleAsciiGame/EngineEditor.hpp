@@ -5,10 +5,11 @@
 #include "PopupGUIManager.hpp"
 #include "IBasicRenderable.hpp"
 #include "DebugInfo.hpp"
-#include "ToggleGUI.hpp"
-#include "ButtonGUI.hpp"
+#include "UIToggleComponent.hpp"
+#include "UIButton.hpp"
 #include "raylib.h"
 #include "GUIHierarchy.hpp"
+#include "UIPanel.hpp"
 
 namespace Core { class Engine; }
 namespace Input { class InputManager; }
@@ -55,12 +56,12 @@ private:
 	EntityEditorGUI m_entityEditor;
 	SpriteEditorGUI m_spriteEditor;
 
-	TextGUI m_mousePosText;
-	PanelGUI m_overheadBarContainer;
-	LayoutGUI m_toggleLayout;
-	ToggleGUI m_pauseGameToggle;
-	ToggleGUI m_editModeToggle;
-	ButtonGUI m_assetEditorButton;
+	UITextComponent m_mousePosText;
+	UIPanel m_overheadBarContainer;
+	UILayout m_toggleLayout;
+	UIToggleComponent m_pauseGameToggle;
+	UIToggleComponent m_editModeToggle;
+	UIButton m_assetEditorButton;
 	EditModeInfo m_editModeInfo;
 
 	bool m_displayingGameView;

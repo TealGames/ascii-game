@@ -9,7 +9,7 @@ UIObjectData::UIObjectData(const Json& json) : UIObjectData()
 	Deserialize(json);
 }
 UIObjectData::UIObjectData(const NormalizedPosition& normalizedPos) :
-	ComponentData(), m_normalizedPos(normalizedPos)
+	Component(), m_normalizedPos(normalizedPos)
 {
 
 }

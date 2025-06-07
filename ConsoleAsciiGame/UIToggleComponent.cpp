@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "ToggleGUI.hpp"
+#include "UIToggleComponent.hpp"
 #include "RaylibUtils.hpp"
 #include "GUISelectorManager.hpp"
 #include <optional>
@@ -9,12 +9,12 @@
 //	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
 //	m_valueSetAction(nullptr) {}
 
-ToggleGUI::ToggleGUI(const bool& startValue, const GUIStyle& settings, 
+UIToggleComponent::UIToggleComponent(const bool& startValue, const GUIStyle& settings, 
 	const ToggleAction& valueSetAction, const TextureAsset* toggledTexture)
-	: SelectableGUI(),  m_isToggled(startValue), m_settings(settings), 
+	: UISelectableData(),  m_isToggled(startValue), m_settings(settings), 
 	m_valueSetAction(valueSetAction), m_overlayTexture(toggledTexture)
 {
-	m_OnClick.AddListener([this](SelectableGUI* self)-> void 
+	m_OnClick.AddListener([this](UISelectableData* self)-> void 
 		{
 			//Assert(false, "POOP");
 			ToggleValue();
@@ -23,54 +23,54 @@ ToggleGUI::ToggleGUI(const bool& startValue, const GUIStyle& settings,
 		});
 }
 
-ToggleGUI::~ToggleGUI()
+UIToggleComponent::~UIToggleComponent()
 {
 	//LogError(std::format("Toggle destroyed"));
 	/*if (m_settings.m_Size == ScreenPosition{69, 69}) 
 		Assert(false, std::format("DEATRUCTOR HELL YEAH settings:{}", m_settings.m_Size.ToString()));*/
 }
 
-void ToggleGUI::SetSettings(const GUIStyle& settings)
+void UIToggleComponent::SetSettings(const GUIStyle& settings)
 {
 	m_settings = settings;
 }
-void ToggleGUI::SetOverlayTexture(const TextureAsset& asset)
+void UIToggleComponent::SetOverlayTexture(const TextureAsset& asset)
 {
 	m_overlayTexture = &asset;
 }
-bool ToggleGUI::HasOverlayTexture() const
+bool UIToggleComponent::HasOverlayTexture() const
 {
 	return m_overlayTexture != nullptr;
 }
 
-bool ToggleGUI::IsToggled() const
+bool UIToggleComponent::IsToggled() const
 {
 	return m_isToggled;
 }
 
-void ToggleGUI::SetValue(const bool value)
+void UIToggleComponent::SetValue(const bool value)
 {
 	m_isToggled = value;
 	if (m_valueSetAction) m_valueSetAction(m_isToggled);
 }
-void ToggleGUI::ToggleValue()
+void UIToggleComponent::ToggleValue()
 {
 	SetValue(!m_isToggled);
 }
 
-void ToggleGUI::SetValueSetAction(const ToggleAction& action)
+void UIToggleComponent::SetValueSetAction(const ToggleAction& action)
 {
 	m_valueSetAction = action;
 }
 
-void ToggleGUI::DrawOverlayTexture(const float targetWidth, const float targetHeight, const Vector2& topLeftPos)
+void UIToggleComponent::DrawOverlayTexture(const float targetWidth, const float targetHeight, const Vector2& topLeftPos)
 {
 	const float scaleX = targetWidth / m_overlayTexture->GetTexture().width;
 	const float scaleY = targetHeight / m_overlayTexture->GetTexture().height;
 	DrawTextureEx(m_overlayTexture->GetTexture(), topLeftPos, 0, std::min(scaleX, scaleY), WHITE);
 }
 
-RenderInfo ToggleGUI::ElementRender(const RenderInfo& renderInfo)
+RenderInfo UIToggleComponent::ElementRender(const RenderInfo& renderInfo)
 {
 	const float guiHeight = renderInfo.m_RenderSize.m_Y;
 	const float guiWidth = guiHeight;
@@ -98,4 +98,24 @@ RenderInfo ToggleGUI::ElementRender(const RenderInfo& renderInfo)
 	//SetLastFramneRect(GUIRect{ ScreenPosition(topLeftPos.x, topLeftPos.y), {guiWidth, guiHeight} });
 	return RenderInfo{ ScreenPosition{static_cast<int>(topLeftPos.x),
 				static_cast<int>(topLeftPos.y) }, ScreenPosition(guiWidth, guiHeight) };
+}
+
+void UIToggleComponent::InitFields()
+{
+	m_Fields = {};
+}
+std::string UIToggleComponent::ToString() const
+{
+	return std::format("[ToggleGUI]");
+}
+
+void UIToggleComponent::Deserialize(const Json& json)
+{
+	//TODO: implement
+	return;
+}
+Json UIToggleComponent::Serialize()
+{
+	//TODO: implement
+	return {};
 }

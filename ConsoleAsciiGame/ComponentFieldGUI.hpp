@@ -5,11 +5,11 @@
 #include "ComponentField.hpp"
 #include "IDelayedRenderable.hpp"
 #include "ITreeGUIConstructible.hpp"
-#include "InputFieldGUI.hpp"
-#include "ContainerGUI.hpp"
+#include "UIInputField.hpp"
+#include "UIContainer.hpp"
 #include "InputManager.hpp"
-#include "ToggleGUI.hpp"
-#include "ColorPickerGUI.hpp"
+#include "UIToggleComponent.hpp"
+#include "UIColorPicker.hpp"
 
 class GUISelectorManager;
 class ComponentGUI;
@@ -19,14 +19,14 @@ class ComponentFieldGUI : public ITreeGUIConstructible
 {
 private:
 	const Input::InputManager* m_inputManager;
-	ContainerGUI m_guiLayout;
+	UIContainer m_guiLayout;
 	ComponentField* m_fieldInfo;
-	std::vector<InputFieldGUI> m_inputFields;
-	ToggleGUI m_checkbox;
-	ColorPickerGUI m_colorPicker;
+	std::vector<UIInputField> m_inputFields;
+	UIToggleComponent m_checkbox;
+	UIColorPickerData m_colorPicker;
 
 	const ComponentGUI* m_componentGUI;
-	TextGUI m_fieldNameText;
+	UITextComponent m_fieldNameText;
 public:
 
 private:

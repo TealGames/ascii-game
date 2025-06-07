@@ -22,7 +22,7 @@ namespace ECS
 	class EntityRegistry;
 
 	template<typename T>
-	requires std::is_base_of_v<ComponentData, T>
+	requires std::is_base_of_v<Component, T>
 	struct EntityComponentPair
 	{
 		//Note: the types are pointers so this object
@@ -37,7 +37,7 @@ namespace ECS
 
 	template<typename ...Args>
 	requires Utils::HasAtLeastOneArg<Args...> 
-			 && Utils::AllSameBaseType<ComponentData, Args...>
+			 && Utils::AllSameBaseType<Component, Args...>
 	struct EntityComponents
 	{
 		EntityData* m_Entity;
@@ -107,7 +107,7 @@ namespace ECS
 		bool IsGlobal() const;
 
 		template<typename T, typename... Args>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		T& AddComponent(Args&&... args)
 		{
 			if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
@@ -115,7 +115,7 @@ namespace ECS
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
 			T& result= m_registry.emplace<T>(m_Id, std::forward<Args>(args)...);
-			ComponentData* componentData = &result;
+			Component* componentData = &result;
 			componentData->m_entity = this;
 			componentData->InitFields();
 
@@ -129,7 +129,7 @@ namespace ECS
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T> && std::is_default_constructible_v<T>
+		requires std::is_base_of_v<Component, T> && std::is_default_constructible_v<T>
 		T& AddComponent()
 		{
 			if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
@@ -137,7 +137,7 @@ namespace ECS
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
 			T& result= m_registry.emplace<T>(m_Id);
-			ComponentData* componentData = &result;
+			Component* componentData = &result;
 			componentData->m_entity = this;
 			componentData->InitFields();
 
@@ -152,7 +152,7 @@ namespace ECS
 		/// <param name="component"></param>
 		/// <returns></returns>
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		T& AddComponent(const T& component)
 		{
 			if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
@@ -160,7 +160,7 @@ namespace ECS
 				ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
 			T& result = m_registry.emplace_or_replace<T>(m_Id, component);
-			ComponentData* componentData = &result;
+			Component* componentData = &result;
 			componentData->m_entity = this;
 			componentData->InitFields();
 
@@ -169,7 +169,7 @@ namespace ECS
 		}
 
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		bool HasComponent() const
 		{
 			//TODO: maybe try checking if checking vector of all this entity's component
@@ -202,14 +202,14 @@ namespace ECS
 
 
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		T* TryGetComponentMutable()
 		{
 			return m_registry.try_get<T>(m_Id);
 		}
 
 		template<typename T>
-		requires std::is_base_of_v<ComponentData, T>
+		requires std::is_base_of_v<Component, T>
 		const T* TryGetComponent() const
 		{
 			return m_registry.try_get<T>(m_Id);
@@ -224,7 +224,7 @@ namespace ECS
 		size_t TryGetIndexOfComponent(const ComponentData* component) const;
 		size_t TryGetIndexOfComponent(const std::string& componentName) const;*/
 
-		std::string TryGetComponentName(const ComponentData* component) const;
+		std::string TryGetComponentName(const Component* component) const;
 
 		/// <summary>
 		/// Will return all components as base type for this entity. 
@@ -232,7 +232,7 @@ namespace ECS
 		/// is modifiable, but no other components can be added/removed/changed
 		/// </summary>
 		/// <returns></returns>
-		const std::vector<ComponentData*>& GetAllComponentsMutable() const;
+		const std::vector<Component*>& GetAllComponentsMutable() const;
 
 		bool Validate() override;
 

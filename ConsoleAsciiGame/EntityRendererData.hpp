@@ -5,7 +5,7 @@
 #include "ComponentData.hpp"
 #include "VisualData.hpp"
 
-class EntityRendererData : public ComponentData
+class EntityRendererData : public Component
 {
 private:
 	//Stores every entity's visual from top row to bottom row
