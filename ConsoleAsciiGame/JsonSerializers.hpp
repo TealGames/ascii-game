@@ -6,7 +6,7 @@
 #include "VisualData.hpp"
 #include "TextArray.hpp"
 #include "SerializableEntity.hpp"
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "EntityData.hpp"
 #include "AnimatorData.hpp"
 #include "SpriteAnimation.hpp"
@@ -261,7 +261,7 @@ requires (!std::is_pointer_v<T> && std::is_base_of_v<Component, T>)
 Json TrySerializeComponent(const T* component, const bool& isOptional = false)
 {
 	const Component* componentBase = static_cast<const Component*>(component);
-	const EntityData& entity = componentBase->GetEntitySafe();
+	const EntityData& entity = componentBase->GetEntity();
 	const std::string componentName = entity.TryGetComponentName(componentBase);
 
 	if (isOptional)
@@ -269,7 +269,7 @@ Json TrySerializeComponent(const T* component, const bool& isOptional = false)
 		return TrySerializeOptional<const T*>(component == nullptr ? std::nullopt : std::make_optional(component),
 			[&entity, &componentName](const T* component)->Json
 			{
-				return SerializableComponent(entity.GetSceneName(), entity.GetName(), componentName);
+				return SerializableComponent(entity.m_SceneName, entity.m_Name, componentName);
 				//if (componentName == "PhysicsBodyData") Assert(false, std::format("Created serializvble comp:{}", serialized.ToString()));
 			});
 	}
@@ -277,7 +277,7 @@ Json TrySerializeComponent(const T* component, const bool& isOptional = false)
 	if (!Assert(component != nullptr, std::format("Tried to serialize NULL component for a NON OPTIONAL call")))
 		return {};
 
-	return SerializableComponent(entity.GetSceneName(), entity.GetName(), componentName);
+	return SerializableComponent(entity.m_SceneName, entity.m_Name, componentName);
 }
 
 template<typename T>

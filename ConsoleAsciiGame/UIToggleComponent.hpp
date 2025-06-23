@@ -2,8 +2,8 @@
 #include "raylib.h"
 #include <functional>
 #include "UISelectableData.hpp"
-#include "GUIStyle.hpp"
-#include "GUIRect.hpp"
+#include "UIStyle.hpp"
+#include "UIRect.hpp"
 
 class TextureAsset;
 
@@ -16,7 +16,7 @@ private:
 	/// that changes between the two after a click
 	/// </summary>
 	bool m_isToggled;
-	GUIStyle m_settings;
+	UIStyle m_settings;
 	const TextureAsset* m_overlayTexture;
 
 	ToggleAction m_valueSetAction;
@@ -25,11 +25,11 @@ public:
 private:
 	void DrawOverlayTexture(const float targetWidth, const float targetHeight, const Vector2& topLeftPos);
 public:
-	UIToggleComponent(const bool& startValue, const GUIStyle& settings, 
+	UIToggleComponent(const bool& startValue, const UIStyle& settings, 
 		const ToggleAction& valueSetAction=nullptr, const TextureAsset* overlayTexture=nullptr);
 	~UIToggleComponent();
 
-	void SetSettings(const GUIStyle& settings);
+	void SetSettings(const UIStyle& settings);
 	void SetOverlayTexture(const TextureAsset& asset);
 	bool HasOverlayTexture() const;
 
@@ -39,7 +39,7 @@ public:
 
 	void SetValueSetAction(const ToggleAction& action);
 
-	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
+	//RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 
 	void InitFields() override;
 	std::string ToString() const override;

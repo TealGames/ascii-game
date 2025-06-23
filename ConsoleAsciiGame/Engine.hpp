@@ -21,14 +21,14 @@
 #include "TriggerSystem.hpp"
 #include "CollisionBoxSystem.hpp"
 #include "ParticleEmitterSystem.hpp"
-#include "UIRendererSystem.hpp"
+#include "UISystemExecutor.hpp"
 #include "CameraController.hpp"
 #include "CollisionRegistry.hpp"
 #include "TimeKeeper.hpp"
 #include "GameManager.hpp"
 //#include "InputManager.hpp"
-#include "GUIHierarchy.hpp"
-#include "GUISelectorManager.hpp"
+#include "UIHierarchy.hpp"
+#include "UIInteractionManager.hpp"
 #include "EngineEditor.hpp"
 #include "GameRenderer.hpp"
 
@@ -45,8 +45,9 @@ namespace Core
 		Physics::PhysicsManager m_physicsManager;
 		CameraController m_cameraController;
 		Input::InputManager m_inputManager;
-		GUISelectorManager m_guiSelectorManager;
-		GUIHierarchy m_uiTree;
+		UIInteractionManager m_UIInteractionManager;
+		UIHierarchy m_uiHierarchy;
+		PopupUIManager m_popupManager;
 		Rendering::Renderer m_renderer;
 
 		//TODO: there has to be a way that does not involve us writing every possible system
@@ -63,7 +64,7 @@ namespace Core
 		ECS::ParticleEmitterSystem m_particleEmitterSystem;
 		ECS::TriggerSystem m_triggerSystem;
 
-		ECS::UIRenderSystem m_uiRenderSystem;
+		UISystemExecutor m_uiSystemExecutor;
 
 		//std::optional<ECS::EntityComponents<PlayerData, PhysicsBodyData>> m_playerInfo;
 		//std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;

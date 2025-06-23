@@ -1,5 +1,5 @@
 #pragma once
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "NormalizedPosition.hpp"
 
 class UIObjectData : public Component

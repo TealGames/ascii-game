@@ -1,5 +1,5 @@
 #pragma once
-#include "GUIRect.hpp"
+#include "UIRect.hpp"
 #include "UITransformData.hpp"
 
 namespace ECS
@@ -12,9 +12,6 @@ namespace ECS
 	private:
 	public:
 		UITransformSystem();
-
-		GUIRect CalculateRect(const UITransformData& transform, const GUIRect& parentInfo) const;
-		GUIRect CalculateChildRect(const UITransformData& transform, const GUIRect& thisRenderInfo) const;
 	};
 }
 

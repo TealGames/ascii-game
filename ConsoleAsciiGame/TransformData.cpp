@@ -58,7 +58,7 @@ Vec2 TransformData::GetLocalPos() const
 }
 Vec2 TransformData::GetGlobalPos() const
 {
-	const EntityData* parentEntity = GetEntitySafe().GetParent();
+	const EntityData* parentEntity = GetEntity().GetParent();
 	return parentEntity != nullptr ? parentEntity->GetTransform().GetGlobalPos() + m_localPos : m_localPos;
 }
 Vec2 TransformData::GetLocalPosLastFrame() const

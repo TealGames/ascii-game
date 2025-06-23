@@ -5,7 +5,7 @@
 #include "UIRendererComponent.hpp"
 #include "GameRenderer.hpp"
 
-UITextureData::UITextureData() : m_texture(nullptr) {}
+UITextureData::UITextureData() : m_texture(nullptr), m_renderer(nullptr) {}
 UITextureData::UITextureData(const TextureAsset& texture) : m_texture(&texture) {}
 
 const TextureAsset* UITextureData::GetTexture() const
@@ -16,15 +16,14 @@ bool UITextureData::HasTexture() const
 {
 	return m_texture != nullptr;
 }
-GUIRect UITextureData::Render(const GUIRect& renderRect)
+UIRect UITextureData::Render(const UIRect& renderRect)
 {
 	if (m_texture == nullptr) return {};
-	UIRendererData* renderer = GetEntitySafeMutable().TryGetComponentMutable<UIRendererData>();
 
 	const Vec2Int renderAreaSize = renderRect.GetSize();
 	const float scaleX = renderAreaSize.m_X / m_texture->GetTexture().width;
 	const float scaleY = renderAreaSize.m_Y / m_texture->GetTexture().height;
-	renderer->GetRendererMutable().AddTextureCall(renderRect.m_TopLeftPos, m_texture->GetTexture(), 0, std::min(scaleX, scaleY), WHITE);
+	m_renderer->GetRendererMutable().AddTextureCall(renderRect.m_TopLeftPos, m_texture->GetTexture(), 0, std::min(scaleX, scaleY), WHITE);
 	return renderRect;
 }
 

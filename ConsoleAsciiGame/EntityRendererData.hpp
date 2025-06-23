@@ -2,7 +2,7 @@
 #include <vector>
 #include "Vec2Int.hpp"
 #include "RenderLayer.hpp"
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "VisualData.hpp"
 
 class EntityRendererData : public Component

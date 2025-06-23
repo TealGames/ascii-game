@@ -4,9 +4,10 @@
 #include "HelperFunctions.hpp"
 #include "EntityData.hpp"
 
-GUIElement::GUIElement() : GUIElement(RelativeGUIRect()) {}
-GUIElement::GUIElement(const NormalizedPosition& size) : GUIElement(RelativeGUIRect(size)) {}
-GUIElement::GUIElement(const RelativeGUIRect& relativeRect)
+/*
+GUIElement::GUIElement() : GUIElement(RelativeUIRect()) {}
+GUIElement::GUIElement(const NormalizedPosition& size) : GUIElement(RelativeUIRect(size)) {}
+GUIElement::GUIElement(const RelativeUIRect& relativeRect)
 	: m_relativeRect(relativeRect), m_flags(), m_lastRenderInfo(), m_padding() {}
 
 
@@ -47,9 +48,9 @@ void GUIElement::SetSizeUnsafe(const Vec2& size)
 	bool isFixedHorizontal = false;
 	bool isFixedVertical = false;
 
-	if (GetEntitySafe().GetChildCount() > 0)
+	if (GetEntity().GetChildCount() > 0)
 	{
-		for (auto& child : GetEntitySafeMutable().GetChildrenOfTypeMutable<GUIElement>())
+		for (auto& child : GetEntityMutable().GetChildrenOfTypeMutable<GUIElement>())
 		{
 			if (child == nullptr) continue;
 
@@ -61,8 +62,8 @@ void GUIElement::SetSizeUnsafe(const Vec2& size)
 			Vec2 newSize = childSize * Vec2(isFixedHorizontal ? parentSize.m_X / size.m_X : 1,
 				isFixedVertical ? parentSize.m_Y / size.m_Y : 1);
 
-			/*if (child->GetId() == 19) LogWarning(std::format("Setting child:{} when size set for parent:{} to newsize:{} childSize:{} og parentSize:{} new parent Size:{}",
-				child->ToStringBase(), ToStringBase(), newSize.ToString(), childSize.ToString(), parentSize.ToString(), size.ToString()));*/
+			//if (child->GetId() == 19) LogWarning(std::format("Setting child:{} when size set for parent:{} to newsize:{} childSize:{} og parentSize:{} new parent Size:{}",
+			//child->ToStringBase(), ToStringBase(), newSize.ToString(), childSize.ToString(), parentSize.ToString(), size.ToString()));
 
 			//Note: by default fixed horizontal/vertical elements CANNOT have those parts modified by size,
 			//but we need to update fixed children from parent, so we get around these checks by using unsafe version
@@ -121,15 +122,15 @@ void GUIElement::TryCenter(const bool centerX, const bool centerY)
 	SetTopLeftPos({ centerX? extraSpace.m_X / 2 : currTopLeft.m_X, centerY? extraSpace.m_Y/2 + size.m_Y: currTopLeft.m_Y});
 }
 
-void GUIElement::SetPadding(const RelativeGUIPadding& padding)
+void GUIElement::SetPadding(const RelativeUIPadding& padding)
 {
 	m_padding = padding;
 }
-const RelativeGUIPadding& GUIElement::GetPadding() const
+const RelativeUIPadding& GUIElement::GetPadding() const
 {
 	return m_padding;
 }
-RelativeGUIPadding& GUIElement::GetPaddingMutable()
+RelativeUIPadding& GUIElement::GetPaddingMutable()
 {
 	return m_padding;
 }
@@ -138,21 +139,21 @@ NormalizedPosition GUIElement::GetSize() const
 {
 	return m_relativeRect.GetSize();
 }
-const RelativeGUIRect& GUIElement::GetRect() const
+const RelativeUIRect& GUIElement::GetRect() const
 {
 	return m_relativeRect;
 }
-RelativeGUIRect& GUIElement::GetRectMutable()
+RelativeUIRect& GUIElement::GetRectMutable()
 {
 	return m_relativeRect;
 }
 
-void GUIElement::SetLastFrameRect(const GUIRect& rect)
+void GUIElement::SetLastFrameRect(const UIRect& rect)
 {
 	m_lastRenderInfo = rect;
 }
 
-const GUIRect& GUIElement::GetLastFrameRect() const
+const UIRect& GUIElement::GetLastFrameRect() const
 {
 	return m_lastRenderInfo;
 }
@@ -168,7 +169,7 @@ void GUIElement::InitFields()
 
 std::string GUIElement::ToString() const
 {
-	return std::format("[Id:{} Type:{} TL:{} BR:{} Size:{}]", GetEntitySafe().ToStringId(),
+	return std::format("[Id:{} Type:{} TL:{} BR:{} Size:{}]", GetEntity().ToStringId(),
 		Utils::FormatTypeName(typeid(*this).name()), m_relativeRect.GetTopLeftPos().ToString(),
 		m_relativeRect.GetBottomRighttPos().ToString(), GetSize().ToString());
 }
@@ -183,6 +184,7 @@ Json GUIElement::Serialize()
 	//TOOO: implement
 	return {};
 }
+*/
 //RenderInfo GUIElement::CalculateChildRenderInfo(const RenderInfo& parentInfo, const size_t childIndex) const
 //{
 //	return parentInfo;

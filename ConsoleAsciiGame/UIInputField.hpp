@@ -5,8 +5,8 @@
 #include <cstdint>
 #include "InputManager.hpp"
 #include "raylib.h"
-#include "GUIRect.hpp"
-#include "GUIStyle.hpp"
+#include "UIRect.hpp"
+#include "UIStyle.hpp"
 #include "UISelectableData.hpp"
 
 enum class InputFieldType
@@ -70,6 +70,7 @@ constexpr InputFieldFlag operator~(const InputFieldFlag& op)
 
 class UITextComponent;
 class UIPanel;
+namespace ECS { class UIInputFieldSystem; }
 
 using InputFieldAction = std::function<void(std::string input)>;
 using InputFieldKeyActions = std::unordered_map<KeyboardKey, InputFieldAction>;
@@ -86,14 +87,14 @@ private:
 	InputFieldFlag m_inputFlags;
 
 	//bool m_isSelected;
-	GUIRect m_lastRenderRect;
-
 	InputFieldAction m_submitAction;
 	InputFieldKeyActions m_keyActions;
 
-	GUIStyle m_settings;
+	UIStyle m_settings;
 
 	const Input::InputManager* m_inputManager;
+public:
+	friend class ECS::UIInputFieldSystem;
 
 private:
 	/*InputFieldGUI(const Input::InputManager* manager, const InputFieldType& type, const InputFieldFlag& flags,
@@ -118,7 +119,7 @@ private:
 public:
 	//InputField();
 	UIInputField(const Input::InputManager& manager, const InputFieldType& type, 
-		const InputFieldFlag& flags, const GUIStyle& settings, 
+		const InputFieldFlag& flags, const UIStyle& settings, 
 		const InputFieldAction& submitAction=nullptr, const InputFieldKeyActions& keyPressActions = {});
 	~UIInputField();
 
@@ -129,7 +130,7 @@ public:
 
 	void SetSubmitAction(const InputFieldAction& action);
 	void SetKeyPressAction(const KeyboardKey key, const InputFieldAction& action);
-	void SetSettings(const GUIStyle& settings);
+	void SetSettings(const UIStyle& settings);
 
 	void OverrideInput(const std::string& str);
 	const std::string& GetInput() const;
@@ -150,7 +151,7 @@ public:
 	/// <returns></returns>
 	float GetFloatInput() const;
 
-	RenderInfo ElementRender(const RenderInfo& renderInfo) override;
+	//RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 	//const GUIRect& GetLastRenderRect() const;
 
 	void InitFields() override;

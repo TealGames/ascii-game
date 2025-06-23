@@ -1,14 +1,14 @@
 #pragma once
 #include "CommandConsole.hpp"
-#include "EntityEditorGUI.hpp"
-#include "SpriteEditorGUI.hpp"
-#include "PopupGUIManager.hpp"
+#include "EntityEditorUI.hpp"
+#include "SpriteEditorUI.hpp"
+#include "PopupUIManager.hpp"
 #include "IBasicRenderable.hpp"
 #include "DebugInfo.hpp"
 #include "UIToggleComponent.hpp"
 #include "UIButton.hpp"
 #include "raylib.h"
-#include "GUIHierarchy.hpp"
+#include "UIHierarchy.hpp"
 #include "UIPanel.hpp"
 
 namespace Core { class Engine; }
@@ -26,7 +26,8 @@ class Scene;
 class CameraData;
 class TimeKeeper;
 class CameraController;
-class GUISelectorManager;
+class UIInteractionManager;
+class PopupUIManager;
 
 struct EditModeInfo
 {
@@ -38,30 +39,30 @@ struct EditModeInfo
 class EngineEditor //: public IBasicRenderable
 {
 private:
-	EntityData* m_editorObj;
+	UITransformData* m_editorRoot;
 
 	TimeKeeper& m_timeKeeper;
 	const Input::InputManager& m_inputManager;
 	SceneManagement::SceneManager& m_sceneManager;
 	Physics::PhysicsManager& m_physicsManager;
 	const CameraController& m_cameraController;
-	GUISelectorManager& m_guiSelector;
+	UIInteractionManager& m_guiSelector;
 	ECS::CollisionBoxSystem& m_collisionBoxSystem;
-	GUIHierarchy& m_guiTree;
+	UIHierarchy& m_guiTree;
+	PopupUIManager& m_popupManager;
 
 	CommandConsole m_commandConsole;
 	DebugInfo m_debugInfo;
-	PopupGUIManager m_popupManager;
 
-	EntityEditorGUI m_entityEditor;
-	SpriteEditorGUI m_spriteEditor;
+	EntityEditorUI m_entityEditor;
+	SpriteEditorUI m_spriteEditor;
 
-	UITextComponent m_mousePosText;
-	UIPanel m_overheadBarContainer;
-	UILayout m_toggleLayout;
-	UIToggleComponent m_pauseGameToggle;
-	UIToggleComponent m_editModeToggle;
-	UIButton m_assetEditorButton;
+	UITextComponent* m_mousePosText;
+	UIPanel* m_overheadBarContainer;
+	UILayout* m_toggleLayout;
+	UIToggleComponent* m_pauseGameToggle;
+	UIToggleComponent* m_editModeToggle;
+	UIButton* m_assetEditorButton;
 	EditModeInfo m_editModeInfo;
 
 	bool m_displayingGameView;
@@ -72,7 +73,8 @@ private:
 
 public:
 	EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
-		SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, GUIHierarchy& guiTree, ECS::CollisionBoxSystem& collisionSystem);
+		SceneManagement::SceneManager& scene, const CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, 
+		PopupUIManager& popupManager, ECS::CollisionBoxSystem& collisionSystem);
 	~EngineEditor();
 
 	void Init(ECS::PlayerSystem& playerSystem);

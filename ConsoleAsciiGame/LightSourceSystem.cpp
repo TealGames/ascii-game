@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include <cmath>
 #include "LightSourceSystem.hpp"
+#include "EntityData.hpp"
 #include "Vec2.hpp"
 #include "Scene.hpp"
 #include "EntityRendererSystem.hpp"
@@ -39,7 +40,7 @@ namespace ECS
         
         std::vector<FragmentedTextBuffer*> affectedLayerBuffers = {};
         scene.OperateOnComponents<LightSourceData>(
-            [this, &scene, &affectedLayerBuffers](LightSourceData& data, ECS::Entity& entity)-> void
+            [this, &scene, &affectedLayerBuffers](LightSourceData& data)-> void
             {
                 //Log(LogType::Warning, std::format("Light data for {} is mutated: {}", entity.m_Name, std::to_string(data.m_MutatedThisFrame)));
                 affectedLayerBuffers = scene.GetLayerBufferMutable(data.m_AffectedLayers);
@@ -98,21 +99,20 @@ namespace ECS
 
                 scene.IncreaseFrameDirtyComponentCount();
                 //if (CACHE_LAST_BUFFER && !data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
-                RenderLight(data, entity, affectedLayerBuffers);
+                RenderLight(data, affectedLayerBuffers);
                 data.m_MutatedThisFrame = false;
                 //std::cout << "Rendering lgiht" << std::endl;
             });
             
     }
 
-	void LightSourceSystem::RenderLight(LightSourceData& data, ECS::Entity& entity, 
-        std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels)
+	void LightSourceSystem::RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels)
     {
         //TODO: right now we use only the transform pos, but we should also use every pos on player too
         
-        EntityRendererData* renderData = entity.TryGetComponentMutable<EntityRendererData>();
+        EntityRendererData* renderData = data.GetEntityMutable().TryGetComponentMutable<EntityRendererData>();
         if (!Assert(renderData != nullptr, std::format("Tried to render light for entity: {} "
-            "but could not find its entity render component!", entity.GetName()))) return;
+            "but could not find its entity render component!", data.GetEntity().m_Name))) return;
 
         //TODO: it might not make sense for all lighting to just use the renderer to determine lighting start pos,
         //so perhaps this needs to be more customizable to allow for this and other behavior
@@ -123,7 +123,7 @@ namespace ECS
         for (auto& buffer : buffers)
         {
             if (buffer == nullptr) continue;
-            CreateLightingForPoint(data, entity, entity.m_Transform.GetPos(), *buffer, false);
+            CreateLightingForPoint(data, data.GetEntity().GetTransform().GetGlobalPos(), *buffer, false);
 
             //Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
             //Log(std::format("Player Pos color: {}", RaylibUtils::ToString(buffer->GetAt(m_transform.m_Pos.GetFlipped())->m_Color)));
@@ -132,7 +132,7 @@ namespace ECS
 
     //TODO: this probably needs to be optimized
     //TODO: there is a lot of get flopped and conversions from cartesia and row col pos so that could be optimized
-    void LightSourceSystem::CreateLightingForPoint(LightSourceData & data, const ECS::Entity & entity,
+    void LightSourceSystem::CreateLightingForPoint(LightSourceData& data,
         const WorldPosition& centerPos, FragmentedTextBuffer& buffer, bool displayLightLevels)
     {
         std::sort(buffer.begin(), buffer.end(), 
@@ -148,7 +148,7 @@ namespace ECS
             centerDistance = GetDistance(centerPos, bufferPos.m_Pos);
             if (centerDistance > data.m_LightRadius) break;
 
-            bufferPos.m_Text.m_Color = CalculateNewColor(data, entity, bufferPos, centerDistance, nullptr, nullptr);
+            bufferPos.m_Text.m_Color = CalculateNewColor(data, bufferPos, centerDistance, nullptr, nullptr);
         }
     }
 
@@ -172,7 +172,7 @@ namespace ECS
                  static_cast<unsigned char>(std::roundf((originalColor.b) * (1 - colorMultiplier) + fractionalColor.m_Z)), 255 };
     }
 
-    Color LightSourceSystem::CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, 
+    Color LightSourceSystem::CalculateNewColor(LightSourceData& data,
         const TextBufferCharPosition& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
         //Log(std::format("Distance between {} and {} is: {}",

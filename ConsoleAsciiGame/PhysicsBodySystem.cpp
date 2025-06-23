@@ -40,7 +40,7 @@ namespace ECS
 		{
 			if (body == nullptr) continue;
 
-			entity = &(body->GetEntitySafeMutable());
+			entity = &(body->GetEntityMutable());
 
 			float velocityMagnitude = body->GetVelocity().GetMagnitude();
 			if (DRAW_BODY_VELOCITY_VECTORS && !Utils::ApproximateEqualsF(velocityMagnitude, 0))

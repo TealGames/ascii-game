@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "GlobalComponentInfo.hpp"
 #include "EntityData.hpp"
-#include "ComponentData.hpp"
+#include "Component.hpp"
 
 ComponentInfo::ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies, const ComponentAddAction& postAddAction)
 	: ComponentInfo(dependency, componentDependencies, nullptr, postAddAction) {}
@@ -132,7 +132,7 @@ namespace GlobalComponentInfo
 		auto infoIt = GetComponentInfo(component);
 		if (infoIt== m_ComponentInfo.cend() || infoIt->second.m_DependencyType != DeppendencyType::Component) return true;
 
-		const EntityData& entity = component->GetEntitySafe();
+		const EntityData& entity = component->GetEntity();
 		for (const auto& componentDependency : infoIt->second.m_DependentComponents)
 		{
 			if (componentDependency == nullptr) continue;

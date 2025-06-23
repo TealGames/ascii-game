@@ -9,20 +9,24 @@ UILayout::UILayout(const LayoutType type, const SizingType sizing, const Normali
 
 void UILayout::AddLayoutElement(EntityData& element)
 {
-	GetEntitySafeMutable().PushChild(element);
+	GetEntityMutable().PushChild(element);
 	//TODO: an optimization could be to update the size of this newly pushed child
 	//and if we know whether internal state of gui element changed, we can prevent
 	//unnecessary layout updates
 }
+std::tuple<EntityData*, UITransformData*> UILayout::CreateLayoutElement(const std::string& name)
+{
+	return GetEntityMutable().CreateChildUI(name);
+}
 void UILayout::RemoveLayoutElements(const size_t& childStartIndex, const size_t& count)
 {
-	GetEntitySafeMutable().TryPopChildren(childStartIndex, count);
+	GetEntityMutable().TryPopChildren(childStartIndex, count);
 }
 
 Vec2 UILayout::GetTotalSizeUsed() const
 {
 	Vec2 size = {};
-	for (const auto& child : GetEntitySafe().GetChildrenOfType<UITransformData>())
+	for (const auto& child : GetEntity().GetChildrenOfType<UITransformData>())
 	{
 		size += child->GetSize().GetPos();
 	}
@@ -36,7 +40,7 @@ void UILayout::Update(const float deltaTime)
 
 void UILayout::LayoutUpdate()
 {
-	if (GetEntitySafe().GetChildCount() == 0) return;
+	if (GetEntity().GetChildCount() == 0) return;
 
 	//SetMaxSize();
 	Vec2 totalElementSizeUsed = {};
@@ -45,7 +49,7 @@ void UILayout::LayoutUpdate()
 
 	float currentRowLenNorm = 0;
 	int gridRows = 0;
-	for (const auto& child : GetEntitySafe().GetChildrenOfType<UITransformData>())
+	for (const auto& child : GetEntity().GetChildrenOfType<UITransformData>())
 	{
 		currentSize = child->GetSize();
 		
@@ -77,7 +81,7 @@ void UILayout::LayoutUpdate()
 	//If we have no sizing, we leave the size factor as one
 	if (m_sizingType != SizingType::None)
 	{
-		const size_t childCount = GetEntitySafe().GetChildCount();
+		const size_t childCount = GetEntity().GetChildCount();
 		//We base size factor off of remaining horizontal space after removing x spacing and how much total elements x size (without spaces) goes over that limit
 		if (m_type == LayoutType::Horizontal) sizeFactor = (NormalizedPosition::MAX - m_spacing.GetX() * (childCount - 1)) / totalElementSizeUsed.m_X;
 		else if (m_type == LayoutType::Vertical) sizeFactor = (NormalizedPosition::MAX - m_spacing.GetY() * (childCount - 1)) / totalElementSizeUsed.m_Y;
@@ -96,7 +100,7 @@ void UILayout::LayoutUpdate()
 	if (m_sizingType == SizingType::ShrinkChildren && totalSizeNorm.GetY() > GetSize().GetY())
 		sizeFactorY = GetSize().GetY() / totalSizeNorm.GetY();*/
 
-	const auto& children = GetEntitySafeMutable().GetChildrenOfTypeMutable<UITransformData>();
+	const auto& children = GetEntityMutable().GetChildrenOfTypeMutable<UITransformData>();
 	for (size_t i=0; i<children.size(); i++)
 	{
 		if (children[i] == nullptr) continue;
@@ -105,7 +109,7 @@ void UILayout::LayoutUpdate()
 		{
 			LogError(std::format("Tried to update layout of id:{} but current pos norm:{} "
 				"reached a point where size would be 0. Size factor:{} totalSizeNorm:{}",
-				GetEntitySafe().ToStringId(), currentPosNorm.ToString(), std::to_string(sizeFactor), totalElementSizeUsed.ToString()));
+				GetEntity().ToStringId(), currentPosNorm.ToString(), std::to_string(sizeFactor), totalElementSizeUsed.ToString()));
 
 			//Note: sizing sizing of none allows for elements that do not fit, we just ignore those and can leave without any errors
 			if (m_sizingType != SizingType::None) throw std::invalid_argument("Invalid layout state");
@@ -147,7 +151,7 @@ void UILayout::LayoutUpdate()
 		}
 
 		LogError(std::format("While doing layout update for:{} child:{} old rect:{} new:{} size factor:{} spacing:{}", ToString(), 
-			children[i]->GetEntitySafe().ToStringId(), before.ToString(), children[i]->GetRect().ToString(), std::to_string(sizeFactor), m_spacing.ToString()));
+			children[i]->GetEntity().ToStringId(), before.ToString(), children[i]->GetRect().ToString(), std::to_string(sizeFactor), m_spacing.ToString()));
 	}
 
 	//Assert(false, std::format("END"));

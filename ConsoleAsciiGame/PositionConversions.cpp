@@ -30,8 +30,8 @@ namespace Conversions
 	ScreenPosition WorldToScreenPosition(const CameraData& camera, const WorldPosition& pos)
 	{
 		//TODO: could this maybe be precalculated to optimize
-		const float topLeftY = camera.GetEntitySafe().GetTransform().GetGlobalPos().m_Y + (camera.m_CameraSettings.m_WorldViewportSize.m_Y / 2);
-		const float bottomLeftX = camera.GetEntitySafe().GetTransform().GetGlobalPos().m_X - (camera.m_CameraSettings.m_WorldViewportSize.m_X / 2);
+		const float topLeftY = camera.GetEntity().GetTransform().GetGlobalPos().m_Y + (camera.m_CameraSettings.m_WorldViewportSize.m_Y / 2);
+		const float bottomLeftX = camera.GetEntity().GetTransform().GetGlobalPos().m_X - (camera.m_CameraSettings.m_WorldViewportSize.m_X / 2);
 		Vec2 screenPercent{ (pos.m_X - bottomLeftX) / camera.m_CameraSettings.m_WorldViewportSize.m_X,
 					 (topLeftY - pos.m_Y) / camera.m_CameraSettings.m_WorldViewportSize.m_Y };
 
@@ -42,7 +42,7 @@ namespace Conversions
 
 	WorldPosition ScreenToWorldPosition(const CameraData& camera, const ScreenPosition& pos)
 	{
-		WorldPosition bottomLeftPos = camera.GetEntitySafe().GetTransform().GetGlobalPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
+		WorldPosition bottomLeftPos = camera.GetEntity().GetTransform().GetGlobalPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
 		Vec2 screenPercent{ static_cast<float>(pos.m_X) / SCREEN_WIDTH, static_cast<float>(SCREEN_HEIGHT- pos.m_Y) / SCREEN_HEIGHT};
 
 		Vec2 worldSize = screenPercent * camera.m_CameraSettings.m_WorldViewportSize;

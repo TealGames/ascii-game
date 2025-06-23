@@ -1,5 +1,5 @@
 #pragma once
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include <functional>
 #include "Event.hpp"
 #include "CollisionBoxData.hpp"

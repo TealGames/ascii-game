@@ -21,7 +21,7 @@ namespace ECS
 		//Note: we should NOT opyimize be having a deltaTime <=0 early return because we still need to render 
 		//particles even thoguh they do not change across time
 		scene.OperateOnComponents<ParticleEmitterData>(
-			[this, &scene, &deltaTime](ParticleEmitterData& data, ECS::Entity& entity)-> void
+			[this, &scene, &deltaTime](ParticleEmitterData& data)-> void
 			{
 				auto renderLayers = scene.GetLayersMutable(data.m_renderLayers);
 

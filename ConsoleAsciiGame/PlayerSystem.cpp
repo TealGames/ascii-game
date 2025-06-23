@@ -44,7 +44,7 @@ namespace ECS
 
 					Vector2 mousePos = GetMousePosition();
 					WorldPosition worldPos = Conversions::ScreenToWorldPosition(mainCamera, { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y) });
-					player.GetEntitySafeMutable().GetTransformMutable().SetLocalPos(worldPos);
+					player.GetEntityMutable().GetTransformMutable().SetLocalPos(worldPos);
 				}
 #endif
 

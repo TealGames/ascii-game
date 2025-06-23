@@ -73,10 +73,10 @@ namespace Physics
 					return;
 
 				//TODO: if one has physics body while other does not do we still simulate physics?
-				PhysicsBodyData* bodyA = collisionData.m_CollisionBoxA->GetEntitySafeMutable().TryGetComponentMutable<PhysicsBodyData>();
+				PhysicsBodyData* bodyA = collisionData.m_CollisionBoxA->GetEntityMutable().TryGetComponentMutable<PhysicsBodyData>();
 				if (bodyA == nullptr) return;
 
-				PhysicsBodyData* bodyB = collisionData.m_CollisionBoxB->GetEntitySafeMutable().TryGetComponentMutable<PhysicsBodyData>();
+				PhysicsBodyData* bodyB = collisionData.m_CollisionBoxB->GetEntityMutable().TryGetComponentMutable<PhysicsBodyData>();
 				if (bodyB == nullptr) return;
 
 				//Assert(false, std::format("Found collision"));
@@ -92,7 +92,7 @@ namespace Physics
 				//for things like grounded checks/gravity)
 				
 				//TODO: using global pos everywere is expensive, perhaps we can optimize by checking parents first?
-				const Vec2 incomingBToADir = GetVector(bodyB->GetEntitySafe().GetTransform().GetGlobalPos(), bodyA->GetEntitySafe().GetTransform().GetGlobalPos()).GetYAsVector();
+				const Vec2 incomingBToADir = GetVector(bodyB->GetEntity().GetTransform().GetGlobalPos(), bodyA->GetEntity().GetTransform().GetGlobalPos()).GetYAsVector();
 				const float dotProductBofA = DotProduct(incomingBToADir, bodyB->GetVelocity());
 				/*LogError(std::format("touching:{} DOT BETWEEN B-> A:{} bodyB vel:{} is:{}", std::to_string(collisionData.m_IntersectionData.IsTouchingIntersection()), incomingBToADir.ToString(),
 					bodyB->GetVelocity().ToString(), std::to_string(dotProductBofA)));*/
@@ -125,7 +125,7 @@ namespace Physics
 
 			PhysicsBodyData& body = *(m_bodies[i]);
 			const CollisionBoxData& box = m_bodies[i]->GetCollisionBox();
-			EntityData& bodyAEntity = body.GetEntitySafeMutable();
+			EntityData& bodyAEntity = body.GetEntityMutable();
 
 			KinematicUpdate(deltaTime, bodyAEntity, body, box);
 
@@ -228,8 +228,8 @@ namespace Physics
 
 	void PhysicsWorld::ResolveCollision(CollisionPair& collision, PhysicsBodyData* bodyA, PhysicsBodyData* bodyB)
 	{
-		EntityData& entityA = collision.m_CollisionBoxA->GetEntitySafeMutable();
-		EntityData& entityB = collision.m_CollisionBoxB->GetEntitySafeMutable();
+		EntityData& entityA = collision.m_CollisionBoxA->GetEntityMutable();
+		EntityData& entityB = collision.m_CollisionBoxB->GetEntityMutable();
 
 		if (!Assert(this, bodyA != nullptr && bodyB != nullptr, std::format("Tried to resolve collision:{} body bodyA and/or bodyB "
 			"has no physicsBody", collision.ToString())))

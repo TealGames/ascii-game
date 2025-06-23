@@ -9,7 +9,7 @@
 #include "RaylibUtils.hpp"
 #include "ProfilerTimer.hpp"
 #include "Debug.hpp"
-#include "GUIHierarchy.hpp"
+#include "UIHierarchy.hpp"
 #include "EditorStyles.hpp"
 
 namespace Rendering

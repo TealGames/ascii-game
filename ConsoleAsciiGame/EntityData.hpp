@@ -1,17 +1,25 @@
 #pragma once
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "Debug.hpp"
 #include "EntityRegistry.hpp"
 #include "TransformData.hpp"
 #include "GlobalComponentInfo.hpp"
 
+class UITransformData;
 namespace ECS { class EntityRegistry; }
 
+class EntityData;
 class EntityData : public Component
 {
 private:
 	ECS::EntityRegistry* m_registry;
 	ECS::EntityID m_id;
+	/// <summary>
+	/// Different from enable property on component. This controls the whole 
+	/// entity so while some components may be disabled (including this), active
+	/// entity state propogates recursively and can not be enabled until parent is enabled
+	/// </summary>
+	bool m_isActive;
 
 	std::vector<Component*> m_components;
 
@@ -30,7 +38,6 @@ public:
 	std::string m_SceneName;
 	std::string m_Name;
 
-	bool m_Active;
 	/// <summary>
 	/// If true, will be serialized in the scene asset so it can be deserialized
 	/// again with the same data between gameplay sessions
@@ -47,7 +54,7 @@ private:
 	requires std::is_base_of_v<Component, T>
 	void ComponentRequirementCheck()
 	{
-		if (!GlobalComponentInfo::PassesComponentRequirementCheck(*this, *typeid(T)))
+		if (!GlobalComponentInfo::PassesComponentRequirementCheck(*this, typeid(T)))
 		{
 			Assert(false, std::format("Attempted to add a component of type:{} to entity:{} "
 				"but it does not have the required components", Utils::GetTypeName<T>(), ToString()));
@@ -57,9 +64,9 @@ private:
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	bool TryInvokePostAddAction() const
+	bool TryInvokePostAddAction()
 	{
-		return GlobalComponentInfo::InvokePostAddAction(*this, *typeid(T));
+		return GlobalComponentInfo::InvokePostAddAction(*this, typeid(T));
 	}
 
 	/// <summary>
@@ -70,15 +77,15 @@ private:
 	/// <returns></returns>
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	T& AddComponentUnsafe()
+	T& AddComponentUnsafe(const T& component)
 	{
-		T& result = m_registry->AddComponent<T>(component);
-		Component* componentData = &result;
+		T& addedComponent = m_registry->AddComponent<T>(m_id, component);
+		Component* componentData = &addedComponent;
 		componentData->m_entity = this;
 		componentData->InitFields();
 
 		m_components.emplace_back(componentData);
-		return result;
+		return addedComponent;
 	}
 
 public:
@@ -96,20 +103,19 @@ public:
 	TransformData& GetTransformMutable();
 	const TransformData& GetTransform() const;
 
-	/*template<typename T, typename... Args>
-	requires std::is_base_of_v<ComponentData, T>
-	T& AddComponent(Args&&... args)
-	{
-		ComponentRequirementCheck<T>();
-
-		T& result = m_registry->AddComponent<T>(m_id, std::forward<Args>(args)...);
-		ComponentData* componentData = &result;
-		componentData->m_entity = this;
-		componentData->InitFields();
-
-		m_components.emplace_back(componentData);
-		return result;
-	}*/
+	bool IsEntityActive() const;
+	/// <summary>
+	/// Will attempt to enable this entity. If the parent is not enabled, it means this 
+	/// entity can not be enabled due to deactive state propagating to the children
+	/// </summary>
+	/// <returns></returns>
+	bool TryActivateEntity();
+	/// <summary>
+	/// Will disable this entity (different from disabling certain component since all components are essentially 
+	/// deactivated and will not be updated) and all children entities as well
+	/// </summary>
+	void DeactivateEntity();
+	bool TrySetEntityActive(const bool active);
 
 	/// <summary>
 	/// Will add the component with data to this entity
@@ -127,8 +133,10 @@ public:
 			"but it already has this type (and duplicates are not allowed)", typeid(T).name(),
 			ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
 
-		AddComponentUnsafe<T>(component);
+		T& createdComponent = AddComponentUnsafe<T>(component);
 		TryInvokePostAddAction<T>();
+		LogWarning(std::format("Created component is:{}", createdComponent.ToString()));
+		return createdComponent;
 	}
 	/// <summary>
 	/// Will add the component of type to this entity using no argument/default constructor
@@ -137,7 +145,12 @@ public:
 	/// <returns></returns>
 	template<typename T>
 	requires std::is_base_of_v<Component, T>&& std::is_default_constructible_v<T>
-	T& AddComponent() { return AddComponent<T>(T()); }
+	T& AddComponent() 
+	{ 
+		T& addedComponent= AddComponent<T>(T()); 
+		LogWarning(std::format("Added component no arguments is:{}", addedComponent.ToString()));
+		return addedComponent;
+	}
 
 	/// <summary>
 	/// If the component already exists, will set its values to that of the component argument
@@ -181,11 +194,11 @@ public:
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	T* TryGetComponentMutable() { return m_registry->TryGetComponentMutable(m_id); }
+	T* TryGetComponentMutable() { return m_registry->TryGetComponentMutable<T>(m_id); }
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	const T* TryGetComponent() const { return m_registry->TryGetComponent(m_id); }
+	const T* TryGetComponent() const { return m_registry->TryGetComponent<T>(m_id); }
 
 	/// <summary>
 	/// Will return a list of all components of this entity that contain the base
@@ -227,7 +240,7 @@ public:
 	/// is modifiable, but no other components can be added/removed/changed
 	/// </summary>
 	/// <returns></returns>
-	const std::vector<Component*>& GetAllComponentsMutable() const;
+	std::vector<Component*>& GetAllComponentsMutable();
 
 	EntityData* GetParentMutable();
 	const EntityData* GetParent() const;
@@ -237,6 +250,40 @@ public:
 	size_t GetChildCount() const;
 
 	EntityData& CreateChild(const std::string& name, const TransformData& transform);
+	EntityData& CreateChild(const std::string& name);
+
+	/// <summary>
+	/// Creates a child with name, transform and variable other comonents and returns a tuple of the entity and components created
+	/// Note: while it would be better to return a tuple of refs, we do not do that since we want to allow for std::tie() for assigning existing
+	/// component/entity vars, which most of the type are pointers due to some needing to be used in vectors/collections which cannot have references
+	/// </summary>
+	/// <typeparam name="...ComponentT"></typeparam>
+	/// <param name="name"></param>
+	/// <param name="transform"></param>
+	/// <param name="...components"></param>
+	/// <returns></returns>
+	template<typename ...ComponentT>
+	requires Utils::AllSameBaseType<Component, ComponentT...>
+	std::tuple<EntityData*, ComponentT*...> CreateChild(const std::string& name, const TransformData& transform, const ComponentT&... components)
+	{
+		EntityData& entity = CreateChild(name, transform);
+		return std::make_tuple<EntityData*, ComponentT*...>(&entity, (&entity.AddComponent<ComponentT>(components))...);
+	}
+
+	template<typename ...ComponentT>
+	requires Utils::AllSameBaseType<Component, ComponentT...>
+	std::tuple<EntityData*, UITransformData*, ComponentT*...> CreateChildUI(const std::string& name, const TransformData& transform, 
+		const UITransformData& uitransform, const ComponentT&... components)
+	{
+		return CreateChild<UITransformData, ComponentT...>(name, transform, uitransform, components...);
+	}
+	template<typename ...ComponentT>
+	requires Utils::AllSameBaseType<Component, ComponentT...>
+	std::tuple<EntityData*, UITransformData*, ComponentT*...> CreateChildUI(const std::string& name, const ComponentT&... components)
+	{
+		return CreateChildUI<ComponentT...>(name, TransformData(), UITransformData(), components...);
+	}
+
 	/// <summary>
 	/// Adds the element as a child and returns its child index
 	/// </summary>
@@ -281,6 +328,8 @@ public:
 	std::vector<const EntityData*> GetChildren() const;
 	EntityData* TryGetChildEntityAtMutable(const size_t index);
 	EntityData* TryGetChildEntityMutable(const ECS::EntityID id);
+	size_t GetChildIndex(const ECS::EntityID id) const;
+	bool HasChild(const ECS::EntityID id) const;
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
@@ -355,17 +404,14 @@ public:
 	requires std::is_base_of_v<Component, T>
 	T* FindComponentRecursiveMutable(const ECS::EntityID id)
 	{
-		if (m_id == id) return this;
+		if (m_id == id) return m_registry->TryGetComponentMutable<T>(m_id);
 		if (m_childrenIds.empty()) return nullptr;
 
 		T* foundComponent = nullptr;
 		T* currChild = nullptr;
 		for (const auto& childId : m_childrenIds)
 		{
-			currChild = m_registry->TryGetComponentMutable<T>(childId);
-			if (currChild == nullptr) continue;
-
-			foundComponent = currChild->FindComponentRecursiveMutable<T>(id);
+			foundComponent = currChild->GetEntityMutable().FindComponentRecursiveMutable<T>(id);
 			if (foundComponent != nullptr) return foundComponent;
 		}
 		return nullptr;
@@ -402,9 +448,9 @@ public:
 			if (m_childrenIds[i] == id)
 			{
 				if (childIndex != nullptr) *childIndex = i;
-				return this;
+				return m_registry->TryGetComponentMutable<T>(m_id);
 			}
-			foundComponent = currChild->FindParentComponentRecursiveMutable<T>(id, childIndex);
+			foundComponent = currChild->GetEntityMutable().FindParentComponentRecursiveMutable<T>(id, childIndex);
 			if (foundComponent != nullptr) return foundComponent;
 		}
 		return nullptr;
@@ -422,16 +468,17 @@ public:
 };
 
 template <typename... Types>
-std::function<bool(EntityData&)> RequiredComponentCheck(const Types&... components) {
-	return [](EntityData& entity) -> bool
+requires Utils::AllSameBaseType<Component, Types...>
+ValidationAction RequiredComponentCheck(const Types&... components) {
+	return [&components...](EntityData& entity) -> bool
 		{
 			bool isMissingComponent = false;
-			(([isMissingComponent]() -> void
+			(([&]() -> void
 				{
 					if (isMissingComponent) return;
 					if (entity.HasComponent<Types>()) return;
 
-					if (ADD_REQUIRED_COMPONENTS)
+					if (EntityData::ADD_REQUIRED_COMPONENTS)
 						entity.AddComponent<Types>(components);
 					else
 					{
@@ -446,7 +493,8 @@ std::function<bool(EntityData&)> RequiredComponentCheck(const Types&... componen
 }
 
 template <typename... Types>
-std::function<bool(EntityData&)> RequiredComponentCheck()
+ValidationAction RequiredComponentCheck()
 {
 	return RequiredComponentCheck<Types...>(Types()...);
 }
+

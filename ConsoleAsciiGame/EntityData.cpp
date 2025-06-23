@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "EntityData.hpp"
 #include "EntityRegistry.hpp"
+#include "UITransformData.hpp"
 
 //TODO: add a reserved entity name ssytem and not allowing those names to be used
 const char* EntityData::GLOBAL_SCENE_NAME = "global";
@@ -8,15 +9,15 @@ const char* EntityData::GLOBAL_SCENE_NAME = "global";
 EntityData::EntityData(ECS::EntityRegistry* registry, const ECS::EntityID id,
 	const std::string& name, const std::string& sceneName, ECS::EntityID parentId) :
 	m_registry(registry), m_id(id), m_Name(name), m_SceneName(sceneName), m_parentId(parentId), m_childrenIds(), 
-	m_components(), m_Active(true), m_IsSerializable(true), m_OnFarthestChildElementAttached()
+	m_components(), m_IsSerializable(true), m_OnFarthestChildElementAttached()
 {
 
 }
 
-EntityData::EntityData() : EntityData(nullptr, ECS::INVALID_ENTITY_ID, "NULL", "NULL", ECS::INVALID_ENTITY_ID) {}
+EntityData::EntityData() : EntityData(nullptr, ECS::INVALID_ID, "NULL", "NULL", ECS::INVALID_ID) {}
 EntityData::EntityData(ECS::EntityRegistry& registry, const ECS::EntityID id,
 	const std::string& name, const std::string& sceneName, EntityData* parent)
-	: EntityData(&registry, id, name, sceneName, parent->GetId()) {}
+	: EntityData(&registry, id, name, sceneName, parent!=nullptr? parent->m_id : ECS::INVALID_ID) {}
 
 
 ECS::EntityID EntityData::GetId() const { return m_id; }
@@ -65,6 +66,40 @@ const TransformData& EntityData::GetTransform() const
 		throw std::invalid_argument("Invalid transform");
 	}
 	return *transform;
+}
+bool EntityData::IsEntityActive() const { return m_isActive; }
+
+bool EntityData::TryActivateEntity()
+{
+	if (m_isActive) return true;
+	//If parent is not enabled, we can not enable this object
+	if (!m_registry->TryGetEntity(m_parentId)->m_isActive)
+		return false;
+
+	m_isActive = true;
+	return true;
+}
+void EntityData::DeactivateEntity()
+{
+	if (!m_isActive) return;
+
+	m_isActive = false;
+	if (m_childrenIds.empty()) return;
+
+	for (auto& childId : m_childrenIds)
+	{
+		m_registry->TryGetEntityMutable(childId)->DeactivateEntity();
+	}
+	return;
+}
+bool EntityData::TrySetEntityActive(const bool active)
+{
+	if (active) return TryActivateEntity();
+	else
+	{
+		DeactivateEntity();
+		return true;
+	}
 }
 
 bool EntityData::HasComponent(const std::string& targetComponentName) const
@@ -157,24 +192,26 @@ const std::type_info& EntityData::GetComponentType(const Component* component) c
 {
 	return typeid(*component);
 }
-const std::vector<Component*>& EntityData::GetAllComponentsMutable() const
+std::vector<Component*>& EntityData::GetAllComponentsMutable()
 {
 	return m_components;
 }
 
 EntityData* EntityData::GetParentMutable()
 {
-	if (m_parentId == ECS::INVALID_ENTITY_ID) return nullptr;
-	return m_registry->TryGetComponentMutable<EntityData>(m_parentId);
+	if (ECS::IsValidID(m_parentId)) 
+		return m_registry->TryGetComponentMutable<EntityData>(m_parentId);
+	else return nullptr;
 }
 const EntityData* EntityData::GetParent() const
 {
-	if (m_parentId == ECS::INVALID_ENTITY_ID) return nullptr;
-	return m_registry->TryGetComponent<EntityData>(m_parentId);
+	if (ECS::IsValidID(m_parentId))
+		return m_registry->TryGetComponent<EntityData>(m_parentId);
+	else return nullptr;
 }
 bool EntityData::HasParent() const
 {
-	return m_parentId != ECS::INVALID_ENTITY_ID;
+	return ECS::IsValidID(m_parentId);
 }
 EntityData* EntityData::GetHighestParentMutable()
 {
@@ -211,8 +248,16 @@ EntityData& EntityData::CreateChild(const std::string& name, const TransformData
 	PushChild(createdEntity);
 	return createdEntity;
 }
+EntityData& EntityData::CreateChild(const std::string& name)
+{
+	return CreateChild(name, TransformData());
+}
+
 size_t EntityData::PushChild(EntityData& entity)
 {
+	size_t existingChildIndex = GetChildIndex(entity.GetId());
+	if (existingChildIndex != size_t(-1)) return existingChildIndex;
+
 	ECS::EntityID childId = m_childrenIds.emplace_back(entity.GetId());
 	entity.m_parentId = GetId();
 	if (m_SceneName != "") entity.m_SceneName = m_SceneName;
@@ -295,6 +340,28 @@ EntityData* EntityData::FindParentEntityRecursiveMutable(const ECS::EntityID id,
 	return FindParentComponentRecursiveMutable<EntityData>(id, childIndex);
 }
 
+bool EntityData::HasChild(const ECS::EntityID id) const
+{
+	for (const auto& childId : m_childrenIds)
+	{
+		if (childId == id)
+			return true;
+	}
+	return false;
+}
+
+size_t EntityData::GetChildIndex(const ECS::EntityID id) const
+{
+	if (m_childrenIds.empty()) return -1;
+
+	for (size_t i = 0; i < m_childrenIds.size(); i++)
+	{
+		if (m_childrenIds[i] == id)
+			return i;
+	}
+	return -1;
+}
+
 //std::vector<std::string> EntityData::GetDependencyFlags() const
 //{
 //	return {};
@@ -319,7 +386,7 @@ std::string EntityData::ToString() const
 			componentNames += Utils::FormatTypeName(typeid(*m_components[i]).name());
 		}
 	}
-	return std::format("['{}'(ID: {} A:{})-> {}]", m_Name, ToString(m_id), std::to_string(m_Active), componentNames);
+	return std::format("['{}'(ID: {} A:{})-> {}]", m_Name, ToString(m_id), std::to_string(m_isActive), componentNames);
 }
 
 void EntityData::Deserialize(const Json& json)

@@ -18,7 +18,7 @@ namespace ECS
         InputSystem(Input::InputManager& inputManager);
         ~InputSystem() = default;
 
-        void SystemUpdate(Scene& scene, InputData& component, ECS::Entity& entity, const float& deltaTime) override;
+        void SystemUpdate(Scene& scene, InputData& component, const float& deltaTime) override;
     };
 }
 

@@ -122,7 +122,7 @@ void PlayerData::Deserialize(const Json& json)
 	m_xMoveSpeed = json.at("MoveSpeed").get<float>();
 	m_maxJumpHeight = json.at("JumpHeight").get<float>();
 
-	m_body = TryDeserializeComponent<PhysicsBodyData>(json.at("Body"), GetEntitySafeMutable());
+	m_body = TryDeserializeComponent<PhysicsBodyData>(json.at("Body"), GetEntityMutable());
 	TrySetInitialJumpSpeed();
 }
 Json PlayerData::Serialize()

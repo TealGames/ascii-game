@@ -65,13 +65,13 @@ namespace ECS
         /*Log(std::format("Main camera trans: {} follow trans: {}", mainCamera.m_Transform.m_Pos.ToString(), 
             std::to_string(cameraData.m_CameraSettings.m_FollowTarget!=nullptr)));*/
         //Log(std::format("Main camera trans: {} follow trans: ", mainCamera.m_Transform.m_Pos.ToString()));
-        cameraData.GetEntitySafeMutable().GetTransformMutable().SetLocalPos(cameraData.m_CameraSettings.m_FollowTarget->GetTransform().GetLocalPos());
+        cameraData.GetEntityMutable().GetTransformMutable().SetLocalPos(cameraData.m_CameraSettings.m_FollowTarget->GetTransform().GetLocalPos());
     }
 
     bool CameraSystem::IsWithinViewport(const CameraData& camera, const WorldPosition& pos) const
     {
-        WorldPosition bottomLeftPos = camera.GetEntitySafe().GetTransform().GetLocalPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
-        WorldPosition topRightPos = camera.GetEntitySafe().GetTransform().GetLocalPos() + (camera.m_CameraSettings.m_WorldViewportSize / 2);
+        WorldPosition bottomLeftPos = camera.GetEntity().GetTransform().GetLocalPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
+        WorldPosition topRightPos = camera.GetEntity().GetTransform().GetLocalPos() + (camera.m_CameraSettings.m_WorldViewportSize / 2);
         return bottomLeftPos.m_X <= pos.m_X && pos.m_X <= topRightPos.m_X && bottomLeftPos.m_Y <= pos.m_Y && pos.m_Y <= topRightPos.m_Y;
     }
 

@@ -1,26 +1,28 @@
 #pragma once
 #include "UISelectableData.hpp"
-#include "GUIStyle.hpp"
+#include "UIStyle.hpp"
 #include "Event.hpp"
 
 class UIPanel;
 class UIRenderer;
 class UITransformData;
-class GUISelectorManager;
+class UIInteractionManager;
 namespace Input { class InputManager; }
+namespace ECS { class UISliderSystem; }
 
 class UISliderComponent : public UISelectableData
 {
 private:
 	const Input::InputManager* m_inputManager;
-	GUIStyle m_settings;
+	UIStyle m_settings;
 	Vec2 m_minMaxValues;
 	float m_value;
 
 	UIRendererData* m_renderer;
 	UIPanel* m_backgroundPanel;
-	UITransformData* m_sliderHandle;
 public:
+	friend class ECS::UISliderSystem;
+	UITransformData* m_SliderHandle;
 	Event<void, float> m_OnValueSet;
 
 private:
@@ -31,9 +33,9 @@ private:
 	float GetValueNormalized() const;
 public:
 	UISliderComponent(const Input::InputManager& inputManager, 
-		const Vec2 minMaxValues, const GUIStyle& settings);
+		const Vec2 minMaxValues, const UIStyle& settings);
 
-	void SetSettings(const GUIStyle& settings);
+	void SetSettings(const UIStyle& settings);
 	void SetMinValue(const float min);
 	void SetMaxValue(const float max);
 	void SetValue(const float value);

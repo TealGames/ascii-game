@@ -694,7 +694,7 @@ void from_json(const Json& json, ComponentReference& fieldReference)
 			JsonUtils::ToStringProperties(json))))
 			return;
 
-		ECS::Entity* maybeEntity = SceneManager->TryGetEntityMutable(component.m_SerializedEntity.m_SceneName,
+		EntityData* maybeEntity = SceneManager->TryGetEntityMutable(component.m_SerializedEntity.m_SceneName,
 			component.m_SerializedEntity.m_EntityName);
 		if (maybeEntity == nullptr) return;
 
@@ -707,8 +707,8 @@ void from_json(const Json& json, ComponentReference& fieldReference)
 }
 void to_json(Json& json, const ComponentReference& fieldReference)
 {
-	const ECS::Entity& entity = fieldReference.GetEntitySafe();
-	SerializableComponent component = SerializableComponent(entity.GetSceneName(), entity.GetName(),
+	const EntityData& entity = fieldReference.GetEntitySafe();
+	SerializableComponent component = SerializableComponent(entity.m_SceneName, entity.m_Name,
 		fieldReference.GetComponentName());
 	json = component;
 }
@@ -744,7 +744,7 @@ void from_json(const Json& json, ComponentFieldReference& fieldReference)
 	try
 	{
 		SerializableField field = json.get<SerializableField>();
-		ECS::Entity* maybeEntity = SceneManager->TryGetEntityMutable(field.m_SerializedComponent.m_SerializedEntity.m_SceneName,
+		EntityData* maybeEntity = SceneManager->TryGetEntityMutable(field.m_SerializedComponent.m_SerializedEntity.m_SceneName,
 			field.m_SerializedComponent.m_SerializedEntity.m_EntityName);
 		if (maybeEntity == nullptr) return;
 
@@ -757,8 +757,8 @@ void from_json(const Json& json, ComponentFieldReference& fieldReference)
 }	
 void to_json(Json& json, const ComponentFieldReference& fieldReference)
 {
-	const ECS::Entity& entity = fieldReference.GetEntitySafe();
-	SerializableField field = SerializableField(entity.GetSceneName(), entity.GetName(), 
+	const EntityData& entity = fieldReference.GetEntitySafe();
+	SerializableField field = SerializableField(entity.m_SceneName, entity.m_Name, 
 		fieldReference.m_ComponentRef.GetComponentName(), fieldReference.GetFieldName());
 	json = field;
 }

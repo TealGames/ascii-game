@@ -1,15 +1,12 @@
 #pragma once
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include <string>
 #include "FontData.hpp"
 #include "raylib.h"
 #include "ScreenPosition.hpp"
 #include <cstdint>
-#include "GUIPadding.hpp"
-#include "GUIRect.hpp"
-
-class UIRendererData;
-class TextGUIStyle;
+#include "UIPadding.hpp"
+#include "UIRect.hpp"
 
 enum class TextAlignment : std::uint8_t
 {
@@ -64,6 +61,10 @@ bool IsMiddleVerticalAlignment(const TextAlignment& alignment);
 /// <returns></returns>
 bool IsRightAlignment(const TextAlignment& alignment);
 
+class UIRendererData;
+class TextUIStyle;
+namespace ECS { class UITextSystem; }
+
 class UITextComponent : public Component
 {
 private:
@@ -94,13 +95,15 @@ private:
 	/// </summary>
 	TextAlignment m_alignment;
 
-	GUIPadding m_padding;
+	UIPadding m_padding;
 
 public:
+	friend class ECS::UITextSystem;
+
 	static constexpr float NULL_FONT_FACTOR = 0;
 	static constexpr bool DEFAULT_FIT_TO_AREA = true;
 	static constexpr TextAlignment DEFAULT_ALIGNMENT = TextAlignment::Center;
-	static const GUIPadding DEFAULT_PADDING;
+	static const UIPadding DEFAULT_PADDING;
 
 private:
 	/// <summary>
@@ -129,7 +132,7 @@ private:
 	/// <param name="renderInfo"></param>
 	/// <param name="textRectArea"></param>
 	/// <returns></returns>
-	ScreenPosition CalculateTopLeftPos(const GUIRect& renderInfo, const Vector2& fullTextArea) const;
+	ScreenPosition CalculateTopLeftPos(const UIRect& renderInfo, const Vector2& fullTextArea) const;
 
 	/// <summary>
 	/// Returns the amount of ACTUAL usable space from rendering information
@@ -137,18 +140,18 @@ private:
 	/// </summary>
 	/// <param name="renderInfo"></param>
 	/// <returns></returns>
-	Vec2 CalculateUsableSpace(const GUIRect& renderInfo) const;
+	Vec2 CalculateUsableSpace(const UIRect& renderInfo) const;
 
 private:
-	UITextComponent(const std::string text, const FontProperties& font, const GUIPadding& padding,
+	UITextComponent(const std::string text, const FontProperties& font, const UIPadding& padding,
 		const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea);
 
 public:
 	UITextComponent();
 	UITextComponent(const std::string text, const FontProperties& font, const Color& color);
-	UITextComponent(const std::string& text, const TextGUIStyle& settings);
+	UITextComponent(const std::string& text, const TextUIStyle& settings);
 
-	void SetSettings(const TextGUIStyle& settings);
+	void SetSettings(const TextUIStyle& settings);
 
 	void SetText(const std::string& text);
 	const std::string& GetText() const;
@@ -187,10 +190,10 @@ public:
 	void SetPaddingBottom(const float& padding);
 	void SetPaddingRight(const float& padding);
 	void SetPaddingLeft(const float& padding);
-	void SetPadding(const GUIPadding& padding);
+	void SetPadding(const UIPadding& padding);
 
 	//RenderInfo Render(const RenderInfo& renderInfo) override;
-	GUIRect Render(const GUIRect& rect);
+	UIRect Render(const UIRect& rect);
 
 	void InitFields() override;
 	std::string ToString() const override;

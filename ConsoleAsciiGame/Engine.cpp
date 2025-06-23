@@ -100,6 +100,11 @@ namespace Core
 	//for the children ids and others
 	//TODO: since global pos is acceseed frequentyl figure out optimization (preferablly on components themselves) so they can access global pos without doing recursion
 	//TODO: extracting int/float consider case where number is out of range
+	//TODO: add ui transform as a gettable component from any other ui component
+	//TODO: instead of doing component required check and then post add action of setting dependencies, we should probably instead in all component systems just make sure it has component (and add if missing) 
+	//as well as wset the private reference then in one go rather than split in two functions
+	//TODO: ensure all components hve default constructors so they can be made with no args when deserializing. All dependencies should be set in the system on the postadd event
+	//TODO: remove components vector from entity data since you can just access componetns using registry pointer
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -139,11 +144,11 @@ namespace Core
 		m_inputManager(m_assetManager),
 		m_cameraController(),
 		m_physicsManager(m_sceneManager, m_collisionRegistry),
-		m_guiSelectorManager(m_inputManager, m_uiTree),
-		m_uiTree(m_sceneManager.m_GlobalEntityManager,{SCREEN_WIDTH, SCREEN_HEIGHT}),
+		m_UIInteractionManager(m_inputManager, m_uiHierarchy),
+		m_uiHierarchy(m_sceneManager.m_GlobalEntityManager, Vec2Int{SCREEN_WIDTH, SCREEN_HEIGHT}),
+		m_popupManager(m_uiHierarchy),
 		m_renderer(),
 		m_transformSystem(),
-		m_uiRenderSystem(m_renderer),
 		m_entityRendererSystem(),
 		m_lightSystem(m_entityRendererSystem),
 		//m_inputSystem(m_inputManager),
@@ -155,11 +160,12 @@ namespace Core
 		m_cameraSystem(&(m_collisionBoxSystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
 		m_particleEmitterSystem(),
 		m_triggerSystem(),
+		m_uiSystemExecutor(m_renderer, m_uiHierarchy, m_popupManager),
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
 		m_timeKeeper(),
 		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_assetManager,
-			m_sceneManager, m_cameraController, m_guiSelectorManager, m_uiTree, m_collisionBoxSystem),
+			m_sceneManager, m_cameraController, m_UIInteractionManager, m_uiHierarchy, m_popupManager, m_collisionBoxSystem),
 		m_gameManager(m_sceneManager.m_GlobalEntityManager)
 	{
 		EngineLog("FINISHED SYSTEM MANAGERS INIT");
@@ -221,7 +227,7 @@ namespace Core
 		//Note: globals create main menu camera that then adds itself to each scene when scene is loaded
 		//TODO: change this weird and akward way of setting camera that feels hidden
 
-		//Assert(false, std::format("FOUND ACTIVE SELECTED: {}", m_guiSelectorManager.TryGetSelectableSelected()->GetLastFrameRect().ToString()));
+		//Assert(false, std::format("FOUND ACTIVE SELECTED: {}", m_UIInteractionManager.TryGetSelectableSelected()->GetLastFrameRect().ToString()));
 		/*for (const auto& entity : m_sceneManager.GetActiveSceneMutable()->GetAllEntities())
 		{
 			LogError(this, std::format("Entity: {} has fields: {}", entity->m_Name,
@@ -232,10 +238,10 @@ namespace Core
 
 		//Note: gui selector init has to be after any other calls because we want to ensure we create the selectable
 		//tree after as much time is given to add any gui elements to the ui tree
-		m_guiSelectorManager.Init();
+		m_UIInteractionManager.Init();
 		ValidateAll();
 
-		LogWarning(std::format("Tree hierarcxhy: {}", m_uiTree.ToStringTree()));
+		LogWarning(std::format("Tree hierarcxhy: {}", m_uiHierarchy.ToStringTree()));
 		StartAll();
 	}
 
@@ -258,8 +264,6 @@ namespace Core
 		if (!Assert(this, newScene != nullptr, "Tried to call start on all systems but there "
 			"are no scenes set as active right now"))
 			return;
-
-		m_uiRenderSystem.Start(*newScene);
 	}
 
 	void Engine::EngineLog(const std::string& log) const
@@ -295,7 +299,7 @@ namespace Core
 			m_cameraController.UpdateActiveCamera();
 			CameraData& mainCamera = m_cameraController.GetActiveCameraMutable();
 
-			std::string cameraSceneName = mainCamera.GetEntitySafe().m_SceneName;
+			std::string cameraSceneName = mainCamera.GetEntity().m_SceneName;
 			if (!Assert(this, cameraSceneName == EntityData::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
 				std::format("Tried to get active camera:{} during update loop, "
 					"but that camera is not in the active scene OR global storage (main camera scene:{}, active scene:{})", mainCamera.ToString(),
@@ -327,9 +331,10 @@ namespace Core
 			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 			m_gameManager.GameUpdate();
 
-			m_guiSelectorManager.Update();
-			m_uiTree.UpdateAll(unscaledDeltaTime);
+			m_UIInteractionManager.Update();
+			//m_uiHierarchy.UpdateAll(unscaledDeltaTime);
 			m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
+			m_uiSystemExecutor.SystemsUpdate(m_sceneManager.m_GlobalEntityManager, unscaledDeltaTime);
 
 			frameBuffer = &m_cameraSystem.GetCurrentFrameBuffer();
 			Assert(this, frameBuffer!=nullptr && !frameBuffer->empty(), std::format("Tried to render buffer from camera output, but it has no data"));
@@ -342,9 +347,10 @@ namespace Core
 		}
 		else
 		{
-			m_guiSelectorManager.Update();
-			m_uiTree.UpdateAll(unscaledDeltaTime);
+			m_UIInteractionManager.Update();
+			//m_uiHierarchy.UpdateAll(unscaledDeltaTime);
 			m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
+			m_uiSystemExecutor.SystemsUpdate(m_sceneManager.m_GlobalEntityManager, unscaledDeltaTime);
 
 			//Rendering::RenderBuffer(nullptr, nullptr, nullptr, &m_uiTree);
 			m_renderer.RenderQueue();

@@ -1,7 +1,7 @@
 #pragma once
 #include <optional>
 #include "CameraSettings.hpp"
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "WorldPosition.hpp"
 #include "TextBuffer.hpp"
 #include <vector>

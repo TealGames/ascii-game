@@ -29,23 +29,17 @@ namespace ECS
 	requires std::is_base_of_v<Component, T>
 	void OperateOnActiveComponents(EntityRegistry& registry, const std::function<void(T&)>& action)
 	{
-		auto view = registry.view<T>();
+		auto view = registry.GetInternalRegistry().view<T>();
 		for (auto entityId : view)
 		{
 			T* component = registry.TryGetComponentMutable<T>(entityId);
 			Component* componentBase = static_cast<Component*>(component);
 			if (componentBase == nullptr || !componentBase->m_IsEnabled) continue;
 
-			EntityData* entityPtr = componentBase->GetEntitySafeMutable();
-			if (entityPtr == nullptr)
-			{
-				Assert(false, std::format("Attempted to operate on active components of type:{} "
-					"from multi body system but component has no entity ptr!", Utils::GetTypeName<T>()));
-				return;
-			}
-			if (!entityPtr->m_Active) continue;
+			EntityData& entity = componentBase->GetEntityMutable();
+			if (!entity.IsEntityActive()) continue;
 
-			action(*component, *entityPtr);
+			action(*component);
 		}
 	}
 
@@ -53,21 +47,15 @@ namespace ECS
 	requires std::is_base_of_v<Component, T>
 	void GetRegistryComponentsMutable(EntityRegistry& registry, std::vector<T*>& inputVector)
 	{
-		auto view = registry.view<T>();
+		auto view = registry.GetInternalRegistry().view<T>();
 		for (auto entityId : view)
 		{
 			T* component = registry.TryGetComponentMutable<T>(entityId);
 			Component* componentBase = static_cast<Component*>(component);
 			if (componentBase==nullptr || !componentBase->m_IsEnabled) continue;
 
-			EntityData* entityPtr = componentBase->GetEntitySafeMutable();
-			if (entityPtr == nullptr)
-			{
-				Assert(false, std::format("Attempted to get registry components of type:{} "
-					"from multi body system but component has no entity ptr!", Utils::GetTypeName<T>()));
-				return;
-			}
-			if (!entityPtr->m_Active) continue;
+			EntityData& entity = componentBase->GetEntityMutable();
+			if (!entity.IsEntityActive()) continue;
 
 			inputVector.push_back(component);
 		}

@@ -4,12 +4,12 @@
 #include "limits"
 #include "RaylibUtils.hpp"
 #include "Debug.hpp"
-#include "TextGUISettings.hpp"
+#include "UITextStyle.hpp"
 #include "EntityData.hpp"
 #include "UIRendererComponent.hpp"
 #include "GameRenderer.hpp"
 
-const GUIPadding UITextComponent::DEFAULT_PADDING = GUIPadding();
+const UIPadding UITextComponent::DEFAULT_PADDING = UIPadding();
 static constexpr float FONT_SIZE_CALC_DELTA = 0.5;
 static constexpr bool DRAW_RENDER_BOUNDS = false;
 
@@ -46,7 +46,7 @@ bool IsRightAlignment(const TextAlignment& alignment)
 
 UITextComponent::UITextComponent() : UITextComponent("", {}, Color()) {}
 
-UITextComponent::UITextComponent(const std::string text, const FontProperties& font, const GUIPadding& padding, 
+UITextComponent::UITextComponent(const std::string text, const FontProperties& font, const UIPadding& padding, 
 	const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea) :
 	m_text(text), m_fontData(font), m_padding(padding), 
 	m_alignment(alignment), m_color(color), m_fontSizeFactor(factor), m_fitToArea(fitToArea), m_renderer(nullptr) {}
@@ -54,11 +54,11 @@ UITextComponent::UITextComponent(const std::string text, const FontProperties& f
 UITextComponent::UITextComponent(const std::string text, const FontProperties& font, const Color& color) :
 	UITextComponent(text, font, DEFAULT_PADDING, DEFAULT_ALIGNMENT, color, NULL_FONT_FACTOR, DEFAULT_FIT_TO_AREA) {}
 	
-UITextComponent::UITextComponent(const std::string& text, const TextGUIStyle& settings) :
+UITextComponent::UITextComponent(const std::string& text, const TextUIStyle& settings) :
 	UITextComponent(text, settings.m_FontData, settings.m_Padding, settings.m_TextAlignment,
 		settings.m_TextColor, settings.m_FontSizeFactor, settings.m_FitToArea) {}
 
-void UITextComponent::SetSettings(const TextGUIStyle& settings)
+void UITextComponent::SetSettings(const TextUIStyle& settings)
 {
 	m_fontData = settings.m_FontData;
 	m_padding = settings.m_Padding;
@@ -164,7 +164,7 @@ float UITextComponent::CalculateMaxFontSizeForSpace(const ScreenPosition& space,
 	return CalculateMaxFontSizeForSpace(Vec2(static_cast<float>(space.m_X), 
 		static_cast<float>(space.m_Y)), spacing, startingSize);
 }
-ScreenPosition UITextComponent::CalculateTopLeftPos(const GUIRect& renderInfo, const Vector2& textRectArea) const
+ScreenPosition UITextComponent::CalculateTopLeftPos(const UIRect& renderInfo, const Vector2& textRectArea) const
 {
 	int newX = renderInfo.m_TopLeftPos.m_X + m_padding.m_Left;
 	int newY = renderInfo.m_TopLeftPos.m_Y + m_padding.m_Top;
@@ -195,7 +195,7 @@ ScreenPosition UITextComponent::CalculateTopLeftPos(const GUIRect& renderInfo, c
 	return {newX, newY};
 }
 
-Vec2 UITextComponent::CalculateUsableSpace(const GUIRect& renderInfo) const
+Vec2 UITextComponent::CalculateUsableSpace(const UIRect& renderInfo) const
 {
 	return {renderInfo.GetSize().m_X - m_padding.m_Left - m_padding.m_Right,
 			renderInfo.GetSize().m_Y - m_padding.m_Top - m_padding.m_Bottom};
@@ -240,12 +240,12 @@ void UITextComponent::SetPaddingLeft(const float& padding)
 {
 	m_padding.m_Left = padding;
 }
-void UITextComponent::SetPadding(const GUIPadding& padding)
+void UITextComponent::SetPadding(const UIPadding& padding)
 {
 	m_padding = padding;
 }
 
-GUIRect UITextComponent::Render(const GUIRect& rect)
+UIRect UITextComponent::Render(const UIRect& rect)
 {
 	if (m_text.empty()) return {};
 
@@ -267,7 +267,7 @@ GUIRect UITextComponent::Render(const GUIRect& rect)
 	}
 
 	if (!Assert(this, m_fontData.m_Size != 0, std::format("Tried to render text GUI with id:{} "
-		"but font size was calculated to be 0:{} valid font:{}. Usaable space:{} (total space:{}) space used:{}", GetEntitySafe().ToStringId(),
+		"but font size was calculated to be 0:{} valid font:{}. Usaable space:{} (total space:{}) space used:{}", GetEntity().ToStringId(),
 		ToString(), std::to_string(RaylibUtils::IsValidFont(m_fontData.m_FontType)), rect.ToString(),
 		usableSize.ToString(), RaylibUtils::ToString(spaceUsed))))
 		return {};

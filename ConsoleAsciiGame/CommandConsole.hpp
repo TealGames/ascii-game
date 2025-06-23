@@ -7,9 +7,6 @@
 #include <queue>
 #include <chrono> 
 #include "InputManager.hpp"
-#include "UIInputField.hpp"
-#include "UILayout.hpp"
-#include "UIContainer.hpp"
 
 //using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;
@@ -28,8 +25,12 @@ enum class ConsoleOutputMessageType
 	Success,
 };
 
-class GUISelectorManager;
-class GUIHierarchy;
+class UIInteractionManager;
+class UIHierarchy;
+class UITransformData;
+class UITextComponent;
+class UIInputField;
+class UILayout;
 
 constexpr int MAX_OUTPUT_MESSAGES = 10;
 class CommandConsole
@@ -41,11 +42,10 @@ private:
 	PromptCollection m_prompts;
 	float m_timeSinceOpen;
 
-	UIContainer m_toggleableContainer;
-	UIContainer m_container;
-	UIInputField m_inputField;
-	UILayout m_outputMessageLayout;
-	std::array<UITextComponent, MAX_OUTPUT_MESSAGES> m_outputMessagesTextGuis;
+	UITransformData* m_container;
+	UIInputField* m_inputField;
+	UILayout* m_outputMessageLayout;
+	std::array<UITextComponent*, MAX_OUTPUT_MESSAGES> m_outputMessagesTextGuis;
 	std::uint8_t m_nextTextGuiIndex;
 	std::vector<float> m_messageCloseTimes;
 
@@ -66,7 +66,7 @@ private:
 	void SetNextMessage(const std::string& message, const Color color);
 	void RemoveBackMessage();
 public:
-	CommandConsole(const Input::InputManager& input, GUIHierarchy& hierarchy, GUISelectorManager& selector);
+	CommandConsole(const Input::InputManager& input, UIHierarchy& hierarchy, UIInteractionManager& selector);
 
 	//void SetActiveConsole(CommandConsole& console);
 

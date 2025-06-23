@@ -2,7 +2,7 @@
 #include <string>
 #include "raylib.h"
 #include <unordered_map>
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "Point2DInt.hpp"
 #include "InputAction.hpp"
 #include "InputManager.hpp"

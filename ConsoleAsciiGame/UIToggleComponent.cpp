@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "UIToggleComponent.hpp"
 #include "RaylibUtils.hpp"
-#include "GUISelectorManager.hpp"
+#include "UIInteractionManager.hpp"
 #include <optional>
 #include "TextureAsset.hpp"
 
@@ -9,7 +9,7 @@
 //	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
 //	m_valueSetAction(nullptr) {}
 
-UIToggleComponent::UIToggleComponent(const bool& startValue, const GUIStyle& settings, 
+UIToggleComponent::UIToggleComponent(const bool& startValue, const UIStyle& settings, 
 	const ToggleAction& valueSetAction, const TextureAsset* toggledTexture)
 	: UISelectableData(),  m_isToggled(startValue), m_settings(settings), 
 	m_valueSetAction(valueSetAction), m_overlayTexture(toggledTexture)
@@ -30,7 +30,7 @@ UIToggleComponent::~UIToggleComponent()
 		Assert(false, std::format("DEATRUCTOR HELL YEAH settings:{}", m_settings.m_Size.ToString()));*/
 }
 
-void UIToggleComponent::SetSettings(const GUIStyle& settings)
+void UIToggleComponent::SetSettings(const UIStyle& settings)
 {
 	m_settings = settings;
 }
@@ -70,6 +70,7 @@ void UIToggleComponent::DrawOverlayTexture(const float targetWidth, const float 
 	DrawTextureEx(m_overlayTexture->GetTexture(), topLeftPos, 0, std::min(scaleX, scaleY), WHITE);
 }
 
+/*
 RenderInfo UIToggleComponent::ElementRender(const RenderInfo& renderInfo)
 {
 	const float guiHeight = renderInfo.m_RenderSize.m_Y;
@@ -99,6 +100,7 @@ RenderInfo UIToggleComponent::ElementRender(const RenderInfo& renderInfo)
 	return RenderInfo{ ScreenPosition{static_cast<int>(topLeftPos.x),
 				static_cast<int>(topLeftPos.y) }, ScreenPosition(guiWidth, guiHeight) };
 }
+*/
 
 void UIToggleComponent::InitFields()
 {

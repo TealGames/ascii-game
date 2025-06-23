@@ -51,6 +51,10 @@ enum class DeppendencyType
 using TypeCollection = std::vector<const std::type_info*>;
 using ValidationAction = std::function<bool(EntityData& entity)>;
 using ComponentAddAction = std::function<void(EntityData& entity)>;
+template<typename T>
+requires std::is_base_of_v<T, Component>
+using ComponentTypeAddAction= std::function<void(T&)>;
+
 struct ComponentInfo
 {
 	//RequiredComponentType m_RequiredType;

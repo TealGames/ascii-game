@@ -18,7 +18,7 @@ namespace ECS
 #endif 
 
 		scene.OperateOnComponents<TransformData>(
-			[](TransformData& transform, ECS::Entity& entity)->void
+			[](TransformData& transform)->void
 			{
 				transform.SetLocalPosLastFrame(transform.GetLocalPos());
 			});

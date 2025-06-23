@@ -1,6 +1,7 @@
 #pragma once
 #include "EntityID.hpp"
-#include <entt/entt.hpp>
+#include "Debug.hpp"
+#include "HelperFunctions.hpp"
 
 class Component;
 class EntityData;
@@ -8,7 +9,6 @@ class TransformData;
 
 namespace ECS
 {
-	constexpr EntityID INVALID_ENTITY_ID = EntityID(-1);
 	class EntityRegistry
 	{
 	private:
@@ -20,11 +20,11 @@ namespace ECS
 		requires std::is_base_of_v<Component, T>
 		bool PassesHasComponentCheck(const EntityID id) const
 		{
-			if (HasComponent<T>())
+			if (HasComponent<T>(id))
 			{
 				LogError(std::format("Tried to add component of type: {} to {} via EntityRegistry"
 					"but it already has this type (and duplicates are not allowed)", typeid(T).name(),
-					TryGetEntity(id)->ToString());
+					TryGetEntity(id)->ToString()));
 				return false;
 			}
 			return true;
@@ -34,11 +34,13 @@ namespace ECS
 		EntityRegistry();
 
 		bool IsValidID(const EntityID& id) const;
-		EntityData& CreateNewEntity(const std::string& name, const TransformData& transform = {});
+		EntityData& CreateNewEntity(const std::string& name, const TransformData& transform);
 
 		EntityData* TryGetEntityMutable(const EntityID id);
 		const EntityData* TryGetEntity(const EntityID id) const;
 		bool HasEntity(const EntityID& id) const;
+
+		entt::registry& GetInternalRegistry();
 
 		template<typename T, typename... Args>
 		requires std::is_base_of_v<Component, T>

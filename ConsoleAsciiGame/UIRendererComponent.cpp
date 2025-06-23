@@ -2,24 +2,25 @@
 #include "UIRendererComponent.hpp"
 #include "GameRenderer.hpp"
 
-UIRendererData::UIRendererData() : Component(), m_renderer(nullptr) {}
+UIRendererData::UIRendererData() : Component(), m_renderer(nullptr), m_lastRenderRect(), m_isEventBlocker(false) {}
 
-void UIRendererData::SetRenderer(Rendering::Renderer& renderer)
-{
-	m_renderer = &renderer;
-}
 Rendering::Renderer& UIRendererData::GetRendererMutable()
 {
 	return *m_renderer;
 }
 
-void UIRendererData::SetLastRenderRect(const GUIRect& rect)
-{
-	m_lastRenderRect = rect;
-}
-const GUIRect& UIRendererData::GetLastRenderRect() const
+const UIRect& UIRendererData::GetLastRenderRect() const
 {
 	return m_lastRenderRect;
+}
+
+void UIRendererData::SetEventBlocker(const bool status)
+{
+	m_isEventBlocker = status;
+}
+bool UIRendererData::IsSelectionEventBlocker() const
+{
+	return m_isEventBlocker;
 }
 
 void UIRendererData::InitFields()

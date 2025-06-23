@@ -1,13 +1,17 @@
 #pragma once
-#include "ComponentData.hpp"
-#include "GUIRect.hpp"
+#include "Component.hpp"
+#include "UIRect.hpp"
 
 class TextureAsset;
+class UIRendererData;
+namespace ECS { class UITextureSystem; }
 class UITextureData : public Component
 {
 private:
 	const TextureAsset* m_texture;
+	UIRendererData* m_renderer;
 public:
+	friend class ECS::UITextureSystem;
 
 private:
 public:
@@ -17,7 +21,7 @@ public:
 	const TextureAsset* GetTexture() const;
 	bool HasTexture() const;
 
-	GUIRect Render(const GUIRect& parentInfo);
+	UIRect Render(const UIRect& parentInfo);
 
 	void InitFields() override;
 	std::string ToString() const override;

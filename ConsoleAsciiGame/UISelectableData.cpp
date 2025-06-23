@@ -1,18 +1,17 @@
 #include "pch.hpp"
 #include "UISelectableData.hpp"
-#include "GUISelectorManager.hpp"
+#include "UIInteractionManager.hpp"
 #include "Debug.hpp"
 #include "UIRendererComponent.hpp"
 #include "GameRenderer.hpp"
 #include "EntityData.hpp"
-#include "UIRendererComponent.hpp"
 
-UISelectableData::UISelectableData(const InteractionEventFlags eventFlags, const InteractionRenderFlags renderFlags) :
-	m_eventFlags(eventFlags), m_renderFlags(renderFlags),
+UISelectableData::UISelectableData(const float clickCooldown, const InteractionEventFlags eventFlags, const InteractionRenderFlags renderFlags) :
+	m_eventFlags(eventFlags), m_renderFlags(renderFlags), m_renderer(nullptr),
 	//m_selectorManager(selectorManager), 
 	//m_lastFrameRect(), 
-	m_isSelected(false), m_isHovered(false),
-	m_OnSelect(), m_OnDeselect(), m_dragTime(0)
+	m_isSelected(false), m_isHovered(false), m_dragTime(0),
+	m_OnSelect(), m_OnDeselect(), m_OnClick(clickCooldown), m_OnHoverStart(), m_OnHoverEnd()
 {
 	
 }
@@ -109,7 +108,7 @@ void UISelectableData::HoverEnd()
 	m_OnHoverEnd.Invoke(this);
 }
 
-GUIRect UISelectableData::RenderOverlay(const GUIRect& elementRendered)
+UIRect UISelectableData::RenderOverlay(const UIRect& elementRendered)
 {
 	if (m_renderFlags == InteractionRenderFlags::None) return {};
 
@@ -121,20 +120,20 @@ GUIRect UISelectableData::RenderOverlay(const GUIRect& elementRendered)
 	return elementRendered;
 }
 
-void UISelectableData::DrawDisabledOverlay(const GUIRect& renderInfo)
+void UISelectableData::DrawDisabledOverlay(const UIRect& renderInfo)
 {
 	Color disabledOverlay = BLACK;
 	disabledOverlay.a = 155;
 
-	UIRendererData* renderer = GetEntitySafeMutable().TryGetComponentMutable<UIRendererData>();
+	UIRendererData* renderer = GetEntityMutable().TryGetComponentMutable<UIRendererData>();
 	renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), disabledOverlay);
 }
-void UISelectableData::DrawHoverOverlay(const GUIRect& renderInfo)
+void UISelectableData::DrawHoverOverlay(const UIRect& renderInfo)
 {
 	Color hoverOverlay = WHITE;
 	hoverOverlay.a = 90;
 
-	UIRendererData* renderer = GetEntitySafeMutable().TryGetComponentMutable<UIRendererData>();
+	UIRendererData* renderer = GetEntityMutable().TryGetComponentMutable<UIRendererData>();
 	renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), hoverOverlay);
 }
 

@@ -71,24 +71,16 @@ public:
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	void OperateOnComponents(const std::function<void(T&, EntityData&)> action)
+	void OperateOnComponents(const std::function<void(T&)> action)
 	{
-		ECS::OperateOnActiveComponents<T>(m_globalRegistry,
-			[this](const ECS::EntityID id)->EntityData*
-			{
-				return TryGetGlobalEntityMutable(id);
-			}, action);
+		ECS::OperateOnActiveComponents<T>(m_globalRegistry, action);
 	}
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
 	void GetComponents(std::vector<T*>& inputVec)
 	{
-		ECS::GetRegistryComponentsMutable<T>(m_globalRegistry,
-			[this](const ECS::EntityID id)->EntityData*
-			{
-				return TryGetGlobalEntityMutable(id);
-			}, inputVec);
+		ECS::GetRegistryComponentsMutable<T>(m_globalRegistry, inputVec);
 	}
 };
 

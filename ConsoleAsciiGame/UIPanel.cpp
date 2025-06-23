@@ -7,18 +7,16 @@
 #include "GameRenderer.hpp"
 
 UIPanel::UIPanel() : UIPanel(Color()) {}
-UIPanel::UIPanel(const Color color) : m_color(color) {}
+UIPanel::UIPanel(const Color color) : m_color(color), m_renderer(nullptr) {}
 
 void UIPanel::SetColor(const Color color)
 {
 	m_color = color;
 }
 
-GUIRect UIPanel::Render(const GUIRect& renderInfo)
+UIRect UIPanel::Render(const UIRect& renderInfo)
 {
-	UIRendererData* renderer = GetEntitySafeMutable().TryGetComponentMutable<UIRendererData>();
-	renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), m_color);
-
+	m_renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), m_color);
 	return renderInfo;
 }
 

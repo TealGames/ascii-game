@@ -4,6 +4,6 @@
 struct ITreeGUIConstructible
 {
 	~ITreeGUIConstructible() = default;
-	virtual GUIElement* GetTreeGUI() = 0;
+	//virtual GUIElement* GetTreeGUI() = 0;
 };
 

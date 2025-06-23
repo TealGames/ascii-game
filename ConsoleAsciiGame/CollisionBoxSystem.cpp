@@ -46,7 +46,7 @@ namespace ECS
 			minBodyDisplacement = {};
 			minBodyDisplacementVec = {};
 
-			bounds.emplace_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntitySafe().m_Name, boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
+			bounds.emplace_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntity().m_Name, boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
 			if (RENDER_COLLIDER_OUTLINES)
 			{
 				/*if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
@@ -121,7 +121,7 @@ namespace ECS
 
 		if (!Assert(this, maybeDirType.has_value(), std::format("Tried to add collision between boxA:{} (entity:{}) and boxB:{} (entity:{}) "
 			"but failed to get convert colliding dir:{} to direction type",
-			boxA.ToString(), boxA.GetEntitySafe().ToString(), boxB.ToString(), boxB.GetEntitySafe().ToString(), collidingDir.ToString())))
+			boxA.ToString(), boxA.GetEntity().ToString(), boxB.ToString(), boxB.GetEntity().ToString(), collidingDir.ToString())))
 		{
 			return false;
 		}

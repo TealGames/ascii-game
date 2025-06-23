@@ -1,5 +1,5 @@
 #pragma once
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "PhysicsBodyData.hpp"
 #include "Vec2.hpp"
 

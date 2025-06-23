@@ -22,14 +22,6 @@ namespace ECS
 		if (!Assert(this, mainCamera != nullptr, 
 			std::format("Tried to run system update for UI but main camera is NULL")))
 			return;*/
-
-		scene.OperateOnComponents<UIObjectData>(
-			[this, &scene, &deltaTime, &mainCamera](UIObjectData& data, ECS::Entity& entity)-> void
-			{
-				WorldPosition worldPos = Conversions::ScreenToWorldPosition(mainCamera, Conversions::NormalizedScreenToPosition(data.GetNormalizedPos()));
-				entity.m_Transform.SetPos(worldPos);
-				//LogError(std::format("Update called for ui object data:{} scene bodesi:{}", entity.GetName(), scene.ToStringEntityData()));
-			});
 	}
 }
 

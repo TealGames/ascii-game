@@ -1,5 +1,5 @@
 #pragma once
-#include "ComponentData.hpp"
+#include "Component.hpp"
 
 class UIContainer : public Component
 {

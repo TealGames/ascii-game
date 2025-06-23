@@ -1,15 +1,18 @@
 #pragma once
-#include "ISelectable.hpp"
 #include "Event.hpp"
-#include "RenderInfo.hpp"
-#include "GUIElement.hpp"
+#include "CooldownEvent.hpp"
 #include "HelperMacros.hpp"
 #include "HelperFunctions.hpp"
+#include "Vec2.hpp"
+#include "UIRect.hpp"
+#include "Component.hpp"
 
 class UIRendererData;
 class UISelectableData;
+namespace ECS { class UISelectableSystem; }
 
 using SelectableInteractEvent = Event<void, UISelectableData*>;
+using SelectableCooldownInteractEvent = CooldownEvent<void, UISelectableData*>;
 /// <summary>
 /// Where float is the total drag time and the vec2 is the move delta
 /// </summary>
@@ -37,7 +40,7 @@ class UISelectableData : public Component
 {
 private:
 	//GUIRect m_lastFrameRect;
-	//GUISelectorManager* m_selectorManager;
+	//UIInteractionManager* m_selectorManager;
 	UIRendererData* m_renderer;
 
 	bool m_isSelected;
@@ -45,6 +48,7 @@ private:
 	float m_dragTime;
 
 public:
+	friend class ECS::UISelectableSystem;
 	static constexpr InteractionEventFlags DEFAULT_EVENT_FLAGS = Utils::SetAllFlags<InteractionEventFlags>();
 	static constexpr InteractionRenderFlags DEFAULT_RENDER_FLAGS= Utils::SetAllFlags<InteractionRenderFlags>();
 
@@ -55,7 +59,7 @@ public:
 	//that get triggered when those events occur
 	SelectableInteractEvent m_OnSelect;
 	SelectableInteractEvent m_OnDeselect;
-	SelectableInteractEvent m_OnClick;
+	SelectableCooldownInteractEvent m_OnClick;
 	SelectableInteractEvent m_OnHoverStart;
 	SelectableInteractEvent m_OnHoverEnd;
 	/// <summary>
@@ -65,15 +69,15 @@ public:
 	SelectableDragEvent m_OnDragDelta;
 
 protected:
-	//GUISelectorManager& GetSelectorManager();
+	//UIInteractionManager& GetSelectorManager();
 	/*void SetLastFramneRect(const GUIRect& newRect);
 	GUIRect& GetLastFrameRectMutable();*/
 
-	void DrawDisabledOverlay(const GUIRect& rect);
-	void DrawHoverOverlay(const GUIRect& rect);
+	void DrawDisabledOverlay(const UIRect& rect);
+	void DrawHoverOverlay(const UIRect& rect);
 
 public:
-	UISelectableData(const InteractionEventFlags eventFlags= DEFAULT_EVENT_FLAGS, 
+	UISelectableData(const float clickCooldown=0, const InteractionEventFlags eventFlags= DEFAULT_EVENT_FLAGS, 
 				  const InteractionRenderFlags renderFlags= DEFAULT_RENDER_FLAGS);
 	~UISelectableData();
 
@@ -99,7 +103,7 @@ public:
 	//const GUIRect GetLastFrameRect() const;
 
 	virtual void Update(const float deltaTime);
-	GUIRect RenderOverlay(const GUIRect& elementRendered);
+	UIRect RenderOverlay(const UIRect& elementRendered);
 
 	virtual void InitFields() override;
 	virtual std::string ToString() const override;

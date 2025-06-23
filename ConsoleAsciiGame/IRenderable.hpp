@@ -1,8 +1,8 @@
 #pragma once
-#include "GUIRect.hpp"
+#include "UIRect.hpp"
 
 struct IRenderable
 {
 	virtual ~IRenderable() = default;
-	virtual GUIRect Render(const GUIRect& renderInfo) = 0;
+	virtual UIRect Render(const UIRect& renderInfo) = 0;
 };

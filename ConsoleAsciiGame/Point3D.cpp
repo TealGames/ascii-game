@@ -86,13 +86,13 @@ namespace Utils
 
 	Point3D& Point3D::operator=(const Point3D& newPos)
 	{
-		if (this != &newPos)
-		{
-			m_X = newPos.m_X;
-			m_Y = newPos.m_Y;
-			m_Z = newPos.m_Z;
-		}
-		else return *this;
+		if (this == &newPos)
+			return *this;
+		
+		m_X = newPos.m_X;
+		m_Y = newPos.m_Y;
+		m_Z = newPos.m_Z;
+		return *this;
 	}
 
 	Point3D& Point3D::operator=(Point3D&& other) noexcept

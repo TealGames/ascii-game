@@ -7,9 +7,9 @@
 #include "SceneManager.hpp"
 #include "PhysicsManager.hpp"
 #include "RaylibUtils.hpp"
-#include "GUISelectorManager.hpp"
+#include "UIInteractionManager.hpp"
 #include "CollisionBoxSystem.hpp"
-#include "ColorPopupGUI.hpp"
+#include "ColorPopupUI.hpp"
 #include "EditorStyles.hpp"
 
 static constexpr float TOP_BAR_HEIGHT = 0.03;
@@ -23,89 +23,83 @@ static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
 EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
 
 EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
-	SceneManagement::SceneManager& scene, const CameraController& camera, GUISelectorManager& selector, GUIHierarchy& guiTree, ECS::CollisionBoxSystem& collisionSystem)
+	SceneManagement::SceneManager& scene, const CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, PopupUIManager& popupManager, ECS::CollisionBoxSystem& collisionSystem)
 	:
-	m_editorObj(nullptr),
+	m_editorRoot(std::get<1>(guiTree.CreateAtRoot(DEFAULT_LAYER, "EditorRoot"))),
 	m_displayingGameView(true),
 	m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_cameraController(camera),
 	m_physicsManager(physics), m_guiSelector(selector), m_guiTree(guiTree), m_collisionBoxSystem(collisionSystem),
 	m_commandConsole(m_inputManager, m_guiTree, m_guiSelector), m_debugInfo(guiTree),
-	m_popupManager(guiTree),
-	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager, assetManager),
+	m_popupManager(popupManager),
+	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager, assetManager, m_editorRoot->GetEntityMutable()),
 	m_spriteEditor(m_guiTree, m_inputManager, assetManager),
-	m_overheadBarContainer(EditorStyles::EDITOR_BACKGROUND_COLOR), m_toggleLayout(LayoutType::Horizontal, SizingType::ShrinkOnly, {}),
-	m_pauseGameToggle(false, EditorStyles::GetToggleStyle()), m_editModeToggle(false, EditorStyles::GetToggleStyle()),
-	m_editModeInfo(), m_assetEditorButton(EditorStyles::GetButtonStyle(TextAlignment::Center), "AssetEditors"),
-	m_mousePosText("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center))
+	m_overheadBarContainer(nullptr), m_toggleLayout(nullptr), m_pauseGameToggle(nullptr), m_editModeToggle(nullptr), m_mousePosText(nullptr),
+		m_editModeInfo(), m_assetEditorButton(nullptr)
 {
+	EntityData& editorRootEntity = m_editorRoot->GetEntityMutable();
 
-	//scene.m_GlobalEntityManager.CreateGlobalEntity("__Editor", TransformData());
+	auto [mousePosTextEntity, mousePosTextTransform] = editorRootEntity.CreateChildUI("MousePosText");
+	m_mousePosText = &(mousePosTextEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center))));
+	mousePosTextTransform->SetSize(MOUSE_POS_TEXT_SIZE);
 
-	/*const GUIStyle toggleSettings = GUIStyle( EntityEditorGUI::EDITOR_SECONDARY_COLOR,
-		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), 
-			TextAlignment::Center, GUIPadding(), 0.8));
+	//----------------------------------------------------------------
+	// OVERHEAD BAR CREATION + TOGGLE LAYOUT + ASSET EDITOR BUTTON
+	//---------------------------------------------------------------
+	auto [overheadBarEntity, overheadBarTransform] = editorRootEntity.CreateChildUI("OverheadBar");
+	m_overheadBarContainer = &(overheadBarEntity->AddComponent(UIPanel(EditorStyles::EDITOR_BACKGROUND_COLOR)));
+	overheadBarTransform->SetBounds(NormalizedPosition::TOP_LEFT, { 1, 1 - TOP_BAR_HEIGHT });
 
-	const GUIStyle buttonSettings = GUIStyle( EntityEditorGUI::EDITOR_PRIMARY_COLOR,
-		TextGUIStyle(EntityEditorGUI::EDITOR_TEXT_COLOR, FontProperties(0, EntityEditorGUI::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
-			TextAlignment::Center, GUIPadding(), 0.8));*/
+	auto [toggleLayoutEntity, toggleLayoutTransform] = m_overheadBarContainer->GetEntityMutable().CreateChildUI("ToggleLayout");
+	m_toggleLayout = &(toggleLayoutEntity->AddComponent(UILayout(LayoutType::Horizontal, SizingType::ShrinkOnly, {})));
 
-	m_mousePosText.SetSize(MOUSE_POS_TEXT_SIZE);
-	
-	//m_pauseGameToggle.SetSettings(toggleSettings);
-	m_editModeToggle.SetFixed(false, true);
-	m_editModeToggle.SetValueSetAction([this](const bool isChecked)-> void
-		{
-			if (isChecked) m_guiTree.AddToRoot(DEFAULT_LAYER, &m_mousePosText);
-			else
-			{
-				m_guiTree.TryRemoveElement(m_mousePosText.GetEntityId());
-				m_mousePosText.SetText("");
-			}
-		});
-
-	m_pauseGameToggle.SetFixed(false, true);
-	m_pauseGameToggle.SetValueSetAction([this](const bool isChecked) -> void
-		{ 
-			if (isChecked) m_timeKeeper.StopTimeScale();
-			else m_timeKeeper.ResetTimeScale();
-
-			//DebugProperties::SetLogMessages(!isChecked);
-		});
-
-	//m_editModeToggle.SetSettings(toggleSettings);
-	m_toggleLayout.AddLayoutElement(&m_pauseGameToggle);
-	m_toggleLayout.AddLayoutElement(&m_editModeToggle);
-
-	const float layoutWidth = TOGGLE_LAYOUT_WIDTH_PER_TOGGLE * m_toggleLayout.GetChildCount();
-	const float layoutStartX = (1 - layoutWidth) / 2;
-	m_toggleLayout.SetBounds({ layoutStartX, 1}, {layoutStartX+ layoutWidth, 0});
-
-	//m_assetEditorButton.SetSettings(buttonSettings);
-	m_assetEditorButton.SetBounds(NormalizedPosition::TOP_LEFT, { ASSET_EDITOR_BUTTON_WIDTH, 0 });
-	m_assetEditorButton.SetClickAction([this](const UIButton& button)-> void
+	auto [assetEditorButtonEntity, assetEditorButtonTransform] = m_overheadBarContainer->GetEntityMutable().CreateChildUI("AssetEditorButton");
+	m_assetEditorButton = &(assetEditorButtonEntity->AddComponent(UIButton(EditorStyles::GetButtonStyle(TextAlignment::Center), "AssetEditors")));
+	assetEditorButtonTransform->SetBounds(NormalizedPosition::TOP_LEFT, { ASSET_EDITOR_BUTTON_WIDTH, 0 });
+	m_assetEditorButton->m_OnClick.AddListener([this](UISelectableData* data)-> void
 		{
 			m_displayingGameView = !m_displayingGameView;
 			if (m_displayingGameView)
 			{
-				m_assetEditorButton.SetText("AssetEditors");
-				m_entityEditor.TryCloseCurrentEntityGUI();
+				m_assetEditorButton->SetText("AssetEditors");
+				m_entityEditor.CloseCurrentEntityGUI();
 			}
-			else m_assetEditorButton.SetText("GameView");
+			else m_assetEditorButton->SetText("GameView");
 		});
 
-	m_overheadBarContainer.SetBounds(NormalizedPosition::TOP_LEFT, { 1, 1 - TOP_BAR_HEIGHT });
-	m_overheadBarContainer.PushChild(&m_assetEditorButton);
-	m_overheadBarContainer.PushChild(&m_toggleLayout);
-	m_guiTree.AddToRoot(DEFAULT_LAYER, &m_overheadBarContainer);
+	//----------------------------------------------------------------
+	// PAUSE AND EDIT MODE TOGGLE CREATION
+	//---------------------------------------------------------------
+	auto [pauseGameToggleEntity, pauseGameToggleTransform] = m_toggleLayout->CreateLayoutElement("PauseGameToggle");
+	pauseGameToggleTransform->SetFixed(false, true);
+	m_pauseGameToggle = &(pauseGameToggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle())));
+	m_pauseGameToggle->SetValueSetAction([this](const bool isChecked) -> void
+		{
+			if (isChecked) m_timeKeeper.StopTimeScale();
+			else m_timeKeeper.ResetTimeScale();
+		});
 
+	auto [editModeToggleEntity, editModeToggleTransform] = m_toggleLayout->CreateLayoutElement("EditModeToggle");
+	editModeToggleTransform->SetFixed(false, true);
+	m_editModeToggle = &(editModeToggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle())));
+	m_editModeToggle->SetValueSetAction([this](const bool isChecked)-> void
+		{
+			m_mousePosText->GetEntityMutable().TrySetEntityActive(isChecked);
+		});
+
+	const float layoutWidth = TOGGLE_LAYOUT_WIDTH_PER_TOGGLE * toggleLayoutEntity->GetChildCount();
+	const float layoutStartX = (1 - layoutWidth) / 2;
+	toggleLayoutTransform->SetBounds({ layoutStartX, 1 }, { layoutStartX + layoutWidth, 0 });
+	
+
+	//m_assetEditorButton.SetSettings(buttonSettings);
 	DebugProperties::OnMessageLogged.AddListener([this](const LogType& logType, const std::string& message, 
 		const bool& logToConsole, const bool& pauseOnMessage)-> void
 		{
 			if (!pauseOnMessage) return;
 
 			//To prevent paused going unpaused here we need it to be not paused state
-			if (!m_pauseGameToggle.IsToggled()) 
-				m_pauseGameToggle.ToggleValue();
+			if (!m_pauseGameToggle->IsToggled()) 
+				m_pauseGameToggle->ToggleValue();
 		});
 
 	//LogWarning(std::format("Popup addr:{}", Utils::ToStringPointerAddress(&m_popupManager)));
@@ -118,7 +112,6 @@ EngineEditor::~EngineEditor()
 
 void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 {
-
 	m_commandConsole.AddPrompt(new CommandPrompt<std::string, float, float>("setpos", { "EntityName", "PosX", "PosY" },
 		[this](const std::string& entityName, const float& x, const float& y) -> void {
 			if (EntityData* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
@@ -132,7 +125,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 			if (EntityData* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
 			{
 				//Assert(false, std::format("Sending entity: {}", entity->m_Name));
-				m_entityEditor.SetEntityGUI(*entity);
+				m_entityEditor.SetEntityUI(*entity);
 				return;
 			}
 			m_commandConsole.LogOutputMessage(std::format("Entity with name: '{}' could not be found",
@@ -212,7 +205,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 
 void EngineEditor::SelectEntityEditor(EntityData& entity)
 {
-	m_entityEditor.SetEntityGUI(*m_editModeInfo.m_Selected);
+	m_entityEditor.SetEntityUI(*m_editModeInfo.m_Selected);
 	m_popupManager.CloseAllPopups();
 }
 
@@ -221,13 +214,11 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 	InitConsoleCommands(playerSystem);
 
 	//Note: the init order matters because it creates the order that the objects are added to the selector
-	m_popupManager.AddPopup(new ColorPopupGUI(m_inputManager));
+	m_popupManager.AddPopup(new ColorPopupUI(m_inputManager));
 }
 
 void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDeltaTime, const float timeStep)
 {
-	m_assetEditorButton.Update(unscaledDeltaTime);
-	m_popupManager.UpdatePopups(unscaledDeltaTime);
 	m_commandConsole.Update(scaledDeltaTime);
 
 	if (!IsInGameView())
@@ -251,7 +242,7 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 	if (m_inputManager.IsKeyPressed(PAUSE_TOGGLE_KEY))
 	{
 		//LogError("Toggle pause");
-		m_pauseGameToggle.ToggleValue();
+		m_pauseGameToggle->ToggleValue();
 	}
 
 	//m_editModeToggle.Update();
@@ -264,12 +255,12 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(*activeScene, worldClickedPos);
 		if (!entitiesWithinPos.empty())
 		{
-			m_editModeInfo.m_Selected = &(entitiesWithinPos[0]->GetEntitySafeMutable());
+			m_editModeInfo.m_Selected = &(entitiesWithinPos[0]->GetEntityMutable());
 			SelectEntityEditor(*m_editModeInfo.m_Selected);
 		}
 	}
 	
-	else if (m_editModeToggle.IsToggled())
+	else if (m_editModeToggle->IsToggled())
 	{
 		//If we are in edit mode holding the down button (and not selected selectable this frame-> meaning click might correspond to selectable click not edit mode click) 
 		// we can move the selected entity to that pos
@@ -284,9 +275,11 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		const Vec2 mousePos = m_inputManager.GetMousePosition();
 		const Vec2Int rootSize = m_guiTree.GetRootSize();
 		const Vec2 mousePosNorm = Vec2(mousePos.m_X / rootSize.m_X, (rootSize.m_Y- mousePos.m_Y)/ rootSize.m_Y);
-		m_mousePosText.SetText(mousePos.ToString(2));
-		const Vec2 textSize = m_mousePosText.GetSize().GetPos();
-		m_mousePosText.SetTopLeftPos({ mousePosNorm.m_X- (textSize.m_X/2), mousePosNorm.m_Y+ textSize.m_Y});
+		m_mousePosText->SetText(mousePos.ToString(2));
+
+		UITransformData& mousePosTextTransform = *(m_mousePosText->GetEntityMutable().TryGetComponentMutable<UITransformData>());
+		const Vec2 textSize = mousePosTextTransform.GetSize().GetPos();
+		mousePosTextTransform.SetTopLeftPos({ mousePosNorm.m_X- (textSize.m_X/2), mousePosNorm.m_Y+ textSize.m_Y});
 	}
 	m_entityEditor.Update();
 }

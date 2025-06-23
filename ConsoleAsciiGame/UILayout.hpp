@@ -1,4 +1,6 @@
 #pragma once
+#include "Component.hpp"
+#include "NormalizedPosition.hpp"
 
 enum class LayoutType
 {
@@ -50,6 +52,7 @@ public:
 	UILayout(const LayoutType type, const SizingType sizing, const NormalizedPosition spacing = {});
 
 	void AddLayoutElement(EntityData& element);
+	std::tuple<EntityData*, UITransformData*> CreateLayoutElement(const std::string& name);
 	void RemoveLayoutElements(const size_t& childStartIndex, const size_t& count);
 	Vec2 GetTotalSizeUsed() const;
 

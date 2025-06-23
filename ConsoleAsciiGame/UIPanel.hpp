@@ -1,14 +1,18 @@
 #pragma once
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "Color.hpp"
 #include "raylib.h"
-#include "GUIRect.hpp"
+#include "UIRect.hpp"
 
+class UIRendererData;
+namespace ECS { class UIPanelSystem; }
 class UIPanel : public Component
 {
 private:
 	Color m_color;
+	UIRendererData* m_renderer;
 public:
+	friend class ECS::UIPanelSystem;
 
 private:
 public:
@@ -17,7 +21,7 @@ public:
 
 	void SetColor(const Color color);
 
-	GUIRect Render(const GUIRect& rect);
+	UIRect Render(const UIRect& rect);
 
 	void InitFields() override;
 	std::string ToString() const override;

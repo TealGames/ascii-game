@@ -1,12 +1,12 @@
 #pragma once
 #include <vector>
 #include <cstdint>
-#include "RelativeGUIRect.hpp"
+#include "RelativeUIRect.hpp"
 #include "Event.hpp"
 
-#include "RelativeGUIPadding.hpp"
-#include "GUIRect.hpp"
-#include "ComponentData.hpp"
+#include "RelativeUIPadding.hpp"
+#include "UIRect.hpp"
+#include "Component.hpp"
 #include "RenderInfo.hpp"
 
 
@@ -24,11 +24,13 @@
 ///	   This is best when you do not need specific placements and/or you need placements that cannot be done with existing components, allowing
 ///	   for a more customized look to the UI. NOTE: IN THIS CASE ALL SELECTALBES NEED TO BE REGISTERED IF THEY ARE NOT ADDED TO THE UI TREE
 /// </summary>
+/// 
+/*
 class GUIElement : public Component
 {
 private:
 
-	GUIRect m_lastRenderInfo;
+	UIRect m_lastRenderInfo;
 
 	
 
@@ -45,7 +47,7 @@ private:
 
 public:
 	GUIElement();
-	GUIElement(const RelativeGUIRect& relativeRect);
+	GUIElement(const RelativeUIRect& relativeRect);
 	GUIElement(const NormalizedPosition& size);
 	~GUIElement() = default;
 
@@ -66,19 +68,19 @@ public:
 	void SetBounds(const NormalizedPosition& topLeftPos, const NormalizedPosition& bottomRightPos);
 	void TryCenter(const bool centerX, const bool centerY);
 
-	void SetPadding(const RelativeGUIPadding& padding);
-	const RelativeGUIPadding& GetPadding() const;
-	RelativeGUIPadding& GetPaddingMutable();
+	void SetPadding(const RelativeUIPadding& padding);
+	const RelativeUIPadding& GetPadding() const;
+	RelativeUIPadding& GetPaddingMutable();
 
 	NormalizedPosition GetSize() const;
-	const RelativeGUIRect& GetRect() const;
-	RelativeGUIRect& GetRectMutable();
+	const RelativeUIRect& GetRect() const;
+	RelativeUIRect& GetRectMutable();
 
 	virtual void Update(const float deltaTime) = 0;
 	//void UpdateRecursive(const float deltaTime);
 
-	void SetLastFrameRect(const GUIRect& rect);
-	const GUIRect& GetLastFrameRect() const;
+	void SetLastFrameRect(const UIRect& rect);
+	const UIRect& GetLastFrameRect() const;
 	/// <summary>
 	/// Will render the current element and return how much space/what top left pos was ACTUALLY used
 	/// </summary>
@@ -104,4 +106,4 @@ public:
 	/// <returns></returns>
 	//RenderInfo CalculateChildRenderInfo(const RenderInfo& parentInfo, const size_t childIndex) const;
 };
-
+*/

@@ -2,7 +2,7 @@
 #include "pch.hpp"
 #include "raylib.h"
 #include "Vec2.hpp"
-#include "GUIStyle.hpp"
+#include "UIStyle.hpp"
 
 namespace EditorStyles
 {
@@ -34,36 +34,36 @@ namespace EditorStyles
 	//-------------------------------------------------------------------
 	//			GUI STYLES
 	//-------------------------------------------------------------------
-	inline TextGUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const Color color= EDITOR_TEXT_DEFAULT_COLOR)
+	inline TextUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const Color color= EDITOR_TEXT_DEFAULT_COLOR)
 	{
-		return TextGUIStyle(color, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
-			alignment, GUIPadding(), factor);
+		return TextUIStyle(color, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+			alignment, UIPadding(), factor);
 	}
-	inline TextGUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const Color color = EDITOR_TEXT_DEFAULT_COLOR)
+	inline TextUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const Color color = EDITOR_TEXT_DEFAULT_COLOR)
 	{
-		return TextGUIStyle(color, FontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
-			alignment, GUIPadding());
-	}
-
-	inline GUIStyle GetInputFieldStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
-	{
-		return GUIStyle(EDITOR_SECONDARY_COLOR, TextGUIStyle(EDITOR_TEXT_DEFAULT_COLOR,
-			FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), alignment, GUIPadding(), factor));
+		return TextUIStyle(color, FontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+			alignment, UIPadding());
 	}
 
-	inline GUIStyle GetSliderStyle()
+	inline UIStyle GetInputFieldStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
 	{
-		return GUIStyle(EDITOR_PRIMARY_COLOR, EDITOR_SECONDARY_COLOR, TextGUIStyle());
+		return UIStyle(EDITOR_SECONDARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR,
+			FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), alignment, UIPadding(), factor));
 	}
 
-	inline GUIStyle GetToggleStyle()
+	inline UIStyle GetSliderStyle()
 	{
-		return GUIStyle(EDITOR_SECONDARY_COLOR, WHITE, TextGUIStyle());
+		return UIStyle(EDITOR_PRIMARY_COLOR, EDITOR_SECONDARY_COLOR, TextUIStyle());
 	}
 
-	inline GUIStyle GetButtonStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
+	inline UIStyle GetToggleStyle()
 	{
-		return GUIStyle(EDITOR_PRIMARY_COLOR, TextGUIStyle(EDITOR_TEXT_DEFAULT_COLOR, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
-				alignment, GUIPadding(), factor));
+		return UIStyle(EDITOR_SECONDARY_COLOR, WHITE, TextUIStyle());
+	}
+
+	inline UIStyle GetButtonStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
+	{
+		return UIStyle(EDITOR_PRIMARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+				alignment, UIPadding(), factor));
 	}
 }

@@ -33,7 +33,8 @@ namespace Game
 				healthUI.AddComponent<UIObjectData>(UIObjectData(healthPosRelative));
 				healthUI.AddComponent<EntityRendererData>(EntityRendererData{ healthVisualData, RenderLayerType::UI });
 
-				healthUI.m_Active = i < state.GetHealth();
+				healthUI.TrySetEntityActive(i < state.GetHealth());
+
 				m_health.push_back(&healthUI);
 				//LogError(std::format("Craeted health:{}", healthPosRelative.GetPos().ToString()));
 			}
@@ -59,7 +60,7 @@ namespace Game
 							std::to_string(currentIndex), std::to_string(m_health.size()))))
 							return;
 
-						m_health[currentIndex]->m_Active = delta > 0;
+						m_health[currentIndex]->TrySetEntityActive(delta > 0);
 
 						delta > 0 ? currentIndex++ : currentIndex--;
 					}

@@ -30,15 +30,16 @@ std::string ToString(const InputFieldType& type)
 }
 
 UIInputField::UIInputField(const Input::InputManager& manager, const InputFieldType& type, 
-	const InputFieldFlag& flags, const GUIStyle& settings, 
+	const InputFieldFlag& flags, const UIStyle& settings, 
 	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
 	: UISelectableData(), m_inputManager(&manager), m_type(type), m_input(), m_lastInput(), 
 	m_textGUI(nullptr), m_background(nullptr), m_inputFlags(flags), m_submitAction(submitAction),
-	m_keyActions(keyPressActions), m_settings(settings), m_lastRenderRect()
+	m_keyActions(keyPressActions), m_settings(settings)
 {
 	//LogError("Creating Input FIeld");
 	//Assert(false, std::format("Created  gui redct: {}", GetLastFrameRect().ToString()));
 	if (HasFlag(InputFieldFlag::SelectOnStart)) Select();
+	if (HasFlag(InputFieldFlag::UserUIReadonly)) AddRenderFlags(InteractionRenderFlags::DrawDisabledOverlay);
 }
 
 //InputField::InputField() : InputField(nullptr, nullptr, InputFieldType::Any, InputFieldFlag::None, {}, nullptr, {}) 
@@ -142,7 +143,7 @@ void UIInputField::SetKeyPressAction(const KeyboardKey key, const InputFieldActi
 	m_keyActions.emplace(key, action);
 }
 
-void UIInputField::SetSettings(const GUIStyle& settings) 
+void UIInputField::SetSettings(const UIStyle& settings) 
 { 
 	m_settings = settings; 
 	if (m_textGUI != nullptr) m_textGUI->SetSettings(settings.m_TextSettings);
@@ -237,6 +238,7 @@ bool UIInputField::HasFlag(const InputFieldFlag& flag) const
 	return Utils::HasFlagAll(m_inputFlags, flag);
 }
 
+/*
 RenderInfo InputFieldGUI::ElementRender(const RenderInfo& renderInfo)
 {
 	//Assert(false, std::format("drawing field gui at:{}", renderInfo.ToString()));
@@ -252,25 +254,26 @@ RenderInfo InputFieldGUI::ElementRender(const RenderInfo& renderInfo)
 	//Vector2 textStartPos = RaylibUtils::ToRaylibVector(renderInfo.m_TopLeftPos);
 	//const float fontSize = m_settings.m_TextSettings.GetFontSize(renderSize);
 	////if (m_settings.m_TextSettings.m_FontSizeType==TextGUIFontSize::ParentArea) 
-	////Assert(false, std::format("Font size is: {} text factor: {}", std::to_string(fontSize), std::to_string(m_settings.m_TextSettings.m_FontSize)));*/
+	////Assert(false, std::format("Font size is: {} text factor: {}", std::to_string(fontSize), std::to_string(m_settings.m_TextSettings.m_FontSize)));
 
 	//textStartPos.x += m_settings.m_TextSettings.m_RightIndent;
 	//DrawTextEx(GetGlobalFont(), inputStr.c_str(), textStartPos,
 	//	fontSize, DEBUG_INFO_CHAR_SPACING.m_X, m_settings.m_TextSettings.m_TextColor);
 
 	//Note: if this object is deselected (even if is readonly) we do not draw disabled overlay
-	if (IsSelected() && HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay(renderInfo);
-	LogError(std::format("reached end here yaya"));
+	//if (IsSelected() && HasFlag(InputFieldFlag::UserUIReadonly)) DrawDisabledOverlay(renderInfo);
+	//LogError(std::format("reached end here yaya"));
 
 	//SetLastFramneRect(GUIRect(renderInfo.m_TopLeftPos, renderInfo.m_RenderSize));
 	//Assert(false, std::format("On render set last rect mutable; {}", GetLastFrameRect().ToString()));
 
-	/*m_lastRenderRect.SetSize(renderSize);
-	m_lastRenderRect.SetTopLeftPos(renderInfo.m_TopLeftPos);*/
+	//m_lastRenderRect.SetSize(renderSize);
+	//m_lastRenderRect.SetTopLeftPos(renderInfo.m_TopLeftPos);
 	
 	//LogError(std::format("Updating input field rect to: {}", m_lastRenderRect.ToString()));
 	return renderInfo;
 }
+*/
 
 void UIInputField::InitFields()
 {

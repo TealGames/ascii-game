@@ -2,9 +2,9 @@
 #include "VisualData.hpp"
 #include "MultiBodySystem.hpp"
 #include "SpriteAnimatorData.hpp"
-#include "Entity.hpp"
 #include "EntityRendererSystem.hpp"
 
+class EntityData;
 namespace ECS
 {
 	class SpriteAnimatorSystem : MultiBodySystem
@@ -14,7 +14,7 @@ namespace ECS
 	public:
 
 	private:
-		void SetVisual(ECS::Entity& entity, const SpriteAnimation& animation);
+		void SetVisual(EntityData& entity, const SpriteAnimation& animation) const;
 	public:
 		SpriteAnimatorSystem(EntityRendererSystem& entityRenderer);
 		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;

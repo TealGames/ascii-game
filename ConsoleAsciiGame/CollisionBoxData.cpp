@@ -489,7 +489,7 @@ void CollisionBoxData::Deserialize(const Json& json)
 {
 	m_aabb = json.at("AABB").get<Physics::AABB>();
 	m_transformOffset = json.at("Offset").get<WorldPosition>();
-	m_transform = &(GetEntitySafe().GetTransform());
+	m_transform = &(GetEntity().GetTransform());
 }
 Json CollisionBoxData::Serialize()
 {

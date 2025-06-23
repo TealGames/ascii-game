@@ -3,10 +3,10 @@
 #include <cstdint>
 #include "RenderCall.hpp"
 
-class GUIHierarchy;
+class UIHierarchy;
 class DebugInfo;
 class CommandConsole;
-class EntityEditorGUI;
+class EntityEditorUI;
 
 namespace Rendering
 {

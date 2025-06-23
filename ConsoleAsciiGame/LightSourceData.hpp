@@ -4,7 +4,7 @@
 #include "ColorGradient.hpp"
 #include "RenderLayer.hpp"
 #include "Point3D.hpp"
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "Color.hpp"
 
 struct LightMapChar

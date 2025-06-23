@@ -31,7 +31,7 @@ ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTi
 
 WorldPosition ParticleEmitterData::GetOriginWorldPos() const
 {
-	return GetEntitySafe().GetTransform().GetGlobalPos() + m_originTransformOffset;
+	return GetEntity().GetTransform().GetGlobalPos() + m_originTransformOffset;
 }
 void ParticleEmitterData::SetSpawnRate(const float& value)
 {

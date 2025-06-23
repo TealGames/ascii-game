@@ -49,7 +49,7 @@ namespace ECS
 				//return;
 
 				if (!Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
-					"but entity's render data: {} has no render layers", data.GetEntitySafe().m_Name))) return;
+					"but entity's render data: {} has no render layers", data.GetEntity().m_Name))) return;
 
 				/*
 				if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !entity.m_Transform.HasMovedThisFrame() &&
@@ -75,7 +75,7 @@ namespace ECS
 				for (auto& buffer : affectedLayerBuffers)
 				{
 					if (!Assert(buffer != nullptr, std::format("Tried to update render system "
-						"but entity's render data: {} found a NULL render layer buffer", data.GetEntitySafe().m_Name))) return;
+						"but entity's render data: {} found a NULL render layer buffer", data.GetEntity().m_Name))) return;
 
 					AddTextToBuffer(*buffer, data);
 					//LogWarning(std::format("Entity: {} has been added to buffer. new buffer: {}", entity.m_Name, ToString(*buffer)));
@@ -93,7 +93,7 @@ namespace ECS
 	void EntityRendererSystem::AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data)
 	{
 		//TODO: should this really be a function of visual data and should we expose the buffer directly from the scene like this
-		data.GetVisualData().AddTextPositionsToBuffer(data.GetEntitySafe().GetTransform().GetGlobalPos(), buffer);
+		data.GetVisualData().AddTextPositionsToBuffer(data.GetEntity().GetTransform().GetGlobalPos(), buffer);
 	}
 }
 

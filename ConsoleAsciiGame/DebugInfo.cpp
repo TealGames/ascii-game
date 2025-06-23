@@ -10,26 +10,31 @@
 #include "InputManager.hpp"
 #include "RaylibUtils.hpp"
 #include "EditorStyles.hpp"
-#include "GUIHierarchy.hpp"
+#include "UIHierarchy.hpp"
+#include "UILayout.hpp"
+#include "UITextComponent.hpp"
 
 const float TOP_LEFT_Y = 0.95;
 const float DEBUG_AREA_WIDTH = 0.3;
 const float DEBUG_AREA_HIGHER_PER_PROPERTY = 0.02;
 constexpr float TEXT_SIZE = 11;
 
-DebugInfo::DebugInfo(GUIHierarchy& hierarchy) :
-	m_textGuis(Utils::ConstructArray<UITextComponent, DEBUG_PROPERTIES_COUNT>("", EditorStyles::GetTextStyleSetSize(TextAlignment::CenterLeft, TEXT_SIZE))),
-	m_layout(LayoutType::Vertical, SizingType::ExpandAndShrink),
+DebugInfo::DebugInfo(UIHierarchy& hierarchy) :
+	m_textGuis(Utils::ConstructArray<UITextComponent*, DEBUG_PROPERTIES_COUNT>()),
+	m_containerLayout(nullptr),
 	m_nextIndex(0), m_mouseDebugData(std::nullopt), m_isEnabled(false)
 {
-	for (auto& text : m_textGuis)
-	{
-		m_layout.AddLayoutElement(&text);
-		text.SetFixed(true, false);
-	}
+	auto [debugInfoEntity, debugInfoTransform] = hierarchy.CreateAtRoot(TOP_LAYER, "DebugInfoContainer");
+	m_containerLayout = &(debugInfoEntity->AddComponent(UILayout(LayoutType::Vertical, SizingType::ExpandAndShrink)));
 	const NormalizedPosition topLeft = { 0, TOP_LEFT_Y };
-	m_container.SetBounds(topLeft, { DEBUG_AREA_WIDTH, topLeft.m_Y - DEBUG_AREA_HIGHER_PER_PROPERTY * DEBUG_PROPERTIES_COUNT });
-	hierarchy.AddToRoot(TOP_LAYER, &m_container);
+	debugInfoTransform->SetBounds(topLeft, { DEBUG_AREA_WIDTH, topLeft.m_Y - DEBUG_AREA_HIGHER_PER_PROPERTY * DEBUG_PROPERTIES_COUNT });
+
+	for (size_t i=0; i<m_textGuis.size(); i++)
+	{
+		auto [textEntity, textTransoform] = m_containerLayout->CreateLayoutElement("TextDebug");
+		m_textGuis[i] = &(textEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleSetSize(TextAlignment::CenterLeft, TEXT_SIZE))));
+		textTransoform->SetFixed(true, false);
+	}
 }
 
 //void DebugInfo::ClearProperties()
@@ -40,7 +45,7 @@ DebugInfo::DebugInfo(GUIHierarchy& hierarchy) :
 void DebugInfo::SetProperty(const std::string& name, const std::string& value)
 {
 	std::string fullStr = std::format("{}: {}", name, value);
-	m_textGuis[m_nextIndex].SetText(fullStr);
+	m_textGuis[m_nextIndex]->SetText(fullStr);
 
 	m_nextIndex++;
 }
@@ -90,8 +95,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scen
 	if (input.IsKeyPressed(TOGGLE_DEBUG_INFO_KEY))
 	{
 		m_isEnabled = !m_isEnabled;
-		if (m_isEnabled) m_container.PushChild(&m_layout);
-		else m_container.TryPopChildAt(0);
+		m_containerLayout->GetEntityMutable().TrySetEntityActive(m_isEnabled);
 	}
 	if (!m_isEnabled) return;
 

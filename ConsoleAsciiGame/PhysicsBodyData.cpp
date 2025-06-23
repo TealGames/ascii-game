@@ -56,10 +56,6 @@ void PhysicsBodyData::InitFields()
 						{m_profile.SetFriction(friction); }, &(m_profile.GetFrictionMutable())),
 	};
 }
-std::vector<std::string> PhysicsBodyData::GetDependencyFlags() const
-{
-	return {Utils::GetTypeName<CollisionBoxData>()};
-}
 
 //bool PhysicsBodyData::ValidateAABB(const Physics::AABB& bounding) const
 //{
@@ -89,7 +85,7 @@ const Physics::PhysicsWorld& PhysicsBodyData::GetPhysicsWorldSafe()
 {
 	if (!Assert(this, m_physicsSimulation != nullptr,
 		std::format("Tried to get physics world of body: '{}' "
-			"but it is NULL", GetEntitySafe().m_Name)))
+			"but it is NULL", GetEntity().m_Name)))
 		throw std::invalid_argument("Failed to retrieve physics world");
 
 	return *m_physicsSimulation;
@@ -192,7 +188,7 @@ bool PhysicsBodyData::HasAnyConstraints() const
 const CollisionBoxData& PhysicsBodyData::GetCollisionBox() const
 {
 	if (!Assert(this, m_collider!=nullptr, std::format("Tried to get collider data for entity:{} but was NULL", 
-		GetEntitySafe().m_Name)));
+		GetEntity().m_Name)));
 		throw std::invalid_argument("Invalid Collision Box data");
 
 	return *m_collider;
@@ -352,7 +348,7 @@ void PhysicsBodyData::Deserialize(const Json& json)
 
 	//m_aabb= json.at("AABB").get<Physics::AABB>();
 	//ValidateAABB(m_aabb);
-	m_collider= TryDeserializeComponent<CollisionBoxData>(json.at("Collider"), GetEntitySafeMutable());
+	m_collider= TryDeserializeComponent<CollisionBoxData>(json.at("Collider"), GetEntityMutable());
 	//LogError(std::format("Finsihed deserialiation of collier"));
 	//m_transformOffset = json.at("Offset").get<Vec2>();
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "AABB.hpp"
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "IValidateable.hpp"
 #include <unordered_map>
 

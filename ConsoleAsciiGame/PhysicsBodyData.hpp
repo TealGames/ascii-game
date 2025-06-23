@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "Vec2.hpp"
 //#include "WorldPosition.hpp"
 //#include "Direction.hpp"

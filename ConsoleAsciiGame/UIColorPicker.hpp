@@ -1,19 +1,20 @@
 #pragma once
 #include "UISelectableData.hpp"
 #include "IRenderable.hpp"
-#include "GUIStyle.hpp"
+#include "UIStyle.hpp"
 #include "Color.hpp"
 #include <functional>
 
-class PopupGUIManager;
+class PopupUIManager;
 namespace Input { class InputManager; }
+namespace ECS { class UIColorPickerSystem; }
 
 class UIPanel;
 using ColorPickerAction = std::function<void(Utils::Color)>;
 class UIColorPickerData :  public UISelectableData
 {
 private:
-	PopupGUIManager* m_popupManager;
+	PopupUIManager* m_popupManager;
 	UIRendererData* m_renderer;
 	UIPanel* m_fieldPanel;
 	//GUIStyle m_settings;
@@ -21,11 +22,12 @@ private:
 
 	ColorPickerAction m_valueSetCallback;
 public:
+	friend class ECS::UIColorPickerSystem;
 
 private:
 public:
 	UIColorPickerData();
-	UIColorPickerData(const GUIStyle& settings);
+	UIColorPickerData(const UIStyle& settings);
 
 	void SetColor(const Utils::Color color);
 	//void SetSettings(const GUIStyle& settings);

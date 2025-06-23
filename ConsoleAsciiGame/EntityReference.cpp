@@ -18,5 +18,5 @@ std::string EntityReference::GetSceneName() const
 bool EntityReference::MatchesScene(const Component* component)
 {
 	if (component == nullptr) return false;
-	return m_Scene->GetName() == component->GetEntitySafe().m_SceneName;
+	return m_Scene->GetName() == component->GetEntity().m_SceneName;
 }

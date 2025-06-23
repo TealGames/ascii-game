@@ -4,9 +4,6 @@
 #include <optional>
 #include "WorldPosition.hpp"
 #include "ScreenPosition.hpp"
-#include "UITextComponent.hpp"
-#include "UIContainer.hpp"
-#include "UILayout.hpp"
 #include "raylib.h"
 
 class Scene;
@@ -15,7 +12,10 @@ namespace Input
 	class InputManager;
 }
 class CameraData;
-class GUIHierarchy;
+class UIHierarchy;
+class UITransformData;
+class UITextComponent;
+class UILayout;
 
 struct DebugMousePosition
 {
@@ -27,9 +27,8 @@ constexpr int DEBUG_PROPERTIES_COUNT = 10;
 class DebugInfo //: public IBasicRenderable
 {
 private:
-	UIContainer m_container;
-	UILayout m_layout;
-	std::array<UITextComponent, DEBUG_PROPERTIES_COUNT> m_textGuis;
+	UILayout* m_containerLayout;
+	std::array<UITextComponent*, DEBUG_PROPERTIES_COUNT> m_textGuis;
 	size_t m_nextIndex;
 	//std::vector<std::size_t> m_highlightedIndices;
 
@@ -41,7 +40,7 @@ public:
 
 private:
 public:
-	DebugInfo(GUIHierarchy& hierarchy);
+	DebugInfo(UIHierarchy& hierarchy);
 
 	//void ClearProperties();
 	void Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera);

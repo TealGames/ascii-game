@@ -2,13 +2,13 @@
 #include "UIColorPicker.hpp"
 #include "RaylibUtils.hpp"
 #include "Debug.hpp"
-#include "ColorPopupGUI.hpp"
-#include "PopupGUIManager.hpp"
+#include "ColorPopupUI.hpp"
+#include "PopupUIManager.hpp"
 #include "HelperFunctions.hpp"
 #include "UIPanel.hpp"
 
-UIColorPickerData::UIColorPickerData() : UIColorPickerData(GUIStyle()) {}
-UIColorPickerData::UIColorPickerData(const GUIStyle& settings)
+UIColorPickerData::UIColorPickerData() : UIColorPickerData(UIStyle()) {}
+UIColorPickerData::UIColorPickerData(const UIStyle& settings)
 	: UISelectableData(), m_color(), m_popupManager(nullptr), m_valueSetCallback(), m_renderer(nullptr), m_fieldPanel(nullptr) //m_settings(settings), 
 {
 	//LogWarning(std::format("coloc picker addr create:{}", Utils::ToStringPointerAddress(this)));
@@ -16,8 +16,8 @@ UIColorPickerData::UIColorPickerData(const GUIStyle& settings)
 		{
 			//Assert(false, "PISS");
 			//LogWarning(std::format("color picker call addr:{}", Utils::ToStringPointerAddress(this)));
-			ColorPopupGUI* popup = nullptr; 
-			const bool isEnabled= m_popupManager->TryTogglePopupAt<ColorPopupGUI>(m_renderer->GetLastRenderRect(),
+			ColorPopupUI* popup = nullptr; 
+			const bool isEnabled= m_popupManager->TryTogglePopupAt<ColorPopupUI>(m_renderer->GetLastRenderRect(),
 				PopupPositionFlags::BelowRect | PopupPositionFlags::CenteredXToRect, &popup);
 
 			if (popup==nullptr)
@@ -35,11 +35,11 @@ UIColorPickerData::UIColorPickerData(const GUIStyle& settings)
 		});*/
 
 	//TODO: maybe make it possible to add events to the popup directly so we do not have to do checks for correct typye
-	m_popupManager->m_OnPopupClosed.AddListener([this](const std::string& type, const PopupGUI* popup)-> void
+	m_popupManager->m_OnPopupClosed.AddListener([this](const std::string& type, const PopupUI* popup)-> void
 		{
-			if (!m_popupManager->IsPopupType<ColorPopupGUI>(type)) return;
+			if (!m_popupManager->IsPopupType<ColorPopupUI>(type)) return;
 
-			const ColorPopupGUI* colorPopup = dynamic_cast<const ColorPopupGUI*>(popup);
+			const ColorPopupUI* colorPopup = dynamic_cast<const ColorPopupUI*>(popup);
 			//Assert(false, std::format("Reached popup of color:{} internal color:{}", colorPopup->GetColor().ToString(), ));
 			SetColor(colorPopup->GetColor());
 		});

@@ -1,6 +1,6 @@
 #pragma once
 #include "raylib.h"
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "TextBuffer.hpp"
 #include <vector>
 #include <cstdint>

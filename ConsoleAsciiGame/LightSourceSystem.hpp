@@ -15,6 +15,7 @@
 #include "LightSourceData.hpp"
 #include "Scene.hpp"
 
+class EntityData;
 namespace ECS
 {
 	constexpr std::uint8_t MIN_LIGHT_LEVEL = std::numeric_limits< std::uint8_t>::min();
@@ -58,12 +59,12 @@ namespace ECS
 		/// <returns></returns>
 		Color ApplyColorFilter(const Color& originalColor, const Utils::Point3D& fractionalColor, const float& multiplier) const;
 
-		void CreateLightingForPoint(LightSourceData& data, const ECS::Entity& entity, const WorldPosition& centerPos,
+		void CreateLightingForPoint(LightSourceData& data, const WorldPosition& centerPos,
 			FragmentedTextBuffer& buffer, bool displayLightLevels);
 
-		void RenderLight(LightSourceData& data, ECS::Entity& entity, std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels = false);
+		void RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
-		Color CalculateNewColor(LightSourceData& data, const ECS::Entity& entity, const TextBufferCharPosition& bufferPos, const float& distance, 
+		Color CalculateNewColor(LightSourceData& data, const TextBufferCharPosition& bufferPos, const float& distance, 
 			std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:

@@ -4,16 +4,16 @@
 #include "HelperFunctions.hpp"
 #include "Debug.hpp"
 #include "RaylibUtils.hpp"
-#include "GUISelectorManager.hpp"
-#include "GUIHierarchy.hpp"
+#include "UIInteractionManager.hpp"
+#include "UIHierarchy.hpp"
 #include "EditorStyles.hpp"
+#include "UIInputField.hpp"
+#include "UILayout.hpp"
 
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
-
 static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_ONE;
 
 static const Color CONSOLE_COLOR = { GRAY.r, GRAY.g, GRAY.b, 100 };
-
 static constexpr float CONSOLE_HEIGHT = 0.05;
 static const NormalizedPosition OUTPUT_MESSAGE_AREA = {0.6, 0.2};
 
@@ -23,29 +23,46 @@ static constexpr int COMMAND_CONSOLE_SPACING = 3;
 static constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
 static constexpr int COMMAND_CONSOLE_TEXT_INDENT = 10;
 
-CommandConsole::CommandConsole(const Input::InputManager& input, GUIHierarchy& hierarchy, GUISelectorManager& selector) :
+CommandConsole::CommandConsole(const Input::InputManager& input, UIHierarchy& hierarchy, UIInteractionManager& selector) :
 	m_inputManager(input), m_prompts(), m_messageCloseTimes(), 
-	m_inputField(input, InputFieldType::Any, 
-		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit, 
-		EditorStyles::GetInputFieldStyle(TextAlignment::TopLeft)),
-	m_outputMessageLayout(LayoutType::Vertical, SizingType::ExpandAndShrink), m_toggleableContainer(), m_container(),
-	m_outputMessagesTextGuis(Utils::ConstructArray<UITextComponent, MAX_OUTPUT_MESSAGES>("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))),
+	m_inputField(nullptr), m_outputMessageLayout(nullptr), m_container(nullptr),
+	m_outputMessagesTextGuis(Utils::ConstructArray<UITextComponent*, MAX_OUTPUT_MESSAGES>()),
 	m_nextTextGuiIndex(0), m_timeSinceOpen(0), m_isEnabled(false)
 {
+	EntityData* containerEntity = nullptr;
+	std::tie(containerEntity, m_container) = hierarchy.CreateAtRoot(DEFAULT_LAYER, "CommandConsoleContainer");
+
+	auto [inputFieldEntity, inputFieldTransform] = containerEntity->CreateChildUI("InputField");
+	m_inputField = &(inputFieldEntity->AddComponent(UIInputField(input, InputFieldType::Any,
+		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit,
+		EditorStyles::GetInputFieldStyle(TextAlignment::TopLeft))));
 	//GUIStyle fieldSettings = GUIStyle(GRAY, TextGUIStyle(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), 
 	//	TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
-	m_inputField.SetBounds({ 0, CONSOLE_HEIGHT }, NormalizedPosition::BOTTOM_RIGHT);
-	m_inputField.SetSubmitAction([this](std::string input) -> void
+	inputFieldTransform->SetBounds({ 0, CONSOLE_HEIGHT }, NormalizedPosition::BOTTOM_RIGHT);
+	m_inputField->SetSubmitAction([this](std::string input) -> void
 		{
 			TryInvokePrompt();
 			ResetInput();
 		});
-	m_inputField.SetKeyPressAction(LAST_COMMAND_KEY, [this](std::string input) -> void
+	m_inputField->SetKeyPressAction(LAST_COMMAND_KEY, [this](std::string input) -> void
 		{
 			//Assert(false, std::format("Triggering stuff last input: {}", m_inputField.GetLastInput()));
 			//TODO: this does not work because we override underlying input and not attempted input
-			m_inputField.OverrideInput(m_inputField.GetLastInput());
+			m_inputField->OverrideInput(m_inputField->GetLastInput());
 		});
+
+	auto [layoutEntity, layoutTransform] = containerEntity->CreateChildUI("Layout");
+	m_outputMessageLayout = &(layoutEntity->AddComponent(UILayout(LayoutType::Vertical, SizingType::ExpandAndShrink)));
+
+	const NormalizedPosition messageLayoutTopLeft = inputFieldTransform->GetRect().GetTopLeftPos() + NormalizedPosition(0, OUTPUT_MESSAGE_AREA.m_Y);
+	layoutTransform->SetBounds(messageLayoutTopLeft, { messageLayoutTopLeft.m_X + OUTPUT_MESSAGE_AREA.m_X, inputFieldTransform->GetRect().GetTopLeftPos().m_Y });
+
+	for (size_t i=0; i<m_outputMessagesTextGuis.size(); i++)
+	{
+		auto [textEntity, textTransform] = containerEntity->CreateChildUI(std::format("Text{}", std::to_string(i)));
+		m_outputMessagesTextGuis[i] = &(textEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))));
+		textTransform->SetFixed(true, false);
+	}
 
 	DebugProperties::OnMessageLogged.AddListener(
 		[this](const LogType& logType, const std::string& message, const bool& logToConsole, const bool& pause)-> void
@@ -57,14 +74,6 @@ CommandConsole::CommandConsole(const Input::InputManager& input, GUIHierarchy& h
 
 			LogOutputMessage(message, messageType);
 		});
-
-	const NormalizedPosition messageLayoutTopLeft = m_inputField.GetRect().GetTopLeftPos() + NormalizedPosition(0, OUTPUT_MESSAGE_AREA.m_Y);
-	m_outputMessageLayout.SetBounds(messageLayoutTopLeft, { messageLayoutTopLeft.m_X + OUTPUT_MESSAGE_AREA.m_X, m_inputField.GetRect().GetTopLeftPos().m_Y});
-	for (auto& text : m_outputMessagesTextGuis) text.SetFixed(true, false);
-
-	m_toggleableContainer.PushChild(&m_inputField);
-	m_toggleableContainer.PushChild(&m_outputMessageLayout);
-	hierarchy.AddToRoot(DEFAULT_LAYER, &m_container);
 }
 
 std::string CommandConsole::FormatPromptName(const std::string& name)
@@ -115,7 +124,7 @@ void CommandConsole::DeletePrompts()
 
 bool CommandConsole::TryInvokePrompt()
 {
-	std::string formattedPrompt = FormatPromptName(m_inputField.GetInput());
+	std::string formattedPrompt = FormatPromptName(m_inputField->GetInput());
 	std::vector<std::string> promptSegments = Utils::Split(formattedPrompt, ' ');
 
 	if (!Assert(this, !promptSegments.empty(), 
@@ -151,7 +160,7 @@ bool CommandConsole::TryInvokePrompt()
 	{
 		if (prompt->TryInvokeAction(promptReversed))
 		{
-			const std::string message = std::format("Console command: '{}' has been successfully executed", m_inputField.GetInput());
+			const std::string message = std::format("Console command: '{}' has been successfully executed", m_inputField->GetInput());
 			LogOutputMessage(message, ConsoleOutputMessageType::Success);
 			Log(message);
 			return true;
@@ -167,7 +176,7 @@ bool CommandConsole::TryInvokePrompt()
 std::vector<std::string> CommandConsole::GetPromptDocumentation(const std::string& promptName)
 {
 	std::vector<std::string> docs = {};
-	std::string formattedPrompt = FormatPromptName(m_inputField.GetInput());
+	std::string formattedPrompt = FormatPromptName(m_inputField->GetInput());
 	auto it = TryGetIteratorForPromptName(formattedPrompt);
 
 	for (const auto& promptOverload : it->second)
@@ -220,9 +229,9 @@ void CommandConsole::LogOutputMessages(const std::vector<std::string>& messages,
 void CommandConsole::SetNextMessage(const std::string& message, const Color color)
 {
 	m_messageCloseTimes.emplace(m_messageCloseTimes.begin(), m_timeSinceOpen + MESSAGE_DISPLAY_TIME_SECONDS);
-	m_outputMessagesTextGuis[m_nextTextGuiIndex].SetText(message);
-	m_outputMessagesTextGuis[m_nextTextGuiIndex].SetTextColor(color);
-	m_outputMessageLayout.PushChild(&m_outputMessagesTextGuis[m_nextTextGuiIndex]);
+	m_outputMessagesTextGuis[m_nextTextGuiIndex]->SetText(message);
+	m_outputMessagesTextGuis[m_nextTextGuiIndex]->SetTextColor(color);
+	m_outputMessagesTextGuis[m_nextTextGuiIndex]->GetEntityMutable().TryActivateEntity();
 
 	m_nextTextGuiIndex++;
 }
@@ -231,8 +240,8 @@ void CommandConsole::RemoveBackMessage()
 	if (m_nextTextGuiIndex == 0) return;
 
 	m_messageCloseTimes.pop_back();
-	m_outputMessagesTextGuis[m_nextTextGuiIndex-1].SetText("");
-	m_outputMessageLayout.TryPopChildAt(m_nextTextGuiIndex-1);
+	m_outputMessagesTextGuis[m_nextTextGuiIndex-1]->SetText("");
+	m_outputMessagesTextGuis[m_nextTextGuiIndex - 1]->GetEntityMutable().DeactivateEntity();
 
 	m_nextTextGuiIndex--;
 }
@@ -245,11 +254,10 @@ void CommandConsole::Update(const float scaledDeltaTime)
 		if (m_isEnabled)
 		{
 			m_timeSinceOpen = 0;
-			m_container.PushChild(&m_toggleableContainer);
 			ResetInput();
 			//Assert(false, std::format("Input reset"));
 		}
-		else m_container.TryPopChildAt(0);
+		m_container->GetEntityMutable().TrySetEntityActive(m_isEnabled);
 	}
 	if (!m_isEnabled || m_messageCloseTimes.empty()) return;
 
@@ -305,7 +313,7 @@ RenderInfo CommandConsole::Render(const RenderInfo& renderInfo)
 */
 
 bool CommandConsole::IsEnabled() const { return m_isEnabled; }
-void CommandConsole::ResetInput() { m_inputField.ResetInput(); }
+void CommandConsole::ResetInput() { m_inputField->ResetInput(); }
 //std::string CommandConsole::GetInput() const
 //{
 //	return m_input + "_";

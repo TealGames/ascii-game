@@ -3,6 +3,7 @@
 #include "HelperFunctions.hpp"
 #include "EntityRendererData.hpp"
 #include "SpriteAnimation.hpp"
+#include "EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "ProfilerTimer.hpp"
@@ -21,7 +22,7 @@ namespace ECS
 		if (deltaTime <= 0) return;
 
 		scene.OperateOnComponents<SpriteAnimatorData>(
-			[this, &scene, deltaTime](SpriteAnimatorData& data, ECS::Entity& entity)-> void
+			[this, &scene, deltaTime](SpriteAnimatorData& data)-> void
 			{
 				if (!data.IsPlayingAnimation()) return;
 
@@ -44,21 +45,21 @@ namespace ECS
 				{
 					currentAnim->m_FrameIndex = (currentAnim->m_FrameIndex + 1) % currentAnim->m_Frames.size();
 					if (currentAnim->m_FrameIndex==0) currentAnim->m_NormalizedTime -= currentAnim->m_SingleLoopLength;
-					SetVisual(entity, *currentAnim);
+					SetVisual(data.GetEntityMutable(), *currentAnim);
 				}
 			});
 	}
 
-	void SpriteAnimatorSystem::SetVisual(ECS::Entity& entity, const SpriteAnimation& animation)
+	void SpriteAnimatorSystem::SetVisual(EntityData& entity, const SpriteAnimation& animation) const
 	{
 		//TODO: this should maybe be included as dependency for the animator?
 		EntityRendererData* renderer = entity.TryGetComponentMutable<EntityRendererData>();
 		if (!Assert(this, renderer != nullptr, std::format("Tried to set the visual on sprite animator for entity: {} "
-			"but it does not have entity renderer component", entity.GetName()))) return;
+			"but it does not have entity renderer component", entity.m_Name))) return;
 
 		const VisualData* currAnimVisual = animation.TryGetCurrentVisualData();
 		if (!Assert(this, currAnimVisual != nullptr, std::format("Tried to set the animation visual for entity:{} "
-			"but failed to retrieve current animation visual. FrameIndex:{}", entity.GetName(), std::to_string(animation.m_FrameIndex))))
+			"but failed to retrieve current animation visual. FrameIndex:{}", entity.m_Name, std::to_string(animation.m_FrameIndex))))
 			return;
 
 		//TODO: perhaps there should be some optimization here and maybe we can reintroduce frame deltas in some way?

@@ -1,6 +1,7 @@
 #pragma once
 #include "UIButton.hpp"	
 
+class GlobalEntityManager;
 namespace ECS
 {
 	class UIButtonSystem
@@ -12,7 +13,7 @@ namespace ECS
 	public:
 		UIButtonSystem();
 
-		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime);
+		void SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime);
 	};
 }
 

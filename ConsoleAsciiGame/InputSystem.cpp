@@ -18,7 +18,7 @@ namespace ECS
     {
     }
 
-    void InputSystem::SystemUpdate(Scene& scene, InputData& data, ECS::Entity& entity, const float& deltaTime)
+    void InputSystem::SystemUpdate(Scene& scene, InputData& data, const float& deltaTime)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("InputSystem::SystemUpdate");

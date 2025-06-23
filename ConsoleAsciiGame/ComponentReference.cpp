@@ -6,7 +6,7 @@ ComponentReference::ComponentReference()
 	: m_Entity(nullptr), m_ComponentIndex(-1) {}
 
 ComponentReference::ComponentReference(Component* componentData) 
-	: m_Entity(&(componentData->GetEntitySafeMutable())), m_ComponentIndex(-1)
+	: m_Entity(&(componentData->GetEntityMutable())), m_ComponentIndex(-1)
 {
 	if (!Assert(this, m_Entity != nullptr, std::format("Tried to construct a component reference with component data: {} "
 		"but the entity from that component data is null", componentData->ToString())))

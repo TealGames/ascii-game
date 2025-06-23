@@ -9,7 +9,7 @@
 #include <optional>
 #include <type_traits>
 #include "HelperFunctions.hpp"
-#include "ComponentData.hpp"
+#include "Component.hpp"
 #include "ComponentFieldReference.hpp"
 #include "Debug.hpp"
 

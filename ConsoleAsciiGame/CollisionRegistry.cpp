@@ -22,7 +22,7 @@ CollisionRegistry::CollisionRegistry() : m_collisions() {}
 
 std::string CollisionRegistry::CreateCollisionKey(const CollisionBoxData& boxA, const CollisionBoxData& boxB) const
 {
-	return boxA.GetEntitySafe().m_Name + COLLISION_KEY_SEPARATOR + boxB.GetEntitySafe().m_Name;
+	return boxA.GetEntity().m_Name + COLLISION_KEY_SEPARATOR + boxB.GetEntity().m_Name;
 }
 
 /*

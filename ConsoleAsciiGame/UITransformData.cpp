@@ -3,9 +3,9 @@
 #include "HelperFunctions.hpp"
 #include "EntityData.hpp"
 
-UITransformData::UITransformData() : UITransformData(RelativeGUIRect()) {}
-UITransformData::UITransformData(const NormalizedPosition& size) : UITransformData(RelativeGUIRect(size)) {}
-UITransformData::UITransformData(const RelativeGUIRect& relativeRect)
+UITransformData::UITransformData() : UITransformData(RelativeUIRect()) {}
+UITransformData::UITransformData(const NormalizedPosition& size) : UITransformData(RelativeUIRect(size)) {}
+UITransformData::UITransformData(const RelativeUIRect& relativeRect)
 	: m_relativeRect(relativeRect), m_flags(), m_padding() {}
 
 
@@ -29,16 +29,6 @@ bool UITransformData::IsFixedHorizontal() const
 	return Utils::HasFlagAll(m_flags, UITransformFlags::FixedHorizontal);
 }
 
-void UITransformData::SetEventBlocker(const bool status)
-{
-	if (status) Utils::AddFlags(m_flags, UITransformFlags::BlockSelectionEvents);
-	else Utils::RemoveFlags(m_flags, UITransformFlags::BlockSelectionEvents);
-}
-bool UITransformData::IsSelectionEventBlocker() const
-{
-	return Utils::HasFlagAll(m_flags, UITransformFlags::BlockSelectionEvents);
-}
-
 void UITransformData::SetSizeUnsafe(const Vec2& size)
 {
 	const Vec2 parentSize = GetSize().GetPos();
@@ -46,9 +36,9 @@ void UITransformData::SetSizeUnsafe(const Vec2& size)
 	bool isFixedHorizontal = false;
 	bool isFixedVertical = false;
 
-	if (GetEntitySafe().GetChildCount() > 0)
+	if (GetEntity().GetChildCount() > 0)
 	{
-		for (auto& child : GetEntitySafeMutable().GetChildrenOfTypeMutable<UITransformData>())
+		for (auto& child : GetEntityMutable().GetChildrenOfTypeMutable<UITransformData>())
 		{
 			if (child == nullptr) continue;
 
@@ -120,13 +110,35 @@ void UITransformData::TryCenter(const bool centerX, const bool centerY)
 	SetTopLeftPos({ centerX ? extraSpace.m_X / 2 : currTopLeft.m_X, centerY ? extraSpace.m_Y / 2 + size.m_Y : currTopLeft.m_Y });
 }
 
-void UITransformData::SetPadding(const RelativeGUIPadding& padding) { m_padding = padding; }
-const RelativeGUIPadding& UITransformData::GetPadding() const { return m_padding; }
-RelativeGUIPadding& UITransformData::GetPaddingMutable() { return m_padding; }
+void UITransformData::SetPadding(const RelativeUIPadding& padding) { m_padding = padding; }
+const RelativeUIPadding& UITransformData::GetPadding() const { return m_padding; }
+RelativeUIPadding& UITransformData::GetPaddingMutable() { return m_padding; }
 
 NormalizedPosition UITransformData::GetSize() const { return m_relativeRect.GetSize(); }
-const RelativeGUIRect& UITransformData::GetRect() const { return m_relativeRect; }
-RelativeGUIRect& UITransformData::GetRectMutable() { return m_relativeRect; }
+const RelativeUIRect& UITransformData::GetRect() const { return m_relativeRect; }
+RelativeUIRect& UITransformData::GetRectMutable() { return m_relativeRect; }
+
+UIRect UITransformData::CalculateRect(const UIRect& parentInfo) const
+{
+	return UIRect(parentInfo.m_TopLeftPos + GetSizeFromFactor(Abs(GetRect().GetTopLeftPos().GetPos() -
+		NormalizedPosition::TOP_LEFT), parentInfo.GetSize()), GetRect().GetSize(parentInfo.GetSize()));
+}
+UIRect UITransformData::CalculateChildRect(const UIRect& thisRenderInfo) const
+{
+	const RelativeUIPadding& padding = GetPadding();
+	if (!padding.HasNonZeroPadding()) return thisRenderInfo;
+
+	const ScreenPosition paddingTopLeft = ScreenPosition(padding.m_Left.GetValue() * thisRenderInfo.GetSize().m_X,
+		padding.m_Top.GetValue() * thisRenderInfo.GetSize().m_Y);
+	const ScreenPosition paddingBottomRight = ScreenPosition(padding.m_Right.GetValue() * thisRenderInfo.GetSize().m_X,
+		padding.m_Bottom.GetValue() * thisRenderInfo.GetSize().m_Y);
+	//if (padding.HasNonZeroPadding())
+	//{
+	//	//Assert(false, std::format("NOn zero padding tTL:{} bR:{} padding:{}", paddingTopLeft.ToString(), paddingBottomRight.ToString(), m_padding.ToString()));
+	//}
+
+	return UIRect(thisRenderInfo.m_TopLeftPos + paddingTopLeft, thisRenderInfo.GetSize() - paddingTopLeft - paddingBottomRight);
+}
 
 //std::vector<std::string> UITransformData::GetDependencyFlags() const
 //{
@@ -139,7 +151,7 @@ void UITransformData::InitFields()
 
 std::string UITransformData::ToString() const
 {
-	return std::format("[Id:{} Type:{} TL:{} BR:{} Size:{}]", GetEntitySafe().ToStringId(),
+	return std::format("[Id:{} Type:{} TL:{} BR:{} Size:{}]", GetEntity().ToStringId(),
 		Utils::FormatTypeName(typeid(*this).name()), m_relativeRect.GetTopLeftPos().ToString(),
 		m_relativeRect.GetBottomRighttPos().ToString(), GetSize().ToString());
 }
