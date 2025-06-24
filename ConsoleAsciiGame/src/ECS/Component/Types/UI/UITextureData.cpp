@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "UITextureData.hpp"
-#include "TextureAsset.hpp"
-#include "EntityData.hpp"
-#include "UIRendererComponent.hpp"
-#include "GameRenderer.hpp"
+#include "ECS/Component/Types/UI/UITextureData.hpp"
+#include "Core/Asset/TextureAsset.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "Core/Rendering/GameRenderer.hpp"
 
 UITextureData::UITextureData() : m_texture(nullptr), m_renderer(nullptr) {}
 UITextureData::UITextureData(const TextureAsset& texture) : m_texture(&texture) {}

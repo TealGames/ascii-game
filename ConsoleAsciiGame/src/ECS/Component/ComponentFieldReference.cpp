@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "ComponentFieldReference.hpp"
-#include "Debug.hpp"
-#include "HelperFunctions.hpp"
+#include "ECS/Component/ComponentFieldReference.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 ComponentFieldReference::ComponentFieldReference()
 	: m_ComponentRef(), m_FieldRef(nullptr) {}//m_Entity(nullptr), m_ComponentRef() {}, m_ComponentIndex(-1), m_FieldRef(nullptr) {}

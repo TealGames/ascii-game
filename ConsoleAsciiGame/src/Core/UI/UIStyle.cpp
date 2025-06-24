@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "UIStyle.hpp"
+#include "Core/UI/UIStyle.hpp"
 
 UIStyle::UIStyle() : UIStyle(GRAY, TextUIStyle()) {}
 UIStyle::UIStyle(const Color& backgroundColor, const TextUIStyle& textSetting) :

@@ -1,5 +1,5 @@
 #pragma once
-#include "UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 namespace ECS
 {

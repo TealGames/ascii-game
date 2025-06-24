@@ -1,11 +1,11 @@
 #pragma once
-#include "Event.hpp"
-#include "CooldownEvent.hpp"
-#include "HelperMacros.hpp"
-#include "HelperFunctions.hpp"
-#include "Vec2.hpp"
-#include "UIRect.hpp"
-#include "Component.hpp"
+#include "Utils/Data/Event.hpp"
+#include "Utils/Data/CooldownEvent.hpp"
+#include "Utils/HelperMacros.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Core/UI/UIRect.hpp"
+#include "ECS/Component/Component.hpp"
 
 class UIRendererData;
 class UISelectableData;

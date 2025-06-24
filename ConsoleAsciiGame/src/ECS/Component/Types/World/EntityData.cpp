@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "EntityData.hpp"
-#include "EntityRegistry.hpp"
-#include "UITransformData.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Entity/EntityRegistry.hpp"
+#include "ECS/Component/Types/UI/UITransformData.hpp"
 
 //TODO: add a reserved entity name ssytem and not allowing those names to be used
 const char* EntityData::GLOBAL_SCENE_NAME = "global";

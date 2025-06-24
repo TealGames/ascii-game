@@ -1,6 +1,6 @@
 #pragma once
-#include "NormalizedPosition.hpp"
-#include "ScreenPosition.hpp"
+#include "Utils/Data/NormalizedPosition.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
 #include <string>
 
 class RelativeUIRect

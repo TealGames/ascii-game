@@ -1,9 +1,9 @@
 #pragma once
 #include <optional>
-#include "CameraSettings.hpp"
-#include "Component.hpp"
-#include "WorldPosition.hpp"
-#include "TextBuffer.hpp"
+#include "Core/Camera/CameraSettings.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Utils/Data/WorldPosition.hpp"
+#include "Core/Visual/TextBuffer.hpp"
 #include <vector>
 
 class CameraData : public Component

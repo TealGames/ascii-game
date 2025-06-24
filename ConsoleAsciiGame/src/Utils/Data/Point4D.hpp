@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
-#include "Point2D.hpp"
-#include "Point3D.hpp"
+#include "Utils/Data/Point2D.hpp"
+#include "Utils/Data/Point3D.hpp"
 
 namespace Utils
 {

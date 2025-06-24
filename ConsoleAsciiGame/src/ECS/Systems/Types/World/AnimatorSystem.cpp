@@ -1,14 +1,14 @@
 #include "pch.hpp"
 #include <variant>
 #include <type_traits>
-#include "AnimatorSystem.hpp"
-#include "AnimatorData.hpp"
-#include "HelperFunctions.hpp"
-#include "Scene.hpp"
-#include "EntityData.hpp"
+#include "ECS/Systems/Types/World/AnimatorSystem.hpp"
+#include "ECS/Component/Types/World/AnimatorData.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

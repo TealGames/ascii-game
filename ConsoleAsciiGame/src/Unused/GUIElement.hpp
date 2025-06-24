@@ -1,14 +1,12 @@
 #pragma once
 #include <vector>
 #include <cstdint>
-#include "RelativeUIRect.hpp"
-#include "Event.hpp"
+#include "Core/UI/RelativeUIRect.hpp"
+#include "Utils/Data/Event.hpp"
 
-#include "RelativeUIPadding.hpp"
-#include "UIRect.hpp"
-#include "Component.hpp"
-#include "RenderInfo.hpp"
-
+#include "Core/UI/RelativeUIPadding.hpp"
+#include "Core/UI/UIRect.hpp"
+#include "ECS/Component/Component.hpp"
 
 
 /// <summary>

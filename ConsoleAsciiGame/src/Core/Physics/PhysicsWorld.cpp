@@ -1,11 +1,11 @@
 #include "pch.hpp"
-#include "PhysicsWorld.hpp"
-#include "EntityData.hpp"
-#include "ProfilerTimer.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
-#include "CollisionBoxData.hpp"
-#include "CollisionRegistry.hpp"
+#include "Core/Physics/PhysicsWorld.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "ECS/Component/Types/World/CollisionBoxData.hpp"
+#include "Core/Collision/CollisionRegistry.hpp"
 
 namespace Physics
 {

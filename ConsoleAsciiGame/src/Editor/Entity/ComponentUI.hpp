@@ -1,12 +1,12 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "UILayout.hpp"
-#include "Component.hpp"
-#include "ComponentFieldUI.hpp"
-#include "InputManager.hpp"
-#include "UIToggleComponent.hpp"
-#include "UIPanel.hpp"
+#include "ECS/Component/Types/UI/UILayout.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Editor/Entity/ComponentFieldUI.hpp"
+#include "Core/Input/InputManager.hpp"
+#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 class EntityUI;
 class UIInteractionManager;

@@ -1,7 +1,7 @@
 #pragma once
 #include <map>
-#include "CameraData.hpp"
-#include "IValidateable.hpp"
+#include "ECS/Component/Types/World/CameraData.hpp"
+#include "Core/IValidateable.hpp"
 #include <cstdint>
 #include <limits>
 

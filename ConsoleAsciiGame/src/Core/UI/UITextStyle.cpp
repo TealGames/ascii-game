@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "UITextStyle.hpp"
+#include "Core/UI/UITextStyle.hpp"
 
 TextUIStyle::TextUIStyle(const Color& color, const FontProperties& fontData, 
 	const TextAlignment& alignment, const UIPadding& padding, const float& factor, const bool& fitToArea) :

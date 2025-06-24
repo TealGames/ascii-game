@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "FontAsset.hpp"
-#include "Debug.hpp"
-#include "RaylibUtils.hpp"
-#include "IOHandler.hpp"
+#include "Core/Asset/FontAsset.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Utils/IOHandler.hpp"
 
 const std::string FontAsset::EXTENSION = ".txt";
 

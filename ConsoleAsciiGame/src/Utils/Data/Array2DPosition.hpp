@@ -1,5 +1,5 @@
 #pragma once
-#include "Vec2Int.hpp"
+#include "Utils/Data/Vec2Int.hpp"
 
 constexpr int NULL_INDEX = -1;
 class Array2DPosition final

@@ -1,6 +1,6 @@
 #pragma once
-#include "WorldPosition.hpp"
-#include "ScreenPosition.hpp"
+#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
 
 class EntityData;
 

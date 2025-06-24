@@ -1,14 +1,14 @@
 #pragma once
 #include "raylib.h"
-#include "Component.hpp"
-#include "TextBuffer.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Core/Visual/TextBuffer.hpp"
 #include <vector>
 #include <cstdint>
-#include "WorldPosition.hpp"
-#include "FloatRange.hpp"
-#include "RenderLayer.hpp"
-#include "ColorGradient.hpp"
-#include "ObjectPool.hpp"
+#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Data/FloatRange.hpp"
+#include "Core/Rendering/RenderLayer.hpp"
+#include "Utils/Data/ColorGradient.hpp"
+#include "Utils/DataStructure/ObjectPool.hpp"
 
 struct Particle
 {

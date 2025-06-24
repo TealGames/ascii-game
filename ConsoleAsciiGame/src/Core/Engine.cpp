@@ -1,30 +1,30 @@
 #include "pch.hpp"
-#include "Engine.hpp"
+#include "Core/Engine.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "raylib.h"
 #include "Globals.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "TransformSystem.hpp"
-#include "EntityRendererSystem.hpp"
-#include "CameraSystem.hpp"
-#include "LightSourceSystem.hpp"
-#include "InputSystem.hpp"
-#include "AnimatorSystem.hpp"
-#include "SpriteAnimatorSystem.hpp"
-#include "PhysicsBodySystem.hpp"
-#include "Array2DPosition.hpp"
-#include "Timer.hpp"
-#include "ProfilerTimer.hpp"
-#include "PositionConversions.hpp"
-#include "DebugInfo.hpp"
-#include "InputProfileAsset.hpp"
-#include "JsonSerializers.hpp"
-#include "GlobalCreator.hpp"
-#include "GlobalColorCodes.hpp"
-#include "EntityData.hpp"
-#include "Fig.hpp"
+#include "ECS/Systems/Types/World/TransformSystem.hpp"
+#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
+#include "ECS/Systems/Types/World/CameraSystem.hpp"
+#include "ECS/Systems/Types/World/LightSourceSystem.hpp"
+#include "ECS/Systems/Types/World/InputSystem.hpp"
+#include "ECS/Systems/Types/World/AnimatorSystem.hpp"
+#include "ECS/Systems/Types/World/SpriteAnimatorSystem.hpp"
+#include "ECS/Systems/Types/World/PhysicsBodySystem.hpp"
+#include "Utils/Data/Array2DPosition.hpp"
+#include "Core/Time/Timer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
+#include "Core/PositionConversions.hpp"
+#include "Core/Analyzation/DebugInfo.hpp"
+#include "Core/Input/InputProfileAsset.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
+#include "Game/GlobalCreator.hpp"
+#include "Core/Asset/GlobalColorCodes.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Fig/Fig.hpp"
 
 namespace Core
 {
@@ -166,7 +166,7 @@ namespace Core
 		m_timeKeeper(),
 		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_assetManager,
 			m_sceneManager, m_cameraController, m_UIInteractionManager, m_uiHierarchy, m_popupManager, m_collisionBoxSystem),
-		m_gameManager(m_sceneManager.m_GlobalEntityManager)
+		m_gameManager(m_uiHierarchy)
 	{
 		EngineLog("FINISHED SYSTEM MANAGERS INIT");
 

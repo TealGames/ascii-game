@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
-#include "EntityRegistry.hpp"
-#include "CameraData.hpp"
-#include "EntityData.hpp"
+#include "ECS/Entity/EntityRegistry.hpp"
+#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 class Scene;
 namespace ECS

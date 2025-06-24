@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "Timer.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Core/Time/Timer.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 TimerResult::TimerResult() : TimerResult({}, {}, 0) {}
 

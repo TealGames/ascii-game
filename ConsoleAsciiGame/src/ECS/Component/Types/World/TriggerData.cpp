@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "TriggerData.hpp"
-#include "Debug.hpp"
+#include "ECS/Component/Types/World/TriggerData.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 std::string ToString(const TriggerType& trigger)
 {

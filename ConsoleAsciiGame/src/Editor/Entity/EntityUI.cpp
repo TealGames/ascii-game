@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "EntityUI.hpp"
-#include "RaylibUtils.hpp"
-#include "HelperFunctions.hpp"
-#include "UIInteractionManager.hpp"
-#include "EditorStyles.hpp"
-#include "InputManager.hpp"
+#include "Editor/Entity/EntityUI.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/UI/UIInteractionManager.hpp"
+#include "Editor/EditorStyles.hpp"
+#include "Core/Input/InputManager.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 20;
 constexpr float ACTIVE_TOGGLE_SPACE = 0.15;

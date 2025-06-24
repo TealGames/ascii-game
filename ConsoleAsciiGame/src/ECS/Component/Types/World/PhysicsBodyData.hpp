@@ -1,13 +1,13 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "Component.hpp"
-#include "Vec2.hpp"
-//#include "WorldPosition.hpp"
-//#include "Direction.hpp"
-//#include "NormalizedPosition.hpp"
-#include "PhysicsProfile.hpp"
-#include "CollisionBoxData.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Utils/Data/Vec2.hpp"
+//#include "Utils/Data/WorldPosition.hpp"
+//#include "Utils/Data/Direction.hpp"
+//#include "Utils/Data/NormalizedPosition.hpp"
+#include "Core/Physics/PhysicsProfile.hpp"
+#include "ECS/Component/Types/World/CollisionBoxData.hpp"
 
 namespace Physics
 {

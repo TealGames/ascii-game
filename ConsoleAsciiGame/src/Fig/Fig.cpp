@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "Fig.hpp"
-#include "HelperFunctions.hpp"
+#include "Fig/Fig.hpp"
+#include "Utils/HelperFunctions.hpp"
 #include <fstream>
-#include "StringUtil.hpp"
-#include "Debug.hpp"
+#include "Utils/StringUtil.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 const std::string Fig::COMMENT_START = "/*";
 const std::string Fig::COMMENT_CLOSE= "*\\";

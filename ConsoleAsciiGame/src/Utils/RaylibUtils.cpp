@@ -1,9 +1,9 @@
 #include "pch.hpp"
 #include "raylib.h"
-#include "RaylibUtils.hpp"
-#include "Debug.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Core/Analyzation/Debug.hpp"
 #include <limits>
-#include "Vec2Int.hpp"
+#include "Utils/Data/Vec2Int.hpp"
 
 namespace RaylibUtils
 {

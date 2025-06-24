@@ -1,6 +1,6 @@
 #pragma once
-#include "TextBuffer.hpp"
-#include "UIInputField.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "ECS/Component/Types/UI/UIInputField.hpp"
 
 class UIInteractionManager;
 namespace Input { class InputManager; }

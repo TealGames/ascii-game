@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "GUIElement.hpp"
-#include "Debug.hpp"
-#include "HelperFunctions.hpp"
-#include "EntityData.hpp"
+#include "Unused/GUIElement.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 /*
 GUIElement::GUIElement() : GUIElement(RelativeUIRect()) {}

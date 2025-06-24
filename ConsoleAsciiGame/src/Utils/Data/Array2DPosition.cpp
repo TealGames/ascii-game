@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "Array2DPosition.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Utils/Data/Array2DPosition.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 Array2DPosition::Array2DPosition() : 
 	m_Pos() {}

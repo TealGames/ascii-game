@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "UITransformData.hpp"
-#include "HelperFunctions.hpp"
-#include "EntityData.hpp"
+#include "ECS/Component/Types/UI/UITransformData.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 UITransformData::UITransformData() : UITransformData(RelativeUIRect()) {}
 UITransformData::UITransformData(const NormalizedPosition& size) : UITransformData(RelativeUIRect(size)) {}

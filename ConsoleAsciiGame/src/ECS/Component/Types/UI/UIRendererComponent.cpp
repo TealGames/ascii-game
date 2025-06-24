@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "UIRendererComponent.hpp"
-#include "GameRenderer.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "Core/Rendering/GameRenderer.hpp"
 
 UIRendererData::UIRendererData() : Component(), m_renderer(nullptr), m_lastRenderRect(), m_isEventBlocker(false) {}
 

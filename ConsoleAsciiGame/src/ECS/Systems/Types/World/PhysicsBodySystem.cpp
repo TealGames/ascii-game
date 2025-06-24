@@ -1,14 +1,14 @@
 #include "pch.hpp"
-#include "PhysicsBodySystem.hpp"
-#include "PhysicsBodyData.hpp"
-#include "PhysicsWorld.hpp"
-#include "PositionConversions.hpp"
-#include "HelperFunctions.hpp"
-#include "Scene.hpp"
-#include "GlobalComponentInfo.hpp"
+#include "ECS/Systems/Types/World/PhysicsBodySystem.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "Core/Physics/PhysicsWorld.hpp"
+#include "Core/PositionConversions.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

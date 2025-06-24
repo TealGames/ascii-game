@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "SpriteAnimatorData.hpp"
-#include "JsonSerializers.hpp"
-#include "HelperFunctions.hpp"
-#include "SpriteAnimationAsset.hpp"
+#include "ECS/Component/Types/World/SpriteAnimatorData.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Asset/SpriteAnimationAsset.hpp"
 
 SpriteAnimatorData::SpriteAnimatorData() : Component(), m_animations(), m_playingAnimation(nullptr) {}
 SpriteAnimatorData::SpriteAnimatorData(const Json& json) : SpriteAnimatorData()

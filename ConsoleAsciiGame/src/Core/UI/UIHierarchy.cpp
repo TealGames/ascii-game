@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "UIHierarchy.hpp"
-#include "Debug.hpp"
+#include "Core/UI/UIHierarchy.hpp"
+#include "Core/Analyzation/Debug.hpp"
 #include <queue>
 #include <vector>
-#include "GlobalEntityManager.hpp"
-//#include "EntityData.hpp"
+#include "Core/Scene/GlobalEntityManager.hpp"
+//#include "ECS/Component/Types/World/EntityData.hpp"
 
 static constexpr bool DRAW_RENDER_BOUNDS = false;
 

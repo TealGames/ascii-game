@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
-#include "SingleBodySystem.hpp"
-#include "InputData.hpp"
-#include "InputManager.hpp"
+#include "ECS/Systems/SingleBodySystem.hpp"
+#include "ECS/Component/Types/World/InputData.hpp"
+#include "Core/Input/InputManager.hpp"
 
 namespace ECS
 {

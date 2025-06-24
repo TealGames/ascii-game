@@ -1,5 +1,5 @@
 #pragma once
-#include "UIButton.hpp"	
+#include "ECS/Component/Types/UI/UIButton.hpp"	
 
 class GlobalEntityManager;
 namespace ECS

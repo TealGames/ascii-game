@@ -1,11 +1,11 @@
 #include "pch.hpp"
-#include "Profiler.hpp"
-#include "HelperFunctions.hpp"
+#include "Core/Analyzation/Profiler.hpp"
+#include "Utils/HelperFunctions.hpp"
 #include <filesystem>
 #include <fstream>
 #include "plplot/plstream.h"
 #include "plplot/plplot.h"
-#include "Debug.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 static constexpr bool WRITE_TO_FILE = true;
 static constexpr bool DISPLAY_ALL_ROUTINE_GRAPHS = false;

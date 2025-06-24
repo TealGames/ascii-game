@@ -1,16 +1,16 @@
 #pragma once
 #include <vector>
-#include "TextArray.hpp"
-#include "FragmentedTextArray.hpp"
+#include "Core/Visual/TextArray.hpp"
+#include "Core/Rendering/FragmentedTextArray.hpp"
 #include "raylib.h"
 #include <cstdint>
 #include <optional>
 #include "Globals.hpp"
-#include "TextBuffer.hpp"
-#include "Vec2.hpp"
-#include "NormalizedPosition.hpp"
-#include "WorldPosition.hpp"
-#include "TextBuffer.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/NormalizedPosition.hpp"
+#include "Utils/Data/WorldPosition.hpp"
+#include "Core/Visual/TextBuffer.hpp"
 
 
 ////TODO: the data from get world size of visual data should be abstracted

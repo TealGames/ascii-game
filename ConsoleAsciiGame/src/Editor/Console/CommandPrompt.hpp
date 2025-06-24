@@ -5,10 +5,10 @@
 #include <optional>
 #include <functional>
 #include <typeinfo>
-#include "CommandPromptType.hpp"
-#include "ICommandPrompt.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Editor/Console/CommandPromptType.hpp"
+#include "Editor/Console/ICommandPrompt.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 template<typename ...Args>
 class CommandPrompt : public ICommandPrompt

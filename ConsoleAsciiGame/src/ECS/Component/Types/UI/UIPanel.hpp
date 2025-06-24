@@ -1,8 +1,8 @@
 #pragma once
-#include "Component.hpp"
-#include "Color.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Utils/Data/Color.hpp"
 #include "raylib.h"
-#include "UIRect.hpp"
+#include "Core/UI/UIRect.hpp"
 
 class UIRendererData;
 namespace ECS { class UIPanelSystem; }

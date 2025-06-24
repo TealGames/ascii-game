@@ -1,5 +1,5 @@
 #pragma once
-#include "UITextComponent.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
 
 namespace ECS
 {

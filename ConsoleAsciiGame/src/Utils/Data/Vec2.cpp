@@ -3,11 +3,11 @@
 #include <numbers>
 #include <string>
 #include <format>
-#include "HelperFunctions.hpp"
+#include "Utils/HelperFunctions.hpp"
 #include "Vec2.hpp"
 #include "Point2D.hpp"
 #include "Point2DInt.hpp"
-#include "Debug.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 const Vec2 Vec2::UP(0, 1);
 const Vec2 Vec2::DOWN(0, -1);

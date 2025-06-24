@@ -1,2 +1,2 @@
 #include "pch.hpp"
-#include "ComponentFlags.hpp"
+#include "ECS/Component/ComponentFlags.hpp"

@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "EntityMapper.hpp"
-#include "ComponentType.hpp"
-#include "HelperFunctions.hpp"
+#include "Unused/EntityMapper.hpp"
+#include "ECS/Component/ComponentType.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 
 namespace Old

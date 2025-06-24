@@ -2,12 +2,12 @@
 #include <string>
 #include <vector>
 #include <optional>
-#include "TextBuffer.hpp"
-#include "Array2DPosition.hpp"
-#include "Component.hpp"
-#include "TransformSystem.hpp"
-#include "EntityRendererData.hpp"
-#include "MultiBodySystem.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Utils/Data/Array2DPosition.hpp"
+#include "ECS/Component/Component.hpp"
+#include "ECS/Systems/Types/World/TransformSystem.hpp"
+#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
 
 namespace ECS
 {

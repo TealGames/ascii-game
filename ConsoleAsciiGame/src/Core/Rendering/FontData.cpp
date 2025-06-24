@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "FontData.hpp"
-#include "RaylibUtils.hpp"
+#include "Core/Rendering/FontData.hpp"
+#include "Utils/RaylibUtils.hpp"
 
 FontProperties::FontProperties() : FontProperties(0, 0, {}) {}
 

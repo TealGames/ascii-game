@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "InputProfileAsset.hpp"
+#include "Core/Input/InputProfileAsset.hpp"
 #include <fstream>
-#include "InputManager.hpp"
-#include "IOHandler.hpp"
+#include "Core/Input/InputManager.hpp"
+#include "Utils/IOHandler.hpp"
 
 const std::string InputProfileAsset::EXTENSION = ".input";
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <filesystem>
-#include "IJsonSerializable.hpp"
+#include "Core/Serialization/IJsonSerializable.hpp"
 
 class Asset
 {

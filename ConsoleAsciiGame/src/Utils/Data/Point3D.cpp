@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "Point3D.hpp"
+#include "Utils/Data/Point3D.hpp"
 #include <cmath>
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 namespace Utils
 {

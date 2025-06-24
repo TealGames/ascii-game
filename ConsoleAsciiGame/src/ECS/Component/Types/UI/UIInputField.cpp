@@ -1,14 +1,14 @@
 #include <optional>
 #include <cstdint>
 #include "pch.hpp"
-#include "UIInputField.hpp"
-#include "Debug.hpp"
-#include "StringUtil.hpp"
+#include "ECS/Component/Types/UI/UIInputField.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Utils/StringUtil.hpp"
 #include "Globals.hpp"
-#include "Vec2Int.hpp"
-#include "RaylibUtils.hpp"
-#include "UITextComponent.hpp"
-#include "UIPanel.hpp"
+#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
 static constexpr KeyboardKey ESCAPE_KEY = KEY_COMMA;

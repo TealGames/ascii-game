@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "StringUtil.hpp"
+#include "Utils/StringUtil.hpp"
 
 namespace Utils
 {

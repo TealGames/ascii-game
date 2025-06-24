@@ -1,10 +1,10 @@
 #pragma once
 #include <optional>
-#include "Asset.hpp"
-#include "Scene.hpp"
-#include "IJsonSerializable.hpp"
-#include "IDependableAsset.hpp"
-#include "GlobalEntityManager.hpp"
+#include "Core/Asset/Asset.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "Core/Serialization/IJsonSerializable.hpp"
+#include "Core/Asset/IDependableAsset.hpp"
+#include "Core/Scene/GlobalEntityManager.hpp"
 
 namespace AssetManagement
 {

@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "InputProfile.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Core/Input/InputProfile.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 #include <fstream>
-#include "StringUtil.hpp"
-#include "InputManager.hpp"
+#include "Utils/StringUtil.hpp"
+#include "Core/Input/InputManager.hpp"
 
 namespace Input
 {

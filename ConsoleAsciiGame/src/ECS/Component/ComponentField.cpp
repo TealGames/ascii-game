@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "ComponentField.hpp"
-#include "Debug.hpp"
+#include "ECS/Component/ComponentField.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 ComponentField::ComponentField(const std::string& name, const ComponentFieldVariant& value, const bool& isWritable)
 	: m_FieldName(name), m_Value(value), m_MaybeSetFunction(std::nullopt), m_isReadonly(!isWritable)

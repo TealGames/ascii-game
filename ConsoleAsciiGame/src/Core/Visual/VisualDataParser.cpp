@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "VisualDataParser.hpp"
-#include "GlobalColorCodes.hpp"
-#include "Debug.hpp"
-#include "RaylibUtils.hpp"
+#include "Core/Visual/VisualDataParser.hpp"
+#include "Core/Asset/GlobalColorCodes.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Utils/RaylibUtils.hpp"
 
 static constexpr char NEW_ROW_CHAR = '-';
 static constexpr char CHAR_COLOR_ALIAS_START = '[';

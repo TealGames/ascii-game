@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "RenderLayer.hpp"
-#include "TextBuffer.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Core/Rendering/RenderLayer.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 std::string ToString(const RenderLayerType& layers)
 {

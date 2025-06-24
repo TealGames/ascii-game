@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "SpriteCharUI.hpp"
-#include "EditorStyles.hpp"
+#include "Editor/Sprite/SpriteCharUI.hpp"
+#include "Editor/EditorStyles.hpp"
 
 SpriteCharUI::SpriteCharUI(Input::InputManager& inputManager) 
 	: m_charField(inputManager, InputFieldType::String, InputFieldFlag::None, EditorStyles::GetInputFieldStyle(TextAlignment::Center))

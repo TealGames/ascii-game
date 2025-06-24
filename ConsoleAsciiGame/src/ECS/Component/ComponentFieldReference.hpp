@@ -1,6 +1,6 @@
 #pragma once
-#include "EntityData.hpp"
-#include "ComponentReference.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Core/Serialization/ComponentReference.hpp"
 
 struct ComponentFieldReference
 {

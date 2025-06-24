@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "JsonSerializers.hpp"
-#include "JsonConstants.hpp"
-#include "Debug.hpp"
-#include "SceneManager.hpp"
-#include "AssetManager.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
+#include "Core/Serialization/JsonConstants.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Core/Scene/SceneManager.hpp"
+#include "Core/Asset/AssetManager.hpp"
 
 SceneManagement::SceneManager* SceneManager = nullptr;
 AssetManagement::AssetManager* AssetManager = nullptr;

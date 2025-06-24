@@ -1,11 +1,11 @@
 #include "pch.hpp"
-#include "UIColorPicker.hpp"
-#include "RaylibUtils.hpp"
-#include "Debug.hpp"
-#include "ColorPopupUI.hpp"
-#include "PopupUIManager.hpp"
-#include "HelperFunctions.hpp"
-#include "UIPanel.hpp"
+#include "ECS/Component/Types/Editor/UIColorPicker.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Editor/Entity/ColorPopupUI.hpp"
+#include "Core/UI/PopupUIManager.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 UIColorPickerData::UIColorPickerData() : UIColorPickerData(UIStyle()) {}
 UIColorPickerData::UIColorPickerData(const UIStyle& settings)

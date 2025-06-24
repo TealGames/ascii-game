@@ -1,10 +1,9 @@
 #pragma once
-#include "UISelectableData.hpp"
-#include "IRenderable.hpp"
-#include "UIStyle.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "Core/UI/UIStyle.hpp"
 #include <functional>
 #include <string>
-#include "CooldownEvent.hpp"
+#include "Utils/Data/CooldownEvent.hpp"
 
 class UIButton;
 class UITextComponent;

@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <functional>
-#include "Debug.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 template<typename T>
 using PoolCollection = std::vector<T>;

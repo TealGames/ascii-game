@@ -1,6 +1,6 @@
 #pragma once
-#include "Vec2.hpp"
-#include "Component.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "ECS/Component/Component.hpp"
 
 //Since negative positions are not allowed
 const Vec2 NULL_POS = Vec2{ -1, -1 };

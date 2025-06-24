@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "GlobalColorCodes.hpp"
+#include "Core/Asset/GlobalColorCodes.hpp"
 #include <filesystem>
-#include "AssetManager.hpp"
+#include "Core/Asset/AssetManager.hpp"
 
 static const std::filesystem::path GLOBAL_COLOR_PATH = "global_colors.txt";
 static std::unordered_map<std::string, Color> ColorCodes = {};

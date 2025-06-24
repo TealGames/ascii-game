@@ -7,18 +7,16 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
-#include "EntityRegistry.hpp"
-#include "Point2DInt.hpp"
-#include "TextBuffer.hpp"
-#include "RenderLayer.hpp"
-#include "Updateable.hpp"
-#include "Entity.hpp"
-#include "IJsonSerializable.hpp"
-#include "ILoadable.hpp"
-#include "GlobalEntityManager.hpp"
-//#include "EntityMapper.hpp"
-//#include "CameraData.hpp"
-#include "TransformData.hpp"
+#include "ECS/Entity/EntityRegistry.hpp"
+#include "Utils/Data/Point2DInt.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Core/Rendering/RenderLayer.hpp"
+#include "ECS/Entity/Entity.hpp"
+#include "Core/Serialization/IJsonSerializable.hpp"
+#include "Core/Scene/GlobalEntityManager.hpp"
+//#include "Unused/EntityMapper.hpp"
+//#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/TransformData.hpp"
 
 //using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
 //TODO: perhaps we should consolidate the string and local entity collection into one to not take up as much memory

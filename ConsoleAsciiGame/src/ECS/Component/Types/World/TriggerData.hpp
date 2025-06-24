@@ -1,8 +1,8 @@
 #pragma once
-#include "Component.hpp"
+#include "ECS/Component/Component.hpp"
 #include <functional>
-#include "Event.hpp"
-#include "CollisionBoxData.hpp"
+#include "Utils/Data/Event.hpp"
+#include "ECS/Component/Types/World/CollisionBoxData.hpp"
 
 /// <summary>
 /// The type of trigger that will determine any preset trigger functions 

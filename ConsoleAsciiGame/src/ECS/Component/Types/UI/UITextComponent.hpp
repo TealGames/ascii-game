@@ -1,12 +1,12 @@
 #pragma once
-#include "Component.hpp"
+#include "ECS/Component/Component.hpp"
 #include <string>
-#include "FontData.hpp"
+#include "Core/Rendering/FontData.hpp"
 #include "raylib.h"
-#include "ScreenPosition.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
 #include <cstdint>
-#include "UIPadding.hpp"
-#include "UIRect.hpp"
+#include "Core/UI/UIPadding.hpp"
+#include "Core/UI/UIRect.hpp"
 
 enum class TextAlignment : std::uint8_t
 {

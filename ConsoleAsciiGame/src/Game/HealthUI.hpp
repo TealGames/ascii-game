@@ -1,10 +1,10 @@
 #pragma once
 #include <vector>
-#include "UIObjectData.hpp"
 
 class EntityData;
 class GameState;
 class GlobalEntityManager;
+class UIHierarchy;
 
 namespace Game
 {
@@ -20,7 +20,7 @@ namespace Game
 		public:
 			HealthUI();
 
-			void Init(GlobalEntityManager& globalEntities, GameState& state);
+			void Init(UIHierarchy& hierarchy, GameState& state);
 		};
 	}
 }

@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "CameraController.hpp"
-#include "Debug.hpp"
+#include "Core/Camera/CameraController.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 CameraController::CameraController() : m_priorityCameras() {}
 

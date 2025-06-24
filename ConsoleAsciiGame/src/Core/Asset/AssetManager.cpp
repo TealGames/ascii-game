@@ -1,13 +1,13 @@
 #include "pch.hpp"
-#include "AssetManager.hpp"
-#include "Debug.hpp"
-#include "SceneAsset.hpp"
-#include "InputProfileAsset.hpp"
-#include "SpriteAnimationAsset.hpp"
-#include "SpriteAsset.hpp"
-#include "FontAsset.hpp"
-#include "TextureAsset.hpp"
-#include "IOHandler.hpp"
+#include "Core/Asset/AssetManager.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Core/Asset/SceneAsset.hpp"
+#include "Core/Input/InputProfileAsset.hpp"
+#include "Core/Asset/SpriteAnimationAsset.hpp"
+#include "Core/Asset/SpriteAsset.hpp"
+#include "Core/Asset/FontAsset.hpp"
+#include "Core/Asset/TextureAsset.hpp"
+#include "Utils/IOHandler.hpp"
 
 static bool THROW_ON_UNKNWON_ASSET = false;
 

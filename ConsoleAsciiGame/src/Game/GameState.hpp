@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Event.hpp"
+#include "Utils/Data/Event.hpp"
 
 class GameState
 {

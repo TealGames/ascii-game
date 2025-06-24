@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "CompoundInput.hpp"
-#include "HelperFunctions.hpp"
-#include "InputManager.hpp"
+#include "Core/Input/CompoundInput.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Input/InputManager.hpp"
 
 namespace Input
 {

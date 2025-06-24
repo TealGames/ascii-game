@@ -2,13 +2,13 @@
 #include <cstdint>
 #include <type_traits>
 #include <limits>
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
-#include "PopupUI.hpp"
-#include "Event.hpp"
-#include "UIRect.hpp"
-#include "UIHierarchy.hpp"
-#include "HelperMacros.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Core/UI/PopupUI.hpp"
+#include "Utils/Data/Event.hpp"
+#include "Core/UI/UIRect.hpp"
+#include "Core/UI/UIHierarchy.hpp"
+#include "Utils/HelperMacros.hpp"
 
 template<typename T>
 concept IsPopupType = std::is_base_of_v<PopupUI, T>;

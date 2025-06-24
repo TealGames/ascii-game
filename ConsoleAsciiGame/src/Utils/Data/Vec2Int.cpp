@@ -2,11 +2,11 @@
 #include <cmath>
 #include <string>
 #include <format>
-#include "HelperFunctions.hpp"
+#include "Utils/HelperFunctions.hpp"
 #include "Vec2Int.hpp"
 #include "Point2D.hpp"
 #include "Point2DInt.hpp"
-#include "Debug.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 const Vec2Int Vec2Int::UP(0, 1);
 const Vec2Int Vec2Int::DOWN(0, -1);

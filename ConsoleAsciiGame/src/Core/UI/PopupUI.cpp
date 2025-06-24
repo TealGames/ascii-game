@@ -1,11 +1,11 @@
 #include "pch.hpp"
-#include "PopupUI.hpp"
+#include "Core/UI/PopupUI.hpp"
 #include "raylib.h"
-#include "EditorStyles.hpp"
-#include "EntityData.hpp"
-#include "UITransformData.hpp"
-#include "UIPanel.hpp"
-#include "UIRendererComponent.hpp"
+#include "Editor/EditorStyles.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UITransformData.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 
 static constexpr float POPUP_PADDING = 0.05;
 

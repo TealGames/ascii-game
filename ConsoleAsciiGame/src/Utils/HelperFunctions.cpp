@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <random>
 #include <stacktrace>
-#include "HelperFunctions.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 namespace Utils
 {

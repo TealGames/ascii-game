@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "CameraData.hpp"
-#include "JsonSerializers.hpp"
-#include "EntityData.hpp"
+#include "ECS/Component/Types/World/CameraData.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 CameraData::CameraData() : CameraData(CameraSettings()) {}
 

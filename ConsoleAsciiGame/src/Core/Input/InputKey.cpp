@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "InputKey.hpp"
-#include "RaylibUtils.hpp"
-#include "Debug.hpp"
+#include "Core/Input/InputKey.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 namespace Input
 {

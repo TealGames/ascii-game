@@ -1,11 +1,10 @@
 #pragma once
 #include <vector>	
-#include "IRenderable.hpp"
-#include "EntityData.hpp"
-#include "ComponentUI.hpp"
-#include "UIToggleComponent.hpp"
-#include "UILayout.hpp"
-#include "UIPanel.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Editor/Entity/ComponentUI.hpp"
+#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
+#include "ECS/Component/Types/UI/UILayout.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 class UIHierarchy;
 class PopupUIManager;

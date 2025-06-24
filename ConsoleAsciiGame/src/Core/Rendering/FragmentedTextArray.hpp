@@ -1,5 +1,5 @@
 #pragma once
-#include "TextArray.hpp"
+#include "Core/Visual/TextArray.hpp"
 
 enum class TextArrayPositionType
 {

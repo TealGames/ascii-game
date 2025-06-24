@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "IOHandler.hpp"
+#include "Utils/IOHandler.hpp"
 #include <fstream>
-#include "Debug.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 namespace IO
 {

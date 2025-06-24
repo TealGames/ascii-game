@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "JsonConstants.hpp"
+#include "Core/Serialization/JsonConstants.hpp"
 #include <unordered_map>
-#include "RaylibUtils.hpp"
+#include "Utils/RaylibUtils.hpp"
 #include "Globals.hpp"
-#include "VisualData.hpp"
+#include "Core/Visual/VisualData.hpp"
 
 namespace JsonConstants
 {

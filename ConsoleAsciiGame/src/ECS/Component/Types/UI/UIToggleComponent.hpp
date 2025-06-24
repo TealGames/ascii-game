@@ -1,9 +1,9 @@
 #pragma once
 #include "raylib.h"
 #include <functional>
-#include "UISelectableData.hpp"
-#include "UIStyle.hpp"
-#include "UIRect.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "Core/UI/UIStyle.hpp"
+#include "Core/UI/UIRect.hpp"
 
 class TextureAsset;
 

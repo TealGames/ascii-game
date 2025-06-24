@@ -1,11 +1,11 @@
 #pragma once
-#include "Vec2Int.hpp" 
-#include "WorldPosition.hpp"
-#include "Vec2.hpp"
-#include "Direction.hpp"
+#include "Utils/Data/Vec2Int.hpp" 
+#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Direction.hpp"
 #include <string>
 #include <optional>
-#include "NormalizedPosition.hpp"
+#include "Utils/Data/NormalizedPosition.hpp"
 
 namespace Physics
 {

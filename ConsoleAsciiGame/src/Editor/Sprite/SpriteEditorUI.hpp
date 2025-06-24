@@ -1,7 +1,6 @@
 #pragma once
-#include "ITreeGUIConstructible.hpp"
-#include "UIButton.hpp"
-#include "UIContainer.hpp"
+#include "ECS/Component/Types/UI/UIButton.hpp"
+#include "ECS/Component/Types/UI/UIContainer.hpp"
 
 class UIHierarchy;
 namespace AssetManagement { class AssetManager; }

@@ -2,9 +2,9 @@
 #include <vector>
 #include <string>
 //#include <array>
-#include "Array2DPosition.hpp"
-#include "Vec2.hpp"
-#include "FontData.hpp"
+#include "Utils/Data/Array2DPosition.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Core/Rendering/FontData.hpp"
 
 //The character used for empty spaces and will NOT be rendered
 constexpr char EMPTY_CHAR_PLACEHOLDER = ' ';

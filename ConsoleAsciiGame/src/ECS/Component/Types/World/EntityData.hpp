@@ -1,9 +1,9 @@
 #pragma once
-#include "Component.hpp"
-#include "Debug.hpp"
-#include "EntityRegistry.hpp"
-#include "TransformData.hpp"
-#include "GlobalComponentInfo.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "ECS/Entity/EntityRegistry.hpp"
+#include "ECS/Component/Types/World/TransformData.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
 
 class UITransformData;
 namespace ECS { class EntityRegistry; }

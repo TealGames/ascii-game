@@ -1,21 +1,20 @@
 #pragma once
 #include <optional>
 #include <vector>
-#include "SingleBodySystem.hpp"
-#include "Vec2Int.hpp"
-#include "Entity.hpp"
-#include "Updateable.hpp"
-#include "Component.hpp"
-#include "TransformSystem.hpp"
-#include "RenderLayer.hpp"
-#include "SceneManager.hpp"
-#include "Scene.hpp"
-#include "CameraData.hpp"
-#include "WorldPosition.hpp"
-#include "ScreenPosition.hpp"
-#include "TextBuffer.hpp"
-#include "ColliderOutlineBuffer.hpp"
-#include "LineBuffer.hpp"
+#include "ECS/Systems/SingleBodySystem.hpp"
+#include "Utils/Data/Vec2Int.hpp"
+#include "ECS/Entity/Entity.hpp"
+#include "ECS/Component/Component.hpp"
+#include "ECS/Systems/Types/World/TransformSystem.hpp"
+#include "Core/Rendering/RenderLayer.hpp"
+#include "Core/Scene/SceneManager.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Component/Types/World/CameraData.hpp"
+#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Core/Collision/ColliderOutlineBuffer.hpp"
+#include "Core/Rendering/LineBuffer.hpp"
 
 namespace ECS
 {

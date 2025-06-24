@@ -1,6 +1,6 @@
 #pragma once
-#include "Profiler.hpp"
-#include "Timer.hpp"
+#include "Core/Analyzation/Profiler.hpp"
+#include "Core/Time/Timer.hpp"
 #include <string>
 
 class ProfilerTimer : protected Timer

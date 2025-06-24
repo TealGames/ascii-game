@@ -1,8 +1,8 @@
 #pragma once
 #include <cstdint>
-#include "AABB.hpp"
-#include "Component.hpp"
-#include "IValidateable.hpp"
+#include "Core/Collision/AABB.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Core/IValidateable.hpp"
 #include <unordered_map>
 
 struct AABBIntersectionData

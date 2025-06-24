@@ -1,5 +1,5 @@
 #pragma once
-#include "UISliderComponent.hpp"
+#include "ECS/Component/Types/UI/UISliderComponent.hpp"
 
 namespace ECS
 {

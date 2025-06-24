@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "UIButtonSystem.hpp"
-#include "MultiBodySystem.hpp"
-#include "GlobalEntityManager.hpp"
-#include "GlobalComponentInfo.hpp"
-#include "UITextComponent.hpp"
-#include "EditorStyles.hpp"
+#include "ECS/Systems/Types/UI/UIButtonSystem.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
+#include "Core/Scene/GlobalEntityManager.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "Editor/EditorStyles.hpp"
 
 namespace ECS
 {

@@ -1,9 +1,9 @@
 #pragma once
-#include "UISelectableData.hpp"
-#include "InputManager.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "Core/Input/InputManager.hpp"
 #include <map>
 #include <optional>
-#include "UIHierarchy.hpp"
+#include "Core/UI/UIHierarchy.hpp"
 
 class UIRendererData;
 class UIInteractionManager

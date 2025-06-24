@@ -1,19 +1,18 @@
 #include "pch.hpp"
-#include "CameraSystem.hpp"
-#include "Updateable.hpp"
-#include "Component.hpp"
+#include "ECS/Systems/Types/World/CameraSystem.hpp"
+#include "ECS/Component/Component.hpp"
 #include "Globals.hpp"
-#include "SceneManager.hpp"
-#include "Array2DPosition.hpp"
-#include "PositionConversions.hpp"
-#include "HelperFunctions.hpp"
-#include "RaylibUtils.hpp"
-#include "Scene.hpp"
-#include "EntityData.hpp"
-#include "GlobalComponentInfo.hpp"
+#include "Core/Scene/SceneManager.hpp"
+#include "Utils/Data/Array2DPosition.hpp"
+#include "Core/PositionConversions.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

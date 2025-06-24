@@ -1,9 +1,9 @@
 #pragma once
 #include <vector>
-#include "Vec2Int.hpp"
-#include "RenderLayer.hpp"
-#include "Component.hpp"
-#include "VisualData.hpp"
+#include "Utils/Data/Vec2Int.hpp"
+#include "Core/Rendering/RenderLayer.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Core/Visual/VisualData.hpp"
 
 class EntityRendererData : public Component
 {

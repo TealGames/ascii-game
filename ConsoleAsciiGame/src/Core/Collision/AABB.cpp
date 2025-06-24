@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "AABB.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Core/Collision/AABB.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 namespace Physics
 {

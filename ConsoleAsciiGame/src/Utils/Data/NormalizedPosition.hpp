@@ -1,6 +1,6 @@
 #pragma once
-#include "Vec2.hpp"
-#include "NormalizedValue.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/NormalizedValue.hpp"
 
 /// <summary>
 /// Represents a normalized position of a rectangle where [0,0] would represent 

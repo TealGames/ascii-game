@@ -1,7 +1,7 @@
 #pragma once
-#include "HealthUI.hpp"
+#include "Game/HealthUI.hpp"
 
-class GlobalEntityManager;
+class UIHierarchy;
 namespace Game
 {
 	namespace UI
@@ -9,7 +9,7 @@ namespace Game
 		class GameUIManager
 		{
 		private:
-			GlobalEntityManager& m_globalEntityManager;
+			UIHierarchy& m_hierarchy;
 			GameState& m_state;
 			HealthUI m_healthUI;
 
@@ -17,7 +17,7 @@ namespace Game
 		
 		private:
 		public:
-			GameUIManager(GlobalEntityManager& globalManager, GameState& state);
+			GameUIManager(UIHierarchy& hierarchy, GameState& state);
 
 			void ValidateUI();
 			void StartUI();

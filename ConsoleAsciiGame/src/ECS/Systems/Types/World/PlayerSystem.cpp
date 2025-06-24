@@ -1,15 +1,15 @@
 #include "pch.hpp"
-#include "PlayerSystem.hpp"
-#include "PhysicsBodyData.hpp"
-#include "CameraData.hpp"
-#include "Vec2.hpp"
+#include "ECS/Systems/Types/World/PlayerSystem.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "ECS/Component/Types/World/CameraData.hpp"
+#include "Utils/Data/Vec2.hpp"
 #include "raylib.h"
-#include "PositionConversions.hpp"
-#include "Scene.hpp"
-#include "EntityData.hpp"
+#include "Core/PositionConversions.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

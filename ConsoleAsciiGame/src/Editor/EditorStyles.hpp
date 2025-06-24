@@ -1,8 +1,8 @@
 #pragma once
 #include "pch.hpp"
 #include "raylib.h"
-#include "Vec2.hpp"
-#include "UIStyle.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Core/UI/UIStyle.hpp"
 
 namespace EditorStyles
 {

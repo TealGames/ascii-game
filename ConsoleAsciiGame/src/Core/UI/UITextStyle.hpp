@@ -1,8 +1,8 @@
 #pragma once
 #include "raylib.h"
-#include "FontData.hpp"
-#include "UITextComponent.hpp"
-#include "UIPadding.hpp"
+#include "Core/Rendering/FontData.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "Core/UI/UIPadding.hpp"
 
 class TextUIStyle
 {

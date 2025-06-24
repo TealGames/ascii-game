@@ -1,11 +1,11 @@
 #include "pch.hpp"
-#include "ParticleEmitterSystem.hpp"
-#include "Scene.hpp"
-#include "CameraData.hpp"
-#include "ParticleEmitterData.hpp"
+#include "ECS/Systems/Types/World/ParticleEmitterSystem.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/ParticleEmitterData.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 

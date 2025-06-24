@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "RelativeUIRect.hpp"
-#include "Debug.hpp"
+#include "Core/UI/RelativeUIRect.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 RelativeUIRect::RelativeUIRect() : RelativeUIRect(NormalizedPosition::TOP_LEFT, NormalizedPosition(1, 1)) {}
 RelativeUIRect::RelativeUIRect(const NormalizedPosition& size) : RelativeUIRect(NormalizedPosition::TOP_LEFT, size) {}

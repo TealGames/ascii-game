@@ -1,6 +1,6 @@
 #pragma once
-#include "Component.hpp"
-#include "UIRect.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Core/UI/UIRect.hpp"
 
 namespace Rendering { class Renderer; }
 namespace ECS { class UIRenderSystem; }

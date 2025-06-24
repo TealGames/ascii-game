@@ -1,5 +1,5 @@
 #pragma once
-#include "HelperMacros.hpp"
+#include "Utils/HelperMacros.hpp"
 
 using ComponentFlagsType = std::uint32_t;
 enum class ComponentFlags : ComponentFlagsType

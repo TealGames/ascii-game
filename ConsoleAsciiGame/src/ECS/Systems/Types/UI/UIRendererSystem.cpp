@@ -1,15 +1,15 @@
 #include "pch.hpp"
 #include <stack>
-#include "UIRendererSystem.hpp"
-#include "UIHierarchy.hpp"
-#include "Scene.hpp"
-#include "EntityData.hpp"
+#include "ECS/Systems/Types/UI/UIRendererSystem.hpp"
+#include "Core/UI/UIHierarchy.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
-#include "UIPanel.hpp"
-#include "UITextureData.hpp"
-#include "UISelectableData.hpp"
-#include "UITextComponent.hpp"
-#include "GlobalComponentInfo.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UITextureData.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
 
 namespace ECS
 {

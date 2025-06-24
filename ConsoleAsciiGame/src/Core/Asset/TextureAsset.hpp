@@ -1,5 +1,5 @@
 #pragma once
-#include "Asset.hpp"
+#include "Core/Asset/Asset.hpp"
 #include "raylib.h"
 
 class TextureAsset : public Asset

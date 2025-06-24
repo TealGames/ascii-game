@@ -1,5 +1,5 @@
 #pragma once
-#include "MultiBodySystem.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
 
 namespace ECS
 {

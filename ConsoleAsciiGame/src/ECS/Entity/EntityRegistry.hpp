@@ -1,7 +1,7 @@
 #pragma once
-#include "EntityID.hpp"
-#include "Debug.hpp"
-#include "HelperFunctions.hpp"
+#include "ECS/Entity/EntityID.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 class Component;
 class EntityData;

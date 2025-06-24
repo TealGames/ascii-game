@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "UISliderSystem.hpp"
-#include "GlobalComponentInfo.hpp"
-#include "EntityData.hpp"
-#include "UIRendererComponent.hpp"
-#include "UIPanel.hpp"
+#include "ECS/Systems/Types/UI/UISliderSystem.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 namespace ECS
 {

@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "InputManager.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Core/Input/InputManager.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 #include <cctype>
-#include "InputProfileAsset.hpp"
-#include "AssetManager.hpp"
+#include "Core/Input/InputProfileAsset.hpp"
+#include "Core/Asset/AssetManager.hpp"
 
 namespace Input
 {

@@ -1,6 +1,6 @@
 #include "pch.hpp"
 
-#include "UIRect.hpp"
+#include "Core/UI/UIRect.hpp"
 
 UIRect::UIRect() : UIRect(ScreenPosition(), Vec2Int()) {}
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
-#include "EntityData.hpp"
-#include "Scene.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Core/Scene/Scene.hpp"
 
 struct EntityReference
 {

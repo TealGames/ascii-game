@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "GameState.hpp"
+#include "Game/GameState.hpp"
 
 GameState::GameState() : m_health(START_HEALTH), m_isPaused() {}
 

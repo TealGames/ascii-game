@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
-#include "VisualData.hpp"
-#include "Component.hpp"
+#include "Core/Visual/VisualData.hpp"
+#include "ECS/Component/Component.hpp"
 #include <unordered_map>
 
 class SpriteAnimationAsset;

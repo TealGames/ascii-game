@@ -1,7 +1,6 @@
 #pragma once
-#include "UISelectableData.hpp"
-#include "IRenderable.hpp"
-#include "ColorGradient.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "Utils/Data/ColorGradient.hpp"
 
 class UIPanel;
 class UIColorGradient : public UISelectableData

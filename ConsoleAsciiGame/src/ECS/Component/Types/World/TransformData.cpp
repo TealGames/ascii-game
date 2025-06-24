@@ -1,10 +1,10 @@
 //NOT USED
 #include "pch.hpp"
 
-#include "TransformData.hpp"
-#include "Debug.hpp"
-#include "EntityData.hpp"
-#include "JsonSerializers.hpp"
+#include "ECS/Component/Types/World/TransformData.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
 
 TransformData::TransformData() : TransformData(Vec2{}) {}
 

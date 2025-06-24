@@ -1,6 +1,6 @@
 #pragma once
-#include "Asset.hpp"
-#include "VisualData.hpp"
+#include "Core/Asset/Asset.hpp"
+#include "Core/Visual/VisualData.hpp"
 
 class SpriteAsset : public Asset
 {

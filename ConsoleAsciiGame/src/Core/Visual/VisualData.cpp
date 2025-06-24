@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "VisualData.hpp"
-#include "TextBuffer.hpp"
-#include "HelperFunctions.hpp"
-#include "RaylibUtils.hpp"
+#include "Core/Visual/VisualData.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Utils/RaylibUtils.hpp"
 #include "raylib.h"
-#include "Debug.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 const float& VisualData::DEFAULT_FONT_SIZE = GLOBAL_FONT_SIZE;
 

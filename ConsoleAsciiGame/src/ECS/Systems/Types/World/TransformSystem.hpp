@@ -1,10 +1,10 @@
 #pragma once
 #include <vector>
-#include "Component.hpp"
-#include "Point2DInt.hpp"
-#include "TransformData.hpp"
-#include "MultiBodySystem.hpp"
-#include "Scene.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Utils/Data/Point2DInt.hpp"
+#include "ECS/Component/Types/World/TransformData.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
+#include "Core/Scene/Scene.hpp"
 
 namespace ECS
 {

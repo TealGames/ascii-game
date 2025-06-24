@@ -1,11 +1,11 @@
 #include "pch.hpp"
 #include "raylib.h"
-#include "TextArray.hpp"
-#include "HelperFunctions.hpp"
-#include "RaylibUtils.hpp"
-#include "Array2DPosition.hpp"
-#include "Vec2Int.hpp"
-#include "Debug.hpp"
+#include "Core/Visual/TextArray.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Utils/Data/Array2DPosition.hpp"
+#include "Utils/Data/Vec2Int.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 TextChar::TextChar() :
 	m_Color{}, m_Char(EMPTY_CHAR_PLACEHOLDER) {}

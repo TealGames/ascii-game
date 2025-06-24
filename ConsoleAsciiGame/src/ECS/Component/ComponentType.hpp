@@ -3,15 +3,15 @@
 #include <vector>
 #include <limits>
 #include <cmath>
-#include "CameraData.hpp"
-#include "TransformData.hpp"
-#include "InputData.hpp"
-//#include "AnimatorData.hpp"#include <cstdint>
+#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/TransformData.hpp"
+#include "ECS/Component/Types/World/InputData.hpp"
+//#include "ECS/Component/Types/World/AnimatorData.hpp"#include <cstdint>
 
-#include "LightSourceData.hpp"
-#include "EntityRendererData.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "ECS/Component/Types/World/LightSourceData.hpp"
+#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 //This means that the max number of components supported is 64 
 // (the amount of bits for the type)

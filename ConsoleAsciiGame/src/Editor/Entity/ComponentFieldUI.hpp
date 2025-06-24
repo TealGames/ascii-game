@@ -1,7 +1,7 @@
 #pragma once
 #include <functional>
 #include <string>
-#include "ComponentField.hpp"
+#include "ECS/Component/ComponentField.hpp"
 
 class UIInteractionManager;
 class ComponentUI;

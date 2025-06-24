@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "UISelectableData.hpp"
-#include "UIInteractionManager.hpp"
-#include "Debug.hpp"
-#include "UIRendererComponent.hpp"
-#include "GameRenderer.hpp"
-#include "EntityData.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "Core/UI/UIInteractionManager.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "Core/Rendering/GameRenderer.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 UISelectableData::UISelectableData(const float clickCooldown, const InteractionEventFlags eventFlags, const InteractionRenderFlags renderFlags) :
 	m_eventFlags(eventFlags), m_renderFlags(renderFlags), m_renderer(nullptr),

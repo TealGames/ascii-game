@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "EntityReference.hpp"
+#include "Core/Serialization/EntityReference.hpp"
 
 EntityReference::EntityReference(EntityData& entity, Scene* scene)
 	: m_Entity(entity), m_Scene(scene) {}

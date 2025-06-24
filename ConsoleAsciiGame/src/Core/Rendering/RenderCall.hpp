@@ -1,8 +1,8 @@
 #pragma once
 #include <variant>
-#include "Vec2.hpp"
-#include "ScreenPosition.hpp"
-#include "Color.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Data/Color.hpp"
 #include "raylib.h"
 
 namespace Rendering

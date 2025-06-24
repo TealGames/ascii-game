@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "VectorEnums.hpp"
-#include "Debug.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 std::string ToString(const AngleMode& mode)
 {

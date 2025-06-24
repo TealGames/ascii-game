@@ -1,17 +1,17 @@
 #include "pch.hpp"
 #include "raylib.h"
-#include "EntityRendererSystem.hpp"
-#include "TextBuffer.hpp"
-#include "Array2DPosition.hpp"
-#include "Component.hpp"
-#include "TransformSystem.hpp"
-#include "HelperFunctions.hpp"
-#include "PositionConversions.hpp"
-#include "Scene.hpp"
-#include "EntityData.hpp"
+#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Utils/Data/Array2DPosition.hpp"
+#include "ECS/Component/Component.hpp"
+#include "ECS/Systems/Types/World/TransformSystem.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/PositionConversions.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

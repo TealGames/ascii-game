@@ -1,9 +1,9 @@
 #pragma once
 #include <optional>
 #include <type_traits>
-#include "MultiBodySystem.hpp"
-#include "AnimatorData.hpp"
-#include "Debug.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
+#include "ECS/Component/Types/World/AnimatorData.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 namespace ECS
 {

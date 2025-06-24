@@ -1,13 +1,14 @@
 #include "pch.hpp"
-#include "HealthUI.hpp"
-#include "GameState.hpp"
-#include "GlobalEntityManager.hpp"
-#include "EntityData.hpp"
-#include "EntityRendererData.hpp"
-#include "Debug.hpp"
+#include "Game/HealthUI.hpp"
+#include "Game/GameState.hpp"
+#include "Core/Scene/GlobalEntityManager.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Core/UI/UIHierarchy.hpp"
 
 static const NormalizedPosition HEALTH_START_POS_RELATIVE = { 0.05, 0.95 };
-static const float HELATH_DELTA_X_RELATIVE = 0.05;
+static const NormalizedPosition HEALTH_SIZE = { 0.05, 0.05 };
 
 namespace Game
 {
@@ -15,27 +16,27 @@ namespace Game
 	{
 		HealthUI::HealthUI() : m_health() {}
 
-		void HealthUI::Init(GlobalEntityManager& globalEntities, GameState& state)
+		void HealthUI::Init(UIHierarchy& hierarchy, GameState& state)
 		{
 			m_health.reserve(GameState::MAX_HEALTH);
+			auto [healthRootEntity, healthRootTransform] = hierarchy.CreateAtRoot(DEFAULT_LAYER, "HealthRoot");
 
 			/*const VisualDataPreset visualPreset = { GetGlobalFont(), 4, VisualData::DEFAULT_CHAR_SPACING,
 					CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };*/
 			FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, GetGlobalFont());
 			const VisualData healthVisualData = VisualData({ {TextChar(Color(215, 71, 9, 255), '@')}}, {0, 0}, fontSettings, VisualData::DEFAULT_PIVOT);
 
+			NormalizedPosition topLeftPos = {};
 			for (size_t i = 0; i < GameState::MAX_HEALTH; i++)
 			{
-				EntityData& healthUI = globalEntities.CreateGlobalEntity("Health" + std::to_string(i), TransformData());
-				const NormalizedPosition healthPosRelative = NormalizedPosition(HEALTH_START_POS_RELATIVE.GetPos().m_X +
-					HELATH_DELTA_X_RELATIVE * i, HEALTH_START_POS_RELATIVE.GetPos().m_Y);
+				auto [healthUIEntity, healthUITransform] = healthRootEntity->CreateChildUI("Health" + std::to_string(i));
+				topLeftPos = NormalizedPosition(HEALTH_START_POS_RELATIVE.GetPos().m_X +
+					HEALTH_SIZE.GetX() * i, HEALTH_START_POS_RELATIVE.GetPos().m_Y);
 
-				healthUI.AddComponent<UIObjectData>(UIObjectData(healthPosRelative));
-				healthUI.AddComponent<EntityRendererData>(EntityRendererData{ healthVisualData, RenderLayerType::UI });
+				healthUIEntity->AddComponent<EntityRendererData>(EntityRendererData{ healthVisualData, RenderLayerType::UI });
+				healthUIEntity->TrySetEntityActive(i < state.GetHealth());
 
-				healthUI.TrySetEntityActive(i < state.GetHealth());
-
-				m_health.push_back(&healthUI);
+				m_health.push_back(healthUIEntity);
 				//LogError(std::format("Craeted health:{}", healthPosRelative.GetPos().ToString()));
 			}
 			//Assert(false, std::format("Created Health UI max:{} globals:{}", std::to_string(GameState::MAX_HEALTH), globalEntities.ToStringEntityData()));

@@ -1,11 +1,11 @@
 #include "pch.hpp"
-#include "EntityMapper.hpp"
-#include "Scene.hpp"
-#include "GlobalEntityManager.hpp"
-#include "StringUtil.hpp"
-#include "HelperFunctions.hpp"
-#include "SceneAsset.hpp"
-#include "EntityData.hpp"
+#include "Unused/EntityMapper.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "Core/Scene/GlobalEntityManager.hpp"
+#include "Utils/StringUtil.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Asset/SceneAsset.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 
 GlobalEntityManager::GlobalEntityManager() :

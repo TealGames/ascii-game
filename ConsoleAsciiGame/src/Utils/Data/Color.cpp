@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "Color.hpp"
-#include "HelperFunctions.hpp"
+#include "Utils/Data/Color.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 namespace Utils
 {

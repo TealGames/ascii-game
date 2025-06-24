@@ -1,5 +1,5 @@
 #pragma once
-#include "SerializableEntity.hpp"
+#include "Core/Serialization/SerializableEntity.hpp"
 #include <cstdint>
 
 struct SerializableComponent

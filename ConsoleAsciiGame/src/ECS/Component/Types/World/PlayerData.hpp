@@ -1,7 +1,7 @@
 #pragma once
-#include "Component.hpp"
-#include "PhysicsBodyData.hpp"
-#include "Vec2.hpp"
+#include "ECS/Component/Component.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "Utils/Data/Vec2.hpp"
 
 class PlayerData : public Component
 {

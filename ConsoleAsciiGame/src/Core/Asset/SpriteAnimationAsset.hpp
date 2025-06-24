@@ -1,6 +1,6 @@
 #pragma once
-#include "Asset.hpp"
-#include "SpriteAnimation.hpp"
+#include "Core/Asset/Asset.hpp"
+#include "Core/Visual/SpriteAnimation.hpp"
 
 class SpriteAnimationAsset : public Asset
 {

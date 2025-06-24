@@ -1,5 +1,5 @@
 #pragma once
-#include "UILayout.hpp"
+#include "ECS/Component/Types/UI/UILayout.hpp"
 
 class GlobalEntityManager;
 namespace ECS

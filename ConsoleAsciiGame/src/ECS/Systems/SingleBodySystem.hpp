@@ -1,6 +1,6 @@
 #pragma once
-#include "EntityMapper.hpp"
-#include "Scene.hpp"
+#include "Unused/EntityMapper.hpp"
+#include "Core/Scene/Scene.hpp"
 
 namespace ECS
 {

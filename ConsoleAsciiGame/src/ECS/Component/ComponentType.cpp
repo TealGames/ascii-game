@@ -1,7 +1,7 @@
 #include "pch.hpp"
 
-#include "ComponentType.hpp"
-#include "HelperFunctions.hpp"
+#include "ECS/Component/ComponentType.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 std::uint8_t GetPlaceOfComponentType(const ComponentType& type)
 {

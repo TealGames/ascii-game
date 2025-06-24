@@ -1,5 +1,5 @@
 #pragma once
-#include "Vec2.hpp"
+#include "Utils/Data/Vec2.hpp"
 #include <optional>
 #include <string>
 

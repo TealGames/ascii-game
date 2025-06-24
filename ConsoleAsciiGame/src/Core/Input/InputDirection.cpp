@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "InputDirection.hpp"
-#include "StringUtil.hpp"
-#include "Debug.hpp"
+#include "Core/Input/InputDirection.hpp"
+#include "Utils/StringUtil.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 namespace Input
 {

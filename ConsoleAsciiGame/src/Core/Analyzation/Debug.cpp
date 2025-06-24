@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "Debug.hpp"
-#include "StringUtil.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Utils/StringUtil.hpp"
 
 namespace DebugProperties
 {

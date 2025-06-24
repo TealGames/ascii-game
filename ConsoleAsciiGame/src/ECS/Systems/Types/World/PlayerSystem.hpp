@@ -1,7 +1,7 @@
 #pragma once
-#include "MultiBodySystem.hpp"
-#include "PlayerData.hpp"
-#include "InputManager.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
+#include "ECS/Component/Types/World/PlayerData.hpp"
+#include "Core/Input/InputManager.hpp"
 
 #define ALLOW_PLAYER_CHEATS
 

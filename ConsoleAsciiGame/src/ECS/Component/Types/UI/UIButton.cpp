@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "UIButton.hpp"
+#include "ECS/Component/Types/UI/UIButton.hpp"
 #include "raylib.h"
-#include "Debug.hpp"
-#include "EntityData.hpp"
-#include "UITextComponent.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
 
 UIButton::UIButton() : UIButton(UIStyle()) {}
 UIButton::UIButton(const UIStyle& settings, const std::string text, const float cooldownTime) :

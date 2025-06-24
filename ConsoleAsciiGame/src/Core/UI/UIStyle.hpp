@@ -1,7 +1,7 @@
 #pragma once
 #include "raylib.h"
-#include "ScreenPosition.hpp"
-#include "UITextStyle.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
+#include "Core/UI/UITextStyle.hpp"
 
 struct UIStyle
 {

@@ -4,16 +4,16 @@
 #include <optional>
 #include <limits>
 #include "raylib.h"
-#include "Component.hpp"
-#include "MultiBodySystem.hpp"
-#include "EntityRendererSystem.hpp"
-#include "TransformSystem.hpp"
-#include "LightSourceSystem.hpp"
-#include "Point4D.hpp"
-#include "TextBuffer.hpp"
-#include "ColorGradient.hpp"
-#include "LightSourceData.hpp"
-#include "Scene.hpp"
+#include "ECS/Component/Component.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
+#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
+#include "ECS/Systems/Types/World/TransformSystem.hpp"
+#include "ECS/Systems/Types/World/LightSourceSystem.hpp"
+#include "Utils/Data/Point4D.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Utils/Data/ColorGradient.hpp"
+#include "ECS/Component/Types/World/LightSourceData.hpp"
+#include "Core/Scene/Scene.hpp"
 
 class EntityData;
 namespace ECS

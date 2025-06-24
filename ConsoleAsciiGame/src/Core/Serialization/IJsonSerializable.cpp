@@ -1,2 +1,2 @@
 #include "pch.hpp"
-#include "IJsonSerializable.hpp"
+#include "Core/Serialization/IJsonSerializable.hpp"

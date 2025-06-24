@@ -8,10 +8,10 @@
 #include <variant>
 #include <optional>
 #include <type_traits>
-#include "HelperFunctions.hpp"
-#include "Component.hpp"
-#include "ComponentFieldReference.hpp"
-#include "Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "ECS/Component/Component.hpp"
+#include "ECS/Component/ComponentFieldReference.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 template<typename T>
 class AnimationPropertyKeyframe

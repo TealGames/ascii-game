@@ -1,12 +1,12 @@
 #include "pch.hpp"
-#include "SpriteAnimatorSystem.hpp"
-#include "HelperFunctions.hpp"
-#include "EntityRendererData.hpp"
-#include "SpriteAnimation.hpp"
-#include "EntityData.hpp"
+#include "ECS/Systems/Types/World/SpriteAnimatorSystem.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "Core/Visual/SpriteAnimation.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 namespace ECS
 {

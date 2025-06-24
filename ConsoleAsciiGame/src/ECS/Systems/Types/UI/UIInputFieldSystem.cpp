@@ -1,12 +1,12 @@
 #include "pch.hpp"
-#include "UIInputFieldSystem.hpp"
-#include "GlobalComponentInfo.hpp"
-#include "EntityData.hpp"
-#include "UIPanel.hpp"
-#include "UITextComponent.hpp"
-#include "EditorStyles.hpp"
-#include "MultiBodySystem.hpp" 
-#include "GlobalEntityManager.hpp"
+#include "ECS/Systems/Types/UI/UIInputFieldSystem.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "Editor/EditorStyles.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp" 
+#include "Core/Scene/GlobalEntityManager.hpp"
 
 namespace ECS
 {

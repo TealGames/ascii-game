@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "ICommandPrompt.hpp"
+#include "Editor/Console/ICommandPrompt.hpp"
 
 ICommandPrompt::ICommandPrompt(const std::string& command) : m_args{}, m_command(command){}
 

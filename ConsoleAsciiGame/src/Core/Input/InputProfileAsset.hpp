@@ -1,9 +1,9 @@
 #pragma once
-#include "Asset.hpp"
+#include "Core/Asset/Asset.hpp"
 #include <optional>
-#include "InputProfile.hpp"
-#include "IDependableAsset.hpp"
-#include "IJsonSerializable.hpp"
+#include "Core/Input/InputProfile.hpp"
+#include "Core/Asset/IDependableAsset.hpp"
+#include "Core/Serialization/IJsonSerializable.hpp"
 
 class InputProfileAsset : public Asset, public IDependableAsset<Input::InputManager>
 {

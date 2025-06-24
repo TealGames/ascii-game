@@ -1,15 +1,15 @@
 #pragma once
-#include "UIContainer.hpp"
-#include "UITransformSystem.hpp"
-#include "UIRendererSystem.hpp"
+#include "ECS/Component/Types/UI/UIContainer.hpp"
+#include "ECS/Systems/Types/UI/UITransformSystem.hpp"
+#include "ECS/Systems/Types/UI/UIRendererSystem.hpp"
 #include <cstdint>
 #include <map>
 #include <limits>
 #include <functional>
 #include <optional>
 #include <queue>
-#include "Event.hpp"
-#include "EntityData.hpp"
+#include "Utils/Data/Event.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 using UILayer = std::uint8_t;
 constexpr UILayer MAX_LAYERS = 8;

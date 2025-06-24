@@ -1,11 +1,11 @@
 #include "pch.hpp"
-#include "CollisionBoxSystem.hpp"
-#include "Scene.hpp"
-#include "PositionConversions.hpp"
-#include "EntityData.hpp"
+#include "ECS/Systems/Types/World/CollisionBoxSystem.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "Core/PositionConversions.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

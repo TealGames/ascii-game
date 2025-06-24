@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "UILayoutSystem.hpp"
-#include "MultiBodySystem.hpp"
-#include "GlobalEntityManager.hpp"
+#include "ECS/Systems/Types/UI/UILayoutSystem.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
+#include "Core/Scene/GlobalEntityManager.hpp"
 
 namespace ECS
 {

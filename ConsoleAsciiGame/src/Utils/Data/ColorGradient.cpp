@@ -1,11 +1,11 @@
 #include <limits>
 
 #include "pch.hpp"
-#include "ColorGradient.hpp"
+#include "Utils/Data/ColorGradient.hpp"
 #include "raylib.h"
-#include "HelperFunctions.hpp"
-#include "RaylibUtils.hpp"
-#include "Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 ColorGradientKeyFrame::ColorGradientKeyFrame() : ColorGradientKeyFrame({}, 0) {}
 ColorGradientKeyFrame::ColorGradientKeyFrame(const Color& color, const float& location) 

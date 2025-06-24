@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "UIPanel.hpp"
-#include "Debug.hpp"
-#include "RaylibUtils.hpp"
-#include "UIRendererComponent.hpp"
-#include "EntityData.hpp"
-#include "GameRenderer.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Core/Rendering/GameRenderer.hpp"
 
 UIPanel::UIPanel() : UIPanel(Color()) {}
 UIPanel::UIPanel(const Color color) : m_color(color), m_renderer(nullptr) {}

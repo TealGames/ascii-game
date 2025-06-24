@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "EntitySystem.hpp"
+#include "ECS/Systems/Types/World/EntitySystem.hpp"
 
 namespace ECS
 {

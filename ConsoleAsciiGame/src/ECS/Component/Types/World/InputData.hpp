@@ -2,10 +2,10 @@
 #include <string>
 #include "raylib.h"
 #include <unordered_map>
-#include "Component.hpp"
-#include "Point2DInt.hpp"
-#include "InputAction.hpp"
-#include "InputManager.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Utils/Data/Point2DInt.hpp"
+#include "Core/Input/InputAction.hpp"
+#include "Core/Input/InputManager.hpp"
 
 class InputData : public Component
 {

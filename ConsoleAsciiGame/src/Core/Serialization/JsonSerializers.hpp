@@ -1,26 +1,26 @@
 #pragma once
 #include "nlohmann/json.hpp"
-#include "Vec2.hpp"
-#include "Vec2Int.hpp"
-#include "RenderLayer.hpp"
-#include "VisualData.hpp"
-#include "TextArray.hpp"
-#include "SerializableEntity.hpp"
-#include "Component.hpp"
-#include "EntityData.hpp"
-#include "AnimatorData.hpp"
-#include "SpriteAnimation.hpp"
-#include "ComponentFieldReference.hpp"
-#include "SerializableField.hpp"
-#include "ColorGradient.hpp"
-#include "JsonUtils.hpp"
-#include "AABB.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Int.hpp"
+#include "Core/Rendering/RenderLayer.hpp"
+#include "Core/Visual/VisualData.hpp"
+#include "Core/Visual/TextArray.hpp"
+#include "Core/Serialization/SerializableEntity.hpp"
+#include "ECS/Component/Component.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/AnimatorData.hpp"
+#include "Core/Visual/SpriteAnimation.hpp"
+#include "ECS/Component/ComponentFieldReference.hpp"
+#include "Core/Serialization/SerializableField.hpp"
+#include "Utils/Data/ColorGradient.hpp"
+#include "Core/Serialization/JsonUtils.hpp"
+#include "Core/Collision/AABB.hpp"
 #include <functional>
 #include <type_traits>
 #include <cstdint>
 #include <vector>
-#include "FloatRange.hpp"
-#include "Asset.hpp"
+#include "Utils/Data/FloatRange.hpp"
+#include "Core/Asset/Asset.hpp"
 
 using Json = nlohmann::json;
 using JsonOrdered = nlohmann::ordered_json;

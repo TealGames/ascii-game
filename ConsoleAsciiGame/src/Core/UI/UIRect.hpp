@@ -1,8 +1,8 @@
 #pragma once
-#include "Vec2Int.hpp"
-#include "ScreenPosition.hpp"
-#include "WorldPosition.hpp"
-#include "NormalizedPosition.hpp"
+#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Data/NormalizedPosition.hpp"
 
 class UIRect
 {

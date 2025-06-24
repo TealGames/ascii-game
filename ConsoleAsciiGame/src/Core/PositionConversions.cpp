@@ -1,8 +1,8 @@
 #pragma once
 #include "pch.hpp"
-#include "Array2DPosition.hpp"
-#include "PositionConversions.hpp"
-#include "EntityData.hpp"
+#include "Utils/Data/Array2DPosition.hpp"
+#include "Core/PositionConversions.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 namespace Conversions
 {

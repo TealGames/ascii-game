@@ -2,8 +2,8 @@
 #include "unordered_map"
 #include <cstdint>
 #include <type_traits>
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 enum class ReferenceType
 {

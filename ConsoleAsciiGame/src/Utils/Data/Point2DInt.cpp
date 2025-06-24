@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "Point2DInt.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Utils/Data/Point2DInt.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 namespace Utils
 {

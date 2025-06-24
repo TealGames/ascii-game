@@ -1,7 +1,7 @@
 #pragma once
-#include "MultiBodySystem.hpp" 
-#include "CollisionRegistry.hpp"
-#include "ColliderOutlineBuffer.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp" 
+#include "Core/Collision/CollisionRegistry.hpp"
+#include "Core/Collision/ColliderOutlineBuffer.hpp"
 
 namespace ECS
 {

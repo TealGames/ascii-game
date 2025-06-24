@@ -1,5 +1,5 @@
 #pragma once
-#include "PhysicsWorld.hpp"
+#include "Core/Physics/PhysicsWorld.hpp"
 
 namespace SceneManagement
 {

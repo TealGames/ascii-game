@@ -1,8 +1,7 @@
 #pragma once
-#include "UISelectableData.hpp"
-#include "IRenderable.hpp"
-#include "UIStyle.hpp"
-#include "Color.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "Core/UI/UIStyle.hpp"
+#include "Utils/Data/Color.hpp"
 #include <functional>
 
 class PopupUIManager;

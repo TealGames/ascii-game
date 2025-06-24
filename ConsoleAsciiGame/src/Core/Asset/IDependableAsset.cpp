@@ -1,2 +1,2 @@
 #include "pch.hpp"
-#include "IDependableAsset.hpp"
+#include "Core/Asset/IDependableAsset.hpp"

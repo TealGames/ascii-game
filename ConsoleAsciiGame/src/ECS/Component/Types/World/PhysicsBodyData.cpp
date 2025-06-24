@@ -1,11 +1,11 @@
 #include "pch.hpp"
-#include "PhysicsBodyData.hpp"
-#include "HelperFunctions.hpp"
-#include "EntityData.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 #include <limits>
 #include <optional>
-#include "JsonSerializers.hpp"
-#include "Debug.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 MoveContraints::MoveContraints(const bool constrainX, const bool constrainY)
 	: m_ConstrainX(constrainX), m_ConstrainY(constrainY) {}

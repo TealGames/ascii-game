@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
-#include "ScreenPosition.hpp"
-#include "Vec2.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Data/Vec2.hpp"
 
 struct RectangleOutlineData
 {

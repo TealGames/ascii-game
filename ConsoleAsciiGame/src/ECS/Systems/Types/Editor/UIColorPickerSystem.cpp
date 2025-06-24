@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "UIColorPickerSystem.hpp"
-#include "GlobalComponentInfo.hpp"
-#include "EntityData.hpp"
-#include "UIRendererComponent.hpp"
+#include "ECS/Systems/Types/Editor/UIColorPickerSystem.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 
 namespace ECS
 {

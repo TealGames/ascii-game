@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "SerializableEntity.hpp"
+#include "Core/Serialization/SerializableEntity.hpp"
 
 SerializableEntity::SerializableEntity() : SerializableEntity("", "") {}
 SerializableEntity::SerializableEntity(const std::string& sceneName, const std::string& entityName) 

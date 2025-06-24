@@ -1,16 +1,16 @@
 #include "pch.hpp"
 #include <cmath>
-#include "LightSourceSystem.hpp"
-#include "EntityData.hpp"
-#include "Vec2.hpp"
-#include "Scene.hpp"
-#include "EntityRendererSystem.hpp"
-#include "TextBuffer.hpp"
-#include "ColorGradient.hpp"
-#include "Scene.hpp"
+#include "ECS/Systems/Types/World/LightSourceSystem.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Utils/Data/ColorGradient.hpp"
+#include "Core/Scene/Scene.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "JsonSerializers.hpp"
-#include "EntityRendererData.hpp"
-#include "JsonUtils.hpp"
-#include "Debug.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
+#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "Core/Serialization/JsonUtils.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 EntityRendererData::EntityRendererData() : EntityRendererData(VisualData(), RenderLayerType::None) {}
 

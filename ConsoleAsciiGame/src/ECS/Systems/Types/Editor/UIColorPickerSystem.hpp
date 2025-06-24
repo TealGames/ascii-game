@@ -1,5 +1,5 @@
 #pragma once
-#include "UIColorPicker.hpp"
+#include "ECS/Component/Types/Editor/UIColorPicker.hpp"
 
 class PopupUIManager;
 namespace ECS

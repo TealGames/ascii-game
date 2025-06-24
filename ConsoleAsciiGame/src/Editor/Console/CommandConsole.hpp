@@ -1,12 +1,12 @@
 #pragma once
 #include <unordered_map>
 #include <string>
-#include "CommandPrompt.hpp"
+#include "Editor/Console/CommandPrompt.hpp"
 #include "raylib.h"
 #include <memory>
 #include <queue>
 #include <chrono> 
-#include "InputManager.hpp"
+#include "Core/Input/InputManager.hpp"
 
 //using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;

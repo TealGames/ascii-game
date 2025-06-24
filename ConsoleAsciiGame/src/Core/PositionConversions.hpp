@@ -1,6 +1,6 @@
 #pragma once
-#include "CameraData.hpp"
-#include "NormalizedPosition.hpp"
+#include "ECS/Component/Types/World/CameraData.hpp"
+#include "Utils/Data/NormalizedPosition.hpp"
 
 namespace Conversions
 {

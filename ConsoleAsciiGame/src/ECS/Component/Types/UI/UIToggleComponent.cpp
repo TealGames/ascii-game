@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "UIToggleComponent.hpp"
-#include "RaylibUtils.hpp"
-#include "UIInteractionManager.hpp"
+#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Core/UI/UIInteractionManager.hpp"
 #include <optional>
-#include "TextureAsset.hpp"
+#include "Core/Asset/TextureAsset.hpp"
 
 //ToggleGUI::ToggleGUI() : 
 //	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 

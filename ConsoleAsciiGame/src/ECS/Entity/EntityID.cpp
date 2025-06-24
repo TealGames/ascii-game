@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "EntityID.hpp"
+#include "ECS/Entity/EntityID.hpp"
 
 namespace ECS
 {

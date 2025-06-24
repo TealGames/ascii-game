@@ -2,7 +2,7 @@
 #include <optional>
 #include <string>
 #include "raylib.h"
-#include "Vec2.hpp"
+#include "Utils/Data/Vec2.hpp"
 
 namespace JsonConstants
 {

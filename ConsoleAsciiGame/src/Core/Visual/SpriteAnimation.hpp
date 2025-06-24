@@ -1,5 +1,5 @@
 #pragma once
-#include "VisualData.hpp"
+#include "Core/Visual/VisualData.hpp"
 
 /// <summary>
 /// Stores the whole entire visual frame. This is meant for the user interface for 

@@ -1,11 +1,11 @@
 #pragma once
 #include <vector>
-#include "TextBuffer.hpp"
-#include "ColorGradient.hpp"
-#include "RenderLayer.hpp"
-#include "Point3D.hpp"
-#include "Component.hpp"
-#include "Color.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Utils/Data/ColorGradient.hpp"
+#include "Core/Rendering/RenderLayer.hpp"
+#include "Utils/Data/Point3D.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Utils/Data/Color.hpp"
 
 struct LightMapChar
 {

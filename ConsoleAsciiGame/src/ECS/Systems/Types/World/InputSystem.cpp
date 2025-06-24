@@ -1,12 +1,12 @@
 
 //NOT USED
 #include "pch.hpp"
-#include "InputSystem.hpp"
+#include "ECS/Systems/Types/World/InputSystem.hpp"
 #include "raylib.h"
-#include "HelperFunctions.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

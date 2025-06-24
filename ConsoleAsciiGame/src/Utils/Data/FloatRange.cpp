@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "FloatRange.hpp"
-#include "HelperFunctions.hpp"
+#include "Utils/Data/FloatRange.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 FloatRange::FloatRange() : FloatRange(0, 0) {}
 

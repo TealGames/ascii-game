@@ -2,8 +2,8 @@
 #include <unordered_map>
 #include <vector>
 #include <optional>
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 /// <summary>
 /// A map that retains the insertion order. It is implemented by having a hashtable that stores key values normally so

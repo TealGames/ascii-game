@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "TextureAsset.hpp"
-#include "Debug.hpp"
+#include "Core/Asset/TextureAsset.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 const std::string TextureAsset::EXTENSION = ".png";
 

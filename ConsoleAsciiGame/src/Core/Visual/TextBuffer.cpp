@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "TextBuffer.hpp"
-#include "HelperFunctions.hpp"
+#include "Core/Visual/TextBuffer.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 TextBufferCharPosition::TextBufferCharPosition() : TextBufferCharPosition({}, {}, {}) {}
 TextBufferCharPosition::TextBufferCharPosition(const Vec2& pos, const TextChar& textChar, const FontProperties& font)

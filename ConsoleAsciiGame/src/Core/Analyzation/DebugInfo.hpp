@@ -2,8 +2,8 @@
 #include <string>
 #include <array>
 #include <optional>
-#include "WorldPosition.hpp"
-#include "ScreenPosition.hpp"
+#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
 #include "raylib.h"
 
 class Scene;

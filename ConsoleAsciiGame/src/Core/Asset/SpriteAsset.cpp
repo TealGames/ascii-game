@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "SpriteAsset.hpp"
-#include "JsonSerializers.hpp"
-#include "IOHandler.hpp"
+#include "Core/Asset/SpriteAsset.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
+#include "Utils/IOHandler.hpp"
 
 const std::string SpriteAsset::EXTENSION = ".json";
 

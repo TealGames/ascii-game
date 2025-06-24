@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "SpriteAnimation.hpp"
-#include "Debug.hpp"
+#include "Core/Visual/SpriteAnimation.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 SpriteAnimationFrame::SpriteAnimationFrame() : SpriteAnimationFrame(0, {}) {}
 SpriteAnimationFrame::SpriteAnimationFrame(const float& time, const VisualData& frame) :

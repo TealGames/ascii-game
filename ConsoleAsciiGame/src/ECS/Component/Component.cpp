@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "Component.hpp"
-#include "Debug.hpp"
-#include "EntityData.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 Component::Component() 
 	: m_MutatedThisFrame(false), m_IsEnabled(true), m_entity(nullptr), m_Fields() //m_dependencyLevel(dependency)

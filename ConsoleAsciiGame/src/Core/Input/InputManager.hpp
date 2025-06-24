@@ -4,15 +4,15 @@
 #include <string>
 #include <optional>
 #include <filesystem>
-#include "Direction.hpp"
+#include "Utils/Data/Direction.hpp"
 #include "raylib.h"
-#include "Vec2.hpp"
-#include "Point2DInt.hpp"
-#include "CompoundInput.hpp"
-#include "InputKey.hpp"
-#include "InputProfile.hpp"
-#include "ScreenPosition.hpp"
-#include "InputProfileAsset.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Point2DInt.hpp"
+#include "Core/Input/CompoundInput.hpp"
+#include "Core/Input/InputKey.hpp"
+#include "Core/Input/InputProfile.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
+#include "Core/Input/InputProfileAsset.hpp"
 
 //TODO: predefined data like compounds should be mutated and set up to work with file loading
 //rather than force user to add all compounds themselves (should leave option, but mainly all should be 

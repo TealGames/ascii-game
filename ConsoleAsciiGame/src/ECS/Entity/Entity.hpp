@@ -8,10 +8,10 @@
 #include <type_traits>
 #include <algorithm>
 #include <tuple>
-#include "HelperFunctions.hpp"
-#include "ComponentType.hpp"
-#include "Debug.hpp"
-#include "IValidateable.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "ECS/Component/ComponentType.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Core/IValidateable.hpp"
 
 class TransformData;
 class EntityData;

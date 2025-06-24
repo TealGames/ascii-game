@@ -4,13 +4,13 @@
 #include <queue>
 #include "Globals.hpp"
 
-#include "GameRenderer.hpp"
-#include "HelperFunctions.hpp"
-#include "RaylibUtils.hpp"
-#include "ProfilerTimer.hpp"
-#include "Debug.hpp"
-#include "UIHierarchy.hpp"
-#include "EditorStyles.hpp"
+#include "Core/Rendering/GameRenderer.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Core/UI/UIHierarchy.hpp"
+#include "Editor/EditorStyles.hpp"
 
 namespace Rendering
 {

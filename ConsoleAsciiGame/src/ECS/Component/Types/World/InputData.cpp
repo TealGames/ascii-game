@@ -1,8 +1,8 @@
 //NOT USED
 #include "pch.hpp"
-#include "InputData.hpp"	
-#include "Debug.hpp"
-#include "EntityData.hpp"
+#include "ECS/Component/Types/World/InputData.hpp"	
+#include "Core/Analyzation/Debug.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 InputData::InputData() : Component(),
 	m_actions() {}

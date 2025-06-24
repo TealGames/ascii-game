@@ -1,7 +1,7 @@
 #pragma once
 #include <optional>
-#include "EntityUI.hpp"
-#include "InputManager.hpp"
+#include "Editor/Entity/EntityUI.hpp"
+#include "Core/Input/InputManager.hpp"
 
 class UIHierarchy;
 class CameraData;

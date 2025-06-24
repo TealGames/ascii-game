@@ -2,15 +2,15 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
-#include "MultiBodySystem.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
 #include <optional>
 #include <functional>
 #include <format>
-#include "EntityRegistry.hpp"
-//#include "EntityMapper.hpp"
-#include "Scene.hpp"
-#include "HelperFunctions.hpp"
-//#include "AssetManager.hpp"
+#include "ECS/Entity/EntityRegistry.hpp"
+//#include "Unused/EntityMapper.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "Utils/HelperFunctions.hpp"
+//#include "Core/Asset/AssetManager.hpp"
 
 class EntityData;
 

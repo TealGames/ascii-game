@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "EntityEditorUI.hpp"
+#include "Editor/Entity/EntityEditorUI.hpp"
 #include "Globals.hpp"
-#include "NormalizedPosition.hpp"
-#include "PositionConversions.hpp"
-#include "CameraController.hpp"
-#include "UIHierarchy.hpp"
+#include "Utils/Data/NormalizedPosition.hpp"
+#include "Core/PositionConversions.hpp"
+#include "Core/Camera/CameraController.hpp"
+#include "Core/UI/UIHierarchy.hpp"
 
 EntityEditorUI::EntityEditorUI(const Input::InputManager& input,
 	const CameraController& cameraController, UIHierarchy& hiearchy, PopupUIManager& popupManager, const AssetManagement::AssetManager& assetManager, EntityData& parent)

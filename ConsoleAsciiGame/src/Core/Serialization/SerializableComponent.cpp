@@ -1,6 +1,6 @@
 #include "pch.hpp"
-#include "SerializableComponent.hpp"
-#include "Debug.hpp"
+#include "Core/Serialization/SerializableComponent.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 const char* SerializableComponent::SELF_COMPONENT_ENTITY_KEYWORD = "Self";
 

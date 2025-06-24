@@ -1,14 +1,14 @@
 #pragma once
 #include <string>
 #include <variant>
-#include "Vec2.hpp"
-#include "Vec2Int.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Int.hpp"
 #include <type_traits>
 #include <typeinfo>
 #include <functional>
 #include <optional>
 #include <cstdint>
-#include "Color.hpp"
+#include "Utils/Data/Color.hpp"
 
 //enum class ComponentFieldType
 //{

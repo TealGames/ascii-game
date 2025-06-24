@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "FigDeserializers.hpp"
-#include "StringUtil.hpp"
-#include "HelperFunctions.hpp"
+#include "Fig/FigDeserializers.hpp"
+#include "Utils/StringUtil.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 bool ToBool(const std::string& value)
 {

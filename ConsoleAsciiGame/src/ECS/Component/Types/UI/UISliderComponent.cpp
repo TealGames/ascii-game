@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "UISliderComponent.hpp"
-#include "Debug.hpp"
-#include "EntityData.hpp"
-#include "UIPanel.hpp"
-#include "UIRendererComponent.hpp"
-#include "UITransformData.hpp"
+#include "ECS/Component/Types/UI/UISliderComponent.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "ECS/Component/Types/UI/UITransformData.hpp"
 
 static const NormalizedPosition HANDLE_SIZE = {0.05, 1};
 static const float SLIDER_HEIGHT = 0.5;

@@ -2,14 +2,14 @@
 #include <string>
 #include <cstdint>
 #include "raylib.h"
-#include "HelperFunctions.hpp"
-#include "Point4D.hpp"
-#include "Point3D.hpp"
-#include "Vec2.hpp"
-#include "Vec2Int.hpp"
-#include "PositionConversions.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Utils/Data/Point4D.hpp"
+#include "Utils/Data/Point3D.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Int.hpp"
+#include "Core/PositionConversions.hpp"
 #include <optional>
-#include "Color.hpp"
+#include "Utils/Data/Color.hpp"
 
 namespace RaylibUtils
 {

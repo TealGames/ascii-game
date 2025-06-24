@@ -1,8 +1,8 @@
 #pragma once
-#include "GameState.hpp"
-#include "GameUIManager.hpp"
+#include "Game/GameState.hpp"
+#include "Game/GameUIManager.hpp"
 
-class GlobalEntityManager;
+class UIHierarchy;
 class GameManager
 {
 private:
@@ -13,7 +13,7 @@ public:
 
 private:
 public:
-	GameManager(GlobalEntityManager& globalManager);
+	GameManager(UIHierarchy& hierarhcy);
 
 	void GameValidate();
 	void GameStart();

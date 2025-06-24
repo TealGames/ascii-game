@@ -1,5 +1,5 @@
 #pragma once
-#include "UISelectableData.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
 
 namespace ECS
 {

@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "UISelectableSystem.hpp"
-#include "GlobalComponentInfo.hpp"
-#include "UIRendererComponent.hpp"
-#include "EntityData.hpp"
+#include "ECS/Systems/Types/UI/UISelectableSystem.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 namespace ECS
 {

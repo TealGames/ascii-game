@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "UIColorGradient.hpp"
+#include "ECS/Component/Types/Editor/UIColorGradient.hpp"
 #include "raylib.h"
 
 UIColorGradient::UIColorGradient(const ColorGradient& gradient) : m_gradient(gradient) {}

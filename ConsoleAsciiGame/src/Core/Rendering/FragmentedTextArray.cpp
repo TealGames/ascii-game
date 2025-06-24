@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "FragmentedTextArray.hpp"
-#include "RaylibUtils.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
+#include "Core/Rendering/FragmentedTextArray.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 std::string ToString(const TextArrayPositionType& positionType)
 {

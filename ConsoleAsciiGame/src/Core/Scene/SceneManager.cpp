@@ -1,8 +1,8 @@
 #include <filesystem>
 #include "pch.hpp"
-#include "SceneManager.hpp"
-#include "Scene.hpp"
-#include "HelperFunctions.hpp"
+#include "Core/Scene/SceneManager.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 namespace SceneManagement
 {

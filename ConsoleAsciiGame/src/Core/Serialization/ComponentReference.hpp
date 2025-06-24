@@ -1,5 +1,5 @@
 #pragma once
-#include "EntityData.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 struct ComponentReference
 {

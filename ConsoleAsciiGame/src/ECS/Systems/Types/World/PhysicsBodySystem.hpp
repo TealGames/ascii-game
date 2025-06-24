@@ -1,8 +1,8 @@
 #pragma once
-#include "MultiBodySystem.hpp"
-//#include "ColliderOutlineBuffer.hpp"
-#include "LineBuffer.hpp"
-#include "PhysicsManager.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
+//#include "Core/Collision/ColliderOutlineBuffer.hpp"
+#include "Core/Rendering/LineBuffer.hpp"
+#include "Core/Physics/PhysicsManager.hpp"
 
 namespace ECS
 {

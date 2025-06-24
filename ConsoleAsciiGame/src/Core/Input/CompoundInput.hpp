@@ -4,9 +4,9 @@
 #include <vector>
 #include <string>
 #include <optional>
-#include "InputAction.hpp"
-#include "InputDirection.hpp"
-#include "Vec2Int.hpp"
+#include "Core/Input/InputAction.hpp"
+#include "Core/Input/InputDirection.hpp"
+#include "Utils/Data/Vec2Int.hpp"
 
 namespace Input
 {

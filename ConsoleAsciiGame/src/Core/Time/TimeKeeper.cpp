@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "TimeKeeper.hpp"
+#include "Core/Time/TimeKeeper.hpp"
 
 TimeKeeper::TimeKeeper() :
 	m_currentTime(std::chrono::high_resolution_clock().now()),

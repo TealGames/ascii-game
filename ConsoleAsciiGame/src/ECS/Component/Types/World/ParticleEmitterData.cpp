@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "ParticleEmitterData.hpp"
-#include "EntityData.hpp"
+#include "ECS/Component/Types/World/ParticleEmitterData.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 #include <functional>
-#include "JsonSerializers.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
 
 Particle::Particle(const TextChar& text, const float& fontSize, const WorldPosition& pos, const Vec2& vel, const float& lifeTime)
 	: m_TextChar(text), m_FontSize(fontSize), m_Pos(pos), m_Velocity(vel), m_AliveTime(0), m_LifeTime(lifeTime) {}

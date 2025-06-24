@@ -3,11 +3,11 @@
 #include <unordered_map>
 #include <functional>
 #include <cstdint>
-#include "InputManager.hpp"
+#include "Core/Input/InputManager.hpp"
 #include "raylib.h"
-#include "UIRect.hpp"
-#include "UIStyle.hpp"
-#include "UISelectableData.hpp"
+#include "Core/UI/UIRect.hpp"
+#include "Core/UI/UIStyle.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
 
 enum class InputFieldType
 {

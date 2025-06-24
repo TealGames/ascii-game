@@ -1,10 +1,10 @@
 //NOT USED
 #include "pch.hpp"
 
-#include "Engine.hpp"
+#include "Core/Engine.hpp"
 #include "raylib.h"
-#include "PreservedMap.hpp"
-#include "Debug.hpp"
+#include "Utils/DataStructure/PreservedMap.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
 #define _CRTDBG_MAP_ALLOC

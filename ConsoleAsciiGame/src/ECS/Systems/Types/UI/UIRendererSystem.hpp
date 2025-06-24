@@ -1,5 +1,5 @@
 #pragma once
-#include "UIRendererComponent.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 
 namespace Rendering { class Renderer; }
 class Scene;

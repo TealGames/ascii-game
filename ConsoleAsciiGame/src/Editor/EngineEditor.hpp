@@ -1,15 +1,14 @@
 #pragma once
-#include "CommandConsole.hpp"
-#include "EntityEditorUI.hpp"
-#include "SpriteEditorUI.hpp"
-#include "PopupUIManager.hpp"
-#include "IBasicRenderable.hpp"
-#include "DebugInfo.hpp"
-#include "UIToggleComponent.hpp"
-#include "UIButton.hpp"
+#include "Editor/Console/CommandConsole.hpp"
+#include "Editor/Entity/EntityEditorUI.hpp"
+#include "Editor/Sprite/SpriteEditorUI.hpp"
+#include "Core/UI/PopupUIManager.hpp"
+#include "Core/Analyzation/DebugInfo.hpp"
+#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
+#include "ECS/Component/Types/UI/UIButton.hpp"
 #include "raylib.h"
-#include "UIHierarchy.hpp"
-#include "UIPanel.hpp"
+#include "Core/UI/UIHierarchy.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 namespace Core { class Engine; }
 namespace Input { class InputManager; }

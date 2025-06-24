@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "CommandPromptType.hpp"
-#include "HelperFunctions.hpp"
-#include "StringUtil.hpp"
-#include "Debug.hpp"
+#include "Editor/Console/CommandPromptType.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Utils/StringUtil.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 const std::type_info& GetCommandPromptTypeFromEnum(const CommandPromptType& prompt)
 {

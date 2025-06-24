@@ -12,8 +12,8 @@
 #include <algorithm>
 #include <type_traits>
 #include <unordered_map>
-#include "HelperFunctions.hpp"
-#include "ComponentType.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "ECS/Component/ComponentType.hpp"
 
 namespace Old
 {

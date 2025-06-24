@@ -1,7 +1,7 @@
 #pragma once
-#include "HelperFunctions.hpp"
+#include "Utils/HelperFunctions.hpp"
 #include "Globals.hpp"
-#include "Event.hpp"
+#include "Utils/Data/Event.hpp"
 #include <optional>
 #include <cstdint>
 

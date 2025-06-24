@@ -1,8 +1,8 @@
 //NOT USED
 #include "pch.hpp"
 
-#include "LightSourceData.hpp"
-#include "JsonSerializers.hpp"
+#include "ECS/Component/Types/World/LightSourceData.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
 
 LightMapChar::LightMapChar() : m_RelativePos(), m_ColorFactor() {}
 LightMapChar::LightMapChar(const Vec2Int& relativePos,

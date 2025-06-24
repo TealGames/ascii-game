@@ -1,14 +1,14 @@
 #pragma once
-#include "Asset.hpp"
+#include "Core/Asset/Asset.hpp"
 #include <vector>
 #include <unordered_map>
 #include <type_traits>
 #include <functional>
-#include "HelperFunctions.hpp"
-#include "IDependableAsset.hpp"
-#include "IValidateable.hpp"
-#include "Debug.hpp"
-#include "IOHandler.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Asset/IDependableAsset.hpp"
+#include "Core/IValidateable.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Utils/IOHandler.hpp"
 
 namespace AssetManagement
 {
@@ -247,7 +247,7 @@ namespace AssetManagement
 		}
 
 		template<typename T, typename ...Args>
-		requires IsAssetType<T>&& std::is_base_of_v<IDependable<Args...>, T>
+		requires IsAssetType<T>&& std::is_base_of_v<IDependableAsset<Args...>, T>
 		void InitDependencies(std::add_lvalue_reference_t<Args>... args)
 		{
 			const std::string tTypeName = Utils::GetTypeName<T>();
@@ -258,7 +258,7 @@ namespace AssetManagement
 
 			for (auto& asset : assets)
 			{
-				static_cast<IDependable<Args...>*>(asset)->SetDependencies(args...);
+				static_cast<IDependableAsset<Args...>*>(asset)->SetDependencies(args...);
 			}
 		}
 	};

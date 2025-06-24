@@ -1,6 +1,6 @@
 #pragma once
-#include "MultiBodySystem.hpp"
-#include "RenderLayer.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
+#include "Core/Rendering/RenderLayer.hpp"
 
 class ParticleEmitterData;
 class Particle;

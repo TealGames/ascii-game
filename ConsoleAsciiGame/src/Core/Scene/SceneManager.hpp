@@ -4,11 +4,11 @@
 #include <unordered_map>
 #include <optional>
 #include <string>
-#include "SceneAsset.hpp"
-#include "Scene.hpp"
-#include "GlobalEntityManager.hpp"
-#include "Event.hpp"
-#include "AssetManager.hpp"
+#include "Core/Asset/SceneAsset.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "Core/Scene/GlobalEntityManager.hpp"
+#include "Utils/Data/Event.hpp"
+#include "Core/Asset/AssetManager.hpp"
 
 namespace SceneManagement
 {

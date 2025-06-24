@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "PlayerData.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
-#include "PhysicsWorld.hpp"
-#include "JsonSerializers.hpp"
+#include "ECS/Component/Types/World/PlayerData.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Core/Physics/PhysicsWorld.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
 
 PlayerData::PlayerData() :
 	PlayerData(nullptr, 0, 0) {}

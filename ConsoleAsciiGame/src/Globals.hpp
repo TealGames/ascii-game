@@ -2,8 +2,8 @@
 #include <string>
 #include "raylib.h"
 #include <cstdint>
-#include "Vec2.hpp"
-#include "Vec2Int.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Int.hpp"
 
 //TODO: this might have to become a txt or json file
 inline const std::string WINDOW_NAME = "game";

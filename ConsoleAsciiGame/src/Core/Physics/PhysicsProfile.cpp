@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "PhysicsProfile.hpp"
+#include "Core/Physics/PhysicsProfile.hpp"
 
 namespace Physics
 {

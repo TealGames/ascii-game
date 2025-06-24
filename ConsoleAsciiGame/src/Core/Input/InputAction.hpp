@@ -2,8 +2,8 @@
 #include "raylib.h"
 #include <string>
 #include <vector>
-#include "InputState.hpp"
-#include "InputKey.hpp"
+#include "Core/Input/InputState.hpp"
+#include "Core/Input/InputKey.hpp"
 
 namespace Input
 {

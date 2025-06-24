@@ -1,9 +1,9 @@
 #pragma once
-#include "Component.hpp"
-#include "HelperMacros.hpp"
-#include "RelativeUIRect.hpp"
-#include "RelativeUIPadding.hpp"
-#include "UIRect.hpp"
+#include "ECS/Component/Component.hpp"
+#include "Utils/HelperMacros.hpp"
+#include "Core/UI/RelativeUIRect.hpp"
+#include "Core/UI/RelativeUIPadding.hpp"
+#include "Core/UI/UIRect.hpp"
 
 enum class UITransformFlags : std::uint8_t
 {

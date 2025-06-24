@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "SpriteEditorUI.hpp"
-#include "Debug.hpp"
-#include "UIHierarchy.hpp"
-#include "EntityEditorUI.hpp"
-#include "AssetManager.hpp"
-#include "SpriteAsset.hpp"
+#include "Editor/Sprite/SpriteEditorUI.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Core/UI/UIHierarchy.hpp"
+#include "Editor/Entity/EntityEditorUI.hpp"
+#include "Core/Asset/AssetManager.hpp"
+#include "Core/Asset/SpriteAsset.hpp"
 
 SpriteEditorUI::SpriteEditorUI(UIHierarchy& hierarchy, const Input::InputManager& inputManager, AssetManagement::AssetManager& assetManager)
 	: m_assetManager(&assetManager), m_inputManager(&inputManager) //,m_saveButton(GUIStyle(), "Save")

@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "TransformSystem.hpp"
-#include "Point2DInt.hpp"
-#include "TransformData.hpp"
+#include "ECS/Systems/Types/World/TransformSystem.hpp"
+#include "Utils/Data/Point2DInt.hpp"
+#include "ECS/Component/Types/World/TransformData.hpp"
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

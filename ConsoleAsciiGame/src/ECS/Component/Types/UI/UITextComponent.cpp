@@ -1,13 +1,13 @@
 #include "pch.hpp"
-#include "UITextComponent.hpp"
-#include "ScreenPosition.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
 #include "limits"
-#include "RaylibUtils.hpp"
-#include "Debug.hpp"
-#include "UITextStyle.hpp"
-#include "EntityData.hpp"
-#include "UIRendererComponent.hpp"
-#include "GameRenderer.hpp"
+#include "Utils/RaylibUtils.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "Core/UI/UITextStyle.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "Core/Rendering/GameRenderer.hpp"
 
 const UIPadding UITextComponent::DEFAULT_PADDING = UIPadding();
 static constexpr float FONT_SIZE_CALC_DELTA = 0.5;

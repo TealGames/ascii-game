@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
-#include "HelperMacros.hpp"
-#include "Debug.hpp"
+#include "Utils/HelperMacros.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 class NormalizedValue
 {

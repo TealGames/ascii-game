@@ -2,10 +2,10 @@
 #include <vector>
 #include <unordered_set>
 #include <cstdint>
-#include "Vec2.hpp"
-#include "WorldPosition.hpp"
-#include "CollisionRegistry.hpp"
-#include "PhysicsBodyData.hpp"
+#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/WorldPosition.hpp"
+#include "Core/Collision/CollisionRegistry.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
 
 class CollisionBoxData;
 namespace ECS

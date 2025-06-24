@@ -1,12 +1,12 @@
 #include "pch.hpp"
-#include "TriggerSystem.hpp"
-#include "TriggerData.hpp"
-#include "Scene.hpp"
-#include "GlobalComponentInfo.hpp"
+#include "ECS/Systems/Types/World/TriggerSystem.hpp"
+#include "ECS/Component/Types/World/TriggerData.hpp"
+#include "Core/Scene/Scene.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
 
 
 #ifdef ENABLE_PROFILER
-#include "ProfilerTimer.hpp"
+#include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
 namespace ECS

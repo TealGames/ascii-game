@@ -2,8 +2,8 @@
 #include <unordered_map>
 #include <filesystem>
 #include <string>
-#include "InputAction.hpp"
-#include "CompoundInput.hpp"
+#include "Core/Input/InputAction.hpp"
+#include "Core/Input/CompoundInput.hpp"
 
 namespace Input
 {

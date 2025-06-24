@@ -1,11 +1,11 @@
 #pragma once
 #include "raylib.h"
-#include "Debug.hpp"
+#include "Core/Analyzation/Debug.hpp"
 #include <cstdint>
 #include <string>
 #include <optional>
 #include <any>
-#include "InputState.hpp"
+#include "Core/Input/InputState.hpp"
 
 namespace Input
 {

@@ -1,14 +1,14 @@
 #pragma once
-#include "UIButtonSystem.hpp"
-#include "UITransformSystem.hpp"
-#include "UISelectableSystem.hpp"
-#include "UIColorPickerSystem.hpp"
-#include "UIInputFieldSystem.hpp"
-#include "UILayoutSystem.hpp"
-#include "UIPanelSystem.hpp"
-#include "UISliderSystem.hpp"
-#include "UITextSystem.hpp"
-#include "UIRendererSystem.hpp"
+#include "ECS/Systems/Types/UI/UIButtonSystem.hpp"
+#include "ECS/Systems/Types/UI/UITransformSystem.hpp"
+#include "ECS/Systems/Types/UI/UISelectableSystem.hpp"
+#include "ECS/Systems/Types/Editor/UIColorPickerSystem.hpp"
+#include "ECS/Systems/Types/UI/UIInputFieldSystem.hpp"
+#include "ECS/Systems/Types/UI/UILayoutSystem.hpp"
+#include "ECS/Systems/Types/UI/UIPanelSystem.hpp"
+#include "ECS/Systems/Types/UI/UISliderSystem.hpp"
+#include "ECS/Systems/Types/UI/UITextSystem.hpp"
+#include "ECS/Systems/Types/UI/UIRendererSystem.hpp"
 
 namespace Rendering { class Renderer; }
 class UIHierarhcy;

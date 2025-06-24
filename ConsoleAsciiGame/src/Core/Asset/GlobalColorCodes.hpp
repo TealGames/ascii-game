@@ -1,8 +1,7 @@
 #pragma once
 #include "raylib.h"
 #include <optional>
-#include "Fig.hpp"
-#include "../"
+#include "Fig/Fig.hpp"
 
 namespace AssetManagement
 {

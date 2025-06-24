@@ -1,22 +1,22 @@
 #include "pch.hpp"
 #include <deque>
-#include "SceneAsset.hpp"
-#include "JsonUtils.hpp"
-#include "JsonSerializers.hpp"
-#include "AnimatorData.hpp"
-#include "CameraData.hpp"
-#include "EntityRendererData.hpp"
-#include "LightSourceData.hpp"
-#include "PhysicsBodyData.hpp"
-#include "PlayerData.hpp"
-#include "CollisionBoxData.hpp"
-#include "SpriteAnimatorData.hpp"
-#include "ParticleEmitterData.hpp"
-#include "AssetManager.hpp"
-#include "IOHandler.hpp"
-#include "VisualDataParser.hpp"
-#include "GlobalComponentInfo.hpp"
-#include "EntityData.hpp"
+#include "Core/Asset/SceneAsset.hpp"
+#include "Core/Serialization/JsonUtils.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
+#include "ECS/Component/Types/World/AnimatorData.hpp"
+#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "ECS/Component/Types/World/LightSourceData.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "ECS/Component/Types/World/PlayerData.hpp"
+#include "ECS/Component/Types/World/CollisionBoxData.hpp"
+#include "ECS/Component/Types/World/SpriteAnimatorData.hpp"
+#include "ECS/Component/Types/World/ParticleEmitterData.hpp"
+#include "Core/Asset/AssetManager.hpp"
+#include "Utils/IOHandler.hpp"
+#include "Core/Visual/VisualDataParser.hpp"
+#include "ECS/Component/GlobalComponentInfo.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 const std::string SceneAsset::EXTENSION = ".json";
 const std::string SceneAsset::LEVEL_EXTENSION = ".level";
@@ -305,10 +305,6 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 				else if (componentName == Utils::GetTypeName<SpriteAnimatorData>())
 				{
 					serializedComponentJson = dynamic_cast<SpriteAnimatorData*>(component)->Serialize();
-				}
-				else if (componentName == Utils::GetTypeName<UIObjectData>())
-				{
-					serializedComponentJson = dynamic_cast<UIObjectData*>(component)->Serialize();
 				}
 				else if (componentName == Utils::GetTypeName<ParticleEmitterData>())
 				{

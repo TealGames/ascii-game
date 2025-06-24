@@ -1,7 +1,7 @@
 #pragma once
-#include "PopupUI.hpp"
+#include "Core/UI/PopupUI.hpp"
 #include <array>
-#include "Color.hpp"
+#include "Utils/Data/Color.hpp"
 
 namespace Input { class InputManager; }
 class UIInteractionManager;

@@ -1,10 +1,10 @@
 #include "pch.hpp"
-#include "CollisionBoxData.hpp"
-#include "HelperFunctions.hpp"
-#include "Debug.hpp"
-#include "TransformData.hpp"
-#include "EntityData.hpp"
-#include "JsonSerializers.hpp"
+#include "ECS/Component/Types/World/CollisionBoxData.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
+#include "ECS/Component/Types/World/TransformData.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Core/Serialization/JsonSerializers.hpp"
 
 AABBIntersectionData::AABBIntersectionData() :
 	AABBIntersectionData(false, Vec2::ZERO) {}

@@ -1,8 +1,8 @@
 #pragma once
-#include "VisualData.hpp"
-#include "MultiBodySystem.hpp"
-#include "SpriteAnimatorData.hpp"
-#include "EntityRendererSystem.hpp"
+#include "Core/Visual/VisualData.hpp"
+#include "ECS/Systems/MultiBodySystem.hpp"
+#include "ECS/Component/Types/World/SpriteAnimatorData.hpp"
+#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
 
 class EntityData;
 namespace ECS

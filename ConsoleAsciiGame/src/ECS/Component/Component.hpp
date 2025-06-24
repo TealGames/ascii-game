@@ -1,9 +1,9 @@
 #pragma once
 #include <vector>
-#include "ComponentField.hpp"
-#include "IJsonSerializable.hpp"
-#include "IValidateable.hpp"
-#include "EntityID.hpp"
+#include "ECS/Component/ComponentField.hpp"
+#include "Core/Serialization/IJsonSerializable.hpp"
+#include "Core/IValidateable.hpp"
+#include "ECS/Entity/EntityID.hpp"
 
 enum class HighestDependecyLevel
 {

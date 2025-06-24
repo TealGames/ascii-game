@@ -1,7 +1,7 @@
 #pragma once
-#include "UISelectableData.hpp"
-#include "UIStyle.hpp"
-#include "Event.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "Core/UI/UIStyle.hpp"
+#include "Utils/Data/Event.hpp"
 
 class UIPanel;
 class UIRenderer;

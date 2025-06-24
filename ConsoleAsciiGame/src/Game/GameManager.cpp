@@ -1,8 +1,8 @@
 #include "pch.hpp"
-#include "GameManager.hpp"
+#include "Game/GameManager.hpp"
 
-GameManager::GameManager(GlobalEntityManager& globalManager) 
-	: m_state(), m_uiManager(globalManager, m_state) {}
+GameManager::GameManager(UIHierarchy& hierarchy) 
+	: m_state(), m_uiManager(hierarchy, m_state) {}
 
 void GameManager::GameValidate()
 {

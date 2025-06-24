@@ -3,7 +3,7 @@
 #include <string>
 #include <optional>
 #include <cstdint>
-#include "TextBuffer.hpp"
+#include "Core/Visual/TextBuffer.hpp"
 
 using RenderLayerNumericType = std::uint8_t;
 enum class RenderLayerType : RenderLayerNumericType

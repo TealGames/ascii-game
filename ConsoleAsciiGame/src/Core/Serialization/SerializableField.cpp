@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "SerializableField.hpp"
+#include "Core/Serialization/SerializableField.hpp"
 
 SerializableField::SerializableField() : SerializableField("", "", "", "") {}
 SerializableField::SerializableField(const SerializableComponent& serializedComp, const std::string& fieldName)

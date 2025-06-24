@@ -1,5 +1,5 @@
 #pragma once
-#include "UITextureData.hpp"
+#include "ECS/Component/Types/UI/UITextureData.hpp"
 
 namespace ECS
 {
