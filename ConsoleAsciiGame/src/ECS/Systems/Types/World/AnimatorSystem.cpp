@@ -43,18 +43,18 @@ namespace ECS
 								typeid(PropertyConvertedType).name(), typeid(ExtractedType).name()));*/
 
 							AnimationProperty<ExtractedType>* maybeProperty = std::get_if<AnimationProperty<ExtractedType>>(&property);
-							if (!Assert(this, maybeProperty != nullptr, std::format("Tried to get the current type in variant as: {} "
+							if (!Assert(maybeProperty != nullptr, std::format("Tried to get the current type in variant as: {} "
 								"but it failed to be converted from value: {}", typeid(PropertyConvertedType).name(),
 								typeid(maybeProperty).name()))) return;
 
-							if (!Assert(this, IsValidKeyframeIndex<ExtractedType>(*maybeProperty, maybeProperty->m_KeyframeIndex),
+							if (!Assert(IsValidKeyframeIndex<ExtractedType>(*maybeProperty, maybeProperty->m_KeyframeIndex),
 								std::format("Tried to get next key from from index: {} but it is not valid", std::to_string(maybeProperty->m_KeyframeIndex))))
 								return;
 
 							if (data.m_NormalizedTime >= maybeProperty->m_Keyframes[maybeProperty->m_KeyframeIndex].GetTime())
 							{
 								std::optional<size_t> newIndex = TryGetKeyFrameAtTime<ExtractedType>(data, *maybeProperty, data.m_NormalizedTime);
-								if (!Assert(this, newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
+								if (!Assert(newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
 									"and end time: {} on entity: {} but failed!", std::to_string(data.m_NormalizedTime),
 									std::to_string(data.GetTimeLength()), data.GetEntity().m_Name)))
 									return;
@@ -74,7 +74,7 @@ namespace ECS
 							}
 							else
 							{
-								LogError(this, std::format("Tried to update property in animator for entity:{} "
+								LogError(std::format("Tried to update property in animator for entity:{} "
 									"but could not find any Type specific actions to take for it (probably due to not defining actions for this type)", data.GetEntity().m_Name));
 							}
 						}, property);

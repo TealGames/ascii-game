@@ -2,7 +2,7 @@
 #include "pch.hpp"
 #include <optional>
 #include <queue>
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 
 #include "Core/Rendering/GameRenderer.hpp"
 #include "Utils/HelperFunctions.hpp"
@@ -15,6 +15,7 @@
 namespace Rendering
 {
     constexpr bool DONT_RENDER_NON_UTILS = false;
+    //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
     std::vector<RenderCall> RenderCalls;
     std::vector<TextCallData> TextData;
     std::vector<TextureCallData> TextureData;
@@ -111,12 +112,15 @@ namespace Rendering
         RenderCalls.push_back(TextCall{ pos, static_cast<TextID>(TextData.size() - 1), color });
     }
 
-    void Renderer::RenderQueue()
+    void Renderer::RenderBuffer()
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
 #endif 
         BeginDrawing();
+        ClearBackground(BLACK);
+
+        //LogError(std::format("Frame has: {} render calls", std::to_string(RenderCalls.size())));
         for (const auto& call : RenderCalls)
         {
             if (const CircleCall* c= std::get_if<CircleCall>(&call))
@@ -125,7 +129,8 @@ namespace Rendering
             }
             else if (const RectCall* c = std::get_if<RectCall>(&call))
             {
-                DrawRectangle(c->m_Pos.m_X, c->m_Pos.m_Y, c->m_Size.m_X, c->m_Pos.m_Y, c->m_Color);
+                //if (RaylibUtils::ColorEqual(c->m_Color, RED)) LogError(std::format("Drawing red rectangle at:{}", c->m_Pos.ToString()));
+                DrawRectangle(c->m_Pos.m_X, c->m_Pos.m_Y, c->m_Size.m_X, c->m_Size.m_Y, c->m_Color);
             }
             else if (const TextureCall* c = std::get_if<TextureCall>(&call))
             {
@@ -139,5 +144,12 @@ namespace Rendering
             }   
         }
         EndDrawing();
+
+        ClearBuffer();
+    }
+
+    void Renderer::ClearBuffer()
+    {
+        RenderCalls.clear();
     }
 }

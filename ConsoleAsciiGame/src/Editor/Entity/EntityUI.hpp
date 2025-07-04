@@ -16,8 +16,9 @@ class EntityUI //: public ITreeGUIConstructible
 private:
 	const Input::InputManager* m_inputManager;
 	PopupUIManager* m_popupManager;
-	const AssetManagement::AssetManager* m_assetManager;
+	AssetManagement::AssetManager* m_assetManager;
 
+	EntityData* m_layoutParent;
 	UILayout* m_guiLayout;
 	UIPanel* m_entityHeader;
 	EntityData* m_entity;
@@ -28,10 +29,13 @@ private:
 public: 
 
 private:
+	void CreateLayout();
 public:
 	EntityUI(const Input::InputManager& manager, PopupUIManager& popupManager, 
-		const AssetManagement::AssetManager& assetManager, EntityData& parent);
+		AssetManagement::AssetManager& assetManager);
 	~EntityUI();
+
+	void Init(EntityData& parent);
 
 	void Update();
 	void SetEntity(EntityData& entity);

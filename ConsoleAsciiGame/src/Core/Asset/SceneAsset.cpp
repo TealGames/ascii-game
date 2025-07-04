@@ -26,14 +26,14 @@ static const char* LEVEL_BACKGROUND_PROPERTY_NAME = "Level";
 SceneAsset::SceneAsset(const std::filesystem::path& path) : 
 	Asset(path, true), m_assetManager(nullptr), m_scene(std::nullopt) 
 {
-	if (!Assert(this, IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a scene asset from path:'{}' "
+	if (!Assert(IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a scene asset from path:'{}' "
 		"but it does not have required extension:'{}'", path.string(), EXTENSION)))
 		return;
 }
 
 AssetManagement::AssetManager& SceneAsset::GetAssetManagerMutable()
 {
-	if (!Assert(this, m_assetManager!=nullptr, std::format("Tried to retrieve asset manager MUTABLE from scene asset:{} "
+	if (!Assert(m_assetManager!=nullptr, std::format("Tried to retrieve asset manager MUTABLE from scene asset:{} "
 		"but the asset manager has no reference yet due to dependencies for this asset not initialized", ToString())))
 	{
 		throw std::invalid_argument("Invalid asset manager scene asset dependency");
@@ -45,7 +45,7 @@ AssetManagement::AssetManager& SceneAsset::GetAssetManagerMutable()
 
 Scene& SceneAsset::GetSceneMutable()
 {
-	if (!Assert(this, m_scene.has_value(), std::format("Tried to retrieve scene MUTABLE from scene asset:{} "
+	if (!Assert(m_scene.has_value(), std::format("Tried to retrieve scene MUTABLE from scene asset:{} "
 		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
 	{
 		throw std::invalid_argument("Invalid scene asset dependency");
@@ -56,7 +56,7 @@ Scene& SceneAsset::GetSceneMutable()
 }
 const Scene& SceneAsset::GetScene() const
 {
-	if (!Assert(this, m_scene.has_value(), std::format("Tried to retrieve scene from scene asset:{} "
+	if (!Assert(m_scene.has_value(), std::format("Tried to retrieve scene from scene asset:{} "
 		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
 	{
 		throw std::invalid_argument("Invalid scene asset dependency");
@@ -125,57 +125,57 @@ void SceneAsset::UpdateAssetFromFile()
 				continue;
 			}
 
-			if (!Assert(this, currentEntity != nullptr, std::format("Tried to parse scene file at path: '{}' "
+			if (!Assert(currentEntity != nullptr, std::format("Tried to parse scene file at path: '{}' "
 				"for component: {} but current entity: {} is null", GetPathCopy().string(), componentName, entityName)))
 				return;
 
 			if (componentName == Utils::GetTypeName<AnimatorData>())
 			{
-				componentCreated = &(currentEntity->AddComponent<AnimatorData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<AnimatorData>());
 			}
 			else if (componentName == Utils::GetTypeName<CameraData>())
 			{
-				componentCreated = &(currentEntity->AddComponent<CameraData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<CameraData>());
 			}
 			else if (componentName == Utils::GetTypeName<EntityRendererData>())
 			{
-				componentCreated = &(currentEntity->AddComponent<EntityRendererData>());
-				LogError(std::format("Deserialized entity renderer: {} to: {}", JsonUtils::ToStringProperties(currentComponentJson),
-					currentEntity->TryGetComponent<EntityRendererData>()->ToString()));
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<EntityRendererData>());
+				/*LogError(std::format("Deserialized entity renderer: {} to: {}", JsonUtils::ToStringProperties(currentComponentJson),
+					currentEntity->TryGetComponent<EntityRendererData>()->ToString()));*/
 			}
 			else if (componentName == Utils::GetTypeName<LightSourceData>())
 			{
-				componentCreated = &(currentEntity->AddComponent<LightSourceData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<LightSourceData>());
 			}
 			else if (componentName == Utils::GetTypeName<PhysicsBodyData>())
 			{
-				componentCreated = &(currentEntity->AddComponent<PhysicsBodyData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<PhysicsBodyData>());
 			}
 			else if (componentName == Utils::GetTypeName<PlayerData>())
 			{
-				componentCreated = &(currentEntity->AddComponent<PlayerData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<PlayerData>());
 			}
 			else if (componentName == Utils::GetTypeName<SpriteAnimatorData>())
 			{
-				componentCreated = &(currentEntity->AddComponent<SpriteAnimatorData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<SpriteAnimatorData>());
 			}
 			else if (componentName == Utils::GetTypeName<ParticleEmitterData>())
 			{
-				componentCreated = &(currentEntity->AddComponent<ParticleEmitterData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<ParticleEmitterData>());
 			}
 			else if (componentName == Utils::GetTypeName<CollisionBoxData>())
 			{
-				componentCreated = &(currentEntity->AddComponent<CollisionBoxData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<CollisionBoxData>());
 			}
 			else
 			{
-				Assert(this, false, std::format("Tried to DESERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
+				Assert(false, std::format("Tried to DESERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
 					"but no component by that name exists!", componentName, entityName, GetPathCopy().string()));
 				return;
 			}
 
 			//if (componentCreated == nullptr) continue;
-			if (!Assert(this, componentCreated != nullptr, std::format("Tried to deserialize component but reference stored after creation is NULL. "
+			if (!Assert(componentCreated != nullptr, std::format("Tried to deserialize component but reference stored after creation is NULL. "
 				"This could mean the correct component was identified but it was not successfully added to the entity")))
 				return;
 
@@ -183,7 +183,7 @@ void SceneAsset::UpdateAssetFromFile()
 			if (!GlobalComponentInfo::DoesComponentHaveDependencies(componentCreated))
 			{
 				componentCreated->Deserialize(currentComponentJson);
-				LogError(std::format("Created {} component: {}", Utils::FormatTypeName(typeid(*componentCreated).name()), componentCreated->ToString()));
+				//LogError(std::format("Created {} component: {}", Utils::FormatTypeName(typeid(*componentCreated).name()), componentCreated->ToString()));
 			}
 			else
 			{
@@ -323,13 +323,13 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 			}
 			catch (const std::exception& e)
 			{
-				LogError(this, std::format("Tried to serialize scene asset but ran into error while converting component"
+				LogError(std::format("Tried to serialize scene asset but ran into error while converting component"
 					"of type : {} for entity : {}. Error : {}", componentName, entity->m_Name, e.what()));
 				return;
 			}
-			LogError(std::format("Created component json:{}", JsonUtils::ToStringProperties(serializedComponentJson)));
+			//LogError(std::format("Created component json:{}", JsonUtils::ToStringProperties(serializedComponentJson)));
 
-			if (!Assert(this, !serializedComponentJson.empty(), std::format("Tried to deserialize scene asset for entity:{} "
+			if (!Assert(!serializedComponentJson.empty(), std::format("Tried to deserialize scene asset for entity:{} "
 				"at component:{} but its component json is empty!", entity->m_Name, componentName)))
 				return;
 
@@ -338,7 +338,7 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 		}
 		json["Entities"].push_back(currentEntityJson);
 	}
-	LogError(std::format("Resulting json : {}", JsonUtils::ToStringProperties(json)));
+	//LogError(std::format("Resulting json : {}", JsonUtils::ToStringProperties(json)));
 	
 	IO::TryWriteFile(path, json.dump());
 }
@@ -346,18 +346,19 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 bool SceneAsset::TryLoadLevelBackground()
 {
 	//TODO: right now we expect the level to have the same name but with different extension
-	std::filesystem::path maybePath = GetAssetManagerMutable().TryGetAssetPath(GetName(), LEVEL_EXTENSION);
-	if (!Assert(this, !maybePath.empty(), std::format("Attempted to load level background for scene asset:{} "
+	std::filesystem::path maybePath = GetPath().parent_path() / (GetName() + LEVEL_EXTENSION);
+	if (!Assert(IO::DoesPathExist(maybePath), std::format("Attempted to load level background for scene asset:{} "
 		"but could not find level from asset manager using name:{} extension:{}", ToString(), GetName(), LEVEL_EXTENSION)))
 		return false;
 
 	//std::ifstream fstream(maybePath);
 	//std::vector<std::vector<TextCharArrayPosition>> visualPositions = {};
 	Fig levelFig = Fig(maybePath);
+	//LogWarning(std::format("Try load level background fig:{}", levelFig.ToString()));
 	//Assert(false, std::format("Level fig:{}", levelFig.ToString()));
 
 	VisualData backgroundVisual = ParseDefaultVisualData(levelFig.TryGetBaldValue(LEVEL_BACKGROUND_PROPERTY_NAME));
-	if (!Assert(this, !backgroundVisual.IsEmpty(), std::format("Tried to parse level background for scene asset:{} "
+	if (!Assert(!backgroundVisual.IsEmpty(), std::format("Tried to parse level background for scene asset:{} "
 		"but resulted in empty visual data when using fig value:{} visual data:{}", ToString(), 
 		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_BACKGROUND_PROPERTY_NAME)), backgroundVisual.ToString())))
 		return false;
@@ -369,8 +370,8 @@ bool SceneAsset::TryLoadLevelBackground()
 	/*LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().ToString()));
 	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));*/
 
-	CollisionBoxData& collisionBox = backgroundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(backgroundEntity.GetTransform(), backgroundVisual.GetWorldSize(), {0,0}));
-	PhysicsBodyData& physicsBody = backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(collisionBox, 10));
+	CollisionBoxData& collisionBox = backgroundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(backgroundVisual.GetWorldSize(), {0,0}));
+	PhysicsBodyData& physicsBody = backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(&collisionBox, 10));
 	physicsBody.SetConstraint(MoveContraints(true, true));
 	/*LogWarning(std::format("Created Physics body: {} visual size: {}", physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), 
 		backgroundVisual.m_Text.GetSize().ToString()));*/

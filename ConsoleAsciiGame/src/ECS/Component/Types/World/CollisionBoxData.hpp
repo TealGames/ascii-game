@@ -45,7 +45,6 @@ class CollisionBoxData : public Component
 private:
 	Physics::AABB m_aabb;
 	WorldPosition m_transformOffset;
-	const TransformData* m_transform;
 
 	CollidingInfoCollection m_collidingBoxes;
 
@@ -59,15 +58,12 @@ private:
 	const TransformData& GetTransform() const;
 	const WorldPosition& GetCurrentPos() const;
 
-
-	CollisionBoxData(const TransformData* transform, const Vec2& size, const WorldPosition& transformOffset);
-
 	CollidingInfoCollection::iterator TryGetCollidingBoxIt(const CollisionBoxData& otherBox);
 
 public:
 	CollisionBoxData();
 	CollisionBoxData(const Json& json);
-	CollisionBoxData(const TransformData& transform, const Vec2& size, const WorldPosition& transformOffset);
+	CollisionBoxData(const Vec2& size, const WorldPosition& transformOffset);
 
 	bool IsCollidingWithBox(const CollisionBoxData& otherBox) const;
 	bool TryAddCollidingBox(const CollisionBoxData& otherBox);

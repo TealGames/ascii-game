@@ -64,7 +64,7 @@ namespace Old
 
 	EntityID EntityMapper::ReserveAvailableEntityID()
 	{
-		if (!Assert(this, m_nextAvailableEntityID < MAX_ENTITIES, std::format("ENTITY MAPPER: Tried to reserve the next available "
+		if (!Assert(m_nextAvailableEntityID < MAX_ENTITIES, std::format("ENTITY MAPPER: Tried to reserve the next available "
 			"entity ID (current: {}), but max entities: {} have been reserved",
 			std::to_string(m_nextAvailableEntityID), std::to_string(MAX_ENTITIES))))
 		{

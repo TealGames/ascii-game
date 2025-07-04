@@ -30,7 +30,7 @@ public:
 	const float& GetTime() const { return m_time; }
 	const T& GetValue() const 
 	{
-		if (!Assert(this, m_value != std::nullopt, 
+		if (!Assert(m_value != std::nullopt, 
 			std::format("Tried to get value from animation property key frame but value is NULL")))
 			throw std::invalid_argument("Invalid value state");
 

@@ -6,28 +6,14 @@
 #include "Core/UI/PopupUIManager.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
 
 UIColorPickerData::UIColorPickerData() : UIColorPickerData(UIStyle()) {}
 UIColorPickerData::UIColorPickerData(const UIStyle& settings)
-	: UISelectableData(), m_color(), m_popupManager(nullptr), m_valueSetCallback(), m_renderer(nullptr), m_fieldPanel(nullptr) //m_settings(settings), 
+	: m_color(), m_popupManager(nullptr), m_valueSetCallback(), m_renderer(nullptr), m_fieldPanel(nullptr), m_selectable(nullptr)
 {
 	//LogWarning(std::format("coloc picker addr create:{}", Utils::ToStringPointerAddress(this)));
-	m_OnSelect.AddListener([this](UISelectableData* gui)-> void
-		{
-			//Assert(false, "PISS");
-			//LogWarning(std::format("color picker call addr:{}", Utils::ToStringPointerAddress(this)));
-			ColorPopupUI* popup = nullptr; 
-			const bool isEnabled= m_popupManager->TryTogglePopupAt<ColorPopupUI>(m_renderer->GetLastRenderRect(),
-				PopupPositionFlags::BelowRect | PopupPositionFlags::CenteredXToRect, &popup);
-
-			if (popup==nullptr)
-			{
-				Assert(false, std::format("Attempted to popup color popup gui after clicking "
-					"color picker GUI:{} but popup failed to appear", ToString()));
-			}
-
-			if (isEnabled) popup->SetColor(GetColor());
-		});
+	
 
 	/*m_OnDeselect.AddListener([this](SelectableGUI* gui)-> void
 		{
@@ -44,6 +30,26 @@ UIColorPickerData::UIColorPickerData(const UIStyle& settings)
 			SetColor(colorPopup->GetColor());
 		});
 	//Assert(false, std::format(0))
+}
+
+void UIColorPickerData::Init()
+{
+	m_selectable->m_OnSelect.AddListener([this](UISelectableData* gui)-> void
+		{
+			//Assert(false, "PISS");
+			//LogWarning(std::format("color picker call addr:{}", Utils::ToStringPointerAddress(this)));
+			ColorPopupUI* popup = nullptr;
+			const bool isEnabled = m_popupManager->TryTogglePopupAt<ColorPopupUI>(GetEntity().TryGetComponent<UITransformData>()->GetLastWorldArea(),
+				PopupPositionFlags::BelowRect | PopupPositionFlags::CenteredXToRect, &popup);
+
+			if (popup == nullptr)
+			{
+				Assert(false, std::format("Attempted to popup color popup gui after clicking "
+					"color picker GUI:{} but popup failed to appear", ToString()));
+			}
+
+			if (isEnabled) popup->SetColor(GetColor());
+		});
 }
 
 void UIColorPickerData::SetValueSetAction(const ColorPickerAction& action)

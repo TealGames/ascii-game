@@ -7,7 +7,7 @@ constexpr Enum operator|(Enum lhs, Enum rhs) { \
     return static_cast<Enum>(static_cast<T>(lhs) | static_cast<T>(rhs)); \
 } \
 constexpr Enum operator&(Enum lhs, Enum rhs) { \
-    using T = std::underlying_type_t<Enum>; \
+using T = std::underlying_type_t<Enum>; \
     return static_cast<Enum>(static_cast<T>(lhs) & static_cast<T>(rhs)); \
 } \
 constexpr Enum operator^(Enum lhs, Enum rhs) { \
@@ -20,8 +20,19 @@ constexpr Enum operator~(Enum rhs) { \
 } \
 constexpr Enum& operator|=(Enum& lhs, Enum rhs) { lhs = lhs | rhs; return lhs; } \
 constexpr Enum& operator&=(Enum& lhs, Enum rhs) { lhs = lhs & rhs; return lhs; } \
-constexpr Enum& operator^=(Enum& lhs, Enum rhs) { lhs = lhs ^ rhs; return lhs; }
-
+constexpr Enum& operator^=(Enum& lhs, Enum rhs) { lhs = lhs ^ rhs; return lhs; } \
+constexpr bool operator==(Enum lhs, int type) { \
+    return static_cast<std::underlying_type_t<Enum>>(lhs)== static_cast<std::underlying_type_t<Enum>>(type); \
+} \
+constexpr bool operator!=(Enum lhs, int type) { \
+    return !(lhs == type); \
+} \
+constexpr bool operator==(Enum lhs, std::underlying_type_t<Enum> type) { \
+    return static_cast<std::underlying_type_t<Enum>>(lhs)== type; \
+} \
+constexpr bool operator!=(Enum lhs, std::underlying_type_t<Enum> type) { \
+    return !(lhs == type); \
+} \
 
 //TODO: craete an extensible mutli-field use for arithmetic/logic operators
 #define DECLARE_ARITHMETIC_OPERATORS(Type)				\

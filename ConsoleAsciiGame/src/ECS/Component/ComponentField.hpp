@@ -9,6 +9,7 @@
 #include <optional>
 #include <cstdint>
 #include "Utils/Data/Color.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 //enum class ComponentFieldType
 //{
@@ -78,11 +79,11 @@ public:
 		{
 			if (HasSetFunction())
 			{
-				if (!Assert(this, IsSetFunctionofType<T>(), std::format("Tried to set value of field: '{}' of type: {} "
+				if (!Assert(IsSetFunctionofType<T>(), std::format("Tried to set value of field: '{}' of type: {} "
 					"with a set function but set function does not match that type", m_FieldName, GetCurrentType().name())))
 					throw std::invalid_argument("Invalid set function type");
 
-				/*if (!Assert(this, m_MaybeSetFunction.value()!=nullptr, std::format("Tried to set value of field: '{}' of type: {} "
+				/*if (!Assert(m_MaybeSetFunction.value()!=nullptr, std::format("Tried to set value of field: '{}' of type: {} "
 						"with a set function that is NULL", m_FieldName, GetCurrentType().name())))
 					throw std::invalid_argument("Invalid set function");*/
 

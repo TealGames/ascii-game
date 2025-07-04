@@ -4,6 +4,7 @@
 namespace Rendering { class Renderer; }
 class Scene;
 class UIHierarchy;
+class EngineState;
 
 namespace ECS
 {
@@ -12,16 +13,18 @@ namespace ECS
 	private:
 		UIHierarchy* m_uiHierarchy;
 		Rendering::Renderer* m_renderer;
-		std::vector<UIRendererData*> m_uiRenderersHierarchyOrder;
+		const EngineState* m_engineState;
+		//std::vector<UIRendererData*> m_uiRenderersHierarchyOrder;
+		//bool m_hasGuiTreeUpdated;
 	public:
 
 	private:
-		void StoreRenderers();
-		UIRect RenderSingle(UIRendererData& renderer, const UIRect& rect);
+		//void CreateRenderTree();
+		UIRect RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const UIRect& rect);
 		void RenderAll();
 	public:
-		UIRenderSystem(Rendering::Renderer& renderer, UIHierarchy& hierarchy);
-
+		UIRenderSystem(const EngineState& engineState, Rendering::Renderer& renderer, UIHierarchy& hierarchy);
+		void Init();
 		void SystemUpdate();
 	};
 }

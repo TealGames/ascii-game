@@ -58,9 +58,14 @@ namespace Utils
 
 	std::string GetCurrentStackTrace() 
 	{
+#if !_HAS_CXX23
+		throw std::invalid_argument("Attempted to get current stack trace on a C++ version that does not support it (Need C++23)");
+		return "";
+#else
 		std::ostringstream stream;
 		stream << std::stacktrace::current();
 		return stream.str();
+#endif
 	}
 
 	void ClearSTDCIN()

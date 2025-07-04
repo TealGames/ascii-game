@@ -44,7 +44,7 @@ Timer::~Timer()
 
 void Timer::Start()
 {
-	if (!Assert(this, !m_isRunning, 
+	if (!Assert(!m_isRunning, 
 		std::format("Tried to START a timer while it is already running!"))) 
 		return;
 
@@ -55,7 +55,7 @@ void Timer::Start()
 
 TimerResult Timer::Stop()
 {
-	if (!Assert(this, m_isRunning,
+	if (!Assert(m_isRunning,
 		std::format("Tried to STOP a timer while it is not running!")))
 		return {};
 

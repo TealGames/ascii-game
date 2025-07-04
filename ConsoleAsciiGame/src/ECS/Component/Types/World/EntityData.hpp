@@ -4,6 +4,9 @@
 #include "ECS/Entity/EntityRegistry.hpp"
 #include "ECS/Component/Types/World/TransformData.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
+#include <format>
+
+class UIPanel;
 
 class UITransformData;
 namespace ECS { class EntityRegistry; }
@@ -79,12 +82,20 @@ private:
 	requires std::is_base_of_v<Component, T>
 	T& AddComponentUnsafe(const T& component)
 	{
+		if (m_Name=="InputField" && FormatComponentName(typeid(T))== "UIPanel")
+		{
+			//LogWarning("Reached a point here");
+		}
+
+		ComponentRequirementCheck<T>();
+
 		T& addedComponent = m_registry->AddComponent<T>(m_id, component);
 		Component* componentData = &addedComponent;
 		componentData->m_entity = this;
 		componentData->InitFields();
 
 		m_components.emplace_back(componentData);
+		TryInvokePostAddAction<T>();
 		return addedComponent;
 	}
 
@@ -127,16 +138,13 @@ public:
 	requires std::is_base_of_v<Component, T>
 	T& AddComponent(const T& component)
 	{
-		ComponentRequirementCheck<T>();
+		if (!Assert(!HasComponent<T>(), std::format("Tried to add component of type: '{}' to '{}' "
+			"but it already has this type (and duplicates are not allowed)", FormatComponentName(typeid(T)), ToString())))
+			throw std::invalid_argument("Attempted to add duplicate component");
 
-		if (!Assert(this, !HasComponent<T>(), std::format("Tried to add component of type: {} to {} "
-			"but it already has this type (and duplicates are not allowed)", typeid(T).name(),
-			ToString()))) throw std::invalid_argument("Attempted to add duplicate component");
-
-		T& createdComponent = AddComponentUnsafe<T>(component);
-		TryInvokePostAddAction<T>();
+		return AddComponentUnsafe<T>(component);
+		
 		//LogWarning(std::format("Created component is:{}", createdComponent.ToString()));
-		return createdComponent;
 	}
 	/// <summary>
 	/// Will add the component of type to this entity using no argument/default constructor
@@ -147,9 +155,8 @@ public:
 	requires std::is_base_of_v<Component, T>&& std::is_default_constructible_v<T>
 	T& AddComponent() 
 	{ 
-		T& addedComponent= AddComponent<T>(T()); 
+		return AddComponent<T>(T()); 
 		//LogWarning(std::format("Added component no arguments is:{}", addedComponent.ToString()));
-		return addedComponent;
 	}
 
 	/// <summary>
@@ -200,6 +207,21 @@ public:
 	requires std::is_base_of_v<Component, T>
 	const T* TryGetComponent() const { return m_registry->TryGetComponent<T>(m_id); }
 
+	template<typename T>
+	requires std::is_base_of_v<Component, T>
+	T& GetOrAddComponentMutable(const T& component)
+	{
+		T* maybeComponent = TryGetComponentMutable<T>();
+		if (maybeComponent != nullptr) return *maybeComponent;
+		return AddComponentUnsafe<T>(component);
+	}
+	template<typename T>
+	requires std::is_base_of_v<Component, T>&& std::is_default_constructible_v<T>
+	T& GetOrAddComponentMutable()
+	{
+		return GetOrAddComponentMutable(T());
+	}
+
 	/// <summary>
 	/// Will return a list of all components of this entity that contain the base
 	/// type T
@@ -247,7 +269,7 @@ public:
 	bool HasParent() const;
 	EntityData* GetHighestParentMutable();
 	const EntityData* GetHighestParent() const;
-	size_t GetChildCount() const;
+	int GetChildCount() const;
 
 	EntityData& CreateChild(const std::string& name, const TransformData& transform);
 	EntityData& CreateChild(const std::string& name);
@@ -458,7 +480,6 @@ public:
 
 	void InitFields() override;
 
-	static std::string ToString(const ECS::EntityID& id);
 	std::string ToString() const override;
 
 	void Deserialize(const Json& json) override;
@@ -470,7 +491,7 @@ public:
 template <typename... Types>
 requires Utils::AllSameBaseType<Component, Types...>
 ValidationAction CreateRequiredComponentFunction(const Types&... components) {
-	return [&components...](EntityData& entity) -> bool
+	return [components...](EntityData& entity) -> bool
 		{
 			bool passesRequiredCheck = true;
 			(([&]() -> void
@@ -481,7 +502,8 @@ ValidationAction CreateRequiredComponentFunction(const Types&... components) {
 					if (EntityData::ADD_REQUIRED_COMPONENTS)
 					{
 						entity.AddComponent<Types>(components);
-						LogWarning(std::format("Added missing component of type:{} to entity:{}", Utils::GetTypeName<Types>(), entity.ToString()));
+						/*LogWarning(std::format("Added missing component of type:{} to entity:{}", 
+							Utils::GetTypeName<Types>(), entity.ToString()));*/
 					}
 					else
 					{

@@ -25,12 +25,12 @@ namespace ECS
 #endif 
 
         //const Input::InputProfile* inputProfile = m_inputManager.TryGetProfile(MAIN_INPUT_PROFILE_NAME);
-        //if (!Assert(this, inputProfile != nullptr, std::format("Tried to update input for player "
+        //if (!Assert(inputProfile != nullptr, std::format("Tried to update input for player "
         //    "but the input profile: '{}' was not found", MAIN_INPUT_PROFILE_NAME)))
         //    return;
 
         //const Input::CompoundInput* moveCompound = inputProfile->TryGetCompoundInputAction(MAIN_INPUT_PROFILE_MOVE_ACTION);
-        //if (!Assert(this, moveCompound != nullptr, std::format("Tried to update input for player "
+        //if (!Assert(moveCompound != nullptr, std::format("Tried to update input for player "
         //    "but the move compound: '{}' was not found in input profile: {}",
         //    MAIN_INPUT_PROFILE_MOVE_ACTION, MAIN_INPUT_PROFILE_NAME)))
         //    return;

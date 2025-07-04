@@ -16,6 +16,6 @@ public:
 	void SetGradient(const ColorGradient& gradient);
 	const ColorGradient& GetGradient() const;
 
-	void Update(const float deltaTime) override;
+	void Update(const float deltaTime);
 };
 

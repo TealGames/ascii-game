@@ -11,6 +11,7 @@ namespace ECS
 	private:
 	public:
 		UITextSystem();
+		void Init();
 	};
 }
 

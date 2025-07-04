@@ -6,6 +6,7 @@
 #include "ECS/Component/Types/World/EntityRendererData.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "Core/UI/UIHierarchy.hpp"
+#include "StaticReferenceGlobals.hpp"
 
 static const NormalizedPosition HEALTH_START_POS_RELATIVE = { 0.05, 0.95 };
 static const NormalizedPosition HEALTH_SIZE = { 0.05, 0.05 };
@@ -23,7 +24,7 @@ namespace Game
 
 			/*const VisualDataPreset visualPreset = { GetGlobalFont(), 4, VisualData::DEFAULT_CHAR_SPACING,
 					CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };*/
-			FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, GetGlobalFont());
+			FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, StaticReferenceGlobals::GetDefaultRaylibFont());
 			const VisualData healthVisualData = VisualData({ {TextChar(Color(215, 71, 9, 255), '@')}}, {0, 0}, fontSettings, VisualData::DEFAULT_PIVOT);
 
 			NormalizedPosition topLeftPos = {};
@@ -56,7 +57,7 @@ namespace Game
 
 					while (currentIndex != targetIndex)
 					{
-						if (!Assert(this, currentIndex >= 0 && currentIndex < m_health.size(), std::format("Tried to update health UI from {} -> {} "
+						if (!Assert(currentIndex >= 0 && currentIndex < m_health.size(), std::format("Tried to update health UI from {} -> {} "
 							"but current index:{} is out of bounds of health UI:[0, {})", std::to_string(oldHealth), std::to_string(newHealth),
 							std::to_string(currentIndex), std::to_string(m_health.size()))))
 							return;

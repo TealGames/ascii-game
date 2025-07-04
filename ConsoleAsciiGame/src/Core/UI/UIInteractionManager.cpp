@@ -11,7 +11,7 @@ static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
 UIInteractionManager::UIInteractionManager(const Input::InputManager& input, UIHierarchy& hierarchy)
 	: m_inputManager(input), m_hierarchy(hierarchy), m_selectableLayers(), m_selectionEventBlockers(), 
 	m_currentSelected(nullptr), m_currentDragged(nullptr), m_currentHovered(nullptr),
-	m_selectedThisFrame(false), m_hasGuiTreeUpdated(false), m_lastFrameMousePos(m_inputManager.GetMousePosition())
+	m_selectedThisFrame(false), m_guiTreeNeedsUpdate(true), m_lastFrameMousePos(m_inputManager.GetMousePosition())
 {
 }
 
@@ -20,7 +20,7 @@ void UIInteractionManager::CreateSelectableArray()
 	m_selectableLayers.clear();
 
 	size_t i = 0;
-	m_hierarchy.ElementTraversalDFS<UIRendererData>([this, &i](UILayer layer, UIRendererData& element) -> void
+	m_hierarchy.ElementTraversalDFS<UITransformData>([this, &i](UILayer layer, UITransformData& element) -> void
 		{
 			//LogWarning(std::format("Bool is element:{} selectable:", element->ToStringBase()));
 			if (element.IsSelectionEventBlocker()) AddSelectionEventBlocker(layer, i, element);
@@ -37,16 +37,11 @@ void UIInteractionManager::CreateSelectableArray()
 
 void UIInteractionManager::TryUpdateTree()
 {
-	if (!m_hasGuiTreeUpdated) return;
-
-	CreateSelectableArray();
-	m_hasGuiTreeUpdated = false;
+	
 }
 
 void UIInteractionManager::Init()
 {
-	CreateSelectableArray();
-
 	//TODO: this is slow and not very good solution to have to recreate selectable array on every addition/removal
 	m_hierarchy.m_OnElementAdded.AddListener([this](const UITransformData* element)-> void
 		{
@@ -54,7 +49,7 @@ void UIInteractionManager::Init()
 
 			//LogError(std::format("DOPE SHIT"));
 			//CraeteSelectableArray();
-			m_hasGuiTreeUpdated = true;
+			m_guiTreeNeedsUpdate = true;
 
 			/*if (i>=1) Assert(false, std::format("Updated selectable array ({}) element added:{} selectables:{} HIERARCHY:{}", 
 				std::to_string(i), element->ToStringBase(), ToStringSelectables(), m_hierarchy.ToStringTree()));
@@ -64,14 +59,14 @@ void UIInteractionManager::Init()
 	m_hierarchy.m_OnElementRemoved.AddListener([this](const UITransformData* element)-> void
 		{
 			//CreateSelectableArray();
-			m_hasGuiTreeUpdated = true;
+			m_guiTreeNeedsUpdate = true;
 		});
 }
 
 void UIInteractionManager::SelectNewSelectable(UISelectableData* selectable)
 {
 	if (selectable == nullptr) return;
-	LogWarning(std::format("SELEC NEW SELECTABLE:{}", selectable->ToString()));
+	//LogWarning(std::format("SELEC NEW SELECTABLE:{}", selectable->ToString()));
 
 	DeselectCurrentSelectable();
 	selectable->Select();
@@ -84,8 +79,8 @@ void UIInteractionManager::ClickSelectable(UISelectableData* selectable)
 	//Assert(false, std::format("CLICKIGN ON SELECTABLE"));
 	if (selectable == nullptr) return;
 	selectable->Click();
-	LogWarning(std::format("CLICK SELECTABLE:{} tree:{}", selectable->ToString(), m_hierarchy.ToStringTree()));
-	LogError(std::format("click selectable ADDR:{}", Utils::ToStringPointerAddress(selectable)));
+	//LogWarning(std::format("CLICK SELECTABLE:{} tree:{}", selectable->ToString(), m_hierarchy.ToStringTree()));
+	//LogError(std::format("click selectable ADDR:{}", Utils::ToStringPointerAddress(selectable)));
 }
 
 void UIInteractionManager::StopCurrentHovering()
@@ -125,7 +120,12 @@ void UIInteractionManager::Update()
 	//	//allRect += "HELLO";
 	//}
 
-	TryUpdateTree();
+	if (m_guiTreeNeedsUpdate)
+	{
+		CreateSelectableArray();
+		m_guiTreeNeedsUpdate = false;
+	}
+
 	InvokeInteractionEvents();
 	m_lastFrameMousePos = m_inputManager.GetMousePosition();
 	
@@ -184,7 +184,7 @@ void UIInteractionManager::InvokeInteractionEvents()
 				if (it == m_selectionEventBlockers.end()) continue;
 
 				//Note: only if the event blocker contains the position do we block further events
-				if (it->second != nullptr && it->second->GetLastRenderRect().ContainsPos(mousePos))
+				if (it->second != nullptr && it->second->GetLastWorldArea().ContainsPos(mousePos))
 				{
 					//foundEventBlock = true;
 					//break;
@@ -224,9 +224,9 @@ void UIInteractionManager::InvokeInteractionEvents()
 			}
 			else if (selectKeyState == Input::KeyState::Released)
 			{
-				LogError(std::format("BEFORE click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
+				//LogError(std::format("BEFORE click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
 				ClickSelectable(selectable);
-				LogError(std::format("AFTER click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
+				//LogError(std::format("AFTER click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
 
 				SelectNewSelectable(selectable);
 				m_selectedThisFrame = true;
@@ -243,8 +243,8 @@ void UIInteractionManager::InvokeInteractionEvents()
 	}
 
 	//clickTime++;
-	if (selectKeyState == Input::KeyState::Released && clickTime > 2)
-		Assert(false, std::format("After event CLICKED:{} \n\n selectavle tree:{} \n\ngui tree:{}", mousePos.ToString(), ToStringSelectables(), m_hierarchy.ToStringTree()));
+	/*if (selectKeyState == Input::KeyState::Released && clickTime > 2)
+		Assert(false, std::format("After event CLICKED:{} \n\n selectavle tree:{} \n\ngui tree:{}", mousePos.ToString(), ToStringSelectables(), m_hierarchy.ToStringTree()));*/
 }
 
 void UIInteractionManager::AddSelectable(const UILayer layer, UISelectableData* selectable)
@@ -267,7 +267,7 @@ void UIInteractionManager::AddSelectables(const UILayer layer, const std::vector
 		AddSelectable(layer, selectable);
 }
 
-void UIInteractionManager::AddSelectionEventBlocker(const UILayer layer, const size_t elementIndex, const UIRendererData& element)
+void UIInteractionManager::AddSelectionEventBlocker(const UILayer layer, const size_t elementIndex, const UITransformData& element)
 {
 	auto it = m_selectableLayers.find(layer);
 	//TODO: it might not be a good idea to have nullptr as the placeholder for event blockers in case selectables are null by accident

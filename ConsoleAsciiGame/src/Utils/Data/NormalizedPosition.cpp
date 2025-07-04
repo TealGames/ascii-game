@@ -31,7 +31,7 @@ NormalizedPosition::NormalizedPosition(const NormalizedValue x, const float y) :
 
 const Vec2 NormalizedPosition::GetPos() const
 {
-	/*if (!Assert(this, IsValidPos(), std::format("Tried to retrieve normalized pos IMMUTABLE, "
+	/*if (!Assert(IsValidPos(), std::format("Tried to retrieve normalized pos IMMUTABLE, "
 		"but it is an invalid state: {}", m_pos.ToString())))
 		throw std::invalid_argument("Invalid normalized pos state");*/
 
@@ -39,7 +39,7 @@ const Vec2 NormalizedPosition::GetPos() const
 }
 //Vec2& NormalizedPosition::GetPosMutable()
 //{
-//	if (!Assert(this, IsValidPos(), std::format("Tried to retrieve normalized pos MUTABLE, "
+//	if (!Assert(IsValidPos(), std::format("Tried to retrieve normalized pos MUTABLE, "
 //		"but it is an invalid state: {}", m_pos.ToString())))
 //		throw std::invalid_argument("Invalid normalized pos state");
 //
@@ -105,7 +105,7 @@ NormalizedPosition NormalizedPosition::operator*(const float& scalar) const
 }
 NormalizedPosition NormalizedPosition::operator/(const float& scalar) const
 {
-	if (!Assert(this, scalar != 0,
+	if (!Assert(scalar != 0,
 		std::format("Tried to divide a normalized position: {} by a 0 value scalar", ToString())))
 	{
 		return *this;

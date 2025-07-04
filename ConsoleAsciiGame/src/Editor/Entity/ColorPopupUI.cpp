@@ -27,11 +27,13 @@ ColorChannelUI::ColorChannelUI() : m_Container(nullptr), m_Slider(nullptr), m_Te
 void ColorChannelUI::CreateChannel(UITransformData& parent, const Input::InputManager& input)
 {
 	//m_Text())
-	m_Container = std::get<1>(parent.GetEntityMutable().CreateChildUI("UIColorChannel"));
-	m_Slider = &(m_Container->GetEntityMutable().AddComponent(UISliderComponent(input, Vec2{ 0, 1 }, EditorStyles::GetSliderStyle())));
-	m_Text = &(m_Container->GetEntityMutable().AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center))));
+	EntityData* containerEntity = nullptr;
+	std::tie(containerEntity, m_Container) = parent.GetEntityMutable().CreateChildUI("UIColorChannel");
+	m_Container->SetSize({ 1, 0.2 });
 
-	m_Container->SetSize({1, 0.2});
+	m_Slider = &(containerEntity->AddComponent(UISliderComponent(input, Vec2{ 0, 1 }, EditorStyles::GetSliderStyle())));
+	m_Text = &(containerEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center))));
+	
 	m_Text->GetEntityMutable().TryGetComponentMutable<UITransformData>()->SetBounds(NormalizedPosition::TOP_LEFT, { CHANNEL_TEXT_WIDTH, 0 });
 	m_Slider->GetEntityMutable().TryGetComponentMutable<UITransformData>()->SetBounds({ CHANNEL_TEXT_WIDTH, 1 }, { CHANNEL_TEXT_WIDTH+ CHANNEL_SLIDER_WIDTH, 0});
 

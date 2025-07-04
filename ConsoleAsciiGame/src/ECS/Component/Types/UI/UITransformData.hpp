@@ -12,8 +12,11 @@ enum class UITransformFlags : std::uint8_t
 	/// parent. Note: this means it WILL size down/up based on canvas size changes since the dimensions are still as percents, but
 	/// if the parent size changes, it will maintain the original dimensions by updating to the corresponding values of the parent size
 	/// </summary>
+	None = 0,
 	FixedHorizontal = 1 << 0,
-	FixedVertical = 1 << 1
+	FixedVertical = 1 << 1,
+	EventBlocker =1 << 2,
+	All= 0xFF
 };
 FLAG_ENUM_OPERATORS(UITransformFlags)
 
@@ -28,6 +31,7 @@ private:
 	/// Values are relative to THIS ELEMENT"S SIZE
 	/// </summary>
 	RelativeUIPadding m_padding;
+	UIRect m_lastWorldArea;
 public:
 
 private:
@@ -46,6 +50,18 @@ public:
 	void SetFixed(const bool horizontal, const bool vertical);
 	bool IsFixedVertical() const;
 	bool IsFixedHorizontal() const;
+
+	void SetLastWorldArea(const UIRect& area);
+	const UIRect& GetLastWorldArea() const;
+
+	/// <summary>
+	/// Although it is not a selectable, nonselectables CAN block events from propagating further
+	/// and can prevent lower level selectables from receiving their events. HOWEVER, since event blockers use rendered areas
+	/// for the blocked area (NOT transform rect) it must have a rendered component attached that renders in order for event blocking to work.
+	/// This is most useful for overlays or other types of popups and dialogs that may block lower elements completely
+	/// </summary>
+	void SetEventBlocker(const bool status);
+	bool IsSelectionEventBlocker() const;
 
 	void SetSize(const NormalizedPosition& size);
 	void SetMaxSize();

@@ -3,6 +3,7 @@
 #include "ECS/Component/Types/World/PhysicsBodyData.hpp"
 #include "Utils/Data/Vec2.hpp"
 
+namespace ECS { class PlayerSystem; }
 class PlayerData : public Component
 {
 private:
@@ -16,6 +17,7 @@ private:
 	Vec2Int m_lastFrameDirectionalInput;
 
 public:
+	friend class ECS::PlayerSystem;
 
 private:
 	float CalculateInitialJumpSpeed() const;

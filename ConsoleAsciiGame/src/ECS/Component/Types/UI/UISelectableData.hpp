@@ -102,13 +102,12 @@ public:
 
 	//const GUIRect GetLastFrameRect() const;
 
-	virtual void Update(const float deltaTime);
 	UIRect RenderOverlay(const UIRect& elementRendered);
 
-	virtual void InitFields() override;
-	virtual std::string ToString() const override;
+	void InitFields() override;
+	std::string ToString() const override;
 
-	virtual void Deserialize(const Json& json) override;
-	virtual Json Serialize() override;
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
 };
 

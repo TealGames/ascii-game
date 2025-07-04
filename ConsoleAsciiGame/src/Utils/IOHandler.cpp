@@ -2,6 +2,7 @@
 #include "Utils/IOHandler.hpp"
 #include <fstream>
 #include "Core/Analyzation/Debug.hpp"
+#include "StringUtil.hpp"
 
 namespace IO
 {
@@ -32,6 +33,65 @@ namespace IO
 	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::string& extension)
 	{
 		return path.extension().string() == extension;
+	}
+
+	bool DoesDirectoryContainDirectory(const std::filesystem::path& parent, const std::filesystem::path& child)
+	{
+		auto canon_parent = std::filesystem::weakly_canonical(parent);
+		auto canon_child = std::filesystem::weakly_canonical(child);
+
+		auto mismatch_pair = std::mismatch(canon_parent.begin(), canon_parent.end(), canon_child.begin());
+		return mismatch_pair.first == canon_parent.end();
+	}
+
+	std::optional<std::filesystem::path> GetFirstDirectory(const std::filesystem::path& path)
+	{
+		for (const auto& part : path) 
+		{
+			if (part != "/" && part != "\\" && part != path.root_name() && part != path.root_directory()) 
+			{
+				return part;
+			}
+		}
+		return std::nullopt;
+	}
+
+	std::optional<std::filesystem::path> GetRelativePath(const std::filesystem::path& parentPath, const std::filesystem::path& childPath)
+	{
+		std::filesystem::path canonicalInput;
+		std::filesystem::path canonicalParent;
+
+		try {
+			canonicalInput = std::filesystem::weakly_canonical(childPath);
+			canonicalParent = std::filesystem::weakly_canonical(parentPath);
+		}
+		// Handle broken symlinks or missing paths gracefully
+		catch (...) 
+		{
+			return std::nullopt;  
+		}
+
+		// Check if the input is inside the asset path
+		auto mismatch = std::mismatch(canonicalParent.begin(), canonicalParent.end(), canonicalInput.begin());
+		if (mismatch.first == canonicalParent.end()) 
+		{
+			//If child path is inside parent path, make it relative to parent
+			return std::filesystem::relative(canonicalInput, canonicalParent).string();
+		}
+
+		// Try walking up childpath to find a prefix that is inside parent path
+		std::filesystem::path currentPath = canonicalInput;
+		while (currentPath.has_parent_path())
+		{
+			currentPath = currentPath.parent_path();
+			auto mismatch = std::mismatch(canonicalParent.begin(), canonicalParent.end(), currentPath.begin());
+			if (mismatch.first == canonicalParent.end()) 
+			{
+				return std::filesystem::relative(canonicalInput, canonicalParent);
+			}
+		}
+
+		return std::nullopt;
 	}
 
 	bool CreatePathIfNotExist(const std::filesystem::path& path, const bool forceCleanPath)

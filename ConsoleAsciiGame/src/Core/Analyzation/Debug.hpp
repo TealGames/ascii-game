@@ -1,9 +1,10 @@
 #pragma once
-#include "Utils/HelperFunctions.hpp"
-#include "Globals.hpp"
+#include <string>
 #include "Utils/Data/Event.hpp"
 #include <optional>
 #include <cstdint>
+#include <source_location>
+#include "Utils/HelperMacros.hpp"
 
 using LogTypeIntegralType = std::uint8_t;
 enum class LogType : LogTypeIntegralType
@@ -12,72 +13,100 @@ enum class LogType : LogTypeIntegralType
 	Error = 1 << 0,
 	Warning = 1 << 1,
 	Log = 1 << 2,
+	All= 0xFF
 };
 
-constexpr LogType operator&(const LogType& lhs, const LogType& rhs)
-{
-	return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
-		& static_cast<LogTypeIntegralType>(rhs));
-}
-constexpr LogType& operator&=(LogType& lhs, const LogType& rhs)
-{
-	lhs = lhs & rhs;
-	return lhs;
-}
-constexpr LogType operator|(const LogType& lhs, const LogType& rhs)
-{
-	return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
-		| static_cast<LogTypeIntegralType>(rhs));
-}
-constexpr LogType& operator|=(LogType& lhs, const LogType& rhs)
-{
-	lhs = lhs | rhs;
-	return lhs;
-}
-constexpr LogType operator~(const LogType& op)
-{
-	return static_cast<LogType>(~static_cast<LogTypeIntegralType>(op));
-}
-constexpr bool operator==(const LogType first, const LogType other)
-{
-	return static_cast<LogTypeIntegralType>(first) == static_cast<LogTypeIntegralType>(other);
-}
-constexpr bool operator!=(const LogType first, const LogType other)
-{
-	return !(first == other);
-}
+FLAG_ENUM_OPERATORS(LogType)
+//constexpr LogType operator&(const LogType& lhs, const LogType& rhs)
+//{
+//	return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
+//		& static_cast<LogTypeIntegralType>(rhs));
+//}
+//constexpr LogType& operator&=(LogType& lhs, const LogType& rhs)
+//{
+//	lhs = lhs & rhs;
+//	return lhs;
+//}
+//constexpr LogType operator|(const LogType& lhs, const LogType& rhs)
+//{
+//	return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
+//		| static_cast<LogTypeIntegralType>(rhs));
+//}
+//constexpr LogType& operator|=(LogType& lhs, const LogType& rhs)
+//{
+//	lhs = lhs | rhs;
+//	return lhs;
+//}
+//constexpr LogType operator~(const LogType& op)
+//{
+//	return static_cast<LogType>(~static_cast<LogTypeIntegralType>(op));
+//}
+//constexpr bool operator==(const LogType first, const LogType other)
+//{
+//	return static_cast<LogTypeIntegralType>(first) == static_cast<LogTypeIntegralType>(other);
+//}
+//constexpr bool operator!=(const LogType first, const LogType other)
+//{
+//	return !(first == other);
+//}
 
 std::optional<LogType> StringToLogType(const std::string& str);
 std::string LogTypeToString(const LogType& logType);
 
-constexpr LogType LOG_TYPE_ALL = LogType::Log | LogType::Error | LogType::Warning;
+enum class CallerLogDetails : std::uint8_t
+{
+	None = 0,
+	FileName = 1,
+	FunctionName = 1 << 1,
+	LineNumber = 1 << 2,
+	ColumnNumber = 1 << 3,
+	All= 0xFF
+};
+FLAG_ENUM_OPERATORS(CallerLogDetails)
+
 constexpr bool DEFAULT_LOG_TIME = true;
-constexpr bool DEFAULT_LOG_TO_GAME_CONSOLE = false;
+constexpr bool DEFAULT_MESSAGE_EVENT_FLAG = true;
 constexpr bool DEFAULT_SHOW_STACK_TRACE = false;
-constexpr bool DEFAULT_PAUSE_ON_MESSAGE = false;
+
+enum class ErroneousBehavior: std::uint8_t
+{
+	None = 0,
+	/// <summary>
+	/// Will throw an exception with the same contents as the message
+	/// </summary>
+	Throw = 1,
+	/// <summary>
+	/// [ONLY IN DEBUG BUILDS] Will cause a debug break to be triggered 
+	/// in the editor
+	/// </summary>
+	Break = 1 << 2,
+	/// <summary>
+	/// Special event flag will be set in log message end event
+	/// which can be used to trigger any other behavior in the program
+	/// </summary>
+	EventFlag = 1 << 3,
+	All = 0xFF
+};
+FLAG_ENUM_OPERATORS(ErroneousBehavior)
 
 namespace DebugProperties
 {
-	constexpr bool THROW_ON_FAILED_ASSERT = true;
-	constexpr bool THROW_ON_ALL_ERROR = false;
-	constexpr bool PAUSE_ON_ERROR = true;
+	constexpr ErroneousBehavior ASSERT_BEHAVIOR = ErroneousBehavior::Break;
+	constexpr ErroneousBehavior ERROR_LOG_BEHAVIOR = ErroneousBehavior::Break;
 
-	extern bool LogMessages;
-	extern std::string MessageFilter;
-	extern LogType LogTypeFilter;
-
-	extern Event<void, LogType, std::string, bool, bool> OnMessageLogged;
+	extern Event<void, LogType, std::string, bool> OnMessageLogged;
 
 	void SetLogMessages(const bool doLog);
+	void SetCallerLogDetails(CallerLogDetails logDetails);
 		
 	void SetLogMessageFilter(const std::string& message);
 	void ClearLogMessageFilter();
-	void SetLogTypeFilter(const LogType& logType);
-	void AddLogTypeFilter(const LogType& logType);
-	void RemoveLogTypeFilter(const LogType& logType);
+	void SetLogTypeFilter(LogType logType);
+	void AddLogTypeFilter(LogType logType);
+	void RemoveLogTypeFilter(LogType logType);
 	void SetAllLogTypeFilter();
 	void SetNoneLogTypeFilter();
-	const LogType& GetLogTypeFilter();
+	LogType GetLogTypeFilter();
 	void ResetLogFilters();
 }
 
@@ -88,62 +117,8 @@ namespace DebugProperties
 /// <param name="objPtr"></param>
 /// <param name="logType"></param>
 /// <param name="str"></param>
-template<typename T>
-void LogMessage(const T* const objPtr, const LogType& logType, const std::string& message, 
-	const bool& showStackTrace, const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, 
-	const char* overrideANSIColor= nullptr, const bool& pauseOnMessageDone= DEFAULT_PAUSE_ON_MESSAGE)
-{
-	//Log(logType, std::format("{}: {}", objPtr != nullptr ? typeid(T).name() : "", str), logTime);
-
-	if (!DebugProperties::LogMessages) return;
-
-	//if ((LOG_MESSAGE_TYPES & logType) != LogType::None) return;
-	if (!Utils::HasFlagAny(DebugProperties::LogTypeFilter, logType)) return;
-
-	if (!DebugProperties::MessageFilter.empty() &&
-		message.substr(0, DebugProperties::MessageFilter.size()) != DebugProperties::MessageFilter) return;
-
-	std::string stackTraceMessage = message;
-	if (showStackTrace) stackTraceMessage += std::format("\n-------> STACK TRACE: {}", Utils::GetCurrentStackTrace());
-
-	std::string logTypeMessage;
-	std::string timeFormatted = "";
-	if (logTime) timeFormatted = std::format("{}[{}{}{}]{}", ANSI_COLOR_WHITE, ANSI_COLOR_GRAY,
-		Utils::FormatTime(Utils::GetCurrentTime()), ANSI_COLOR_WHITE, ANSI_COLOR_CLEAR);
-
-	const char* mainTextAnsiColor = nullptr;
-	switch (logType)
-	{
-	case LogType::Error:
-		mainTextAnsiColor = overrideANSIColor != nullptr ? overrideANSIColor : ANSI_COLOR_RED;
-		logTypeMessage = std::format("{}[{}!{}] {} {}ERROR:", ANSI_COLOR_WHITE,
-			mainTextAnsiColor, ANSI_COLOR_WHITE, timeFormatted, mainTextAnsiColor);
-		break;
-
-	case LogType::Warning:
-		mainTextAnsiColor = overrideANSIColor != nullptr ? overrideANSIColor : ANSI_COLOR_YELLOW;
-		logTypeMessage = std::format("{}[{}!{}] {} {}WARNING:", ANSI_COLOR_WHITE,
-			mainTextAnsiColor, ANSI_COLOR_WHITE, timeFormatted, mainTextAnsiColor);
-		break;
-
-	case LogType::Log:
-		mainTextAnsiColor = overrideANSIColor != nullptr ? overrideANSIColor : ANSI_COLOR_WHITE;
-		logTypeMessage = std::format("{} {}LOG:", timeFormatted, mainTextAnsiColor);
-		break;
-
-	default:
-		std::string errMessage = "Tried to log message of message type "
-			"that is not defined: ";
-		throw std::invalid_argument(errMessage);
-	}
-	std::string objectName = objPtr != nullptr ? std::format("{}:", typeid(T).name())  : "";
-	std::string fullMessage = std::format("\n{}{}{}{}", logTypeMessage, objectName, stackTraceMessage, ANSI_COLOR_CLEAR);
-	
-	std::cout << fullMessage << std::endl;
-
-	if (DebugProperties::THROW_ON_ALL_ERROR && (logType & LogType::Error) != LogType::None) throw std::invalid_argument(message);
-	DebugProperties::OnMessageLogged.Invoke(logType, message, logToGameConsole, pauseOnMessageDone);
-}
+void LogMessage(const LogType& logType, const CallerLogDetails callerDetails, const std::string& message, const bool showStackTrace, const bool logTime,
+	const char* overrideANSIColor, const bool setEventFlag, const std::source_location& loc = std::source_location::current());
 
 /// <summary>
 /// Logs a message as a default LOG type
@@ -152,21 +127,8 @@ void LogMessage(const T* const objPtr, const LogType& logType, const std::string
 /// <param name="objPtr"></param>
 /// <param name="str"></param>
 /// <param name="logTime"></param>
-template<typename T>
-void Log(const T* const objPtr, const std::string& str, 
-	const bool& logTime = DEFAULT_LOG_TIME, const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, 
-	const char* overrideAnsiColor=nullptr)
-{
-	LogMessage<T>(objPtr, LogType::Log, str, false, logTime, logToGameConsole, overrideAnsiColor);
-}
-/// <summary>
-/// Logs a message as a default LOG type
-/// </summary>
-/// <param name="str"></param>
-/// <param name="logTime"></param>
-void Log(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, 
-	const char* overrideAnsiColor = nullptr);
+void Log(const std::string& message, const bool logTime = DEFAULT_LOG_TIME, 
+	const char* overrideAnsiColor = nullptr, const bool setEventFlag = DEFAULT_MESSAGE_EVENT_FLAG, const std::source_location& loc = std::source_location::current());
 
 /// <summary>
 /// Logs a message as a WARNING type
@@ -175,60 +137,17 @@ void Log(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME,
 /// <param name="objPtr"></param>
 /// <param name="str"></param>
 /// <param name="logTime"></param>
-template<typename T>
-void LogWarning(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE)
-{
-	LogMessage<T>(objPtr, LogType::Warning, str, false, logTime, logToGameConsole);
-}
-/// <summary>
-/// Logs a message as a WARNING type
-/// </summary>
-/// <param name="str"></param>
-/// <param name="logTime"></param>
-void LogWarning(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE);
+void LogWarning(const std::string& message, const bool logTime = DEFAULT_LOG_TIME,
+	const bool setEventFlag = DEFAULT_MESSAGE_EVENT_FLAG, const std::source_location& loc = std::source_location::current());
 
 /// <summary>
 /// Logs a message as an ERROR type
 /// </summary>
 /// <param name="str"></param>
 /// <param name="logTime"></param>
-template<typename T>
-void LogError(const T* const objPtr, const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE, 
-	const bool& pauseOnMesssageEnd= DEFAULT_PAUSE_ON_MESSAGE)
-{
-	LogMessage<T>(objPtr, LogType::Error, str, showStackTrace, logTime, logToGameConsole, nullptr, pauseOnMesssageEnd);
-}
-/// <summary>
-/// Logs a message as an ERROR type
-/// </summary>
-/// <param name="str"></param>
-/// <param name="logTime"></param>
-void LogError(const std::string& str, const bool& logTime = DEFAULT_LOG_TIME, 
-	const bool& logToGameConsole = DEFAULT_LOG_TO_GAME_CONSOLE, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE, 
-	const bool& pauseOnMesssageEnd = DEFAULT_PAUSE_ON_MESSAGE);
+void LogError(const std::string& message, const bool logTime = DEFAULT_LOG_TIME,
+	const bool showStackTrace = DEFAULT_SHOW_STACK_TRACE, const std::source_location& loc = std::source_location::current());
+void Break();
 
-/// <summary>
-/// If condition is false will log error and return false, othersise return true and does nothing
-/// </summary>
-bool Assert(const bool condition, const std::string& errMessage, const bool& showStackTrace= DEFAULT_SHOW_STACK_TRACE);
-
-template<typename T>
-bool Assert(const T* const objPtr, const bool condition, const std::string& errMessage, 
-	const bool& showStackTrace = DEFAULT_SHOW_STACK_TRACE)
-{
-	if (!condition)
-	{
-		LogError<T>(objPtr, errMessage, DEFAULT_LOG_TIME, true, showStackTrace);
-		if (DebugProperties::THROW_ON_FAILED_ASSERT) throw std::invalid_argument(errMessage);
-	}
-	return condition;
-}
-
-template<typename T>
-void Break(const T* const objPtr)
-{
-	Assert(objPtr, false, std::format("Break invoked"));
-}
+bool Assert(const bool condition, const std::string& errMessage, const bool showStackTrace = DEFAULT_SHOW_STACK_TRACE, 
+	const std::source_location& loc = std::source_location::current());

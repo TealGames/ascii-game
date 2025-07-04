@@ -8,6 +8,7 @@
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Asset/FontAsset.hpp"
 
 const UIPadding UITextComponent::DEFAULT_PADDING = UIPadding();
 static constexpr float FONT_SIZE_CALC_DELTA = 0.5;
@@ -79,7 +80,7 @@ const std::string& UITextComponent::GetText() const
 }
 void UITextComponent::SetFontSize(const float& size)
 {
-	if (!Assert(this, size!=0, std::format("Tried to set font size "
+	if (!Assert(size!=0, std::format("Tried to set font size "
 		"to:{} which is not allowed", std::to_string(size))))
 		return;
 
@@ -94,7 +95,7 @@ void UITextComponent::SetTextColor(const Color color)
 
 void UITextComponent::SetFontFactorSize(const float& factor)
 {
-	if (!Assert(this, m_fontSizeFactor!=NULL_FONT_FACTOR, std::format("Tried to set font factor "
+	if (!Assert(m_fontSizeFactor!=NULL_FONT_FACTOR, std::format("Tried to set font factor "
 		"size to:{} which is not allowed", std::to_string(factor))))
 		return;
 
@@ -116,12 +117,12 @@ float UITextComponent::GetFontSize() const
 	//the last font size used
 	return m_fontData.m_Size;
 }
-float UITextComponent::GetFontSizeFromArea(const Vec2& parentArea, const int textSize) const
+float UITextComponent::GetFontSizeFromArea(const Vec2& parentArea, const int textCharCount) const
 {
 	const float fontByHeight = parentArea.m_Y * m_fontSizeFactor;
 
 	const float averageCharWidthFactor = 0.6f;
-	const float fontByWidth = (parentArea.m_X * m_fontSizeFactor) / (textSize * averageCharWidthFactor);
+	const float fontByWidth = (parentArea.m_X * m_fontSizeFactor) / (textCharCount * averageCharWidthFactor);
 
 	return std::min(fontByWidth, fontByHeight);
 	//Typically, area that a font size takes up grows with the square of font size
@@ -129,7 +130,7 @@ float UITextComponent::GetFontSizeFromArea(const Vec2& parentArea, const int tex
 }
 Vector2 UITextComponent::CalculateSpaceUsed(const float& fontSize, const float& spacing) const
 {
-	return MeasureTextEx(m_fontData.m_FontType, m_text.c_str(), fontSize, spacing);
+	return MeasureTextEx(m_fontData.m_FontAsset->GetFont(), m_text.c_str(), fontSize, spacing);
 }
 float UITextComponent::CalculateMaxFontSizeForSpace(const Vec2& space, const float spacing, const float startingSize) const
 {
@@ -248,28 +249,37 @@ void UITextComponent::SetPadding(const UIPadding& padding)
 UIRect UITextComponent::Render(const UIRect& rect)
 {
 	if (m_text.empty()) return {};
+	if (!Assert(m_fontData.HasValidFont(), std::format("Tried to render text GUI:{} of entity:{} "
+		"but font is invalid", ToString(), GetEntity().ToString())))
+		return {};
 
 	const Vec2 usableSize = CalculateUsableSpace(rect);
-	if (HasFontSizeFactor()) m_fontData.m_Size = GetFontSizeFromArea(usableSize, m_text.size());
+	if (HasFontSizeFactor())
+	{
+		/*LogWarning(std::format("Font size (before:{}) from area:{} is:{} entity:{} text:{}", m_fontData.m_Size, usableSize.ToString(), 
+			GetFontSizeFromArea(usableSize, m_text.size()), GetEntity().m_Name, m_text));*/
+		m_fontData.m_Size = GetFontSizeFromArea(usableSize, m_text.size());
+	}
 
 	Vector2 spaceUsed = CalculateSpaceUsed(m_fontData.m_Size, m_fontData.m_Tracking);
+	//LogWarning(std::format("Space used for font:{} is:{}", m_fontData.m_Size, RaylibUtils::ToString(spaceUsed)));
 	/*if (m_text == "AssetEditors")
 	{
 		Assert(false, std::format("Space used:{} font size:{} usable:{} factor:{}", RaylibUtils::ToString(spaceUsed),
 			std::to_string(m_fontData.m_Size), usableSize.ToString(), std::to_string(m_fontSizeFactor)));
 	}*/
 
-	if (m_fontData.m_Size == 0 || spaceUsed.x > usableSize.m_X || spaceUsed.y > usableSize.m_Y)
+	if (m_fontData.m_Size <= 0 || spaceUsed.x > usableSize.m_X || spaceUsed.y > usableSize.m_Y)
 	{
-		if (m_fontData.m_Size == 0) LogError("Calculing new font size because size is 0");
+		//if (m_fontData.m_Size == 0) LogError("Calculing new font size because size is 0");
 		m_fontData.m_Size = CalculateMaxFontSizeForSpace(usableSize, m_fontData.m_Tracking, m_fontData.m_Size);
 		spaceUsed = CalculateSpaceUsed(m_fontData.m_Size, m_fontData.m_Tracking);
 	}
 
-	if (!Assert(this, m_fontData.m_Size != 0, std::format("Tried to render text GUI with id:{} "
-		"but font size was calculated to be 0:{} valid font:{}. Usaable space:{} (total space:{}) space used:{}", GetEntity().ToStringId(),
-		ToString(), std::to_string(RaylibUtils::IsValidFont(m_fontData.m_FontType)), rect.ToString(),
-		usableSize.ToString(), RaylibUtils::ToString(spaceUsed))))
+	if (!Assert(m_fontData.m_Size > 0, std::format("Tried to render text GUI:{} of entity:{}"
+		"but font size was calculated to be 0. valid font:{}. Usaable space:{} (total space:{}) space used:{} spacing:{}",
+		ToString(), GetEntity().ToString(), std::to_string(m_fontData.m_FontAsset->HasValidFont()), rect.ToString(),
+		usableSize.ToString(), RaylibUtils::ToString(spaceUsed), m_fontData.m_Tracking)))
 		return {};
 
 	const ScreenPosition topLeftPos = CalculateTopLeftPos(rect, spaceUsed);
@@ -286,7 +296,7 @@ UIRect UITextComponent::Render(const UIRect& rect)
 					std::to_string(HasFontSizeFactor()), std::to_string(GetFontSizeFromArea(usableSize)), RaylibUtils::ToString(spaceUsed)));
 			}*/
 	//LogError(std::format("started drawing test"));
-	m_renderer->GetRendererMutable().AddTextCall(topLeftPos, m_fontData.m_FontType, m_text.c_str(), m_fontData.m_Size, m_fontData.m_Tracking, m_color);
+	m_renderer->GetRendererMutable().AddTextCall(topLeftPos, m_fontData.m_FontAsset->GetFont(), m_text.c_str(), m_fontData.m_Size, m_fontData.m_Tracking, m_color);
 	//LogError(std::format("Finsihed drawing test"));
 	//if (DRAW_RENDER_BOUNDS) DrawRectangleLines(topLeftPos.x, topLeftPos.y, spaceUsed.x, spaceUsed.y, YELLOW);
 	//Note: although we use a different top left pos for actual text due to padding, the full object starts at the render info top left

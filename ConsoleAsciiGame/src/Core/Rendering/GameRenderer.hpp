@@ -24,6 +24,7 @@ namespace Rendering
         void AddTextureCall(const ScreenPosition& pos, const Texture& tex, const float rotation, const float scale, const Color color);
         void AddTextCall(const ScreenPosition& pos, const Font& font, const char* text, const float size, const float spacing, const Color color);
 
-        void RenderQueue();
+        void RenderBuffer();
+        void ClearBuffer();
     };
 }

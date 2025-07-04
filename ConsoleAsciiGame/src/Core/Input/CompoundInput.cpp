@@ -44,7 +44,7 @@ namespace Input
 
 	void CompoundInput::AddEntry(const InputDirection& dir, const InputAction& action)
 	{
-		if (!Assert(this, !HasDirection(dir), std::format("Tried to add compound input entry of action: {} "
+		if (!Assert(!HasDirection(dir), std::format("Tried to add compound input entry of action: {} "
 			"to dir: {} that already contains an input action", action.ToString(), Input::ToString(dir))))
 			return;
 
@@ -56,7 +56,7 @@ namespace Input
 		Vec2Int dir = {};
 		for (const auto& entry : m_dirKeys)
 		{
-			/*LogError(this, std::format("Compound: {} key: {} STATE: {} (down: {})", name, std::to_string(entry.second),
+			/*LogError(std::format("Compound: {} key: {} STATE: {} (down: {})", name, std::to_string(entry.second),
 				ToString(GetKeyState(entry.second)), std::to_string(IsKeyDown(entry.second))));*/
 			if (!entry.second.IsDown()) continue;
 
@@ -65,7 +65,7 @@ namespace Input
 			else if (entry.first == InputDirection::Right) dir.m_X++;
 			else if (entry.first == InputDirection::Left) dir.m_X--;
 		}
-		//LogError(this, std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
+		//LogError(std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
 		return dir;
 	}
 	/*std::vector<KeyState> CompoundInput::GetCompoundKeyStates()

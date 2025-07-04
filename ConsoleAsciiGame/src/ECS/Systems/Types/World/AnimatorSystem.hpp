@@ -83,7 +83,7 @@ namespace ECS
 		//	if (data.m_NormalizedTime >= property.m_Keyframes[property.m_KeyframeIndex].GetTime())
 		//	{
 		//		std::optional<size_t> newIndex = TryGetKeyFrameAtTime<T>(data, property, data.m_NormalizedTime);
-		//		if (!Assert(this, newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
+		//		if (!Assert(newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
 		//			"and end time: {} on entity: {} but failed!", std::to_string(data.m_NormalizedTime),
 		//			std::to_string(data.m_AnimationLength), entity.GetName())))
 		//			return;
@@ -104,7 +104,7 @@ namespace ECS
 		//	}
 		//	else
 		//	{
-		//		LogError(this, std::format("Tried to update property in animator for entity:{} "
+		//		LogError(std::format("Tried to update property in animator for entity:{} "
 		//			"but could not find any Type specific actions to take for it (probably due to not defining actions for this type)", entity.GetName()));
 		//	}
 		//}

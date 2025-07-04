@@ -62,7 +62,7 @@ namespace Utils
 
 	Point3D Point3D::operator/(const Point3D& otherPos) const
 	{
-		if (!Assert(this, otherPos.m_X != 0 && otherPos.m_Y != 0 && otherPos.m_Z != 0,
+		if (!Assert(otherPos.m_X != 0 && otherPos.m_Y != 0 && otherPos.m_Z != 0,
 			std::format("Tried to divide {} by a value with 0 {}",
 				ToString(), otherPos.ToString()))) return {};
 
@@ -71,7 +71,7 @@ namespace Utils
 
 	Point3D Point3D::operator/(const float factor) const
 	{
-		if (!Assert(this, factor!=0, std::format("Tried to divide {} by a value with 0 {}",
+		if (!Assert(factor!=0, std::format("Tried to divide {} by a value with 0 {}",
 				ToString(), std::to_string(factor)))) return {};
 
 		return { m_X / factor, m_Y / factor, m_Z/factor};

@@ -13,5 +13,6 @@ namespace ECS
 	private:
 	public:
 		UIColorPickerSystem(PopupUIManager& popupManager);
+		void Init();
 	};
 }

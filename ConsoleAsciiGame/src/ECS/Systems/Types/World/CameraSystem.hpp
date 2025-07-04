@@ -16,14 +16,16 @@
 #include "Core/Collision/ColliderOutlineBuffer.hpp"
 #include "Core/Rendering/LineBuffer.hpp"
 
+namespace Rendering { class Renderer; }
 namespace ECS
 {
 	class CameraSystem : public SingleBodySystem<CameraData>
 	{
 	private:
-		FragmentedTextBuffer m_currentFrameBuffer;
-		ColliderOutlineBuffer* m_colliderOutlineBuffer;
-		LineBuffer* m_lineBuffer;
+		Rendering::Renderer* m_renderer;
+		//FragmentedTextBuffer m_currentFrameBuffer;
+		//ColliderOutlineBuffer* m_colliderOutlineBuffer;
+		//LineBuffer* m_lineBuffer;
 
 	public:
 
@@ -41,15 +43,15 @@ namespace ECS
 		/// <param name="sceneManager">Manager needed to retrieve viewed data</param>
 		/// <param name="followTarget">The object that that camera attempts to follow</param>
 		/// <param name="viewportSize">THe amount of text vewied in WIDTH, HEIGHT</param>
-		CameraSystem(ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer);
+		CameraSystem(Rendering::Renderer& renderer, ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer);
 		//Camera(Transform& transform, const Vec2Int& viewportSize);
 
 		void UpdateCameraPosition(CameraData& cameraData);
 
 		void SystemUpdate(Scene& scene, CameraData& component, const float& deltaTime) override;
 
-		const FragmentedTextBuffer& GetCurrentFrameBuffer() const;
+		/*const FragmentedTextBuffer& GetCurrentFrameBuffer() const;
 		const ColliderOutlineBuffer* GetCurrentColliderOutlineBuffer() const;
-		const LineBuffer* GetCurrentLineBuffer() const;
+		const LineBuffer* GetCurrentLineBuffer() const;*/
 	};
 }

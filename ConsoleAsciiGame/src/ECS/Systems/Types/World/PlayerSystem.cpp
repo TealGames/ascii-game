@@ -21,7 +21,14 @@ namespace ECS
 	PlayerSystem::PlayerSystem(Input::InputManager& input) : 
 		m_inputManager(input), m_cheatsEnabled(CHEATS_ENABLED_DEFAULT), m_lastFrameGrounded(false)
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(PlayerData), ComponentInfo(CreateRequiredComponentFunction<PhysicsBodyData>()));
+		GlobalComponentInfo::AddComponentInfo(typeid(PlayerData), 
+			ComponentInfo(CreateComponentTypes<PhysicsBodyData>(), CreateRequiredComponentFunction(PhysicsBodyData()),
+			[](EntityData& entity)-> void
+			{
+				PlayerData& player = *(entity.TryGetComponentMutable<PlayerData>());
+				if (player.m_body != nullptr) player.m_body = entity.TryGetComponentMutable<PhysicsBodyData>();
+				//fieldComponent.m_background = entity.TryGetComponentMutable<UIPanel>();
+			}));
 	}
 
 	void PlayerSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
@@ -29,8 +36,12 @@ namespace ECS
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("PlayerSystem::SystemUpdate");
 #endif 
-
-		if (deltaTime <= 0) return;
+		//LogError(std::format("Does scene have active player:{}", std::to_string(scene.TryGetEntity("player")->IsEntityActive())));
+		if (deltaTime <= 0)
+		{
+			LogError(std::format("Regturning player due to dt:{}", deltaTime));
+			return;
+		}
 		
 		scene.OperateOnComponents<PlayerData>(
 			[this, &scene, &deltaTime, &mainCamera](PlayerData& player)-> void
@@ -39,7 +50,7 @@ namespace ECS
 				if (m_cheatsEnabled && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
 				{
 					/*CameraData* camera = scene.TryGetMainCameraMutable();
-					if (!Assert(this, camera != nullptr, std::format("Tried to get camera to convert screen "
+					if (!Assert(camera != nullptr, std::format("Tried to get camera to convert screen "
 						"to world point for mouse position cheat but it is null"))) return;*/
 
 					Vector2 mousePos = GetMousePosition();
@@ -48,13 +59,15 @@ namespace ECS
 				}
 #endif
 
+				LogWarning(std::format("Player is at pos:{}", player.GetEntity().GetTransform().GetGlobalPos().ToString()));
+
 				const Input::InputProfile* inputProfile = m_inputManager.TryGetProfile(MAIN_INPUT_PROFILE_NAME);
-				if (!Assert(this, inputProfile != nullptr, std::format("Tried to move player in PlayerSystem "
+				if (!Assert(inputProfile != nullptr, std::format("Tried to move player in PlayerSystem "
 					"but the input profile: '{}' was not found", MAIN_INPUT_PROFILE_NAME)))
 					return;
 
 				const Input::CompoundInput* moveCompound = inputProfile->TryGetCompoundInputAction(MAIN_INPUT_PROFILE_MOVE_ACTION);
-				if (!Assert(this, moveCompound != nullptr, std::format("Tried to move player in PlayerSystem "
+				if (!Assert(moveCompound != nullptr, std::format("Tried to move player in PlayerSystem "
 					"but the move compound: '{}' was not found in input profile: {}",
 					MAIN_INPUT_PROFILE_MOVE_ACTION, MAIN_INPUT_PROFILE_NAME)))
 					return;

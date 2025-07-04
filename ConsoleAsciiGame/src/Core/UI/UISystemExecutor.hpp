@@ -9,10 +9,13 @@
 #include "ECS/Systems/Types/UI/UISliderSystem.hpp"
 #include "ECS/Systems/Types/UI/UITextSystem.hpp"
 #include "ECS/Systems/Types/UI/UIRendererSystem.hpp"
+#include "ECS/Systems/Types/UI/UIToggleSystem.hpp"
 
 namespace Rendering { class Renderer; }
 class UIHierarhcy;
 class GlobalEntityManager;
+class EngineState;
+
 class UISystemExecutor
 {
 private:
@@ -27,11 +30,13 @@ private:
 	ECS::UIPanelSystem m_uiPanelSystem;
 	ECS::UISliderSystem m_uiSliderSystem;
 	ECS::UITextSystem m_uiTextSystem;
+	ECS::UIToggleSystem m_uiToggleSystem;
 public:
 
 private:
 public:
-	UISystemExecutor(Rendering::Renderer& renderer, UIHierarchy& hierarchy, PopupUIManager& popupManager);
+	UISystemExecutor(const EngineState& state, Rendering::Renderer& renderer, UIHierarchy& hierarchy, PopupUIManager& popupManager);
+	void Init();
 	void SystemsUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime);
 };
 

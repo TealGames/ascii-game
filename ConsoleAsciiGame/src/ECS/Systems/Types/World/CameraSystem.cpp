@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/CameraSystem.hpp"
 #include "ECS/Component/Component.hpp"
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
 #include "Core/PositionConversions.hpp"
@@ -10,6 +10,8 @@
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
+#include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Asset/FontAsset.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
@@ -21,10 +23,10 @@ namespace ECS
     static constexpr bool DO_SIZE_SCALING = true;
     static constexpr float FONT_SIZE_FACTOR = 0.1;
 
-	CameraSystem::CameraSystem(ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer) :
-        m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
+	CameraSystem::CameraSystem(Rendering::Renderer& renderer, ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer) :
+        m_renderer(&renderer)//, m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
 	{
-        GlobalComponentInfo::AddComponentInfo(typeid(CameraData), ComponentInfo(DeppendencyType::Entity));
+        GlobalComponentInfo::AddComponentInfo(typeid(CameraData), ComponentInfo(DependencyType::Entity));
         //LogWarning(std::format("CREATED CAMERA SYSTEM: {}", std::to_string(colliderBuffer!=nullptr)));
 	}
 
@@ -34,28 +36,23 @@ namespace ECS
         ProfilerTimer timer("CameraSystem::SystemUpdate");
 #endif 
 
-        m_currentFrameBuffer.clear();
+        //m_currentFrameBuffer.clear();
 
         //TODO: somthing was wrong with dirty counting )(most likely) so the optimization was not working
         //so instead use dirty from entities not from componentns
-        if (CACHE_LAST_BUFFER && !scene.HasDirtyComponents() && !mainCamera.m_LastFrameBuffer.empty())
-        {
-            //Log("NO camera render update");
-            m_currentFrameBuffer = mainCamera.m_LastFrameBuffer;
-            //Rendering::RenderBuffer(data.m_LastFrameBuffer.value());
-            return;
-        }
+        //if (CACHE_LAST_BUFFER && !scene.HasDirtyComponents() && !mainCamera.m_LastFrameBuffer.empty())
+        //{
+        //    //Log("NO camera render update");
+        //    m_currentFrameBuffer = mainCamera.m_LastFrameBuffer;
+        //    //Rendering::RenderBuffer(data.m_LastFrameBuffer.value());
+        //    return;
+        //}
 
         scene.IncreaseFrameDirtyComponentCount();
         if (!mainCamera.m_CameraSettings.HasNoFollowTarget()) UpdateCameraPosition(mainCamera);
-       /* Rendering::RenderBuffer(TextBuffer(5, 5, TextChar(BLUE, 'V')));
-        data.m_LastFrameBuffer = TextBuffer(5, 5, TextChar(BLUE, 'V'));
-        data.m_LastFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);*/
-        //return;
 
         CollapseLayersWithinViewport(scene, mainCamera);
-        //m_currentFrameBuffer = CollapseLayersWithinViewport(scene, data, mainCamera);
-        if (CACHE_LAST_BUFFER) mainCamera.m_LastFrameBuffer = m_currentFrameBuffer;
+        //if (CACHE_LAST_BUFFER) mainCamera.m_LastFrameBuffer = m_currentFrameBuffer;
     }
 
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
@@ -77,7 +74,7 @@ namespace ECS
     void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData)
     {
         //TODO: this is cuainsg some performance rpboelms
-        m_currentFrameBuffer.clear();
+        //m_currentFrameBuffer.clear();
 
         float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_CameraSettings.m_WorldViewportSize.m_X, 
                                      SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y);
@@ -90,12 +87,15 @@ namespace ECS
         //Log(std::format("Total layers: {}", std::to_string(layers.size())));
         ScreenPosition newScreenPos = {};
 
+        //LogError(std::format("Collapsing layers within viewport: {}", scene.ToStringLayers()));
+
         //TODO: this is inefficient because we render each pos within viewport, but even if some objects are within the same pos
         //the one behind it is still rendered. NOTE: it is difficult to find a solution when we might have small overlaps and we 
         //wanbt overlaps to be visible to ensure realism/not akward visuals + makes it difficult when using raylib
         for (const auto& layer : layers)
         {
             //Log(std::format("LAYER has buffer: {}", layer->ToString()));
+            //LogWarning(std::format("Found layer with buffer size:{}", layer->GetBuffer().size()));
             for (const auto& textBufferPos : layer->GetBuffer())
             {
                 /*Log(std::format("Is pos {} within viewport: {}", textBufferPos.ToString(), 
@@ -104,15 +104,23 @@ namespace ECS
                /* Log(std::format("Convert pos: {} to screen pos; {}", 
                     textBufferPos.m_Pos.ToString(), WorldToScreenPosition(cameraData, textBufferPos.m_Pos).ToString()));*/
 
-                m_currentFrameBuffer.emplace_back(textBufferPos);
+                //m_currentFrameBuffer.emplace_back(textBufferPos);
+                
                 //TODO: it seems as thoguh font scaling causes problems and size inconsistencies with rest of world
 
-                if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_Size *= scaleFactor;
+                //if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_Size *= scaleFactor;
+               
                 newScreenPos = Conversions::WorldToScreenPosition(cameraData, textBufferPos.m_Pos);
-                m_currentFrameBuffer.back().m_Pos = Vec2(static_cast<float>(newScreenPos.m_X), static_cast<float>(newScreenPos.m_Y));
+                m_renderer->AddTextCall(newScreenPos, textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_Text.m_Char,
+                    textBufferPos.m_FontData.m_Size, textBufferPos.m_FontData.m_Tracking, textBufferPos.m_Text.m_Color);
+               /* LogWarning(std::format("Adding text call at:{} font size:{} color:{} char:{}", newScreenPos.ToString(), textBufferPos.m_FontData.m_Size, 
+                    RaylibUtils::ToString(textBufferPos.m_Text.m_Color), textBufferPos.m_Text.m_Char));*/
+                //m_currentFrameBuffer.back().m_Pos = Vec2(static_cast<float>(newScreenPos.m_X), static_cast<float>(newScreenPos.m_Y));
             }
         }
+        //LogError(std::format("Completed layers"));
 
+        /*
         if (DO_SIZE_SCALING)
         {
             if (m_colliderOutlineBuffer != nullptr && m_colliderOutlineBuffer->HasData())
@@ -138,9 +146,10 @@ namespace ECS
         }
 
         if (CACHE_LAST_BUFFER) cameraData.m_LastFrameBuffer = m_currentFrameBuffer;
+        */
     }
     
-    const FragmentedTextBuffer& CameraSystem::GetCurrentFrameBuffer() const
+   /* const FragmentedTextBuffer& CameraSystem::GetCurrentFrameBuffer() const
     {
         if (m_currentFrameBuffer.empty()) return {};
         return m_currentFrameBuffer;
@@ -154,5 +163,5 @@ namespace ECS
     const LineBuffer* CameraSystem::GetCurrentLineBuffer() const
     {
         return m_lineBuffer;
-    }
+    }*/
 }

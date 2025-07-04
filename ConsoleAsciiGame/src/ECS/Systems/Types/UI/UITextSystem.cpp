@@ -6,9 +6,14 @@
 
 namespace ECS
 {
-	UITextSystem::UITextSystem()
+	UITextSystem::UITextSystem() {}
+	void UITextSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UITextComponent), ComponentInfo(CreateRequiredComponentFunction<UIRendererData>(),
-			[](EntityData& entity)-> void {entity.TryGetComponentMutable<UITextComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>(); }));
+		GlobalComponentInfo::AddComponentInfo(typeid(UITextComponent),
+			ComponentInfo(CreateComponentTypes<UIRendererData>(), CreateRequiredComponentFunction(UIRendererData()),
+				[](EntityData& entity)-> void
+				{
+					entity.TryGetComponentMutable<UITextComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>();
+				}));
 	}
 }

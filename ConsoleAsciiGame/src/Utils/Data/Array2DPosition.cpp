@@ -65,7 +65,7 @@ Array2DPosition Array2DPosition::operator*(const int factor) const
 
 Array2DPosition Array2DPosition::operator/(const Array2DPosition& otherPos) const
 {
-	if (!Assert(this, otherPos.GetRow() != 0 && otherPos.GetCol() != 0,
+	if (!Assert(otherPos.GetRow() != 0 && otherPos.GetCol() != 0,
 		std::format("Tried to divide {} by a value with 0 {}",
 			ToString(), otherPos.ToString()))) return {};
 
@@ -74,7 +74,7 @@ Array2DPosition Array2DPosition::operator/(const Array2DPosition& otherPos) cons
 
 Array2DPosition Array2DPosition::operator/(const int factor) const
 {
-	if (!Assert(this, factor != 0,
+	if (!Assert(factor != 0,
 		std::format("Tried to divide {} by a factor with 0 {}",
 			ToString(), std::to_string(factor)))) return {};
 

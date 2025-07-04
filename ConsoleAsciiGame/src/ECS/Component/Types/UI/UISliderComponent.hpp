@@ -1,16 +1,17 @@
 #pragma once
-#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "ECS/Component/Component.hpp"
 #include "Core/UI/UIStyle.hpp"
 #include "Utils/Data/Event.hpp"
 
 class UIPanel;
 class UIRenderer;
 class UITransformData;
+class UISelectableData;
 class UIInteractionManager;
 namespace Input { class InputManager; }
 namespace ECS { class UISliderSystem; }
 
-class UISliderComponent : public UISelectableData
+class UISliderComponent : public Component
 {
 private:
 	const Input::InputManager* m_inputManager;
@@ -19,6 +20,7 @@ private:
 	float m_value;
 
 	UIRendererData* m_renderer;
+	UISelectableData* m_selectable;
 	UIPanel* m_backgroundPanel;
 public:
 	friend class ECS::UISliderSystem;
@@ -35,6 +37,8 @@ public:
 	UISliderComponent(const Input::InputManager& inputManager, 
 		const Vec2 minMaxValues, const UIStyle& settings);
 
+	void Init();
+
 	void SetSettings(const UIStyle& settings);
 	void SetMinValue(const float min);
 	void SetMaxValue(const float max);
@@ -46,6 +50,11 @@ public:
 	int GetMinValueInt() const;
 	int GetMaxValueInt() const;
 	float GetValue() const;
+
+	void Deserialize(const Json& json) override;
+	Json Serialize() override;
+
+	std::string ToString() const override;
 
 	//RenderInfo ElementRender(const RenderInfo& renderInfo) override;
 };

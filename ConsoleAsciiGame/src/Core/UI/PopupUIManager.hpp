@@ -144,6 +144,8 @@ public:
 	PopupUIManager(UIHierarchy& hierarchy);
 	~PopupUIManager();
 
+	void Init();
+
 	void AddPopup(PopupUI* poup);
 
 	template<typename T> 

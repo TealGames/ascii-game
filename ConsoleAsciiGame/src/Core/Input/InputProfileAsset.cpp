@@ -3,6 +3,7 @@
 #include <fstream>
 #include "Core/Input/InputManager.hpp"
 #include "Utils/IOHandler.hpp"
+#include "Utils/StringUtil.hpp"
 
 const std::string InputProfileAsset::EXTENSION = ".input";
 
@@ -15,14 +16,14 @@ static constexpr char COMPOUND_INPUT_IDENTIFIER = '>';
 InputProfileAsset::InputProfileAsset(const std::filesystem::path& path)
 	: Asset(path, true), m_profile(std::nullopt), m_inputManager(nullptr)
 {
-	if (!Assert(this, IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a input profile asset from path:'{}' "
+	if (!Assert(IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a input profile asset from path:'{}' "
 		"but it does not have required extension:'{}'", path.string(), EXTENSION)))
 		return;
 }
 
 Input::InputManager& InputProfileAsset::GetInputManager()
 {
-	if (!Assert(this, m_inputManager!=nullptr, std::format("Tried to retrieve scene MUTABLE from scene asset:{} "
+	if (!Assert(m_inputManager!=nullptr, std::format("Tried to retrieve scene MUTABLE from scene asset:{} "
 		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
 	{
 		throw std::invalid_argument("Invalid scene asset dependency");
@@ -58,7 +59,7 @@ void InputProfileAsset::UpdateAssetFromFile()
 		if (line.empty()) continue;
 		//std::string lineBefore = line;
 		line = Utils::StringUtil(line).RemoveSpaces().ToString();
-		//LogWarning(this, std::format("COnverted line: {} -> {}", lineBefore, line));
+		//LogWarning(std::format("COnverted line: {} -> {}", lineBefore, line));
 		//LogError(std::format("Current line:'{}' header+genrall:'{}'", line, HEADER_CHAR + GENERAL_HEADER));
 
 		if (line == HEADER_CHAR + GENERAL_HEADER)
@@ -80,7 +81,7 @@ void InputProfileAsset::UpdateAssetFromFile()
 		}
 
 		const size_t colonIndex = line.find(':');
-		if (!Assert(this, colonIndex != std::string::npos, std::format("Tried to parse input profile but current line: '{}' "
+		if (!Assert(colonIndex != std::string::npos, std::format("Tried to parse input profile but current line: '{}' "
 			"does not contain any colons identifying action name end", line))) return;
 
 		inputName = line.substr(0, colonIndex);
@@ -118,7 +119,7 @@ void InputProfileAsset::UpdateAssetFromFile()
 			//TODO: perhaps the profile.txt should implicity say what devide the input is for and/or
 			//also add the option to list out the CORRESPONDING key for different devices 
 			currentDevice = Input::TryGetStringKeyDevice(keybindName, &inputAsEnum);
-			if (!Assert(this, currentDevice.has_value(),
+			if (!Assert(currentDevice.has_value(),
 				std::format("Could not deduce the device from keybind name: '{}' of input profile: '{}'", keybindName, GetName())))
 				return;
 
@@ -136,7 +137,7 @@ void InputProfileAsset::UpdateAssetFromFile()
 			}
 			else
 			{
-				LogError(this, std::format("Tried to convert input key: '{}' from input profile: '{}' "
+				LogError(std::format("Tried to convert input key: '{}' from input profile: '{}' "
 					"to raylib enum but there no device actions for: {}", keybindName, GetName(), Input::ToString(currentDevice.value())));
 				return;
 			}
@@ -154,13 +155,13 @@ void InputProfileAsset::UpdateAssetFromFile()
 
 		if (isCompoundKey)
 		{
-			/*if (!Assert(this, currentCompoundIt != m_compoundInputs.end(),
+			/*if (!Assert(currentCompoundIt != m_compoundInputs.end(),
 				std::format("Tried to parse an input profile but at line: '{}' "
 					"tried to add input to compound but there is not compound set", line)))
 				return;*/
 
 			std::optional<Input::InputDirection> actionAsDir = Input::TryConvertStringToDirection(inputName);
-			if (!Assert(this, actionAsDir.has_value(), std::format("Tried to parse compound input action: '{}' as direction "
+			if (!Assert(actionAsDir.has_value(), std::format("Tried to parse compound input action: '{}' as direction "
 				"for compound input: '{}' but it failed. All compound input actions must be valid directions",
 				inputName, currentCompoundInput.GetName())))
 				return;
@@ -180,7 +181,7 @@ void InputProfileAsset::UpdateAssetFromFile()
 		GetProfileMutable().TryAddCompoundAction(currentCompoundInput);
 	}
 
-	Log(this, std::format("Successfully created profile: {}", GetProfileMutable().ToString()));
+	Log(std::format("Successfully created profile: {}", GetProfileMutable().ToString()));
 }
 
 void InputProfileAsset::SaveToPath(const std::filesystem::path& path)
@@ -190,7 +191,7 @@ void InputProfileAsset::SaveToPath(const std::filesystem::path& path)
 
 Input::InputProfile& InputProfileAsset::GetProfileMutable()
 {
-	if (!Assert(this, m_profile.has_value(), std::format("Tried to retrieve input MUTABLE from input asset:{} "
+	if (!Assert(m_profile.has_value(), std::format("Tried to retrieve input MUTABLE from input asset:{} "
 		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
 		throw std::invalid_argument("Invalid input asset dependency");
 
@@ -198,7 +199,7 @@ Input::InputProfile& InputProfileAsset::GetProfileMutable()
 }
 const Input::InputProfile& InputProfileAsset::GetProfile() const
 {
-	if (!Assert(this, m_profile.has_value(), std::format("Tried to retrieve input from input asset:{} "
+	if (!Assert(m_profile.has_value(), std::format("Tried to retrieve input from input asset:{} "
 		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
 		throw std::invalid_argument("Invalid input asset dependency");
 

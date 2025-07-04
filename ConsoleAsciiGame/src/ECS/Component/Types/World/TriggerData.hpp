@@ -18,21 +18,21 @@ enum class TriggerType
 };
 std::string ToString(const TriggerType& trigger);
 
+namespace ECS { class TriggerSystem; }
 class TriggerData : public Component
 {
 private:
 	const CollisionBoxData* m_collider;
 	TriggerType m_triggerType;
 public:
+	friend class ECS::TriggerSystem;
+
 	Event<void, const CollisionBoxData*> m_OnEnter;
 	Event<void, const CollisionBoxData*> m_OnExit;
-
-private:
-	TriggerData(const CollisionBoxData* collider);
 	
 public:
 	TriggerData();
-	TriggerData(const CollisionBoxData& collider);
+	TriggerData(const CollisionBoxData* collider);
 
 	const CollisionBoxData& GetCollisionBox() const;
 

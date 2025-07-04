@@ -14,14 +14,17 @@ constexpr char EMPTY_CHAR_PLACEHOLDER = ' ';
 struct TextChar
 {
 	Color m_Color;
-	char m_Char;
+	char m_Char[2];
 
 	TextChar();
-	TextChar(const Color& color, const char& textChar);
+	TextChar(const Color& color, const char& textChar= EMPTY_CHAR_PLACEHOLDER);
 	TextChar(const TextChar&) = default;
 
 	bool IsEmpty() const;
 	Vec2 GetWorldSize(const FontProperties& font) const;
+
+	char GetChar() const;
+	void SetChar(const char& c);
 
 	bool operator==(const TextChar& other) const;
 	std::string ToString() const;

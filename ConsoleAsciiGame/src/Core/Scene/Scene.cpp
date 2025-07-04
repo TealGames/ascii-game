@@ -7,7 +7,7 @@
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/RaylibUtils.hpp"
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 #include "Utils/Data/Event.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
 #include "Core/Visual/VisualData.hpp"
@@ -165,7 +165,7 @@ std::string Scene::GetName() const
 }
 GlobalEntityManager& Scene::TryGetGlobalEntityManagerMutable()
 {
-	if (!Assert(this, m_globalEntities != nullptr, std::format("Tired to get global entities manager MUTABLE from scene: {} but global entities manager "
+	if (!Assert(m_globalEntities != nullptr, std::format("Tired to get global entities manager MUTABLE from scene: {} but global entities manager "
 		"is not set up (could be due to creating scene using constructor that does not include dependency", GetName())))
 		throw std::invalid_argument("Invalid global entity manager");
 
@@ -173,7 +173,7 @@ GlobalEntityManager& Scene::TryGetGlobalEntityManagerMutable()
 }
 const GlobalEntityManager& Scene::TryGetGlobalEntityManager() const
 {
-	if (!Assert(this, m_globalEntities != nullptr, std::format("Tired to get global entities manager from scene: {} but global entities manager "
+	if (!Assert(m_globalEntities != nullptr, std::format("Tired to get global entities manager from scene: {} but global entities manager "
 		"is not set up (could be due to creating scene using constructor that does not include dependency", GetName())))
 		throw std::invalid_argument("Invalid global entity manager");
 
@@ -228,7 +228,7 @@ void Scene::Deserialize(const Json& json)
 				continue;
 			}
 
-			if (!Assert(this, currentEntity != nullptr, std::format("Tried to parse scene file at path: '{}' "
+			if (!Assert(currentEntity != nullptr, std::format("Tried to parse scene file at path: '{}' "
 				"for component: {} but current entity: {} is null", m_scenePath.string(), componentName, entityName)))
 				return;
 
@@ -274,7 +274,7 @@ void Scene::Deserialize(const Json& json)
 			}
 
 			//if (componentCreated == nullptr) continue;
-			if (!Assert(this, componentCreated != nullptr, std::format("Tried to deserialize component but reference stored after creation is NULL. "
+			if (!Assert(componentCreated != nullptr, std::format("Tried to deserialize component but reference stored after creation is NULL. "
 				"This could mean the correct component was identified but it was not successfully added to the entity")))
 				return;
 
@@ -630,7 +630,7 @@ std::string Scene::ToStringLayers() const
 	for (const auto& layer : m_layers)
 	{
 		result += "\nLAYER: ";
-		Log(std::format("Display all scene layers at layer: {}", layer.second.ToString()));
+		//Log(std::format("Display all scene layers at layer: {}", layer.second.ToString()));
 		result += layer.second.ToString();
 	}
 	return result;
@@ -705,7 +705,7 @@ std::string Scene::ToString() const
 		if (entity == nullptr) continue;
 
 		currentEntitiesStr.push_back(entity->ToString());
-		//LogError(this, std::format("Found entity str: {}", entitiesStringified.back()));
+		//LogError(std::format("Found entity str: {}", entitiesStringified.back()));
 	}
 	std::string localEntitiesStr = Utils::ToStringIterable<std::vector<std::string>, std::string>(currentEntitiesStr);
 	

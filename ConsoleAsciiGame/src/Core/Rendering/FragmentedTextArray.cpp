@@ -36,7 +36,7 @@ TextCharArrayPosition* FragmentedTextArray::TryGetPosMutable(const Array2DPositi
 
 	if (positionType==TextArrayPositionType::ArrayIndex)
 	{
-		if (Assert(this, IsValidIndexPos(rowColPos), std::format("Tried to get pos MUTABLE from row col index: {} "
+		if (Assert(IsValidIndexPos(rowColPos), std::format("Tried to get pos MUTABLE from row col index: {} "
 			"but it is out of bounds", rowColPos.ToString()))) return nullptr;
 		return &(m_textArray[rowColPos.GetRow()][rowColPos.GetCol()]);
 	}
@@ -81,7 +81,7 @@ bool FragmentedTextArray::IsValidIndexPos(const Array2DPosition& rowCol)
 void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const TextChar& newBufferChar)
 {
 	TextCharArrayPosition* pos = TryGetPosMutable(rowColPos, positionType);
-	if (!Assert(this, pos != nullptr, std::format("Tried to set position: {}({}) with BUFFER CHAR: {} for fragmented text array "
+	if (!Assert(pos != nullptr, std::format("Tried to set position: {}({}) with BUFFER CHAR: {} for fragmented text array "
 		"but data was not found", rowColPos.ToString(), ::ToString(positionType), newBufferChar.ToString()))) return;
 
 	pos->m_Text = newBufferChar;
@@ -89,15 +89,15 @@ void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArra
 void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const char& newChar)
 {
 	TextCharArrayPosition* pos = TryGetPosMutable(rowColPos, positionType);
-	if (!Assert(this, pos != nullptr, std::format("Tried to set position: {}({}) with CHAR: {} for fragmented text array "
+	if (!Assert(pos != nullptr, std::format("Tried to set position: {}({}) with CHAR: {} for fragmented text array "
 		"but data was not found", rowColPos.ToString(), ::ToString(positionType), Utils::ToString(newChar)))) return;
 
-	pos->m_Text.m_Char = newChar;
+	pos->m_Text.SetChar(newChar);
 }
 void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const Color& newColor)
 {
 	TextCharArrayPosition* pos = TryGetPosMutable(rowColPos, positionType);
-	if (!Assert(this, pos != nullptr, std::format("Tried to set position: {}({}) with COLOR: {} for fragmented text array "
+	if (!Assert(pos != nullptr, std::format("Tried to set position: {}({}) with COLOR: {} for fragmented text array "
 		"but data was not found", rowColPos.ToString(), ::ToString(positionType), RaylibUtils::ToString(newColor)))) return;
 
 	pos->m_Text.m_Color = newColor;
@@ -111,7 +111,7 @@ void FragmentedTextArray::SetAt(const std::vector<Array2DPosition>& rowColPos, c
 	for (const auto& pos : rowColPos)
 	{
 		dataPtr = TryGetPosMutable(pos, positionType);
-		if (!Assert(this, dataPtr != nullptr, std::format("Tried to set position: {}({}) OF OTHER POSITIONS with buffer: {} for fragmented text array "
+		if (!Assert(dataPtr != nullptr, std::format("Tried to set position: {}({}) OF OTHER POSITIONS with buffer: {} for fragmented text array "
 			"but data was not found", pos.ToString(), ::ToString(positionType), newBufferChar.ToString()))) return;
 
 		dataPtr->m_Text = newBufferChar;
@@ -125,7 +125,7 @@ void FragmentedTextArray::SetAt(const std::vector<TextCharArrayPosition>& update
 	for (const auto& updatedChars : updatedCharsAtPos)
 	{
 		dataPtr = TryGetPosMutable(updatedChars.m_RowColPos, positionType);
-		if (!Assert(this, dataPtr != nullptr, std::format("Tried to set position: {}({}) OF OTHER POSITIONS with text buffer: {} for fragmented text array "
+		if (!Assert(dataPtr != nullptr, std::format("Tried to set position: {}({}) OF OTHER POSITIONS with text buffer: {} for fragmented text array "
 			"but data was not found", updatedChars.m_RowColPos.ToString(), ::ToString(positionType), updatedChars.ToString()))) return;
 
 		dataPtr->m_Text = updatedChars.m_Text;
@@ -139,7 +139,7 @@ void FragmentedTextArray::SetAt(const std::vector<ColorPosition>& updateColorsAt
 	for (const auto& updatedChars : updateColorsAtPos)
 	{
 		dataPtr = TryGetPosMutable(updatedChars.m_RowColPos, positionType);
-		if (!Assert(this, dataPtr != nullptr, std::format("Tried to set position: {}({}) OF OTHER POSITIONS with text color: {} for fragmented text array "
+		if (!Assert(dataPtr != nullptr, std::format("Tried to set position: {}({}) OF OTHER POSITIONS with text color: {} for fragmented text array "
 			"but data was not found", updatedChars.m_RowColPos.ToString(), ::ToString(positionType), updatedChars.ToString()))) return;
 
 		dataPtr->m_Text.m_Color = updatedChars.m_Color;
@@ -155,7 +155,7 @@ std::string FragmentedTextArray::ToString(const std::vector<std::vector<TextChar
 	{
 		for (int c = 0; c < chars[r].size(); c++)
 		{
-			currentChar = chars[r][c].m_Text.m_Char;
+			currentChar = chars[r][c].m_Text.GetChar();
 			fullStr += std::format("{}({})", currentChar, chars[r][c].m_RowColPos.ToString());
 
 			if (convertAll)

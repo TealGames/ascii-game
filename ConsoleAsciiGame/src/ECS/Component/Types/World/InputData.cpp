@@ -9,7 +9,7 @@ InputData::InputData() : Component(),
 
 void InputData::AddAction(const Input::InputAction& action)
 {
-	if (!Assert(this, m_actions.find(action.m_Name) != m_actions.end(), std::format("Tried to add the input action: {}"
+	if (!Assert(m_actions.find(action.m_Name) != m_actions.end(), std::format("Tried to add the input action: {}"
 		" to input data of entity: '{}', but that action already exists for this input data!",
 		action.m_Name, GetEntity().m_Name)))
 		return;
@@ -43,7 +43,7 @@ void InputData::InitFields()
 //}
 //const Input::InputManager& InputData::GetInputManager() const
 //{
-//	if (!Assert(this, m_inputManager != nullptr, std::format("Tried to get input manager from "
+//	if (!Assert(m_inputManager != nullptr, std::format("Tried to get input manager from "
 //		"input data of entity: '{}' but it has not been set yet by input system", GetEntitySafe().m_Name)))
 //		throw std::invalid_argument("Invalid input manager state");
 //

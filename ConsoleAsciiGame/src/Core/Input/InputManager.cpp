@@ -14,6 +14,11 @@ namespace Input
 	InputManager::InputManager(AssetManagement::AssetManager& assetManager)
 		: m_assetManager(assetManager), m_keyboardStates(), m_mouseStates(), m_gamepadStates(), m_profiles{}
 	{
+		
+	}
+
+	void InputManager::Init()
+	{
 		for (const auto& key : GetAllKeyboardKeys())
 		{
 			m_keyboardStates.emplace(key, InputKey(key, InputState()));
@@ -28,8 +33,9 @@ namespace Input
 		}
 
 		//if (allInputProfilePath.empty()) return;
+		//LogWarning(std::format("Does input path exist:{}", std::to_string(m_assetManager.IsValidAssetPath(INPUT_PROFILES_FOLDER))));
 		auto profiles = m_assetManager.GetAssetsOfTypeMutable<InputProfileAsset>(INPUT_PROFILES_FOLDER);
-		if (!Assert(this, profiles.size() > 0, std::format("Tried to laod all input profiles in input manager "
+		if (!Assert(profiles.size() > 0, std::format("Tried to load all input profiles in input manager "
 			"but could not find any input profile at path: '{}'", INPUT_PROFILES_FOLDER.string())))
 			return;
 
@@ -138,7 +144,7 @@ namespace Input
 				//the held time might be off
 				inputState.SetState(KeyState::Down);
 				inputState.SetDownTimeDelta(deltaTime);
-				//LogError(this, std::format("INput state for; {} IS: {}", std::to_string(keyValue), ToString(inputState.GetState())));
+				//LogError(std::format("INput state for; {} IS: {}", std::to_string(keyValue), ToString(inputState.GetState())));
 			}
 			else if (IsKeyReleased(device, keyValue)) 
 				inputState.SetState(KeyState::Released);

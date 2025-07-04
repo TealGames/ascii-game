@@ -18,8 +18,18 @@ namespace ECS
 	PhysicsBodySystem::PhysicsBodySystem(Physics::PhysicsManager& physicsManager) 
 		: m_lineBuffer(), m_physicsManager(physicsManager) 
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(PhysicsBodySystem), 
-			ComponentInfo(DeppendencyType::None, {}, CreateRequiredComponentFunction<CollisionBoxData>()));
+		GlobalComponentInfo::AddComponentInfo(typeid(PhysicsBodyData), 
+			ComponentInfo(CreateComponentTypes<CollisionBoxData>(), CreateRequiredComponentFunction(CollisionBoxData()),
+				[](EntityData& entity)-> void
+				{
+					PhysicsBodyData& body = *(entity.TryGetComponentMutable<PhysicsBodyData>());
+					//Note: since we allow assigning collider from physics body, we only set it if it was not set from constructor
+					if (body.m_collider == nullptr)
+					{
+						body.m_collider = entity.TryGetComponent<CollisionBoxData>();
+						if (entity.m_Name == "player") LogError(std::format("Set player collider:{}", body.m_collider->ToString()));
+					}
+				}));
 	}
 
 	void PhysicsBodySystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)

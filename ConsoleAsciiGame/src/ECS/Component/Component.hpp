@@ -115,4 +115,10 @@ public:
 
 std::string FormatComponentName(const Component* component);
 std::string FormatComponentName(const std::type_info& typeInfo);
+
+template<typename... ComponentTs>
+std::vector<const std::type_info*> CreateComponentTypes()
+{
+	return {(&typeid(ComponentTs))...};
+}
 	

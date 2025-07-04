@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Editor/Entity/ComponentUI.hpp"
 #include "raylib.h"
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 #include "Utils/RaylibUtils.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "ECS/Entity/Entity.hpp"
@@ -10,6 +10,7 @@
 #include "Editor/EditorStyles.hpp"
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/TextureAsset.hpp"
+#include "Core/UIElementTemplates.hpp"
 
 constexpr static float HEADER_PANEL_HEIGHT = 0.03;
 constexpr static float DROPDOWN_WIDTH = 0.2;
@@ -23,25 +24,24 @@ constexpr static float ONE_FIELD_MAX_ENTITY_SPACE = 0.05;
 //static constexpr bool DIVIDE_FIELDS_BY_AMOUNT = false;
 
 ComponentUI::ComponentUI(const Input::InputManager& inputManager, PopupUIManager& popupManager, 
-	const AssetManagement::AssetManager& m_assetManager, const EntityUI& entityGUI, UILayout& parent)
+	AssetManagement::AssetManager& m_assetManager, const EntityUI& entityGUI, UILayout& parent)
 	: m_inputManager(&inputManager), m_popupManager(&popupManager), m_component(nullptr), m_fieldGUIs(), m_entityGUI(&entityGUI),
-	m_dropdownDefaultTexture(m_assetManager.TryGetTypeAsset<TextureAsset>("dropdown_icon_default")), 
-	m_dropdownToggledTexture(m_assetManager.TryGetTypeAsset<TextureAsset>("dropdown_icon_toggled")),
 	m_dropdownCheckbox(nullptr), m_componentNameText(nullptr),  m_container(nullptr), m_fieldLayout(nullptr), m_nameHeader(nullptr)
 {
 	EntityData* guiContainerEntity = nullptr;
 	std::tie(guiContainerEntity, m_container) = parent.CreateLayoutElement("ComponentContainer");
 	m_container->SetSize({ 1, HEADER_PANEL_HEIGHT });
 
-	auto [nameHeaderEntity, nameHeaderTransform] = guiContainerEntity->CreateChildUI("NameHeader");
+	auto [nameHeaderEntity, nameHeaderTransform] = guiContainerEntity->CreateChildUI("ComponentNameHeader");
 	m_nameHeader = &(nameHeaderEntity->AddComponent(UIPanel(EditorStyles::EDITOR_BACKGROUND_COLOR)));
 	nameHeaderTransform->SetSize({ 1, 1 });
 	nameHeaderTransform->SetFixed(false, true);
 
-	auto [dropdownEntity, dropdownTransform] = nameHeaderEntity->CreateChildUI("DropdownCheckbox");
-	m_dropdownCheckbox = &(dropdownEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle(), nullptr, m_dropdownDefaultTexture)));
+	EntityData* dropdownEntity = nullptr;
+	UITransformData* dropdownTransform = nullptr;
+	std::tie(dropdownEntity, dropdownTransform, m_dropdownCheckbox) = Templates::CreateCheckboxTemplate(*nameHeaderEntity, "ComponentDropdownCheckbox");
 	dropdownTransform->SetBounds(NormalizedPosition::TOP_LEFT, { DROPDOWN_WIDTH, 0 });
-	m_dropdownCheckbox->SetValueSetAction([this](const bool isChecked) -> void
+	m_dropdownCheckbox->m_OnValueSet.AddListener([this](const bool isChecked) -> void
 		{
 			if (isChecked)
 			{
@@ -55,25 +55,21 @@ ComponentUI::ComponentUI(const Input::InputManager& inputManager, PopupUIManager
 
 				layoutTransform.SetSize({ 1, 1 - nameHeaderSize.GetY() });
 				layoutTransform.SetTopLeftPos(NormalizedPosition::TOP_LEFT - Vec2(0, nameHeaderSize.GetY()));
-				
-
-				if (m_dropdownToggledTexture != nullptr) m_dropdownCheckbox->SetOverlayTexture(*m_dropdownToggledTexture);
 				//Assert(false, std::format("Component tree:{}", m_guiContainer.ToStringRecursive("")));
 			}
 			else
 			{
 				//m_nameHeader.SetSize({1, 1});
 				m_container->SetSize({ 1, HEADER_PANEL_HEIGHT });
-				if (m_dropdownDefaultTexture != nullptr) m_dropdownCheckbox->SetOverlayTexture(*m_dropdownDefaultTexture);
 			}
 			m_fieldLayout->GetEntityMutable().TrySetEntityActive(isChecked);
 		});
 
-	auto[nameTextEntity, nameTextTransform] = nameHeaderEntity->CreateChildUI("NameText");
+	auto[nameTextEntity, nameTextTransform] = nameHeaderEntity->CreateChildUI("ComponentNameText");
 	m_componentNameText = &(nameTextEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))));
 	nameTextTransform->SetBounds({ DROPDOWN_WIDTH, 1 }, NormalizedPosition::BOTTOM_RIGHT);
 
-	auto [layoutEntity, layoutTransform] = guiContainerEntity->CreateChildUI("Layout");
+	auto [layoutEntity, layoutTransform] = guiContainerEntity->CreateChildUI("ComponentLayout");
 	//TODO: add colored panel with color: EditorStyles::EDITOR_BACKGROUND_COLOR to feld layout background
 	m_fieldLayout = &(nameTextEntity->AddComponent(UILayout(LayoutType::Vertical, SizingType::ExpandAndShrink, NormalizedPosition{ 0, 0.02 })));
 	/*Assert(false, std::format("Created compiennt gui for comp: {} with field val: {}", GetComponentName(),
@@ -116,7 +112,7 @@ void ComponentUI::SetComponent(Component& component)
 
 const Input::InputManager& ComponentUI::GetInputManager() const
 {
-	if (!Assert(this, m_inputManager != nullptr, 
+	if (!Assert(m_inputManager != nullptr, 
 		std::format("Tried to get input manager for component GUI but it is NULL")))
 	{
 		throw std::invalid_argument("Invalid input manager state");
@@ -224,7 +220,7 @@ ScreenPosition ComponentGUI::Render(const RenderInfo& renderInfo)
 
 const EntityUI& ComponentUI::GetEntityGUISafe() const
 {
-	if (!Assert(this, m_entityGUI != nullptr, std::format("Tried to get entity GUI from cmponent: '{}' for entity: '{}'",
+	if (!Assert(m_entityGUI != nullptr, std::format("Tried to get entity GUI from cmponent: '{}' for entity: '{}'",
 		GetComponentName(), m_component->GetEntity().m_Name)))
 	{
 		throw std::invalid_argument("Failed to retrieve entity gui");

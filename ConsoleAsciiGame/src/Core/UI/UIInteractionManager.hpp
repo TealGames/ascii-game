@@ -5,14 +5,13 @@
 #include <optional>
 #include "Core/UI/UIHierarchy.hpp"
 
-class UIRendererData;
 class UIInteractionManager
 {
 private:
 	const Input::InputManager& m_inputManager;
 	UIHierarchy& m_hierarchy;
 	std::map<UILayer, std::vector<UISelectableData*>, std::greater<UILayer>> m_selectableLayers;
-	std::unordered_map<size_t, const UIRendererData*> m_selectionEventBlockers;
+	std::unordered_map<size_t, const UITransformData*> m_selectionEventBlockers;
 	//TODO: for optimization reasons, this is slow
 	//std::map<GUIEventPriority, SelectableGUI*, std::greater<GUIEventPriority>> m_selectables;
 
@@ -37,7 +36,7 @@ private:
 	/// True if the current selectable was selected THIS frame
 	/// </summary>
 	bool m_selectedThisFrame;
-	bool m_hasGuiTreeUpdated;
+	bool m_guiTreeNeedsUpdate;
 	Vec2 m_lastFrameMousePos;
 public:
 
@@ -55,7 +54,7 @@ private:
 	std::string ToStringSelectableTypes() const;
 	
 	bool IsEventBlocker(const size_t index) const;
-	void AddSelectionEventBlocker(const UILayer layer, const size_t elementIndex, const UIRendererData& element);
+	void AddSelectionEventBlocker(const UILayer layer, const size_t elementIndex, const UITransformData& element);
 public:
 	UIInteractionManager(const Input::InputManager& input, UIHierarchy& hierarchy);
 

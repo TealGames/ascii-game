@@ -12,7 +12,6 @@ namespace ECS
 	private:
 	public:
 		UILayoutSystem();
-
 		void SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime);
 	};
 }

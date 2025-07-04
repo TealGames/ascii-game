@@ -70,8 +70,8 @@ void to_json(Json& json, const TextChar& textChar);
 void from_json(const Json& json, TextCharArrayPosition& textChar);
 void to_json(Json& json, const TextCharArrayPosition& textChar);
 
-std::optional<Font> TryDeserializeFont(const Json& json);
-Json TrySerializeFont(const Font& font);
+//std::optional<Font> TryDeserializeFont(const Json& json);
+//Json TrySerializeFont(const Font& font);
 
 void from_json(const Json& json, FontProperties& font);
 void to_json(Json& json, const FontProperties& font);
@@ -94,10 +94,10 @@ namespace Physics
 	void to_json(Json& json, const Physics::AABB& aabb);
 }
 
-Asset* TryDeserializeAsset(const Json& json);
-Json TrySerializeAsset(const Asset& asset);
+Json TrySerializeAsset(const Asset* asset);
 Json TrySerializeAssets(const std::vector<const Asset*>& assets);
 
+Asset* TryDeserializeAsset(const Json& json);
 template<typename T>
 requires (!std::is_pointer_v<T> && IsAssetType<T>)
 T* TryDeserializeTypeAsset(const Json& json)
@@ -301,8 +301,6 @@ Json TrySerializeComponentSelf(const T* component, EntityData& selfEntity, const
 
 	return SerializableComponent(componentName);
 }
-
-
 
 void from_json(const Json& json, SerializableField& serializableField);
 void to_json(Json& json, const SerializableField& serializableField);

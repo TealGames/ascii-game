@@ -15,12 +15,12 @@ AnimatorData::AnimatorData(const std::vector<AnimationPropertyVariant>& properti
 	Component(),
 	m_Properties(properties), m_AnimationSpeed(speed), m_NormalizedTime(0), m_KeyframeIndex(0), m_AnimationLength(animationTime), m_Loop(loop)
 {
-	if (!Assert(this, !Utils::ApproximateEqualsF(m_AnimationSpeed, 0),
+	if (!Assert(!Utils::ApproximateEqualsF(m_AnimationSpeed, 0),
 		std::format("Tried to set animator data:{} with animation speed of zero!", 
 		Utils::ToStringIterable<std::vector<AnimationPropertyVariant>, AnimationPropertyVariant>(m_Properties)))) 
 		return;
 
-	//if (!Assert(this, !m_Properties.empty(),
+	//if (!Assert(!m_Properties.empty(),
 	//	std::format("Tried to set animator data:{} but there are no key frames", 
 	//	Utils::ToStringIterable<std::vector<AnimationPropertyVariant>, AnimationPropertyVariant>(m_Properties)))) 
 	//	return;

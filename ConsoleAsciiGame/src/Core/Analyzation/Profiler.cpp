@@ -6,6 +6,7 @@
 #include "plplot/plstream.h"
 #include "plplot/plplot.h"
 #include "Core/Analyzation/Debug.hpp"
+#include "AnsiCodes.hpp"
 
 static constexpr bool WRITE_TO_FILE = true;
 static constexpr bool DISPLAY_ALL_ROUTINE_GRAPHS = false;
@@ -97,9 +98,9 @@ Profiler::~Profiler()
 	std::replace(fileName.begin(), fileName.end(), ':', '_');
 	std::filesystem::path fullOutPath = OUT_FILE_PATH / fileName;
 
-	LogWarning("Writing to file at: {}!", fullOutPath.string());
+	LogWarning(std::format("Writing to file at: {}!", fullOutPath.string()));
 	std::ofstream outStream(fullOutPath);
-	if (!Assert(this, outStream.is_open(), std::format("Tried to open a file at path: {} "
+	if (!Assert(outStream.is_open(), std::format("Tried to open a file at path: {} "
 		"for writing to output profiler data but something went wrong", fullOutPath.string()))) return;
 
 	std::string url = EncodeGraphInDesmosURL(GraphColor::Green,
@@ -130,7 +131,7 @@ Profiler::~Profiler()
 	else if (!DISPLAY_GRAPH_ROUTINE_NAME.empty())
 	{
 		auto graphDisplayRoutineIt = m_profilerSummary.m_RoutineSummaries.find(DISPLAY_GRAPH_ROUTINE_NAME);
-		if (!Assert(this, graphDisplayRoutineIt != m_profilerSummary.m_RoutineSummaries.end(), 
+		if (!Assert(graphDisplayRoutineIt != m_profilerSummary.m_RoutineSummaries.end(), 
 			std::format("Tried to display a graph in profiler for routine: {} "
 			"but a routine of that name could not be found", DISPLAY_GRAPH_ROUTINE_NAME))) return;
 

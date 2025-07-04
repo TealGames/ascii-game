@@ -85,7 +85,7 @@ Json SpriteAnimatorData::Serialize()
 	for (const auto& animation : m_animations)
 	{
 		if (animation.second == nullptr) continue;
-		serializedAssets.push_back(TrySerializeAsset(*animation.second));
+		serializedAssets.push_back(TrySerializeAsset(animation.second));
 	}
 	return { "Animations", serializedAssets };
 }

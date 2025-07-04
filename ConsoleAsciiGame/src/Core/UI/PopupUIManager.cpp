@@ -23,9 +23,14 @@ void PopupGUIInfo::Disable()
 PopupUIManager::PopupUIManager(UIHierarchy& hierarchy)
 	: m_popupContainer(nullptr), m_hierarchy(&hierarchy), m_popups(), m_OnPopupOpened(), m_OnPopupClosed()
 {
+	
+}
+
+void PopupUIManager::Init()
+{
 	//m_rootSize = hierarchy.GetRootSize();
-	m_popupContainer = std::get<0>(hierarchy.CreateAtRoot(TOP_LAYER, "PopupContainer"));
-	LogWarning(std::format("After adding popup gui manager:{}", hierarchy.ToStringTree()));
+	m_popupContainer = std::get<0>(m_hierarchy->CreateAtRoot(TOP_LAYER, "PopupContainer"));
+	//LogWarning(std::format("After adding popup gui manager:{}", m_hierarchy->ToStringTree()));
 }
 
 PopupUIManager::~PopupUIManager()
@@ -82,7 +87,7 @@ bool PopupUIManager::TryClosePopup(PopupGUIInfo& popupInfo)
 void PopupUIManager::AddPopup(PopupUI* popup)
 {
 	PopupGUIInfo& info= m_popups.emplace_back(PopupGUIInfo(*popup));
-	info.m_UI->CreatePopup(m_popupContainer->CreateChild(std::format("{}Container", Utils::FormatTypeName(typeid(*popup).name()))));
+	info.m_UI->CreatePopup(*std::get<0>(m_popupContainer->CreateChildUI(std::format("{}Container", Utils::FormatTypeName(typeid(*popup).name())))));
 	//emplaced.first->second.m_GUI->Init();
 }
  

@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include "Utils/HelperFunctions.hpp"
 
 class EntityData;
 class Component;
@@ -34,7 +35,7 @@ enum class RequiredComponentType
 /// The type of object the component needs for it to work properly, but is NOT required for it to be added meaning
 /// it may still retain some functionality even if this dependency is not there, but may be in an inactive or erroneous state
 /// </summary>
-enum class DeppendencyType
+enum class DependencyType
 {
 	None,
 	/// <summary>
@@ -55,24 +56,29 @@ template<typename T>
 requires std::is_base_of_v<T, Component>
 using ComponentTypeAddAction= std::function<void(T&)>;
 
-struct ComponentInfo
+class ComponentInfo
 {
 	//RequiredComponentType m_RequiredType;
-
-	DeppendencyType m_DependencyType;
+private:
+public:
+	DependencyType m_DependencyType;
 	TypeCollection m_DependentComponents;
 
 	ValidationAction m_ComponentRequirementCheck;
 	ComponentAddAction m_ComponentPostAddAction;
 
+private:
+	ComponentInfo(const DependencyType dependency, const TypeCollection& componentDependencies,
+		const ValidationAction& action, const ComponentAddAction& postAddAction);
+
 	/*ComponentInfo(const RequiredComponentType requiredType, const TypeCollection& required);
 	ComponentInfo(const DeppendencyType dependencyType, const TypeCollection& dependentComponents = {});
 	ComponentInfo(const RequiredComponentType requiredType, const TypeCollection& required,
 		const DeppendencyType dependencyType, const TypeCollection& dependentComponents);*/
-	ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies, 
-		const ValidationAction& validationAction, const ComponentAddAction& postAddAction=nullptr);
-	ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies = {}, const ComponentAddAction& postAddAction = nullptr);
-	ComponentInfo(const ValidationAction& validationAction, const ComponentAddAction& postAddAction = nullptr);
+public:
+	ComponentInfo(const TypeCollection& dependentTypes, const ValidationAction& requiredAction, const ComponentAddAction& postAddAction = nullptr);
+	ComponentInfo(const DependencyType dependency, const TypeCollection& componentDependencies = {}, const ComponentAddAction& postAddAction = nullptr);
+	ComponentInfo(const ComponentAddAction& postAddAction);
 };
 using ComponentInfoCollection = std::unordered_map<const std::type_info*, ComponentInfo>;
 
@@ -99,7 +105,7 @@ namespace GlobalComponentInfo
 	/// <param name="component"></param>
 	/// <param name="type"></param>
 	/// <returns></returns>
-	bool DoesComponentHaveDependencyType(const Component* component, const DeppendencyType type);
+	bool DoesComponentHaveDependencyType(const Component* component, const DependencyType type);
 	bool DoesComponentHaveDependencies(const Component* component);
 	bool DoesComponentDependOnEntity(const Component* component);
 	bool DoesComponentDependOnComponent(const Component* component);

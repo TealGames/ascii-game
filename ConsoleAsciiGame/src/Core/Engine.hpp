@@ -31,6 +31,8 @@
 #include "Core/UI/UIInteractionManager.hpp"
 #include "Editor/EngineEditor.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
+#include "GlobalInitializer.hpp"
+#include "Core/EngineState.hpp"
 
 namespace Core
 {
@@ -38,8 +40,11 @@ namespace Core
 	class Engine
 	{
 	private:
+		EngineState m_engineState;
 
 		AssetManagement::AssetManager m_assetManager;
+		GlobalInitializer m_globalInitializer;
+		
 		CollisionRegistry m_collisionRegistry;
 		SceneManagement::SceneManager m_sceneManager;
 		Physics::PhysicsManager m_physicsManager;
@@ -106,7 +111,7 @@ namespace Core
 		//	if (type == ComponentType::LightSource)
 		//	{
 		//		LightSourceData* maybeData = entity.TryGetComponentMutable<LightSourceData>();
-		//		if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
+		//		if (!Assert(maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
 		//			"but it does not have that component", propertyName, entity.GetName(), ToString(type)))) return nullptr;
 
 		//		if (propertyName == "LightRadius" && std::is_same_v<PropertyType, decltype(maybeData->m_LightRadius)>)
@@ -117,14 +122,14 @@ namespace Core
 		//			return reinterpret_cast<PropertyType*>(&(maybeData->m_Intensity));
 		//		else
 		//		{
-		//			if (!Assert(this, maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
+		//			if (!Assert(maybeData != nullptr, std::format("Tried to get property: {} from system for entity: {} and component: {} "
 		//				"but it did not match any names and/or their types with type: {}!", propertyName, 
 		//				entity.GetName(), ToString(type), typeid(PropertyType).name()))) return nullptr;
 		//		}
 		//	}
 		//	else
 		//	{
-		//		LogError(this, std::format("Tried to get property: {} from "
+		//		LogError(std::format("Tried to get property: {} from "
 		//			"engine for entity: {} of an undefined type: {}", propertyName, entity.GetName(), ToString(type)));
 		//	}
 		//	return nullptr;

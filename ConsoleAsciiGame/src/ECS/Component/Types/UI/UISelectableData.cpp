@@ -61,8 +61,6 @@ bool UISelectableData::RectContainsPos(const ScreenPosition& pos) const
 	return m_renderer->GetLastRenderRect().ContainsPos(pos);
 }
 
-void UISelectableData::Update(const float deltaTime) {}
-
 void UISelectableData::Select()
 {
 	if (!Utils::HasFlagAll(m_eventFlags, InteractionEventFlags::InvokeSelectionEvents))

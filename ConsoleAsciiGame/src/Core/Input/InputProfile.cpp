@@ -11,10 +11,10 @@ namespace Input
 	InputProfile::InputProfile(InputManager& manager,const std::string& name) :
 		m_name(name), m_actions(), m_compoundInputs(), m_inputManager(&manager)
 	{
-		/*if (!Assert(this, std::filesystem::exists(filePath), std::format("Tried to create input profile from path: '{}' "
+		/*if (!Assert(std::filesystem::exists(filePath), std::format("Tried to create input profile from path: '{}' "
 			"but that path is not valid", filePath.string()))) return;
 
-		if (!Assert(this, filePath.has_filename(), std::format("Tried to create input profile from path: '{}' "
+		if (!Assert(filePath.has_filename(), std::format("Tried to create input profile from path: '{}' "
 			"but that path does not lead to a file", filePath.string()))) return;*/
 
 		//std::ifstream stream(filePath);
@@ -23,7 +23,7 @@ namespace Input
 
 	InputManager& InputProfile::GetInputManagerMutable()
 	{
-		if (!Assert(this, m_inputManager != nullptr, std::format("Tried to get input manager MUTABLE "
+		if (!Assert(m_inputManager != nullptr, std::format("Tried to get input manager MUTABLE "
 			"in input profile:{} but it is null", GetName())))
 			throw std::invalid_argument("Invalid input manager state");
 
@@ -45,7 +45,7 @@ namespace Input
 			if (line.empty()) continue;
 			std::string lineBefore = line;
 			line = Utils::StringUtil(line).RemoveSpaces().ToString();
-			LogWarning(this, std::format("COnverted line: {} -> {}", lineBefore, line));
+			LogWarning(std::format("COnverted line: {} -> {}", lineBefore, line));
 
 			if (line == HEADER_CHAR + GENERAL_HEADER)
 			{
@@ -64,7 +64,7 @@ namespace Input
 			}
 
 			const size_t colonIndex = line.find(':');
-			if (!Assert(this, colonIndex != std::string::npos, std::format("Tried to parse input profile but current line: '{}' "
+			if (!Assert(colonIndex != std::string::npos, std::format("Tried to parse input profile but current line: '{}' "
 				"does not contain any colons identifying action name end", line))) return;
 
 			inputName = line.substr(0, colonIndex);
@@ -95,7 +95,7 @@ namespace Input
 				//TODO: perhaps the profile.txt should implicity say what devide the input is for and/or
 				//also add the option to list out the CORRESPONDING key for different devices 
 				currentDevice = TryGetStringKeyDevice(keybindName, &inputAsEnum);
-				if (!Assert(this, currentDevice.has_value(), 
+				if (!Assert(currentDevice.has_value(), 
 					std::format("Could not deduce the device from keybind name: '{}' of input profile: '{}'", keybindName, m_name))) 
 					return;
 
@@ -113,7 +113,7 @@ namespace Input
 				}
 				else
 				{
-					LogError(this, std::format("Tried to convert input key: '{}' from input profile: '{}' "
+					LogError(std::format("Tried to convert input key: '{}' from input profile: '{}' "
 						"to raylib enum but there no device actions for: {}", keybindName, m_name, Input::ToString(currentDevice.value())));
 					return;
 				}
@@ -132,13 +132,13 @@ namespace Input
 
 			if (isCompoundKey)
 			{
-				if (!Assert(this, currentCompoundIt != m_compoundInputs.end(),
+				if (!Assert(currentCompoundIt != m_compoundInputs.end(),
 					std::format("Tried to parse an input profile but at line: '{}' "
 						"tried to add input to compound but there is not compound set", line))) 
 					return;
 
 				std::optional<InputDirection> actionAsDir = TryConvertStringToDirection(inputName);
-				if (!Assert(this, actionAsDir.has_value(), std::format("Tried to parse compound input action: '{}' as direction "
+				if (!Assert(actionAsDir.has_value(), std::format("Tried to parse compound input action: '{}' as direction "
 					"for compound input: '{}' but it failed. All compound input actions must be valid directions",
 					inputName, currentCompoundIt->first)))
 					return;

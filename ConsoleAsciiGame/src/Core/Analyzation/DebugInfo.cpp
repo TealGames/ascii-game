@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/Analyzation/DebugInfo.hpp"
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/World/PhysicsBodyData.hpp"
@@ -16,20 +16,25 @@
 
 const float TOP_LEFT_Y = 0.95;
 const float DEBUG_AREA_WIDTH = 0.3;
-const float DEBUG_AREA_HIGHER_PER_PROPERTY = 0.02;
+const float DEBUG_AREA_HIGHER_PER_PROPERTY = 0.05;
 constexpr float TEXT_SIZE = 11;
 
-DebugInfo::DebugInfo(UIHierarchy& hierarchy) :
+DebugInfo::DebugInfo() :
 	m_textGuis(Utils::ConstructArray<UITextComponent*, DEBUG_PROPERTIES_COUNT>()),
 	m_containerLayout(nullptr),
 	m_nextIndex(0), m_mouseDebugData(std::nullopt), m_isEnabled(false)
+{
+	
+}
+
+void DebugInfo::CreateUI(UIHierarchy& hierarchy)
 {
 	auto [debugInfoEntity, debugInfoTransform] = hierarchy.CreateAtRoot(TOP_LAYER, "DebugInfoContainer");
 	m_containerLayout = &(debugInfoEntity->AddComponent(UILayout(LayoutType::Vertical, SizingType::ExpandAndShrink)));
 	const NormalizedPosition topLeft = { 0, TOP_LEFT_Y };
 	debugInfoTransform->SetBounds(topLeft, { DEBUG_AREA_WIDTH, topLeft.m_Y - DEBUG_AREA_HIGHER_PER_PROPERTY * DEBUG_PROPERTIES_COUNT });
 
-	for (size_t i=0; i<m_textGuis.size(); i++)
+	for (size_t i = 0; i < m_textGuis.size(); i++)
 	{
 		auto [textEntity, textTransoform] = m_containerLayout->CreateLayoutElement("TextDebug");
 		m_textGuis[i] = &(textEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleSetSize(TextAlignment::CenterLeft, TEXT_SIZE))));
@@ -92,21 +97,22 @@ const std::optional<DebugMousePosition>& DebugInfo::GetMouseDebugData() const
 
 void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera)
 {
+	bool isActive = m_isEnabled;
 	if (input.IsKeyPressed(TOGGLE_DEBUG_INFO_KEY))
 	{
 		m_isEnabled = !m_isEnabled;
-		m_containerLayout->GetEntityMutable().TrySetEntityActive(m_isEnabled);
 	}
+	m_containerLayout->GetEntityMutable().TrySetEntityActive(m_isEnabled);
+	//Log(std::format("Debug info active:{}", m_containerLayout->GetEntityMutable().IsEntityActive()));
 	if (!m_isEnabled) return;
 
 	m_nextIndex = 0;
-	LogError(std::format("update startg for debug"));
 	SetProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
 	SetProperty("DeltaTime", std::format("{} s", std::to_string(deltaTime)));
 	SetProperty("TimeStep", std::format("{} s", std::to_string(timeStep)));
 
 	const EntityData* playerEntity = activeScene.TryGetEntity("player", true);
-	if (!Assert(this, playerEntity != nullptr, std::format("Tried to update properties"
+	if (!Assert(playerEntity != nullptr, std::format("Tried to update properties"
 		"for debug info but player could not be in active scene")))
 		return;
 
@@ -126,7 +132,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scen
 	ScreenPosition mouseScreenPos = { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y) };
 	WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(mainCamera, mouseScreenPos);
 	SetMouseDebugData(DebugMousePosition{ mouseWorld, {mouseScreenPos.m_X + 15, mouseScreenPos.m_Y} });
-	LogError(std::format("Finished update loop"));
+	//LogError(std::format("Finished update loop"));
 }
 
 /*

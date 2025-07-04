@@ -135,7 +135,7 @@ void UILayout::LayoutUpdate()
 		{
 			const auto old = currentPosNorm;
 			currentPosNorm.m_Y -= (m_spacing.GetY() + children[i]->GetSize().GetY());
-			LogWarning(std::format("VERTICAL POS UPDATE OLD:{} NEW:{}", old.ToString(), currentPosNorm.ToString()));
+			//LogWarning(std::format("VERTICAL POS UPDATE OLD:{} NEW:{}", old.ToString(), currentPosNorm.ToString()));
 		}
 		else if (m_type == LayoutType::Horizontal) currentPosNorm.m_X +=(m_spacing.GetX() + children[i]->GetSize().GetX());
 		else
@@ -150,8 +150,8 @@ void UILayout::LayoutUpdate()
 			//LogError(std::format("Checking layout child:{} next line width:{} posNorm:{}", children[i]->ToStringBase(), std::to_string(nextLineWidth), currentPosNorm.ToString()));
 		}
 
-		LogError(std::format("While doing layout update for:{} child:{} old rect:{} new:{} size factor:{} spacing:{}", ToString(), 
-			children[i]->GetEntity().ToStringId(), before.ToString(), children[i]->GetRect().ToString(), std::to_string(sizeFactor), m_spacing.ToString()));
+		/*LogError(std::format("While doing layout update for:{} child:{} old rect:{} new:{} size factor:{} spacing:{}", ToString(), 
+			children[i]->GetEntity().ToStringId(), before.ToString(), children[i]->GetRect().ToString(), std::to_string(sizeFactor), m_spacing.ToString()));*/
 	}
 
 	//Assert(false, std::format("END"));

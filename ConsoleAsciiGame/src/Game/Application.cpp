@@ -12,7 +12,9 @@
 #include <crtdbg.h>
 #endif
 
-int main() {
+
+int main() 
+{
 
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -59,7 +61,7 @@ int main() {
 
     try
     {
-        InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME.c_str());
+        InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME);
         SetTargetFPS(TARGET_FPS);
 
         Core::Engine engine; 

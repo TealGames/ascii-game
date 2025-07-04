@@ -2,8 +2,9 @@
 #include "ECS/Entity/EntityID.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "Utils/HelperFunctions.hpp"
+#include "ECS/Component/Component.hpp"
+#include <format>
 
-class Component;
 class EntityData;
 class TransformData;
 
@@ -46,6 +47,10 @@ namespace ECS
 		requires std::is_base_of_v<Component, T>
 		T& AddComponent(const EntityID entityId, Args&&... args)
 		{
+			if (!Assert(IsValidID(entityId), std::format("Attempted to add component via constructor args:'{}' to invalid entity:'{}'",
+				FormatComponentName(typeid(T)), ToString(entityId))))
+				throw std::invalid_argument("Invalid entity id");
+
 			if (!PassesHasComponentCheck<T>(entityId))
 				throw std::invalid_argument("Attempted to add duplicate component");
 
@@ -61,6 +66,10 @@ namespace ECS
 		requires std::is_base_of_v<Component, T>
 		T& AddComponent(const EntityID entityId, const T& component)
 		{
+			if (!Assert(IsValidID(entityId), std::format("Attempted to add component via complete object:'{}' to invalid entity:'{}'",
+				FormatComponentName(typeid(T)), ToString(entityId))))
+				throw std::invalid_argument("Invalid entity id");
+
 			if (!PassesHasComponentCheck<T>(entityId))
 				throw std::invalid_argument("Attempted to add duplicate component");
 
@@ -87,6 +96,10 @@ namespace ECS
 		requires std::is_base_of_v<Component, T>
 		T* TrySetComponent(const EntityID entityId, const T& component)
 		{
+			if (!Assert(IsValidID(entityId), std::format("Attempted to set component:'{}' to invalid entity:'{}'",
+				FormatComponentName(typeid(T)), ToString(entityId))))
+				throw std::invalid_argument("Invalid entity id");
+
 			T* component = TryGetComponentMutable<T>(entityId);
 			if (component == nullptr) return nullptr;
 
@@ -97,6 +110,10 @@ namespace ECS
 		requires std::is_base_of_v<Component, T>
 		T* AddOrSetComponent(const EntityID entityId, const T& component)
 		{
+			if (!Assert(IsValidID(entityId), std::format("Attempted to add or set component:'{}' to invalid entity:'{}'",
+				FormatComponentName(typeid(T)), ToString(entityId))))
+				throw std::invalid_argument("Invalid entity id");
+
 			return m_registry.emplace_or_replace(entityId, component);
 		}
 
@@ -104,6 +121,10 @@ namespace ECS
 		requires std::is_base_of_v<Component, T>
 		bool HasComponent(const EntityID entityId) const
 		{
+			if (!Assert(IsValidID(entityId), std::format("Attempted to check has component:'{}' to invalid entity:'{}'",
+				FormatComponentName(typeid(T)), ToString(entityId))))
+				throw std::invalid_argument("Invalid entity id");
+
 			return m_registry.try_get<T>(entityId) != nullptr;
 		}
 
@@ -111,6 +132,10 @@ namespace ECS
 		requires std::is_base_of_v<Component, T>
 		T* TryGetComponentMutable(const EntityID entityId)
 		{
+			if (!Assert(IsValidID(entityId), std::format("Attempted to get component MUTABLE:'{}' to invalid entity:'{}'",
+				FormatComponentName(typeid(T)), ToString(entityId))))
+				throw std::invalid_argument("Invalid entity id");
+
 			return m_registry.try_get<T>(entityId);
 		}
 
@@ -118,6 +143,10 @@ namespace ECS
 		requires std::is_base_of_v<Component, T>
 		const T* TryGetComponent(const EntityID entityId) const
 		{
+			if (!Assert(IsValidID(entityId), std::format("Attempted to get component:'{}' to invalid entity:'{}'",
+				FormatComponentName(typeid(T)), ToString(entityId))))
+				throw std::invalid_argument("Invalid entity id");
+
 			return m_registry.try_get<T>(entityId);
 		}
 	};

@@ -91,7 +91,7 @@ EntityData& GlobalEntityManager::CreateGlobalEntity(const std::string& name, con
 {
 	std::string cleanedName = CleanName(name);
 	//Since we want cleaned name to use in error message, we choose to not clean second time when checking for entity
-	Assert(this, !HasGlobalEntity(name, false), 
+	Assert(!HasGlobalEntity(name, false), 
 		std::format("Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
 		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName));
 

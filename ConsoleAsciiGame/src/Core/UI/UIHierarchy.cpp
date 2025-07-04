@@ -9,10 +9,16 @@
 static constexpr bool DRAW_RENDER_BOUNDS = false;
 
 UIHierarchy::UIHierarchy(GlobalEntityManager& globalEntityManager, const Vec2Int rootCanvasSize)
-	: m_uiRoot(nullptr), m_rootSize(rootCanvasSize), m_layerRoots({}), m_OnElementAdded(), m_OnElementRemoved()
+	: m_globalEntityManager(&globalEntityManager), m_uiRoot(nullptr), m_rootSize(rootCanvasSize), m_layerRoots({}), 
+	m_OnElementAdded(), m_OnElementRemoved()//, m_elementAddedThisFrame(false)
+{
+	
+}
+
+void UIHierarchy::Init()
 {
 	//m_rootElements.reserve(TOP_LAYER);
-	EntityData& uiRootEntity= globalEntityManager.CreateGlobalEntity(ROOT_UI_ENTITY_NAME, TransformData());
+	EntityData& uiRootEntity = m_globalEntityManager->CreateGlobalEntity(ROOT_UI_ENTITY_NAME, TransformData());
 	UITransformData& rootTransform = uiRootEntity.AddComponent<UITransformData>();
 	LogWarning(std::format("Root transform: {}", rootTransform.ToString()));
 	m_uiRoot = &rootTransform;
@@ -30,7 +36,7 @@ bool UIHierarchy::IsValidLayer(const UILayer layer, const bool logError) const
 	const bool isValid= layer <= TOP_LAYER;
 	if (logError && !isValid)
 	{
-		Assert(this, false, std::format("Attempted to use a gui layer:{} "
+		Assert(false, std::format("Attempted to use a gui layer:{} "
 			"but the underlying layer value is invalid", std::to_string(layer)));
 	}
 	return isValid;
@@ -74,6 +80,7 @@ bool UIHierarchy::IsLayerRootID(const ECS::EntityID id) const
 
 	for (const auto& rootElement : m_layerRoots)
 	{
+		if (rootElement == nullptr) continue;
 		if (rootElement->GetEntity().GetId() == id)
 			return true;
 	}
@@ -86,12 +93,7 @@ UITransformData* UIHierarchy::FindMutable(const ECS::EntityID id)
 	UITransformData* foundElement = nullptr;
 	for (size_t i=0; i<m_layerRoots.size(); i++)
 	{
-		if (m_layerRoots[i] == nullptr)
-		{
-			Assert(false, std::format("Tried to find gui element with id:{} MUTABLE"
-				"but encountered lyaer root:{} that is null", EntityData::ToString(id), std::to_string(i)));
-			return nullptr;
-		}
+		if (m_layerRoots[i] == nullptr) continue;
 
 		foundElement = m_layerRoots[i]->GetEntityMutable().FindComponentRecursiveMutable<UITransformData>(id);
 		if (foundElement != nullptr) return foundElement;
@@ -103,12 +105,7 @@ UITransformData* UIHierarchy::FindParentMutable(const ECS::EntityID id, size_t* 
 	UITransformData* foundEntity= nullptr;
 	for (size_t i = 0; i < m_layerRoots.size(); i++)
 	{
-		if (m_layerRoots[i] == nullptr)
-		{
-			Assert(false, std::format("Tried to find gui element parent with id:{} MUTABLE"
-				"but encountered lyaer root:{} that is null", EntityData::ToString(id), std::to_string(i)));
-			return nullptr;
-		}
+		if (m_layerRoots[i] == nullptr) continue;
 
 		foundEntity = m_layerRoots[i]->GetEntityMutable().FindParentComponentRecursiveMutable<UITransformData>(id, foundChildIndex);
 		if (foundEntity != nullptr) return foundEntity;
@@ -130,7 +127,10 @@ std::vector<UITransformData*> UIHierarchy::GetLayerRootsMutable(const bool topLa
 	else
 	{
 		for (auto& layer : m_layerRoots)
+		{
+			if (layer == nullptr) continue;
 			layers.push_back(layer);
+		}
 	}
 	return layers;
 }
@@ -165,7 +165,7 @@ void UIHierarchy::AddToRoot(const UILayer layer, UITransformData* element)
 	//can speed up some of the process here
 	if (element == nullptr)
 	{
-		Assert(this, false, std::format("Tried to add element to root of gui hierarchy but element is NULL"));
+		Assert(false, std::format("Tried to add element to root of gui hierarchy but element is NULL"));
 		return;
 	}
 
@@ -178,14 +178,14 @@ UITransformData* UIHierarchy::RemoveFromRoot(const UILayer layer, const ECS::Ent
 {
 	if (IsLayerRootID(id))
 	{
-		Assert(this, false, std::format("Tried to remove element with id:'{}' from hierarchy, "
-			"but it is a layer root element and those cannot be removed", EntityData::ToString(id)));
+		Assert(false, std::format("Tried to remove element with id:'{}' from hierarchy, "
+			"but it is a layer root element and those cannot be removed", ECS::ToString(id)));
 		return nullptr;
 	}
 	if (m_layerRoots[layer] == nullptr)
 	{
-		Assert(this, false, std::format("Attempted to remove element from layer:{} "
-			"root with id:{} but that layer has no root", std::to_string(layer), EntityData::ToString(id)));
+		Assert(false, std::format("Attempted to remove element from layer:{} "
+			"root with id:{} but that layer has no root", std::to_string(layer), ECS::ToString(id)));
 		return nullptr;
 	}
 
@@ -220,7 +220,7 @@ UITransformData* UIHierarchy::RemoveFromRoot(const UILayer layer, const ECS::Ent
 //{
 //	if (IsLayerRootID(id))
 //	{
-//		Assert(this, false, std::format("Tried to remove element with id:'{}' from hierarchy, "
+//		Assert(false, std::format("Tried to remove element with id:'{}' from hierarchy, "
 //			"but it is a layer root element and those cannot be removed", EntityData::ToString(id)));
 //		return nullptr;
 //	}
@@ -339,10 +339,20 @@ std::optional<UIRect> UIHierarchy::TryCalculateRenderRect(const UITransformData&
 	std::optional<UIRect> layerResult = std::nullopt;
 	for (const auto& layer : m_layerRoots)
 	{
+		if (layer == nullptr) continue;
 		layerResult = TryCalculateRenderRectHelper(*layer, GetRootRect(), element.GetEntityID());
 		if (layerResult != std::nullopt) return layerResult;
 	}
 	return std::nullopt;
+}
+
+void UIHierarchy::LayerTraversal(const std::function<void(UILayer, UITransformData&)>& action)
+{
+	for (size_t i = 0; i < m_layerRoots.size(); i++)
+	{
+		if (m_layerRoots[i] == nullptr) continue;
+		action(static_cast<UILayer>(i), *m_layerRoots[i]);
+	}
 }
 
 //void UIHierarchy::UpdateElementHelper(const float deltaTime, UITransformData& element)
@@ -412,7 +422,8 @@ UIRect UIHierarchy::GetRootRect() const
 std::string UIHierarchy::ToStringElementHelper(std::string startNewLine, const UITransformData& element) const
 {
 	std::string result = "";
-	result += std::format("\n{}-> {}", startNewLine, element.GetEntity().ToString());
+	//result += std::format("\n{}-> {}", startNewLine, std::format("{}({})", element.GetEntity().ToString(), element.ToString()));
+	result += std::format("\n{}-> {}", startNewLine, std::format("{} ({})", element.GetEntity().m_Name, element.ToString()));
 
 	if (element.GetEntity().GetChildCount()==0) return result;
 

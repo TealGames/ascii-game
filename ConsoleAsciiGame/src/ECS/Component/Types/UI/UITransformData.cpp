@@ -6,7 +6,7 @@
 UITransformData::UITransformData() : UITransformData(RelativeUIRect()) {}
 UITransformData::UITransformData(const NormalizedPosition& size) : UITransformData(RelativeUIRect(size)) {}
 UITransformData::UITransformData(const RelativeUIRect& relativeRect)
-	: m_relativeRect(relativeRect), m_flags(), m_padding() {}
+	: m_relativeRect(relativeRect), m_flags(UITransformFlags::None), m_padding(), m_lastWorldArea() {}
 
 
 void UITransformData::SetFixed(const bool horizontal, const bool vertical)
@@ -27,6 +27,25 @@ bool UITransformData::IsFixedVertical() const
 bool UITransformData::IsFixedHorizontal() const
 {
 	return Utils::HasFlagAll(m_flags, UITransformFlags::FixedHorizontal);
+}
+
+void UITransformData::SetLastWorldArea(const UIRect& area)
+{
+	m_lastWorldArea = area;
+}
+const UIRect& UITransformData::GetLastWorldArea() const
+{
+	return m_lastWorldArea;
+}
+
+void UITransformData::SetEventBlocker(const bool status)
+{
+	if (status) Utils::AddFlags(m_flags, UITransformFlags::EventBlocker);
+	else Utils::RemoveFlags(m_flags, UITransformFlags::EventBlocker);
+}
+bool UITransformData::IsSelectionEventBlocker() const
+{
+	return Utils::HasFlagAll(m_flags, UITransformFlags::EventBlocker);
 }
 
 void UITransformData::SetSizeUnsafe(const Vec2& size)
@@ -151,9 +170,9 @@ void UITransformData::InitFields()
 
 std::string UITransformData::ToString() const
 {
-	return std::format("[Id:{} Type:{} TL:{} BR:{} Size:{}]", GetEntity().ToStringId(),
-		Utils::FormatTypeName(typeid(*this).name()), m_relativeRect.GetTopLeftPos().ToString(),
-		m_relativeRect.GetBottomRighttPos().ToString(), GetSize().ToString());
+	return std::format("[Id:{} TL:{} BR:{} Size:{} LAST WA:{}]", GetEntity().ToStringId(),
+		m_relativeRect.GetTopLeftPos().ToString(), m_relativeRect.GetBottomRighttPos().ToString(), 
+		GetSize().ToString(), m_lastWorldArea.ToString());
 }
 
 void UITransformData::Deserialize(const Json& json)

@@ -79,7 +79,6 @@ namespace RaylibUtils
 		{"MouseBack", GAMEPAD_BUTTON_RIGHT_THUMB},			//Gamepad joystick pressed button right
 	};
 		
-
 	std::string ToString(const Color& color)
 	{
 		return std::format("[R:{}, G:{}, B:{}, A:{}]",

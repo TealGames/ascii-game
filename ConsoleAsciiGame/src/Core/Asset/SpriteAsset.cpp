@@ -25,7 +25,7 @@ void SpriteAsset::UpdateAssetFromFile()
 void SpriteAsset::SaveToPath(const std::filesystem::path& path)
 {
 	Json json = m_visual;
-	Assert(this, IO::TryWriteFile(path, json.dump()),
+	Assert(IO::TryWriteFile(path, json.dump()),
 		std::format("Tried to save sprite asset at apth:'{}' but failed", path.string()));
 }
 

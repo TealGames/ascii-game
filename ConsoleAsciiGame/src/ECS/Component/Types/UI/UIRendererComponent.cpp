@@ -2,25 +2,15 @@
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 
-UIRendererData::UIRendererData() : Component(), m_renderer(nullptr), m_lastRenderRect(), m_isEventBlocker(false) {}
+UIRendererData::UIRendererData() : Component(), m_renderer(nullptr), m_lastRenderArea() {}
 
 Rendering::Renderer& UIRendererData::GetRendererMutable()
 {
 	return *m_renderer;
 }
-
 const UIRect& UIRendererData::GetLastRenderRect() const
 {
-	return m_lastRenderRect;
-}
-
-void UIRendererData::SetEventBlocker(const bool status)
-{
-	m_isEventBlocker = status;
-}
-bool UIRendererData::IsSelectionEventBlocker() const
-{
-	return m_isEventBlocker;
+	return m_lastRenderArea;
 }
 
 void UIRendererData::InitFields()

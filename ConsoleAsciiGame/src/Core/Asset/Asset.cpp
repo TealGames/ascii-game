@@ -7,6 +7,8 @@ Asset::Asset(const std::filesystem::path& path, const bool hasDependencies)
 //Note: if we do not have dependencies we can say they are already set
 	: m_name(), m_path(path), m_dependenciesSet(!hasDependencies)
 {
+	if (path.empty()) return;
+
 	if (!Assert(std::filesystem::exists(m_path), std::format("Tried to create an asset at path: {} "
 		"but that path does not exist", m_path.string())))
 		return;

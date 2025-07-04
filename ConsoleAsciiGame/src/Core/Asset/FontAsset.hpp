@@ -14,10 +14,12 @@ public:
 private:
 public:
 	FontAsset(const std::filesystem::path& path);
+	FontAsset(const Font& font);
 	~FontAsset();
 
 	Font& GetFontMutable();
 	const Font& GetFont() const;
+	bool HasValidFont() const;
 
 	void UpdateAssetFromFile() override;
 };

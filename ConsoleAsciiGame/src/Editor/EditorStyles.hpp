@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "Utils/Data/Vec2.hpp"
 #include "Core/UI/UIStyle.hpp"
+#include "StaticReferenceGlobals.hpp"
 
 namespace EditorStyles
 {
@@ -34,21 +35,25 @@ namespace EditorStyles
 	//-------------------------------------------------------------------
 	//			GUI STYLES
 	//-------------------------------------------------------------------
+	inline const FontAsset& GetEditorFont()
+	{
+		return StaticReferenceGlobals::GetDefaultRaylibFont();
+	}
 	inline TextUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const Color color= EDITOR_TEXT_DEFAULT_COLOR)
 	{
-		return TextUIStyle(color, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+		return TextUIStyle(color, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 			alignment, UIPadding(), factor);
 	}
 	inline TextUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const Color color = EDITOR_TEXT_DEFAULT_COLOR)
 	{
-		return TextUIStyle(color, FontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+		return TextUIStyle(color, FontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 			alignment, UIPadding());
 	}
 
 	inline UIStyle GetInputFieldStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
 	{
 		return UIStyle(EDITOR_SECONDARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR,
-			FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), alignment, UIPadding(), factor));
+			FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()), alignment, UIPadding(), factor));
 	}
 
 	inline UIStyle GetSliderStyle()
@@ -63,7 +68,7 @@ namespace EditorStyles
 
 	inline UIStyle GetButtonStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
 	{
-		return UIStyle(EDITOR_PRIMARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetGlobalFont()),
+		return UIStyle(EDITOR_PRIMARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 				alignment, UIPadding(), factor));
 	}
 }

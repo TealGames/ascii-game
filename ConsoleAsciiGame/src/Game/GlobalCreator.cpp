@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Game/GlobalCreator.hpp"
 #include "Core/Scene/GlobalEntityManager.hpp"
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 #include "ECS/Component/Types/World/LightSourceData.hpp"
 #include "ECS/Component/Types/World/EntityRendererData.hpp"
 #include "ECS/Component/Types/World/AnimatorData.hpp"
@@ -18,8 +18,9 @@
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/SpriteAnimationAsset.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
+#include "StaticReferenceGlobals.hpp"
 
-namespace GlobalCreator
+namespace GlobalEntityCreator
 {
 	void CreateGlobals(GlobalEntityManager& globalsManager, SceneManagement::SceneManager& sceneManager, 
 		CameraController& cameraController, AssetManagement::AssetManager& assetManager)
@@ -29,16 +30,16 @@ namespace GlobalCreator
 		//Font* fontptr = &(GetGlobalFont());
 		/*VisualDataPreset visualPreset = {, VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };*/
-		FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, GetGlobalFont());
+		FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, StaticReferenceGlobals::GetDefaultRaylibFont());
 		//LogError(std::format("Is valid preset font:{}", std::to_string(RaylibUtils::IsValidFont(visualPreset.m_Font))));
 
 
 		EntityData& playerEntity = globalsManager.CreateGlobalEntity("player", TransformData(Vec2{ 10, 5 }));
-		CollisionBoxData& playerCollider = playerEntity.AddComponent<CollisionBoxData>(CollisionBoxData(playerEntity.GetTransform(), Vec2(2, 2), Vec2(0, 0)));
+		CollisionBoxData& playerCollider = playerEntity.AddComponent<CollisionBoxData>(CollisionBoxData(Vec2(2, 2), Vec2(0, 0)));
 		/*Assert(false, std::format("Created player collider:{} min:{} max:{}", playerCollider.ToStringRelative(), 
 			playerCollider.GetGlobalMin().ToString(), playerCollider.GetGlobalMax().ToString()));*/
 
-		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(playerCollider, 1, GRAVITY, 20));
+		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(&playerCollider, 1, GRAVITY, 20));
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 8, 20));
 
 		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
@@ -67,7 +68,7 @@ namespace GlobalCreator
 			AnimationPropertyKeyframe<std::uint8_t>(std::uint8_t(1), 1) })}, 1, 1, true));
 
 		SpriteAnimatorData& spriteAnimator= playerEntity.AddComponent<SpriteAnimatorData>(SpriteAnimatorData());
-		SpriteAnimationAsset* testAnim = assetManager.TryGetTypeAssetMutable<SpriteAnimationAsset>("test");
+		SpriteAnimationAsset* testAnim = assetManager.TryGetTypeAssetFromPathMutable<SpriteAnimationAsset>("sprite_animations/test.sanim");
 		//Assert(false, std::format("Adding anim:{}", testAnim->ToString()));
 		spriteAnimator.AddAnimation(*testAnim);
 		spriteAnimator.TryPlayAnimation(testAnim->GetAnimation().m_Name);
@@ -87,8 +88,8 @@ namespace GlobalCreator
 		cameraController.TryRegisterCamera(cameraData);
 
 		EntityData& trigger = globalsManager.CreateGlobalEntity("Trigger", TransformData(Vec2{15, 0}));
-		CollisionBoxData& triggerCollider = trigger.AddComponent<CollisionBoxData>(CollisionBoxData(trigger.GetTransform(), Vec2(5, 5), Vec2(0, 0)));
-		TriggerData& triggerData= trigger.AddComponent<TriggerData>(TriggerData(triggerCollider));
+		CollisionBoxData& triggerCollider = trigger.AddComponent<CollisionBoxData>(CollisionBoxData(Vec2(5, 5), Vec2(0, 0)));
+		TriggerData& triggerData= trigger.AddComponent<TriggerData>(TriggerData(&triggerCollider));
 		//triggerData.m_OnExit.AddListener([](const CollisionBoxData* enteredBody)-> void { LogError(std::format("EXIITNG"), true, false, false, true); });
 		//triggerData.m_OnEnter.AddListener([](const CollisionBoxData* enteredBody)-> void { LogError(std::format("ENTERING"), true, false, false, true); });
 

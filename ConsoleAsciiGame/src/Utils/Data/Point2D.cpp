@@ -61,7 +61,7 @@ namespace Utils
 
 	Point2D Point2D::operator/(const Point2D& otherPos) const
 	{
-		if (!Assert(this, otherPos.m_X != 0 && otherPos.m_Y != 0,
+		if (!Assert(otherPos.m_X != 0 && otherPos.m_Y != 0,
 			std::format("Tried to divide {} by a value with 0 {}",
 				ToString(), otherPos.ToString()))) return {};
 
@@ -70,7 +70,7 @@ namespace Utils
 
 	Point2D Point2D::operator/(const float& factor) const
 	{
-		if (!Assert(this, factor != 0,
+		if (!Assert(factor != 0,
 			std::format("Tried to divide {} by a value with 0 {}",
 				ToString(), std::to_string(factor)))) return {};
 

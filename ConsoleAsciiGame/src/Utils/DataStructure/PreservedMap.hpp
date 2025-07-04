@@ -221,7 +221,7 @@ public:
 
 	std::pair<Iterator, bool> Insert(const KType& key, const VType& value)
 	{
-		if (!Assert(this, !HasKey(key), std::format("Tried to insert key value pair:{} but key already exists", 
+		if (!Assert(!HasKey(key), std::format("Tried to insert key value pair:{} but key already exists", 
 			Utils::ToStringPair<KType, VType>(key, value))))
 			return { EndMutable(), false };
 

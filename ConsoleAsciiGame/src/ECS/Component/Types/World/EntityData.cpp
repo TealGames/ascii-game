@@ -4,12 +4,12 @@
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 
 //TODO: add a reserved entity name ssytem and not allowing those names to be used
-const char* EntityData::GLOBAL_SCENE_NAME = "global";
+const char* EntityData::GLOBAL_SCENE_NAME = "Global";
 
 EntityData::EntityData(ECS::EntityRegistry* registry, const ECS::EntityID id,
 	const std::string& name, const std::string& sceneName, ECS::EntityID parentId) :
 	m_registry(registry), m_id(id), m_Name(name), m_SceneName(sceneName), m_parentId(parentId), m_childrenIds(), 
-	m_components(), m_IsSerializable(true), m_OnFarthestChildElementAttached()
+	m_components(), m_IsSerializable(true), m_OnFarthestChildElementAttached(), m_isActive(true)
 {
 
 }
@@ -21,7 +21,7 @@ EntityData::EntityData(ECS::EntityRegistry& registry, const ECS::EntityID id,
 
 
 ECS::EntityID EntityData::GetId() const { return m_id; }
-std::string EntityData::ToStringId() const { return ToString(GetId()); }
+std::string EntityData::ToStringId() const { return ECS::ToString(GetId()); }
 bool EntityData::IsGlobal() const { return m_SceneName == GLOBAL_SCENE_NAME; }
 ECS::EntityRegistry& EntityData::GetRegistryMutable()
 {
@@ -77,6 +77,11 @@ bool EntityData::TryActivateEntity()
 		return false;
 
 	m_isActive = true;
+	for (auto& childId : m_childrenIds)
+	{
+		m_registry->TryGetEntityMutable(childId)->TryActivateEntity();
+	}
+
 	return true;
 }
 void EntityData::DeactivateEntity()
@@ -240,7 +245,7 @@ const EntityData* EntityData::GetHighestParent() const
 	return currentParent;
 }
 
-size_t EntityData::GetChildCount() const { return m_childrenIds.size(); }
+int EntityData::GetChildCount() const { return m_childrenIds.size(); }
 
 EntityData& EntityData::CreateChild(const std::string& name, const TransformData& transform)
 {
@@ -371,10 +376,6 @@ void EntityData::InitFields()
 	m_Fields = {};
 }
 
-std::string EntityData::ToString(const ECS::EntityID& id)
-{
-	return std::to_string(static_cast<uint32_t>(id));
-}
 std::string EntityData::ToString() const
 {
 	std::string componentNames = "Components: ";
@@ -386,7 +387,7 @@ std::string EntityData::ToString() const
 			componentNames += FormatComponentName(typeid(*m_components[i]));
 		}
 	}
-	return std::format("['{}'(ID:{} A:{})-> {}]", m_Name, ToString(m_id), std::to_string(m_isActive), componentNames);
+	return std::format("['{}'(ID:{} A:{})-> {}]", m_Name, ECS::ToString(m_id), std::to_string(m_isActive), componentNames);
 }
 
 void EntityData::Deserialize(const Json& json)

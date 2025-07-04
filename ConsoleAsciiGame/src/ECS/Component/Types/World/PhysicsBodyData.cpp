@@ -10,8 +10,8 @@
 MoveContraints::MoveContraints(const bool constrainX, const bool constrainY)
 	: m_ConstrainX(constrainX), m_ConstrainY(constrainY) {}
 
-PhysicsBodyData::PhysicsBodyData(const CollisionBoxData* coliisionBox, const float& mass, 
-	const float& gravity, const float& terminalYVelocity)
+PhysicsBodyData::PhysicsBodyData(const CollisionBoxData* coliisionBox, const float mass, 
+	const float gravity, const float terminalYVelocity)
 	: Component(),
 	m_mass(std::abs(mass)), //m_aabb(CreateAABB(boundingBoxSize, transformOffset)),
 	//m_collider(GetEntitySafe().m_Transform, boundingBoxSize, transformOffset),
@@ -35,14 +35,10 @@ PhysicsBodyData::PhysicsBodyData(const Json& json) : PhysicsBodyData()
 {
 	Deserialize(json);
 }
-PhysicsBodyData::PhysicsBodyData(const CollisionBoxData& collisionBox, const float& mass) :
-	PhysicsBodyData(&collisionBox, mass, 0, 0) {}
 
-PhysicsBodyData::PhysicsBodyData(const CollisionBoxData& collisionBox, const float& mass, 
-	const float& gravity, const float& terminalYVelocity)
-	:PhysicsBodyData(&collisionBox, mass, gravity, terminalYVelocity) {}
+PhysicsBodyData::PhysicsBodyData(const CollisionBoxData* collisionBox, const float mass) :
+	PhysicsBodyData(collisionBox, mass, 0, 0) {}
 	
-
 void PhysicsBodyData::InitFields()
 {
 	m_Fields = 
@@ -60,7 +56,7 @@ void PhysicsBodyData::InitFields()
 //bool PhysicsBodyData::ValidateAABB(const Physics::AABB& bounding) const
 //{
 //	const Vec2 size = bounding.GetSize();
-//	if (Assert(this, size.m_X!=0 && size.m_Y!=0, 
+//	if (Assert(size.m_X!=0 && size.m_Y!=0, 
 //		std::format("Tried to create a Physics Body but the AABB cannot have 0 x or y size: {}. "
 //			"This could be due to bad bounding size or offset!", size.ToString()))) 
 //		return false;
@@ -83,7 +79,7 @@ void PhysicsBodyData::RemovePhysicsWorldRef()
 }
 const Physics::PhysicsWorld& PhysicsBodyData::GetPhysicsWorldSafe()
 {
-	if (!Assert(this, m_physicsSimulation != nullptr,
+	if (!Assert(m_physicsSimulation != nullptr,
 		std::format("Tried to get physics world of body: '{}' "
 			"but it is NULL", GetEntity().m_Name)))
 		throw std::invalid_argument("Failed to retrieve physics world");
@@ -187,9 +183,9 @@ bool PhysicsBodyData::HasAnyConstraints() const
 
 const CollisionBoxData& PhysicsBodyData::GetCollisionBox() const
 {
-	if (!Assert(this, m_collider!=nullptr, std::format("Tried to get collider data for entity:{} but was NULL", 
-		GetEntity().m_Name)));
-		throw std::invalid_argument("Invalid Collision Box data");
+	if (!Assert(m_collider!=nullptr, std::format("Tried to get collider data for entity:{} but was NULL", 
+		GetEntity().m_Name)))
+		throw std::invalid_argument(std::format("Invalid Collision Box data for entity:{}", GetEntity().m_Name));
 
 	return *m_collider;
 }
@@ -240,7 +236,7 @@ void PhysicsBodyData::AddCollidingBody(PhysicsBodyData& collidingBody)
 
 	Vec2 collidingDir = m_collider.GetAABBDirection(collidingBody.GetCollisionBox(), true);
 	std::optional<MoveDirection> maybeDirType = TryConvertVectorToDirection(collidingDir);
-	if (!Assert(this, maybeDirType.has_value(), std::format("Tried to add colliding body named '{}' "
+	if (!Assert(maybeDirType.has_value(), std::format("Tried to add colliding body named '{}' "
 		"to body: '{}' but could not deduce direction from vector: {} of colliding body (Pos:{}) relative to this body(Pos:{})", 
 		collidingBody.GetEntitySafe().GetName(), GetEntitySafe().GetName(), collidingDir.ToString(), 
 		collidingBody.GetEntitySafe().m_Transform.ToString(), GetEntitySafe().m_Transform.ToString())))
@@ -348,7 +344,7 @@ void PhysicsBodyData::Deserialize(const Json& json)
 
 	//m_aabb= json.at("AABB").get<Physics::AABB>();
 	//ValidateAABB(m_aabb);
-	m_collider= TryDeserializeComponent<CollisionBoxData>(json.at("Collider"), GetEntityMutable());
+	//m_collider= TryDeserializeComponent<CollisionBoxData>(json.at("Collider"), GetEntityMutable());
 	//LogError(std::format("Finsihed deserialiation of collier"));
 	//m_transformOffset = json.at("Offset").get<Vec2>();
 
@@ -365,7 +361,8 @@ Json PhysicsBodyData::Serialize()
 {
 	return //{ {"AABB", m_aabb}, 
 		//{ {"Offset", m_transformOffset}, 
-		{ {"Collider", TrySerializeComponent<CollisionBoxData>(m_collider)},
+		{ 
+		//{"Collider", TrySerializeComponent<CollisionBoxData>(m_collider)},
 		{ "Mass", m_mass }, {"Gravity", m_gravity}, {"Restitution", m_profile.GetRestitution()},
 		{"Friction", m_profile.GetFriction()}, {"Velocity", m_velocity}, 
 		{"TerminalVelocity", m_terminalYVelocity}, {"Acceleration", m_acceleration}};

@@ -15,13 +15,12 @@ std::string ToString(const TriggerType& trigger)
 
 
 TriggerData::TriggerData() : TriggerData(nullptr) {}
-TriggerData::TriggerData(const CollisionBoxData& collider) : TriggerData(&collider) {}
 TriggerData::TriggerData(const CollisionBoxData* collider) : 
 	Component(), m_collider(collider), m_triggerType(TriggerType::Default), m_OnEnter(), m_OnExit() {}
 
 const CollisionBoxData& TriggerData::GetCollisionBox() const
 {
-	if (!Assert(this, m_collider != nullptr, std::format("Tried to get collider but it is NULL")))
+	if (!Assert(m_collider != nullptr, std::format("Tried to get collider but it is NULL")))
 		throw std::invalid_argument("Invalid collider box state");
 
 	return *m_collider;

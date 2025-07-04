@@ -6,9 +6,14 @@
 
 namespace ECS
 {
-	UITextureSystem::UITextureSystem()
+	UITextureSystem::UITextureSystem() {}
+	void UITextureSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UITextureData), ComponentInfo(CreateRequiredComponentFunction<UIRendererData>(),
-			[](EntityData& entity)-> void {entity.TryGetComponentMutable<UITextureData>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>(); }));
+		GlobalComponentInfo::AddComponentInfo(typeid(UITextureData),
+			ComponentInfo(CreateComponentTypes<UIRendererData>(), CreateRequiredComponentFunction(UIRendererData()),
+				[](EntityData& entity)-> void
+				{
+					entity.TryGetComponentMutable<UITextureData>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>();
+				}));
 	}
 }

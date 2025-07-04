@@ -1,14 +1,14 @@
 #include "pch.hpp"
 #include "Editor/Entity/EntityEditorUI.hpp"
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 #include "Utils/Data/NormalizedPosition.hpp"
 #include "Core/PositionConversions.hpp"
 #include "Core/Camera/CameraController.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 
 EntityEditorUI::EntityEditorUI(const Input::InputManager& input,
-	const CameraController& cameraController, UIHierarchy& hiearchy, PopupUIManager& popupManager, const AssetManagement::AssetManager& assetManager, EntityData& parent)
-	: m_inputManager(&input), m_guiTree(&hiearchy), m_popupManager(&popupManager), m_assetManager(&assetManager), m_selectedEntityUI(input, popupManager, assetManager, parent)
+	const CameraController& cameraController, UIHierarchy& hiearchy, PopupUIManager& popupManager, AssetManagement::AssetManager& assetManager)
+	: m_inputManager(&input), m_guiTree(&hiearchy), m_popupManager(&popupManager), m_assetManager(&assetManager), m_selectedEntityUI(input, popupManager, assetManager)
 	//m_entityGUIs(), m_selectedEntity(m_entityGUIs.end())
 {
 
@@ -19,9 +19,14 @@ EntityEditorUI::~EntityEditorUI()
 	CloseCurrentEntityGUI();
 }
 
+void EntityEditorUI::Init(EntityData& parent)
+{
+	m_selectedEntityUI.Init(parent);
+}
+
 const Input::InputManager& EntityEditorUI::GetInputManagerSafe() const
 {
-	if (!Assert(this, m_inputManager != nullptr, "Tried to get input manager but is NULL"))
+	if (!Assert(m_inputManager != nullptr, "Tried to get input manager but is NULL"))
 		throw std::invalid_argument("Invalid input manager state");
 
 	return *m_inputManager;

@@ -67,7 +67,7 @@ public:
 
 	void SetCooldownTime(const float time)
 	{
-		return m_currentCooldownTime;
+		m_currentCooldownTime = time;
 	}
 	float GetCooldownTime() const
 	{

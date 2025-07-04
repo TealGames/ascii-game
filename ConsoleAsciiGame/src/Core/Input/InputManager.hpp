@@ -61,6 +61,7 @@ namespace Input
 
 	public:
 		InputManager(AssetManagement::AssetManager& assetManager);
+		void Init();
 
 		void SetInputCooldown(const std::map<KeyboardKey, float>& keyCooldownTime);
 		void SetInputCooldown(const float& allKeyCooldownTime);

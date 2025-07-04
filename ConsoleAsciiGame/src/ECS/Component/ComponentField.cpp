@@ -11,7 +11,7 @@ ComponentField::ComponentField(const std::string& name, const ComponentFieldVari
 ComponentField::ComponentField(const std::string& name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value)
 	: m_FieldName(name), m_Value(value), m_MaybeSetFunction(setAction), m_isReadonly(false)
 {
-	if (!Assert(this, setAction.index() == m_Value.index(), std::format("Tried to create a component field named: '{}' with set action, "
+	if (!Assert(setAction.index() == m_Value.index(), std::format("Tried to create a component field named: '{}' with set action, "
 		"but that action does not acceot the same type of argument as the internal reference to field: {}!", 
 		m_FieldName, GetCurrentType().name()))) 
 		throw std::invalid_argument("Invalid set action");
@@ -39,7 +39,7 @@ const std::type_info& ComponentField::GetCurrentType() const
 	else if (IsCurrentType<Vec2Int>()) return typeid(Vec2Int);
 	else if (IsCurrentType<Utils::Color>()) return typeid(Utils::Color);
 
-	LogError(this, std::format("Tried to retrieve current type for component field but no type was defined for it"));
+	LogError(std::format("Tried to retrieve current type for component field but no type was defined for it"));
 	throw std::invalid_argument("Invalid type actions");
 }
 

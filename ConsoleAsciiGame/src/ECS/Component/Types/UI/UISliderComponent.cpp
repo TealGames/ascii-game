@@ -5,6 +5,7 @@
 #include "ECS/Component/Types/UI/UIPanel.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
 
 static const NormalizedPosition HANDLE_SIZE = {0.05, 1};
 static const float SLIDER_HEIGHT = 0.5;
@@ -12,10 +13,16 @@ static const float SLIDER_HEIGHT = 0.5;
 static constexpr float MIN_DRAG_TIME_TO_MOVE = 0.1;
 
 UISliderComponent::UISliderComponent(const Input::InputManager& inputManager, const Vec2 minMaxValues, const UIStyle& settings)
-	: UISelectableData(), m_inputManager(&inputManager), m_settings(settings), 
-	m_minMaxValues(minMaxValues), m_value(GetMinValue()), m_OnValueSet(), m_renderer(nullptr), m_backgroundPanel(nullptr), m_SliderHandle(nullptr)
+	: m_inputManager(&inputManager), m_settings(settings), 
+	m_minMaxValues(minMaxValues), m_value(GetMinValue()), m_OnValueSet(), 
+	m_renderer(nullptr), m_backgroundPanel(nullptr), m_SliderHandle(nullptr), m_selectable(nullptr)
 {
-	m_OnDragDelta.AddListener([this](UISelectableData* gui, const float dragTime, const Vec2 mouseDelta)-> void 
+	
+}
+
+void UISliderComponent::Init()
+{
+	m_selectable->m_OnDragDelta.AddListener([this](UISelectableData* gui, const float dragTime, const Vec2 mouseDelta)-> void
 		{
 			//Assert(false, std::format("REACEHD HERE"));
 
@@ -23,9 +30,9 @@ UISliderComponent::UISliderComponent(const Input::InputManager& inputManager, co
 
 			const Vec2Int lastRenderSize = m_renderer->GetLastRenderRect().GetSize();
 			float moveFraction = mouseDelta.m_X / lastRenderSize.m_X;
-			SetValueDelta(moveFraction * (m_minMaxValues.m_Y- m_minMaxValues.m_X));
+			SetValueDelta(moveFraction * (m_minMaxValues.m_Y - m_minMaxValues.m_X));
 
-			m_SliderHandle->SetTopLeftPos(NormalizedPosition(GetValueNormalized()- (0.5*HANDLE_SIZE.GetX()), 1));
+			m_SliderHandle->SetTopLeftPos(NormalizedPosition(GetValueNormalized() - (0.5 * HANDLE_SIZE.GetX()), 1));
 		});
 }
 
@@ -56,6 +63,22 @@ int UISliderComponent::GetMaxValueInt() const { return m_minMaxValues.YAsInt(); 
 
 float UISliderComponent::GetValue() const { return m_value; };
 float UISliderComponent::GetValueNormalized() const { return (m_value / m_minMaxValues.m_Y) + m_minMaxValues.m_X; }
+
+void UISliderComponent::Deserialize(const Json& json)
+{
+	//TODO: implement
+	return;
+}
+Json UISliderComponent::Serialize() 
+{
+	//TODO: implement
+	return {};
+}
+
+std::string UISliderComponent::ToString() const 
+{
+	return std::format("[UISlider ]");
+}
 
 //RenderInfo UISliderComponent::ElementRender(const RenderInfo& renderInfo)
 //{

@@ -12,7 +12,7 @@ namespace ECS
 	private:
 	public:
 		UIButtonSystem();
-
+		void Init();
 		void SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime);
 	};
 }

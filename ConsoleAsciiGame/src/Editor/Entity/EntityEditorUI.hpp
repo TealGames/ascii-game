@@ -14,7 +14,7 @@ class EntityEditorUI
 {
 private:
 	const Input::InputManager* m_inputManager;
-	const AssetManagement::AssetManager* m_assetManager;
+	AssetManagement::AssetManager* m_assetManager;
 	PopupUIManager* m_popupManager;
 	UIHierarchy* m_guiTree;
 
@@ -29,8 +29,10 @@ private:
 
 public:
 	EntityEditorUI(const Input::InputManager& input, const CameraController& cameraController, 
-		UIHierarchy& hierarchy, PopupUIManager& popupManager, const AssetManagement::AssetManager& assetManager, EntityData& parent);
+		UIHierarchy& hierarchy, PopupUIManager& popupManager, AssetManagement::AssetManager& assetManager);
 	~EntityEditorUI();
+
+	void Init(EntityData& parent);
 
 	void SetEntityUI(EntityData& entity);
 	bool HasEntitySelected() const;

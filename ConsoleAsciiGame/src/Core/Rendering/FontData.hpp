@@ -1,17 +1,23 @@
 #pragma once
 #include "raylib.h"
 
-struct FontProperties
+class FontAsset;
+class FontProperties
 {
+private:
+public:
 	float m_Size;
 	/// <summary>
 	/// The horizontal space that is between all characters
 	/// </summary>
 	float m_Tracking;
-	Font m_FontType;
+	const FontAsset* m_FontAsset;
 
+private:
+	FontProperties(const float fontSize, const float spacing, const FontAsset* font);
+public:
 	FontProperties();
-	FontProperties(const float fontSize, const float spacing, const Font& font);
+	FontProperties(const float fontSize, const float spacing, const FontAsset& font);
 
 	bool HasValidFont() const;
 };

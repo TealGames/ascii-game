@@ -131,7 +131,7 @@ std::string Vec2::ToString(const std::uint8_t& decimalPlaces, VectorForm form) c
 		break;
 
 	default:
-		LogError(this, std::format("Tried to convert vector ({},{}) to string "
+		LogError(std::format("Tried to convert vector ({},{}) to string "
 			"with undefined form {}", m_X, m_Y, ::ToString(form)));
 		break;
 	}
@@ -171,7 +171,7 @@ Vec2 Vec2::operator*(const float& scalar) const
 }
 Vec2 Vec2::operator/(const Vec2& other) const
 {
-	if (!Assert(this, other.m_X != 0 && other.m_Y!=0,
+	if (!Assert(other.m_X != 0 && other.m_Y!=0,
 		std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString())))
 	{
 		return *this;
@@ -181,7 +181,7 @@ Vec2 Vec2::operator/(const Vec2& other) const
 
 Vec2 Vec2::operator/(const float& scalar) const
 {
-	if (!Assert(this, scalar != 0,
+	if (!Assert(scalar != 0,
 		std::format("Tried to divide a vector: {} by a 0 value scalar", ToString())))
 	{
 		return *this;

@@ -1,10 +1,11 @@
 #include "pch.hpp"
 #include "Core/Time/TimeKeeper.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 TimeKeeper::TimeKeeper() :
 	m_currentTime(std::chrono::high_resolution_clock().now()),
 	m_lastTime(std::chrono::high_resolution_clock().now()),
-	m_scaledDeltaTime(0), m_timeScale(DEFAULT_TIME_SCALE), m_currentFPS(0),
+	m_scaledDeltaTime(0), m_independentDeltaTime(0), m_timeScale(DEFAULT_TIME_SCALE), m_currentFPS(0),
 	m_frameCount(0), m_frameLimit(NO_FRAME_LIMIT)
 {}
 
@@ -42,14 +43,15 @@ std::uint16_t TimeKeeper::GetFPS() const
 void TimeKeeper::SetTimeScale(const double& scale)
 {
 	m_timeScale = scale;
+	if (m_timeScale == 0) Assert(false, std::format("Set time"));
 }
 void TimeKeeper::ResetTimeScale()
 {
-	m_timeScale = 1;
+	SetTimeScale(1);
 }
 void TimeKeeper::StopTimeScale()
 {
-	m_timeScale = 0;
+	SetTimeScale(0);
 }
 
 void TimeKeeper::SetFrameLimit(const std::uint64_t& frameLimit)

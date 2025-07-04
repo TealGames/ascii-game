@@ -4,23 +4,20 @@
 #include "Core/UI/UIInteractionManager.hpp"
 #include <optional>
 #include "Core/Asset/TextureAsset.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "ECS/Component/Types/UI/UITextureData.hpp"
 
 //ToggleGUI::ToggleGUI() : 
 //	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
 //	m_valueSetAction(nullptr) {}
 
-UIToggleComponent::UIToggleComponent(const bool& startValue, const UIStyle& settings, 
-	const ToggleAction& valueSetAction, const TextureAsset* toggledTexture)
-	: UISelectableData(),  m_isToggled(startValue), m_settings(settings), 
-	m_valueSetAction(valueSetAction), m_overlayTexture(toggledTexture)
+UIToggleComponent::UIToggleComponent(const bool& startValue, const UIStyle& settings, UITextureData* onTexture, UITextureData* offTexture)//, const TextureAsset* toggledTexture)
+	: m_isToggled(startValue), m_settings(settings), 
+	//m_valueSetAction(valueSetAction), 
+	m_OnValueSet(), m_onTexture(onTexture), m_offTexture(offTexture),
+	m_selectable(nullptr)//,m_overlayTexture(toggledTexture),
 {
-	m_OnClick.AddListener([this](UISelectableData* self)-> void 
-		{
-			//Assert(false, "POOP");
-			ToggleValue();
-			self->Deselect();
-			//SetSettings({});
-		});
+	SetTextureFromState();
 }
 
 UIToggleComponent::~UIToggleComponent()
@@ -30,18 +27,39 @@ UIToggleComponent::~UIToggleComponent()
 		Assert(false, std::format("DEATRUCTOR HELL YEAH settings:{}", m_settings.m_Size.ToString()));*/
 }
 
+void UIToggleComponent::Init()
+{
+	m_selectable->m_OnClick.AddListener([this](UISelectableData* self)-> void
+		{
+			//Assert(false, "POOP");
+			ToggleValue();
+			self->Deselect();
+			//SetSettings({});
+		});
+}
+
 void UIToggleComponent::SetSettings(const UIStyle& settings)
 {
 	m_settings = settings;
 }
-void UIToggleComponent::SetOverlayTexture(const TextureAsset& asset)
+void UIToggleComponent::SetStateTextures(UITextureData* onTexture, UITextureData* offTexture)
 {
-	m_overlayTexture = &asset;
+	m_onTexture = onTexture;
+	m_offTexture = offTexture;
 }
-bool UIToggleComponent::HasOverlayTexture() const
+void UIToggleComponent::SetTextureFromState()
 {
-	return m_overlayTexture != nullptr;
+	if (m_onTexture != nullptr) m_onTexture->m_IsEnabled = m_isToggled;
+	if (m_offTexture != nullptr) m_offTexture->m_IsEnabled = !m_isToggled;
 }
+//void UIToggleComponent::SetOverlayTexture(const TextureAsset& asset)
+//{
+//	m_overlayTexture = &asset;
+//}
+//bool UIToggleComponent::HasOverlayTexture() const
+//{
+//	return m_overlayTexture != nullptr;
+//}
 
 bool UIToggleComponent::IsToggled() const
 {
@@ -51,24 +69,26 @@ bool UIToggleComponent::IsToggled() const
 void UIToggleComponent::SetValue(const bool value)
 {
 	m_isToggled = value;
-	if (m_valueSetAction) m_valueSetAction(m_isToggled);
+	SetTextureFromState();
+	//if (m_valueSetAction) m_valueSetAction(m_isToggled);
+	m_OnValueSet.Invoke(m_isToggled);
 }
 void UIToggleComponent::ToggleValue()
 {
 	SetValue(!m_isToggled);
 }
 
-void UIToggleComponent::SetValueSetAction(const ToggleAction& action)
-{
-	m_valueSetAction = action;
-}
+//void UIToggleComponent::SetValueSetAction(const ToggleAction& action)
+//{
+//	m_valueSetAction = action;
+//}
 
-void UIToggleComponent::DrawOverlayTexture(const float targetWidth, const float targetHeight, const Vector2& topLeftPos)
-{
-	const float scaleX = targetWidth / m_overlayTexture->GetTexture().width;
-	const float scaleY = targetHeight / m_overlayTexture->GetTexture().height;
-	DrawTextureEx(m_overlayTexture->GetTexture(), topLeftPos, 0, std::min(scaleX, scaleY), WHITE);
-}
+//void UIToggleComponent::DrawOverlayTexture(const float targetWidth, const float targetHeight, const Vector2& topLeftPos)
+//{
+//	const float scaleX = targetWidth / m_overlayTexture->GetTexture().width;
+//	const float scaleY = targetHeight / m_overlayTexture->GetTexture().height;
+//	DrawTextureEx(m_overlayTexture->GetTexture(), topLeftPos, 0, std::min(scaleX, scaleY), WHITE);
+//}
 
 /*
 RenderInfo UIToggleComponent::ElementRender(const RenderInfo& renderInfo)

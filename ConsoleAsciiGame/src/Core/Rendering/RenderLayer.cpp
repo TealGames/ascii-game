@@ -220,3 +220,4 @@ std::string RenderLayer::ToString() const
 	}
 	return Utils::ToStringIterable<std::vector<std::string>, std::string>(layerStr);
 }
+

@@ -2,7 +2,7 @@
 #include "Core/Engine.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "raylib.h"
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 #include "Utils/HelperFunctions.hpp"
@@ -14,6 +14,7 @@
 #include "ECS/Systems/Types/World/AnimatorSystem.hpp"
 #include "ECS/Systems/Types/World/SpriteAnimatorSystem.hpp"
 #include "ECS/Systems/Types/World/PhysicsBodySystem.hpp"
+#include "Core/UIElementTemplates.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
 #include "Core/Time/Timer.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
@@ -25,6 +26,7 @@
 #include "Core/Asset/GlobalColorCodes.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Fig/Fig.hpp"
+#include "AnsiCodes.hpp"
 
 namespace Core
 {
@@ -105,6 +107,15 @@ namespace Core
 	//as well as wset the private reference then in one go rather than split in two functions
 	//TODO: ensure all components hve default constructors so they can be made with no args when deserializing. All dependencies should be set in the system on the postadd event
 	//TODO: remove components vector from entity data since you can just access componetns using registry pointer
+	//TODO: make errors (and asserts) invoke debugger break/file line/function name for easier debugging
+	//TODO: when doing required ocmponent checks it does not work with base types, meaning UIINput field which inherits from uiselectable will not do the required check for the base type
+	//so instead we should make uiselectable(uiinterable) into separate component
+	//TODO: make globals perhaps into a class/structure
+	//TODO: abstract out all engine ui stuff into separate ui manager class
+	//TODO: since there may be systems that have flags that are true for one update loop (to avoid events) make a separate object that does this and resets at the end of eveyr update loop
+	//so it can be easily reused and so systems like uirenderer and ui interation manager do not need events for add element
+	//TODO: right now ui renderer and transform have their own last frame rect vars, but most of the time renders are thesame for both, so ui renderer should probably use the var result from get function from transform
+	//in order to prevent var storage duplication/ remove the return value from render
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -138,7 +149,9 @@ namespace Core
 	}
 
 	Engine::Engine() :
+		m_engineState(),
 		m_assetManager(),
+		m_globalInitializer(m_assetManager),
 		m_collisionRegistry(),
 		m_sceneManager(m_assetManager),
 		m_inputManager(m_assetManager),
@@ -157,28 +170,39 @@ namespace Core
 		m_collisionBoxSystem(m_collisionRegistry),
 		m_physicsBodySystem(m_physicsManager),
 		m_playerSystem(m_inputManager),
-		m_cameraSystem(&(m_collisionBoxSystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
+		m_cameraSystem(m_renderer, &(m_collisionBoxSystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
 		m_particleEmitterSystem(),
 		m_triggerSystem(),
-		m_uiSystemExecutor(m_renderer, m_uiHierarchy, m_popupManager),
+		m_uiSystemExecutor(m_engineState, m_renderer, m_uiHierarchy, m_popupManager),
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
 		m_timeKeeper(),
 		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_assetManager,
 			m_sceneManager, m_cameraController, m_UIInteractionManager, m_uiHierarchy, m_popupManager, m_collisionBoxSystem),
 		m_gameManager(m_uiHierarchy)
+
 	{
-		EngineLog("FINISHED SYSTEM MANAGERS INIT");
+		EngineLog("FINISHED SYSTEM CONSTRUCTORS");
+
+		//Note: input relies on assets, and 
+		//asset manager needs to setup assets AFTER static global asset ref is set
+		m_assetManager.Init();
+
+		m_inputManager.Init();
+		m_inputManager.SetInputCooldown(0.3);
 
 		InitJsonSerializationDependencies(m_sceneManager, m_assetManager);
-
 		m_assetManager.InitDependencies<SceneAsset, GlobalEntityManager, AssetManagement::AssetManager>(m_sceneManager.m_GlobalEntityManager, m_assetManager);
 		m_assetManager.InitDependencies<InputProfileAsset, Input::InputManager>(m_inputManager);
+
 		//TODO: glocal color codes should not reside in engine init but should be a second-class/hierarchy call
 		GlobalColorCodes::InitCodes(m_assetManager);
-		EngineLog("FINISHED ASSET MANAGER DEPENDENCY INIT");
-
-		GlobalCreator::CreateGlobals(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
+		Templates::Init(m_assetManager);
+		
+		m_uiHierarchy.Init();
+		m_popupManager.Init();
+		m_uiSystemExecutor.Init();
+		GlobalEntityCreator::CreateGlobals(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
 
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
@@ -187,7 +211,7 @@ namespace Core
 		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {StartAll(); });
 		EngineLog("LOADED ALL SCENES");
 
-		if (!Assert(this, m_sceneManager.TrySetActiveScene(0),
+		if (!Assert(m_sceneManager.TrySetActiveScene(0),
 			std::format("Tried to set the active scene to the first one, but failed!")))
 			return;
 
@@ -214,12 +238,12 @@ namespace Core
 			m_sceneManager.GetActiveScene()->GetName(),
 			m_sceneManager.GetActiveScene()->ToStringLayers()));*/
 
-		//Log(this, std::format("OBSACLE ID: {}", obstacle.ToString()));
-		//Log(this, std::format("CAMERA ID: {}", mainCameraEntity.ToString()));
-		//Log(this, std::format("PLAYER ID: {}", playerEntity.ToString()));
+		//Log(std::format("OBSACLE ID: {}", obstacle.ToString()));
+		//Log(std::format("CAMERA ID: {}", mainCameraEntity.ToString()));
+		//Log(std::format("PLAYER ID: {}", playerEntity.ToString()));
 
 		//m_inputManager.InitProfiles();
-		m_inputManager.SetInputCooldown(0.3);
+		
 		//InitConsoleCommands();
 		m_editor.Init(m_playerSystem);
 		EngineLog("ADDED ALL CONSOLE COMMANDS");
@@ -230,7 +254,7 @@ namespace Core
 		//Assert(false, std::format("FOUND ACTIVE SELECTED: {}", m_UIInteractionManager.TryGetSelectableSelected()->GetLastFrameRect().ToString()));
 		/*for (const auto& entity : m_sceneManager.GetActiveSceneMutable()->GetAllEntities())
 		{
-			LogError(this, std::format("Entity: {} has fields: {}", entity->m_Name,
+			LogError(std::format("Entity: {} has fields: {}", entity->m_Name,
 				Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(entity->m_Transform.GetFields())));
 		}*/
 		m_gameManager.GameStart();
@@ -239,9 +263,11 @@ namespace Core
 		//Note: gui selector init has to be after any other calls because we want to ensure we create the selectable
 		//tree after as much time is given to add any gui elements to the ui tree
 		m_UIInteractionManager.Init();
+
+		m_engineState.SetExecutionState(ExecutionState::Validation);
 		ValidateAll();
 
-		LogWarning(std::format("Tree hierarcxhy: {}", m_uiHierarchy.ToStringTree()));
+		//LogWarning(std::format("Tree hierarcxhy: {}", m_uiHierarchy.ToStringTree()));
 		StartAll();
 	}
 
@@ -261,7 +287,7 @@ namespace Core
 	void Engine::StartAll()
 	{
 		Scene* newScene = m_sceneManager.GetActiveSceneMutable();
-		if (!Assert(this, newScene != nullptr, "Tried to call start on all systems but there "
+		if (!Assert(newScene != nullptr, "Tried to call start on all systems but there "
 			"are no scenes set as active right now"))
 			return;
 	}
@@ -269,7 +295,7 @@ namespace Core
 	void Engine::EngineLog(const std::string& log) const
 	{
 		if (!DO_ENGINE_LOGS) return;
-		Log(this, log, true, false, ANSI_COLOR_BLUE);
+		LogMessage(LogType::Log, CallerLogDetails::None, log, false, true, ANSI_COLOR_BLUE, false);
 	}
 
 	LoopStatusCode Engine::Update()
@@ -277,10 +303,12 @@ namespace Core
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("Engine::Update");
 #endif 
+		LogWarning(std::format("FPS:{}", GetFPS()));
 
 		m_timeKeeper.UpdateTimeStart();
 		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
 		const float unscaledDeltaTime = m_timeKeeper.GetLastIndependentDeltaTime();
+		//LogError(std::format("Update scaled dt:{} unscaled:{} scale:{}", scaledDeltaTime, unscaledDeltaTime, m_timeKeeper.GetTimeScale()));
 
 		m_inputManager.Update(unscaledDeltaTime);
 
@@ -288,11 +316,11 @@ namespace Core
 		if (m_editor.IsInGameView())
 		{
 			Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
-			if (!Assert(this, activeScene != nullptr, "Tried to update the active scene but there "
+			if (!Assert(activeScene != nullptr, "Tried to update the active scene but there "
 				"are none set as active right now"))
 				return ERROR_CODE;
 
-			if (!Assert(this, activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
+			if (!Assert(activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
 				"are no entities in the scene", activeScene->GetName())))
 				return ERROR_CODE;
 
@@ -300,7 +328,7 @@ namespace Core
 			CameraData& mainCamera = m_cameraController.GetActiveCameraMutable();
 
 			std::string cameraSceneName = mainCamera.GetEntity().m_SceneName;
-			if (!Assert(this, cameraSceneName == EntityData::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
+			if (!Assert(cameraSceneName == EntityData::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
 				std::format("Tried to get active camera:{} during update loop, "
 					"but that camera is not in the active scene OR global storage (main camera scene:{}, active scene:{})", mainCamera.ToString(),
 					cameraSceneName, activeScene->GetName())))
@@ -335,13 +363,9 @@ namespace Core
 			//m_uiHierarchy.UpdateAll(unscaledDeltaTime);
 			m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
 			m_uiSystemExecutor.SystemsUpdate(m_sceneManager.m_GlobalEntityManager, unscaledDeltaTime);
-
-			frameBuffer = &m_cameraSystem.GetCurrentFrameBuffer();
-			Assert(this, frameBuffer!=nullptr && !frameBuffer->empty(), std::format("Tried to render buffer from camera output, but it has no data"));
-
 			/*Rendering::RenderBuffer(frameBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(),
 				m_cameraSystem.GetCurrentLineBuffer(), &m_uiTree);*/
-			m_renderer.RenderQueue();
+			m_renderer.RenderBuffer();
 
 			m_transformSystem.UpdateLastFramePos(*activeScene);
 		}
@@ -353,7 +377,7 @@ namespace Core
 			m_uiSystemExecutor.SystemsUpdate(m_sceneManager.m_GlobalEntityManager, unscaledDeltaTime);
 
 			//Rendering::RenderBuffer(nullptr, nullptr, nullptr, &m_uiTree);
-			m_renderer.RenderQueue();
+			m_renderer.RenderBuffer();
 		}
 		
 		m_timeKeeper.UpdateTimeEnd();
@@ -366,6 +390,7 @@ namespace Core
 	void Engine::BeginUpdateLoop()
 	{
 		LoopStatusCode currentCode = SUCCESS_CODE;
+		m_engineState.SetExecutionState(ExecutionState::Update);
 		while (!WindowShouldClose())
 		{
 			if (IsKeyPressed(TOGGLE_PAUSE_UPDATE_KEY))
@@ -380,18 +405,18 @@ namespace Core
 			}
 			catch (const std::exception& e)
 			{
-				LogError(this, std::format("Update loop terminated due to exception: {}", e.what()), true, false, true);
+				LogError(std::format("Update loop terminated due to exception: {}", e.what()), true, false);
 				return;
 			}
 
 #ifdef ENABLE_PROFILER
 			ProfilerTimer::m_Profiler.LogCurrentRoundTimes();
 #endif
-			if (!Assert(this, currentCode != ERROR_CODE, 
+			if (!Assert(currentCode != ERROR_CODE, 
 				std::format("Update loop terminated due to error"), true)) 
 				return;
 
-			if (!Assert(this, currentCode != EXIT_CODE,
+			if (!Assert(currentCode != EXIT_CODE,
 				std::format("Update loop terminated due to loop end triggered"), true)) 
 				return;
 		}

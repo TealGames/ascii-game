@@ -64,11 +64,11 @@ namespace Physics
 
 		m_collisionRegistry.ExecuteOnAllCollisions([this](CollisionPair& collisionData) -> void
 			{
-				if (!Assert(this, collisionData.m_CollisionBoxA != nullptr, std::format("Tried to resolve a collision:{} "
+				if (!Assert(collisionData.m_CollisionBoxA != nullptr, std::format("Tried to resolve a collision:{} "
 					"but collision box A is null", collisionData.ToString())))
 					return;
 
-				if (!Assert(this, collisionData.m_CollisionBoxB != nullptr, std::format("Tried to resolve a collision:{} "
+				if (!Assert(collisionData.m_CollisionBoxB != nullptr, std::format("Tried to resolve a collision:{} "
 					"but collision box B is null", collisionData.ToString())))
 					return;
 
@@ -109,7 +109,7 @@ namespace Physics
 				//Note: we need to remove the collision body from registry since if we cycel throguh all entities
 				//those that have multiple collisions may get resolved by their parter body first thus leading to
 				//an attempted resolution twice for the same pair
-				if (!Assert(this, m_collisionRegistry.TryRemoveCollision(collisionData), std::format("Tried to remove a collision pair "
+				if (!Assert(m_collisionRegistry.TryRemoveCollision(collisionData), std::format("Tried to remove a collision pair "
 					"from registry in collision resolution but faield for pair:{}", collisionData.ToString())))
 					return;
 				*/
@@ -187,7 +187,7 @@ namespace Physics
 							Vec2 moveDelta = collision.m_Depth.GetOppositeDirection();
 							bodyAEntity.m_Transform.SetPosDelta({ moveDelta.m_X, moveDelta.m_Y });
 
-							Log(this, std::format("COSNERVING for {} MASS A: {} MASS B: {} DEPTH: {} in norma: {} old p: {} j delta;{} new: {} vel: {}",
+							Log(std::format("COSNERVING for {} MASS A: {} MASS B: {} DEPTH: {} in norma: {} old p: {} j delta;{} new: {} vel: {}",
 								bodyA.GetEntitySafe().GetName(), std::to_string(bodyA.GetMass()), std::to_string(bodyB.GetMass()),
 								moveDelta.ToString(),
 								collsionNormal.ToString(), oldMomenumn.ToString(), std::to_string(CalculateImpulse(bodyA, bodyB, collsionNormal)),
@@ -231,7 +231,7 @@ namespace Physics
 		EntityData& entityA = collision.m_CollisionBoxA->GetEntityMutable();
 		EntityData& entityB = collision.m_CollisionBoxB->GetEntityMutable();
 
-		if (!Assert(this, bodyA != nullptr && bodyB != nullptr, std::format("Tried to resolve collision:{} body bodyA and/or bodyB "
+		if (!Assert(bodyA != nullptr && bodyB != nullptr, std::format("Tried to resolve collision:{} body bodyA and/or bodyB "
 			"has no physicsBody", collision.ToString())))
 			return;
 
@@ -282,7 +282,7 @@ namespace Physics
 			return;
 		}
 
-		LogError(this, std::format("Tried to handle collision:{} but no previous resolution methods "
+		LogError(std::format("Tried to handle collision:{} but no previous resolution methods "
 			"were possible so simple push is executed", collision.ToString()));
 		return;
 	}
@@ -343,7 +343,7 @@ namespace Physics
 			isMoveEntityB = false;
 			if (bodyA.HasAnyConstraints())
 			{
-				LogError(this, std::format("Handling collision for pair:{} but both are constrained "
+				LogError(std::format("Handling collision for pair:{} but both are constrained "
 					"objects so entityA is pushed out", collision.ToString()));
 			}
 		}

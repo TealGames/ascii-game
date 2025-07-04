@@ -82,6 +82,10 @@ namespace ECS
 
 					Particle* particlePtr = data.m_particles.TryAdd(Particle(TextChar(initialColor, data.m_Char), data.m_FontData.m_Size,
 						data.GetOriginWorldPos(), randomVel, randomLifeTime));
+					if (!Assert(particlePtr != nullptr, std::format("Attempted to create particle in emitter system "
+						"for entity:{} particle:{} but failed", data.GetEntity().ToString(), data.ToString())))
+						return;
+
 					AddParticleToLayers(data, *particlePtr, renderLayers);
 				}
 

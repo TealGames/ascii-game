@@ -46,7 +46,7 @@ namespace SceneManagement
 		if (!LOAD_SCENES_FROM_ASSETS) return;
 
 		auto sceneAssets = m_assetManager.GetAssetsOfTypeMutable<SceneAsset>(SCENES_FOLDER);
-		if (!Assert(this, sceneAssets.size() > 0, std::format("Tried to laod all scenes in scene manager "
+		if (!Assert(sceneAssets.size() > 0, std::format("Tried to laod all scenes in scene manager "
 			"but could not find any scenes at path: '{}'", SCENES_FOLDER.string())))
 			return;
 
@@ -102,7 +102,7 @@ namespace SceneManagement
 		}
 		catch (const std::exception& e)
 		{
-			Assert(this, false, std::format("Tried to get all scenes at path: {} "
+			Assert(false, std::format("Tried to get all scenes at path: {} "
 				"but ran into error: {}", m_allScenePath.string(), e.what()));
 		}
 		*/

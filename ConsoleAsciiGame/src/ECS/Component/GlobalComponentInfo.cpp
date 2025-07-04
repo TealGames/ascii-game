@@ -3,12 +3,17 @@
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Component.hpp"
 
-ComponentInfo::ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies, const ComponentAddAction& postAddAction)
-	: ComponentInfo(dependency, componentDependencies, nullptr, postAddAction) {}
-ComponentInfo::ComponentInfo(const ValidationAction& validationAction, const ComponentAddAction& postAddAction)
-	: ComponentInfo(DeppendencyType::None, {}, validationAction, postAddAction) {}
-ComponentInfo::ComponentInfo(const DeppendencyType dependency, const TypeCollection& componentDependencies, const ValidationAction& validationAction, const ComponentAddAction& postAddAction) :
+ComponentInfo::ComponentInfo(const DependencyType dependency, const TypeCollection& componentDependencies, const ValidationAction& validationAction, const ComponentAddAction& postAddAction) :
 	m_DependencyType(dependency), m_DependentComponents(componentDependencies), m_ComponentRequirementCheck(validationAction), m_ComponentPostAddAction(postAddAction) {}
+
+ComponentInfo::ComponentInfo(const DependencyType dependency, const TypeCollection& componentDependencies, const ComponentAddAction& postAddAction)
+	: ComponentInfo(dependency, componentDependencies, nullptr, postAddAction) {}
+ComponentInfo::ComponentInfo(const ComponentAddAction& postAddAction)
+	: ComponentInfo(DependencyType::None, {}, nullptr, postAddAction) {}
+
+ComponentInfo::ComponentInfo(const TypeCollection& dependentTypes, const ValidationAction& requiredAction, const ComponentAddAction& postAddAction)
+	: ComponentInfo(DependencyType::Component, dependentTypes, requiredAction, postAddAction) {}
+
 
 namespace GlobalComponentInfo
 {
@@ -95,34 +100,35 @@ namespace GlobalComponentInfo
 		}
 		return true;
 	}*/
-	bool DoesComponentHaveDependencyType(const Component* component, const DeppendencyType type)
+	bool DoesComponentHaveDependencyType(const Component* component, const DependencyType type)
 	{
 		auto infoIt = m_ComponentInfo.find(&typeid(*component));
 		//If we can not find a profile and the depdency type is None, we can return true 
 		//otherwise we say it is false because by default we assume no profile == no depdenencies
 		if (infoIt == m_ComponentInfo.cend())
 		{
-			if (type == DeppendencyType::None) return true;
+			if (type == DependencyType::None) return true;
 			else return false;
 		}
+		return infoIt->second.m_DependencyType == type;
 	}
 	bool DoesComponentHaveDependencies(const Component* component)
 	{
 		if (component == nullptr) return false;
 		auto infoIt = GetComponentInfo(component);
-		return infoIt != m_ComponentInfo.cend() && infoIt->second.m_DependencyType != DeppendencyType::None;
+		return infoIt != m_ComponentInfo.cend() && infoIt->second.m_DependencyType != DependencyType::None;
 	}
 	bool DoesComponentDependOnEntity(const Component* component)
 	{
 		if (component == nullptr) return false;
 		auto infoIt = GetComponentInfo(component);
-		return infoIt != m_ComponentInfo.cend() && infoIt->second.m_DependencyType == DeppendencyType::Entity;
+		return infoIt != m_ComponentInfo.cend() && infoIt->second.m_DependencyType == DependencyType::Entity;
 	}
 	bool DoesComponentDependOnComponent(const Component* component)
 	{
 		if (component == nullptr) return false;
 		auto infoIt = GetComponentInfo(component);
-		return infoIt != m_ComponentInfo.cend() && infoIt->second.m_DependencyType == DeppendencyType::Component;
+		return infoIt != m_ComponentInfo.cend() && infoIt->second.m_DependencyType == DependencyType::Component;
 	}
 
 	bool DoesComponentHaveComponentDependencies(const Component* component)
@@ -130,7 +136,7 @@ namespace GlobalComponentInfo
 		if (component == nullptr) return true;
 
 		auto infoIt = GetComponentInfo(component);
-		if (infoIt== m_ComponentInfo.cend() || infoIt->second.m_DependencyType != DeppendencyType::Component) return true;
+		if (infoIt== m_ComponentInfo.cend() || infoIt->second.m_DependencyType != DependencyType::Component) return true;
 
 		const EntityData& entity = component->GetEntity();
 		for (const auto& componentDependency : infoIt->second.m_DependentComponents)

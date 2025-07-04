@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "Core/Visual/SpriteAnimation.hpp"
 #include "Core/Analyzation/Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 SpriteAnimationFrame::SpriteAnimationFrame() : SpriteAnimationFrame(0, {}) {}
 SpriteAnimationFrame::SpriteAnimationFrame(const float& time, const VisualData& frame) :
@@ -32,7 +33,7 @@ SpriteAnimation::SpriteAnimation(const std::string& name, const std::vector<Spri
 
 const VisualData& SpriteAnimation::GetVisualDataForFrame(const size_t index) const
 {
-	if (!Assert(this, 0 <= index && index < m_Frames.size(), std::format("Tried to get visual data for frame "
+	if (!Assert(0 <= index && index < m_Frames.size(), std::format("Tried to get visual data for frame "
 		"at invalid index:{} but index is valid in range:[0,{})", std::to_string(index), std::to_string(m_Frames.size()))))
 		throw std::invalid_argument("Invalid frame index");
 

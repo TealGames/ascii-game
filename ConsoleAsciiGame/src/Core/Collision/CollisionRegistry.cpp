@@ -84,7 +84,7 @@ bool CollisionRegistry::HasCollision(const CollisionBoxData& box) const
 
 bool CollisionRegistry::TryAddCollision(const CollisionPair& pair)
 {
-	if (!Assert(this, pair.m_CollisionBoxA != nullptr && pair.m_CollisionBoxB != nullptr,
+	if (!Assert(pair.m_CollisionBoxA != nullptr && pair.m_CollisionBoxB != nullptr,
 		std::format("Tried to create add collision to registry but either one or both collision boxes are NULL")))
 		return false;
 
@@ -116,7 +116,7 @@ bool CollisionRegistry::TryRemoveCollision(const CollisionBoxData& boxA, const C
 //bool CollisionRegistry::ForceUpdateCollision(const CollisionBoxData& boxA, const CollisionBoxData& boxB)
 //{
 //	const CollisionPair* collision = TryGetCollision(boxA, boxB);
-//	if (!Assert(this, collision != nullptr, std::format("Tried to force update a collision between A : {} B: {} "
+//	if (!Assert(collision != nullptr, std::format("Tried to force update a collision between A : {} B: {} "
 //		"but a collision between those two boxes does not exist", boxA.ToString(), boxB.ToString())))
 //		return false;
 //

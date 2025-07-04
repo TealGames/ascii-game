@@ -11,6 +11,7 @@ namespace ECS
 	private:
 	public:
 		UIPanelSystem();
+		void Init();
 	};
 }
 

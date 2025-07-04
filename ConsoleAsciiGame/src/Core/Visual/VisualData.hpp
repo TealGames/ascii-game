@@ -5,13 +5,11 @@
 #include "raylib.h"
 #include <cstdint>
 #include <optional>
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/Data/Vec2.hpp"
 #include "Utils/Data/NormalizedPosition.hpp"
 #include "Utils/Data/WorldPosition.hpp"
-#include "Core/Visual/TextBuffer.hpp"
-
 
 ////TODO: the data from get world size of visual data should be abstracted
 ////so the entity renderer does not have to guess where top left pos is
@@ -38,14 +36,14 @@ enum class CharAreaType
 
 struct VisualDataPreset
 {
-	Font m_Font = {};
+	const FontAsset* m_FontAsset = nullptr;
 	float m_FontSize = 0;
 	Vec2 m_CharSpacing = {};
 	CharAreaType m_CharAreaType = CharAreaType::Adaptive;
 	Vec2 m_PredefinedCharArea = {};
 	NormalizedPosition m_RelativePivotPos = {};
 
-	VisualDataPreset(const Font& font, const float& fontSize, const Vec2& charSpacing,
+	VisualDataPreset(const FontAsset& font, const float& fontSize, const Vec2& charSpacing,
 		const CharAreaType& charAreaType, const Vec2& predefinedCharArea, 
 		const NormalizedPosition& relativePivotPos);
 };
@@ -107,11 +105,12 @@ private:
 	void AddTextPositionsToBufferAdaptive(const WorldPosition& transformPos, TextBufferMixed& buffer) const;*/
 
 private:
+	void CreateBuffer(const std::vector<std::vector<TextBufferChar>>& rawBuffer,
+		const Vec2& charSpacing, const NormalizedPosition& relativePivotPos);
 public:
 	VisualData();
 
-	VisualData(const FragmentedTextBuffer& rawBuffer, const Font& font, const float& fontSize,
-		const NormalizedPosition& relativePivotPos);
+	VisualData(const FragmentedTextBuffer& rawBuffer, const NormalizedPosition& relativePivotPos);
 
 	VisualData(const std::vector<std::vector<TextBufferChar>>& rawBuffer, const Vec2& charSpacing,
 		const NormalizedPosition& relativePivotPos);

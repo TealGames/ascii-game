@@ -3,18 +3,19 @@
 #include "Utils/StringUtil.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Analyzation/Debug.hpp"
-#include "Utils/RaylibUtils.hpp"
 #include "Core/UI/UIInteractionManager.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "ECS/Component/Types/UI/UIInputField.hpp"
 #include "ECS/Component/Types/UI/UILayout.hpp"
+#include "StaticGlobals.hpp"
+#include "Core/Input/InputManager.hpp"
 
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_ONE;
 
 static const Color CONSOLE_COLOR = { GRAY.r, GRAY.g, GRAY.b, 100 };
-static constexpr float CONSOLE_HEIGHT = 0.05;
+static constexpr float CONSOLE_HEIGHT = 0.1;
 static const NormalizedPosition OUTPUT_MESSAGE_AREA = {0.6, 0.2};
 
 static constexpr int COMMAND_CONSOLE_WIDTH = SCREEN_WIDTH;
@@ -22,18 +23,24 @@ static constexpr int COMMAND_CONSOLE_FONT_SIZE = 25;
 static constexpr int COMMAND_CONSOLE_SPACING = 3;
 static constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
 static constexpr int COMMAND_CONSOLE_TEXT_INDENT = 10;
+static constexpr std::uint16_t MESSAGE_MAX_LENGTH = 50;
 
-CommandConsole::CommandConsole(const Input::InputManager& input, UIHierarchy& hierarchy, UIInteractionManager& selector) :
+CommandConsole::CommandConsole(const Input::InputManager& input, UIInteractionManager& selector) :
 	m_inputManager(input), m_prompts(), m_messageCloseTimes(), 
 	m_inputField(nullptr), m_outputMessageLayout(nullptr), m_container(nullptr),
 	m_outputMessagesTextGuis(Utils::ConstructArray<UITextComponent*, MAX_OUTPUT_MESSAGES>()),
 	m_nextTextGuiIndex(0), m_timeSinceOpen(0), m_isEnabled(false)
 {
+}
+
+void CommandConsole::CreateUI(UIHierarchy& hierarchy)
+{
 	EntityData* containerEntity = nullptr;
 	std::tie(containerEntity, m_container) = hierarchy.CreateAtRoot(DEFAULT_LAYER, "CommandConsoleContainer");
+	m_container->SetMaxSize();
 
 	auto [inputFieldEntity, inputFieldTransform] = containerEntity->CreateChildUI("InputField");
-	m_inputField = &(inputFieldEntity->AddComponent(UIInputField(input, InputFieldType::Any,
+	m_inputField = &(inputFieldEntity->AddComponent(UIInputField(m_inputManager, InputFieldType::Any,
 		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit,
 		EditorStyles::GetInputFieldStyle(TextAlignment::TopLeft))));
 	//GUIStyle fieldSettings = GUIStyle(GRAY, TextGUIStyle(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), 
@@ -57,23 +64,25 @@ CommandConsole::CommandConsole(const Input::InputManager& input, UIHierarchy& hi
 	const NormalizedPosition messageLayoutTopLeft = inputFieldTransform->GetRect().GetTopLeftPos() + NormalizedPosition(0, OUTPUT_MESSAGE_AREA.m_Y);
 	layoutTransform->SetBounds(messageLayoutTopLeft, { messageLayoutTopLeft.m_X + OUTPUT_MESSAGE_AREA.m_X, inputFieldTransform->GetRect().GetTopLeftPos().m_Y });
 
-	for (size_t i=0; i<m_outputMessagesTextGuis.size(); i++)
+	for (size_t i = 0; i < m_outputMessagesTextGuis.size(); i++)
 	{
-		auto [textEntity, textTransform] = containerEntity->CreateChildUI(std::format("Text{}", std::to_string(i)));
+		auto [textEntity, textTransform] = layoutEntity->CreateChildUI(std::format("Text{}", std::to_string(i)));
 		m_outputMessagesTextGuis[i] = &(textEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))));
 		textTransform->SetFixed(true, false);
 	}
 
 	DebugProperties::OnMessageLogged.AddListener(
-		[this](const LogType& logType, const std::string& message, const bool& logToConsole, const bool& pause)-> void
+		[this](const LogType& logType, std::string message, const bool hasEventFlag)-> void
 		{
-			if (!logToConsole) return;
+			if (!hasEventFlag || logType!=LogType::Error) return;
 
 			ConsoleOutputMessageType messageType = ConsoleOutputMessageType::Default;
-			if ((logType & LogType::Error)!=LogType::None) messageType = ConsoleOutputMessageType::Error;
-
+			if ((logType & LogType::Error) != LogType::None) messageType = ConsoleOutputMessageType::Error;
+			if (message.size() > MESSAGE_MAX_LENGTH) message = message.substr(0, MESSAGE_MAX_LENGTH) + "...";
 			LogOutputMessage(message, messageType);
 		});
+
+	//LogError(std::format("After creating ui created container: {} inputfield:{}", m_container->ToString(), inputFieldTransform->ToString()));
 }
 
 std::string CommandConsole::FormatPromptName(const std::string& name)
@@ -127,11 +136,11 @@ bool CommandConsole::TryInvokePrompt()
 	std::string formattedPrompt = FormatPromptName(m_inputField->GetInput());
 	std::vector<std::string> promptSegments = Utils::Split(formattedPrompt, ' ');
 
-	if (!Assert(this, !promptSegments.empty(), 
+	if (!Assert(!promptSegments.empty(), 
 		std::format("Tried to check input for command prompt but found no prompt segments!")))
 		return false;
 
-	if (!Assert(this, !promptSegments[0].empty(),
+	if (!Assert(!promptSegments[0].empty(),
 		std::format("Tried to check input for command prompt but first prompt segment is empty")))
 		return false;
 	

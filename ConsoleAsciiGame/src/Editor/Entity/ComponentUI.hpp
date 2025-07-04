@@ -12,8 +12,6 @@ class EntityUI;
 class UIInteractionManager;
 class PopupUIManager;
 namespace AssetManagement { class AssetManager; };
-class TextureAsset;
-
 class ComponentUI //: public ITreeGUIConstructible
 {
 private:
@@ -26,9 +24,6 @@ private:
 	Component* m_component;
 	std::vector<ComponentFieldUI> m_fieldGUIs;
 
-	const TextureAsset* m_dropdownToggledTexture;
-	const TextureAsset* m_dropdownDefaultTexture;
-
 	UIToggleComponent* m_dropdownCheckbox;
 	UITextComponent* m_componentNameText;
 
@@ -40,7 +35,7 @@ private:
 
 public:
 	ComponentUI(const Input::InputManager& inputManager, PopupUIManager& popupManager, 
-		const AssetManagement::AssetManager& m_assetManager, const EntityUI& entityGUI, UILayout& parent);
+		AssetManagement::AssetManager& m_assetManager, const EntityUI& entityGUI, UILayout& parent);
 	~ComponentUI();
 	
 	//void Init();

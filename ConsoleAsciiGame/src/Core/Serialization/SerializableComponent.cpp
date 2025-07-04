@@ -9,7 +9,7 @@ SerializableComponent::SerializableComponent() : SerializableComponent("", "", "
 SerializableComponent::SerializableComponent(const SerializableEntity& serializableEntity, const std::string& compName) 
 	: m_SerializedEntity(serializableEntity), m_ComponentName(compName) 
 {
-	if (!Assert(this, m_SerializedEntity.m_EntityName!= SELF_COMPONENT_ENTITY_KEYWORD, std::format("Tried to create a serializable "
+	if (!Assert(m_SerializedEntity.m_EntityName!= SELF_COMPONENT_ENTITY_KEYWORD, std::format("Tried to create a serializable "
 		"component with args:[SerializableEntity]:{} compName:{} with prohibited entity name:{}. Use the componentname only "
 		"constructor instead for self components", m_SerializedEntity.ToString(), m_ComponentName, m_SerializedEntity.m_EntityName)))
 		return;
@@ -18,7 +18,7 @@ SerializableComponent::SerializableComponent(const SerializableEntity& serializa
 SerializableComponent::SerializableComponent(const std::string& sceneName, const std::string& entityName,
 	const std::string& componentName) : m_SerializedEntity(sceneName, entityName), m_ComponentName(componentName) 
 {
-	if (!Assert(this, m_SerializedEntity.m_EntityName != SELF_COMPONENT_ENTITY_KEYWORD, std::format("Tried to create a serializable "
+	if (!Assert(m_SerializedEntity.m_EntityName != SELF_COMPONENT_ENTITY_KEYWORD, std::format("Tried to create a serializable "
 		"component with args: scene name:{} entity name:{} compName:{} with prohibited entity name:{}. Use the componentname only "
 		"constructor instead for self components", sceneName, entityName, m_ComponentName, m_SerializedEntity.m_EntityName)))
 		return;

@@ -29,6 +29,7 @@ struct MoveContraints
 };
 
 //class CollisionBoxData;
+namespace ECS { class PhysicsBodySystem; }
 class PhysicsBodyData : public Component
 {
 private:
@@ -74,20 +75,18 @@ private:
 
 	//TODO: add other settings like restitution (bounciness), friction, gravity, etc
 public:
+	friend class ECS::PhysicsBodySystem;
 
 private:
 	//bool ValidateAABB(const Physics::AABB& boundingBox) const;
 	//Physics::AABB CreateAABB(const Vec2& boundingBoxSize, const WorldPosition& transformOffset);
 
-	PhysicsBodyData(const CollisionBoxData* collisionBox, const float& mass, 
-		const float& gravity, const float& terminalYVelocity);
-
 public:
 	PhysicsBodyData();
 	PhysicsBodyData(const Json& json);
-	PhysicsBodyData(const CollisionBoxData& collisionBox, const float& mass);
-	PhysicsBodyData(const CollisionBoxData& collisionBox, const float& mass, 
-		const float& gravity, const float& terminalYVelocity);
+	PhysicsBodyData(const CollisionBoxData* collisionBox, const float mass);
+	PhysicsBodyData(const CollisionBoxData* collisionBox, const float mass, 
+		const float gravity, const float terminalYVelocity);
 
 	void SetPhysicsWorldRef(const Physics::PhysicsWorld& world);
 	void RemovePhysicsWorldRef();

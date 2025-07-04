@@ -107,7 +107,7 @@ Vec2Int Vec2Int::operator*(const float& scalar) const
 
 Vec2Int Vec2Int::operator/(const float& scalar) const
 {
-	if (!Assert(this, scalar != 0,
+	if (!Assert(scalar != 0,
 		std::format("Tried to divide a vector: {} by a 0 value scalar", ToString())))
 	{
 		return *this;
@@ -157,7 +157,7 @@ std::string Vec2Int::ToString(VectorForm form) const
 		break;
 
 	default:
-		LogError(this, std::format("Tried to convert vector ({},{}) to string "
+		LogError(std::format("Tried to convert vector ({},{}) to string "
 			"with undefined form {}", m_X, m_Y, ToString(form)));
 		break;
 	}

@@ -7,19 +7,26 @@
 #include "Editor/EditorStyles.hpp"
 #include "ECS/Systems/MultiBodySystem.hpp" 
 #include "Core/Scene/GlobalEntityManager.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
 
 namespace ECS
 {
-	UIInputFieldSystem::UIInputFieldSystem()
+	UIInputFieldSystem::UIInputFieldSystem() {}
+	void UIInputFieldSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UIInputField), ComponentInfo(CreateRequiredComponentFunction<UITextComponent, UIPanel>(
-			UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center)), UIPanel()),
-			[](EntityData& entity)-> void 
-			{
-				UIInputField& fieldComponent = *(entity.TryGetComponentMutable<UIInputField>());
-				fieldComponent.m_textGUI = entity.TryGetComponentMutable<UITextComponent>();
-				fieldComponent.m_background = entity.TryGetComponentMutable<UIPanel>();
-			}));
+		GlobalComponentInfo::AddComponentInfo(typeid(UIInputField),
+			ComponentInfo(CreateComponentTypes<UITextComponent, UIPanel, UISelectableData>(),
+				CreateRequiredComponentFunction<UITextComponent, UIPanel, UISelectableData>(
+					UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center)), UIPanel(), UISelectableData()),
+				[](EntityData& entity)-> void
+				{
+					UIInputField& fieldComponent = *(entity.TryGetComponentMutable<UIInputField>());
+					fieldComponent.m_textGUI = entity.TryGetComponentMutable<UITextComponent>();
+					fieldComponent.m_background = entity.TryGetComponentMutable<UIPanel>();
+					fieldComponent.m_selectable = entity.TryGetComponentMutable<UISelectableData>();
+
+					fieldComponent.Init();
+				}));
 	}
 
 	void UIInputFieldSystem::SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime)

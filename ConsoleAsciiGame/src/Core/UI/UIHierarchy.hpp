@@ -24,6 +24,7 @@ using UIElementLayersCollection = std::array<UITransformData*, MAX_LAYERS>;
 class UIHierarchy
 {
 private:
+	GlobalEntityManager* m_globalEntityManager;
 	Vec2Int m_rootSize;
 	UITransformData* m_uiRoot;
 	/// <summary>
@@ -64,6 +65,8 @@ private:
 	std::string ToStringElementHelper(std::string startNewLine, const UITransformData& element) const;
 public:
 	UIHierarchy(GlobalEntityManager& globalEntityManager, const Vec2Int rootCanvasSize);
+
+	void Init();
 
 	const Vec2Int GetRootSize() const;
 	const UITransformData* GetRootElement() const;
@@ -173,9 +176,12 @@ public:
 
 		for (size_t i=0; i<m_layerRoots.size(); i++)
 		{
+			if (m_layerRoots[i] == nullptr) continue;
 			HelperDFS(static_cast<UILayer>(i), m_layerRoots[i]->GetEntityMutable());
 		}
 	}
+
+	void LayerTraversal(const std::function<void(UILayer, UITransformData&)>& action);
 
 	/// <summary>
 	/// Will calculate the actual size of the element AS LONG AS IT EXISTS WITHIN THE TREE

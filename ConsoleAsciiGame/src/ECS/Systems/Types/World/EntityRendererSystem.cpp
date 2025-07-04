@@ -42,7 +42,7 @@ namespace ECS
 				//Log(std::format("RENDER LAYERS: {}", std::to_string(affectedLayerBuffers.size())));
 
 				//Log(std::format("Moved this frame: {}", std::to_string(m_transformSystem.HasMovedThisFrame(entity.m_Transform))));
-				//LogError(this, std::format("render system update entity: {} SCENE:{}", entity.ToString(), scene.ToString()));
+				//LogError(std::format("render system update entity: {} SCENE:{}", entity.ToString(), scene.ToString()));
 				//Assert(false, std::format("BALLS"));
 				//return;
 				//LogError(std::format("Trying to render obkect: {}", entity.GetName()));

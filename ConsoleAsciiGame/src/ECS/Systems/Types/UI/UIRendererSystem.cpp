@@ -10,35 +10,52 @@
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
+#include "Core/EngineState.hpp"
 
 namespace ECS
 {
-	UIRenderSystem::UIRenderSystem(Rendering::Renderer& renderer, UIHierarchy& hierarchy)
-		: m_renderer(&renderer), m_uiHierarchy(&hierarchy), m_uiRenderersHierarchyOrder()
-	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UIRendererData), ComponentInfo(nullptr,
-			[this](EntityData& entity)-> void
-			{
-				entity.TryGetComponentMutable<UIRendererData>()->m_renderer = m_renderer;
-			}));
-	}
+	UIRenderSystem::UIRenderSystem(const EngineState& engineState, Rendering::Renderer& renderer, UIHierarchy& hierarchy)
+		: m_engineState(&engineState), m_renderer(&renderer), m_uiHierarchy(&hierarchy) {}//, m_uiRenderersHierarchyOrder(), m_hasGuiTreeUpdated(true) {}
 
-	void UIRenderSystem::StoreRenderers()
+	void UIRenderSystem::Init()
 	{
-		m_uiRenderersHierarchyOrder.clear();
+		GlobalComponentInfo::AddComponentInfo(typeid(UIRendererData),
+			ComponentInfo([this](EntityData& entity)-> void
+				{
+					entity.TryGetComponentMutable<UIRendererData>()->m_renderer = m_renderer;
+				}));
+
+		/*m_uiHierarchy->m_OnElementAdded.AddListener([this](const UITransformData* element)-> void
+			{
+				if (m_engineState->GetExecutionState() != ExecutionState::Update) return;
+				m_hasGuiTreeUpdated = true;
+			});
+
+		m_uiHierarchy->m_OnElementRemoved.AddListener([this](const UITransformData* element)-> void
+			{
+				if (m_engineState->GetExecutionState() != ExecutionState::Update) return;
+				m_hasGuiTreeUpdated = true;
+			});
+		*/
+	}
+	/*
+	void UIRenderSystem::CreateRenderTree()
+	{
+		//m_uiRenderersHierarchyOrder.clear();
 		m_uiHierarchy->ElementTraversalDFS<UIRendererData>([this](UILayer layer, UIRendererData& renderer)-> void
 			{
 				m_uiRenderersHierarchyOrder.push_back(&renderer);
 			});
 	}
-
-	UIRect UIRenderSystem::RenderSingle(UIRendererData& renderer, const UIRect& rect)
+	*/
+	UIRect UIRenderSystem::RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const UIRect& rect)
 	{
 		EntityData& entity = renderer.GetEntityMutable();
 		UIRect renderedArea = {};
 		if (UIPanel* panel = entity.TryGetComponentMutable<UIPanel>())
 		{
 			renderedArea = panel->Render(rect);
+			//if (renderer.GetEntity().m_Name == "EntityHeader") LogError(std::format("Rendered panel at pos:{}", rect.ToString()));
 		}
 		if (UITextureData* texture = entity.TryGetComponentMutable<UITextureData>())
 		{
@@ -59,48 +76,94 @@ namespace ECS
 
 	void UIRenderSystem::RenderAll()
 	{
-		const UIRect* parentRect = {};
+		//if (m_hasGuiTreeUpdated)
+		//{
+		//	CreateRenderTree();
+		//	m_hasGuiTreeUpdated = false;
+		//}
+
+		std::stack<UIRect, std::vector<UIRect>> rectsStack = {};
+		UIRect parentRect = {};
 		UIRect currentRect = {};
-		std::stack<UIRect> rects = {};
+
+		std::stack<UITransformData*, std::vector<UITransformData*>> elementStack = {};
+		UITransformData* currentTransform = nullptr;
 		EntityData* entity = nullptr;
+		UIRendererData* renderer = nullptr;
 
-		rects.push(m_uiHierarchy->GetRootRect());
-		//Note: since we know we got the order in preorder traversal of the ui tree (aka dfs/descending), we can assume 
-		//what the relationship is for the next element and make decision whether to push/pop new rect
-		for (auto& renderer : m_uiRenderersHierarchyOrder)
+		/*for (const auto& r : m_uiRenderersHierarchyOrder)
 		{
-			entity = &(renderer->GetEntityMutable());
-			UITransformData& transform = *(entity->TryGetComponentMutable<UITransformData>());
-			//We get this render info based on this relative pos
-			parentRect = &(rects.top());
-			currentRect = transform.CalculateRect(*parentRect);
-			//Note: render single returns the actual area that is rendered
-			renderer->m_lastRenderRect = RenderSingle(*renderer, currentRect);
+			LogWarning(r->GetEntity().ToString());
+		}*/
 
-			/*if (DRAW_RENDER_BOUNDS) DrawRectangleLines(thisRenderInfo.m_TopLeftPos.m_X, thisRenderInfo.m_TopLeftPos.m_Y,
-				thisRenderInfo.GetSize().m_X, thisRenderInfo.GetSize().m_Y, YELLOW);*/
-
-			
-			/*LogError(std::format("Rendering element calculated from parent info:{} rect:{} current info:{}",
-				renderInfo.ToString(), m_relativeRect.ToString(), thisRenderInfo.ToString()));*/
-
-			//If we have children, we need to go a level deeper so we calculate available space from this rect that can be used as the parent rect
-			//Otherwise no children means we keep the same parent rect
-			if (entity->GetChildCount() > 0)
-				rects.push(transform.CalculateChildRect(currentRect));
-			//If this entity's parent has this entity as the last child, it means we are ready to pop back to parent
-			else if (entity->GetParent()->GetChildIndex(entity->GetId()) == size_t(-1))
-				rects.pop();
-			
-			/*if (m_padding.HasNonZeroPadding())
+		m_uiHierarchy->LayerTraversal([&, this](UILayer layer, UITransformData& rootTransform)-> void
 			{
-				Assert(false, std::format("Padding:{} this render:{} child render:{}",
-					m_padding.ToString(), thisRenderInfo.ToString(), childRenderInfo.ToString()));
-			}*/
+				while (!rectsStack.empty()) rectsStack.pop();
+				rectsStack.push(m_uiHierarchy->GetRootRect());
 
-			//TODO: this is really slow to have to check every element in the ui tree if it has the renderer. we 
-			//should instead cache a different renderer tree for optimization
-		}
+				while (!elementStack.empty()) elementStack.pop();
+				elementStack.push(&rootTransform);
+
+				while (!elementStack.empty())
+				{
+					currentTransform = elementStack.top();
+					elementStack.pop();
+					entity = &(currentTransform->GetEntityMutable());
+
+					parentRect = rectsStack.top();
+					rectsStack.pop();
+					currentRect = currentTransform->CalculateRect(parentRect);
+
+					Vec2Int rectSize = currentRect.GetSize();
+					if (rectSize.m_X == 0 || rectSize.m_Y == 0)
+					{
+						LogError(std::format("Attempted to calculate rect for ui object:{} "
+							"but its render rect has a 0 component:{}. Parent rect:{} ui transform:{}. UI TREE:{}", entity->ToString(),
+							rectSize.ToString(), parentRect.ToString(), currentTransform->ToString(), m_uiHierarchy->ToStringTree()));
+						return;
+					}
+					/*if (!Assert(currentRect.GetSize().m_X != 0 && currentRect.GetSize().m_Y != 0,
+						std::format("Attempted to render all ui elements, but element:{}({}) calculated from parent rect:{} had rect with 0 size component:{}",
+							transform.ToString(), transform.GetEntity().ToString(), parentRect->ToString(), currentRect.ToString())))
+						return;*/
+
+						//Note: render single returns the actual area that is rendered
+					UIRendererData* renderer = entity->TryGetComponentMutable<UIRendererData>();
+					if (entity->IsEntityActive() && renderer != nullptr)
+					{
+						//if (entity->m_Name== "DebugInfoContainer") LogError(std::format("Enttiy is active and rendered"));
+						renderer->m_lastRenderArea = RenderSingle(*m_uiHierarchy, *renderer, currentRect);
+					}
+					currentTransform->SetLastWorldArea(currentRect);
+
+					if (entity->GetChildCount() == 0) continue;
+					//Note: we go backwards to ensure proper DFS order (aka first/top elements first, then bottom)
+					for (int i = entity->GetChildCount() - 1; i >= 0; i--)
+					{
+						UIRect childRect = currentTransform->CalculateChildRect(currentRect);
+						Vec2Int rectSize = childRect.GetSize();
+						if (rectSize.m_X == 0 || rectSize.m_Y == 0)
+						{
+							LogError(std::format("Attempted to calculate child rect of ui object:{} "
+								"but its render rect has a 0 component:{}. Parent rect:{} calcualted child rect:{} parent ui transform:{}. UI TREE:{}",
+								entity->ToString(), rectSize.ToString(), currentRect.ToString(), childRect.ToString(),
+								currentTransform->ToString(), m_uiHierarchy->ToStringTree()));
+							return;
+						}
+
+						currentTransform = entity->TryGetChildComponentAtMutable<UITransformData>(i);
+						if (currentTransform == nullptr)
+						{
+							LogError(std::format("Tried to get child ui transform at index:{} for entity:{} "
+								"but it was null. Child:{}", i, entity->ToString(), entity->TryGetChildEntityAtMutable(i)->ToString()));
+							return;
+						}
+						rectsStack.push(childRect);
+						elementStack.push(currentTransform);
+					}
+				}
+			});
+		//LogWarning(std::format("AFTER CALCULATING RENDER AAREAS:{}", m_uiHierarchy->ToStringTree()));
 	}
 
 	void UIRenderSystem::SystemUpdate()

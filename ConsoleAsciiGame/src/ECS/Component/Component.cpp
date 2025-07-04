@@ -10,7 +10,7 @@ Component::Component()
 
 EntityData& Component::GetEntityMutable()
 {
-	if (!Assert(this, m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
+	if (!Assert(m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
 		"(it means a function creating or adding component probably did not update this setting)")))
 		throw std::invalid_argument("Tried to retrieve invalid entity with component");
 
@@ -19,7 +19,7 @@ EntityData& Component::GetEntityMutable()
 
 const EntityData& Component::GetEntity() const
 {
-	if (!Assert(this, m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
+	if (!Assert(m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
 		"(it means a function creating or adding component probably did not update this setting)")))
 		throw std::invalid_argument("Tried to retrieve invalid entity with component");
 
@@ -90,7 +90,7 @@ std::string FormatComponentName(const Component* component)
 }
 std::string FormatComponentName(const std::type_info& typeInfo)
 {
-	std::string typeName = typeInfo.name();
+	std::string typeName = Utils::FormatTypeName(typeInfo.name());
 	size_t index = typeName.find("Data");
 	if (index != std::string::npos) typeName = typeName.substr(0, index);
 

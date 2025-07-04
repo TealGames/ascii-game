@@ -11,7 +11,7 @@ namespace AssetManagement
 	class AssetManager;
 }
 
-namespace GlobalCreator
+namespace GlobalEntityCreator
 {
 	void CreateGlobals(GlobalEntityManager& manager, SceneManagement::SceneManager& sceneManager, 
 		CameraController& cameraController, AssetManagement::AssetManager& assetManager);

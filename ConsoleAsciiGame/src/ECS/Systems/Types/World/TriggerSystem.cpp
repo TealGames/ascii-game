@@ -14,7 +14,13 @@ namespace ECS
 	TriggerSystem::TriggerSystem() 
 	{
 		GlobalComponentInfo::AddComponentInfo(typeid(TriggerData),
-			ComponentInfo(DeppendencyType::None, {}, CreateRequiredComponentFunction<CollisionBoxData>()));
+			ComponentInfo(CreateComponentTypes<CollisionBoxData>(), CreateRequiredComponentFunction(CollisionBoxData()),
+				[](EntityData& entity)-> void
+				{
+					TriggerData& trigger = *(entity.TryGetComponentMutable<TriggerData>());
+					if (trigger.m_collider != nullptr) trigger.m_collider = entity.TryGetComponent<CollisionBoxData>();
+					//fieldComponent.m_background = entity.TryGetComponentMutable<UIPanel>();
+				}));
 	}
 
 	void TriggerSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)

@@ -12,7 +12,7 @@ namespace ECS
 	private:
 	public:
 		UIInputFieldSystem();
-
+		void Init();
 		void SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime);
 	};
 }

@@ -6,9 +6,14 @@
 
 namespace ECS
 {
-	UISelectableSystem::UISelectableSystem()
+	UISelectableSystem::UISelectableSystem() {}
+	void UISelectableSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UISelectableData), ComponentInfo(CreateRequiredComponentFunction<UIRendererData>(),
-			[](EntityData& entity)-> void {entity.TryGetComponentMutable<UISelectableData>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>(); }));
+		GlobalComponentInfo::AddComponentInfo(typeid(UISelectableData),
+			ComponentInfo(CreateComponentTypes<UIRendererData>(), CreateRequiredComponentFunction(UIRendererData()),
+				[](EntityData& entity)-> void
+				{
+					entity.TryGetComponentMutable<UISelectableData>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>();
+				}));
 	}
 }

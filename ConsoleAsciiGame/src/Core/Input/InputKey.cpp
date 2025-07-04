@@ -65,7 +65,7 @@ namespace Input
 
 	KeyboardKey InputKey::GetAsKeyboard() const
 	{
-		if (!Assert(this, IsDevice(DeviceType::Keyboard), std::format("Tried to get input key: {} as invalid device type: {}",
+		if (!Assert(IsDevice(DeviceType::Keyboard), std::format("Tried to get input key: {} as invalid device type: {}",
 			std::to_string(m_keyValue), Input::ToString(m_deviceType))))
 			return DEFAULT_KEYBOARD_KEY;
 
@@ -74,7 +74,7 @@ namespace Input
 
 	MouseButton InputKey::GetAsMouse() const
 	{
-		if (!Assert(this, IsDevice(DeviceType::Mouse), std::format("Tried to get input key: {} as invalid device type: {}",
+		if (!Assert(IsDevice(DeviceType::Mouse), std::format("Tried to get input key: {} as invalid device type: {}",
 			std::to_string(m_keyValue), Input::ToString(m_deviceType))))
 			return DEFAULT_MOUSE_BUTTON;
 
@@ -83,7 +83,7 @@ namespace Input
 
 	GamepadButton InputKey::GetAsGamepad() const
 	{
-		if (!Assert(this, IsDevice(DeviceType::Gamepad), std::format("Tried to get input key: {} as invalid device type: {}",
+		if (!Assert(IsDevice(DeviceType::Gamepad), std::format("Tried to get input key: {} as invalid device type: {}",
 			std::to_string(m_keyValue), Input::ToString(m_deviceType))))
 			return DEFAULT_GAMEPAD_BUTTON;
 
@@ -110,7 +110,7 @@ namespace Input
 		else if (IsDevice(DeviceType::Mouse)) keybindName = RaylibUtils::MouseButtonToString(GetAsMouse());
 		else
 		{
-			LogError(this, std::format("Tried to convert input key to string but device: "
+			LogError(std::format("Tried to convert input key to string but device: "
 				"{} failed to convert", deviceName));
 			return "";
 		}

@@ -2,6 +2,7 @@
 #include <vector>
 #include <functional>
 #include "Core/Analyzation/Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 template<typename T>
 using PoolCollection = std::vector<T>;
@@ -30,11 +31,21 @@ public:
 	ObjectPool(const size_t& maxSize) : m_pool(), m_usedEndIndex(-1)
 	{ 
 		m_pool.reserve(maxSize);
+		//LogWarning(std::format("Pool at:{} had size reserved;{}", Utils::ToStringPointerAddress(this), m_pool.capacity()));
+	}
+	ObjectPool(const ObjectPool<T>& pool)
+	{
+		m_pool = pool.m_pool;
+		m_usedEndIndex = pool.m_usedEndIndex;
+		//Note: some implmenentations of vector copy may not update capacity which would
+		//ruin pool behavior
+		if (m_pool.capacity() != pool.m_pool.capacity())
+			m_pool.reserve(pool.m_pool.capacity());
 	}
 
 	bool TryReserveNewSize(const size_t& newSize)
 	{
-		if (!Assert(this, m_pool.empty(), std::format("Tried to reserve a new size for object pool:{} after initial construction "
+		if (!Assert(m_pool.empty(), std::format("Tried to reserve a new size for object pool:{} after initial construction "
 			"of size:{} but elements are already added so no new size can be set", std::to_string(newSize), std::to_string(GetMaxCapacity()))))
 			return false;
 
@@ -44,8 +55,8 @@ public:
 
 	T* TryAdd(const T& element)
 	{
-		if (!Assert(this, !IsAtCapacity(), std::format("Tried to add a new object of type:{} to pool but "
-			"max capacity:{} has been reached", Utils::GetTypeName<T>(), std::to_string(GetMaxCapacity()))))
+		if (!Assert(!IsAtCapacity(), std::format("Tried to add a new object of type:{} to pool but pool at addr:{}"
+			"max capacity:{} has been reached", Utils::GetTypeName<T>(), Utils::ToStringPointerAddress(this), std::to_string(GetMaxCapacity()))))
 			return nullptr;
 
 		T* result = nullptr;
@@ -66,7 +77,7 @@ public:
 
 	T& GetAt(const size_t& index)
 	{
-		if (!Assert(this, m_usedEndIndex != -1 && 0 <= index && index <= m_usedEndIndex, 
+		if (!Assert(m_usedEndIndex != -1 && 0 <= index && index <= m_usedEndIndex, 
 			std::format("Tried to get object at index:{} of pool but it is out of bounds of used space:[0,{}]", 
 				std::to_string(index), std::to_string(m_usedEndIndex))))
 			throw std::invalid_argument("Invalid pool index");
@@ -76,7 +87,7 @@ public:
 
 	void SetUnused(const size_t& index)
 	{
-		if (!Assert(this, m_usedEndIndex !=-1 && 0 <= index && index <= m_usedEndIndex, 
+		if (!Assert(m_usedEndIndex !=-1 && 0 <= index && index <= m_usedEndIndex, 
 			std::format("Tried to set object at index:{} of pool to unused "
 			"but it is out of bounds of used space:[0,{}]", std::to_string(index), std::to_string(m_usedEndIndex))))
 			throw std::invalid_argument("Invalid pool index");

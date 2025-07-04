@@ -3,10 +3,6 @@
 #include <string>
 #include "Editor/Console/CommandPrompt.hpp"
 #include "raylib.h"
-#include <memory>
-#include <queue>
-#include <chrono> 
-#include "Core/Input/InputManager.hpp"
 
 //using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;
@@ -31,6 +27,7 @@ class UITransformData;
 class UITextComponent;
 class UIInputField;
 class UILayout;
+namespace Input { class InputManager; }
 
 constexpr int MAX_OUTPUT_MESSAGES = 10;
 class CommandConsole
@@ -66,8 +63,9 @@ private:
 	void SetNextMessage(const std::string& message, const Color color);
 	void RemoveBackMessage();
 public:
-	CommandConsole(const Input::InputManager& input, UIHierarchy& hierarchy, UIInteractionManager& selector);
+	CommandConsole(const Input::InputManager& input, UIInteractionManager& selector);
 
+	void CreateUI(UIHierarchy& hierarchy);
 	//void SetActiveConsole(CommandConsole& console);
 
 	void AddPrompt(ICommandPrompt* prompt);

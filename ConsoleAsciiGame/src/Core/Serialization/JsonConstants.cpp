@@ -2,7 +2,7 @@
 #include "Core/Serialization/JsonConstants.hpp"
 #include <unordered_map>
 #include "Utils/RaylibUtils.hpp"
-#include "Globals.hpp"
+#include "StaticGlobals.hpp"
 #include "Core/Visual/VisualData.hpp"
 
 namespace JsonConstants

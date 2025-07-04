@@ -40,7 +40,9 @@ public:
 
 private:
 public:
-	DebugInfo(UIHierarchy& hierarchy);
+	DebugInfo();
+
+	void CreateUI(UIHierarchy& hierarchy);
 
 	//void ClearProperties();
 	void Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera);

@@ -15,10 +15,9 @@ void PopupUI::CreatePopup(EntityData& parent)
 {
 	EntityData* entity = nullptr;
 	std::tie(entity, m_Container) = parent.CreateChildUI("popup_container");
-	UIRendererData& renderer = entity->AddComponent(UIRendererData());
 	entity->AddComponent<UIPanel>(UIPanel(EditorStyles::EDITOR_BACKGROUND_COLOR));
 
-	renderer.SetEventBlocker(true);
+	m_Container->SetEventBlocker(true);
 	m_Container->GetPaddingMutable().SetAll(POPUP_PADDING);
 
 	AddPopupElements();

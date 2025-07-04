@@ -34,14 +34,11 @@ std::string ToString(const CollisionFlag flag)
 
 CollidingBoxInfo::CollidingBoxInfo(const CollisionBoxData& box, const CollisionFlag& flag) : m_Box(&box), m_Flag(flag) {}
 
-CollisionBoxData::CollisionBoxData(const TransformData* transform, const Vec2& size, const WorldPosition& transformOffset) :
-	Component(), m_transform(transform), m_aabb(size), m_transformOffset(transformOffset), m_collidingBoxes() {}
-
-CollisionBoxData::CollisionBoxData(const TransformData& transform, const Vec2& size, const WorldPosition& transformOffset) :
-	CollisionBoxData(&transform, size, transformOffset) {}
+CollisionBoxData::CollisionBoxData(const Vec2& size, const WorldPosition& transformOffset) :
+	Component(), m_aabb(size), m_transformOffset(transformOffset), m_collidingBoxes() {}
 
 CollisionBoxData::CollisionBoxData() :
-	CollisionBoxData(nullptr, {}, {}) {}
+	CollisionBoxData({}, {}) {}
 
 CollisionBoxData::CollisionBoxData(const Json& json) : CollisionBoxData()
 {
@@ -148,7 +145,7 @@ void CollisionBoxData::UpdateCollisionStates()
 
 bool CollisionBoxData::operator==(const CollisionBoxData& other) const
 {
-	return m_transform == other.m_transform;
+	return GetEntity() == other.GetEntity();
 }
 
 //std::vector<std::string> CollisionBoxData::GetDependencyFlags() const
@@ -163,7 +160,7 @@ void CollisionBoxData::InitFields()
 bool CollisionBoxData::Validate()
 {
 	const Vec2 size = GetAABB().GetSize();
-	if (Assert(this, size.m_X != 0 && size.m_Y != 0,
+	if (Assert(size.m_X != 0 && size.m_Y != 0,
 		std::format("Tried to create a Collision box but the AABB cannot have 0 x or y size: {}. "
 			"This could be due to bad bounding size or offset!", size.ToString())))
 		return false;
@@ -173,10 +170,7 @@ bool CollisionBoxData::Validate()
 
 const TransformData& CollisionBoxData::GetTransform() const
 {
-	if (!Assert(this, m_transform!=nullptr, std::format("Tried to get transform data but was NULL")))
-		throw std::invalid_argument("Invalid transform data");
-
-	return *m_transform;
+	return GetEntity().GetTransform();
 }
 const WorldPosition& CollisionBoxData::GetOffset() const
 {
@@ -235,60 +229,6 @@ AABBIntersectionData CollisionBoxData::GetCollisionIntersectionData(const Collis
 	const WorldPosition otherMaxGlobal = otherBox.GetGlobalMax();
 
 	
-	/*
-	if (thisMaxGlobal.m_X < otherMinGlobal.m_X || thisMinGlobal.m_X > otherMaxGlobal.m_X ||
-		thisMaxGlobal.m_Y < otherMinGlobal.m_Y || thisMinGlobal.m_Y > otherMaxGlobal.m_Y)
-	{
-		return AABBIntersectionData(false, {});
-	}
-
-	bool touchingX = (thisMinGlobal.m_X == otherMaxGlobal.m_X) || (thisMaxGlobal.m_X == otherMinGlobal.m_X);
-	bool touchingY = (thisMinGlobal.m_Y == otherMaxGlobal.m_Y) || (thisMaxGlobal.m_Y == otherMinGlobal.m_Y);
-
-	if (touchingX || touchingY) 
-	{
-		return AABBIntersectionData(true, {});
-	}
-
-
-	AABBIntersectionData result = {};
-	result.m_DoIntersect = true;
-
-	//If OTHER body is between the min and max X of THIS body then we know there is only Y depth 
-	if (thisMinGlobal.m_X <= otherMinGlobal.m_X && otherMinGlobal.m_X <= thisMaxGlobal.m_X &&
-		thisMinGlobal.m_X <= otherMaxGlobal.m_X && otherMaxGlobal.m_X <= thisMaxGlobal.m_X)
-	{
-		
-		result.m_Depth.m_X = 0;
-	}
-	else
-	{
-		const float rightDepthX = otherMinGlobal.m_X - thisMaxGlobal.m_X;
-		const float leftDepthX = otherMaxGlobal.m_X - thisMinGlobal.m_X;
-		result.m_Depth.m_X = Utils::MinAbs(rightDepthX, leftDepthX);
-	}
-
-	//If OTHER body is between the min and max Y of THIS body then we know there is only X depth 
-	if (thisMinGlobal.m_Y <= otherMinGlobal.m_Y && otherMinGlobal.m_Y <= thisMaxGlobal.m_Y &&
-		thisMinGlobal.m_Y <= otherMaxGlobal.m_Y && otherMaxGlobal.m_Y <= thisMaxGlobal.m_Y)
-	{
-		result.m_Depth.m_Y = 0;
-	}
-	else
-	{
-		const float topDepthY = otherMinGlobal.m_Y - thisMaxGlobal.m_Y;
-		const float bottomDepthY = otherMaxGlobal.m_Y - thisMinGlobal.m_Y;
-		result.m_Depth.m_Y = Utils::MinAbs(topDepthY, bottomDepthY);
-		//Assert(false, std::format("Collision A:{} B:{} top depth:{} bottom depth:{} depth:{}",
-		//GetEntitySafe().GetName(), otherBox.GetEntitySafe().GetName(), std::to_string(topDepthY), std::to_string(bottomDepthY), std::to_string(result.m_Depth.m_Y)));
-	}
-	return result;
-	*/
-
-
-	/*result.m_DoIntersect = (thisMaxGlobal.m_X > otherMinGlobal.m_X && thisMinGlobal.m_X < otherMaxGlobal.m_X &&
-		thisMaxGlobal.m_Y > otherMinGlobal.m_Y && thisMinGlobal.m_Y < otherMaxGlobal.m_Y);*/
-
 	AABBIntersectionData result = {};
 
 	//Inttituition is that a collision occurs when the max of one is greater than the min of the other for both X and Y axes
@@ -476,20 +416,19 @@ Vec2 CollisionBoxData::GetAABBDirection(const CollisionBoxData& otherBox, const 
 
 std::string CollisionBoxData::ToString() const
 {
-	return std::format("[CollisionBox AABB:{}, Offset:{} transform:{}]", m_aabb.ToString(GetAABBCenterWorldPos()), 
-		m_transformOffset.ToString(), m_transform!=nullptr? GetTransform().ToString() : "NULL");
+	return std::format("[CollisionBox AABB:{}, Offset:{}]", m_aabb.ToString(GetAABBCenterWorldPos()), 
+		m_transformOffset.ToString());
 }
 std::string CollisionBoxData::ToStringRelative() const
 {
-	return std::format("[CollisionBox AABB:{}, Offset:{} transform:{}]", m_aabb.ToString(),
-		m_transformOffset.ToString(), m_transform != nullptr ? GetTransform().ToString() : "NULL");
+	return std::format("[CollisionBox AABB:{}, Offset:{}]", m_aabb.ToString(),
+		m_transformOffset.ToString());
 }
 
 void CollisionBoxData::Deserialize(const Json& json)
 {
 	m_aabb = json.at("AABB").get<Physics::AABB>();
 	m_transformOffset = json.at("Offset").get<WorldPosition>();
-	m_transform = &(GetEntity().GetTransform());
 }
 Json CollisionBoxData::Serialize()
 {

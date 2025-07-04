@@ -7,7 +7,6 @@
 #include "raylib.h"
 #include "Core/UI/UIRect.hpp"
 #include "Core/UI/UIStyle.hpp"
-#include "ECS/Component/Types/UI/UISelectableData.hpp"
 
 enum class InputFieldType
 {
@@ -70,11 +69,12 @@ constexpr InputFieldFlag operator~(const InputFieldFlag& op)
 
 class UITextComponent;
 class UIPanel;
+class UISelectableData;
 namespace ECS { class UIInputFieldSystem; }
 
 using InputFieldAction = std::function<void(std::string input)>;
 using InputFieldKeyActions = std::unordered_map<KeyboardKey, InputFieldAction>;
-class UIInputField : public UISelectableData
+class UIInputField : public Component
 {
 private:
 	InputFieldType m_type;
@@ -82,9 +82,11 @@ private:
 	std::string m_input;
 	std::string m_lastInput;
 	std::string m_attemptedInput;
+	InputFieldFlag m_inputFlags;
+
+	UISelectableData* m_selectable;
 	UITextComponent* m_textGUI;
 	UIPanel* m_background;
-	InputFieldFlag m_inputFlags;
 
 	//bool m_isSelected;
 	InputFieldAction m_submitAction;
@@ -123,7 +125,8 @@ public:
 		const InputFieldAction& submitAction=nullptr, const InputFieldKeyActions& keyPressActions = {});
 	~UIInputField();
 
-	void Update(const float deltaTime) override;
+	void Init();
+	void Update(const float deltaTime);
 
 	bool HasFlag(const InputFieldFlag& flag) const;
 	const InputFieldType& GetFieldType() const;

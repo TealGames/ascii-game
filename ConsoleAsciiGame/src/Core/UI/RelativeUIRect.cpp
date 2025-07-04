@@ -36,7 +36,7 @@ void RelativeUIRect::SetSize(const NormalizedPosition& size)
 {
 	if (size.GetX()==0 || size.GetY()==0)
 	{
-		Assert(this, false, std::format("Tried to set size for relative "
+		Assert(false, std::format("Tried to set size for relative "
 			"gui:{} rect to:{} which is not allowed", ToString(), size.ToString()));
 		return;
 	}
@@ -83,7 +83,7 @@ void RelativeUIRect::SetSize(const NormalizedPosition& size)
 
 	if (HasInvalidSize())
 	{
-		Assert(this, false, std::format("Tried to set size for relative "
+		Assert(false, std::format("Tried to set size for relative "
 			"gui rect to:{} but resulted in invalid size:{} when converting rect:{} br:{} net:{}", 
 			size.ToString(), ToString(), originalRect.ToString(), GetBottomRight(NormalizedPosition::TOP_LEFT, size).ToString(), netAvailableSpace.ToString()));
 	}
@@ -102,7 +102,7 @@ void RelativeUIRect::SetTopLeft(const NormalizedPosition& topLeft)
 
 	if (HasInvalidSize())
 	{
-		Assert(this, false, std::format("Tried to set top left pos for relative "
+		Assert(false, std::format("Tried to set top left pos for relative "
 			"gui rect but it resulted in invalid size:{}", ToString()));
 	}
 }
@@ -114,7 +114,7 @@ void RelativeUIRect::SetBottomRight(const NormalizedPosition& bottomRight)
 	
 	if (HasInvalidSize())
 	{
-		Assert(this, false, std::format("Tried to set bottom right pos for relative "
+		Assert(false, std::format("Tried to set bottom right pos for relative "
 			"gui rect but it resulted in invalid size:{}", ToString()));
 	}
 }
@@ -125,7 +125,7 @@ void RelativeUIRect::SetBounds(const NormalizedPosition& topLeft, const Normaliz
 
 	if (HasInvalidSize())
 	{
-		Assert(this, false, std::format("Tried to set bounds:[TopLeft:{} BottomRight:{}] for relative "
+		Assert(false, std::format("Tried to set bounds:[TopLeft:{} BottomRight:{}] for relative "
 			"gui rect but resulted in invalid size:{}", topLeft.ToString(), bottomRight.ToString(), ToString()));
 	}
 }

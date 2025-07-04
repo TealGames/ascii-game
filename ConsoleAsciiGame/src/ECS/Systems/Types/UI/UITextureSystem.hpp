@@ -11,6 +11,7 @@ namespace ECS
 	private:
 	public:
 		UITextureSystem();
+		void Init();
 	};
 }
 

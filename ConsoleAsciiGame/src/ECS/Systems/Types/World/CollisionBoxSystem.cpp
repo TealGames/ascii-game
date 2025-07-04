@@ -49,7 +49,7 @@ namespace ECS
 			bounds.emplace_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntity().m_Name, boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
 			if (RENDER_COLLIDER_OUTLINES)
 			{
-				/*if (!Assert(this, mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
+				/*if (!Assert(mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
 					"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;*/
 
 					//WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
@@ -84,7 +84,7 @@ namespace ECS
 					if (std::abs(collision.m_Depth.m_X) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_X = 0;
 					if (std::abs(collision.m_Depth.m_Y) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_Y = 0;
 
-					if (!Assert(this, TryAddCollisionToRegistry(*boxA, *boxB, collision), std::format("Tried to add collision:{} to "
+					if (!Assert(TryAddCollisionToRegistry(*boxA, *boxB, collision), std::format("Tried to add collision:{} to "
 						"registry but something went wrong", collision.ToString())))
 						return;
 
@@ -119,7 +119,7 @@ namespace ECS
 		}
 		std::optional<MoveDirection> maybeDirType = TryConvertVectorToDirection(collidingDir);
 
-		if (!Assert(this, maybeDirType.has_value(), std::format("Tried to add collision between boxA:{} (entity:{}) and boxB:{} (entity:{}) "
+		if (!Assert(maybeDirType.has_value(), std::format("Tried to add collision between boxA:{} (entity:{}) and boxB:{} (entity:{}) "
 			"but failed to get convert colliding dir:{} to direction type",
 			boxA.ToString(), boxA.GetEntity().ToString(), boxB.ToString(), boxB.GetEntity().ToString(), collidingDir.ToString())))
 		{
