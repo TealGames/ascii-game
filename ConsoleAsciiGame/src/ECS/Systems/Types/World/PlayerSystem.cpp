@@ -53,13 +53,12 @@ namespace ECS
 					if (!Assert(camera != nullptr, std::format("Tried to get camera to convert screen "
 						"to world point for mouse position cheat but it is null"))) return;*/
 
-					Vector2 mousePos = GetMousePosition();
-					WorldPosition worldPos = Conversions::ScreenToWorldPosition(mainCamera, { static_cast<int>(mousePos.x), static_cast<int>(mousePos.y) });
+					WorldPosition worldPos = Conversions::ScreenToWorldPosition(mainCamera, m_inputManager.GetMousePosition());
 					player.GetEntityMutable().GetTransformMutable().SetLocalPos(worldPos);
 				}
 #endif
 
-				LogWarning(std::format("Player is at pos:{}", player.GetEntity().GetTransform().GetGlobalPos().ToString()));
+				//LogWarning(std::format("Player is at pos:{}", player.GetEntity().GetTransform().GetGlobalPos().ToString()));
 
 				const Input::InputProfile* inputProfile = m_inputManager.TryGetProfile(MAIN_INPUT_PROFILE_NAME);
 				if (!Assert(inputProfile != nullptr, std::format("Tried to move player in PlayerSystem "

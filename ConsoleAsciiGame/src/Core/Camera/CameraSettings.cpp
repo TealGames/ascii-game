@@ -26,7 +26,7 @@ bool CameraSettings::HasNoFollowTarget() const
 
 WorldPosition CameraSettings::CalculateViewportSize() const
 {
-    return { m_LensSize, m_LensSize / m_AspectRatio.m_X * m_AspectRatio.m_Y };
+    return WorldPosition{ m_LensSize, m_LensSize / m_AspectRatio.m_X * m_AspectRatio.m_Y };
 }
 
 void CameraSettings::UpdateViewportSize()

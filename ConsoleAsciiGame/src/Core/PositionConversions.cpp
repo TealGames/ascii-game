@@ -37,7 +37,7 @@ namespace Conversions
 					 (topLeftY - pos.m_Y) / camera.m_CameraSettings.m_WorldViewportSize.m_Y };
 
 		//TODO: right now we assume the position is for the whole screen, but we may not want the whole screen covered by the viewport
-		return { static_cast<int>(screenPercent.m_X * (float)SCREEN_WIDTH), static_cast<int>(screenPercent.m_Y * (float)SCREEN_HEIGHT) };
+		return ScreenPosition{ screenPercent.m_X * (float)SCREEN_WIDTH, screenPercent.m_Y * (float)SCREEN_HEIGHT };
 	}
 
 
@@ -53,7 +53,7 @@ namespace Conversions
 	ScreenPosition NormalizedScreenToPosition(const NormalizedPosition& normalized)
 	{
 		Vec2 screenValues = { normalized.GetPos().m_X* SCREEN_WIDTH, normalized.GetPos().m_Y * SCREEN_HEIGHT};
-		return {static_cast<int>(screenValues.m_X), static_cast<int>(SCREEN_HEIGHT- screenValues.m_Y)};
+		return ScreenPosition{screenValues.m_X, SCREEN_HEIGHT- screenValues.m_Y};
 	}
 
 	NormalizedPosition ScreenToNormalizedPosition(const ScreenPosition& pos, const Vec2Int totalScreenArea)

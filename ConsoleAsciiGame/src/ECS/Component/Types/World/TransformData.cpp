@@ -15,7 +15,7 @@ TransformData::TransformData(const Json& json) : TransformData()
 
 TransformData::TransformData(const Vec2& pos) :
 	Component(),
-	m_localPos(pos), m_localPosLastFrame(NULL_POS)
+	m_localPos(pos), m_localPosLastFrame(NULL_POS), m_localScale(Vec2::ONE)
 {
 	
 }
@@ -25,27 +25,22 @@ void TransformData::SetLocalPos(const Vec2& newPos)
 	SetLocalPosX(newPos.m_X);
 	SetLocalPosY(newPos.m_Y);
 }
-
 void TransformData::SetLocalPosX(const float& newX)
 {
 	m_localPos.m_X = newX;
 }
-
 void TransformData::SetLocalPosY(const float& newY)
 {
 	m_localPos.m_Y = newY;
 }
-
 void TransformData::SetLocalPosDeltaX(const float& xDelta)
 {
 	SetLocalPosX(m_localPos.m_X + xDelta);
 }
-
 void TransformData::SetLocalPosDeltaY(const float& yDelta)
 {
 	SetLocalPosY(m_localPos.m_Y + yDelta);
 }
-
 void TransformData::SetLocalPosDelta(const Vec2& moveDelta)
 {
 	SetLocalPosDeltaX(moveDelta.m_X);
@@ -65,15 +60,27 @@ Vec2 TransformData::GetLocalPosLastFrame() const
 {
 	return m_localPosLastFrame;
 }
-
 void TransformData::SetLocalPosLastFrame(const Vec2& pos)
 {
 	m_localPosLastFrame = pos;
 }
-
 bool TransformData::HasMovedThisFrame() const
 {
 	return m_localPosLastFrame == NULL_POS || m_localPos != m_localPosLastFrame;
+}
+
+Vec2 TransformData::GetLocalScale() const
+{
+	return m_localScale;
+}
+Vec2 TransformData::GetGlobalScale() const
+{
+	const EntityData* parentEntity = GetEntity().GetParent();
+	return parentEntity != nullptr ? parentEntity->GetTransform().GetGlobalScale() * m_localScale : m_localScale;
+}
+void TransformData::SetLocalScale(const Vec2 scale)
+{
+	m_localScale = scale;
 }
 
 void TransformData::InitFields()

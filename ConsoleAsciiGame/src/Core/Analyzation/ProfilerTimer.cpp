@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #include "Core/Analyzation/Profiler.hpp"
-#include "Core/Time/Timer.hpp"
+#include "Core/Time/TimerBase.hpp"
 #include <string>
 
 Profiler ProfilerTimer::m_Profiler = Profiler();

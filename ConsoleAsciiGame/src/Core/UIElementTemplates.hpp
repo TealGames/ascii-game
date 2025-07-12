@@ -25,5 +25,7 @@ class UIToggleComponent;
 namespace Templates
 {
 	void Init(AssetManagement::AssetManager& assetManager);
+
+	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateDropdownToggleTemplate(EntityData& parent, const std::string& name);
 	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateCheckboxTemplate(EntityData& parent, const std::string& name);
 }

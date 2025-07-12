@@ -1,6 +1,7 @@
 #pragma once
 #include "Utils/Data/WorldPosition.hpp"
 #include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Data/Vec2Int.hpp"
 
 class EntityData;
 

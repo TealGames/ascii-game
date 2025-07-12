@@ -204,10 +204,9 @@ namespace Utils
 		return diff < std::numeric_limits<double>().epsilon();
 	}
 
-	bool ApproximateEqualsF(float f1, float f2)
+	bool ApproximateEqualsF(float a, float b, const float relEps, const float absEps)
 	{
-		double diff = std::fabs(f2 - f1);
-		return diff < std::numeric_limits<double>().epsilon();
+		return std::fabs(a - b) <= std::fmax(relEps * std::fmax(std::fabs(a), std::fabs(b)), absEps);
 	}
 
 	bool IsPosInifinity(double value)

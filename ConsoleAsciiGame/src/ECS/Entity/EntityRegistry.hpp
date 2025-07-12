@@ -130,24 +130,42 @@ namespace ECS
 
 		template<typename T>
 		requires std::is_base_of_v<Component, T>
-		T* TryGetComponentMutable(const EntityID entityId)
+		T* TryGetComponentMutable(const EntityID entityId, bool includeDisabledComponent=true, bool includeIfEntityInactive =true)
 		{
 			if (!Assert(IsValidID(entityId), std::format("Attempted to get component MUTABLE:'{}' to invalid entity:'{}'",
 				FormatComponentName(typeid(T)), ToString(entityId))))
 				throw std::invalid_argument("Invalid entity id");
 
-			return m_registry.try_get<T>(entityId);
+			T* component = m_registry.try_get<T>(entityId);
+
+			if (component == nullptr) 
+				return nullptr;
+			if (!includeDisabledComponent && !static_cast<Component*>(component)->m_IsEnabled) 
+				return nullptr;
+			if (!includeIfEntityInactive && !static_cast<const Component*>(component)->GetEntity().IsEntityActive())
+				return nullptr;
+
+			return component;
 		}
 
 		template<typename T>
 		requires std::is_base_of_v<Component, T>
-		const T* TryGetComponent(const EntityID entityId) const
+		const T* TryGetComponent(const EntityID entityId, bool includeDisabledComponent = true, bool includeIfEntityInactive = true) const
 		{
 			if (!Assert(IsValidID(entityId), std::format("Attempted to get component:'{}' to invalid entity:'{}'",
 				FormatComponentName(typeid(T)), ToString(entityId))))
 				throw std::invalid_argument("Invalid entity id");
 
-			return m_registry.try_get<T>(entityId);
+			const T* component= m_registry.try_get<T>(entityId);
+
+			if (component == nullptr) 
+				return nullptr;
+			if (!includeDisabledComponent && !static_cast<const Component*>(component)->m_IsEnabled) 
+				return nullptr;
+			if (!includeIfEntityInactive && !static_cast<const Component*>(component)->GetEntity().IsEntityActive())
+				return nullptr;
+
+			return component;
 		}
 	};
 }

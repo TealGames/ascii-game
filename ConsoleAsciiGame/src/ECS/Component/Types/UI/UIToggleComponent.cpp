@@ -31,7 +31,6 @@ void UIToggleComponent::Init()
 {
 	m_selectable->m_OnClick.AddListener([this](UISelectableData* self)-> void
 		{
-			//Assert(false, "POOP");
 			ToggleValue();
 			self->Deselect();
 			//SetSettings({});
@@ -49,8 +48,16 @@ void UIToggleComponent::SetStateTextures(UITextureData* onTexture, UITextureData
 }
 void UIToggleComponent::SetTextureFromState()
 {
-	if (m_onTexture != nullptr) m_onTexture->m_IsEnabled = m_isToggled;
-	if (m_offTexture != nullptr) m_offTexture->m_IsEnabled = !m_isToggled;
+	if (m_onTexture != nullptr)
+	{
+		m_onTexture->m_IsEnabled = m_isToggled;
+		/*if (GetEntity().m_Name == "EntityActiveToggle")
+			LogError(std::format("Etntiy active toggle on texture:{}", m_onTexture->m_IsEnabled));*/
+	}
+	if (m_offTexture != nullptr)
+	{
+		m_offTexture->m_IsEnabled = !m_isToggled;
+	}
 }
 //void UIToggleComponent::SetOverlayTexture(const TextureAsset& asset)
 //{

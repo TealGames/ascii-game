@@ -15,7 +15,8 @@
 namespace ECS
 {
 	UIRenderSystem::UIRenderSystem(const EngineState& engineState, Rendering::Renderer& renderer, UIHierarchy& hierarchy)
-		: m_engineState(&engineState), m_renderer(&renderer), m_uiHierarchy(&hierarchy) {}//, m_uiRenderersHierarchyOrder(), m_hasGuiTreeUpdated(true) {}
+		: m_engineState(&engineState), m_renderer(&renderer), m_uiHierarchy(&hierarchy), m_OnElementProcessed() {}
+		//, m_uiRenderersHierarchyOrder(), m_hasGuiTreeUpdated(true) {}
 
 	void UIRenderSystem::Init()
 	{
@@ -50,27 +51,37 @@ namespace ECS
 	*/
 	UIRect UIRenderSystem::RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const UIRect& rect)
 	{
-		EntityData& entity = renderer.GetEntityMutable();
 		UIRect renderedArea = {};
-		if (UIPanel* panel = entity.TryGetComponentMutable<UIPanel>())
+		try
 		{
-			renderedArea = panel->Render(rect);
-			//if (renderer.GetEntity().m_Name == "EntityHeader") LogError(std::format("Rendered panel at pos:{}", rect.ToString()));
-		}
-		if (UITextureData* texture = entity.TryGetComponentMutable<UITextureData>())
-		{
-			renderedArea = texture->Render(rect);
-		}
-		if (UITextComponent* text = entity.TryGetComponentMutable<UITextComponent>())
-		{
-			renderedArea = text->Render(rect);
-		}
+			EntityData& entity = renderer.GetEntityMutable();
+			if (UIPanel* panel = entity.TryGetComponentMutable<UIPanel>(false))
+			{
+				renderedArea = panel->Render(rect);
+				//if (renderer.GetEntity().m_Name == "EntityHeader") LogError(std::format("Rendered panel at pos:{}", rect.ToString()));
+			}
+			if (UITextureData* texture = entity.TryGetComponentMutable<UITextureData>(false))
+			{
+				renderedArea = texture->Render(rect);
+				/*if (entity.GetParent() != nullptr && entity.GetParent()->m_Name == "EntityActiveToggle")
+					LogError(std::format("Found child with parent toggle:{} has renderer", entity.m_Name));*/
+			}
+			if (UITextComponent* text = entity.TryGetComponentMutable<UITextComponent>(false))
+			{
+				renderedArea = text->Render(rect);
+				//if (entity.m_Name == "EntityNameText") LogError(std::format("text reder rect:{}", rect.ToString(), renderedArea.ToString()));
+			}
 
-		if (UISelectableData* selectable = entity.TryGetComponentMutable<UISelectableData>())
-		{
-			selectable->RenderOverlay(renderedArea);
+			if (UISelectableData* selectable = entity.TryGetComponentMutable<UISelectableData>(false))
+			{
+				selectable->RenderOverlay(renderedArea);
+			}
 		}
-
+		catch (const std::exception& e)
+		{
+			LogError(std::format("Attempted to render single entity:{} but encountered error:{}. Full Tree:{}", 
+				renderer.GetEntity().ToString(), e.what(), hierarchy.ToStringTree()));
+		}
 		return renderedArea;
 	}
 
@@ -114,7 +125,7 @@ namespace ECS
 					rectsStack.pop();
 					currentRect = currentTransform->CalculateRect(parentRect);
 
-					Vec2Int rectSize = currentRect.GetSize();
+					Vec2 rectSize = currentRect.GetSize();
 					if (rectSize.m_X == 0 || rectSize.m_Y == 0)
 					{
 						LogError(std::format("Attempted to calculate rect for ui object:{} "
@@ -128,11 +139,12 @@ namespace ECS
 						return;*/
 
 						//Note: render single returns the actual area that is rendered
-					UIRendererData* renderer = entity->TryGetComponentMutable<UIRendererData>();
+					UIRendererData* renderer = entity->TryGetComponentMutable<UIRendererData>(false);
 					if (entity->IsEntityActive() && renderer != nullptr)
 					{
 						//if (entity->m_Name== "DebugInfoContainer") LogError(std::format("Enttiy is active and rendered"));
 						renderer->m_lastRenderArea = RenderSingle(*m_uiHierarchy, *renderer, currentRect);
+						m_OnElementProcessed.Invoke(renderer, &(renderer->m_lastRenderArea));
 					}
 					currentTransform->SetLastWorldArea(currentRect);
 
@@ -141,7 +153,7 @@ namespace ECS
 					for (int i = entity->GetChildCount() - 1; i >= 0; i--)
 					{
 						UIRect childRect = currentTransform->CalculateChildRect(currentRect);
-						Vec2Int rectSize = childRect.GetSize();
+						Vec2 rectSize = childRect.GetSize();
 						if (rectSize.m_X == 0 || rectSize.m_Y == 0)
 						{
 							LogError(std::format("Attempted to calculate child rect of ui object:{} "

@@ -5,9 +5,11 @@
 #include "Core/UI/UIInteractionManager.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "Core/Input/InputManager.hpp"
+#include "Core/UIElementTemplates.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 20;
-constexpr float ACTIVE_TOGGLE_SPACE = 0.15;
+constexpr float ACTIVE_TOGGLE_WIDTH = 0.1;
+constexpr float TOGGLE_NAME_SPACE_WIDTH = 0.05;
 const NormalizedPosition TOP_LEFT_POS_NORMALIZED = { 0.8, 1 };
 
 EntityUI::EntityUI(const Input::InputManager& manager, PopupUIManager& popupManager, AssetManagement::AssetManager& assetManager)
@@ -40,17 +42,18 @@ void EntityUI::CreateLayout()
 	//m_entityHeader = &(headerEntity->AddComponent(UIPanel(RED)));
 	headerTransform->SetSize({ 1, 0.03 });
 
-	auto [nameTextEntity, nameTextTransform] = headerEntity->CreateChildUI("EntityNameText");
-	m_entityNameText = &(headerEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))));
-	nameTextTransform->SetBounds({ ACTIVE_TOGGLE_SPACE, 1 }, NormalizedPosition::BOTTOM_RIGHT);
-
-	auto [toggleEntity, toggleTransform] = guiLayoutEntity->CreateChildUI("EntityActiveToggle");
-	m_activeToggle = &(headerEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle())));
-	toggleTransform->SetBounds(NormalizedPosition::TOP_LEFT, { ACTIVE_TOGGLE_SPACE, 0 });
+	EntityData* toggleEntity = nullptr;
+	UITransformData* toggleTransform = nullptr;
+	std::tie(toggleEntity, toggleTransform, m_activeToggle) = Templates::CreateCheckboxTemplate(*headerEntity, "EntityActiveToggle");
+	toggleTransform->SetBounds(NormalizedPosition::TOP_LEFT, { ACTIVE_TOGGLE_WIDTH, 0 });
 	m_activeToggle->m_OnValueSet.AddListener([this](bool isChecked)-> void
 		{
 			m_entity->TrySetEntityActive(isChecked);
 		});
+
+	auto [nameTextEntity, nameTextTransform] = headerEntity->CreateChildUI("EntityNameText");
+	m_entityNameText = &(nameTextEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))));
+	nameTextTransform->SetBounds({ ACTIVE_TOGGLE_WIDTH+ TOGGLE_NAME_SPACE_WIDTH, 1 }, NormalizedPosition::BOTTOM_RIGHT);
 }
 
 void EntityUI::Update()
@@ -83,16 +86,14 @@ void EntityUI::SetEntity(EntityData& entity)
 	auto& components = entity.GetAllComponentsMutable();
 	m_componentUIs.reserve(components.size());
 
-	//for (size_t i=0; i<components.size(); i++)
-	//{
-	//	if (m_componentUIs.size() <= i)
-	//	{
-	//		m_componentUIs.emplace_back(*m_inputManager, *m_popupManager, *m_assetManager, *this, *m_guiLayout);
-	//	}
-	//	m_componentUIs[i].SetComponent(*components[i]);
-	//	//i++;
-	//	//m_guiLayout.AddLayoutElement(m_componentGUIs.back().GetTreeGUI());
-	//}
+	for (size_t i=0; i<components.size(); i++)
+	{
+		if (m_componentUIs.size() <= i)
+		{
+			m_componentUIs.emplace_back(*m_inputManager, *m_popupManager, *m_assetManager, *this, *m_guiLayout);
+		}
+		m_componentUIs[i].SetComponent(*components[i]);
+	}
 	//LogWarning(std::format("Setentity gui layout to:{}", m_guiLayout->GetEntity().TryGetComponent<UITransformData>()->GetSize().ToString()));
 }
 void EntityUI::ClearEntity()

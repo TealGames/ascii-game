@@ -47,7 +47,13 @@ public:
 	/// </summary>
 	bool m_IsSerializable;
 
-	Event<void, EntityData*> m_OnFarthestChildElementAttached;
+	//Event<void, EntityData*> m_OnFarthestChildElementAttached;
+
+	/// <summary>
+	/// Invokes when a child element has been added to this entity with args
+	/// [PARENT ENTITY, CHILD ENTITY/ENTITY ADDED, CHILD INDEX]
+	/// </summary>
+	static Event<void, EntityData*, EntityData*, size_t> OnChildElementAdded;
 
 private:
 	EntityData(ECS::EntityRegistry* registry, const ECS::EntityID id,
@@ -201,11 +207,11 @@ public:
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	T* TryGetComponentMutable() { return m_registry->TryGetComponentMutable<T>(m_id); }
+	T* TryGetComponentMutable(bool includeDisabledComponent = true) { return m_registry->TryGetComponentMutable<T>(m_id, includeDisabledComponent); }
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	const T* TryGetComponent() const { return m_registry->TryGetComponent<T>(m_id); }
+	const T* TryGetComponent(bool includeDisabledComponent=true) const { return m_registry->TryGetComponent<T>(m_id, includeDisabledComponent); }
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
@@ -288,8 +294,11 @@ public:
 	requires Utils::AllSameBaseType<Component, ComponentT...>
 	std::tuple<EntityData*, ComponentT*...> CreateChild(const std::string& name, const TransformData& transform, const ComponentT&... components)
 	{
-		EntityData& entity = CreateChild(name, transform);
-		return std::make_tuple<EntityData*, ComponentT*...>(&entity, (&entity.AddComponent<ComponentT>(components))...);
+		EntityData& entity = m_registry->CreateNewEntity(name, transform);
+		auto tuple= std::make_tuple<EntityData*, ComponentT*...>(&entity, (&entity.AddComponent<ComponentT>(components))...);
+		//Note: we must push child after all components are created to ensure on event we get correct entity with all components
+		PushChild(entity);
+		return tuple;
 	}
 
 	template<typename ...ComponentT>

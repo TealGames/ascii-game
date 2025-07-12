@@ -5,11 +5,12 @@
 
 //TODO: add a reserved entity name ssytem and not allowing those names to be used
 const char* EntityData::GLOBAL_SCENE_NAME = "Global";
+Event<void, EntityData*, EntityData*, size_t> EntityData::OnChildElementAdded;
 
 EntityData::EntityData(ECS::EntityRegistry* registry, const ECS::EntityID id,
 	const std::string& name, const std::string& sceneName, ECS::EntityID parentId) :
 	m_registry(registry), m_id(id), m_Name(name), m_SceneName(sceneName), m_parentId(parentId), m_childrenIds(), 
-	m_components(), m_IsSerializable(true), m_OnFarthestChildElementAttached(), m_isActive(true)
+	m_components(), m_IsSerializable(true), m_isActive(true)
 {
 
 }
@@ -72,8 +73,9 @@ bool EntityData::IsEntityActive() const { return m_isActive; }
 bool EntityData::TryActivateEntity()
 {
 	if (m_isActive) return true;
+	EntityData* parent = GetParentMutable();
 	//If parent is not enabled, we can not enable this object
-	if (!m_registry->TryGetEntity(m_parentId)->m_isActive)
+	if (parent!=nullptr && !parent->m_isActive)
 		return false;
 
 	m_isActive = true;
@@ -205,13 +207,13 @@ std::vector<Component*>& EntityData::GetAllComponentsMutable()
 EntityData* EntityData::GetParentMutable()
 {
 	if (ECS::IsValidID(m_parentId)) 
-		return m_registry->TryGetComponentMutable<EntityData>(m_parentId);
+		return m_registry->TryGetEntityMutable(m_parentId);
 	else return nullptr;
 }
 const EntityData* EntityData::GetParent() const
 {
 	if (ECS::IsValidID(m_parentId))
-		return m_registry->TryGetComponent<EntityData>(m_parentId);
+		return m_registry->TryGetEntityMutable(m_parentId);
 	else return nullptr;
 }
 bool EntityData::HasParent() const
@@ -249,9 +251,7 @@ int EntityData::GetChildCount() const { return m_childrenIds.size(); }
 
 EntityData& EntityData::CreateChild(const std::string& name, const TransformData& transform)
 {
-	EntityData& createdEntity= m_registry->CreateNewEntity(name, transform);
-	PushChild(createdEntity);
-	return createdEntity;
+	return *(std::get<0>(CreateChild<>(name, transform)));
 }
 EntityData& EntityData::CreateChild(const std::string& name)
 {
@@ -271,12 +271,13 @@ size_t EntityData::PushChild(EntityData& entity)
 	//children creation that might ruin the result of this function
 	const size_t childIndex = GetChildCount() - 1;
 
-	EntityData* currEntity = this;
+	/*EntityData* currEntity = this;
 	while (currEntity->GetParent() != nullptr)
 	{
 		currEntity = currEntity->GetParentMutable();
-	}
-	currEntity->m_OnFarthestChildElementAttached.Invoke(this);
+	}*/
+	//currEntity->m_OnFarthestChildElementAttached.Invoke(this);
+	OnChildElementAdded.Invoke(this, &entity, childIndex);
 	return childIndex;
 }
 EntityData* EntityData::TryPopChild(const ECS::EntityID id) { return TryPopChildAs<EntityData>(id); }

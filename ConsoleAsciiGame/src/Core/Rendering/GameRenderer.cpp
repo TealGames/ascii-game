@@ -12,6 +12,7 @@
 #include "Core/UI/UIHierarchy.hpp"
 #include "Editor/EditorStyles.hpp"
 
+
 namespace Rendering
 {
     constexpr bool DONT_RENDER_NON_UTILS = false;
@@ -95,21 +96,41 @@ namespace Rendering
 
     void Renderer::AddCircleCall(const ScreenPosition& pos, const float radius, const Color color)
     {
-        RenderCalls.push_back(CircleCall{ pos, radius, color });
+        RenderCalls.emplace_back(CircleCall{ pos, radius, color });
     }
-    void Renderer::AddRectangleCall(const ScreenPosition& pos, const Vec2Int& size, const Color color)
+    void Renderer::AddRectangleCall(const ScreenPosition& pos, const Vec2& size, const Color color)
     {
-        RenderCalls.push_back(RectCall{ pos, size, color });
+        RenderCalls.emplace_back(RectCall{ pos, size, color });
     }
-    void Renderer::AddTextureCall(const ScreenPosition& pos, const Texture& tex, const float rotation, const float scale, const Color color)
+    void Renderer::AddTextureCall(const ScreenPosition& pos, const Texture& tex, const float rotation, const Vec2 scale, const Color color)
     {
-        TextureData.emplace_back(tex, rotation, scale);
-        RenderCalls.push_back(TextureCall{ pos, static_cast<TextureID>(TextureData.size()-1), color});
+        TextureData.emplace_back(tex, scale);
+        RenderCalls.emplace_back(TextureCall{ static_cast<TextureID>(TextureData.size() - 1), pos, color });
     }
     void Renderer::AddTextCall(const ScreenPosition& pos, const Font& font, const char* text, const float size, const float spacing, const Color color)
     {
         TextData.emplace_back(font, text, size, spacing);
-        RenderCalls.push_back(TextCall{ pos, static_cast<TextID>(TextData.size() - 1), color });
+        RenderCalls.emplace_back(TextCall{ static_cast<TextID>(TextData.size() - 1), pos, color });
+    }
+    void Renderer::AddLineCall(const ScreenPosition& pos, const float thickness, const Vec2& length, const Color color)
+    {
+        RenderCalls.emplace_back(LineCall{ pos, thickness, length, color });
+    }
+    void Renderer::AddRectangleLineCall(const ScreenPosition& pos, const float thickness, const Vec2& size, const Color color)
+    {
+        RenderCalls.emplace_back(RectLineCall{ pos, thickness, size, color });
+    }
+
+
+    void Renderer::PushCallsToBuffer(const std::vector<RenderCall>& calls)
+    {
+        for (const auto& call : calls)
+            RenderCalls.push_back(call);
+    }
+    void Renderer::MoveCallsToBuffer(std::vector<RenderCall>& calls)
+    {
+        for (auto& call : calls)
+            RenderCalls.emplace_back(std::move(call));
     }
 
     void Renderer::RenderBuffer()
@@ -135,13 +156,33 @@ namespace Rendering
             else if (const TextureCall* c = std::get_if<TextureCall>(&call))
             {
                 TextureCallData& texData = TextureData[c->m_Id];
-                DrawTextureEx(texData.m_Tex, RaylibUtils::ToRaylibVector(c->m_Pos), texData.m_Rotation, texData.m_Scale, c->m_Color);
+                Vector2 scale = RaylibUtils::ToRaylibVector(texData.m_Scale);
+                Vector2 texSize = { texData.m_Tex.width, texData.m_Tex.height };
+                //(std::format("Scale is:{}", texData.m_Scale.ToString()));
+                /*LogError(std::format("Rendering texre at pos:{} scale:{} tex id: {} rotation:{} color:{}", 
+                    c->m_Pos.ToString(), texData.m_Scale, texData.m_Tex.id, texData.m_Rotation, RaylibUtils::ToString(c->m_Color)));*/
+
+                //DrawTextureEx(texData.m_Tex, RaylibUtils::ToRaylibVector(c->m_Pos), texData.m_Rotation, texData.m_Scale, c->m_Color);
+                Rectangle source = { 0.0f, 0.0f, (float)texSize.x * Utils::GetSign(scale.x), (float)texSize.y* Utils::GetSign(scale.y)};
+                //LogWarning(std::format("source size:{} {}", source.width, source.height));
+                Vector2 drawPos = RaylibUtils::ToRaylibVector(c->m_Pos);
+                Rectangle dest = { drawPos.x, drawPos.y, texSize.x*std::abs(scale.x), texSize.y*std::abs(scale.y)};
+                DrawTexturePro(texData.m_Tex, source, dest, {0, 0}, 0, c->m_Color);
             }
             else if (const TextCall* c = std::get_if<TextCall>(&call))
             {
                 TextCallData& textData = TextData[c->m_Id];
-                DrawTextEx(textData.m_Font, textData.m_Text, RaylibUtils::ToRaylibVector(c->m_Pos), textData.m_FontSize, textData.m_Spacing, c->m_Color);
-            }   
+                DrawTextEx(textData.m_Font, textData.m_Text, RaylibUtils::ToRaylibVector(Vec2Int(c->m_Pos.m_X, c->m_Pos.m_Y)), textData.m_FontSize, textData.m_Spacing, c->m_Color);
+            }
+            else if (const LineCall* c = std::get_if<LineCall>(&call))
+            {
+                Vector2 startPos = RaylibUtils::ToRaylibVector(c->m_Pos);
+                DrawLineEx(startPos, Vector2{ startPos.x + c->m_Length.m_X, startPos.y + c->m_Length.m_Y }, c->m_Thickness, c->m_Color);
+            }
+            else if (const RectLineCall* c = std::get_if<RectLineCall>(&call))
+            {
+                DrawRectangleLinesEx(Rectangle{ c->m_Pos.m_X, c->m_Pos.m_Y, c->m_Size.m_X, c->m_Size.m_Y }, c->m_Thickness, c->m_Color);
+            }
         }
         EndDrawing();
 
@@ -150,6 +191,8 @@ namespace Rendering
 
     void Renderer::ClearBuffer()
     {
+        TextData.clear();
+        TextureData.clear();
         RenderCalls.clear();
     }
 }

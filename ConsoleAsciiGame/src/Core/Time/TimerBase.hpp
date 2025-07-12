@@ -21,7 +21,7 @@ struct TimerResult
 std::string ToString(const LocalTime& time);
 std::string ToString(const TimePointLowRes& time);
 
-class Timer
+class TimerBase
 {
 protected:
 	TimePointHighRes m_startTimeHighRes;
@@ -35,8 +35,8 @@ public:
 
 private:
 public:
-	Timer();
-	~Timer();
+	TimerBase();
+	~TimerBase();
 
 	/// <summary>
 	/// Will start the timer

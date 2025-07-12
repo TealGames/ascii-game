@@ -10,6 +10,7 @@
 #include "ECS/Systems/Types/UI/UITextSystem.hpp"
 #include "ECS/Systems/Types/UI/UIRendererSystem.hpp"
 #include "ECS/Systems/Types/UI/UIToggleSystem.hpp"
+#include "ECS/Systems/Types/UI/UITextureSystem.hpp"
 
 namespace Rendering { class Renderer; }
 class UIHierarhcy;
@@ -19,19 +20,20 @@ class EngineState;
 class UISystemExecutor
 {
 private:
-	ECS::UIRenderSystem m_uiRenderSystem;
-
-	ECS::UIColorPickerSystem m_colorPickerSystem;
-	ECS::UISelectableSystem m_uiSelectableSystem;
-	ECS::UITransformSystem m_uiTransformSystem;
-	ECS::UIButtonSystem m_uiButtonSystem;
-	ECS::UIInputFieldSystem m_uiInputFieldSystem;
-	ECS::UILayoutSystem m_uiLayoutSystem;
-	ECS::UIPanelSystem m_uiPanelSystem;
-	ECS::UISliderSystem m_uiSliderSystem;
-	ECS::UITextSystem m_uiTextSystem;
-	ECS::UIToggleSystem m_uiToggleSystem;
 public:
+	ECS::UIRenderSystem m_UiRenderSystem;
+
+	ECS::UIColorPickerSystem m_ColorPickerSystem;
+	ECS::UISelectableSystem m_UiSelectableSystem;
+	ECS::UITransformSystem m_UiTransformSystem;
+	ECS::UIButtonSystem m_UiButtonSystem;
+	ECS::UIInputFieldSystem m_UiInputFieldSystem;
+	ECS::UILayoutSystem m_UiLayoutSystem;
+	ECS::UIPanelSystem m_UiPanelSystem;
+	ECS::UISliderSystem m_UiSliderSystem;
+	ECS::UITextSystem m_UiTextSystem;
+	ECS::UITextureSystem m_UiTextureSystem;
+	ECS::UIToggleSystem m_UiToggleSystem;
 
 private:
 public:

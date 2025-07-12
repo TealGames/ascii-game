@@ -12,14 +12,12 @@
 #include <crtdbg.h>
 #endif
 
-
 int main() 
 {
 
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
-
     //std::optional<float> maybeFloat = TryConvertPromptArgToType<float>("0");
     //Log(std::format("Maybe float val: {}", std::to_string(maybeFloat.value() + 1)));
     //throw std::invalid_argument("");

@@ -2,28 +2,29 @@
 #include "Core/UI/UISystemExecutor.hpp"
 
 UISystemExecutor::UISystemExecutor(const EngineState& state, Rendering::Renderer& renderer, UIHierarchy& hierarchy, PopupUIManager& popupManager) :
-	m_uiRenderSystem(state, renderer, hierarchy), m_colorPickerSystem(popupManager), m_uiSelectableSystem(), m_uiButtonSystem(), m_uiInputFieldSystem(),
-	m_uiLayoutSystem(), m_uiPanelSystem(), m_uiSliderSystem(), m_uiTextSystem(), m_uiToggleSystem(), m_uiTransformSystem()
+	m_UiRenderSystem(state, renderer, hierarchy), m_ColorPickerSystem(popupManager), m_UiSelectableSystem(), m_UiButtonSystem(), m_UiInputFieldSystem(),
+	m_UiLayoutSystem(), m_UiPanelSystem(), m_UiSliderSystem(), m_UiTextSystem(), m_UiToggleSystem(), m_UiTransformSystem()
 {
 
 }
 void UISystemExecutor::Init()
 {
-	m_uiRenderSystem.Init();
-	m_colorPickerSystem.Init();
-	m_uiSelectableSystem.Init();
-	m_uiButtonSystem.Init();
-	m_uiInputFieldSystem.Init();
-	m_uiPanelSystem.Init();
-	m_uiSliderSystem.Init();
-	m_uiTextSystem.Init();
-	m_uiToggleSystem.Init();
+	m_UiRenderSystem.Init();
+	m_ColorPickerSystem.Init();
+	m_UiSelectableSystem.Init();
+	m_UiButtonSystem.Init();
+	m_UiInputFieldSystem.Init();
+	m_UiPanelSystem.Init();
+	m_UiSliderSystem.Init();
+	m_UiTextSystem.Init();
+	m_UiToggleSystem.Init();
+	m_UiTextureSystem.Init();
 }
 
 void UISystemExecutor::SystemsUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime)
 {
-	m_uiButtonSystem.SystemUpdate(globalEntityManager, deltaTime);
-	m_uiInputFieldSystem.SystemUpdate(globalEntityManager, deltaTime);
-	m_uiLayoutSystem.SystemUpdate(globalEntityManager, deltaTime);
-	m_uiRenderSystem.SystemUpdate();
+	m_UiButtonSystem.SystemUpdate(globalEntityManager, deltaTime);
+	m_UiInputFieldSystem.SystemUpdate(globalEntityManager, deltaTime);
+	m_UiLayoutSystem.SystemUpdate(globalEntityManager, deltaTime);
+	m_UiRenderSystem.SystemUpdate();
 }

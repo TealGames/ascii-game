@@ -34,12 +34,12 @@ public:
 private:
 	//void DrawOverlayTexture(const float targetWidth, const float targetHeight, const Vector2& topLeftPos);
 	void SetTextureFromState();
+	void Init();
+
 public:
 	UIToggleComponent(const bool& startValue, const UIStyle& settings, UITextureData* onTexture=nullptr, UITextureData* offTexture=nullptr);
 	//const ToggleAction& valueSetAction=nullptr);//, const TextureAsset* overlayTexture=nullptr);
 	~UIToggleComponent();
-
-	void Init();
 
 	void SetSettings(const UIStyle& settings);
 	void SetStateTextures(UITextureData* onTexture, UITextureData* offTexture);

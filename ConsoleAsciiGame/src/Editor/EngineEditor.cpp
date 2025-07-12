@@ -186,7 +186,7 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 	m_pauseGameToggle = &(pauseGameToggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle())));
 	m_pauseGameToggle->m_OnValueSet.AddListener([this](const bool isChecked) -> void
 		{
-			LogError("Pause game toggle is set with val:{}", isChecked);
+			//LogError("Pause game toggle is set with val:{}", isChecked);
 			if (isChecked) m_timeKeeper.StopTimeScale();
 			else m_timeKeeper.ResetTimeScale();
 		});

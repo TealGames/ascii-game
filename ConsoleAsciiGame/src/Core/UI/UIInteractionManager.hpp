@@ -36,12 +36,10 @@ private:
 	/// True if the current selectable was selected THIS frame
 	/// </summary>
 	bool m_selectedThisFrame;
-	bool m_guiTreeNeedsUpdate;
 	Vec2 m_lastFrameMousePos;
 public:
 
 private:
-	void TryUpdateTree();
 	void InvokeInteractionEvents();
 	void CreateSelectableArray();
 
@@ -50,6 +48,8 @@ private:
 	void ClickSelectable(UISelectableData* selectable);
 	void StopCurrentHovering();
 	void SetNewHoveredSelectable(UISelectableData* selectable);
+	void StartDrag(UISelectableData* selectable);
+	void EndCurrentDrag();
 
 	std::string ToStringSelectableTypes() const;
 	
@@ -58,7 +58,6 @@ private:
 public:
 	UIInteractionManager(const Input::InputManager& input, UIHierarchy& hierarchy);
 
-	void Init();
 	void Update();
 
 	void AddSelectable(const UILayer layer, UISelectableData* selectable);
@@ -66,6 +65,8 @@ public:
 
 	bool SelectedSelectableThisFrame() const;
 	bool HasSelecatbleSelected() const;
+	bool HasSelectableHovered() const;
+	bool HasSelectableDragged() const;
 	const UISelectableData* TryGetSelectableSelected() const;
 	const UISelectableData* TryGetSelectableDragged() const;
 	const UISelectableData* TryGetSelectableHovered() const;

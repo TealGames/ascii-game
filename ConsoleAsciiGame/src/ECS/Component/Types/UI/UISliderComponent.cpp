@@ -28,7 +28,7 @@ void UISliderComponent::Init()
 
 			if (dragTime < MIN_DRAG_TIME_TO_MOVE) return;
 
-			const Vec2Int lastRenderSize = m_renderer->GetLastRenderRect().GetSize();
+			const Vec2 lastRenderSize = m_renderer->GetLastRenderRect().GetSize();
 			float moveFraction = mouseDelta.m_X / lastRenderSize.m_X;
 			SetValueDelta(moveFraction * (m_minMaxValues.m_Y - m_minMaxValues.m_X));
 

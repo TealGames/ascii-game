@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Time/Timer.hpp"
+#include "Core/Time/TimerBase.hpp"
 #include <string>
 #include <cstdint>
 #include <unordered_map>
@@ -81,7 +81,7 @@ private:
 	/// Stores the last process data
 	/// </summary>
 	ProcessCollectionType m_routines;
-	Timer m_profilerActionsTimer;
+	TimerBase m_profilerActionsTimer;
 public:
 
 private:

@@ -30,6 +30,11 @@ TransformData& Component::GetTransformMutable() { return GetEntityMutable().GetT
 const TransformData& Component::GetTransform() const { return GetEntity().GetTransform(); }
 ECS::EntityID Component::GetEntityID() const { return GetEntity().GetId(); }
 
+bool Component::IsInActiveAndEnabledState() const
+{
+	return m_IsEnabled && GetEntity().IsEntityActive();
+}
+
 void Component::InitFields()
 {
 	return;

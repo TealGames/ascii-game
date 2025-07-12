@@ -16,7 +16,7 @@
 #include "ECS/Systems/Types/World/PhysicsBodySystem.hpp"
 #include "Core/UIElementTemplates.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
-#include "Core/Time/Timer.hpp"
+#include "Core/Time/TimerBase.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #include "Core/PositionConversions.hpp"
 #include "Core/Analyzation/DebugInfo.hpp"
@@ -116,6 +116,10 @@ namespace Core
 	//so it can be easily reused and so systems like uirenderer and ui interation manager do not need events for add element
 	//TODO: right now ui renderer and transform have their own last frame rect vars, but most of the time renders are thesame for both, so ui renderer should probably use the var result from get function from transform
 	//in order to prevent var storage duplication/ remove the return value from render
+	//TODO: for some speedup, remove std::format() from if condition and instead inside if scope to reduce overhead of formatting strings when we do assets, or just simple checks, and only when it is necessary for logging wrong value
+	//TODO: msot interaction components do not need update and should instead do things on interaction event, like select, drag, etc since really they need 
+	//to be updated when getting an event not every single frame
+	//TODO: on selectable, we allow calling hover start/end and click, which should only be possible with interaction manager because they are driven by input. select/dselect is fine
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -174,6 +178,7 @@ namespace Core
 		m_particleEmitterSystem(),
 		m_triggerSystem(),
 		m_uiSystemExecutor(m_engineState, m_renderer, m_uiHierarchy, m_popupManager),
+		m_gizmosOverlay(m_uiSystemExecutor.m_UiRenderSystem),
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
 		m_timeKeeper(),
@@ -260,10 +265,6 @@ namespace Core
 		m_gameManager.GameStart();
 		EngineLog("FINISHED GAME INIT");
 
-		//Note: gui selector init has to be after any other calls because we want to ensure we create the selectable
-		//tree after as much time is given to add any gui elements to the ui tree
-		m_UIInteractionManager.Init();
-
 		m_engineState.SetExecutionState(ExecutionState::Validation);
 		ValidateAll();
 
@@ -303,7 +304,7 @@ namespace Core
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("Engine::Update");
 #endif 
-		LogWarning(std::format("FPS:{}", GetFPS()));
+		//LogWarning(std::format("FPS:{}", GetFPS()));
 
 		m_timeKeeper.UpdateTimeStart();
 		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
@@ -313,9 +314,10 @@ namespace Core
 		m_inputManager.Update(unscaledDeltaTime);
 
 		const FragmentedTextBuffer* frameBuffer = nullptr;
+		Scene* activeScene = nullptr;
 		if (m_editor.IsInGameView())
 		{
-			Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
+			activeScene = m_sceneManager.GetActiveSceneMutable();
 			if (!Assert(activeScene != nullptr, "Tried to update the active scene but there "
 				"are none set as active right now"))
 				return ERROR_CODE;
@@ -359,27 +361,22 @@ namespace Core
 			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 			m_gameManager.GameUpdate();
 
-			m_UIInteractionManager.Update();
-			//m_uiHierarchy.UpdateAll(unscaledDeltaTime);
-			m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
-			m_uiSystemExecutor.SystemsUpdate(m_sceneManager.m_GlobalEntityManager, unscaledDeltaTime);
-			/*Rendering::RenderBuffer(frameBuffer, m_cameraSystem.GetCurrentColliderOutlineBuffer(),
-				m_cameraSystem.GetCurrentLineBuffer(), &m_uiTree);*/
-			m_renderer.RenderBuffer();
-
 			m_transformSystem.UpdateLastFramePos(*activeScene);
 		}
-		else
-		{
-			m_UIInteractionManager.Update();
-			//m_uiHierarchy.UpdateAll(unscaledDeltaTime);
-			m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
-			m_uiSystemExecutor.SystemsUpdate(m_sceneManager.m_GlobalEntityManager, unscaledDeltaTime);
 
-			//Rendering::RenderBuffer(nullptr, nullptr, nullptr, &m_uiTree);
-			m_renderer.RenderBuffer();
+		m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
+		m_UIInteractionManager.Update();
+		m_uiSystemExecutor.SystemsUpdate(m_sceneManager.m_GlobalEntityManager, unscaledDeltaTime);
+
+		m_gizmosOverlay.MoveCallsToRenderBuffer(m_renderer);
+		m_renderer.RenderBuffer();
+
+		if (m_editor.IsInGameView())
+		{
+			m_transformSystem.UpdateLastFramePos(*activeScene);
 		}
 		
+		m_uiHierarchy.Update();
 		m_timeKeeper.UpdateTimeEnd();
 		if (m_timeKeeper.ReachedFrameLimit()) 
 			return EXIT_CODE;

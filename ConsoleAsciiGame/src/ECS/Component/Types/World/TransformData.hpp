@@ -12,6 +12,7 @@ private:
 	//Vec2 m_lastLocalPos;
 	Vec2 m_localPosLastFrame;
 
+	Vec2 m_localScale;
 public:
 
 private:
@@ -35,6 +36,10 @@ public:
 	Vec2 GetLocalPosLastFrame() const;
 	void SetLocalPosLastFrame(const Vec2& vec);
 	bool HasMovedThisFrame() const;
+
+	Vec2 GetLocalScale() const;
+	Vec2 GetGlobalScale() const;
+	void SetLocalScale(const Vec2 scale);
 
 	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;

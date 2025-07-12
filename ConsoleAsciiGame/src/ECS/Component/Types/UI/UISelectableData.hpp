@@ -18,23 +18,35 @@ using SelectableCooldownInteractEvent = CooldownEvent<void, UISelectableData*>;
 /// </summary>
 using SelectableDragEvent = Event<void, UISelectableData*, float, Vec2>;
 
-enum class InteractionEventFlags : std::uint8_t
+enum class TriggerInteractionEventFlags : std::uint8_t
 {
 	None						= 0,
 	InvokeSelectionEvents		= 1 << 0,
 	InvokeClickEvent			= 1 << 1,
 	InvokeHoverEvents			= 1 << 2,
 	InvokeDragDeltaEvent		= 1 << 3,
+	All							= 0xFF
 };
-FLAG_ENUM_OPERATORS(InteractionEventFlags)
+FLAG_ENUM_OPERATORS(TriggerInteractionEventFlags)
 
 enum class InteractionRenderFlags : std::uint8_t
 {
 	None						= 0,
 	DrawDisabledOverlay			= 1 << 1,
 	DrawHoverOverlay			= 1 << 2,
+	All							= 0xFF
 };
 FLAG_ENUM_OPERATORS(InteractionRenderFlags)
+
+enum class InteractionEventFlags : std::uint8_t
+{
+	None			= 0,
+	Selected		= 1,
+	Hovered			= 1<<1,
+	Dragged			= 1<<2,
+	All				= 0xFF
+};
+FLAG_ENUM_OPERATORS(InteractionEventFlags)
 
 class UISelectableData : public Component
 {
@@ -43,16 +55,14 @@ private:
 	//UIInteractionManager* m_selectorManager;
 	UIRendererData* m_renderer;
 
-	bool m_isSelected;
-	bool m_isHovered;
 	float m_dragTime;
-
 public:
 	friend class ECS::UISelectableSystem;
-	static constexpr InteractionEventFlags DEFAULT_EVENT_FLAGS = Utils::SetAllFlags<InteractionEventFlags>();
-	static constexpr InteractionRenderFlags DEFAULT_RENDER_FLAGS= Utils::SetAllFlags<InteractionRenderFlags>();
+	static constexpr TriggerInteractionEventFlags DEFAULT_EVENT_FLAGS = TriggerInteractionEventFlags::All;
+	static constexpr InteractionRenderFlags DEFAULT_RENDER_FLAGS = InteractionRenderFlags::All;
 
-	InteractionEventFlags m_eventFlags;
+	TriggerInteractionEventFlags m_triggerEventFlags;
+	InteractionEventFlags m_currentEventFlags;
 	InteractionRenderFlags m_renderFlags;
 
 	//TODO: maybe instead of having these events, we should instead have functions that can be overriden within selectable
@@ -77,7 +87,7 @@ protected:
 	void DrawHoverOverlay(const UIRect& rect);
 
 public:
-	UISelectableData(const float clickCooldown=0, const InteractionEventFlags eventFlags= DEFAULT_EVENT_FLAGS, 
+	UISelectableData(const float clickCooldown=0, const TriggerInteractionEventFlags eventFlags= DEFAULT_EVENT_FLAGS, 
 				  const InteractionRenderFlags renderFlags= DEFAULT_RENDER_FLAGS);
 	~UISelectableData();
 
@@ -89,14 +99,15 @@ public:
 
 	bool IsHoveredOver() const;
 	bool IsSelected() const;
+	bool IsDragged() const;
 	bool IsDraggedForTime(const float time) const;
 	bool RectContainsPos(const ScreenPosition& pos) const;
 
 	void UpdateDrag(const Vec2 mouseDelta, const float time);
 	void ClearDragTime();
 
-	void AddEventFlags(const InteractionEventFlags flags);
-	void RemoveEventFlags(const InteractionEventFlags flags);
+	void AddEventFlags(const TriggerInteractionEventFlags flags);
+	void RemoveEventFlags(const TriggerInteractionEventFlags flags);
 	void AddRenderFlags(const InteractionRenderFlags flags);
 	void RemoveRenderFlags(const InteractionRenderFlags flags);
 

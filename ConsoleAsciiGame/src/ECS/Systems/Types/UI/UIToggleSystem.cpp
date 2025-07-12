@@ -13,7 +13,9 @@ namespace ECS
 			ComponentInfo(CreateComponentTypes<UISelectableData>(), CreateRequiredComponentFunction(UISelectableData()),
 				[](EntityData& entity)-> void
 				{
-					entity.TryGetComponentMutable<UIToggleComponent>()->m_selectable = entity.TryGetComponentMutable<UISelectableData>();
+					UIToggleComponent& toggle = *(entity.TryGetComponentMutable<UIToggleComponent>());
+					toggle.m_selectable = entity.TryGetComponentMutable<UISelectableData>();
+					toggle.Init();
 				}));
 	}
 }

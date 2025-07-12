@@ -6,12 +6,12 @@
 #include "Core/Rendering/GameRenderer.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 
-UISelectableData::UISelectableData(const float clickCooldown, const InteractionEventFlags eventFlags, const InteractionRenderFlags renderFlags) :
-	m_eventFlags(eventFlags), m_renderFlags(renderFlags), m_renderer(nullptr),
+UISelectableData::UISelectableData(const float clickCooldown, const TriggerInteractionEventFlags eventFlags, const InteractionRenderFlags renderFlags) :
+	m_triggerEventFlags(eventFlags), m_renderFlags(renderFlags), m_renderer(nullptr),
 	//m_selectorManager(selectorManager), 
 	//m_lastFrameRect(), 
-	m_isSelected(false), m_isHovered(false), m_dragTime(0),
-	m_OnSelect(), m_OnDeselect(), m_OnClick(clickCooldown), m_OnHoverStart(), m_OnHoverEnd()
+	m_dragTime(0), m_currentEventFlags(InteractionEventFlags::None),
+	m_OnSelect(), m_OnDeselect(), m_OnClick(clickCooldown), m_OnHoverStart(), m_OnHoverEnd(), m_OnDragDelta()
 {
 	
 }
@@ -20,13 +20,13 @@ UISelectableData::~UISelectableData()
 	//LogError(std::format("Selectable:{} destroyed", ToStringBase()));
 }
 
-void UISelectableData::AddEventFlags(const InteractionEventFlags flags)
+void UISelectableData::AddEventFlags(const TriggerInteractionEventFlags flags)
 {
-	Utils::AddFlags(m_eventFlags, flags);
+	Utils::AddFlags(m_triggerEventFlags, flags);
 }
-void UISelectableData::RemoveEventFlags(const InteractionEventFlags flags)
+void UISelectableData::RemoveEventFlags(const TriggerInteractionEventFlags flags)
 {
-	Utils::RemoveFlags(m_eventFlags, flags);
+	Utils::RemoveFlags(m_triggerEventFlags, flags);
 }
 void UISelectableData::AddRenderFlags(const InteractionRenderFlags flags)
 {
@@ -42,19 +42,30 @@ void UISelectableData::RemoveRenderFlags(const InteractionRenderFlags flags)
 //
 //void SelectableGUI::SetLastFramneRect(const GUIRect& newRect) { m_lastFrameRect = newRect; }
 
-bool UISelectableData::IsHoveredOver() const { return m_isHovered; }
-bool UISelectableData::IsSelected() const { return m_isSelected; }
-bool UISelectableData::IsDraggedForTime(const float time) const { return time <= m_dragTime; }
+bool UISelectableData::IsHoveredOver() const { return Utils::HasFlagAll(m_currentEventFlags, InteractionEventFlags::Hovered); }
+bool UISelectableData::IsDragged() const { return Utils::HasFlagAll(m_currentEventFlags, InteractionEventFlags::Dragged); }
+bool UISelectableData::IsSelected() const { return Utils::HasFlagAll(m_currentEventFlags, InteractionEventFlags::Selected); }
+bool UISelectableData::IsDraggedForTime(const float time) const 
+{ 
+	return Utils::HasFlagAll(m_currentEventFlags, InteractionEventFlags::Dragged) && time <= m_dragTime; 
+}
+
 void UISelectableData::UpdateDrag(const Vec2 mouseDelta, const float time) 
 { 
+	if (m_dragTime<=0) Utils::AddFlags(m_currentEventFlags, InteractionEventFlags::Dragged);
 	m_dragTime = time;  
+
 	//LogError(std::format("drag updated mouse mag:{} time:{}", std::to_string( mouseDelta.GetMagnitude()), std::to_string(time)));
 	if (mouseDelta.GetMagnitude() != 0)
 	{
 		m_OnDragDelta.Invoke(this, m_dragTime, mouseDelta);
 	}
 }
-void UISelectableData::ClearDragTime() { m_dragTime = 0; }
+void UISelectableData::ClearDragTime() 
+{ 
+	m_dragTime = 0; 
+	Utils::RemoveFlags(m_currentEventFlags, InteractionEventFlags::Dragged);
+}
 
 bool UISelectableData::RectContainsPos(const ScreenPosition& pos) const
 {
@@ -63,25 +74,25 @@ bool UISelectableData::RectContainsPos(const ScreenPosition& pos) const
 
 void UISelectableData::Select()
 {
-	if (!Utils::HasFlagAll(m_eventFlags, InteractionEventFlags::InvokeSelectionEvents))
+	if (!Utils::HasFlagAll(m_triggerEventFlags, TriggerInteractionEventFlags::InvokeSelectionEvents))
 		return;
 
-	m_isSelected = true;
+	Utils::AddFlags(m_currentEventFlags, InteractionEventFlags::Selected);
 	m_OnSelect.Invoke(this);
 }
 
 void UISelectableData::Deselect()
 {
-	if (!Utils::HasFlagAll(m_eventFlags, InteractionEventFlags::InvokeSelectionEvents))
+	if (!Utils::HasFlagAll(m_triggerEventFlags, TriggerInteractionEventFlags::InvokeSelectionEvents))
 		return;
 
-	m_isSelected = false;
+	Utils::RemoveFlags(m_currentEventFlags, InteractionEventFlags::Selected);
 	m_OnDeselect.Invoke(this);
 }
 
 void UISelectableData::Click()
 {
-	if (!Utils::HasFlagAll(m_eventFlags, InteractionEventFlags::InvokeClickEvent))
+	if (!Utils::HasFlagAll(m_triggerEventFlags, TriggerInteractionEventFlags::InvokeClickEvent))
 		return;
 
 	//Assert(false, "SELECTAVBLE CLICKL");
@@ -91,18 +102,18 @@ void UISelectableData::Click()
 
 void UISelectableData::HoverStart()
 {
-	if (!Utils::HasFlagAll(m_eventFlags, InteractionEventFlags::InvokeHoverEvents))
+	if (!Utils::HasFlagAll(m_triggerEventFlags, TriggerInteractionEventFlags::InvokeHoverEvents))
 		return;
 
-	m_isHovered = true;
+	Utils::AddFlags(m_currentEventFlags, InteractionEventFlags::Hovered);
 	m_OnHoverStart.Invoke(this);
 }
 void UISelectableData::HoverEnd()
 {
-	if (!Utils::HasFlagAll(m_eventFlags, InteractionEventFlags::InvokeHoverEvents))
+	if (!Utils::HasFlagAll(m_triggerEventFlags, TriggerInteractionEventFlags::InvokeHoverEvents))
 		return;
 
-	m_isHovered = false;
+	Utils::RemoveFlags(m_currentEventFlags, InteractionEventFlags::Hovered);
 	m_OnHoverEnd.Invoke(this);
 }
 

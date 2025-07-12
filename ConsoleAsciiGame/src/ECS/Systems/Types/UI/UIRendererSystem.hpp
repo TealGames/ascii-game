@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "Utils/Data/Event.hpp"
 
 namespace Rendering { class Renderer; }
 class Scene;
@@ -17,8 +18,10 @@ namespace ECS
 		//std::vector<UIRendererData*> m_uiRenderersHierarchyOrder;
 		//bool m_hasGuiTreeUpdated;
 	public:
+		Event<void, const UIRendererData*, UIRect*> m_OnElementProcessed;
 
 	private:
+
 		//void CreateRenderTree();
 		UIRect RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const UIRect& rect);
 		void RenderAll();

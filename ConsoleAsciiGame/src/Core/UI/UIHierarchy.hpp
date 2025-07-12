@@ -32,6 +32,7 @@ private:
 	/// (meaning background layers first, then foreground layers)
 	/// </summary>
 	UIElementLayersCollection m_layerRoots;
+	bool m_uiHierarchyUpdatedThisFrame;
 	//std::vector<GUIElement*> m_rootElements;
 public:
 	static constexpr const char* ROOT_UI_ENTITY_NAME = "RootUI";
@@ -67,6 +68,9 @@ public:
 	UIHierarchy(GlobalEntityManager& globalEntityManager, const Vec2Int rootCanvasSize);
 
 	void Init();
+	void Update();
+
+	bool WasUIHierarchyUpdatedThisFrame() const;
 
 	const Vec2Int GetRootSize() const;
 	const UITransformData* GetRootElement() const;

@@ -102,6 +102,7 @@ private:
 	/*InputFieldGUI(const Input::InputManager* manager, const InputFieldType& type, const InputFieldFlag& flags,
 		const GUISettings& settings, const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions);*/
 
+	void Init();
 	std::string CleanInput(const std::string& input) const;
 	
 	void SetAttemptedInputDelta(const std::string& input);
@@ -116,7 +117,7 @@ private:
 	std::string GetDisplayAttemptedInput() const;
 	void SetInput(const std::string& newInput, const bool isAttemptedInput);
 
-	void UpdateInput(const float deltaTime);
+	void UpdateInput();
 
 public:
 	//InputField();
@@ -125,8 +126,7 @@ public:
 		const InputFieldAction& submitAction=nullptr, const InputFieldKeyActions& keyPressActions = {});
 	~UIInputField();
 
-	void Init();
-	void Update(const float deltaTime);
+	void Update();
 
 	bool HasFlag(const InputFieldFlag& flag) const;
 	const InputFieldType& GetFieldType() const;

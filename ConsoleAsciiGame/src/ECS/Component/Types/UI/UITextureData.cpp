@@ -6,7 +6,7 @@
 #include "Core/Rendering/GameRenderer.hpp"
 
 UITextureData::UITextureData() : m_texture(nullptr), m_renderer(nullptr) {}
-UITextureData::UITextureData(const TextureAsset& texture) : m_texture(&texture) {}
+UITextureData::UITextureData(const TextureAsset& texture) : m_texture(&texture), m_renderer(nullptr) {}
 
 const TextureAsset* UITextureData::GetTexture() const
 {
@@ -18,12 +18,16 @@ bool UITextureData::HasTexture() const
 }
 UIRect UITextureData::Render(const UIRect& renderRect)
 {
-	if (m_texture == nullptr) return {};
+	//LogError(std::format("Rendering texture for entity:{} has:{}", GetEntity().m_Name, m_texture!=nullptr));
+	if (!HasTexture()) return {};
 
-	const Vec2Int renderAreaSize = renderRect.GetSize();
-	const float scaleX = renderAreaSize.m_X / m_texture->GetTexture().width;
-	const float scaleY = renderAreaSize.m_Y / m_texture->GetTexture().height;
-	m_renderer->GetRendererMutable().AddTextureCall(renderRect.m_TopLeftPos, m_texture->GetTexture(), 0, std::min(scaleX, scaleY), WHITE);
+	const Vec2 globalScale = GetEntity().GetTransform().GetGlobalScale();
+	const Vec2 renderAreaSize = renderRect.GetSize();
+	const float minFitToAreaScale = std::min((float)renderAreaSize.m_X / m_texture->GetTexture().width, (float)renderAreaSize.m_Y / m_texture->GetTexture().height);
+	const Vec2 scale = Vec2(minFitToAreaScale * globalScale.m_X, minFitToAreaScale * globalScale.m_Y);
+	
+	//LogWarning(std::format("Scale of ui texture:{} global scale:{} local scale:{}", scale.ToString(), globalScale.ToString(), GetEntity().GetTransform().GetLocalScale().ToString()));
+	m_renderer->GetRendererMutable().AddTextureCall(renderRect.m_TopLeftPos, m_texture->GetTexture(), 0, scale, WHITE);
 	return renderRect;
 }
 
@@ -33,7 +37,7 @@ void UITextureData::InitFields()
 }
 std::string UITextureData::ToString() const
 {
-	return std::format("[UITexture tex:{}]", m_texture!=nullptr? m_texture->ToString() : "None");
+	return std::format("[UITexture tex:{}]", HasTexture()? m_texture->ToString() : "None");
 }
 
 void UITextureData::Deserialize(const Json& json)

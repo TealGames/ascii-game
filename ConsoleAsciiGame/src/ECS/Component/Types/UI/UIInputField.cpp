@@ -79,7 +79,7 @@ std::string UIInputField::CleanInput(const std::string& input) const
 	return Utils::StringUtil(input).RemoveSpaces().ToString();
 }
 
-void UIInputField::UpdateInput(const float deltaTime)
+void UIInputField::UpdateInput()
 {
 	if (m_selectable->IsSelected() && GetInputManager().GetInputKey(ESCAPE_KEY)->GetState().IsReleased())
 	{
@@ -135,10 +135,10 @@ void UIInputField::UpdateInput(const float deltaTime)
 	//if (keysPressed == "." && m_type == InputFieldType::Float) Assert(false, std::format("FOUND DOT"));
 	SetAttemptedInputDelta(keysPressed);
 }
-void UIInputField::Update(const float deltaTime)
+void UIInputField::Update()
 {
 	if (m_textGUI == nullptr) return;
-	UpdateInput(deltaTime);
+	UpdateInput();
 	
 	std::string inputStr = m_selectable->IsSelected() && !HasFlag(InputFieldFlag::UserUIReadonly) ? GetDisplayAttemptedInput() : GetDisplayInput();
 	m_textGUI->SetText(inputStr);

@@ -122,8 +122,7 @@ private:
 	/// <param name="spacing"></param>
 	/// <param name="startingSize"></param>
 	/// <returns></returns>
-	float CalculateMaxFontSizeForSpace(const Vec2& space, const float spacing, const float startingSize= 0) const;
-	float CalculateMaxFontSizeForSpace(const ScreenPosition& space, const float spacing, const float startingSize=0) const;
+	float CalculateMaxFontSizeForSpace(const Vec2& space, const float spacing, const float startingSize=0) const;
 	Vector2 CalculateSpaceUsed(const float& fontSize, const float& spacing) const;
 
 	/// <summary>

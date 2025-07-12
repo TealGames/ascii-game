@@ -1,9 +1,9 @@
 #pragma once
 #include "Core/Analyzation/Profiler.hpp"
-#include "Core/Time/Timer.hpp"
+#include "Core/Time/TimerBase.hpp"
 #include <string>
 
-class ProfilerTimer : protected Timer
+class ProfilerTimer : protected TimerBase
 {
 private:
 	std::string m_processName;

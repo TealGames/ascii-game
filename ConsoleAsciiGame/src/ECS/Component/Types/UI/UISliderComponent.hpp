@@ -28,6 +28,8 @@ public:
 	Event<void, float> m_OnValueSet;
 
 private:
+	void Init();
+
 	/// <summary>
 	/// Will return the current value of the slider as a value between 0 and 1
 	/// </summary>
@@ -36,8 +38,6 @@ private:
 public:
 	UISliderComponent(const Input::InputManager& inputManager, 
 		const Vec2 minMaxValues, const UIStyle& settings);
-
-	void Init();
 
 	void SetSettings(const UIStyle& settings);
 	void SetMinValue(const float min);

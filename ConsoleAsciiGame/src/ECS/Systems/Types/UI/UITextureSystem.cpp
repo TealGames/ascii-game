@@ -13,6 +13,7 @@ namespace ECS
 			ComponentInfo(CreateComponentTypes<UIRendererData>(), CreateRequiredComponentFunction(UIRendererData()),
 				[](EntityData& entity)-> void
 				{
+					//if (entity.m_Name == "OnStateTexture") LogError(std::format("Entity has renderer:{}", entity.HasComponent<UIRendererData>()));
 					entity.TryGetComponentMutable<UITextureData>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>();
 				}));
 	}

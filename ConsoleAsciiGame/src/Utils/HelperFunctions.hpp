@@ -566,7 +566,17 @@ namespace Utils
 	double ToRadians(const double);
 	double ToDegrees(const double);
 	bool ApproximateEquals(double, double);
-	bool ApproximateEqualsF(float, float);
+	/// <summary>
+	/// Handles approximate values for floats for values close to 0 (by checking absolute diff < abs epsilon)
+	/// and also for large positive and small negatives aka big deltas/big abs values 
+	/// (by checking scaled relative epsilon based on max abs value < diff)
+	/// </summary>
+	/// <param name="f1"></param>
+	/// <param name="f2"></param>
+	/// <param name="relEps"></param>
+	/// <param name="absEps"></param>
+	/// <returns></returns>
+	bool ApproximateEqualsF(float f1, float f2, const float relEps = 1e-5f, const float absEps = 1e-8f);
 
 	//Returns the sign of the number, except for 0
 	//example: 5 -> 1, -5 -> -1, 0 -> 0

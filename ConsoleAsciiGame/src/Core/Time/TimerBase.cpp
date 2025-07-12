@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "Core/Time/Timer.hpp"
+#include "Core/Time/TimerBase.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
@@ -34,15 +34,15 @@ std::string ToString(const TimePointLowRes& time)
 	return ::ToString(Utils::GetLocalTime(time));
 }
 
-Timer::Timer() : m_isRunning(false), m_systemStartTime(), 
+TimerBase::TimerBase() : m_isRunning(false), m_systemStartTime(), 
 m_systemEndTime(), m_startTimeHighRes(), m_endTimeHighRes() {}
 
-Timer::~Timer()
+TimerBase::~TimerBase()
 {
 	if (m_isRunning) Stop();
 }
 
-void Timer::Start()
+void TimerBase::Start()
 {
 	if (!Assert(!m_isRunning, 
 		std::format("Tried to START a timer while it is already running!"))) 
@@ -53,7 +53,7 @@ void Timer::Start()
 	m_startTimeHighRes = std::chrono::high_resolution_clock().now();
 }
 
-TimerResult Timer::Stop()
+TimerResult TimerBase::Stop()
 {
 	if (!Assert(m_isRunning,
 		std::format("Tried to STOP a timer while it is not running!")))

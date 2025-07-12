@@ -10,7 +10,7 @@ static constexpr bool DRAW_RENDER_BOUNDS = false;
 
 UIHierarchy::UIHierarchy(GlobalEntityManager& globalEntityManager, const Vec2Int rootCanvasSize)
 	: m_globalEntityManager(&globalEntityManager), m_uiRoot(nullptr), m_rootSize(rootCanvasSize), m_layerRoots({}), 
-	m_OnElementAdded(), m_OnElementRemoved()//, m_elementAddedThisFrame(false)
+	m_OnElementAdded(), m_OnElementRemoved(), m_uiHierarchyUpdatedThisFrame(false)//, m_elementAddedThisFrame(false)
 {
 	
 }
@@ -28,7 +28,34 @@ void UIHierarchy::Init()
 		Assert(false, std::format("Attmpted to create the ui root element "
 			"but its ui transform element was null. Entity:{}", uiRootEntity.ToString()));
 	}
+
+	EntityData::OnChildElementAdded.AddListener([this](EntityData* parentEntity, EntityData* childEntity, size_t childIndex)-> void 
+		{
+			//LogWarning(std::format("Child element added:{}", childEntity->ToString()));
+			if (!childEntity->HasComponent<UITransformData>())
+				return;
+
+			EntityData* currentParent = parentEntity;
+			while (currentParent->GetParent() != nullptr)
+			{
+				currentParent = currentParent->GetParentMutable();
+			}
+			LogWarning(std::format("Added highest parent:{}", currentParent->ToString()));
+			if (currentParent->GetId() != m_uiRoot->GetEntityID()) return;
+
+			m_OnElementAdded.Invoke(currentParent->TryGetComponentMutable<UITransformData>());
+			m_uiHierarchyUpdatedThisFrame = true;
+			//LogError("Hierarchy updated");
+		});
 	//m_rootElements.reserve(MAX_LAYERS);
+}
+void UIHierarchy::Update()
+{
+	m_uiHierarchyUpdatedThisFrame = false;
+}
+bool UIHierarchy::WasUIHierarchyUpdatedThisFrame() const
+{
+	return m_uiHierarchyUpdatedThisFrame;
 }
 
 bool UIHierarchy::IsValidLayer(const UILayer layer, const bool logError) const
@@ -55,18 +82,6 @@ UITransformData* UIHierarchy::CreateNewLayer(const UILayer layer)
 	EntityData& layerRoot= m_uiRoot->GetEntityMutable().CreateChild(std::format("Layer{}", std::to_string(layer)), TransformData());
 	UITransformData& rootElement = layerRoot.AddComponent<UITransformData>();
 	m_layerRoots[layer] = &rootElement;
-
-	layerRoot.m_OnFarthestChildElementAttached.AddListener([this](EntityData* entity)-> void
-		{
-			if (entity == nullptr)
-			{
-				Assert(false, std::format("Invoked new gui element added with null element"));
-				return;
-			}
-
-			//Note: gui elements require their placement only in other gui elements, so we can guarantee they are gui elements
-			m_OnElementAdded.Invoke(entity->TryGetComponentMutable<UITransformData>());
-		});
 
 	return &rootElement;
 }
@@ -416,14 +431,14 @@ void UIHierarchy::UpdateAll(const float deltaTime)
 
 UIRect UIHierarchy::GetRootRect() const
 {
-	return UIRect(ScreenPosition(0, 0), m_rootSize);
+	return UIRect(ScreenPosition(0, 0), Vec2(m_rootSize.m_X, m_rootSize.m_Y));
 }
 
 std::string UIHierarchy::ToStringElementHelper(std::string startNewLine, const UITransformData& element) const
 {
 	std::string result = "";
-	//result += std::format("\n{}-> {}", startNewLine, std::format("{}({})", element.GetEntity().ToString(), element.ToString()));
-	result += std::format("\n{}-> {}", startNewLine, std::format("{} ({})", element.GetEntity().m_Name, element.ToString()));
+	result += std::format("\n{}-> {}", startNewLine, std::format("{}({})", element.GetEntity().ToString(), element.ToString()));
+	//result += std::format("\n{}-> {}", startNewLine, std::format("{} ({})", element.GetEntity().m_Name, element.ToString()));
 
 	if (element.GetEntity().GetChildCount()==0) return result;
 

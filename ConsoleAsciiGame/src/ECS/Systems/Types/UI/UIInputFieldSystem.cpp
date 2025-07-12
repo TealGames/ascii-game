@@ -32,9 +32,9 @@ namespace ECS
 	void UIInputFieldSystem::SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime)
 	{
 		globalEntityManager.OperateOnComponents<UIInputField>(
-			[this, &deltaTime](UIInputField& data)-> void
+			[this](UIInputField& data)-> void
 			{
-				data.Update(deltaTime);
+				data.Update();
 			});
 	}
 }

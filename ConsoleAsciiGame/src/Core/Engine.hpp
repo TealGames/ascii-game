@@ -33,6 +33,7 @@
 #include "Core/Rendering/GameRenderer.hpp"
 #include "GlobalInitializer.hpp"
 #include "Core/EngineState.hpp"
+#include "Core/GizmoOverlay.hpp"
 
 namespace Core
 {
@@ -70,6 +71,7 @@ namespace Core
 		ECS::TriggerSystem m_triggerSystem;
 
 		UISystemExecutor m_uiSystemExecutor;
+		GizmoOverlay m_gizmosOverlay;
 
 		//std::optional<ECS::EntityComponents<PlayerData, PhysicsBodyData>> m_playerInfo;
 		//std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;

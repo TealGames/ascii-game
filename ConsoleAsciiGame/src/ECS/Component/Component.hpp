@@ -68,6 +68,11 @@ public:
 	const TransformData& GetTransform() const;
 
 	ECS::EntityID GetEntityID() const;
+	/// <summary>
+	/// Returns true if this component is active and the entity is active
+	/// </summary>
+	/// <returns></returns>
+	bool IsInActiveAndEnabledState() const;
 
 	std::vector<ComponentField>& GetFieldsMutable();
 	/// <summary>

@@ -159,16 +159,11 @@ float UITextComponent::CalculateMaxFontSizeForSpace(const Vec2& space, const flo
 	
 	return fontSize;
 }
-float UITextComponent::CalculateMaxFontSizeForSpace(const ScreenPosition& space, 
-	const float spacing, const float startingSize) const
-{
-	return CalculateMaxFontSizeForSpace(Vec2(static_cast<float>(space.m_X), 
-		static_cast<float>(space.m_Y)), spacing, startingSize);
-}
+
 ScreenPosition UITextComponent::CalculateTopLeftPos(const UIRect& renderInfo, const Vector2& textRectArea) const
 {
-	int newX = renderInfo.m_TopLeftPos.m_X + m_padding.m_Left;
-	int newY = renderInfo.m_TopLeftPos.m_Y + m_padding.m_Top;
+	float newX = renderInfo.m_TopLeftPos.m_X + m_padding.m_Left;
+	float newY = renderInfo.m_TopLeftPos.m_Y + m_padding.m_Top;
 
 	const Vec2 usableSpace = CalculateUsableSpace(renderInfo);
 	const float xSpaceLeft = usableSpace.m_X - textRectArea.x;
@@ -193,12 +188,12 @@ ScreenPosition UITextComponent::CalculateTopLeftPos(const UIRect& renderInfo, co
 		newX += xSpaceLeft;
 	}
 
-	return {newX, newY};
+	return ScreenPosition{newX, newY};
 }
 
 Vec2 UITextComponent::CalculateUsableSpace(const UIRect& renderInfo) const
 {
-	return {renderInfo.GetSize().m_X - m_padding.m_Left - m_padding.m_Right,
+	return Vec2{renderInfo.GetSize().m_X - m_padding.m_Left - m_padding.m_Right,
 			renderInfo.GetSize().m_Y - m_padding.m_Top - m_padding.m_Bottom};
 }
 
@@ -248,10 +243,16 @@ void UITextComponent::SetPadding(const UIPadding& padding)
 
 UIRect UITextComponent::Render(const UIRect& rect)
 {
-	if (m_text.empty()) return {};
+	if (m_text.empty()) 
+		return {};
+
 	if (!Assert(m_fontData.HasValidFont(), std::format("Tried to render text GUI:{} of entity:{} "
 		"but font is invalid", ToString(), GetEntity().ToString())))
 		return {};
+
+	/*if (m_text == "Background")
+		throw std::invalid_argument("Invalid state when redenring background");*/
+		//LogError(std::format("Rendering entity:{} text:{}", GetEntity().m_Name, m_text));
 
 	const Vec2 usableSize = CalculateUsableSpace(rect);
 	if (HasFontSizeFactor())
