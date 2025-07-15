@@ -6,16 +6,18 @@
 #include "Core/Asset/TextureAsset.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "ECS/Component/Types/UI/UITextureData.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 //ToggleGUI::ToggleGUI() : 
 //	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
 //	m_valueSetAction(nullptr) {}
 
-UIToggleComponent::UIToggleComponent(const bool& startValue, const UIStyle& settings, UITextureData* onTexture, UITextureData* offTexture)//, const TextureAsset* toggledTexture)
+UIToggleComponent::UIToggleComponent(const bool& startValue, const UIStyle& settings, 
+	UITextureData* onTexture, UITextureData* offTexture, UIPanel* background)//, const TextureAsset* toggledTexture)
 	: m_isToggled(startValue), m_settings(settings), 
 	//m_valueSetAction(valueSetAction), 
 	m_OnValueSet(), m_onTexture(onTexture), m_offTexture(offTexture),
-	m_selectable(nullptr)//,m_overlayTexture(toggledTexture),
+	m_selectable(nullptr), m_background(background)//,m_overlayTexture(toggledTexture),
 {
 	SetTextureFromState();
 }
@@ -29,6 +31,7 @@ UIToggleComponent::~UIToggleComponent()
 
 void UIToggleComponent::Init()
 {
+	UpdateStyle();
 	m_selectable->m_OnClick.AddListener([this](UISelectableData* self)-> void
 		{
 			ToggleValue();
@@ -40,11 +43,21 @@ void UIToggleComponent::Init()
 void UIToggleComponent::SetSettings(const UIStyle& settings)
 {
 	m_settings = settings;
+	UpdateStyle();
+}
+void UIToggleComponent::UpdateStyle()
+{
+	if (m_background != nullptr) m_background->SetColor(m_settings.m_BackgroundColor);
 }
 void UIToggleComponent::SetStateTextures(UITextureData* onTexture, UITextureData* offTexture)
 {
 	m_onTexture = onTexture;
 	m_offTexture = offTexture;
+	SetTextureFromState();
+}
+void UIToggleComponent::SetBackground(UIPanel* background)
+{
+	m_background = background;
 }
 void UIToggleComponent::SetTextureFromState()
 {

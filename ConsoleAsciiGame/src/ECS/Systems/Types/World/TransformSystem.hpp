@@ -19,7 +19,7 @@ namespace ECS
 		~TransformSystem() = default;
 
 		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
-		void UpdateLastFramePos(Scene& scene);
+		//void UpdateLastFramePos(Scene& scene);
 	};
 }
 

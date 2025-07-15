@@ -2,6 +2,7 @@
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "Core/Input/InputManager.hpp"
 #include <map>
+#include <set>
 #include <optional>
 #include "Core/UI/UIHierarchy.hpp"
 
@@ -12,6 +13,7 @@ private:
 	UIHierarchy& m_hierarchy;
 	std::map<UILayer, std::vector<UISelectableData*>, std::greater<UILayer>> m_selectableLayers;
 	std::unordered_map<size_t, const UITransformData*> m_selectionEventBlockers;
+	std::set<ECS::EntityID> m_selectableIds;
 	//TODO: for optimization reasons, this is slow
 	//std::map<GUIEventPriority, SelectableGUI*, std::greater<GUIEventPriority>> m_selectables;
 
@@ -43,11 +45,11 @@ private:
 	void InvokeInteractionEvents();
 	void CreateSelectableArray();
 
-	void SelectNewSelectable(UISelectableData* selectable);
+	void SelectableSelectCallback(UISelectableData* selectable);
 	void DeselectCurrentSelectable();
-	void ClickSelectable(UISelectableData* selectable);
+	void SelectableClickCallback(UISelectableData* selectable);
 	void StopCurrentHovering();
-	void SetNewHoveredSelectable(UISelectableData* selectable);
+	void SelectableHoverStartCallback(UISelectableData* selectable);
 	void StartDrag(UISelectableData* selectable);
 	void EndCurrentDrag();
 
@@ -64,7 +66,7 @@ public:
 	void AddSelectables(const UILayer layer, const std::vector<UISelectableData*>& selectables);
 
 	bool SelectedSelectableThisFrame() const;
-	bool HasSelecatbleSelected() const;
+	bool HasSelectableSelected() const;
 	bool HasSelectableHovered() const;
 	bool HasSelectableDragged() const;
 	const UISelectableData* TryGetSelectableSelected() const;

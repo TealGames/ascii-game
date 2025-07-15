@@ -21,8 +21,8 @@ namespace Templates
 	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateDropdownToggleTemplate(EntityData& parent, const std::string& name)
 	{
 		auto [toggleEntity, toggleTransform] = parent.CreateChildUI(name);
-		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle()));
-		UIPanel& panel = toggleEntity->AddComponent(UIPanel(EditorStyles::EDITOR_SECONDARY_BACKGROUND_COLOR));
+		UIPanel& panel = toggleEntity->AddComponent(UIPanel());
+		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle(), nullptr, nullptr, &panel));
 
 		if (AssetManager == nullptr)
 		{
@@ -44,8 +44,8 @@ namespace Templates
 	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateCheckboxTemplate(EntityData& parent, const std::string& name)
 	{
 		auto [toggleEntity, toggleTransform] = parent.CreateChildUI(name);
-		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle()));
-		UIPanel& panel = toggleEntity->AddComponent(UIPanel(EditorStyles::EDITOR_SECONDARY_BACKGROUND_COLOR));
+		UIPanel& panel = toggleEntity->AddComponent(UIPanel());
+		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle(), nullptr, nullptr, &panel));
 
 		if (AssetManager == nullptr)
 		{

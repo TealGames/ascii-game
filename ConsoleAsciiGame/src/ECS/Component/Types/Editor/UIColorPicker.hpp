@@ -11,7 +11,7 @@ namespace ECS { class UIColorPickerSystem; }
 class UIPanel;
 class UISelectableData;
 using ColorPickerAction = std::function<void(Utils::Color)>;
-class UIColorPickerData :  public Component
+class UIColorPickerData : public Component
 {
 private:
 	PopupUIManager* m_popupManager;

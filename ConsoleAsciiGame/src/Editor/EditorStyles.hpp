@@ -18,9 +18,9 @@ namespace EditorStyles
 	//-------------------------------------------------------------------
 	inline const Color EDITOR_TEXT_DEFAULT_COLOR = WHITE;
 	inline const Color EDITOR_BACKGROUND_COLOR = { 30, 30, 30, 255 };
-	inline const Color EDITOR_SECONDARY_BACKGROUND_COLOR = { 45, 45, 45, 255 };
+	inline const Color EDITOR_SECONDARY_BACKGROUND_COLOR = { 60, 60, 60, 255 };
 	inline const Color EDITOR_SECONDARY_COLOR = GRAY;
-	inline const Color EDITOR_PRIMARY_COLOR = DARKGRAY;
+	inline const Color EDITOR_PRIMARY_COLOR = {100, 100, 100, 255};
 
 	inline const Vec2 EDITOR_CHAR_SPACING = { 3, 2 };
 	inline constexpr float DEFAULT_TEXT_FACTOR = 0.8;
@@ -52,7 +52,7 @@ namespace EditorStyles
 
 	inline UIStyle GetInputFieldStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
 	{
-		return UIStyle(EDITOR_SECONDARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR,
+		return UIStyle(EDITOR_PRIMARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR,
 			FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()), alignment, UIPadding(), factor));
 	}
 
@@ -63,7 +63,7 @@ namespace EditorStyles
 
 	inline UIStyle GetToggleStyle()
 	{
-		return UIStyle(EDITOR_SECONDARY_COLOR, WHITE, TextUIStyle());
+		return UIStyle(EDITOR_BACKGROUND_COLOR, WHITE, TextUIStyle());
 	}
 
 	inline UIStyle GetButtonStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)

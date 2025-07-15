@@ -9,7 +9,7 @@ struct PopupUI //: public GUIElement
 
 	PopupUI();
 
-	void CreatePopup(EntityData& parent);
+	void CreatePopup(UITransformData& parent);
 	virtual void AddPopupElements() = 0;
 	virtual ~PopupUI() = default;
 

@@ -8,6 +8,7 @@
 #include "Core/Input/InputManager.hpp"
 #include "ECS/Component/Types/UI/UIToggleComponent.hpp"
 #include "ECS/Component/Types/Editor/UIColorPicker.hpp"
+#include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "Utils/Data/Vec2.hpp"
 
@@ -159,6 +160,18 @@ void ComponentFieldUI::SetField(ComponentField& field)
 	//If we have 2 lines, we use the full max space, otherwise we use half
 	if (fieldsStartNewLine) m_guiLayout->SetSize({ 1, 1 });
 	else m_guiLayout->SetSize({ 1, 0.5 });
+
+	for (const auto& field : m_fields)
+	{
+		UISelectableData* selectable = static_cast<Component*>(field)->GetEntityMutable().TryGetComponentMutable<UISelectableData>();
+		if (selectable == nullptr)
+		{
+			LogError(std::format("Tried to create component field of field ui:{} "
+				"but field does not have required selectable component", GetFieldInfo().ToString()));
+			return;
+		}
+		if (GetFieldInfo().IsReadonly()) selectable->SetAllUserInteraction(false);
+	}
 
 	//TODO: this feels like a very gimicky solution to the problem where many fields for a component usually results in the parent layout shrinking their x and y size
 	//thus leading to fields that fit, but are very small in terms of their width. The solution was to fix their horizontal size so layout cannot change it

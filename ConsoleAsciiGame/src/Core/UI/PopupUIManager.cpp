@@ -87,7 +87,9 @@ bool PopupUIManager::TryClosePopup(PopupGUIInfo& popupInfo)
 void PopupUIManager::AddPopup(PopupUI* popup)
 {
 	PopupGUIInfo& info= m_popups.emplace_back(PopupGUIInfo(*popup));
-	info.m_UI->CreatePopup(*std::get<0>(m_popupContainer->CreateChildUI(std::format("{}Container", Utils::FormatTypeName(typeid(*popup).name())))));
+	auto [containerEntity, containerTransform] = m_popupContainer->CreateChildUI(std::format("{}Container", Utils::FormatTypeName(typeid(*popup).name())));
+	info.m_UI->CreatePopup(*containerTransform);
+	info.Disable();
 	//emplaced.first->second.m_GUI->Init();
 }
  

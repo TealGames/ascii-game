@@ -10,7 +10,7 @@ class TransformData : public Component
 private:
 	Vec2 m_localPos;
 	//Vec2 m_lastLocalPos;
-	Vec2 m_localPosLastFrame;
+	//Vec2 m_localPosLastFrame;
 
 	Vec2 m_localScale;
 public:
@@ -33,9 +33,9 @@ public:
 	Vec2 GetLocalPos() const;
 	Vec2 GetGlobalPos() const;
 	//Vec2 GetLastPos() const;
-	Vec2 GetLocalPosLastFrame() const;
-	void SetLocalPosLastFrame(const Vec2& vec);
-	bool HasMovedThisFrame() const;
+	//Vec2 GetLocalPosLastFrame() const;
+	//void SetLocalPosLastFrame(const Vec2& vec);
+	//bool HasMovedThisFrame() const;
 
 	Vec2 GetLocalScale() const;
 	Vec2 GetGlobalScale() const;

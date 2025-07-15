@@ -11,11 +11,10 @@ static constexpr float POPUP_PADDING = 0.05;
 
 PopupUI::PopupUI() : m_Container(nullptr) {}
 
-void PopupUI::CreatePopup(EntityData& parent)
+void PopupUI::CreatePopup(UITransformData& parent)
 {
-	EntityData* entity = nullptr;
-	std::tie(entity, m_Container) = parent.CreateChildUI("popup_container");
-	entity->AddComponent<UIPanel>(UIPanel(EditorStyles::EDITOR_BACKGROUND_COLOR));
+	m_Container = &parent;
+	m_Container->GetEntityMutable().AddComponent<UIPanel>(UIPanel(EditorStyles::EDITOR_BACKGROUND_COLOR));
 
 	m_Container->SetEventBlocker(true);
 	m_Container->GetPaddingMutable().SetAll(POPUP_PADDING);

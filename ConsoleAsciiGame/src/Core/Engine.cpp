@@ -361,7 +361,7 @@ namespace Core
 			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 			m_gameManager.GameUpdate();
 
-			m_transformSystem.UpdateLastFramePos(*activeScene);
+			//m_transformSystem.UpdateLastFramePos(*activeScene);
 		}
 
 		m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
@@ -371,10 +371,10 @@ namespace Core
 		m_gizmosOverlay.MoveCallsToRenderBuffer(m_renderer);
 		m_renderer.RenderBuffer();
 
-		if (m_editor.IsInGameView())
-		{
-			m_transformSystem.UpdateLastFramePos(*activeScene);
-		}
+		//if (m_editor.IsInGameView())
+		//{
+		//	m_transformSystem.UpdateLastFramePos(*activeScene);
+		//}
 		
 		m_uiHierarchy.Update();
 		m_timeKeeper.UpdateTimeEnd();

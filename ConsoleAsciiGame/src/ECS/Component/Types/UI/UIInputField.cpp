@@ -62,6 +62,8 @@ void UIInputField::Init()
 {
 	if (HasFlag(InputFieldFlag::SelectOnStart)) m_selectable->Select();
 	if (HasFlag(InputFieldFlag::UserUIReadonly)) m_selectable->AddRenderFlags(InteractionRenderFlags::DrawDisabledOverlay);
+	//We have to call this during init when we have background panel already set
+	UpdateStyle();
 }
 
 const Input::InputManager& UIInputField::GetInputManager() const
@@ -101,7 +103,6 @@ void UIInputField::UpdateInput()
 	}
 	
 	if (HasFlag(InputFieldFlag::UserUIReadonly)) return;
-
 
 	//THE FOLLOWING LOGIC IS FOR SELECTING/WRITING TO SELECTABLE FROM UI BASED ON PLAYER INPUT:
 	if (GetInputManager().IsKeyReleased(SUBMIT_KEY))
@@ -153,8 +154,13 @@ void UIInputField::SetKeyPressAction(const KeyboardKey key, const InputFieldActi
 void UIInputField::SetSettings(const UIStyle& settings) 
 { 
 	m_settings = settings; 
-	if (m_textGUI != nullptr) m_textGUI->SetSettings(settings.m_TextSettings);
-	if (m_background != nullptr) m_background->SetColor(settings.m_BackgroundColor);
+	UpdateStyle();
+}
+
+void UIInputField::UpdateStyle()
+{
+	if (m_textGUI != nullptr) m_textGUI->SetSettings(m_settings.m_TextSettings);
+	if (m_background != nullptr) m_background->SetColor(m_settings.m_BackgroundColor);
 }
 
 void UIInputField::SetAttemptedInputDelta(const std::string& input)

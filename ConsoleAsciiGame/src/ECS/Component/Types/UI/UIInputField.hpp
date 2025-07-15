@@ -118,6 +118,7 @@ private:
 	void SetInput(const std::string& newInput, const bool isAttemptedInput);
 
 	void UpdateInput();
+	void UpdateStyle();
 
 public:
 	//InputField();

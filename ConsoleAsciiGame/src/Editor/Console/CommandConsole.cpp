@@ -15,7 +15,7 @@ static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_ONE;
 
 static const Color CONSOLE_COLOR = { GRAY.r, GRAY.g, GRAY.b, 100 };
-static constexpr float CONSOLE_HEIGHT = 0.1;
+static constexpr float CONSOLE_HEIGHT = 0.05;
 static const NormalizedPosition OUTPUT_MESSAGE_AREA = {0.6, 0.2};
 
 static constexpr int COMMAND_CONSOLE_WIDTH = SCREEN_WIDTH;
@@ -39,10 +39,12 @@ void CommandConsole::CreateUI(UIHierarchy& hierarchy)
 	std::tie(containerEntity, m_container) = hierarchy.CreateAtRoot(DEFAULT_LAYER, "CommandConsoleContainer");
 	m_container->SetMaxSize();
 
-	auto [inputFieldEntity, inputFieldTransform] = containerEntity->CreateChildUI("InputField");
-	m_inputField = &(inputFieldEntity->AddComponent(UIInputField(m_inputManager, InputFieldType::Any,
+	EntityData* inputFieldEntity = nullptr;
+	UITransformData* inputFieldTransform = nullptr;
+	std::tie(inputFieldEntity, inputFieldTransform, m_inputField) = containerEntity->CreateChildUI("ConsoleInput", 
+		UIInputField(m_inputManager, InputFieldType::Any,
 		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit,
-		EditorStyles::GetInputFieldStyle(TextAlignment::TopLeft))));
+		EditorStyles::GetInputFieldStyle(TextAlignment::CenterLeft)));
 	//GUIStyle fieldSettings = GUIStyle(GRAY, TextGUIStyle(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), 
 	//	TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
 	inputFieldTransform->SetBounds({ 0, CONSOLE_HEIGHT }, NormalizedPosition::BOTTOM_RIGHT);
@@ -58,7 +60,7 @@ void CommandConsole::CreateUI(UIHierarchy& hierarchy)
 			m_inputField->OverrideInput(m_inputField->GetLastInput());
 		});
 
-	auto [layoutEntity, layoutTransform] = containerEntity->CreateChildUI("Layout");
+	auto [layoutEntity, layoutTransform] = containerEntity->CreateChildUI("ConsoleLayout");
 	m_outputMessageLayout = &(layoutEntity->AddComponent(UILayout(LayoutType::Vertical, SizingType::ExpandAndShrink)));
 
 	const NormalizedPosition messageLayoutTopLeft = inputFieldTransform->GetRect().GetTopLeftPos() + NormalizedPosition(0, OUTPUT_MESSAGE_AREA.m_Y);
@@ -66,7 +68,7 @@ void CommandConsole::CreateUI(UIHierarchy& hierarchy)
 
 	for (size_t i = 0; i < m_outputMessagesTextGuis.size(); i++)
 	{
-		auto [textEntity, textTransform] = layoutEntity->CreateChildUI(std::format("Text{}", std::to_string(i)));
+		auto [textEntity, textTransform] = layoutEntity->CreateChildUI(std::format("OutputText{}", std::to_string(i)));
 		m_outputMessagesTextGuis[i] = &(textEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))));
 		textTransform->SetFixed(true, false);
 	}

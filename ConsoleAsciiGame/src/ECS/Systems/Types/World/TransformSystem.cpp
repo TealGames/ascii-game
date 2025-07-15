@@ -11,7 +11,7 @@ namespace ECS
 {
 	void TransformSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) {}
 
-	void TransformSystem::UpdateLastFramePos(Scene& scene)
+	/*void TransformSystem::UpdateLastFramePos(Scene& scene)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("TransformSystem::UpdateLastFramePos");
@@ -22,7 +22,7 @@ namespace ECS
 			{
 				transform.SetLocalPosLastFrame(transform.GetLocalPos());
 			});
-	}
+	}*/
 
 	//TODO: do scene bound checking
 

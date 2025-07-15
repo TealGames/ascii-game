@@ -39,7 +39,7 @@ namespace ECS
 		//LogError(std::format("Does scene have active player:{}", std::to_string(scene.TryGetEntity("player")->IsEntityActive())));
 		if (deltaTime <= 0)
 		{
-			LogError(std::format("Regturning player due to dt:{}", deltaTime));
+			//LogError(std::format("Regturning player due to dt:{}", deltaTime));
 			return;
 		}
 		

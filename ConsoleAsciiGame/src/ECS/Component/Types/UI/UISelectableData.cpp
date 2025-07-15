@@ -37,6 +37,12 @@ void UISelectableData::RemoveRenderFlags(const InteractionRenderFlags flags)
 	Utils::RemoveFlags(m_renderFlags, flags);
 }
 
+void UISelectableData::SetAllUserInteraction(bool doPermit)
+{
+	if (doPermit) AddEventFlags(TriggerInteractionEventFlags::All);
+	else RemoveEventFlags(TriggerInteractionEventFlags::All);
+}
+
 //GUIRect& SelectableGUI::GetLastFrameRectMutable() { return m_lastFrameRect; }
 //const GUIRect SelectableGUI::GetLastFrameRect() const { return m_lastFrameRect; }
 //
@@ -87,6 +93,7 @@ void UISelectableData::Deselect()
 		return;
 
 	Utils::RemoveFlags(m_currentEventFlags, InteractionEventFlags::Selected);
+	//if (GetEntity().m_Name == "ConsoleInput") LogError("Deselected command field");
 	m_OnDeselect.Invoke(this);
 }
 

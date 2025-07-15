@@ -7,6 +7,12 @@
 
 //TODO: these should all be changed to be parsed or retrieved from ui layer of input profile from input manager
 static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
+static Input::KeyState CLICK_INPUT_STATE = Input::KeyState::Released;
+/// <summary>
+/// If true, will deselect the current selected obj if clicked on empty space
+/// with no selectable taking up that space
+/// </summary>
+static constexpr bool DESELECT_ON_EMPTY_CLICK = true;
 
 UIInteractionManager::UIInteractionManager(const Input::InputManager& input, UIHierarchy& hierarchy)
 	: m_inputManager(input), m_hierarchy(hierarchy), m_selectableLayers(), m_selectionEventBlockers(), 
@@ -56,10 +62,10 @@ void UIInteractionManager::Update()
 
 	InvokeInteractionEvents();
 	m_lastFrameMousePos = m_inputManager.GetMousePosition();
+
+	//LogWarning(std::format("Current selected:{}", m_currentSelected!=nullptr? m_currentSelected->GetEntity().m_Name : "NULL"));
 	
 	//Assert(false, std::format("All rects: {}", allRect));
-
-	
 
 	/*LogError(std::format("Selector has: {} selectables active type: {} (rect: {}) allrect: {}", m_selectables.size(), m_currentSelected != nullptr ?
 		ToString(dynamic_cast<InputField*>(m_currentSelected)->GetFieldType()) : "NULL", 
@@ -71,7 +77,7 @@ void UIInteractionManager::InvokeInteractionEvents()
 	static int clickTime = 0;
 
 	//Changes into non-active state result in the current interaction ending to ensure we only allow active ones to be interacted
-	if (HasSelecatbleSelected() && !m_currentSelected->IsInActiveAndEnabledState())
+	if (HasSelectableSelected() && !m_currentSelected->IsInActiveAndEnabledState())
 	{
 		LogWarning(std::format("Current selected selectable:{} is now in non-active state so it is being deselected", 
 			m_currentSelected->GetEntity().m_Name));
@@ -90,28 +96,36 @@ void UIInteractionManager::InvokeInteractionEvents()
 		EndCurrentDrag();
 	}
 
-	if (m_currentSelected != nullptr && m_selectedThisFrame) m_selectedThisFrame = false;
+	if (HasSelectableSelected() && m_selectedThisFrame) m_selectedThisFrame = false;
 	const Input::KeyState selectKeyState = m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetState();
 
-	const Vec2 mousePos = m_inputManager.GetMousePosition();
-	const ScreenPosition screenMousePos = ScreenPosition(mousePos.m_X, mousePos.m_Y);
-	const Vec2 mouseDelta = mousePos - m_lastFrameMousePos;
+	const ScreenPosition newMouseScreenPos = m_inputManager.GetMousePosition();
+	const Vec2 mouseDelta = newMouseScreenPos - m_lastFrameMousePos;
 	//m_lastFrameMousePos = mousePos;
 
 	//Note: since the initial click on a draggable selectable is the only thing that matters, we do not care if it moves outside the area
 	//so we can easily just update the current one that is dragged
-	if (selectKeyState == Input::KeyState::Down && m_currentDragged != nullptr)
+	if (selectKeyState == Input::KeyState::Down && HasSelectableDragged())
 	{
 		//LogError(std::format("Updating drag for:{} all selectable:{}", typeid(*m_currentDragged).name(), ToStringSelectableTypes()));
 		m_currentDragged->UpdateDrag(mouseDelta, m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetCurrentDownTime());
 	}
 
-	const bool hasNewHoverPos = mousePos != m_lastFrameMousePos;
+	const bool hasNewHoverPos = newMouseScreenPos != m_lastFrameMousePos;
 	const bool hasSelectionEvent = selectKeyState == Input::KeyState::Released || selectKeyState == Input::KeyState::Pressed;
 	//NOTE: if the key is not released or pressed AND the position has not changed, it means no select, drag or hover changes have occured so we do not need to look
 	if (m_selectableLayers.empty() || (!hasSelectionEvent && !hasNewHoverPos)) return;
-	//Whether we find the new object that is hovered or not, we still want to stop the current hovering
-	if (hasNewHoverPos && HasSelectableHovered()) m_currentHovered->HoverEnd();
+
+	if (hasNewHoverPos && HasSelectableHovered())
+	{
+		//Only if the new hover pos is outside of current hover area, do we stop current hovering (since we know its a new hover obj)
+		//otherwise we do not want to prevent hover start and end occuring every frame on same object
+		if (!m_currentHovered->RectContainsPos(newMouseScreenPos)) m_currentHovered->HoverEnd();
+		//If current hovered pos just moved but still on same object-> nothing changes and if we have no selection event we can exit
+		else if (!hasSelectionEvent) return;
+	}
+	//By default, we deselect any previously selected if we click
+	if (DESELECT_ON_EMPTY_CLICK && selectKeyState == CLICK_INPUT_STATE) DeselectCurrentSelectable();
 
 	/*Assert(false, std::format("CLICKED POS:{} FOUNDselectable rect: {} size: {} selected: {}",
 			m_lastFrameClickedPosition.value().ToString(), allRect, std::to_string(m_selectables.size()),
@@ -139,7 +153,7 @@ void UIInteractionManager::InvokeInteractionEvents()
 					continue;
 
 				//Note: only if the event blocker contains the position do we block further events
-				if (it->second != nullptr && it->second->GetLastWorldArea().ContainsPos(mousePos))
+				if (it->second != nullptr && it->second->GetLastWorldArea().ContainsPos(newMouseScreenPos))
 				{
 					//foundEventBlock = true;
 					//break;
@@ -162,7 +176,7 @@ void UIInteractionManager::InvokeInteractionEvents()
 				/*LogError(std::format("checking selectable:{} last rect:{} contains pos:{}->{}", selectable->ToStringBase(),
 					selectable->GetLastFrameRect().ToString(), mousePos.ToString(), std::to_string(selectable->GetLastFrameRect().ContainsPos(mousePos))));*/
 
-			if (!selectable->RectContainsPos(screenMousePos)) continue;
+			if (!selectable->RectContainsPos(newMouseScreenPos)) continue;
 
 			if (hasNewHoverPos)
 			{
@@ -181,13 +195,13 @@ void UIInteractionManager::InvokeInteractionEvents()
 				//Note: we do not need to cancel the selectable because we can have one selected
 				//while we drag on another
 				StartDrag(selectable);
+				if (CLICK_INPUT_STATE == selectKeyState) selectable->Click();
 				return;
 			}
-			else if (selectKeyState == Input::KeyState::Released)
+			else if (selectKeyState == Input::KeyState::Released && CLICK_INPUT_STATE== selectKeyState)
 			{
 				//LogError(std::format("BEFORE click selectable ADDR:{} layer total:{}", Utils::ToStringPointerAddress(selectable), std::to_string(layer.second.size())));
 				selectable->Click();
-				m_selectedThisFrame = true;
 				return;
 			}
 
@@ -206,33 +220,36 @@ void UIInteractionManager::InvokeInteractionEvents()
 		Assert(false, std::format("After event CLICKED:{} \n\n selectavle tree:{} \n\ngui tree:{}", mousePos.ToString(), ToStringSelectables(), m_hierarchy.ToStringTree()));*/
 }
 
-void UIInteractionManager::ClickSelectable(UISelectableData* selectable)
+void UIInteractionManager::SelectableClickCallback(UISelectableData* selectable)
 {
 	//Assert(false, std::format("CLICKIGN ON SELECTABLE"));
 	if (selectable == nullptr)
 		return;
 
 	selectable->Select();
+	//LogError(std::format("Clicked on selectable:{}", selectable->GetEntity().m_Name));
 	//SelectNewSelectable(selectable);
 }
 
-void UIInteractionManager::SelectNewSelectable(UISelectableData* selectable)
+void UIInteractionManager::SelectableSelectCallback(UISelectableData* selectable)
 {
 	if (selectable == nullptr)
 		return;
 
 	//selectable->Select();
+	//DeselectCurrentSelectable();
 	DeselectCurrentSelectable();
 	EndCurrentDrag();
 
 	m_currentSelected = selectable;
+	m_selectedThisFrame = true;
 }
 void UIInteractionManager::DeselectCurrentSelectable()
 {
-	m_currentSelected = nullptr;
+	if (m_currentSelected != nullptr) m_currentSelected->Deselect();
 }
 
-void UIInteractionManager::SetNewHoveredSelectable(UISelectableData* selectable)
+void UIInteractionManager::SelectableHoverStartCallback(UISelectableData* selectable)
 {
 	if (selectable == nullptr)
 		return;
@@ -244,7 +261,8 @@ void UIInteractionManager::SetNewHoveredSelectable(UISelectableData* selectable)
 }
 void UIInteractionManager::StopCurrentHovering()
 {
-	m_currentDragged = nullptr;
+	if (m_currentHovered != nullptr) m_currentHovered->HoverEnd();
+	//m_currentHovered = nullptr;
 	//if (m_currentHovered == nullptr) 
 	//	return;
 	////m_currentHovered->HoverEnd();
@@ -275,23 +293,30 @@ void UIInteractionManager::AddSelectable(const UILayer layer, UISelectableData* 
 	if (it == m_selectableLayers.end())
 		m_selectableLayers.emplace(layer, std::vector<UISelectableData*>{ selectable});
 	else it->second.push_back(selectable);
+
+	if (!m_selectableIds.insert(selectable->GetEntityID()).second) return;
+	//If this is a new selectable id, we add update events
 	
 	//If we already triggered an interaction event, we have to make sure we set it before continuing
-	if (selectable->IsSelected()) ClickSelectable(selectable);
-	if (selectable->IsHoveredOver()) SetNewHoveredSelectable(selectable);
+	if (selectable->IsSelected())
+	{
+		//if (selectable->GetEntity().m_Name == "ConsoleInput") LogError("SHIT");
+		SelectableSelectCallback(selectable);
+	}
+	if (selectable->IsHoveredOver()) SelectableHoverStartCallback(selectable);
 	if (selectable->IsDragged()) StartDrag(selectable);
 
 	//Note: since this manager OR a selectable itself can call any of the interaction events, we have to subscribe to event
 	//to actually carryout out the actions associated with an event since we do not know where the event originates from
-	selectable->m_OnClick.AddListener([this](UISelectableData* selectable)-> void {ClickSelectable(selectable); });
-	selectable->m_OnSelect.AddListener([this](UISelectableData* selectable)-> void {SelectNewSelectable(selectable); });
-	selectable->m_OnDeselect.AddListener([this](UISelectableData* selectable)-> void 
+	selectable->m_OnClick.AddListener([this](UISelectableData* selectable)-> void {SelectableClickCallback(selectable); });
+	selectable->m_OnSelect.AddListener([this](UISelectableData* selectable)-> void {SelectableSelectCallback(selectable); });
+	selectable->m_OnDeselect.AddListener([this](UISelectableData* selectable)-> void
 		{
 			if (selectable != m_currentSelected) return;
-			DeselectCurrentSelectable(); 
+			m_currentSelected = nullptr;
 		});
-	selectable->m_OnHoverStart.AddListener([this](UISelectableData* selectable)-> void {SetNewHoveredSelectable(selectable); });
-	selectable->m_OnHoverEnd.AddListener([this](UISelectableData*)-> void {StopCurrentHovering(); });
+	selectable->m_OnHoverStart.AddListener([this](UISelectableData* selectable)-> void {SelectableHoverStartCallback(selectable); });
+	selectable->m_OnHoverEnd.AddListener([this](UISelectableData*)-> void { m_currentHovered = nullptr; });
 
 	//Note: drag does not have reserved start and end since it is 
 }
@@ -319,7 +344,7 @@ bool UIInteractionManager::IsEventBlocker(const size_t index) const
 }
 
 bool UIInteractionManager::SelectedSelectableThisFrame() const { return m_selectedThisFrame; }
-bool UIInteractionManager::HasSelecatbleSelected() const { return m_currentSelected != nullptr; }
+bool UIInteractionManager::HasSelectableSelected() const { return m_currentSelected != nullptr; }
 bool UIInteractionManager::HasSelectableHovered() const { return m_currentHovered != nullptr; }
 bool UIInteractionManager::HasSelectableDragged() const { return m_currentDragged != nullptr; }
 const UISelectableData* UIInteractionManager::TryGetSelectableSelected() const { return m_currentSelected; }

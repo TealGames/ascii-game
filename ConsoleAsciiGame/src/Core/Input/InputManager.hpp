@@ -6,7 +6,6 @@
 #include <filesystem>
 #include "Utils/Data/Direction.hpp"
 #include "raylib.h"
-#include "Utils/Data/Vec2.hpp"
 #include "Utils/Data/Point2DInt.hpp"
 #include "Core/Input/CompoundInput.hpp"
 #include "Core/Input/InputKey.hpp"
@@ -90,7 +89,7 @@ namespace Input
 		/// but uses floats for more precision
 		/// </summary>
 		/// <returns></returns>
-		Vec2 GetMousePosition() const;
+		ScreenPosition GetMousePosition() const;
 
 		const InputKey* GetInputKey(const KeyboardKey& key) const;
 		const InputKey* GetInputKey(const MouseButton& button) const;

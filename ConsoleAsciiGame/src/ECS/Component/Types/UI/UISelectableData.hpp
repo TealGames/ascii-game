@@ -111,6 +111,13 @@ public:
 	void AddRenderFlags(const InteractionRenderFlags flags);
 	void RemoveRenderFlags(const InteractionRenderFlags flags);
 
+	/// <summary>
+	/// If true, all interaction events are flagged to trigger.
+	/// Otherwise, all are flagged to not trigger
+	/// </summary>
+	/// <param name="doPermit"></param>
+	void SetAllUserInteraction(bool doPermit);
+
 	//const GUIRect GetLastFrameRect() const;
 
 	UIRect RenderOverlay(const UIRect& elementRendered);

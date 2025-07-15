@@ -20,15 +20,6 @@ UIColorPickerData::UIColorPickerData(const UIStyle& settings)
 			m_popupManager->TryClosePopup<ColorPopupGUI>();
 		});*/
 
-	//TODO: maybe make it possible to add events to the popup directly so we do not have to do checks for correct typye
-	m_popupManager->m_OnPopupClosed.AddListener([this](const std::string& type, const PopupUI* popup)-> void
-		{
-			if (!m_popupManager->IsPopupType<ColorPopupUI>(type)) return;
-
-			const ColorPopupUI* colorPopup = dynamic_cast<const ColorPopupUI*>(popup);
-			//Assert(false, std::format("Reached popup of color:{} internal color:{}", colorPopup->GetColor().ToString(), ));
-			SetColor(colorPopup->GetColor());
-		});
 	//Assert(false, std::format(0))
 }
 
@@ -49,6 +40,16 @@ void UIColorPickerData::Init()
 			}
 
 			if (isEnabled) popup->SetColor(GetColor());
+		});
+
+	//TODO: maybe make it possible to add events to the popup directly so we do not have to do checks for correct typye
+	m_popupManager->m_OnPopupClosed.AddListener([this](const std::string& type, const PopupUI* popup)-> void
+		{
+			if (!m_popupManager->IsPopupType<ColorPopupUI>(type)) return;
+
+			const ColorPopupUI* colorPopup = dynamic_cast<const ColorPopupUI*>(popup);
+			//Assert(false, std::format("Reached popup of color:{} internal color:{}", colorPopup->GetColor().ToString(), ));
+			SetColor(colorPopup->GetColor());
 		});
 }
 

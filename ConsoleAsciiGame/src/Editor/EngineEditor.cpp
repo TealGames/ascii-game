@@ -11,10 +11,12 @@
 #include "ECS/Systems/Types/World/CollisionBoxSystem.hpp"
 #include "Editor/Entity/ColorPopupUI.hpp"
 #include "Editor/EditorStyles.hpp"
+#include "Core/UIElementTemplates.hpp"
 
 static constexpr float TOP_BAR_HEIGHT = 0.03;
 static constexpr float ASSET_EDITOR_BUTTON_WIDTH = 0.2;
-static constexpr float TOGGLE_LAYOUT_WIDTH_PER_TOGGLE = 0.05;
+static constexpr float TOGGLE_LAYOUT_WIDTH_PER_TOGGLE = 0.03;
+static constexpr float TOFFLE_LAYOUT_WIDTH_SPACING = 0.05;
 static const NormalizedPosition MOUSE_POS_TEXT_SIZE = {0.1, 0.05};
 
 static constexpr KeyboardKey PAUSE_TOGGLE_KEY = KEY_P;
@@ -23,7 +25,8 @@ static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
 EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
 
 EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
-	SceneManagement::SceneManager& scene, const CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, PopupUIManager& popupManager, ECS::CollisionBoxSystem& collisionSystem)
+	SceneManagement::SceneManager& scene, const CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, PopupUIManager& popupManager, 
+	ECS::CollisionBoxSystem& collisionSystem)
 	:
 	m_editorRoot(nullptr),
 	m_displayingGameView(true),
@@ -161,7 +164,7 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 	overheadBarTransform->SetBounds(NormalizedPosition::TOP_LEFT, { 1, 1 - TOP_BAR_HEIGHT });
 
 	auto [toggleLayoutEntity, toggleLayoutTransform] = m_overheadBarContainer->GetEntityMutable().CreateChildUI("ToggleLayout");
-	m_toggleLayout = &(toggleLayoutEntity->AddComponent(UILayout(LayoutType::Horizontal, SizingType::ShrinkOnly, {})));
+	m_toggleLayout = &(toggleLayoutEntity->AddComponent(UILayout(LayoutType::Horizontal, SizingType::ShrinkOnly, { TOFFLE_LAYOUT_WIDTH_SPACING, 0})));
 
 	auto [assetEditorButtonEntity, assetEditorButtonTransform] = m_overheadBarContainer->GetEntityMutable().CreateChildUI("AssetEditorButton");
 	m_assetEditorButton = &(assetEditorButtonEntity->AddComponent(UIButton(EditorStyles::GetButtonStyle(TextAlignment::Center))));
@@ -180,10 +183,11 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 
 	//----------------------------------------------------------------
 	// PAUSE AND EDIT MODE TOGGLE CREATION
-	//---------------------------------------------------------------
-	auto [pauseGameToggleEntity, pauseGameToggleTransform] = m_toggleLayout->CreateLayoutElement("PauseGameToggle");
+	//----------------------------------------------------------------
+	EntityData* pauseGameToggleEntity = nullptr;
+	UITransformData* pauseGameToggleTransform = nullptr;
+	std::tie(pauseGameToggleEntity, pauseGameToggleTransform, m_pauseGameToggle) = Templates::CreateCheckboxTemplate(*toggleLayoutEntity, "PauseGameToggle");
 	pauseGameToggleTransform->SetFixed(false, true);
-	m_pauseGameToggle = &(pauseGameToggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle())));
 	m_pauseGameToggle->m_OnValueSet.AddListener([this](const bool isChecked) -> void
 		{
 			//LogError("Pause game toggle is set with val:{}", isChecked);
@@ -191,9 +195,10 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 			else m_timeKeeper.ResetTimeScale();
 		});
 
-	auto [editModeToggleEntity, editModeToggleTransform] = m_toggleLayout->CreateLayoutElement("EditModeToggle");
+	EntityData* editModeToggleEntity = nullptr;
+	UITransformData* editModeToggleTransform = nullptr;
+	std::tie(editModeToggleEntity, editModeToggleTransform, m_editModeToggle) = Templates::CreateCheckboxTemplate(*toggleLayoutEntity, "EditModeToggle");
 	editModeToggleTransform->SetFixed(false, true);
-	m_editModeToggle = &(editModeToggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle())));
 	m_editModeToggle->m_OnValueSet.AddListener([this](const bool isChecked)-> void
 		{
 			m_mousePosText->GetEntityMutable().TrySetEntityActive(isChecked);
@@ -224,10 +229,13 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 
 	//Note: the init order matters because it creates the order that the objects are added to the selector
 	m_popupManager.AddPopup(new ColorPopupUI(m_inputManager));
+
+	//LogError(std::format("Created engine editor:{}", m_guiTree.ToStringTree()));
 }
 
 void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDeltaTime, const float timeStep)
 {
+	//LogError(std::format("Tree is:{}", m_guiTree.ToStringTree()));
 	m_commandConsole.Update(scaledDeltaTime);
 
 	if (!IsInGameView())
@@ -292,6 +300,8 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		mousePosTextTransform.SetTopLeftPos({ mousePosNorm.m_X- (textSize.m_X/2), mousePosNorm.m_Y+ textSize.m_Y});
 	}
 	m_entityEditor.Update();
+
+	//LogWarning(std::format("pause toggle:{} edit toggle:{}", m_pauseGameToggle->IsToggled(), m_editModeToggle->IsToggled()));
 }
 
 bool EngineEditor::IsInGameView() const

@@ -43,7 +43,7 @@ std::uint16_t TimeKeeper::GetFPS() const
 void TimeKeeper::SetTimeScale(const double& scale)
 {
 	m_timeScale = scale;
-	if (m_timeScale == 0) Assert(false, std::format("Set time"));
+	//if (m_timeScale == 0) Assert(false, std::format("Set time"));
 }
 void TimeKeeper::ResetTimeScale()
 {
