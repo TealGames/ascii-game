@@ -123,6 +123,14 @@ void UILayout::LayoutUpdate()
 			else if (children[i]->IsFixedVertical()) children[i]->SetSizeX(children[i]->GetSize().GetX() * sizeFactor);
 			else children[i]->SetSize(children[i]->GetSize() * sizeFactor);
 		}
+
+		//We do error checking to prevent awkward position setting with invalid sizes
+		if (m_type == LayoutType::Horizontal && currentPosNorm == NormalizedPosition::TOP_RIGHT)
+		{
+			LogError(std::format("Attempted to perform layout update for entity:{} but reached max horizontal layout pos, leaving no room for child:{}. Note: this could be due to "
+				"having large children that are not sized property to fit area because SizingType is NONE!", GetEntity().ToString(), children[i]->GetEntity().ToString()));
+			return;
+		}
 		//Note: pos should ALWAYS be updated after size in case size was max before update and new top left
 		//would become unchanged due to no space to move
 		children[i]->SetTopLeftPos(currentPosNorm);
@@ -137,7 +145,10 @@ void UILayout::LayoutUpdate()
 			currentPosNorm.m_Y -= (m_spacing.GetY() + children[i]->GetSize().GetY());
 			//LogWarning(std::format("VERTICAL POS UPDATE OLD:{} NEW:{}", old.ToString(), currentPosNorm.ToString()));
 		}
-		else if (m_type == LayoutType::Horizontal) currentPosNorm.m_X +=(m_spacing.GetX() + children[i]->GetSize().GetX());
+		else if (m_type == LayoutType::Horizontal)
+		{
+			currentPosNorm.m_X += (m_spacing.GetX() + children[i]->GetSize().GetX());
+		}
 		else
 		{
 			currentPosNorm.m_X +=(children[i]->GetSize().GetX() + m_spacing.GetX());

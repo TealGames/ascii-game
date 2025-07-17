@@ -32,7 +32,7 @@ namespace ECS
 	private:
 		void CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData);
 
-		bool IsWithinViewport(const CameraData& camera, const WorldPosition& pos) const;
+		//bool IsWithinViewport(const TransformData& camera, const WorldPosition& pos) const;
 
 	public:
 		/// <summary>

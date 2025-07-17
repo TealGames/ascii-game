@@ -296,3 +296,9 @@ Vec2 GenerateRandomDir()
 {
 	return GenerateRandomVec2({-1, -1}, {1, 1});
 }
+
+bool IsWithinBounds(const Vec2& targetPos, const Vec2& minPos, const Vec2& maxPos)
+{
+	return minPos.m_X <= targetPos.m_X && targetPos.m_X <= maxPos.m_X && 
+		   minPos.m_Y <= targetPos.m_Y && targetPos.m_Y <= maxPos.m_Y;
+}

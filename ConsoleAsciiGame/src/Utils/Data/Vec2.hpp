@@ -118,3 +118,5 @@ Vec2 Abs(const Vec2& vec);
 Vec2 GenerateRandomVec2(const Vec2& minVec, const Vec2 maxVec);
 Vec2 GenerateRandomDir();
 
+bool IsWithinBounds(const Vec2& targetPos, const Vec2& minPos, const Vec2& maxPos);
+

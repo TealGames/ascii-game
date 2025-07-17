@@ -17,9 +17,9 @@ inline constexpr float GRAVITY = 12;
 inline constexpr float DEBUG_INFO_FONT_SIZE = 15;
 inline const Vec2 DEBUG_INFO_CHAR_SPACING = { 3, 2 };
 
-inline const Vec2 GLOBAL_CHAR_AREA = { 5, 5 };
+inline const Vec2 GLOBAL_CHAR_AREA = { 1, 1 };
 //inline constexpr float GLOBAL_FONT_SIZE = 20;
-inline const Vec2 GLOBAL_FONT_SIZE = { 5, 5 };
+inline const Vec2 GLOBAL_FONT_SIZE = { 1, 1 };
 inline const Vec2 GLOBAL_FONT_CHAR_SPACING = Vec2(0.5, 0.5);
 
 inline const char* MAIN_INPUT_PROFILE_NAME = "main";

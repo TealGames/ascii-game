@@ -30,7 +30,7 @@ namespace ECS
 				data.m_NormalizedTime += deltaTime;
 				if (data.m_NormalizedTime >= data.GetTimeLength() && data.GetDoLoop())
 				{
-					data.m_NormalizedTime -= data.GetTimeLength();
+					data.m_NormalizedTime -= data.GetTimeLength() * static_cast<int>(data.m_NormalizedTime / data.GetTimeLength());
 				}
 
 				for (auto& property : data.m_Properties)

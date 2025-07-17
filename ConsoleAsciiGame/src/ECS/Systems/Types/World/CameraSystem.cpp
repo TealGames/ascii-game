@@ -64,18 +64,9 @@ namespace ECS
         cameraData.GetEntityMutable().GetTransformMutable().SetLocalPos(cameraData.m_CameraSettings.m_FollowTarget->GetTransform().GetLocalPos());
     }
 
-    bool CameraSystem::IsWithinViewport(const CameraData& camera, const WorldPosition& pos) const
-    {
-        WorldPosition bottomLeftPos = camera.GetEntity().GetTransform().GetLocalPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
-        WorldPosition topRightPos = camera.GetEntity().GetTransform().GetLocalPos() + (camera.m_CameraSettings.m_WorldViewportSize / 2);
-        return bottomLeftPos.m_X <= pos.m_X && pos.m_X <= topRightPos.m_X && bottomLeftPos.m_Y <= pos.m_Y && pos.m_Y <= topRightPos.m_Y;
-    }
-
     void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData)
     {
-        //TODO: this is cuainsg some performance rpboelms
-        //m_currentFrameBuffer.clear();
-
+        const TransformData& cameraTransform = cameraData.GetEntity().GetTransform();
         float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_CameraSettings.m_WorldViewportSize.m_X, 
                                      SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y);
 
@@ -90,6 +81,8 @@ namespace ECS
 
         //LogError(std::format("Collapsing layers within viewport: {}", scene.ToStringLayers()));
 
+        const WorldPosition cameraBottomLeftWorldPos= cameraTransform.GetLocalPos() - (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
+        const WorldPosition cameraTopRightWorldPos = cameraTransform.GetLocalPos() + (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
         //TODO: this is inefficient because we render each pos within viewport, but even if some objects are within the same pos
         //the one behind it is still rendered. NOTE: it is difficult to find a solution when we might have small overlaps and we 
         //wanbt overlaps to be visible to ensure realism/not akward visuals + makes it difficult when using raylib
@@ -99,18 +92,9 @@ namespace ECS
             //LogWarning(std::format("Found layer with buffer size:{}", layer->GetBuffer().size()));
             for (const auto& textBufferPos : layer->GetBuffer())
             {
-                /*Log(std::format("Is pos {} within viewport: {}", textBufferPos.ToString(), 
-                    std::to_string(IsWithinViewport(cameraData, textBufferPos.m_Pos))));*/
-                if (!IsWithinViewport(cameraData, textBufferPos.m_Pos)) continue;
-               /* Log(std::format("Convert pos: {} to screen pos; {}", 
-                    textBufferPos.m_Pos.ToString(), WorldToScreenPosition(cameraData, textBufferPos.m_Pos).ToString()));*/
-
-                //m_currentFrameBuffer.emplace_back(textBufferPos);
-                
-                //TODO: it seems as thoguh font scaling causes problems and size inconsistencies with rest of world
-
-                //if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_Size *= scaleFactor;
-               
+                if (!IsWithinBounds(textBufferPos.m_Pos, cameraBottomLeftWorldPos, cameraTopRightWorldPos))
+                    continue;
+             
                 newScreenPos = cameraData.WorldToScreenPosition(textBufferPos.m_Pos);
                 screenSize = cameraData.WorldToScreenSize(textBufferPos.m_FontData.m_RectSize);
 

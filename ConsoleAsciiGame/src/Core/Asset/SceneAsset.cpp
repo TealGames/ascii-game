@@ -21,7 +21,8 @@
 const std::string SceneAsset::EXTENSION = ".json";
 const std::string SceneAsset::LEVEL_EXTENSION = ".level";
 
-static const char* LEVEL_BACKGROUND_PROPERTY_NAME = "Level";
+static const char* LEVEL_GROUND_PROPERTY_NAME = "Ground";
+static const char* LEVEL_BACKGOUND_PROPERTY_NAME = "Background";
 
 SceneAsset::SceneAsset(const std::filesystem::path& path) : 
 	Asset(path, true), m_assetManager(nullptr), m_scene(std::nullopt) 
@@ -357,22 +358,32 @@ bool SceneAsset::TryLoadLevelBackground()
 	//LogWarning(std::format("Try load level background fig:{}", levelFig.ToString()));
 	//Assert(false, std::format("Level fig:{}", levelFig.ToString()));
 
-	VisualData backgroundVisual = ParseDefaultVisualData(levelFig.TryGetBaldValue(LEVEL_BACKGROUND_PROPERTY_NAME));
-	if (!Assert(!backgroundVisual.IsEmpty(), std::format("Tried to parse level background for scene asset:{} "
+	VisualData groundVisual = ParseDefaultVisualData(levelFig.TryGetBaldValue(LEVEL_GROUND_PROPERTY_NAME));
+	if (!Assert(!groundVisual.IsEmpty(), std::format("Tried to parse level ground for scene asset:{} "
 		"but resulted in empty visual data when using fig value:{} visual data:{}", ToString(), 
-		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_BACKGROUND_PROPERTY_NAME)), backgroundVisual.ToString())))
+		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_GROUND_PROPERTY_NAME)), groundVisual.ToString())))
 		return false;
 
-	EntityData& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformData(Vec2{ 0,-10 }));
-	backgroundEntity.m_IsSerializable = false;
-	EntityRendererData& backgroundRenderer = backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
+	EntityData& groundEntity = GetSceneMutable().CreateEntity("Ground", TransformData(Vec2{ 0,-10 }));
+	groundEntity.m_IsSerializable = false;
+	EntityRendererData& groundRenderer = groundEntity.AddComponent<EntityRendererData>(EntityRendererData(groundVisual, RenderLayerType::Background));
 
 	/*LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().ToString()));
 	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));*/
 
-	CollisionBoxData& collisionBox = backgroundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(backgroundVisual.GetWorldSize(), {0,0}));
-	PhysicsBodyData& physicsBody = backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(&collisionBox, 10));
-	physicsBody.SetConstraint(MoveContraints(true, true));
+	CollisionBoxData& groundCollisionBox = groundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(groundVisual.GetWorldSize(), {0,0}));
+	PhysicsBodyData& groundBody = groundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(&groundCollisionBox, 10));
+	groundBody.SetConstraint(MoveContraints(true, true));
+
+	VisualData backgroundVisual = ParseDefaultVisualData(levelFig.TryGetBaldValue(LEVEL_BACKGOUND_PROPERTY_NAME));
+	if (!Assert(!backgroundVisual.IsEmpty(), std::format("Tried to parse level background for scene asset:{} "
+		"but resulted in empty visual data when using fig value:{} visual data:{}", ToString(),
+		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_BACKGOUND_PROPERTY_NAME)), backgroundVisual.ToString())))
+		return false;
+
+	EntityData& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformData(Vec2{ 0,5}));
+	backgroundEntity.m_IsSerializable = false;
+	EntityRendererData& backgroundRenderer = backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
 	/*LogWarning(std::format("Created Physics body: {} visual size: {}", physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), 
 		backgroundVisual.m_Text.GetSize().ToString()));*/
 }

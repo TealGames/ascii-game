@@ -121,8 +121,8 @@ namespace ECS
 			buffer.push_back(charPos);
 			//buffer.back().m_Pos = mainCamera.ScreenToWorldPosition(charPos.m_Pos + pivotScreenPos);
 			buffer.back().m_Pos += pivotWorldPos;
-			LogWarning(std::format("Placed buffer pos wordl:{} char pos:{} pivot:{} screen:{}", buffer.back().m_Pos.ToString(), 
-				charPos.m_Pos.ToString(), pivotWorldPos.ToString(), (charPos.m_Pos + pivotWorldPos).ToString()));
+			/*LogWarning(std::format("Placed buffer pos wordl:{} char pos:{} pivot:{} screen:{}", buffer.back().m_Pos.ToString(), 
+				charPos.m_Pos.ToString(), pivotWorldPos.ToString(), (charPos.m_Pos + pivotWorldPos).ToString()));*/
 		}
 		//if (data.GetEntity().m_Name=="Background") LogError(std::format("finished text buffer for entity:{}", data.GetEntity().m_Name));
 		//TODO: should this really be a function of visual data and should we expose the buffer directly from the scene like this
