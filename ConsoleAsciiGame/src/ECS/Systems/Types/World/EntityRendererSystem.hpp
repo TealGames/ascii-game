@@ -18,7 +18,7 @@ namespace ECS
 	public:
 
 	private:
-		void AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data);
+		void AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data, const CameraData& mainCamer);
 
 	public:
 		EntityRendererSystem();

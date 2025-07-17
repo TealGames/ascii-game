@@ -34,8 +34,8 @@ std::string ToString(const CollisionFlag flag)
 
 CollidingBoxInfo::CollidingBoxInfo(const CollisionBoxData& box, const CollisionFlag& flag) : m_Box(&box), m_Flag(flag) {}
 
-CollisionBoxData::CollisionBoxData(const Vec2& size, const WorldPosition& transformOffset) :
-	Component(), m_aabb(size), m_transformOffset(transformOffset), m_collidingBoxes() {}
+CollisionBoxData::CollisionBoxData(const Vec2& worldSize, const WorldPosition& transformOffset) :
+	Component(), m_aabb(worldSize), m_transformOffset(transformOffset), m_collidingBoxes() {}
 
 CollisionBoxData::CollisionBoxData() :
 	CollisionBoxData({}, {}) {}
@@ -176,7 +176,7 @@ const WorldPosition& CollisionBoxData::GetOffset() const
 {
 	return m_transformOffset;
 }
-const WorldPosition& CollisionBoxData::GetCurrentPos() const
+const WorldPosition& CollisionBoxData::GetCenterGlobalPos() const
 {
 	return GetTransform().GetGlobalPos();
 }
@@ -195,7 +195,7 @@ const Physics::AABB& CollisionBoxData::GetAABB() const
 }
 const WorldPosition CollisionBoxData::GetAABBCenterWorldPos() const
 {
-	return GetCurrentPos() + m_transformOffset;
+	return GetCenterGlobalPos() + m_transformOffset;
 }
 const WorldPosition CollisionBoxData::GetAABBWorldPos(const NormalizedPosition& relativePos) const
 {

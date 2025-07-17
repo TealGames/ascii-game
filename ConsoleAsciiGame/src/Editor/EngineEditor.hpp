@@ -27,6 +27,7 @@ class TimeKeeper;
 class CameraController;
 class UIInteractionManager;
 class PopupUIManager;
+class GizmoOverlay;
 
 struct EditModeInfo
 {
@@ -49,6 +50,7 @@ private:
 	ECS::CollisionBoxSystem& m_collisionBoxSystem;
 	UIHierarchy& m_guiTree;
 	PopupUIManager& m_popupManager;
+	GizmoOverlay& m_gizmos;
 
 	CommandConsole m_commandConsole;
 	DebugInfo m_debugInfo;
@@ -73,7 +75,7 @@ private:
 public:
 	EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
 		SceneManagement::SceneManager& scene, const CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, 
-		PopupUIManager& popupManager, ECS::CollisionBoxSystem& collisionSystem);
+		PopupUIManager& popupManager, ECS::CollisionBoxSystem& collisionSystem, GizmoOverlay& gizmos);
 	~EngineEditor();
 
 	void Init(ECS::PlayerSystem& playerSystem);

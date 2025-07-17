@@ -47,12 +47,12 @@ bool IsRightAlignment(const TextAlignment& alignment)
 
 UITextComponent::UITextComponent() : UITextComponent("", {}, Color()) {}
 
-UITextComponent::UITextComponent(const std::string text, const FontProperties& font, const UIPadding& padding, 
+UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const UIPadding& padding, 
 	const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea) :
 	m_text(text), m_fontData(font), m_padding(padding), 
 	m_alignment(alignment), m_color(color), m_fontSizeFactor(factor), m_fitToArea(fitToArea), m_renderer(nullptr) {}
 
-UITextComponent::UITextComponent(const std::string text, const FontProperties& font, const Color& color) :
+UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const Color& color) :
 	UITextComponent(text, font, DEFAULT_PADDING, DEFAULT_ALIGNMENT, color, NULL_FONT_FACTOR, DEFAULT_FIT_TO_AREA) {}
 	
 UITextComponent::UITextComponent(const std::string& text, const TextUIStyle& settings) :

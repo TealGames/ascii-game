@@ -120,6 +120,9 @@ namespace Core
 	//TODO: msot interaction components do not need update and should instead do things on interaction event, like select, drag, etc since really they need 
 	//to be updated when getting an event not every single frame
 	//TODO: on selectable, we allow calling hover start/end and click, which should only be possible with interaction manager because they are driven by input. select/dselect is fine
+	//TODO: visual data has similar visual storing/creating functions so prevent the need for copying so much similar logic
+	//TODO: what if instead of rendering each segment as text, what if they were all textures with transparent backgrounds and characters made in photshop -> making it easier to have
+	//custom text arrangmenets
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -178,12 +181,12 @@ namespace Core
 		m_particleEmitterSystem(),
 		m_triggerSystem(),
 		m_uiSystemExecutor(m_engineState, m_renderer, m_uiHierarchy, m_popupManager),
-		m_gizmosOverlay(m_uiSystemExecutor.m_UiRenderSystem),
+		m_gizmosOverlay(m_uiSystemExecutor.m_UiRenderSystem, m_physicsManager, m_cameraController),
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
 		m_timeKeeper(),
 		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_assetManager,
-			m_sceneManager, m_cameraController, m_UIInteractionManager, m_uiHierarchy, m_popupManager, m_collisionBoxSystem),
+			m_sceneManager, m_cameraController, m_UIInteractionManager, m_uiHierarchy, m_popupManager, m_collisionBoxSystem, m_gizmosOverlay),
 		m_gameManager(m_uiHierarchy)
 
 	{
@@ -309,7 +312,8 @@ namespace Core
 		m_timeKeeper.UpdateTimeStart();
 		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
 		const float unscaledDeltaTime = m_timeKeeper.GetLastIndependentDeltaTime();
-		//LogError(std::format("Update scaled dt:{} unscaled:{} scale:{}", scaledDeltaTime, unscaledDeltaTime, m_timeKeeper.GetTimeScale()));
+		LogWarning(std::format("Update scaled dt:{} unscaled:{} scale:{} FPS (raylib):{} FPS(engine):{}", 
+			scaledDeltaTime, unscaledDeltaTime, m_timeKeeper.GetTimeScale(), GetFPS(), 1/unscaledDeltaTime));
 
 		m_inputManager.Update(unscaledDeltaTime);
 
@@ -346,7 +350,6 @@ namespace Core
 			//Note: technically transform system should be using scaled time but since it is possible to change pos
 			//even when time is stopped we need to make sure it updates just in case
 			m_transformSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
-			//m_uiSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 
 			m_playerSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 			m_collisionBoxSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
@@ -360,8 +363,6 @@ namespace Core
 			m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 			m_gameManager.GameUpdate();
-
-			//m_transformSystem.UpdateLastFramePos(*activeScene);
 		}
 
 		m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());

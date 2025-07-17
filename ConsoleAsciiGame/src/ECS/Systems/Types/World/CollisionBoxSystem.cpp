@@ -10,7 +10,7 @@
 
 namespace ECS
 {
-	static constexpr bool RENDER_COLLIDER_OUTLINES = true;
+	//static constexpr bool RENDER_COLLIDER_OUTLINES = true;
 
 	CollisionBoxSystem::CollisionBoxSystem(CollisionRegistry& registry) : m_collisionRegistry(registry) {}
 
@@ -47,21 +47,21 @@ namespace ECS
 			minBodyDisplacementVec = {};
 
 			bounds.emplace_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntity().m_Name, boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
-			if (RENDER_COLLIDER_OUTLINES)
-			{
-				/*if (!Assert(mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
-					"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;*/
+			//if (RENDER_COLLIDER_OUTLINES)
+			//{
+			//	/*if (!Assert(mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
+			//		"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;*/
 
-					//WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
-				WorldPosition topLeftColliderPos = boxA->GetAABBTopLeftWorldPos();
-				//TODO: the camera should convert to screen pos not here
-				ScreenPosition topLeftScreenPos = Conversions::WorldToScreenPosition(mainCamera, topLeftColliderPos);
-				/*LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}",
-					entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
+			//		//WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
+			//	WorldPosition topLeftColliderPos = boxA->GetAABBTopLeftWorldPos();
+			//	//TODO: the camera should convert to screen pos not here
+			//	ScreenPosition topLeftScreenPos = mainCamera.WorldToScreenPosition(topLeftColliderPos);
+			//	/*LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}",
+			//		entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
 
-					//m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body->GetAABB().GetSize(), topLeftScreenPos));
-				m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(boxA->GetAABB().GetSize(), topLeftScreenPos));
-			}
+			//		//m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body->GetAABB().GetSize(), topLeftScreenPos));
+			//	m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(boxA->GetAABB().GetSize(), topLeftScreenPos));
+			//}
 
 			for (auto& boxB : boxes)
 			{

@@ -16,7 +16,7 @@ namespace JsonConstants
 	//static const std::unordered_map<std::string, Font> FONT_CONSTANTS = { {"Default", GetFontDefault()}};
 	//Note: we cant just store a reference to font because this occurs on init before raylib gets set up
 	static const std::string DEFAULT_FONT_NAME = "Default";
-	static const std::unordered_map<std::string, float> FONT_SIZE_CONSTANTS = { {"Default", GLOBAL_FONT_SIZE}};
+	static const std::unordered_map<std::string, Vec2> FONT_SIZE_CONSTANTS = { {"Default", GLOBAL_FONT_SIZE}};
 
 	template<typename Value>
 	static std::optional<Value> TryGetConstantValue(const std::unordered_map<std::string, Value>& constants, const std::string& constant)
@@ -88,13 +88,13 @@ namespace JsonConstants
 			[](const Font& font1, const Font& font2)-> bool { return RaylibUtils::FontEqual(font1, font2); });*/
 	}
 
-	std::optional<float> TryGetConstantFontSize(const std::string& constant)
+	std::optional<Vec2> TryGetConstantFontSize(const std::string& constant)
 	{
-		return TryGetConstantValue<float>(FONT_SIZE_CONSTANTS, constant);
+		return TryGetConstantValue<Vec2>(FONT_SIZE_CONSTANTS, constant);
 	}
-	std::optional<std::string> TryGetFontSizeConstant(const float& size)
+	std::optional<std::string> TryGetFontSizeConstant(const Vec2& size)
 	{
-		return TryGetValueConstant<float>(FONT_SIZE_CONSTANTS, size,
-			[](const float& size1, const float& size2)-> bool { return size1 == size2; });
+		return TryGetValueConstant<Vec2>(FONT_SIZE_CONSTANTS, size,
+			[](const Vec2& size1, const Vec2& size2)-> bool { return size1 == size2; });
 	}
 }

@@ -28,18 +28,10 @@ namespace Conversions
 		return GridToArray(CartesianToGrid(pos));
 	}*/
 
-	ScreenPosition WorldToScreenPosition(const CameraData& camera, const WorldPosition& pos)
+	/*ScreenPosition WorldToScreenPosition(const CameraData& camera, const WorldPosition& pos)
 	{
-		//TODO: could this maybe be precalculated to optimize
-		const float topLeftY = camera.GetEntity().GetTransform().GetGlobalPos().m_Y + (camera.m_CameraSettings.m_WorldViewportSize.m_Y / 2);
-		const float bottomLeftX = camera.GetEntity().GetTransform().GetGlobalPos().m_X - (camera.m_CameraSettings.m_WorldViewportSize.m_X / 2);
-		Vec2 screenPercent{ (pos.m_X - bottomLeftX) / camera.m_CameraSettings.m_WorldViewportSize.m_X,
-					 (topLeftY - pos.m_Y) / camera.m_CameraSettings.m_WorldViewportSize.m_Y };
-
-		//TODO: right now we assume the position is for the whole screen, but we may not want the whole screen covered by the viewport
-		return ScreenPosition{ screenPercent.m_X * (float)SCREEN_WIDTH, screenPercent.m_Y * (float)SCREEN_HEIGHT };
-	}
-
+		
+	}*/
 
 	WorldPosition ScreenToWorldPosition(const CameraData& camera, const ScreenPosition& pos)
 	{

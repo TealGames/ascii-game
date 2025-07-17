@@ -71,7 +71,7 @@ private:
 	UIRendererData* m_renderer;
 
 	std::string m_text;
-	FontProperties m_fontData;
+	ScreenFontProperties m_fontData;
 	Color m_color;
 
 	/// <summary>
@@ -142,12 +142,12 @@ private:
 	Vec2 CalculateUsableSpace(const UIRect& renderInfo) const;
 
 private:
-	UITextComponent(const std::string text, const FontProperties& font, const UIPadding& padding,
+	UITextComponent(const std::string text, const ScreenFontProperties& font, const UIPadding& padding,
 		const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea);
 
 public:
 	UITextComponent();
-	UITextComponent(const std::string text, const FontProperties& font, const Color& color);
+	UITextComponent(const std::string text, const ScreenFontProperties& font, const Color& color);
 	UITextComponent(const std::string& text, const TextUIStyle& settings);
 
 	void SetSettings(const TextUIStyle& settings);

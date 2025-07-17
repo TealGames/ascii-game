@@ -7,6 +7,7 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
+#include <tuple>
 #include "ECS/Entity/EntityRegistry.hpp"
 #include "Utils/Data/Point2DInt.hpp"
 #include "Core/Visual/TextBuffer.hpp"
@@ -103,6 +104,11 @@ public:
 
 	void AddToLayer(const RenderLayerType& type, TextBufferCharPosition& texture);
 	std::vector<FragmentedTextBuffer*> GetLayerBufferMutable(const RenderLayerType& renderLayers);
+	/// <summary>
+	/// Gets all render layer buffers in ascending sorted order
+	/// </summary>
+	/// <returns></returns>
+	std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer*>> GetAllLayerBufferMutable();
 	//std::vector<TextBuffer*> GetTextBuffersMutable(const RenderLayerType& renderLayers);
 	//void SetLayers(const RenderLayerType& renderLayers, const std::vector<TextCharPosition>& positions);
 	//void SetLayers(const RenderLayerType& renderLayers, const std::vector<ColorPosition>& positions);

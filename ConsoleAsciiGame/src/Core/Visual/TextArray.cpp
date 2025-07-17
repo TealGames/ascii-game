@@ -23,11 +23,12 @@ void TextChar::SetChar(const char& c)
 {
 	m_Char[0] = c;
 }
-Vec2 TextChar::GetWorldSize(const FontProperties& font) const
+Vec2 TextChar::GetWorldSize(const WorldFontProperties& font) const
 {
-	const std::string tempStr = m_Char;
-	const Vector2 size = MeasureTextEx(font.m_FontAsset->GetFont(), tempStr.c_str(), font.m_Size, font.m_Tracking);
-	return { size.x, size.y };
+	//const std::string tempStr = m_Char;
+	//const Vector2 size = MeasureTextEx(font.m_FontAsset->GetFont(), tempStr.c_str(), font.m_Size, font.m_Tracking);
+	return font.m_RectSize;
+	// { size.x, size.y };
 }
 
 bool TextChar::operator==(const TextChar& other) const

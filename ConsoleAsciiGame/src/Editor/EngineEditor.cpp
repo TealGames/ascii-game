@@ -12,6 +12,7 @@
 #include "Editor/Entity/ColorPopupUI.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "Core/UIElementTemplates.hpp"
+#include "Core/GizmoOverlay.hpp"
 
 static constexpr float TOP_BAR_HEIGHT = 0.03;
 static constexpr float ASSET_EDITOR_BUTTON_WIDTH = 0.2;
@@ -26,13 +27,13 @@ EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
 
 EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
 	SceneManagement::SceneManager& scene, const CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, PopupUIManager& popupManager, 
-	ECS::CollisionBoxSystem& collisionSystem)
+	ECS::CollisionBoxSystem& collisionSystem, GizmoOverlay& gizmos)
 	:
 	m_editorRoot(nullptr),
 	m_displayingGameView(true),
 	m_timeKeeper(time), m_inputManager(input), m_sceneManager(scene), m_cameraController(camera),
 	m_physicsManager(physics), m_guiSelector(selector), m_guiTree(guiTree), m_collisionBoxSystem(collisionSystem),
-	m_commandConsole(m_inputManager, m_guiSelector), m_debugInfo(),
+	m_commandConsole(m_inputManager, m_guiSelector), m_debugInfo(), m_gizmos(gizmos),
 	m_popupManager(popupManager),
 	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager, assetManager),
 	m_spriteEditor(m_guiTree, m_inputManager, assetManager),
@@ -202,6 +203,8 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 	m_editModeToggle->m_OnValueSet.AddListener([this](const bool isChecked)-> void
 		{
 			m_mousePosText->GetEntityMutable().TrySetEntityActive(isChecked);
+			if (isChecked) m_gizmos.EnableAllGizmos();
+			else m_gizmos.DisableAllGizmos();
 		});
 
 	const float layoutWidth = TOGGLE_LAYOUT_WIDTH_PER_TOGGLE * toggleLayoutEntity->GetChildCount();
@@ -266,7 +269,7 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 	//LogError(std::format("Is toggled:{} selected:{}", std::to_string(m_editModeToggle.IsToggled()), std::to_string(m_editModeInfo.m_Selected != nullptr)));
 
 	Vec2 mouseClickedPos = m_inputManager.GetMousePosition();
-	WorldPosition worldClickedPos = Conversions::ScreenToWorldPosition(mainCamera, ScreenPosition(mouseClickedPos.m_X, mouseClickedPos.m_Y));
+	WorldPosition worldClickedPos = mainCamera.ScreenToWorldPosition(ScreenPosition(mouseClickedPos.m_X, mouseClickedPos.m_Y));
 	if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsPressed())
 	{
 		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(*activeScene, worldClickedPos);

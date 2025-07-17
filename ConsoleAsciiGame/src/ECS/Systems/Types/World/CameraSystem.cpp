@@ -4,7 +4,6 @@
 #include "StaticGlobals.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
-#include "Core/PositionConversions.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/RaylibUtils.hpp"
 #include "Core/Scene/Scene.hpp"
@@ -12,6 +11,7 @@
 #include "ECS/Component/GlobalComponentInfo.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 #include "Core/Asset/FontAsset.hpp"
+#include "Utils/RaylibUtils.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
@@ -86,6 +86,7 @@ namespace ECS
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
         //Log(std::format("Total layers: {}", std::to_string(layers.size())));
         ScreenPosition newScreenPos = {};
+        Vec2 screenSize = {};
 
         //LogError(std::format("Collapsing layers within viewport: {}", scene.ToStringLayers()));
 
@@ -110,9 +111,12 @@ namespace ECS
 
                 //if (DO_SIZE_SCALING) m_currentFrameBuffer.back().m_FontData.m_Size *= scaleFactor;
                
-                newScreenPos = Conversions::WorldToScreenPosition(cameraData, textBufferPos.m_Pos);
+                newScreenPos = cameraData.WorldToScreenPosition(textBufferPos.m_Pos);
+                screenSize = cameraData.WorldToScreenSize(textBufferPos.m_FontData.m_RectSize);
+
                 m_renderer->AddTextCall(newScreenPos, textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_Text.m_Char,
-                    textBufferPos.m_FontData.m_Size, textBufferPos.m_FontData.m_Tracking, textBufferPos.m_Text.m_Color);
+                   RaylibUtils::GetBestFontSize(textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_FontData.m_Tracking, screenSize, textBufferPos.m_Text.m_Char), 
+                    textBufferPos.m_FontData.m_Tracking, textBufferPos.m_Text.m_Color);
                /* LogWarning(std::format("Adding text call at:{} font size:{} color:{} char:{}", newScreenPos.ToString(), textBufferPos.m_FontData.m_Size, 
                     RaylibUtils::ToString(textBufferPos.m_Text.m_Color), textBufferPos.m_Text.m_Char));*/
                 //m_currentFrameBuffer.back().m_Pos = Vec2(static_cast<float>(newScreenPos.m_X), static_cast<float>(newScreenPos.m_Y));

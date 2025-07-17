@@ -18,8 +18,8 @@ namespace JsonConstants
 	std::optional<Font> TryGetConstantFont(const std::string& constant);
 	std::optional<std::string> TryGetFontConstant(const Font& font);
 
-	std::optional<float> TryGetConstantFontSize(const std::string& constant);
-	std::optional<std::string> TryGetFontSizeConstant(const float& size);
+	std::optional<Vec2> TryGetConstantFontSize(const std::string& constant);
+	std::optional<std::string> TryGetFontSizeConstant(const Vec2& size);
 }
 
 

@@ -208,6 +208,15 @@ namespace RaylibUtils
 	{
 		return font.texture.id != 0;
 	}
+	float GetBestFontSize(const Font& font, const float spacing, const Vec2& area, const std::string& text)
+	{
+		constexpr float testFontSize = 10.0f;
+		const Vector2 measuredArea = MeasureTextEx(font, text.c_str(), testFontSize, spacing);
+
+		//Since text size scales linearly to area, we can text a size and scale it to fit the desired area
+		float scale = fminf(area.m_X / measuredArea.x, area.m_Y / measuredArea.y);
+		return testFontSize * scale;
+	}
 
 	void RemoveFontExtraSpacing(Font& font)
 	{

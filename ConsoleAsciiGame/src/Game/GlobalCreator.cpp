@@ -30,7 +30,7 @@ namespace GlobalEntityCreator
 		//Font* fontptr = &(GetGlobalFont());
 		/*VisualDataPreset visualPreset = {, VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };*/
-		FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_CHAR_SPACING.m_X, StaticReferenceGlobals::GetDefaultRaylibFont());
+		WorldFontProperties fontSettings = WorldFontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_FONT_CHAR_SPACING.m_X, StaticReferenceGlobals::GetDefaultRaylibFont());
 		//LogError(std::format("Is valid preset font:{}", std::to_string(RaylibUtils::IsValidFont(visualPreset.m_Font))));
 
 
@@ -84,7 +84,7 @@ namespace GlobalEntityCreator
 		//m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
 
 		EntityData& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
-		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 120, &playerEntity} });
+		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 60, &playerEntity} });
 		cameraController.TryRegisterCamera(cameraData);
 
 		EntityData& trigger = globalsManager.CreateGlobalEntity("Trigger", TransformData(Vec2{15, 0}));

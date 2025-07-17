@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <ranges>
+#include <utility>
 #include "Core/Visual/TextArray.hpp"
 #include "Core/Rendering/FragmentedTextArray.hpp"
 #include "raylib.h"
@@ -8,7 +10,7 @@
 #include "StaticGlobals.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/Data/Vec2.hpp"
-#include "Utils/Data/NormalizedPosition.hpp"
+#include "Utils/Data/NormalizedPosition.hpp" 
 #include "Utils/Data/WorldPosition.hpp"
 
 ////TODO: the data from get world size of visual data should be abstracted
@@ -50,11 +52,10 @@ struct VisualDataPreset
 
 //using RawTextBufferBlock = std::vector<std::vector<TextCharArrayPosition>>;
 //std::string ToString(const RawTextBufferBlock& rawBuffer);
-
 class VisualData
 {
 public:
-	static const float& DEFAULT_FONT_SIZE;
+	static const Vec2& DEFAULT_FONT_SIZE;
 
 	static const Vec2 PIVOT_TOP_LEFT;
 	static const Vec2 PIVOT_TOP_RIGHT;
@@ -95,6 +96,7 @@ private:
 	/// the coorindate used for the buffer)
 	/// </summary>
 	FragmentedTextBuffer m_buffer;
+	Vec2 m_worldSize;
 public:
 
 private:
@@ -105,18 +107,52 @@ private:
 	void AddTextPositionsToBufferAdaptive(const WorldPosition& transformPos, TextBufferMixed& buffer) const;*/
 
 private:
-	void CreateBuffer(const std::vector<std::vector<TextBufferChar>>& rawBuffer,
-		const Vec2& charSpacing, const NormalizedPosition& relativePivotPos);
+	void CreateBuffer(const std::vector<std::vector<TextBufferChar>>& rawBuffer, const Vec2& charSpacing);
+
+	void AddToCreatedBuffer(const size_t& r, const size_t& c, const size_t currRowElementCount, const TextChar& textChar, 
+		const WorldFontProperties& fontData, const Vec2& charSpacing, Vec2& pivotDiff, 
+		NormalizedPosition& currPosNormalized, const Vec2& fullSize, float* currentRowMaxHeight, const Vec2* predefinedCharArea);
+
 public:
 	VisualData();
 
+	/// <summary>
+	/// This overload uses a vector of data that contains the char position, color, text, font, etc.
+	/// Most useful for having lots of varied data with lots of holes/uneven spacing and compelx chapes
+	/// </summary>
+	/// <param name="rawBuffer"></param>
+	/// <param name="relativePivotPos"></param>
 	VisualData(const FragmentedTextBuffer& rawBuffer, const NormalizedPosition& relativePivotPos);
 
+	/// <summary>
+	/// This overload uses a 2d array of data with char, color and font
+	/// Most useful for box/non-complex shapes with each character having their own color/font settings
+	/// </summary>
+	/// <param name="rawBuffer"></param>
+	/// <param name="charSpacing"></param>
+	/// <param name="relativePivotPos"></param>
 	VisualData(const std::vector<std::vector<TextBufferChar>>& rawBuffer, const Vec2& charSpacing,
 		const NormalizedPosition& relativePivotPos);
 
+	/// <summary>
+	/// This overload uses a 2d array of char and color and a global font to use for all elementss
+	/// Most useful for box-shapes structures each with similar font but different color/character
+	/// </summary>
+	/// <param name="rawBuffer"></param>
+	/// <param name="charSpacing"></param>
+	/// <param name="fontSettings"></param>
+	/// <param name="relativePivotPos"></param>
 	VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, const Vec2& charSpacing,
-		const FontProperties& fontSettings, const NormalizedPosition& relativePivotPos);
+		const WorldFontProperties& fontSettings, const NormalizedPosition& relativePivotPos);
+
+	//TODO: add overload with same char for every location and one for same color in every 2d element
+
+	/// <summary>
+	/// This overload uses a 2d array of char and color and a global font and global char area
+	/// Most useful for box shapes with same font and where each element occupies same amount of space regardless of font
+	/// </summary>
+	VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, const Vec2& charArea, const Vec2& charSpacing,
+		const WorldFontProperties& fontSettings, const NormalizedPosition& relativePivotPos);
 
 	/*/// <summary>
 	/// This constructor is used for the adaptive char area for the text
@@ -159,14 +195,17 @@ public:
 	/// <param name="pivotPosition"></param>
 	/// <param name="transformPos"></param>
 	/// <returns></returns>
-	void AddTextPositionsToBuffer(const WorldPosition& globalTransformPos, FragmentedTextBuffer& buffer) const;
+	//void AddTextPositionsToBuffer(const WorldPosition& globalTransformPos, FragmentedTextBuffer& buffer) const;
 	const FragmentedTextBuffer& GetBuffer() const;
 	/*const Vec2& GetCharSpacing() const;
 	const Font& GetFont() const;
 	float GetFontSize() const;
 	const FontProperties& GetFontData() const;*/
 
-	const Vec2& GetPivot() const;
+	Vec2 GetPivotRelative() const;
+	WorldPosition GetPivotWorldPos(const WorldPosition& centerScreenPos) const;
+
+	//void AddVisualLocationToBuffer(const size_t& r, const size_t& c, FragmentedTextBuffer& buffer, const ) const;
 
 	/*void SetPredefinedCharArea(const Vec2& area);
 	void SetAdpativeCharArea();

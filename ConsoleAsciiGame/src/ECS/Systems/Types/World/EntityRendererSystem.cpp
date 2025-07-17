@@ -31,14 +31,17 @@ namespace ECS
 		ProfilerTimer timer("EntityRendererSystem::SystemUpdate");
 #endif 
 
-		std::vector<FragmentedTextBuffer*> affectedLayerBuffers = {};
+		//TODO: create a map or vector of all layer pointers, so we do not have to reget them for each entity since the layers do not change
+		//AKA: memoization
+		std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer*>> allLayerBuffers = scene.GetAllLayerBufferMutable();
+		FragmentedTextBuffer* currLayerBuffer = nullptr;
 		scene.OperateOnComponents<EntityRendererData>(
-			[this, &scene, &affectedLayerBuffers](EntityRendererData& data)-> void
+			[this, &scene, &allLayerBuffers, &currLayerBuffer, &mainCamera](EntityRendererData& data)-> void
 			{
 				//if(entity.GetName()== "Background") Assert(false, std::format("Entity:{} has visual:{}", entity.GetName(), data.m_VisualData.ToString()));
 
 				//Log(std::format("Player is at pos: {}", entity.m_Transform.m_Pos.ToString()));
-				affectedLayerBuffers = scene.GetLayerBufferMutable(data.GetRenderLayers()); 
+				//affectedLayerBuffers = scene.GetLayerBufferMutable(data.GetRenderLayers()); 
 				//Log(std::format("RENDER LAYERS: {}", std::to_string(affectedLayerBuffers.size())));
 
 				//Log(std::format("Moved this frame: {}", std::to_string(m_transformSystem.HasMovedThisFrame(entity.m_Transform))));
@@ -48,8 +51,8 @@ namespace ECS
 				//LogError(std::format("Trying to render obkect: {}", entity.GetName()));
 				//return;
 
-				if (!Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
-					"but entity's render data: {} has no render layers", data.GetEntity().m_Name))) return;
+				//if (!Assert(!affectedLayerBuffers.empty(), std::format("Tried to update render system "
+				//	"but entity's render data: {} has no render layers", data.GetEntity().m_Name))) return;
 
 				/*
 				if (CACHE_LAST_BUFFER && !data.m_MutatedThisFrame && !entity.m_Transform.HasMovedThisFrame() &&
@@ -72,12 +75,21 @@ namespace ECS
 					data.m_LastFrameVisualData.clear();*/
 
 				//LogWarning(std::format("Entity: {} has visual: {}", entity.m_Name, data.GetVisualData().m_Text.ToString()));
-				for (auto& buffer : affectedLayerBuffers)
-				{
-					if (!Assert(buffer != nullptr, std::format("Tried to update render system "
-						"but entity's render data: {} found a NULL render layer buffer", data.GetEntity().m_Name))) return;
 
-					AddTextToBuffer(*buffer, data);
+				for (const auto& renderLayerTuple : allLayerBuffers)
+				{
+					if (!Utils::HasFlagAll(data.GetRenderLayers(), std::get<0>(renderLayerTuple)))
+						continue;
+
+					currLayerBuffer = std::get<1>(renderLayerTuple);
+					if (currLayerBuffer == nullptr)
+					{
+						LogError(std::format("Tried to update render system "
+							"but entity's render data: {} found a NULL render layer buffer", data.GetEntity().m_Name));
+						return;
+					}
+						
+					AddTextToBuffer(*currLayerBuffer, data, mainCamera);
 					//LogWarning(std::format("Entity: {} has been added to buffer. new buffer: {}", entity.m_Name, ToString(*buffer)));
 				}
 				data.m_MutatedThisFrame = false;
@@ -90,10 +102,31 @@ namespace ECS
 		return data.GetVisualData().ToString();
 	}
 
-	void EntityRendererSystem::AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data)
+	void EntityRendererSystem::AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data, const CameraData& mainCamera)
 	{
+		const auto& visualBuffer = data.GetVisualData().GetBuffer();
+		buffer.reserve(buffer.size() + visualBuffer.size());
+
+		//const ScreenPosition& pivotScreenPos = data.GetVisualData().GetPivotWorldPos(mainCamera.WorldToScreenPosition(data.GetTransform().GetGlobalPos()));
+		const ScreenPosition& pivotWorldPos = data.GetVisualData().GetPivotWorldPos(data.GetTransform().GetGlobalPos());
+		for (const auto& charPos : visualBuffer)
+		{
+			if (!charPos.m_FontData.HasValidFont())
+			{
+				LogError(std::format("Attempted to add text positions to buffer "
+					"but found invalid font on char pos:{}", charPos.ToString()));
+				return;
+			}
+
+			buffer.push_back(charPos);
+			//buffer.back().m_Pos = mainCamera.ScreenToWorldPosition(charPos.m_Pos + pivotScreenPos);
+			buffer.back().m_Pos += pivotWorldPos;
+			LogWarning(std::format("Placed buffer pos wordl:{} char pos:{} pivot:{} screen:{}", buffer.back().m_Pos.ToString(), 
+				charPos.m_Pos.ToString(), pivotWorldPos.ToString(), (charPos.m_Pos + pivotWorldPos).ToString()));
+		}
+		//if (data.GetEntity().m_Name=="Background") LogError(std::format("finished text buffer for entity:{}", data.GetEntity().m_Name));
 		//TODO: should this really be a function of visual data and should we expose the buffer directly from the scene like this
-		data.GetVisualData().AddTextPositionsToBuffer(data.GetEntity().GetTransform().GetGlobalPos(), buffer);
+		//data.GetVisualData().AddTextPositionsToBuffer(data.GetEntity().GetTransform().GetGlobalPos(), buffer);
 	}
 }
 

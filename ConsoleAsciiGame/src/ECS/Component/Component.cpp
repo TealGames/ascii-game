@@ -10,19 +10,25 @@ Component::Component()
 
 EntityData& Component::GetEntityMutable()
 {
-	if (!Assert(m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
-		"(it means a function creating or adding component probably did not update this setting)")))
+	if (m_entity == nullptr)
+	{
+		LogError(std::format("Tried to retrieve entity from component safely but it is NULLPTR "
+			"(it means a function creating or adding component probably did not update this setting)"));
 		throw std::invalid_argument("Tried to retrieve invalid entity with component");
+	}
 
 	return *m_entity;
 }
 
 const EntityData& Component::GetEntity() const
 {
-	if (!Assert(m_entity != nullptr, std::format("Tried to retrieve entity from component safely but it is NULLPTR "
-		"(it means a function creating or adding component probably did not update this setting)")))
+	if (m_entity == nullptr)
+	{
+		LogError(std::format("Tried to retrieve entity from component safely but it is NULLPTR "
+			"(it means a function creating or adding component probably did not update this setting)"));
 		throw std::invalid_argument("Tried to retrieve invalid entity with component");
-
+	}
+		
 	return *m_entity;
 }
 

@@ -6,7 +6,7 @@
 #include "raylib.h"
 #include "Core/Analyzation/Debug.hpp"
 
-const float& VisualData::DEFAULT_FONT_SIZE = GLOBAL_FONT_SIZE;
+const Vec2& VisualData::DEFAULT_FONT_SIZE = GLOBAL_FONT_SIZE;
 
 const Vec2 VisualData::PIVOT_TOP_LEFT = {0, 1};
 const Vec2 VisualData::PIVOT_TOP_RIGHT = {1, 1};
@@ -27,20 +27,18 @@ VisualData::VisualData() : VisualData({}, Vec2(), NormalizedPosition()) {}
 
 
 VisualData::VisualData(const FragmentedTextBuffer& rawBuffer, const NormalizedPosition& relativePivotPos) :
-	m_buffer(rawBuffer), m_pivotRelative(relativePivotPos)
-{
-}
+	m_buffer(rawBuffer), m_pivotRelative(relativePivotPos), m_worldSize() {}
 
 VisualData::VisualData(const std::vector<std::vector<TextBufferChar>>& rawBuffer, const Vec2& charSpacing,
 	const NormalizedPosition& relativePivotPos) : 
-	m_buffer(), m_pivotRelative(relativePivotPos)
+	m_buffer(), m_pivotRelative(relativePivotPos), m_worldSize()
 {
-	CreateBuffer(rawBuffer, charSpacing, relativePivotPos);
+	CreateBuffer(rawBuffer, charSpacing);
 }
 
 //TODO: this needs to be cut down and abstracted to not have repetitive constructors
 VisualData::VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, const Vec2& charSpacing,
-	const FontProperties& fontSettings, const NormalizedPosition& relativePivotPos) : m_buffer(), m_pivotRelative(relativePivotPos)
+	const WorldFontProperties& fontSettings, const NormalizedPosition& relativePivotPos) : m_buffer(), m_pivotRelative(relativePivotPos), m_worldSize()
 {
 	std::vector<std::vector<TextBufferChar>> fontBuffer = {};
 	for (const auto& textRow : rawBuffer)
@@ -51,11 +49,36 @@ VisualData::VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, cons
 			fontBuffer.back().push_back(TextBufferChar(text, fontSettings));
 		}
 	}
-	CreateBuffer(fontBuffer, charSpacing, relativePivotPos);
+	CreateBuffer(fontBuffer, charSpacing);
+}
+
+VisualData::VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, const Vec2& charArea, const Vec2& charSpacing,
+	const WorldFontProperties& fontSettings, const NormalizedPosition& relativePivotPos) : m_buffer(), m_pivotRelative(relativePivotPos), m_worldSize()
+{
+	if (rawBuffer.empty()) return;
+	
+	size_t maxRowSize = rawBuffer[0].size();
+	for (size_t r = 1; r < rawBuffer.size(); r++)
+	{
+		if (rawBuffer[r].size() > maxRowSize) maxRowSize = rawBuffer[r].size();
+	}
+	m_worldSize = {charArea.m_X * maxRowSize + (charSpacing.m_X * (maxRowSize-1)),
+						   charArea.m_Y* rawBuffer.size() + (charSpacing.m_Y * (rawBuffer.size() - 1))};
+
+	Vec2 pivotDiff = {};
+	NormalizedPosition currPosNormalized = NormalizedPosition::TOP_LEFT;
+	for (size_t r = 0; r < rawBuffer.size(); r++)
+	{
+		for (size_t c = 0; c < rawBuffer[r].size(); c++)
+		{
+			AddToCreatedBuffer(r, c, rawBuffer[r].size(), rawBuffer[r][c], fontSettings, charSpacing,
+				pivotDiff, currPosNormalized, m_worldSize, nullptr, &charArea);
+		}
+	}
 }
 
 void VisualData::CreateBuffer(const std::vector<std::vector<TextBufferChar>>& rawBuffer, 
-	const Vec2& charSpacing, const NormalizedPosition& relativePivotPos)
+	const Vec2& charSpacing)
 {
 	if (rawBuffer.empty()) return;
 
@@ -88,96 +111,105 @@ void VisualData::CreateBuffer(const std::vector<std::vector<TextBufferChar>>& ra
 
 	NormalizedPosition currPosNormalized = NormalizedPosition::TOP_LEFT;
 	float currentRowMaxHeight = 0;
-	Vec2 charSize = {};
-	Vec2 fullSize = { (maxRowChars - 1) * charSpacing.m_X + unpaddedSize.m_X,
+	m_worldSize = { (maxRowChars - 1) * charSpacing.m_X + unpaddedSize.m_X,
 								 (rawBuffer.size() - 1) * charSpacing.m_Y + unpaddedSize.m_Y };
 
-	if (!Assert(fullSize.m_X != 0 && fullSize.m_Y != 0, std::format("Tried to create visual data but "
-		"full size was calculated to invalid value:{} unpadded:{}", fullSize.ToString(), unpaddedSize.ToString())))
+	if (!Assert(m_worldSize.m_X != 0 && m_worldSize.m_Y != 0, std::format("Tried to create visual data but "
+		"full size was calculated to invalid value:{} unpadded:{}", m_worldSize.ToString(), unpaddedSize.ToString())))
 		return;
 
+	Vec2 pivotDiff = {};
 	for (size_t r = 0; r < rawBuffer.size(); r++)
 	{
-		currentRowMaxHeight = 0;
 		for (size_t c = 0; c < rawBuffer[r].size(); c++)
 		{
-			//If it is empty we still want to find the delta and increase it to cover its space
-			//but we should not add it to the buffer
-			if (!rawBuffer[r][c].m_Text.IsEmpty())
-			{
-				//Note: we must subtract their positions and no pos norms directly because we do NOT want clamping from (0,0) to (1,1)
-				//Note: we subtract curr pos - relative pos in order to get the correct order of RIGHT of pivot +, LEFT of pivot:- (UP +, DOWN -)
-				Vec2 pivotDiff = (currPosNormalized.GetPos() - relativePivotPos.GetPos()) * fullSize;
-
-				m_buffer.push_back(TextBufferCharPosition(pivotDiff, rawBuffer[r][c].m_Text, rawBuffer[r][c].m_FontData));
-				/*LogError(std::format("Adding visual data char:{} current norm:{} pivot:{} pivots diff:{} size diff:{} ", m_buffer.back().ToString(),
-					currPosNormalized.GetPos().ToString(), relativePivotPos.GetPos().ToString(), (relativePivotPos.GetPos() - currPosNormalized.GetPos()).ToString(), pivotDiff.ToString()));*/
-			}
-
-			charSize = rawBuffer[r][c].GetWorldSize();
-			if (charSize.m_Y > currentRowMaxHeight) currentRowMaxHeight = charSize.m_Y;
-
-			//Note: pos normalized has normal x and y axes (think first quadrant of cartesian coordinates)
-			//and size is always in row, col so they will need to be opposites when applying changes
-			if (c == rawBuffer[r].size() - 1)
-			{
-				currPosNormalized.m_X = 0;
-				currPosNormalized.m_Y -= ((currentRowMaxHeight + charSpacing.m_Y) / fullSize.m_Y);
-			}
-			else
-			{
-				currPosNormalized.m_X += ((charSize.m_X + charSpacing.m_X) / fullSize.m_X);
-			}
+			AddToCreatedBuffer(r, c, rawBuffer[r].size(), rawBuffer[r][c].m_Text, rawBuffer[r][c].m_FontData, charSpacing,
+				pivotDiff, currPosNormalized, m_worldSize, &currentRowMaxHeight, nullptr);
 		}
 	}
-	//if (m_buffer.size() > 15) Assert(false, std::format("Created visual data full size:{} spacing{} :{}", fullSize.ToString(), charSpacing.ToString(), ToString()));
 }
 
+void VisualData::AddToCreatedBuffer(const size_t& r, const size_t& c, const size_t currRowElementCount, const TextChar& textChar, const WorldFontProperties& fontData, const Vec2& charSpacing,
+	Vec2& pivotDiff, NormalizedPosition& currPosNormalized, const Vec2& fullSize, float* currentRowMaxHeight, const Vec2* predefinedCharArea)
+{
+	if (c == 0 && currentRowMaxHeight!=nullptr) *currentRowMaxHeight = 0;
+
+	//If it is empty we still want to find the delta and increase it to cover its space
+	//but we should not add it to the buffer
+	Vec2 charSize = textChar.GetWorldSize(fontData);
+	if (!textChar.IsEmpty())
+	{
+		//Note: we must subtract their positions and no pos norms directly because we do NOT want clamping from (0,0) to (1,1)
+		//Note: we subtract curr pos - relative pos in order to get the correct order of RIGHT of pivot +, LEFT of pivot:- (UP +, DOWN -)
+		pivotDiff = (currPosNormalized.GetPos() - m_pivotRelative.GetPos()) * fullSize;
+		if (predefinedCharArea != nullptr)
+		{
+			//If the char size height is greater than predefined area, we just move it up by difference
+			//if (charSize.m_Y > predefinedCharArea->m_Y) pivotDiff.m_Y += (charSize.m_Y - predefinedCharArea->m_Y);
+			//If both x and y are smaller, we then center the char in the center of the area
+			if (charSize.m_X < predefinedCharArea->m_X) pivotDiff += (*predefinedCharArea - charSize) / 2 * Vec2(1, -1);
+		}
+
+		m_buffer.push_back(TextBufferCharPosition(pivotDiff, textChar, fontData));
+		/*LogError(std::format("Adding visual data char:{} current norm:{} pivot:{} pivots diff:{} size diff:{} ", m_buffer.back().ToString(),
+			currPosNormalized.GetPos().ToString(), relativePivotPos.GetPos().ToString(), (relativePivotPos.GetPos() - currPosNormalized.GetPos()).ToString(), pivotDiff.ToString()));*/
+	}
+	if (currentRowMaxHeight!=nullptr && charSize.m_Y > *currentRowMaxHeight) *currentRowMaxHeight = charSize.m_Y;
+
+	if (c == currRowElementCount - 1)
+	{
+		currPosNormalized.m_X = 0;
+		currPosNormalized.m_Y -= ((currentRowMaxHeight != nullptr? *currentRowMaxHeight : predefinedCharArea->m_Y) + charSpacing.m_Y) / fullSize.m_Y;
+	}
+	else currPosNormalized.m_X += ((predefinedCharArea!=nullptr? predefinedCharArea->m_X : charSize.m_X) + charSpacing.m_X) / fullSize.m_X;
+}
+
+/*
 void VisualData::AddTextPositionsToBuffer(const WorldPosition& globalTransformPos, FragmentedTextBuffer& buffer) const
 {
+	buffer.reserve(buffer.size()+ m_buffer.size());
 	for (const auto& charPos : m_buffer)
 	{
-		if (!Assert(charPos.m_FontData.HasValidFont(), std::format("Attempted to add text positions to buffer "
-			"but found invalid font on char pos:{}", charPos.ToString()))) 
-			return;
-
+		if (!charPos.m_FontData.HasValidFont())
+		{
+			LogError(std::format("Attempted to add text positions to buffer "
+				"but found invalid font on char pos:{}", charPos.ToString()));
+				return;
+		}
+			
 		buffer.push_back(charPos);
-		buffer.back().m_Pos = buffer.back().m_Pos+ globalTransformPos;
+		buffer.back().m_Pos += globalTransformPos;
 	}
-	/*if (m_charAreaType == CharAreaType::Predefined) AddTextPositionsToBufferPredefined(transformPos, buffer);
-	else if (m_charAreaType == CharAreaType::Adaptive) AddTextPositionsToBufferAdaptive(transformPos, buffer);
-	else
-	{
-		LogError(std::format("Tried to add text positions to buffer at transform: {} "
-			"but char area tyoe has no actions defiend", transformPos.ToString()));
-	}*/
 }
+*/
 
 //TODO: this may be expensive so maybe make this a cached value
 Vec2 VisualData::GetWorldSize() const
 {
-	WorldPosition maxPos = {0, 0};
-	WorldPosition minPos = {std::numeric_limits<float>().max(), 
-							std::numeric_limits<float>().max() };
+	return m_worldSize;
 
-	WorldPosition charMin = {};
-	WorldPosition charMax = {};
-	Vec2 charSize = {};
+	//WorldPosition maxPos = {0, 0};
+	//WorldPosition minPos = {std::numeric_limits<float>().max(), 
+	//						std::numeric_limits<float>().max() };
 
-	for (const auto& textPos : m_buffer)
-	{
-		charSize = textPos.GetWorldSize();
+	//WorldPosition charMin = {};
+	//WorldPosition charMax = {};
+	//Vec2 charSize = {};
 
-		charMin = textPos.m_Pos - Vec2(0, charSize.m_Y);
-		if (charMin.m_X < minPos.m_X) minPos.m_X = charMin.m_X;
-		if (charMin.m_Y < minPos.m_Y) minPos.m_Y = charMin.m_Y;
+	//for (const auto& textPos : m_buffer)
+	//{
+	//	charSize = textPos.GetScreenSize();
 
-		charMax = textPos.m_Pos + Vec2(charSize.m_X, 0);
-		if (charMax.m_X > maxPos.m_X) maxPos.m_X = charMax.m_X;
-		if (charMax.m_Y > maxPos.m_Y) maxPos.m_Y = charMax.m_Y;
-	}
-	//LogError(std::format("When calcualting size min:{} max:{}", minPos.ToString(), maxPos.ToString()));
-	return {std::abs(maxPos.m_X- minPos.m_X), std::abs(maxPos.m_Y- minPos.m_Y)};
+	//	charMin = textPos.m_Pos - Vec2(0, charSize.m_Y);
+	//	if (charMin.m_X < minPos.m_X) minPos.m_X = charMin.m_X;
+	//	if (charMin.m_Y < minPos.m_Y) minPos.m_Y = charMin.m_Y;
+
+	//	charMax = textPos.m_Pos + Vec2(charSize.m_X, 0);
+	//	if (charMax.m_X > maxPos.m_X) maxPos.m_X = charMax.m_X;
+	//	if (charMax.m_Y > maxPos.m_Y) maxPos.m_Y = charMax.m_Y;
+	//}
+	////LogError(std::format("When calcualting size min:{} max:{}", minPos.ToString(), maxPos.ToString()));
+	//return {std::abs(maxPos.m_X- minPos.m_X), std::abs(maxPos.m_Y- minPos.m_Y)};
 }
 
 const FragmentedTextBuffer& VisualData::GetBuffer() const
@@ -190,10 +222,27 @@ bool VisualData::IsEmpty() const
 	return m_buffer.empty();
 }
 
+//void VisualData::AddVisualLocationToBuffer(const size_t& r, const size_t& c, FragmentedTextBuffer& buffer) const
+//{
+//	const TextBufferCharPosition& charPos = buffer[r][c];
+//	if (!charPos.m_FontData.HasValidFont())
+//	{
+//		LogError(std::format("Attempted to add text positions to buffer "
+//			"but found invalid font on char pos:{}", charPos.ToString()));
+//		return;
+//	}
+//
+//	buffer.push_back(charPos);
+//	buffer.back().m_Pos = mainCamera.ScreenToWorldPosition(charPos + )
+//}
 
-const Vec2& VisualData::GetPivot() const
+Vec2 VisualData::GetPivotRelative() const
 {
 	return m_pivotRelative.GetPos();
+}
+WorldPosition VisualData::GetPivotWorldPos(const WorldPosition& centerScreenPos) const
+{	
+	return (m_pivotRelative.GetPos() - PIVOT_CENTER) * GetWorldSize() + centerScreenPos;
 }
 
 std::string VisualData::ToString() const

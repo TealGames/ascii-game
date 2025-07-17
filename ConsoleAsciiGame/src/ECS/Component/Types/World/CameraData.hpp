@@ -17,6 +17,11 @@ public:
 	CameraData(const Json& json);
 	CameraData(const CameraSettings& cameraSettings);
 
+	ScreenPosition WorldToScreenPosition(const WorldPosition& pos) const;
+	WorldPosition ScreenToWorldPosition(const ScreenPosition& pos) const;
+
+	Vec2 WorldToScreenSize(const Vec2& worldSize) const;
+
 	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 

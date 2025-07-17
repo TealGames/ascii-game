@@ -66,8 +66,15 @@ namespace ECS
 		template<typename T>
 		AnimationPropertyKeyframe<T>& GetNextKeyFrameAtIndex(AnimationProperty<T>& property, const size_t& index) const
 		{
-			size_t nextKeyframeIndex = index + 1 % property.m_Keyframes.size();
-			return property.m_Keyframes[nextKeyframeIndex];
+			size_t nextKeyframeIndex = (index + 1) % property.m_Keyframes.size();
+			try
+			{
+				return property.m_Keyframes.at(nextKeyframeIndex);
+			}
+			catch (const std::exception& e)
+			{
+				LogError(std::format("Tried to use index:{} ({}) of keyframes:{}", nextKeyframeIndex, index+1, property.m_Keyframes.size()));
+			}
 		}
 
 		/*AnimationProperty* AnimatorSystem::TryFindMatchingProperty(AnimationKeyframe& keyframe, const AnimationProperty& property)

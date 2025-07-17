@@ -60,7 +60,7 @@ void SpriteAnimationAsset::UpdateAssetFromFile()
 
 	/*VisualDataPreset visualPreset = { GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };*/
-	FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, 0, StaticReferenceGlobals::GetDefaultRaylibFont());
+	WorldFontProperties fontSettings = WorldFontProperties(VisualData::DEFAULT_FONT_SIZE, 0, StaticReferenceGlobals::GetDefaultRaylibFont());
 
 	//Assert(false, std::format("Fig data found:{}", fig.ToString()));
 	for (size_t i=0; i< figProperties.size(); i++)

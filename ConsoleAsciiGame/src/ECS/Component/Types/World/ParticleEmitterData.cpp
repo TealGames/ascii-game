@@ -4,8 +4,8 @@
 #include <functional>
 #include "Core/Serialization/JsonSerializers.hpp"
 
-Particle::Particle(const TextChar& text, const float& fontSize, const WorldPosition& pos, const Vec2& vel, const float& lifeTime)
-	: m_TextChar(text), m_FontSize(fontSize), m_Pos(pos), m_Velocity(vel), m_AliveTime(0), m_LifeTime(lifeTime) {}
+Particle::Particle(const TextChar& text, const Vec2& fontArea, const WorldPosition& pos, const Vec2& vel, const float& lifeTime)
+	: m_TextChar(text), m_FontArea(fontArea), m_Pos(pos), m_Velocity(vel), m_AliveTime(0), m_LifeTime(lifeTime) {}
 
 void Particle::SetColorFromAliveTime(const ColorGradient& color)
 {
@@ -16,7 +16,7 @@ ParticleEmitterData::ParticleEmitterData() : ParticleEmitterData('A', FloatRange
 	ColorGradient(WHITE), {}, RenderLayerType::Player, {}, FloatRange(1, 1), float(5)) {}
 
 ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
-	const FontProperties& fontData, const RenderLayerType& renderLayers,
+	const WorldFontProperties& fontData, const RenderLayerType& renderLayers,
 	const WorldPosition& transformOffset, const FloatRange& speedRange, const float& spawnRate)
 	: Component(), 
 	m_Char(c), m_normalizedTime(0), m_lifetimeColor(colorOverTime), 
@@ -74,7 +74,7 @@ void ParticleEmitterData::Deserialize(const Json& json)
 	m_Char = json.at("Char").get<char>();
 	m_lifetimeRange = json.at("LifetimeRange").get<FloatRange>();
 	m_lifetimeColor = json.at("LifetimeColor").get<ColorGradient>();
-	m_FontData = json.at("FontData").get<FontProperties>();
+	m_FontData = json.at("FontData").get<WorldFontProperties>();
 	m_renderLayers = json.at("Layers").get<RenderLayerType>();
 	m_originTransformOffset = json.at("Offset").get<WorldPosition>();
 	m_speedRange = json.at("SpeedRange").get<FloatRange>();

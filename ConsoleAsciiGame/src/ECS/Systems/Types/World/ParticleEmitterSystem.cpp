@@ -80,7 +80,7 @@ namespace ECS
 					randomVel = GetVector(data.m_speedRange.GetRandom(), randomDir.GetAngle());
 					randomLifeTime = data.m_lifetimeRange.GetRandom();
 
-					Particle* particlePtr = data.m_particles.TryAdd(Particle(TextChar(initialColor, data.m_Char), data.m_FontData.m_Size,
+					Particle* particlePtr = data.m_particles.TryAdd(Particle(TextChar(initialColor, data.m_Char), data.m_FontData.m_RectSize,
 						data.GetOriginWorldPos(), randomVel, randomLifeTime));
 					if (!Assert(particlePtr != nullptr, std::format("Attempted to create particle in emitter system "
 						"for entity:{} particle:{} but failed", data.GetEntity().ToString(), data.ToString())))

@@ -5,6 +5,8 @@
 #include <format>
 #include <cstdint>
 
+using ListenerID = size_t;
+
 template <typename TReturn, typename...TArgs>
 class Event
 {
@@ -81,23 +83,24 @@ public:
 		return true;
 	}
 
-	void AddListener(const std::function<TReturn(TArgs...)>& listener)
+	ListenerID AddListener(const std::function<TReturn(TArgs...)>& listener)
 	{
 		if (m_listeners.size() >= m_maxListenersAllowed)
 		{
 			throw std::invalid_argument(std::format("Tried to add listener to event with signature:'{}' but it "
 				"has already reached its max listener limit: {}", GetSignatureStr(), m_maxListenersAllowed));
-			return;
+			return -1;
 		}
 
 		if (!listener)
 		{
 			throw std::invalid_argument(std::format("Tried to add listener to event with signature: "
 				"'{}' but function was invalid", GetSignatureStr()));
-			return;
+			return -1;
 		}
 
 		m_listeners.emplace_back(listener);
+		return m_listeners.size() - 1;
 	}
 
 	bool HasListener(const std::function<TReturn(TArgs...)> listener) const
@@ -108,10 +111,18 @@ public:
 	bool TryRemoveListener(const std::function<TReturn(TArgs...)> listener)
 	{
 		auto foundIt = TryGetIteratorForListener(listener);
-		if (foundIt == m_listeners.end()) return false;
-		int index = 0;
+		if (foundIt == m_listeners.end())
+			return false;
 
 		m_listeners.erase(foundIt);
+		return true;
+	}
+	bool TryRemoveListener(const ListenerID& id)
+	{
+		if (id >= m_listeners.size()) 
+			return false;
+
+		m_listeners.erase(m_listeners.begin() + id);
 		return true;
 	}
 	void RemoveAllListeners()

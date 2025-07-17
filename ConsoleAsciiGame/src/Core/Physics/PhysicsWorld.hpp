@@ -6,6 +6,7 @@
 #include "Utils/Data/WorldPosition.hpp"
 #include "Core/Collision/CollisionRegistry.hpp"
 #include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "Utils/Data/Event.hpp"
 
 class CollisionBoxData;
 namespace ECS
@@ -57,6 +58,10 @@ namespace Physics
 		/// The speed threshold to finish a bounce to prevent jittery behavior when the jump height becomes small
 		/// </summary>
 		static constexpr float BOUNCE_END_SPEED_THRESHOLD = 0.5;
+		/// <summary>
+		/// Invokes when object is finished being processed by physics
+		/// </summary>
+		Event<void, PhysicsBodyData*> m_OnObjectProcessed;
 
 	private:
 		/// <summary>

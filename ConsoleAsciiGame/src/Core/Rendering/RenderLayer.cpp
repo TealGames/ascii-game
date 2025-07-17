@@ -38,39 +38,39 @@ RenderLayerType GetLayersFromStrings(const std::vector<std::string> layerStrs)
 	return layers;
 }
 
-RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs)
-{
-	return static_cast<RenderLayerType>(
-		static_cast<RenderLayerNumericType>(lhs) | static_cast<RenderLayerNumericType>(rhs));
-}
-
-RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs)
-{
-	lhs = static_cast<RenderLayerType>(lhs | rhs);
-	return lhs;
-}
-
-RenderLayerType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs)
-{
-	return static_cast<RenderLayerType>(
-		static_cast<RenderLayerNumericType>(lhs) & static_cast<RenderLayerNumericType>(rhs));
-}
-
-RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs)
-{
-	lhs = static_cast<RenderLayerType>(lhs & rhs);
-	return lhs;
-}
-
-bool operator==(const RenderLayerType& lhs, const RenderLayerNumericType& rhs)
-{
-	return static_cast<RenderLayerNumericType>(lhs) == rhs;
-}
-
-bool operator!=(const RenderLayerType& lhs, const RenderLayerNumericType& rhs)
-{
-	return static_cast<RenderLayerNumericType>(lhs) != rhs;
-}
+//RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs)
+//{
+//	return static_cast<RenderLayerType>(
+//		static_cast<RenderLayerNumericType>(lhs) | static_cast<RenderLayerNumericType>(rhs));
+//}
+//
+//RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs)
+//{
+//	lhs = static_cast<RenderLayerType>(lhs | rhs);
+//	return lhs;
+//}
+//
+//RenderLayerType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs)
+//{
+//	return static_cast<RenderLayerType>(
+//		static_cast<RenderLayerNumericType>(lhs) & static_cast<RenderLayerNumericType>(rhs));
+//}
+//
+//RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs)
+//{
+//	lhs = static_cast<RenderLayerType>(lhs & rhs);
+//	return lhs;
+//}
+//
+//bool operator==(const RenderLayerType& lhs, const RenderLayerNumericType& rhs)
+//{
+//	return static_cast<RenderLayerNumericType>(lhs) == rhs;
+//}
+//
+//bool operator!=(const RenderLayerType& lhs, const RenderLayerNumericType& rhs)
+//{
+//	return static_cast<RenderLayerNumericType>(lhs) != rhs;
+//}
 
 RenderLayer::RenderLayer() : m_buffer{} {}
 RenderLayer::RenderLayer(const FragmentedTextBuffer& buffer) : m_buffer(buffer) {}

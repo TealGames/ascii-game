@@ -21,7 +21,7 @@ struct TextChar
 	TextChar(const TextChar&) = default;
 
 	bool IsEmpty() const;
-	Vec2 GetWorldSize(const FontProperties& font) const;
+	Vec2 GetWorldSize(const WorldFontProperties& font) const;
 
 	char GetChar() const;
 	void SetChar(const char& c);

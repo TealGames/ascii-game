@@ -41,19 +41,19 @@ namespace EditorStyles
 	}
 	inline TextUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const Color color= EDITOR_TEXT_DEFAULT_COLOR)
 	{
-		return TextUIStyle(color, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
+		return TextUIStyle(color, ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 			alignment, UIPadding(), factor);
 	}
 	inline TextUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const Color color = EDITOR_TEXT_DEFAULT_COLOR)
 	{
-		return TextUIStyle(color, FontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
+		return TextUIStyle(color, ScreenFontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 			alignment, UIPadding());
 	}
 
 	inline UIStyle GetInputFieldStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
 	{
 		return UIStyle(EDITOR_PRIMARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR,
-			FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()), alignment, UIPadding(), factor));
+			ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()), alignment, UIPadding(), factor));
 	}
 
 	inline UIStyle GetSliderStyle()
@@ -68,7 +68,7 @@ namespace EditorStyles
 
 	inline UIStyle GetButtonStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
 	{
-		return UIStyle(EDITOR_PRIMARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR, FontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
+		return UIStyle(EDITOR_PRIMARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR, ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 				alignment, UIPadding(), factor));
 	}
 }

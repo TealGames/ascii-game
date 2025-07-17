@@ -15,7 +15,7 @@ struct Particle
 	TextChar m_TextChar;
 	WorldPosition m_Pos;
 	Vec2 m_Velocity;
-	float m_FontSize;
+	Vec2 m_FontArea;
 	/// <summary>
 	/// The current duration in seconds this particle has been alive for
 	/// </summary>
@@ -25,7 +25,7 @@ struct Particle
 	/// </summary>
 	float m_LifeTime;
 
-	Particle(const TextChar& text, const float& fontSize, 
+	Particle(const TextChar& text, const Vec2& fontArea, 
 		const WorldPosition& pos, const Vec2& vel, const float& lifeTime);
 
 	void SetColorFromAliveTime(const ColorGradient& color);
@@ -35,7 +35,7 @@ struct ParticleEmitterData : Component
 {
 	WorldPosition m_originTransformOffset;
 
-	FontProperties m_FontData;
+	WorldFontProperties m_FontData;
 	//The color of any particle over the course of its lifetime
 	ColorGradient m_lifetimeColor;
 	char m_Char;
@@ -61,7 +61,7 @@ struct ParticleEmitterData : Component
 
 	ParticleEmitterData();
 	ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
-		const FontProperties& fontData, const RenderLayerType& renderLayers, 
+		const WorldFontProperties& fontData, const RenderLayerType& renderLayers, 
 		const WorldPosition& transformOffset, const FloatRange& speedRange, const float& spawnRate);
 
 	WorldPosition GetOriginWorldPos() const;

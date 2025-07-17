@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
 #include "Core/Visual/TextArray.hpp"
 #include "Core/Rendering/FontData.hpp"
 
@@ -7,12 +7,12 @@
 //so that we do not need to repeat the same data for mutliple entries
 struct TextBufferCharPosition
 {
-	Vec2 m_Pos;
+	ScreenPosition m_Pos;
 	TextChar m_Text;
-	FontProperties m_FontData;
+	WorldFontProperties m_FontData;
 
 	TextBufferCharPosition();
-	TextBufferCharPosition(const Vec2& pos, const TextChar& textChar, const FontProperties& font);
+	TextBufferCharPosition(const ScreenPosition& pos, const TextChar& textChar, const WorldFontProperties& font);
 	Vec2 GetWorldSize() const;
 
 	std::string ToString() const;
@@ -22,10 +22,10 @@ std::string ToString(const std::vector<TextBufferCharPosition>& chars);
 struct TextBufferChar
 {
 	TextChar m_Text;
-	FontProperties m_FontData;
+	WorldFontProperties m_FontData;
 
 	TextBufferChar();
-	TextBufferChar(const TextChar& textChar, const FontProperties& font);
+	TextBufferChar(const TextChar& textChar, const WorldFontProperties& font);
 	Vec2 GetWorldSize() const;
 
 	std::string ToString() const;

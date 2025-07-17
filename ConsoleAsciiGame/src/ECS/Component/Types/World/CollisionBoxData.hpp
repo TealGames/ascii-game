@@ -56,14 +56,14 @@ public:
 private:
 	bool Validate() override;
 	const TransformData& GetTransform() const;
-	const WorldPosition& GetCurrentPos() const;
+	const WorldPosition& GetCenterGlobalPos() const;
 
 	CollidingInfoCollection::iterator TryGetCollidingBoxIt(const CollisionBoxData& otherBox);
 
 public:
 	CollisionBoxData();
 	CollisionBoxData(const Json& json);
-	CollisionBoxData(const Vec2& size, const WorldPosition& transformOffset);
+	CollisionBoxData(const Vec2& worldSize, const WorldPosition& transformOffset);
 
 	bool IsCollidingWithBox(const CollisionBoxData& otherBox) const;
 	bool TryAddCollidingBox(const CollisionBoxData& otherBox);

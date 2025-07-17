@@ -3,12 +3,12 @@
 #include "Utils/HelperFunctions.hpp"
 
 TextBufferCharPosition::TextBufferCharPosition() : TextBufferCharPosition({}, {}, {}) {}
-TextBufferCharPosition::TextBufferCharPosition(const Vec2& pos, const TextChar& textChar, const FontProperties& font)
+TextBufferCharPosition::TextBufferCharPosition(const ScreenPosition& pos, const TextChar& textChar, const WorldFontProperties& font)
 	: m_Pos(pos), m_Text(textChar), m_FontData(font) {}
 
 Vec2 TextBufferCharPosition::GetWorldSize() const
 {
-	return m_Text.GetWorldSize(m_FontData);
+	return m_FontData.m_RectSize;
 }
 std::string TextBufferCharPosition::ToString() const
 {
@@ -26,12 +26,12 @@ std::string ToString(const std::vector<TextBufferCharPosition>& chars)
 
 TextBufferChar::TextBufferChar() : TextBufferChar({}, {}) {}
 
-TextBufferChar::TextBufferChar(const TextChar& textChar, const FontProperties& font)
+TextBufferChar::TextBufferChar(const TextChar& textChar, const WorldFontProperties& font)
 	: m_Text(textChar), m_FontData(font) {}
 
 Vec2 TextBufferChar::GetWorldSize() const
 {
-	return m_Text.GetWorldSize(m_FontData);
+	return m_FontData.m_RectSize;
 }
 std::string TextBufferChar::ToString() const
 {

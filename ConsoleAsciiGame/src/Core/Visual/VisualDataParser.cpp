@@ -15,7 +15,7 @@ VisualData ParseDefaultVisualData(const std::vector<std::string>& lines)
 
 	Color currentColor = WHITE;
 	std::vector<std::vector<TextChar>> textCharPos = {};
-	FontProperties fontSettings = FontProperties(VisualData::DEFAULT_FONT_SIZE, 0, StaticReferenceGlobals::GetDefaultRaylibFont());
+	WorldFontProperties fontSettings = WorldFontProperties(VisualData::DEFAULT_FONT_SIZE, 0, StaticReferenceGlobals::GetDefaultRaylibFont());
 	for (const auto& line : lines)
 	{
 		for (size_t i = 0; i < line.size(); i++)
@@ -59,7 +59,7 @@ VisualData ParseDefaultVisualData(const std::vector<std::string>& lines)
 	}
 	//LogWarning(std::format("Tried to parse visual data lines:{} and have text char pos:{}", Utils::ToStringIterable(lines), textCharPos.size()));
 	//Assert(false, std::format("Parsed visual data"));
-	return VisualData(textCharPos, GLOBAL_CHAR_SPACING, fontSettings, VisualData::DEFAULT_PIVOT);
+	return VisualData(textCharPos, GLOBAL_CHAR_AREA, GLOBAL_FONT_CHAR_SPACING, fontSettings, VisualData::DEFAULT_PIVOT);
 }
 
 VisualData ParseDefaultVisualData(const FigProperty& property)

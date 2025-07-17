@@ -73,8 +73,8 @@ void to_json(Json& json, const TextCharArrayPosition& textChar);
 //std::optional<Font> TryDeserializeFont(const Json& json);
 //Json TrySerializeFont(const Font& font);
 
-void from_json(const Json& json, FontProperties& font);
-void to_json(Json& json, const FontProperties& font);
+void from_json(const Json& json, WorldFontProperties& font);
+void to_json(Json& json, const WorldFontProperties& font);
 
 void from_json(const Json& json, TextBufferCharPosition& textChar);
 void to_json(Json& json, const TextBufferCharPosition& textChar);

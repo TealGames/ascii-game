@@ -447,6 +447,15 @@ std::vector<FragmentedTextBuffer*> Scene::GetLayerBufferMutable(const RenderLaye
 	}
 	return buffers;
 }
+std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer*>> Scene::GetAllLayerBufferMutable()
+{
+	std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer*>> buffers = {};
+	for (auto& layer : m_layers)
+	{
+		buffers.emplace_back(std::make_tuple(layer.first, &layer.second.GetBufferMutable()));
+	}
+	return buffers;
+}
 
 void Scene::ResetAllLayers()
 {

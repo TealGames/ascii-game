@@ -4,6 +4,7 @@
 #include <optional>
 #include <cstdint>
 #include "Core/Visual/TextBuffer.hpp"
+#include "Utils/HelperMacros.hpp"
 
 using RenderLayerNumericType = std::uint8_t;
 enum class RenderLayerType : RenderLayerNumericType
@@ -12,18 +13,20 @@ enum class RenderLayerType : RenderLayerNumericType
     Background= 1<<0,
     Player= 1 << 1,
     UI= 1 << 2,
+    All= 0xFF
 };
 std::string ToString(const RenderLayerType& layer);
 std::vector<std::string> GetLayersAsStrings(const RenderLayerType& layers);
 RenderLayerType GetLayersFromStrings(const std::vector<std::string> strings);
 
-RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs);
-RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs);
-RenderLayerType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs);
-RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs);
-
-bool operator==(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
-bool operator!=(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
+FLAG_ENUM_OPERATORS(RenderLayerType)
+//RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs);
+//RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs);
+//RenderLayerType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs);
+//RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs);
+//
+//bool operator==(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
+//bool operator!=(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
 
 //using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
 class RenderLayer

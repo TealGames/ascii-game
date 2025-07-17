@@ -9,14 +9,14 @@ class TextUIStyle
 public:
 	Color m_TextColor;
 	TextAlignment m_TextAlignment;
-	FontProperties m_FontData;
+	ScreenFontProperties m_FontData;
 	UIPadding m_Padding;
 	float m_FontSizeFactor;
 	bool m_FitToArea;
 
 public:
 	TextUIStyle();
-	TextUIStyle(const Color& textColor, const FontProperties& fontData, const TextAlignment& alignment=UITextComponent::DEFAULT_ALIGNMENT, 
+	TextUIStyle(const Color& textColor, const ScreenFontProperties& fontData, const TextAlignment& alignment=UITextComponent::DEFAULT_ALIGNMENT, 
 		const UIPadding& padding= UITextComponent::DEFAULT_PADDING, const float& factor= UITextComponent::NULL_FONT_FACTOR,
 		const bool& fitToArea= UITextComponent::DEFAULT_FIT_TO_AREA);
 };

@@ -128,6 +128,7 @@ namespace Physics
 			EntityData& bodyAEntity = body.GetEntityMutable();
 
 			KinematicUpdate(deltaTime, bodyAEntity, body, box);
+			m_OnObjectProcessed.Invoke(&body);
 
 			//We do not need to simulate bodies with no movement since collisions are resolved on bodies that move
 			//if (Utils::ApproximateEqualsF(bodyA.GetVelocity().GetMagnitude(), 0)) continue;

@@ -129,7 +129,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scen
 	SetProperty("GroundDist:", std::format("{} m", std::to_string(maybePlayer->GetVerticalDistanceToGround())));
 
 	ScreenPosition mouseScreenPos = input.GetMousePosition();
-	WorldPosition mouseWorld = Conversions::ScreenToWorldPosition(mainCamera, mouseScreenPos);
+	WorldPosition mouseWorld = mainCamera.ScreenToWorldPosition(mouseScreenPos);
 	SetMouseDebugData(DebugMousePosition{ mouseWorld, ScreenPosition{mouseScreenPos.m_X + 15, mouseScreenPos.m_Y} });
 	//LogError(std::format("Finished update loop"));
 }
