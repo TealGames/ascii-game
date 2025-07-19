@@ -1,0 +1,9 @@
+@General
+
+@Input
+Interact:	E
+Move:
+> Up:		ArrowUp
+> Down:		ArrowDown
+> Right:	ArrowRight
+> Left:		ArrowLeft

@@ -1,0 +1,312 @@
+PLplot Release 5.16.0
+
+This is a release of the PLplot plotting package. It represents the
+ongoing best efforts (roughly ??? commits since the last release) of
+the PLplot development community to improve this package, and it is
+the only version of PLplot that we attempt to support.  Releases in
+the 5.x.y series should be available roughly two times per year.
+
+Note that PLplot has been continuously developed since 1986 so it has
+accumulated a lot of cruft since that time.  Therefore, we are now
+slowing removing that cruft to improve the lot of both new users and
+new members of the development team.  As a result virtually every
+PLplot release has some backwards incompatibilities introduced to help
+clean it up so please pay careful attention to the OFFICIAL NOTICES
+FOR USERS below (and also in the various sections of
+README.cumulated_release if you need backward incompatibility
+information for several recent releases) where we document such
+incompatibilities to make life easier for those who have prior
+experience with older PLplot releases.
+
+If you encounter a problem with this release that is not already
+documented on our bug tracker, then please send bug reports to PLplot
+developers via our mailing lists (preferred for initial discussion of
+issues) at <http://sourceforge.net/p/plplot/mailman/>. If it turns out
+no quick resolution is possible via mailing-list discussion, then the
+issue should be placed on our bug tracker at
+<http://sourceforge.net/p/plplot/bugs/>.
+
+This software is primarily distributed under the LGPL.  See the
+Copyright file for all licensing details.
+________________________________________________________________
+
+CONTENTS
+
+1. OFFICIAL NOTICES FOR USERS
+
+1.1 CMake version compatibility
+1.2 Qt5 now the default choice
+1.3 Build system option NON_TRANSITIVE now replaced with the TLL_PUBLIC option which has completely changed semantics
+1.4 Build system option PL_HAVE_PTHREAD replaced with PL_USE_PTHREADS_XWIN
+
+2. Improvements relative to the previous release
+
+2.1 Bug fixes
+2.2 Update PLplot to be consistent with modern free software
+2.3 Clean up our build-system logic concerning finding and using a Posix threads library
+2.4 Update our D language support so that all of gdc, ldc, and dmd are working
+
+3. PLplot testing
+________________________________________________________________
+
+1. OFFICIAL NOTICES FOR USERS
+
+1.1 CMake version compatibility
+
+Our build system is implemented using CMake.  The minimum version of
+CMake we currently allow is 3.13.2 on all platforms, and currently the
+latest version of CMake that has been officially released is 3.14.4.
+
+Note, that as of the time of this release we have the following
+free distribution packaging support for modern CMake versions:
+
+* Cygwin: 3.13.1 from <https://cygwin.com/cgi-bin2/package-grep.cgi>
+* MinGW-w64/MSYS2: 3.14.4 from <http://repo.msys2.org/mingw/x86_64/>
+* Fink: 3.11.0 from <http://pdb.finkproject.org/pdb/browse.php?name=cmake>
+* MacPorts: 3.14.4 from <https://www.macports.org/ports.php?by=name&substr=cmake>
+* Homebrew: 3.14.4 from <https://formulae.brew.sh/formula/cmake>
+* Debian Testing: 3.13.4 (from <https://packages.debian.org/buster/cmake> where Testing = Buster is likely to become the official Debian Stable release of Debian in mid-2019, i.e., soon, see <https://en.wikipedia.org/wiki/Debian_version_history>).
+* Other modern Linux distributions: likely 3.13.4 or greater since they typically package later versions of CMake than are available for Debian Stable.
+
+It appears from the above table that binary packages for CMake for our
+minimum allowed version (3.13.2) or later should be available soon or
+immediately on most modern free software distributions.  However,
+PLplot users of distributions that do not package 3.13.2 or later
+(e.g., Cygwin and Fink) will need to build CMake 3.13.2 or later for
+themselves before they build PLplot-5.15.0
+
+This particular PLplot release has been comprehensively tested for
+CMake-3.13.2 through 3.14.4 on a variety of platforms (see
+<http://sourceforge.net/p/plplot/wiki/Testing_Reports> for details
+of recent tests on all platforms).
+
+Therefore, if the CMake version is within this range there is an
+excellent chance that our build system will "just work" on all
+platforms.  Furthermore, if later on you try CMake versions greater
+than the latest version of CMake that is available at the time of this
+PLplot release (3.14.4), our build system will likely continue to work
+well because CMake has an excellent reputation for preserving
+backwards compatibility.
+
+1.2 Qt5 now the default choice
+
+Since our fix (in 5.15.0) of the font configuration for the Qt5
+case our Qt5 results have been just as good as our Qt4 results.
+And free software distribution support for Qt4 is waning in general.  Therefore, for this
+release we have made Qt5 the default choice for our Qt library (as opposed to
+past releases where Qt4 was the default choice).
+
+What this means in practice is the following:
+
+* Only if the user specifies -DPLPLOT_USE_QT5=OFF
+
+Our build system will use Qt4 if available, and if Qt4 is not available,
+it will try Qt5 instead (by forcing PLPLOT_USE_QT5 to ON and proceeding
+as below).
+
+* The default case (or if the user redundantly specifies -DPLPLOT_USE_QT5=ON):
+
+Our build system will use Qt5 if available,
+and if Qt5 is not available the Qt components of PLplot are
+dropped with a suitable warning message.
+
+N.B. we currently plan to deprecate Qt4 in our next release (5.17.0) and
+drop it altogether in the release after that (5.18.0).
+
+1.3 Build system option NON_TRANSITIVE now replaced with the TLL_PUBLIC option which has completely changed semantics
+
+The semantic differences are as follows:
+
+* Opposite interpretation of the logical value so -DTLL_PUBLIC=ON is
+  equivalent to the old -DNON_TRANSITIVE=OFF
+
+* TLL_PUBLIC has a smaller scope than NON_TRANSITIVE.  That is,
+  TLL_PUBLIC is only used to control the PUBLIC or PRIVATE nature of
+  the target_link_libraries commands used for building targets that
+  will be installed, while NON_TRANSITIVE was used in that context as
+  well as used to affect other components of the build system (i.e.,
+  cmake/modules/FindLTDL.cmake and cmake/modules/pkg-config.cmake)
+  which are now implemented depending on the CMake BUILD_SHARED_LIBS
+  option rather than the old NON_TRANSITIVE option.
+
+Another important change (non-semantic in this case) is the TLL_PUBLIC
+default value is OFF in all cases (to minimize leakage of flags
+between library targets as much as possible) while the previous
+default value for NON_TRANSITIVE (ON which is the equivalent of the
+present default OFF value for TLL_PUBLIC) was only used for the shared
+library non-Windows case.  So this change means the default treatment
+of static libraries and Windows platforms is now quite different.
+
+1.4 Build system option PL_HAVE_PTHREAD replaced with PL_USE_PTHREADS_XWIN
+
+As part of the build-system threads library cleanup (see 2.3) the
+misnamed PL_HAVE_PTHREAD option has been replaced by
+PL_USE_PTHREADS_XWIN which is ON by default with the meaning that if a
+Posix threads library is found, the xwin device driver will use that
+library by default.
+
+________________________________________________________________
+
+2. Improvements relative to the previous release
+
+2.1 Bug fixes
+
+The bug fixes in this release are noted in the ~50 commit messages
+collected in ChangeLog.release.
+
+2.2 Update PLplot to be consistent with modern free software
+
+This ongoing project is implemented by making sure PLplot passes all
+[comprehensive
+tests](<https://sourceforge.net/p/plplot/wiki/Testing_Reports) on the
+Debian Testing platform which is a high-quality rolling release that
+keeps up to date with modern free software development.  As a result
+PLplot should be compatible with the following modern versions of free
+software packages:
+
+* CMake-3.13.2 through 3.14.4       (core, bindings, and device drivers)
+* gcc 8.3.0			    (core)
+* qhull 2015.2			    (optional core interpolation functionality)
+* shapelib 1.4.1		    (optional core map functionality)
+* swig 3.0.12 through 4.0.0	    (java, lua, octave, and python bindings)
+* gnatmake/gdc/gfortran 8.3.0	    (ada, d, and fortran bindings)
+* g++ 8.3.0			    (c++ binding and psttf and wxwidgets device drivers)
+* pango 1.42.3, cairo 1.16.0	    (cairo device driver)
+* openjdk 11.0.3		    (java binding)
+* lua 5.3.5			    (lua binding)
+* camlidl 1.05, ocaml 4.05	    (ocaml binding)
+* octave 4.4.1	      		    (octave binding)
+* python 3.7.3			    (python binding)
+* Qt 5.11.3			    (qt binding and qt device driver)
+* Tcl/Tk 8.6.9			    (tcl/tk binding and tk device driver)
+* libx11 2:1.6.7		    (tk and xwin device drivers)
+* wxWidgets 3.0.4		    (wxwidgets binding and device driver)
+
+Notes for this table:
+
+* The CMake versions used for testing were locally built rather than
+  installed from Debian testing, see Section 1.1 for details.
+
+* The Debian Testing package for swig 3.0.12 contains a swig fix from
+  swig-4.0.0. That fix allows an Octave-4.4 binding to be built for
+  PLplot.  If your swig-3 version does not have this fix, you should
+  use Octave-4.2 until swig-4 is released.
+
+* The swig-4.0.0 version used for testing was locally built since this
+  version is not packaged for Debian Testing (yet).
+
+* The Debian Testing package for lua 5.3.3 currently perpetuates
+  [a serious bug](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=902238)
+  for that particular upstream version.  The above good results for lua
+  5.3.5 were generated with a locally built version of upstream 5.3.5
+  that contains the essential fix for 5.3.3.
+
+2.3 Clean up our build-system logic concerning finding and using a Posix threads library
+
+The net result of this cleanup (which includes the user-visible option
+change discussed in 1.4) is the xwin device driver should now have
+more reliable cross-platform threads configuration that follows
+recommended practices.  For example, on Linux the xwin device driver
+is now linked using the C/C++ compiler option -pthread, and that
+choice is strongly recommended by the gcc/g++ documentation (as
+opposed to the choice used before this cleanup which was simply a
+direct link to the threads library).
+
+This clean up finally brings the xwin device driver into conformity
+with our results for other PLplot components (e.g., the psttf, cairo,
+and wxwidgets device drivers and the wxwidgets binding) which have
+always (via external pkg-config and wx-config results used by the
+relevant CMake find modules) used -pthread to link these
+threads-related components of PLplot on Linux.  However, whether or
+not this consistency exists for other Posix platforms (e.g., Mac OS X)
+still needs to be investigated.
+
+2.4 Update our D language support so that all of gdc, ldc, and dmd are working
+
+CMake currently depends on external projects to supply language
+support for the D language.  And an extra complication for D is there
+are three popular D compilers which are gdc (unique front end, gcc
+back end), ldc (dmd front end, LLVM back end), and dmd (the official D
+compiler that de facto sets the standards for the D language).
+
+Previously the PLplot D language support was based on an ancient
+version (which we have adapted over the years) of the cmaked project
+which we designate for this discussion as cmaked_fork.  Although
+cmaked_fork has worked well on Linux for the gdc compiler, it was
+completely broken on that platform for dmd (which effectively excluded
+us from enforcing D language standards for our D source code) and
+provided no support for ldc at all.
+
+Over the years cmaked has been the basis of a number of projects that
+provide D language support for CMake.  One of those that is still
+being actively developed is [the cmake-d
+project](https://github.com/dcarp/cmake-d), and that project is
+designed to support all three D compilers.  Therefore, we have
+replaced cmaked_fork with what we call cmake-d_fork which is vanilla
+modern cmake-d suitably modified so that it works perfectly on Linux
+for all three D compilers and for both the test_d and plplot projects.
+
+The newly implemented test_d project (located at cmake/test_d) is
+designed to be simple self-contained cmake-d_fork test project which
+uses the CMake D language support provided by cmake-d_fork to attempt
+to build a C library which contains one function that delivers the
+classic "hello, world" string, a D wrapper for that library, and a D
+application that links to that wrapper and outputs the string.  On
+Linux, test_d now provides perfect results for its comprehensive test
+for all three D compilers.
+
+The plplot project now also has perfect results from its own
+comprehensive test for all three D compilers on Linux.  Those perfect
+results required a number of changes to PLplot including the
+following:
+
+* Moved from cmaked_fork to cmake-d_fork.
+
+* Modified our D source code to be consistent with the de facto D
+  standard provided by dmd.  (I thank Takeshi Enomoto who donated to
+  PLplot [a preliminary version of those required D language source
+  code changes](https://sourceforge.net/p/plplot/patches/35/).
+
+* Modified the traditional non-CMake build of the installed D examples
+  so that build worked correctly for all three D compilers.
+
+The gdc compiler should work well for all modern CMake versions, but a
+major caveat for the ldc and dmd compilers is cmake-d_fork only works
+properly for those two compilers for CMake version
+3.15.20190829-g3ec986c because the D language support for those
+compilers depends on a CMake language support infrastructure fix that
+only landed on the CMake master branch as commit 3ec986c on
+2019-08-29.  It will obviously take a while until that commit
+propagates to binary versions of CMake in major free software
+distributions.  So therefore until that propagation completes it will
+be necessary for those wishing to use either ldc or dmd that they must
+build a CMake version of their own (e.g., from the tip of the git
+master branch for CMake) that contains commit 3ec986c before building
+PLplot with that version of CMake.
+
+Another major caveat is this new D language support has only been
+tested on one system so far (my own Linux [Debian Buster=Stable]
+system and with my own build of CMake version 3.15.20190829-g3ec986c).
+So it is likely it will work fine (with that version or later of CMake
+for most other Linux systems, but testing on other Linux systems would
+be good to verify that.  Furthermore, additional modifications will
+need to be made to the files in cmake/test_d/cmake/Modules/Platform/
+(for the test_d project case) or the equivalent files in
+cmake/modules/language_support/cmake-d_fork/Platform (in the plplot
+project case) in order for the new D language support to work on
+platforms other than Linux.  For those interested in helping to fix D
+language support on non-Linux platforms, I suggest you start with
+following the comprehensive test instructions in cmake/test_d/README,
+and as stated there I (AWI) would be willing to help analyze those
+results to figure out what Platform file changes are required.
+________________________________________________________________
+
+3. PLplot testing
+
+Comprehensive tests of this release are documented in
+<https://sourceforge.net/p/plplot/wiki/Testing_Reports>.  In addition,
+developers and users who have used the evolving git master tip
+development version of PLplot for their plotting needs during this
+release cycle have provided additional important testing of this
+release of PLplot.
+________________________________________________________________

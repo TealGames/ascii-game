@@ -1,0 +1,66 @@
+cmake_minimum_required(VERSION 3.19.2)
+project(ConsoleAsciiGame)
+
+set(CMAKE_CXX_STANDARD 20)
+#TODO: set OFF -> ON for production build
+set(PRODUCTION_BUILD OFF CACHE BOOL "Make production build" FORCE)
+
+#The runtime library lines are to ensure c++ library is set when we ship 
+#to prevent runtime library errors in case user does not have it/windows sucks at retrieving it
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+if(PRODUCTION_BUILD)
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+else()
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+endif()
+
+#msvc optimization for simd
+if(MSVC)
+	add_compile_options(/arch:AVX2)
+endif()
+
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+#This is to ensure that other libs use this glfw and not theirs
+set(USE_EXTERNAL_GLFW ON CACHE BOOL "" FORCE)
+
+add_subdirectory("dependencies/glfw-3.4")
+add_subdirectory("dependencies/json")
+add_subdirectory("dependencies/entt")
+add_subdirectory("dependencies/raylib")
+#add_subdirectory("dependencies/PLplot")
+
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS src/*.hpp)
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+
+target_sources("${CMAKE_PROJECT_NAME}" PRIVATE ${SOURCES})
+#this is for getting headers from dependencies
+target_include_directories(${PROJECT_NAME} PRIVATE dependencies)
+#this is for allowing include headers from this project files
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+#TODO: remove this since this is for raylib only because it has no include folder
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/raylib/src)
+
+#For better file reading/writing use the RESOURCES_PATH macro
+if(PRODUCTION_BUILD)
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC ASSET_PARENT_PATH="./") 
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=1) 
+else()
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC ASSET_PARENT_PATH="${CMAKE_CURRENT_SOURCE_DIR}/")
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD)
+endif()
+
+target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC GLFW_INCLUDE_NONE=1)
+if (MSVC)
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC _CRT_SECURE_NO_WARNINGS)
+	#this line removes console from build
+	#set_target_properties("${CMAKE_PROJECT_NAME}" PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS/ENTRY:mainCRTStartup")
+endif()
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw nlohmann_json::nlohmann_json EnTT raylib)

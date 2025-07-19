@@ -1,0 +1,52 @@
+# Top-level CMakeLists.txt for the installed version of a simple project consisting of a
+# "hello, world" C library, a D binding for that library, and a D
+# executable to be built that links to that D binding to
+# test CMake language support for D.
+
+# MAINTENANCE 2019-08-29
+# Use minimum version that insures necessary CMake language support fix is available.
+# for all platforms.
+cmake_minimum_required(VERSION 3.15.20190829-g3ec986c FATAL_ERROR)
+
+# Before the project command must specify the location where
+# the test_d project looks for CMake D language support files.
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
+
+# Test this language support case where the C language needs to be enabled so that
+# the Threads module works, and the D languages needs to be enabled so the D
+# examples can be compiled and linked (with the installed C and D libraries).
+project(installed_test_d C D)
+
+# Define key variables that are configured by the core build.
+include(test_d_configure)
+
+# Configure the Threads::Threads library exactly as in the core build
+# (except for tll_argument which is unused for the installed example case).
+# The required THREADS_PREFER_PTHREAD_FLAG variable is set by the above include.
+if(THREADS_PREFER_PTHREAD_FLAG)
+  find_package(Threads)
+  if(Threads_FOUND)
+    #set(tll_argument Threads::Threads)
+    # N.B. From comprehensive test results for the plplot project case
+    # that have been reported to me (AWI) by various testers it is
+    # known that one or both of pkg-config and wx-config uses the
+    # -pthread flag for linking for the Linux(2019) and MSYS2(2019)
+    # platforms, and this is NOT the case for the Cygwin(2016 and
+    # 2018) platform where, for example, -pthread does not occur in
+    # the CMakeCache.txt file for those two Cygwin comprehensive
+    # tests.  Furthermore, we assume for the Mac OS X platform (unless
+    # and until plplot comprehensive tests on that platform show
+    # otherwise) that pkg-config and/or wx-config uses the -pthread
+    # flag for linking.  Therefore, for test_d we currently enforce -pthread
+    # testing for all platforms other than Cygwin.
+    if(NOT CYGWIN)
+      set_target_properties(Threads::Threads PROPERTIES INTERFACE_LINK_LIBRARIES -pthread)
+    endif(NOT CYGWIN)
+  endif(Threads_FOUND)
+endif(THREADS_PREFER_PTHREAD_FLAG)
+
+# Find installed project
+find_package(test_d)
+
+# Build D executable that links to the
+add_subdirectory(d)
