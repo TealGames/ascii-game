@@ -1,58 +1,24 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "Utils/Data/ScreenPosition.hpp"
-#include "limits"
-#include "Utils/RaylibUtils.hpp"
+//#include "Utils/RaylibUtils.hpp"
 #include "Core/Analyzation/Debug.hpp"
-#include "Core/UI/UITextStyle.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 #include "Core/Asset/FontAsset.hpp"
 
-const UIPadding UITextComponent::DEFAULT_PADDING = UIPadding();
 static constexpr float FONT_SIZE_CALC_DELTA = 0.5;
 static constexpr bool DRAW_RENDER_BOUNDS = false;
 
-bool IsTopAlignment(const TextAlignment& alignment)
-{
-	return static_cast<std::uint8_t>(alignment) <= 2;
-}
-bool IsMiddleHorizontalAlignment(const TextAlignment& alignment)
-{
-	std::uint8_t integralValue = static_cast<std::uint8_t>(alignment);
-	return 3 <= integralValue && integralValue <= 5;
-}
-bool IsBottomAlignment(const TextAlignment& alignment)
-{
-	std::uint8_t integralValue = static_cast<std::uint8_t>(alignment);
-	return 6 <= integralValue && integralValue <= 8;
-}
-
-bool IsLeftAlignment(const TextAlignment& alignment)
-{
-	std::uint8_t integralValue = static_cast<std::uint8_t>(alignment);
-	return integralValue == 0 || integralValue == 3 || integralValue == 6;
-}
-bool IsMiddleVerticalAlignment(const TextAlignment& alignment)
-{
-	std::uint8_t integralValue = static_cast<std::uint8_t>(alignment);
-	return integralValue == 1 || integralValue == 4 || integralValue == 7;
-}
-bool IsRightAlignment(const TextAlignment& alignment)
-{
-	std::uint8_t integralValue = static_cast<std::uint8_t>(alignment);
-	return integralValue == 2 || integralValue == 5 || integralValue == 8;
-}
-
-UITextComponent::UITextComponent() : UITextComponent("", {}, Color()) {}
+UITextComponent::UITextComponent() : UITextComponent("", {}, Utils::Color()) {}
 
 UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const UIPadding& padding, 
-	const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea) :
+	const TextAlignment& alignment, const Utils::Color& color, const float& factor, const bool& fitToArea) :
 	m_text(text), m_fontData(font), m_padding(padding), 
 	m_alignment(alignment), m_color(color), m_fontSizeFactor(factor), m_fitToArea(fitToArea), m_renderer(nullptr) {}
 
-UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const Color& color) :
+UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const Utils::Color& color) :
 	UITextComponent(text, font, DEFAULT_PADDING, DEFAULT_ALIGNMENT, color, NULL_FONT_FACTOR, DEFAULT_FIT_TO_AREA) {}
 	
 UITextComponent::UITextComponent(const std::string& text, const TextUIStyle& settings) :
@@ -87,7 +53,7 @@ void UITextComponent::SetFontSize(const float& size)
 	m_fontData.m_Size = std::abs(size);
 }
 
-void UITextComponent::SetTextColor(const Color color)
+void UITextComponent::SetTextColor(const Utils::Color color)
 {
 	m_color = color;
 }
@@ -128,19 +94,21 @@ float UITextComponent::GetFontSizeFromArea(const Vec2& parentArea, const int tex
 	//Typically, area that a font size takes up grows with the square of font size
 	/*return std::sqrtf(parentArea.m_X * parentArea.m_Y * m_fontSizeFactor);*/
 }
-Vector2 UITextComponent::CalculateSpaceUsed(const float& fontSize, const float& spacing) const
+Vec2 UITextComponent::CalculateSpaceUsed(const float& fontSize, const float& spacing) const
 {
-	return MeasureTextEx(m_fontData.m_FontAsset->GetFont(), m_text.c_str(), fontSize, spacing);
+	//TODO: complete this
+	//return MeasureTextEx(m_fontData.m_FontAsset->GetFont(), m_text.c_str(), fontSize, spacing);
+	return {};
 }
 float UITextComponent::CalculateMaxFontSizeForSpace(const Vec2& space, const float spacing, const float startingSize) const
 {
-	Vector2 currentSpace = CalculateSpaceUsed(startingSize, spacing);
-	const bool findingHigherFont = currentSpace.x < space.m_X && currentSpace.y < space.m_Y;
+	Vec2 currentSpace = CalculateSpaceUsed(startingSize, spacing);
+	const bool findingHigherFont = currentSpace.m_X < space.m_X && currentSpace.m_Y < space.m_Y;
 
-	float fontSize = currentSpace.y;
+	float fontSize = currentSpace.m_X;
 	if (findingHigherFont)
 	{
-		while (currentSpace.x < space.m_X && currentSpace.y < space.m_Y)
+		while (currentSpace.m_X < space.m_X && currentSpace.m_Y < space.m_Y)
 		{
 			fontSize += FONT_SIZE_CALC_DELTA;
 			currentSpace = CalculateSpaceUsed(fontSize, spacing);
@@ -150,7 +118,7 @@ float UITextComponent::CalculateMaxFontSizeForSpace(const Vec2& space, const flo
 	}
 	else
 	{
-		while (currentSpace.x > space.m_X || currentSpace.y > space.m_Y)
+		while (currentSpace.m_X > space.m_X || currentSpace.m_Y > space.m_Y)
 		{
 			fontSize -= FONT_SIZE_CALC_DELTA;
 			currentSpace = CalculateSpaceUsed(fontSize, spacing);
@@ -160,14 +128,14 @@ float UITextComponent::CalculateMaxFontSizeForSpace(const Vec2& space, const flo
 	return fontSize;
 }
 
-ScreenPosition UITextComponent::CalculateTopLeftPos(const UIRect& renderInfo, const Vector2& textRectArea) const
+ScreenPosition UITextComponent::CalculateTopLeftPos(const UIRect& renderInfo, const Vec2& textRectArea) const
 {
 	float newX = renderInfo.m_TopLeftPos.m_X + m_padding.m_Left;
 	float newY = renderInfo.m_TopLeftPos.m_Y + m_padding.m_Top;
 
 	const Vec2 usableSpace = CalculateUsableSpace(renderInfo);
-	const float xSpaceLeft = usableSpace.m_X - textRectArea.x;
-	const float ySpaceLeft = usableSpace.m_Y - textRectArea.y;
+	const float xSpaceLeft = usableSpace.m_X - textRectArea.m_X;
+	const float ySpaceLeft = usableSpace.m_Y - textRectArea.m_Y;
 
 	//Note: as you go down, y increases, as you go right x increases
 	if (IsMiddleHorizontalAlignment(m_alignment))
@@ -197,7 +165,7 @@ Vec2 UITextComponent::CalculateUsableSpace(const UIRect& renderInfo) const
 			renderInfo.GetSize().m_Y - m_padding.m_Top - m_padding.m_Bottom};
 }
 
-Color UITextComponent::GetFontColor() const
+Utils::Color UITextComponent::GetFontColor() const
 {
 	return m_color;
 }
@@ -262,7 +230,7 @@ UIRect UITextComponent::Render(const UIRect& rect)
 		m_fontData.m_Size = GetFontSizeFromArea(usableSize, m_text.size());
 	}
 
-	Vector2 spaceUsed = CalculateSpaceUsed(m_fontData.m_Size, m_fontData.m_Tracking);
+	Vec2 spaceUsed = CalculateSpaceUsed(m_fontData.m_Size, m_fontData.m_Tracking);
 	//LogWarning(std::format("Space used for font:{} is:{}", m_fontData.m_Size, RaylibUtils::ToString(spaceUsed)));
 	/*if (m_text == "AssetEditors")
 	{
@@ -270,7 +238,7 @@ UIRect UITextComponent::Render(const UIRect& rect)
 			std::to_string(m_fontData.m_Size), usableSize.ToString(), std::to_string(m_fontSizeFactor)));
 	}*/
 
-	if (m_fontData.m_Size <= 0 || spaceUsed.x > usableSize.m_X || spaceUsed.y > usableSize.m_Y)
+	if (m_fontData.m_Size <= 0 || spaceUsed.m_X > usableSize.m_X || spaceUsed.m_Y > usableSize.m_Y)
 	{
 		//if (m_fontData.m_Size == 0) LogError("Calculing new font size because size is 0");
 		m_fontData.m_Size = CalculateMaxFontSizeForSpace(usableSize, m_fontData.m_Tracking, m_fontData.m_Size);
@@ -280,7 +248,7 @@ UIRect UITextComponent::Render(const UIRect& rect)
 	if (!Assert(m_fontData.m_Size > 0, std::format("Tried to render text GUI:{} of entity:{}"
 		"but font size was calculated to be 0. valid font:{}. Usaable space:{} (total space:{}) space used:{} spacing:{}",
 		ToString(), GetEntity().ToString(), std::to_string(m_fontData.m_FontAsset->HasValidFont()), rect.ToString(),
-		usableSize.ToString(), RaylibUtils::ToString(spaceUsed), m_fontData.m_Tracking)))
+		usableSize.ToString(), spaceUsed.ToString(), m_fontData.m_Tracking)))
 		return {};
 
 	const ScreenPosition topLeftPos = CalculateTopLeftPos(rect, spaceUsed);

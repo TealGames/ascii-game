@@ -1,36 +1,30 @@
 #pragma once
 #include "pch.hpp"
-#include "raylib.h"
+//#include "raylib.h"
 #include "Utils/Data/Vec2.hpp"
 #include "Core/UI/UIStyle.hpp"
 #include "StaticReferenceGlobals.hpp"
+#include "Utils/Data/ColorConstants.hpp"
 
 namespace EditorStyles
 {
 	//-------------------------------------------------------------------
 	//			DEBUG STYLES
 	//-------------------------------------------------------------------
-	inline const Color DEBUG_TEXT_COLOR = WHITE;
-	inline const Color DEBUG_HIGHLIGHTED_TEXT_COLOR = YELLOW;
+	inline constexpr Utils::Color DEBUG_TEXT_COLOR = Utils::COLOR_WHITE;
+	inline constexpr Utils::Color DEBUG_HIGHLIGHTED_TEXT_COLOR = Utils::COLOR_YELLOW;
 
 	//-------------------------------------------------------------------
 	//			EDITOR STYLES
 	//-------------------------------------------------------------------
-	inline const Color EDITOR_TEXT_DEFAULT_COLOR = WHITE;
-	inline const Color EDITOR_BACKGROUND_COLOR = { 30, 30, 30, 255 };
-	inline const Color EDITOR_SECONDARY_BACKGROUND_COLOR = { 60, 60, 60, 255 };
-	inline const Color EDITOR_SECONDARY_COLOR = GRAY;
-	inline const Color EDITOR_PRIMARY_COLOR = {100, 100, 100, 255};
+	inline constexpr Utils::Color EDITOR_TEXT_DEFAULT_COLOR = Utils::COLOR_WHITE;
+	inline constexpr Utils::Color EDITOR_BACKGROUND_COLOR = { 30, 30, 30, 255 };
+	inline constexpr Utils::Color EDITOR_SECONDARY_BACKGROUND_COLOR = { 60, 60, 60, 255 };
+	inline constexpr Utils::Color EDITOR_SECONDARY_COLOR = Utils::COLOR_GRAY;
+	inline constexpr Utils::Color EDITOR_PRIMARY_COLOR = {100, 100, 100, 255};
 
-	inline const Vec2 EDITOR_CHAR_SPACING = { 3, 2 };
+	inline constexpr Vec2 EDITOR_CHAR_SPACING = { 3, 2 };
 	inline constexpr float DEFAULT_TEXT_FACTOR = 0.8;
-
-	//-------------------------------------------------------------------
-	//			RENDER STYLES
-	//-------------------------------------------------------------------
-	inline const Color COLLIDER_OUTLINE_COLOR = GREEN;
-	inline const Color LINE_COLOR = RED;
-	inline const Color GUI_BOUNDS_COLOR = YELLOW;
 
 	//-------------------------------------------------------------------
 	//			GUI STYLES
@@ -39,12 +33,12 @@ namespace EditorStyles
 	{
 		return StaticReferenceGlobals::GetDefaultRaylibFont();
 	}
-	inline TextUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const Color color= EDITOR_TEXT_DEFAULT_COLOR)
+	inline TextUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const Utils::Color color= EDITOR_TEXT_DEFAULT_COLOR)
 	{
 		return TextUIStyle(color, ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 			alignment, UIPadding(), factor);
 	}
-	inline TextUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const Color color = EDITOR_TEXT_DEFAULT_COLOR)
+	inline TextUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const Utils::Color color = EDITOR_TEXT_DEFAULT_COLOR)
 	{
 		return TextUIStyle(color, ScreenFontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 			alignment, UIPadding());
@@ -63,7 +57,7 @@ namespace EditorStyles
 
 	inline UIStyle GetToggleStyle()
 	{
-		return UIStyle(EDITOR_BACKGROUND_COLOR, WHITE, TextUIStyle());
+		return UIStyle(EDITOR_BACKGROUND_COLOR, Utils::COLOR_WHITE, TextUIStyle());
 	}
 
 	inline UIStyle GetButtonStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)

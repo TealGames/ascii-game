@@ -4,7 +4,7 @@
 #include "Utils/Data/Event.hpp"
 
 class UIPanel;
-class UIRenderer;
+class UIRendererData;
 class UITransformData;
 class UISelectableData;
 class UIInteractionManager;

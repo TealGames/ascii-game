@@ -26,14 +26,6 @@ const Vec2 Vec2::NORTHWEST= { -0.5, 0.5 };
 const Vec2 Vec2::ZERO(0, 0);
 const Vec2 Vec2::ONE(1, 1);
 
-Vec2::Vec2() : m_X(0), m_Y(0) {}
-
-Vec2::Vec2(const float& xComp, const float& yComp)
-	: m_X(xComp), m_Y(yComp)
-{
-
-}
-
 Vec2 Vec2::GetXAsVector() const
 {
 	return { m_X, 0 };
@@ -277,6 +269,10 @@ float DotProduct(const Vec2& vecA, const Vec2& vecB)
 Vec2 Abs(const Vec2& vec)
 {
 	return Vec2(std::abs(vec.m_X), std::abs(vec.m_Y));
+}
+Vec2 GetSign(const Vec2& vec)
+{
+	return Vec2(Utils::GetSign(vec.m_X), Utils::GetSign(vec.m_Y));
 }
 
 Vec2 GenerateRandomVec2(const Vec2& minVec, const Vec2 maxVec)

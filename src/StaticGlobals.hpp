@@ -24,3 +24,8 @@ inline const Vec2 GLOBAL_FONT_CHAR_SPACING = Vec2(0.5, 0.5);
 inline const char* MAIN_INPUT_PROFILE_NAME = "main";
 inline const char* MAIN_INPUT_PROFILE_MOVE_ACTION = "Move";
 
+#define GLFW
+#define OPENGL
+
+#define RAYLIB
+

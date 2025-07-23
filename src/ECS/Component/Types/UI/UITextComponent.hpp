@@ -2,64 +2,10 @@
 #include "ECS/Component/Component.hpp"
 #include <string>
 #include "Core/Rendering/FontData.hpp"
-#include "raylib.h"
+//#include "raylib.h"
 #include "Utils/Data/ScreenPosition.hpp"
-#include <cstdint>
-#include "Core/UI/UIPadding.hpp"
 #include "Core/UI/UIRect.hpp"
-
-enum class TextAlignment : std::uint8_t
-{
-	TopLeft=		0,
-	TopCenter=		1,
-	TopRight=		2,
-
-	CenterLeft=		3,
-	Center=			4,
-	CenterRight=	5,
-
-	BottomLeft=		6,
-	BottomCenter=	7,
-	BottomRight=	8,
-};
-
-/// <summary>
-/// Return true if alignment is the top row in 3x3 grid
-/// </summary>
-/// <param name="alignment"></param>
-/// <returns></returns>
-bool IsTopAlignment(const TextAlignment& alignment);
-/// <summary>
-/// Returns true if alignment is middle row in 3x3 grid
-/// </summary>
-/// <param name="alignment"></param>
-/// <returns></returns>
-bool IsMiddleHorizontalAlignment(const TextAlignment& alignment);
-/// <summary>
-/// Returns true if alignment is bottom row in 3x3 grid
-/// </summary>
-/// <param name="alignment"></param>
-/// <returns></returns>
-bool IsBottomAlignment(const TextAlignment& alignment);
-
-/// <summary>
-/// Returns true if alignment is left column in 3x3 grid
-/// </summary>
-/// <param name="alignment"></param>
-/// <returns></returns>
-bool IsLeftAlignment(const TextAlignment& alignment);
-/// <summary>
-/// Returns true if alignment is middle column in 3x3 grid
-/// </summary>
-/// <param name="alignment"></param>
-/// <returns></returns>
-bool IsMiddleVerticalAlignment(const TextAlignment& alignment);
-/// <summary>
-/// Returns true if alignment is right column in 3x3 grid
-/// </summary>
-/// <param name="alignment"></param>
-/// <returns></returns>
-bool IsRightAlignment(const TextAlignment& alignment);
+#include "Core/UI/UITextStyle.hpp"
 
 class UIRendererData;
 class TextUIStyle;
@@ -72,7 +18,7 @@ private:
 
 	std::string m_text;
 	ScreenFontProperties m_fontData;
-	Color m_color;
+	Utils::Color m_color;
 
 	/// <summary>
 	/// When is not -1, sets the font of this text 
@@ -100,11 +46,6 @@ private:
 public:
 	friend class ECS::UITextSystem;
 
-	static constexpr float NULL_FONT_FACTOR = 0;
-	static constexpr bool DEFAULT_FIT_TO_AREA = true;
-	static constexpr TextAlignment DEFAULT_ALIGNMENT = TextAlignment::Center;
-	static const UIPadding DEFAULT_PADDING;
-
 private:
 	/// <summary>
 	/// Will approximate the best font based on the area given. 
@@ -123,7 +64,7 @@ private:
 	/// <param name="startingSize"></param>
 	/// <returns></returns>
 	float CalculateMaxFontSizeForSpace(const Vec2& space, const float spacing, const float startingSize=0) const;
-	Vector2 CalculateSpaceUsed(const float& fontSize, const float& spacing) const;
+	Vec2 CalculateSpaceUsed(const float& fontSize, const float& spacing) const;
 
 	/// <summary>
 	/// Calculates the top left pos based on the text area reserved and the alignment and padding values
@@ -131,7 +72,7 @@ private:
 	/// <param name="renderInfo"></param>
 	/// <param name="textRectArea"></param>
 	/// <returns></returns>
-	ScreenPosition CalculateTopLeftPos(const UIRect& renderInfo, const Vector2& fullTextArea) const;
+	ScreenPosition CalculateTopLeftPos(const UIRect& renderInfo, const Vec2& fullTextArea) const;
 
 	/// <summary>
 	/// Returns the amount of ACTUAL usable space from rendering information
@@ -143,11 +84,11 @@ private:
 
 private:
 	UITextComponent(const std::string text, const ScreenFontProperties& font, const UIPadding& padding,
-		const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea);
+		const TextAlignment& alignment, const Utils::Color& color, const float& factor, const bool& fitToArea);
 
 public:
 	UITextComponent();
-	UITextComponent(const std::string text, const ScreenFontProperties& font, const Color& color);
+	UITextComponent(const std::string text, const ScreenFontProperties& font, const Utils::Color& color);
 	UITextComponent(const std::string& text, const TextUIStyle& settings);
 
 	void SetSettings(const TextUIStyle& settings);
@@ -156,7 +97,7 @@ public:
 	const std::string& GetText() const;
 
 	void SetFontSize(const float& size);
-	void SetTextColor(const Color color);
+	void SetTextColor(const Utils::Color color);
 	/// <summary>
 	/// Sets the factor of the text relative to the parent area. 
 	/// Note: value is clamped to be positive
@@ -177,7 +118,7 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	float GetFontSize() const;
-	Color GetFontColor() const;
+	Utils::Color GetFontColor() const;
 
 	bool DoFitToArea() const;
 	void SetFitToArea(const bool& fit);

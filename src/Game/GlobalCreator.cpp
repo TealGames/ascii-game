@@ -17,6 +17,7 @@
 #include "Utils/RaylibUtils.hpp"
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/SpriteAnimationAsset.hpp"
+#include "Utils/Data/ColorConstants.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "StaticReferenceGlobals.hpp"
 
@@ -44,7 +45,7 @@ namespace GlobalEntityCreator
 
 		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
 		LightSourceData& lightSource = playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
-			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
+			ColorGradient(Utils::Color(243, 208, 67, 255), Utils::Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
 		//Assert(false, std::format("player light source:{}", playerEntity.TryGetComponentWithName("LightSourceData")->ToString()));
 
@@ -55,7 +56,7 @@ namespace GlobalEntityCreator
 		//Assert(false, std::format("Light source fields: {}", lightSource.ToStringFields()));
 
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData(std::vector<std::vector<TextChar>>{ {TextChar(GRAY, 'H') }}, {0, 0}, fontSettings, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
+			VisualData(std::vector<std::vector<TextChar>>{ {TextChar(Utils::COLOR_GRAY, 'H') }}, {0, 0}, fontSettings, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
 		ComponentFieldReference lightRadiusref = ComponentFieldReference(&lightSource, "Radius");
 		//Assert(false, std::format("Entity light radius: {}", lightRadiusref.m_Entity->ToString()));
@@ -77,7 +78,7 @@ namespace GlobalEntityCreator
 			{ SpriteAnimationFrame(0, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, 'O'))}}, visualPreset)),
 			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));*/
 
-		ColorGradient particleGradient = ColorGradient(RED, BLUE);
+		ColorGradient particleGradient = ColorGradient(Utils::COLOR_RED, Utils::COLOR_BLUE);
 		playerEntity.AddComponent<ParticleEmitterData>(ParticleEmitterData('W', FloatRange(1, 11), particleGradient, fontSettings,
 			RenderLayerType::Player, WorldPosition(), FloatRange(5, 16), float(5)));
 

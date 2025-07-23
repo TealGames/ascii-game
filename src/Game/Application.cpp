@@ -2,7 +2,7 @@
 #include "pch.hpp"
 
 #include "Core/Engine.hpp"
-#include "raylib.h"
+//#include "raylib.h"
 #include "Utils/DataStructure/PreservedMap.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
@@ -59,8 +59,8 @@ int main()
 
     try
     {
-        InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME);
-        SetTargetFPS(TARGET_FPS);
+        /*InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME);
+        SetTargetFPS(TARGET_FPS);*/
 
         Core::Engine engine; 
         engine.BeginUpdateLoop();

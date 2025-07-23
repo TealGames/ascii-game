@@ -3,6 +3,7 @@
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Core/PositionConversions.hpp"
+#include "StaticGlobals.hpp"
 
 CameraData::CameraData() : CameraData(CameraSettings()) {}
 

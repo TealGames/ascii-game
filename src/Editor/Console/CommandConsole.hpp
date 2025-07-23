@@ -2,7 +2,8 @@
 #include <unordered_map>
 #include <string>
 #include "Editor/Console/CommandPrompt.hpp"
-#include "raylib.h"
+#include "Utils/Data/Color.hpp"
+//#include "raylib.h"
 
 //using Time = std::chrono::time_point<std::chrono::high_resolution_clock>;
 using PromptCollection = std::unordered_map<std::string, std::vector<ICommandPrompt*>>;
@@ -50,8 +51,6 @@ private:
 	bool m_isEnabled;
 
 public:
-	static constexpr char COMMAND_CHAR= '/';
-	static constexpr KeyboardKey TOGGLE_COMMAND_CONSOLE_KEY = KEY_TAB;
 
 private:
 	std::string FormatPromptName(const std::string& name);
@@ -59,8 +58,8 @@ private:
 	std::string GetDocumentationForPrompt(PromptCollection::iterator& promptIt, const size_t& index) const;
 
 	bool TryInvokePrompt();
-	Color GetColorFromMessageType(const ConsoleOutputMessageType& message);
-	void SetNextMessage(const std::string& message, const Color color);
+	Utils::Color GetColorFromMessageType(const ConsoleOutputMessageType& message);
+	void SetNextMessage(const std::string& message, const Utils::Color color);
 	void RemoveBackMessage();
 public:
 	CommandConsole(const Input::InputManager& input, UIInteractionManager& selector);

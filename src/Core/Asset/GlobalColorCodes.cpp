@@ -4,7 +4,7 @@
 #include "Core/Asset/AssetManager.hpp"
 
 static const std::filesystem::path GLOBAL_COLOR_PATH = "global_colors.txt";
-static std::unordered_map<std::string, Color> ColorCodes = {};
+static std::unordered_map<std::string, Utils::Color> ColorCodes = {};
 
 namespace GlobalColorCodes
 {
@@ -34,11 +34,11 @@ namespace GlobalColorCodes
 		const std::uint8_t r = std::stoi(property.m_Value[0].substr(0, 2), nullptr, 16);
 		const std::uint8_t g = std::stoi(property.m_Value[0].substr(2, 2), nullptr, 16);
 		const std::uint8_t b = std::stoi(property.m_Value[0].substr(4, 2), nullptr, 16);
-		std::uint8_t a = 255;
+		std::uint8_t a = Utils::DEFAULT_CHANNEL_VALUE;
 		if (property.m_Value[0].size() == 8)
 			a = std::stoi(property.m_Value[0].substr(6, 2), nullptr, 16);
 
-		Color color = { r, g, b, a };
+		Utils::Color color = { r, g, b, a };
 		auto emplaceResult= ColorCodes.emplace(property.m_Key, color);
 		return emplaceResult.second;
 	}
@@ -48,7 +48,7 @@ namespace GlobalColorCodes
 		return ColorCodes.find(colorName) != ColorCodes.end();
 	}
 
-	std::optional<Color> TryGetColorFromCode(const std::string& code)
+	std::optional<Utils::Color> TryGetColorFromCode(const std::string& code)
 	{
 		auto colorCodeIt = ColorCodes.find(code);
 		if (colorCodeIt == ColorCodes.end()) return std::nullopt;

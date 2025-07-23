@@ -1,16 +1,18 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "ECS/Component/Types/UI/UILayout.hpp"
 #include "ECS/Component/Component.hpp"
 #include "Editor/Entity/ComponentFieldUI.hpp"
 #include "Core/Input/InputManager.hpp"
-#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+
 
 class EntityUI;
 class UIInteractionManager;
 class PopupUIManager;
+class UIToggleComponent;
+class UITextComponent;
+class UILayout;
+class UIPanel;
 namespace AssetManagement { class AssetManager; };
 class ComponentUI //: public ITreeGUIConstructible
 {

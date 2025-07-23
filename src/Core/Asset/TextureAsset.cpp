@@ -5,19 +5,24 @@
 const std::string TextureAsset::EXTENSION = ".png";
 
 TextureAsset::TextureAsset(const std::filesystem::path& path)
-	: Asset(path, false), m_texture(LoadTexture(path.string().c_str())) {}
+	: Asset(path, false), m_texture() 
+{
+	//LOAD TEXTURE
+	//m_texture= LoadTexture(path.string().c_str());
+}
 
 TextureAsset::~TextureAsset()
 {
-	UnloadTexture(m_texture);
+	//UNLOAD TEXTURE
+	//UnloadTexture(m_texture);
 }
 
 bool TextureAsset::IsValidTexture() const
 {
-	return m_texture.id != 0;
+	return m_texture.IsValid();
 }
 
-const Texture2D& TextureAsset::GetTexture() const
+const Rendering::Texture& TextureAsset::GetTexture() const
 {
 	if (!IsValidTexture())
 	{
@@ -30,6 +35,7 @@ const Texture2D& TextureAsset::GetTexture() const
 
 void TextureAsset::UpdateAssetFromFile()
 {
-	m_texture = LoadTexture(GetPath().string().c_str());
+	//TODO: load texture
+	//m_texture = LoadTexture(GetPath().string().c_str());
 }
 

@@ -4,10 +4,7 @@
 #include "Editor/Sprite/SpriteEditorUI.hpp"
 #include "Core/UI/PopupUIManager.hpp"
 #include "Core/Analyzation/DebugInfo.hpp"
-#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
-#include "ECS/Component/Types/UI/UIButton.hpp"
 #include "Core/UI/UIHierarchy.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 namespace Core { class Engine; }
 namespace Input { class InputManager; }
@@ -27,6 +24,12 @@ class CameraController;
 class UIInteractionManager;
 class PopupUIManager;
 class GizmoOverlay;
+
+class UIPanel;
+class UIToggleComponent;
+class UITextComponent;
+class UIButton;
+class UILayout;
 
 struct EditModeInfo
 {

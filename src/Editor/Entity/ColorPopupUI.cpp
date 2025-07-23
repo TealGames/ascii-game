@@ -9,6 +9,7 @@
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UISliderComponent.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UIInputField.hpp"
 #include "ECS/Component/Types/UI/UILayout.hpp"
 

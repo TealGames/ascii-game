@@ -2,12 +2,13 @@
 #include <vector>	
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Editor/Entity/ComponentUI.hpp"
-#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
-#include "ECS/Component/Types/UI/UILayout.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 class UIHierarchy;
 class PopupUIManager;
+class UILayout;
+class UIPanel;
+class UIToggleComponent;
+class UITextComponent;
 namespace AssetManagement { class AssetManager; };
 namespace Input { class InputManager; }
 

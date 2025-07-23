@@ -10,6 +10,8 @@ namespace ECS { class UIColorPickerSystem; }
 
 class UIPanel;
 class UISelectableData;
+class UIRendererData;
+
 using ColorPickerAction = std::function<void(Utils::Color)>;
 class UIColorPickerData : public Component
 {

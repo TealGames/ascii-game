@@ -3,6 +3,7 @@
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include <functional>
 #include "Core/Serialization/JsonSerializers.hpp"
+#include "Utils/Data/ColorConstants.hpp"
 
 Particle::Particle(const TextChar& text, const Vec2& fontArea, const WorldPosition& pos, const Vec2& vel, const float& lifeTime)
 	: m_TextChar(text), m_FontArea(fontArea), m_Pos(pos), m_Velocity(vel), m_AliveTime(0), m_LifeTime(lifeTime) {}
@@ -13,7 +14,7 @@ void Particle::SetColorFromAliveTime(const ColorGradient& color)
 }
 
 ParticleEmitterData::ParticleEmitterData() : ParticleEmitterData('A', FloatRange(0,1), 
-	ColorGradient(WHITE), {}, RenderLayerType::Player, {}, FloatRange(1, 1), float(5)) {}
+	ColorGradient(Utils::COLOR_WHITE), {}, RenderLayerType::Player, {}, FloatRange(1, 1), float(5)) {}
 
 ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
 	const WorldFontProperties& fontData, const RenderLayerType& renderLayers,

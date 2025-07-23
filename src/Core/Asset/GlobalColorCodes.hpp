@@ -1,7 +1,8 @@
 #pragma once
-#include "raylib.h"
+//#include "raylib.h"
 #include <optional>
 #include "Fig/Fig.hpp"
+#include "Utils/Data/Color.hpp"
 
 namespace AssetManagement
 {
@@ -14,6 +15,6 @@ namespace GlobalColorCodes
 	bool TryRegisterColor(const FigProperty& property);
 
 	bool HasColor(const std::string& colorName);
-	std::optional<Color> TryGetColorFromCode(const std::string& code);
+	std::optional<Utils::Color> TryGetColorFromCode(const std::string& code);
 }
 

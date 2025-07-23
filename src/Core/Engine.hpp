@@ -34,13 +34,15 @@
 #include "GlobalInitializer.hpp"
 #include "Core/EngineState.hpp"
 #include "Core/GizmoOverlay.hpp"
+#include "Core/Window/WindowManager.hpp"
+#include "Core/FrameworkManager.hpp"
 
 namespace Core
 {
-	using LoopStatusCode = std::uint8_t;
 	class Engine
 	{
 	private:
+		WindowManager m_windowManager;
 		EngineState m_engineState;
 
 		AssetManagement::AssetManager m_assetManager;
@@ -95,9 +97,10 @@ namespace Core
 		/// Returns false if it can continue
 		/// </summary>
 		/// <returns></returns>
-		LoopStatusCode Update();
+		void UpdateWindow(Window& window);
 
 		void EngineLog(const std::string& log) const;
+		void SetUpdateStatusCode(const UpdateStatusCode& code);
 
 	public:
 		Engine();

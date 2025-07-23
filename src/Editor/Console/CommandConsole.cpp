@@ -7,9 +7,11 @@
 #include "Core/UI/UIHierarchy.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "ECS/Component/Types/UI/UIInputField.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UILayout.hpp"
 #include "StaticGlobals.hpp"
 #include "Core/Input/InputManager.hpp"
+#include "raylib.h"
 
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_ONE;
@@ -24,6 +26,9 @@ static constexpr int COMMAND_CONSOLE_SPACING = 3;
 static constexpr float COMMAND_CONSOLE_OUPUT_FONT_SIZE = 10;
 static constexpr int COMMAND_CONSOLE_TEXT_INDENT = 10;
 static constexpr std::uint16_t MESSAGE_MAX_LENGTH = 50;
+
+static constexpr char COMMAND_CHAR = '/';
+static constexpr KeyboardKey TOGGLE_COMMAND_CONSOLE_KEY = KEY_TAB;
 
 CommandConsole::CommandConsole(const Input::InputManager& input, UIInteractionManager& selector) :
 	m_inputManager(input), m_prompts(), m_messageCloseTimes(), 
@@ -211,11 +216,11 @@ std::vector<std::string> CommandConsole::GetPromptDocumentationAll()
 	return docs;
 }
 
-Color CommandConsole::GetColorFromMessageType(const ConsoleOutputMessageType& message)
+Utils::Color CommandConsole::GetColorFromMessageType(const ConsoleOutputMessageType& message)
 {
-	if (message == ConsoleOutputMessageType::Error) return RED;
-	else if (message == ConsoleOutputMessageType::Success) return GREEN;
-	else return WHITE;
+	if (message == ConsoleOutputMessageType::Error) return Utils::COLOR_RED;
+	else if (message == ConsoleOutputMessageType::Success) return Utils::COLOR_YELLOW;
+	else return Utils::COLOR_WHITE;
 }
 void CommandConsole::LogOutputMessage(const std::string& message, const ConsoleOutputMessageType& messageType)
 {
@@ -229,7 +234,7 @@ void CommandConsole::LogOutputMessage(const std::string& message, const ConsoleO
 
 void CommandConsole::LogOutputMessages(const std::vector<std::string>& messages, const ConsoleOutputMessageType& messageType)
 {
-	Color color = GetColorFromMessageType(messageType);
+	const Utils::Color color = GetColorFromMessageType(messageType);
 
 	m_nextTextGuiIndex = 0;
 	for (size_t i=0; i<messages.size() && i< MAX_OUTPUT_MESSAGES; i++)
@@ -237,7 +242,7 @@ void CommandConsole::LogOutputMessages(const std::vector<std::string>& messages,
 		SetNextMessage(messages[i], color);
 	}
 }
-void CommandConsole::SetNextMessage(const std::string& message, const Color color)
+void CommandConsole::SetNextMessage(const std::string& message, const Utils::Color color)
 {
 	m_messageCloseTimes.emplace(m_messageCloseTimes.begin(), m_timeSinceOpen + MESSAGE_DISPLAY_TIME_SECONDS);
 	m_outputMessagesTextGuis[m_nextTextGuiIndex]->SetText(message);

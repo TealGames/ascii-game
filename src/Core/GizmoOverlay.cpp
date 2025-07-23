@@ -7,10 +7,11 @@
 #include "Core/Camera/CameraController.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
+#include "Utils/Data/ColorConstants.hpp"
 
 static constexpr float LINE_THICKNESS = 1;
-static const Color COLLIDER_OUTLINE_COLOR = GREEN;
-static const Color UI_RECT_OUTLINE_COLOR = YELLOW;
+static constexpr Utils::Color COLLIDER_OUTLINE_COLOR = Utils::COLOR_GREEN;
+static constexpr Utils::Color UI_RECT_OUTLINE_COLOR = Utils::COLOR_YELLOW;
 
 GizmoOverlay::GizmoOverlay(ECS::UIRenderSystem& renderSystem, Physics::PhysicsManager& physicsManager, const CameraController& cameraController) 
 	: m_queuedCalls(), m_activeGizmos(GizmoType::None)

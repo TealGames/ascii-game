@@ -94,11 +94,11 @@ void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArra
 
 	pos->m_Text.SetChar(newChar);
 }
-void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const Color& newColor)
+void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const Utils::Color& newColor)
 {
 	TextCharArrayPosition* pos = TryGetPosMutable(rowColPos, positionType);
 	if (!Assert(pos != nullptr, std::format("Tried to set position: {}({}) with COLOR: {} for fragmented text array "
-		"but data was not found", rowColPos.ToString(), ::ToString(positionType), RaylibUtils::ToString(newColor)))) return;
+		"but data was not found", rowColPos.ToString(), ::ToString(positionType), newColor.ToString()))) return;
 
 	pos->m_Text.m_Color = newColor;
 }
@@ -160,7 +160,7 @@ std::string FragmentedTextArray::ToString(const std::vector<std::vector<TextChar
 
 			if (convertAll)
 			{
-				fullStr += RaylibUtils::ToString(chars[r][c].m_Text.m_Color) + " ";
+				fullStr += chars[r][c].m_Text.m_Color.ToString() + " ";
 			}
 		}
 		fullStr += "\n";

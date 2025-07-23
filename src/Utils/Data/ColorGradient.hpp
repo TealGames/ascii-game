@@ -1,17 +1,17 @@
 #pragma once
 #include <cstdint>
 #include <vector>
-#include <limits>
 #include <string>
-#include "raylib.h"
+#include "Utils/Data/Color.hpp"
+//#include "raylib.h"
 
 struct ColorGradientKeyFrame
 {
-	Color m_Color;
+	Utils::Color m_Color;
 	float m_Location;
 
 	ColorGradientKeyFrame();
-	ColorGradientKeyFrame(const Color& color, const float& location);
+	ColorGradientKeyFrame(const Utils::Color& color, const float& location);
 
 	bool operator<(const ColorGradientKeyFrame& other) const;
 	bool operator>(const ColorGradientKeyFrame& other) const;
@@ -32,13 +32,13 @@ public:
 private:
 public:
 	ColorGradient();
-	explicit ColorGradient(const Color& singleColor);
-	ColorGradient(const Color& leftColor, const Color& rightColor);
+	explicit ColorGradient(const Utils::Color& singleColor);
+	ColorGradient(const Utils::Color& leftColor, const Utils::Color& rightColor);
 	ColorGradient(const std::vector<ColorGradientKeyFrame>& frames);
 
-	Color GetColorAt(float location, const bool& includeAlpha) const;
-	Color GetFirstColor(const bool& includeAlpha) const;
-	Color GetLastColor(const bool& includeAlpha) const;
+	Utils::Color GetColorAt(float location, const bool& includeAlpha) const;
+	Utils::Color GetFirstColor(const bool& includeAlpha) const;
+	Utils::Color GetLastColor(const bool& includeAlpha) const;
 
 	const std::vector<ColorGradientKeyFrame>& GetKeyframes() const;
 

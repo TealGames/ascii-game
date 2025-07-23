@@ -13,6 +13,11 @@
 #include "Editor/EditorStyles.hpp"
 #include "Core/UIElementTemplates.hpp"
 #include "Core/GizmoOverlay.hpp"
+#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIButton.hpp"
+#include "ECS/Component/Types/UI/UILayout.hpp"
 
 static constexpr float TOP_BAR_HEIGHT = 0.03;
 static constexpr float ASSET_EDITOR_BUTTON_WIDTH = 0.2;

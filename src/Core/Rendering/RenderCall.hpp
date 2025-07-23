@@ -3,8 +3,10 @@
 #include "Utils/Data/Vec2.hpp"
 #include "Utils/Data/Vec2Int.hpp"
 #include "Utils/Data/ScreenPosition.hpp"
-//#include "Utils/Data/Color.hpp"
-#include "raylib.h"
+#include "Utils/Data/Color.hpp"
+#include "Core/Rendering/Texture.hpp"
+#include "Core/Rendering/Font.hpp"
+//#include "raylib.h"
 
 namespace Rendering
 {
@@ -23,13 +25,13 @@ namespace Rendering
 	{
 		ScreenPosition m_Pos;
 		float m_Radius;
-		Color m_Color;
+		Utils::Color m_Color;
 	};
 	struct RectCall
 	{
 		ScreenPosition m_Pos;
 		Vec2 m_Size;
-		Color m_Color;
+		Utils::Color m_Color;
 	};
 
 	using TextureID = std::uint16_t;
@@ -37,11 +39,11 @@ namespace Rendering
 	{
 		TextureID m_Id;
 		ScreenPosition m_Pos;
-		Color m_Color;
+		Utils::Color m_Color;
 	};
 	struct TextureCallData
 	{
-		Texture2D m_Tex;
+		Texture m_Tex;
 		Vec2 m_Scale;
 	};
 
@@ -50,7 +52,7 @@ namespace Rendering
 	{
 		TextID m_Id;
 		ScreenPosition m_Pos;
-		Color m_Color;
+		Utils::Color m_Color;
 	};
 	struct TextCallData
 	{
@@ -65,14 +67,14 @@ namespace Rendering
 		ScreenPosition m_Pos;
 		float m_Thickness;
 		Vec2 m_Length;
-		Color m_Color;
+		Utils::Color m_Color;
 	};
 	struct RectLineCall
 	{
 		ScreenPosition m_Pos;
 		float m_Thickness;
 		Vec2 m_Size;
-		Color m_Color;
+		Utils::Color m_Color;
 	};
 
 	using RenderCall = std::variant<CircleCall, RectCall, TextureCall, TextCall, LineCall, RectLineCall>;

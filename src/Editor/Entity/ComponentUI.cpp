@@ -10,6 +10,10 @@
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/UIElementTemplates.hpp"
+#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UILayout.hpp"
 
 constexpr static float HEADER_PANEL_HEIGHT = 0.03;
 constexpr static float DROPDOWN_WIDTH = 0.1;

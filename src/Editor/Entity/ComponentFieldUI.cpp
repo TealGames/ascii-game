@@ -7,6 +7,8 @@
 #include "ECS/Component/Types/UI/UIInputField.hpp"
 #include "Core/Input/InputManager.hpp"
 #include "ECS/Component/Types/UI/UIToggleComponent.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "ECS/Component/Types/UI/UILayout.hpp"
 #include "ECS/Component/Types/Editor/UIColorPicker.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "Editor/EditorStyles.hpp"

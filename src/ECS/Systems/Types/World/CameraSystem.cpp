@@ -99,7 +99,7 @@ namespace ECS
                 screenSize = cameraData.WorldToScreenSize(textBufferPos.m_FontData.m_RectSize);
 
                 m_renderer->AddTextCall(newScreenPos, textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_Text.m_Char,
-                   RaylibUtils::GetBestFontSize(textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_FontData.m_Tracking, screenSize, textBufferPos.m_Text.m_Char), 
+                   GetBestFontSize(textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_FontData.m_Tracking, screenSize, textBufferPos.m_Text.m_Char), 
                     textBufferPos.m_FontData.m_Tracking, textBufferPos.m_Text.m_Color);
                /* LogWarning(std::format("Adding text call at:{} font size:{} color:{} char:{}", newScreenPos.ToString(), textBufferPos.m_FontData.m_Size, 
                     RaylibUtils::ToString(textBufferPos.m_Text.m_Color), textBufferPos.m_Text.m_Char));*/

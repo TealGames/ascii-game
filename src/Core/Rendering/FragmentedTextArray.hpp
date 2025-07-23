@@ -44,7 +44,7 @@ public:
 
 	void SetAt(const Array2DPosition& pos, const TextArrayPositionType& positionTypen, const TextChar& newBufferChar);
 	void SetAt(const Array2DPosition& pos, const TextArrayPositionType& positionTypen, const char& newChar);
-	void SetAt(const Array2DPosition& pos, const TextArrayPositionType& positionTypen, const Color& newColor);
+	void SetAt(const Array2DPosition& pos, const TextArrayPositionType& positionTypen, const Utils::Color& newColor);
 
 	void SetAt(const std::vector<Array2DPosition>& rowColPos, const TextArrayPositionType& positionTypen, const TextChar& newBufferChar);
 	void SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos, const TextArrayPositionType& positionTypen);

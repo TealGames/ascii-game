@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/Editor/UIColorPicker.hpp"
-#include "Utils/RaylibUtils.hpp"
+//#include "Utils/RaylibUtils.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "Editor/Entity/ColorPopupUI.hpp"
 #include "Core/UI/PopupUIManager.hpp"
@@ -61,7 +61,7 @@ void UIColorPickerData::SetValueSetAction(const ColorPickerAction& action)
 void UIColorPickerData::SetColor(const Utils::Color color) 
 { 
 	m_color = color; 
-	if (m_fieldPanel != nullptr) m_fieldPanel->SetColor(RaylibUtils::ToRaylibColor(m_color));
+	if (m_fieldPanel != nullptr) m_fieldPanel->SetColor(m_color);
 	if (m_valueSetCallback) m_valueSetCallback(m_color);
 }
 //void ColorPickerGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }

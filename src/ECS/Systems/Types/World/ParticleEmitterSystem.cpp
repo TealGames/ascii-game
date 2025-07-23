@@ -73,7 +73,7 @@ namespace ECS
 				Vec2 randomDir = {};
 				Vec2 randomVel = {};
 				float randomLifeTime = 0;
-				const Color initialColor = data.m_lifetimeColor.GetFirstColor(true);
+				const Utils::Color initialColor = data.m_lifetimeColor.GetFirstColor(true);
 				for (int i = 0; i < wholeParticlesToSpawn; i++)
 				{
 					randomDir = GenerateRandomDir();

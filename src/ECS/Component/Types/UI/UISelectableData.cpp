@@ -5,6 +5,10 @@
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
+#include "Utils/Data/ColorConstants.hpp"
+
+static constexpr Utils::Color HOVER_COLOR = Utils::Color(Utils::COLOR_WHITE, 90);
+static constexpr Utils::Color DISABLED_COLOR = Utils::Color(Utils::COLOR_BLACK, 155);
 
 UISelectableData::UISelectableData(const float clickCooldown, const TriggerInteractionEventFlags eventFlags, const InteractionRenderFlags renderFlags) :
 	m_triggerEventFlags(eventFlags), m_renderFlags(renderFlags), m_renderer(nullptr),
@@ -138,19 +142,13 @@ UIRect UISelectableData::RenderOverlay(const UIRect& elementRendered)
 
 void UISelectableData::DrawDisabledOverlay(const UIRect& renderInfo)
 {
-	Color disabledOverlay = BLACK;
-	disabledOverlay.a = 155;
-
 	UIRendererData* renderer = GetEntityMutable().TryGetComponentMutable<UIRendererData>();
-	renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), disabledOverlay);
+	renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), DISABLED_COLOR);
 }
 void UISelectableData::DrawHoverOverlay(const UIRect& renderInfo)
 {
-	Color hoverOverlay = WHITE;
-	hoverOverlay.a = 90;
-
 	UIRendererData* renderer = GetEntityMutable().TryGetComponentMutable<UIRendererData>();
-	renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), hoverOverlay);
+	renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), HOVER_COLOR);
 }
 
 void UISelectableData::InitFields()

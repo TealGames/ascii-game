@@ -4,6 +4,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/RaylibUtils.hpp"
 #include "Core/Analyzation/Debug.hpp"
+#include "StaticGlobals.hpp"
 
 const Vec2& VisualData::DEFAULT_FONT_SIZE = GLOBAL_FONT_SIZE;
 

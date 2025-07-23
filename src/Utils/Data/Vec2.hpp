@@ -27,8 +27,11 @@ public:
 	static const Vec2 ONE;
 
 public:
-	Vec2();
-	Vec2(const float&, const float&);
+	constexpr Vec2() : Vec2(0, 0) {}
+
+	constexpr Vec2(const float xComp, const float yComp)
+		: m_X(xComp), m_Y(yComp) {}
+
 	Vec2(const Vec2&) = default;
 	Vec2(Vec2&&) noexcept = default;
 
@@ -114,6 +117,7 @@ Vec2 GetVectorEndPoint(const Vec2& startPos, const Vec2& vector);
 float DotProduct(const Vec2& vecA, const Vec2& vecB);
 
 Vec2 Abs(const Vec2& vec);
+Vec2 GetSign(const Vec2& vec);
 
 Vec2 GenerateRandomVec2(const Vec2& minVec, const Vec2 maxVec);
 Vec2 GenerateRandomDir();

@@ -1,13 +1,12 @@
 #include <limits>
-
 #include "pch.hpp"
 #include "Utils/Data/ColorGradient.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/RaylibUtils.hpp"
+//#include "Utils/RaylibUtils.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
 ColorGradientKeyFrame::ColorGradientKeyFrame() : ColorGradientKeyFrame({}, 0) {}
-ColorGradientKeyFrame::ColorGradientKeyFrame(const Color& color, const float& location) 
+ColorGradientKeyFrame::ColorGradientKeyFrame(const Utils::Color& color, const float& location) 
 	: m_Color(color), m_Location(location) {}
 
 bool ColorGradientKeyFrame::operator<(const ColorGradientKeyFrame& other) const
@@ -23,15 +22,15 @@ bool ColorGradientKeyFrame::operator>(const ColorGradientKeyFrame& other) const
 std::string ColorGradientKeyFrame::ToString() const
 {
 	return std::format("[Color: {} @{}]", 
-		RaylibUtils::ToString(m_Color), std::to_string(m_Location));
+		m_Color.ToString(), std::to_string(m_Location));
 }
 
 ColorGradient::ColorGradient() : ColorGradient({}, {}) {}
 
-ColorGradient::ColorGradient(const Color& singleColor) : 
+ColorGradient::ColorGradient(const Utils::Color& singleColor) : 
 	ColorGradient(singleColor, singleColor) {}
 
-ColorGradient::ColorGradient(const Color& leftColor, const Color& rightColor) :
+ColorGradient::ColorGradient(const Utils::Color& leftColor, const Utils::Color& rightColor) :
 	m_colorFrames{ ColorGradientKeyFrame{leftColor, MIN_LOCATION}, 
 	ColorGradientKeyFrame{rightColor, MAX_LOCATION} } {}
 
@@ -57,7 +56,7 @@ ColorGradient::ColorGradient(const std::vector<ColorGradientKeyFrame>& frames)
 	std::sort(m_colorFrames.begin(), m_colorFrames.end());
 }
 
-Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
+Utils::Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 {
 	location = std::clamp(location, MIN_LOCATION, MAX_LOCATION);
 	if (m_colorFrames.size() == 1) return m_colorFrames.front().m_Color;
@@ -99,27 +98,27 @@ Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 
 	const ColorGradientKeyFrame leftKey = m_colorFrames[left];
 	const ColorGradientKeyFrame rightKey = m_colorFrames[right];
-	const Color& leftColor = leftKey.m_Color;
-	const Color& rightColor = rightKey.m_Color;
+	const Utils::Color& leftColor = leftKey.m_Color;
+	const Utils::Color& rightColor = rightKey.m_Color;
 
 	float keysNormalizedVal = (location - leftKey.m_Location) / (rightKey.m_Location - leftKey.m_Location);
-	unsigned char newR = std::lerp(leftColor.r, rightColor.r, keysNormalizedVal);
-	unsigned char newG = std::lerp(leftColor.g, rightColor.g, keysNormalizedVal);
-	unsigned char newB = std::lerp(leftColor.b, rightColor.b, keysNormalizedVal);
+	unsigned char newR = std::lerp(leftColor.m_R, rightColor.m_R, keysNormalizedVal);
+	unsigned char newG = std::lerp(leftColor.m_G, rightColor.m_G, keysNormalizedVal);
+	unsigned char newB = std::lerp(leftColor.m_B, rightColor.m_B, keysNormalizedVal);
 
 	unsigned char newA = std::numeric_limits<unsigned char>::max();
-	if (includeAlpha) newA = std::lerp(leftColor.a, rightColor.a, keysNormalizedVal);
+	if (includeAlpha) newA = std::lerp(leftColor.m_A, rightColor.m_A, keysNormalizedVal);
 
 	/*Log(std::format("Color at {} is: {} FULL:{}", std::to_string(location), 
 		RaylibUtils::ToString(Color{ newR, newG, newB, newA }), ToString()));*/
 	return {newR, newG, newB, newA};
 }
 
-Color ColorGradient::GetFirstColor(const bool& includeAlpha) const
+Utils::Color ColorGradient::GetFirstColor(const bool& includeAlpha) const
 {
 	return GetColorAt(MIN_LOCATION, includeAlpha);
 }
-Color ColorGradient::GetLastColor(const bool& includeAlpha) const
+Utils::Color ColorGradient::GetLastColor(const bool& includeAlpha) const
 {
 	return GetColorAt(MAX_LOCATION, includeAlpha);
 }

@@ -5,6 +5,7 @@
 #include "Utils/Data/Array2DPosition.hpp"
 #include "Utils/Data/Vec2.hpp"
 #include "Core/Rendering/FontData.hpp"
+#include "Utils/Data/Color.hpp"
 
 //The character used for empty spaces and will NOT be rendered
 constexpr char EMPTY_CHAR_PLACEHOLDER = ' ';
@@ -13,11 +14,11 @@ constexpr char EMPTY_CHAR_PLACEHOLDER = ' ';
 //into one batch that contains the positions, different chars and color
 struct TextChar
 {
-	Color m_Color;
+	Utils::Color m_Color;
 	char m_Char[2];
 
 	TextChar();
-	TextChar(const Color& color, const char& textChar= EMPTY_CHAR_PLACEHOLDER);
+	TextChar(const Utils::Color& color, const char& textChar= EMPTY_CHAR_PLACEHOLDER);
 	TextChar(const TextChar&) = default;
 
 	bool IsEmpty() const;
@@ -49,12 +50,12 @@ struct TextCharArrayPosition
 struct ColorPosition
 {
 	Array2DPosition m_RowColPos;
-	Color m_Color;
+	Utils::Color m_Color;
 
 	bool operator==(const ColorPosition& other) const = default;
 	std::string ToString() const;
 
-	ColorPosition(const Array2DPosition& pos, const Color& color);
+	ColorPosition(const Array2DPosition& pos, const Utils::Color& color);
 };
 
 using TextArrayCollectionType = std::vector<std::vector<TextChar>>;
@@ -73,14 +74,14 @@ private:
 	std::vector<std::vector<TextChar>> CreateBufferOfChar(const int& width,
 		const int& height, const TextChar& duplicateBufferChar) const;
 
-	std::vector<std::vector<TextChar>> CreateBufferOfChar(const Color& color,
+	std::vector<std::vector<TextChar>> CreateBufferOfChar(const Utils::Color& color,
 		const std::vector<std::vector<char>>& chars) const;
 
 public:
 	TextArray();
 	TextArray(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars);
 	TextArray(const int& width, const int& height, const TextChar& duplicateBufferChar);
-	TextArray(const int& width, const int& height, const Color& color, const std::vector<std::vector<char>>& chars);
+	TextArray(const int& width, const int& height, const Utils::Color& color, const std::vector<std::vector<char>>& chars);
 	TextArray(const TextArray& other);
 	TextArray(TextArray&& other) noexcept;
 
@@ -94,7 +95,7 @@ public:
 
 	void SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar);
 	void SetAt(const Array2DPosition& rowColPos, const char& newChar);
-	void SetAt(const Array2DPosition& rowColPos, const Color& newColor);
+	void SetAt(const Array2DPosition& rowColPos, const Utils::Color& newColor);
 
 	void SetAt(const std::vector<Array2DPosition>& rowColPos, const TextChar& newBufferChar);
 	void SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos);

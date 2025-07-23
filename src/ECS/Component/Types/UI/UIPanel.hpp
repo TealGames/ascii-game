@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
 #include "Utils/Data/Color.hpp"
-#include "raylib.h"
+//#include "raylib.h"
 #include "Core/UI/UIRect.hpp"
 
 class UIRendererData;
@@ -9,7 +9,7 @@ namespace ECS { class UIPanelSystem; }
 class UIPanel : public Component
 {
 private:
-	Color m_color;
+	Utils::Color m_color;
 	UIRendererData* m_renderer;
 public:
 	friend class ECS::UIPanelSystem;
@@ -17,9 +17,9 @@ public:
 private:
 public:
 	UIPanel();
-	UIPanel(const Color color);
+	UIPanel(const Utils::Color color);
 
-	void SetColor(const Color color);
+	void SetColor(const Utils::Color color);
 
 	UIRect Render(const UIRect& rect);
 

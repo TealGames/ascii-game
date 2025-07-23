@@ -6,10 +6,10 @@
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 
-UIPanel::UIPanel() : UIPanel(Color()) {}
-UIPanel::UIPanel(const Color color) : m_color(color), m_renderer(nullptr) {}
+UIPanel::UIPanel() : UIPanel(Utils::Color()) {}
+UIPanel::UIPanel(const Utils::Color color) : m_color(color), m_renderer(nullptr) {}
 
-void UIPanel::SetColor(const Color color)
+void UIPanel::SetColor(const Utils::Color color)
 {
 	m_color = color;
 }
@@ -27,7 +27,7 @@ void UIPanel::InitFields()
 }
 std::string UIPanel::ToString() const
 {
-	return std::format("[PanelGUI color:{}]", RaylibUtils::ToString(m_color));
+	return std::format("[PanelGUI color:{}]", m_color.ToString());
 }
 
 void UIPanel::Deserialize(const Json& json)

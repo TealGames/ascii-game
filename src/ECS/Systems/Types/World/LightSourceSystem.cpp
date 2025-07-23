@@ -158,21 +158,14 @@ namespace ECS
         return data.m_Intensity* std::powf(1 - (distance / (data.m_LightRadius + 1)), data.m_FalloffStrength);
     }
 
-    Color LightSourceSystem::GetColorFromMultiplier(const Color& originalColor, const Color& filterColor, const float& colorMultiplier) const
+    Utils::Color LightSourceSystem::GetColorFromMultiplier(const Utils::Color& originalColor, const Utils::Color& filterColor, const float& colorMultiplier) const
     {
-        return { static_cast<unsigned char>(std::roundf((originalColor.r) * (1 - colorMultiplier) + (filterColor.r) * (colorMultiplier))),
-                 static_cast<unsigned char>(std::roundf((originalColor.g) * (1 - colorMultiplier) + (filterColor.g) * (colorMultiplier))),
-                 static_cast<unsigned char>(std::roundf((originalColor.b) * (1 - colorMultiplier) + (filterColor.b) * (colorMultiplier))), 255};
+        return { static_cast<std::uint8_t>(std::roundf((originalColor.m_R) * (1 - colorMultiplier) + (filterColor.m_R) * (colorMultiplier))),
+                 static_cast<std::uint8_t>(std::roundf((originalColor.m_G) * (1 - colorMultiplier) + (filterColor.m_G) * (colorMultiplier))),
+                 static_cast<std::uint8_t>(std::roundf((originalColor.m_B) * (1 - colorMultiplier) + (filterColor.m_B) * (colorMultiplier))), 255};
     }
 
-    Color LightSourceSystem::ApplyColorFilter(const Color& originalColor, const Utils::Point3D& fractionalColor, const float& colorMultiplier) const
-    {
-        return { static_cast<unsigned char>(std::roundf((originalColor.r) * (1 - colorMultiplier) + fractionalColor.m_X)),
-                 static_cast<unsigned char>(std::roundf((originalColor.g) * (1 - colorMultiplier) + fractionalColor.m_Y)),
-                 static_cast<unsigned char>(std::roundf((originalColor.b) * (1 - colorMultiplier) + fractionalColor.m_Z)), 255 };
-    }
-
-    Color LightSourceSystem::CalculateNewColor(LightSourceData& data,
+    Utils::Color LightSourceSystem::CalculateNewColor(LightSourceData& data,
         const TextBufferCharPosition& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
         //Log(std::format("Distance between {} and {} is: {}",
@@ -185,12 +178,12 @@ namespace ECS
 
         //We want to figure out the color data even if the pos is not valid in case we might need
         //light data to be stored even on invalid positions (so the light map can be created)
-        const Color filterColor = data.m_GradientFilter.GetColorAt(distance / data.m_LightRadius, false);
+        const Utils::Color filterColor = data.m_GradientFilter.GetColorAt(distance / data.m_LightRadius, false);
         const float colorMultiplier = static_cast<float>(lightLevel) / data.m_Intensity;
         //if (lightMapChar != nullptr) *lightMapChar = LightMapChar(centerPos - currentPos, RaylibUtils::GetFractionalColorRGB(filterColor, colorMultiplier), colorMultiplier);
 
-        const Color originalColor = bufferPos.m_Text.m_Color;
-        const Color newColor = GetColorFromMultiplier(originalColor, filterColor, colorMultiplier);
+        const Utils::Color originalColor = bufferPos.m_Text.m_Color;
+        const Utils::Color newColor = GetColorFromMultiplier(originalColor, filterColor, colorMultiplier);
 
         //Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
         //std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),

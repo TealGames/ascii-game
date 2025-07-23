@@ -28,6 +28,7 @@
 #include "Fig/Fig.hpp"
 #include "AnsiCodes.hpp"
 
+
 namespace Core
 {
 	//-------------------------------------------------------------------
@@ -145,10 +146,6 @@ namespace Core
 
 	const KeyboardKey TOGGLE_PAUSE_UPDATE_KEY = KEY_F1;
 
-	constexpr LoopStatusCode SUCCESS_CODE = 0;
-	constexpr LoopStatusCode EXIT_CODE = 1;
-	constexpr LoopStatusCode ERROR_CODE = 2;
-
 	void Engine::Destroy()
 	{
 		CloseWindow();
@@ -156,6 +153,7 @@ namespace Core
 	}
 
 	Engine::Engine() :
+		m_windowManager(),
 		m_engineState(),
 		m_assetManager(),
 		m_globalInitializer(m_assetManager),
@@ -191,6 +189,27 @@ namespace Core
 
 	{
 		EngineLog("FINISHED SYSTEM CONSTRUCTORS");
+
+		BasicResult<bool> frameworkInitResult = FrameworkInit();
+		if (frameworkInitResult.HasError())
+		{
+			LogError(std::format("Attempted to init all frameworks but got error: {}", 
+				*frameworkInitResult.TryGetError()));
+			return;
+		}
+		EngineLog("INITIALIZED ALL FRAMEWORKS");
+
+		Window* createdWindow = m_windowManager.CreateNewWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_ASPECT_RATIO, WINDOW_NAME, 
+			[this](Window& window)-> void {UpdateWindow(window); });
+
+		if (createdWindow==nullptr || !createdWindow->IsValid())
+		{
+			LogError(std::format("Failed to create valid window"));
+			return;
+		}
+		EngineLog("CREATED WINDOW");
+
+		m_renderer.InitBackend();
 
 		//Note: input relies on assets, and 
 		//asset manager needs to setup assets AFTER static global asset ref is set
@@ -277,6 +296,7 @@ namespace Core
 
 	Engine::~Engine()
 	{
+		FrameworkShutdown();
 		//m_commandConsole.DeletePrompts();
 	}
 
@@ -301,8 +321,12 @@ namespace Core
 		if (!DO_ENGINE_LOGS) return;
 		LogMessage(LogType::Log, CallerLogDetails::None, log, false, true, ANSI_COLOR_BLUE, false);
 	}
+	void Engine::SetUpdateStatusCode(const UpdateStatusCode& code)
+	{
+		m_engineState.m_LastUpdateStatus = code;
+	}
 
-	LoopStatusCode Engine::Update()
+	void Engine::UpdateWindow(Window& window)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("Engine::Update");
@@ -321,14 +345,22 @@ namespace Core
 		Scene* activeScene = nullptr;
 		if (m_editor.IsInGameView())
 		{
+			FrameworkUpdate();
+
 			activeScene = m_sceneManager.GetActiveSceneMutable();
 			if (!Assert(activeScene != nullptr, "Tried to update the active scene but there "
 				"are none set as active right now"))
-				return ERROR_CODE;
+			{
+				SetUpdateStatusCode(UpdateStatusCode::Error);
+				return;
+			}
 
 			if (!Assert(activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
 				"are no entities in the scene", activeScene->GetName())))
-				return ERROR_CODE;
+			{
+				SetUpdateStatusCode(UpdateStatusCode::Error);
+				return;
+			}
 
 			m_cameraController.UpdateActiveCamera();
 			CameraData& mainCamera = m_cameraController.GetActiveCameraMutable();
@@ -338,7 +370,10 @@ namespace Core
 				std::format("Tried to get active camera:{} during update loop, "
 					"but that camera is not in the active scene OR global storage (main camera scene:{}, active scene:{})", mainCamera.ToString(),
 					cameraSceneName, activeScene->GetName())))
-				return ERROR_CODE;
+			{
+				SetUpdateStatusCode(UpdateStatusCode::Error);
+				return;
+			}
 
 			//TODO: maybe some general scene stuff should be abstracted into scene manager
 			activeScene->ResetAllLayers();
@@ -379,17 +414,21 @@ namespace Core
 		
 		m_uiHierarchy.Update();
 		m_timeKeeper.UpdateTimeEnd();
-		if (m_timeKeeper.ReachedFrameLimit()) 
-			return EXIT_CODE;
+		if (m_timeKeeper.ReachedFrameLimit())
+		{
+			SetUpdateStatusCode(UpdateStatusCode::Exit);
+			return;
+		}
 
-		return SUCCESS_CODE;
+		SetUpdateStatusCode(UpdateStatusCode::Success);
 	}
 
 	void Engine::BeginUpdateLoop()
 	{
-		LoopStatusCode currentCode = SUCCESS_CODE;
 		m_engineState.SetExecutionState(ExecutionState::Update);
-		while (!WindowShouldClose())
+
+		bool allWindowsActive = true;
+		while (allWindowsActive)
 		{
 			if (IsKeyPressed(TOGGLE_PAUSE_UPDATE_KEY))
 			{
@@ -397,26 +436,18 @@ namespace Core
 				Utils::ClearSTDCIN();
 			}
 
-			try
+			m_windowManager.UpdateAllWindows(&allWindowsActive);
+
+			if (m_engineState.m_LastUpdateStatus == UpdateStatusCode::Error)
 			{
-				currentCode = Update();
-			}
-			catch (const std::exception& e)
-			{
-				LogError(std::format("Update loop terminated due to exception: {}", e.what()), true, false);
+				LogError(std::format("Update loop terminated due to error"));
 				return;
 			}
-
-#ifdef ENABLE_PROFILER
-			ProfilerTimer::m_Profiler.LogCurrentRoundTimes();
-#endif
-			if (!Assert(currentCode != ERROR_CODE, 
-				std::format("Update loop terminated due to error"), true)) 
+			else if (m_engineState.m_LastUpdateStatus == UpdateStatusCode::Exit)
+			{
+				LogError(std::format("Update loop terminated due to loop end triggered"));
 				return;
-
-			if (!Assert(currentCode != EXIT_CODE,
-				std::format("Update loop terminated due to loop end triggered"), true)) 
-				return;
+			}
 		}
 	}
 }

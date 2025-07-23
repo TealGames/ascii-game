@@ -129,52 +129,55 @@ void to_json(Json& json, const RenderLayerType& layer)
 	json = GetLayersAsStrings(layer);
 }
 
-void from_json(const Json& json, Color& color)
+namespace Utils
 {
-	try
+	void from_json(const Json& json, Utils::Color& color)
 	{
-		std::optional<std::string> maybeStringProperty = JsonUtils::TryGet<std::string>(json);
-		if (maybeStringProperty.has_value())
+		try
 		{
-			std::optional<Color> maybeConstantColor = JsonConstants::TryGetConstantColor(maybeStringProperty.value());
-			if (!Assert(maybeConstantColor.has_value(), std::format("Tried to convert json:'{} to color using constant "
-				"names but it matches no constants!'", JsonUtils::ToStringProperties(json))))
+			std::optional<std::string> maybeStringProperty = JsonUtils::TryGet<std::string>(json);
+			if (maybeStringProperty.has_value())
+			{
+				std::optional<Utils::Color> maybeConstantColor = JsonConstants::TryGetConstantColor(maybeStringProperty.value());
+				if (!Assert(maybeConstantColor.has_value(), std::format("Tried to convert json:'{} to color using constant "
+					"names but it matches no constants!'", JsonUtils::ToStringProperties(json))))
+					return;
+
+				color = maybeConstantColor.value();
 				return;
+			}
 
-			color = maybeConstantColor.value();
-			return;
+			LogError(std::format("is str:{}", std::to_string(json.is_string())));
+			if (!HasRequiredProperties(json, { "R", "G", "B" }))
+			{
+
+				return;
+			}
+			color.m_R = json.at("R").get<std::uint8_t>();
+			color.m_G = json.at("G").get<std::uint8_t>();
+			color.m_A = json.at("B").get<std::uint8_t>();
+
+			if (json.contains("A")) color.m_A = json.at("A").get<std::uint8_t>();
+			else color.m_A = Utils::DEFAULT_CHANNEL_VALUE;
 		}
-
-		LogError(std::format("is str:{}", std::to_string(json.is_string())));
-		if (!HasRequiredProperties(json, { "R", "G", "B" }))
+		catch (const std::exception& e)
 		{
-			
+			Assert(false, std::format("Tried to deserialize color:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		}
+	}
+
+
+	void to_json(Json& json, const Utils::Color& color)
+	{
+		std::optional<std::string> maybeConstant = JsonConstants::TryGetColorConstant(color);
+		if (maybeConstant.has_value())
+		{
+			json = maybeConstant.value();
 			return;
 		}
-		color.r = json.at("R").get<std::uint8_t>();
-		color.g = json.at("G").get<std::uint8_t>();
-		color.b = json.at("B").get<std::uint8_t>();
 
-		if (json.contains("A")) color.a = json.at("A").get<std::uint8_t>();
-		else color.a = 255;
+		json = { {"R", color.m_R}, {"G", color.m_G}, {"B", color.m_B}, {"A", color.m_A} };
 	}
-	catch (const std::exception& e)
-	{
-		Assert(false, std::format("Tried to deserialize color:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
-	}
-}
-
-	
-void to_json(Json& json, const Color& color)
-{
-	std::optional<std::string> maybeConstant = JsonConstants::TryGetColorConstant(color);
-	if (maybeConstant.has_value())
-	{
-		json = maybeConstant.value();
-		return;
-	}
-
-	json= { {"R", color.r}, {"G", color.g}, {"B", color.b}, {"A", color.a}};
 }
 
 void from_json(const Json& json, ColorGradientKeyFrame& gradientFrame)
@@ -186,7 +189,7 @@ void from_json(const Json& json, ColorGradientKeyFrame& gradientFrame)
 
 	try
 	{
-		gradientFrame = ColorGradientKeyFrame(json.at(COLOR_PROPERTY).get<Color>(),
+		gradientFrame = ColorGradientKeyFrame(json.at(COLOR_PROPERTY).get<Utils::Color>(),
 			json.at(LOCATION_PROPERTY).get<float>());
 	}
 	catch (const std::exception& e)
@@ -224,7 +227,7 @@ void from_json(const Json& json, TextChar& textChar)
 
 	try
 	{
-		textChar = TextChar(json.at(COLOR_PROPERTY).get<Color>(), json.at(CHAR_PROPERTY).get<char>());
+		textChar = TextChar(json.at(COLOR_PROPERTY).get<Utils::Color>(), json.at(CHAR_PROPERTY).get<char>());
 	}
 	catch (const std::exception& e)
 	{
@@ -247,7 +250,7 @@ void from_json(const Json& json, TextCharArrayPosition& textChar)
 	try
 	{
 		textChar = TextCharArrayPosition(json.at(POS_PROPERTY).get<Array2DPosition>(),
-			TextChar(json.at(COLOR_PROPERTY).get<Color>(), json.at(CHAR_PROPERTY).get<std::string>()[0]));
+			TextChar(json.at(COLOR_PROPERTY).get<Utils::Color>(), json.at(CHAR_PROPERTY).get<std::string>()[0]));
 	}
 	catch (const std::exception& e)
 	{

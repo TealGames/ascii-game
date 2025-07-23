@@ -4,7 +4,8 @@
 #include <functional>
 #include <cstdint>
 #include "Core/Input/InputManager.hpp"
-#include "raylib.h"
+#include "ECS/Component/Component.hpp"
+//#include "raylib.h"
 #include "Core/UI/UIRect.hpp"
 #include "Core/UI/UIStyle.hpp"
 

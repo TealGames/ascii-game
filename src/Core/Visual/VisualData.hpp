@@ -1,12 +1,6 @@
 #pragma once
 #include <vector>
-#include <ranges>
-#include <utility>
 #include "Core/Visual/TextArray.hpp"
-#include "Core/Rendering/FragmentedTextArray.hpp"
-#include <cstdint>
-#include <optional>
-#include "StaticGlobals.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/Data/Vec2.hpp"
 #include "Utils/Data/NormalizedPosition.hpp" 

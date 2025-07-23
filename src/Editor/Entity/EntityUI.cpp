@@ -6,6 +6,10 @@
 #include "Editor/EditorStyles.hpp"
 #include "Core/Input/InputManager.hpp"
 #include "Core/UIElementTemplates.hpp"
+#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "ECS/Component/Types/UI/UILayout.hpp"
+#include "ECS/Component/Types/UI/UIPanel.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 20;
 constexpr float ACTIVE_TOGGLE_WIDTH = 0.1;

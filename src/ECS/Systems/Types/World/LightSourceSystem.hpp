@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <limits>
-#include "raylib.h"
+//#include "raylib.h"
 #include "ECS/Component/Component.hpp"
 #include "ECS/Systems/MultiBodySystem.hpp"
 #include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
@@ -49,22 +49,14 @@ namespace ECS
 		/// <param name="filterColor"></param>
 		/// <param name="multiplier"></param>
 		/// <returns></returns>
-		Color GetColorFromMultiplier(const Color& originalColor, const Color& filterColor, const float& multiplier) const;
-
-		/// <summary>
-		/// This will calculate a new color by combining the fractional color with the original color
-		/// </summary>
-		/// <param name="originalColor"></param>
-		/// <param name="filterColor"></param>
-		/// <returns></returns>
-		Color ApplyColorFilter(const Color& originalColor, const Utils::Point3D& fractionalColor, const float& multiplier) const;
+		Utils::Color GetColorFromMultiplier(const Utils::Color& originalColor, const Utils::Color& filterColor, const float& multiplier) const;
 
 		void CreateLightingForPoint(LightSourceData& data, const WorldPosition& centerPos,
 			FragmentedTextBuffer& buffer, bool displayLightLevels);
 
 		void RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
-		Color CalculateNewColor(LightSourceData& data, const TextBufferCharPosition& bufferPos, const float& distance, 
+		Utils::Color CalculateNewColor(LightSourceData& data, const TextBufferCharPosition& bufferPos, const float& distance, 
 			std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:

@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "raylib.h"
+//#include "raylib.h"
 #include "Core/Visual/TextArray.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/RaylibUtils.hpp"
@@ -9,9 +9,9 @@
 #include "Core/Asset/FontAsset.hpp"
 
 TextChar::TextChar() :
-	TextChar(Color()) {}
+	TextChar(Utils::Color()) {}
 
-TextChar::TextChar(const Color& color, const char& textChar) :
+TextChar::TextChar(const Utils::Color& color, const char& textChar) :
 	m_Color(color), m_Char{ textChar, '\0'} {}
 
 bool TextChar::IsEmpty() const
@@ -33,13 +33,13 @@ Vec2 TextChar::GetWorldSize(const WorldFontProperties& font) const
 
 bool TextChar::operator==(const TextChar& other) const
 {
-	return RaylibUtils::ColorEqual(m_Color, other.m_Color) && m_Char == other.m_Char;
+	return m_Color== other.m_Color && m_Char == other.m_Char;
 }
 
 std::string TextChar::ToString() const
 {
 	return std::format("[Color: {} C:{}]",
-		RaylibUtils::ToString(m_Color), m_Char[0] == EMPTY_CHAR_PLACEHOLDER ? "EMPTY" : Utils::ToString(m_Char[0]));
+		m_Color.ToString(), m_Char[0] == EMPTY_CHAR_PLACEHOLDER ? "EMPTY" : Utils::ToString(m_Char[0]));
 }
 
 std::string ToString(const std::vector<std::vector<TextChar>>& textChars)
@@ -83,17 +83,17 @@ std::string TextCharArrayPosition::ToString() const
 		m_RowColPos.ToString(), m_Text.ToString());
 }
 
-ColorPosition::ColorPosition(const Array2DPosition& pos, const Color& color) :
+ColorPosition::ColorPosition(const Array2DPosition& pos, const Utils::Color& color) :
 	m_RowColPos(pos), m_Color(color) {}
 
 std::string ColorPosition::ToString() const
 {
 	return std::format("[Pos:{}, Color:{}]",
-		m_RowColPos.ToString(), RaylibUtils::ToString(m_Color));
+		m_RowColPos.ToString(), m_Color.ToString());
 }
 
 TextArray::TextArray() :
-	TextArray(0, 0, std::vector<std::vector<TextChar>>{ {TextChar(Color(), EMPTY_CHAR_PLACEHOLDER)} }) {}
+	TextArray(0, 0, std::vector<std::vector<TextChar>>{ {TextChar(Utils::Color(), EMPTY_CHAR_PLACEHOLDER)} }) {}
 
 TextArray::TextArray(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars) :
 	m_width(width), m_height(height), m_TextArray(chars)
@@ -118,7 +118,7 @@ TextArray::TextArray(const int& width, const int& height, const TextChar& duplic
 }
 
 TextArray::TextArray(const int& width, const int& height,
-	const Color& color, const std::vector<std::vector<char>>& chars) :
+	const Utils::Color& color, const std::vector<std::vector<char>>& chars) :
 	TextArray(width, height, CreateBufferOfChar(color, chars)) {}
 
 TextArray::TextArray(const TextArray& other) :
@@ -153,7 +153,7 @@ std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const int& widt
 	return chars;
 }
 
-std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const Color& color,
+std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const Utils::Color& color,
 	const std::vector<std::vector<char>>& chars) const
 {
 	std::vector<std::vector<TextChar>> result = {};
@@ -220,11 +220,11 @@ void TextArray::SetAt(const Array2DPosition& rowColPos, const char& newChar)
 	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].SetChar(newChar);
 }
 
-void TextArray::SetAt(const Array2DPosition& rowColPos, const Color& newColor)
+void TextArray::SetAt(const Array2DPosition& rowColPos, const Utils::Color& newColor)
 {
 	if (!Assert(IsValidPos(rowColPos), 
 		std::format("Tried to set the color: {} at INVALID row col: {} of full buffer: {}",
-		RaylibUtils::ToString(newColor), rowColPos.ToString(), ToString()))) return;
+		newColor.ToString(), rowColPos.ToString(), ToString()))) return;
 
 	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].m_Color = newColor;
 }
@@ -338,7 +338,7 @@ std::string TextArray::ToString(const std::vector<std::vector<TextChar>>& buffer
 
 			if (convertAll)
 			{
-				fullStr += RaylibUtils::ToString(buffer[r][c].m_Color) + " ";
+				fullStr += buffer[r][c].m_Color.ToString() + " ";
 			}
 			/*if (currentChar == EMPTY_CHAR_PLACEHOLDER) fullStr += " ";
 			else fullStr += currentChar;*/
