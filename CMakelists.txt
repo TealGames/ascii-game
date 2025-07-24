@@ -34,6 +34,7 @@ add_subdirectory("dependencies/glad")
 add_subdirectory("dependencies/json")
 add_subdirectory("dependencies/entt")
 add_subdirectory("dependencies/raylib")
+add_subdirectory("dependencies/glm")
 #add_subdirectory("dependencies/PLplot")
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
@@ -64,4 +65,4 @@ if (MSVC)
 	#this line removes console from build
 	#set_target_properties("${CMAKE_PROJECT_NAME}" PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS/ENTRY:mainCRTStartup")
 endif()
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad nlohmann_json::nlohmann_json EnTT raylib)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad glm nlohmann_json::nlohmann_json EnTT raylib)
