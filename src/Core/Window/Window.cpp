@@ -3,6 +3,8 @@
 #include <format>
 #include "Utils/HelperFunctions.hpp"
 
+static constexpr bool DEFAULT_VSYNC_ENABLED = true;
+
 namespace Core
 {
 	bool WindowPlatformCallbacks::HasAllValidCallbacks()
@@ -15,20 +17,22 @@ namespace Core
 	Window::Window(const int width, const int height, const Vec2Int aspectRatioConstraint, const char* windowName, const bool hasNativeState,
 		const WindowPlatformCallbacks& callbacks, const UpdateCallbackType& updateCallback)
 		: m_platformCallbacks(callbacks), m_nativeState(nullptr), m_updateCallback(updateCallback), 
-		m_size(width, height), m_windowName(windowName), m_aspectRatioConstraint(aspectRatioConstraint)
+		m_size(width, height), m_windowName(windowName), m_aspectRatioConstraint(aspectRatioConstraint), m_vsyncEnabled(false)
 	{
-		const BasicResult<bool> windowResult = Init(width, height, windowName);
-		if (windowResult.HasError())
+		bool success = Init(width, height, windowName);
+		if (!success)
 		{
 			LogError(std::format("Failed to init window named:{} after executing init callback", windowName));
 			return;
 		}
-
-		if (hasNativeState&& m_nativeState == nullptr)
+		if (hasNativeState && m_nativeState == nullptr)
 		{
 			LogError("Attempted to initialize window, but native state is null when window constructor has native state TRUE"
 				"after invoking framework specific window init callback");
+			return;
 		}
+
+		SetVSync(DEFAULT_VSYNC_ENABLED);
 	}
 
 	Window::~Window()
@@ -57,7 +61,7 @@ namespace Core
 			m_updateCallback(*this);
 	}
 
-	BasicResult<bool> Window::Init(const int width, const int height, const char* windowName)
+	bool Window::Init(const int width, const int height, const char* windowName)
 	{
 		return m_platformCallbacks.m_InitFunc(*this, width, height, windowName);
 	}
@@ -71,8 +75,8 @@ namespace Core
 	}
 	void Window::SetSize(const int width, const int height)
 	{
-		m_platformCallbacks.m_ResizeFunc(*this, width, height);
 		m_size = Vec2Int(width, height);
+		m_platformCallbacks.m_ResizeFunc(*this, width, height);
 		m_OnResize.Invoke(Vec2Int(width, height));
 	}
 
@@ -100,6 +104,18 @@ namespace Core
 	Vec2Int Window::GetAspectRatioConstraint() const
 	{
 		return m_aspectRatioConstraint;
+	}
+
+	void Window::SetVSync(bool enableVsync)
+	{
+		if (enableVsync == m_vsyncEnabled) return;
+
+		m_vsyncEnabled = enableVsync;
+		m_platformCallbacks.m_SetVsyncFunc(*this, enableVsync);
+	}
+	bool Window::IsVsyncEnabled() const
+	{
+		return m_vsyncEnabled;
 	}
 
 	WindowViewportRect Window::CalculateViewportRect(const int newWidth, const int newHeight) const

@@ -9,7 +9,7 @@ namespace Core
 		return Window(width, height, constrainedAspectRatio, windowName, false, WindowPlatformCallbacks
 			{
 				//Init
-				[](Window& window, const int width, const int height, const char* windowName) -> BasicResult<bool>
+				[](Window& window, const int width, const int height, const char* windowName) -> bool
 				{
 					InitWindow(width, height, windowName);
 					//TODO: maybe fps can be a core part of window init args?

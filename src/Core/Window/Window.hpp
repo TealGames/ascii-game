@@ -1,6 +1,5 @@
 #pragma once
 #include <functional>
-#include "Utils/Data/Result.hpp"
 #include <type_traits>
 #include <utility>
 #include "Utils/Data/Vec2Int.hpp"
@@ -11,9 +10,10 @@ namespace Core
 	class Window;
 	struct WindowPlatformCallbacks
 	{
-		std::function<BasicResult<bool>(Window&, int,int, const char*)> m_InitFunc;
+		std::function<bool(Window&, int,int, const char*)> m_InitFunc;
 		std::function<void(Window&)> m_UpdateFunc;
 		std::function<void(Window&, int, int)> m_ResizeFunc;
+		std::function<void(Window&, bool)> m_SetVsyncFunc;
 		std::function<bool(Window&)> m_IsActiveFunc;
 		std::function<void(Window&)> m_ShutdownFunc;
 
@@ -42,14 +42,14 @@ namespace Core
 		Vec2Int m_size;
 		Vec2Int m_aspectRatioConstraint;
 		const char* m_windowName;
-
+		bool m_vsyncEnabled;
 	public:
 		static const Vec2Int NO_ASPECT_RATIO_CONSTRAINT;
 
 		Event<void, Vec2Int> m_OnResize;
 
 	private:
-		BasicResult<bool> Init(const int width, const int height, const char* windowName);
+		bool Init(const int width, const int height, const char* windowName);
 	public:
 		Window(const int width, const int height, const Vec2Int aspectRatioConstraint, const char* windowName, const bool hasNativeState,
 			const WindowPlatformCallbacks& callbacks, const UpdateCallbackType& updateCallback);
@@ -93,6 +93,15 @@ namespace Core
 		bool HasAspectRatioConstraint() const;
 		void SetAspectRatioConstraint(const Vec2Int constraint);
 		Vec2Int GetAspectRatioConstraint() const;
+
+		/// <summary>
+		/// Sets vertical syncrhonization. 
+		/// If true -> will wait one refresh frame before swapping front/back buffers to render to screen
+		/// If enabled can prevent screen tearing but may result in one frame input lag
+		/// </summary>
+		/// <param name="enableVsync"></param>
+		void SetVSync(bool enableVsync);
+		bool IsVsyncEnabled() const;
 
 		WindowViewportRect CalculateViewportRect(const int newWidth, const int newHeight) const;
 
