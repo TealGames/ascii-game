@@ -35,6 +35,7 @@
 #include "Core/EngineState.hpp"
 #include "Core/GizmoOverlay.hpp"
 #include "Core/Window/WindowManager.hpp"
+#include "Core/Rendering/GraphicsManager.hpp"
 #include "Core/FrameworkManager.hpp"
 
 namespace Core
@@ -57,6 +58,7 @@ namespace Core
 		UIHierarchy m_uiHierarchy;
 		PopupUIManager m_popupManager;
 		Rendering::Renderer m_renderer;
+		Rendering::GraphicsManager m_graphicsManager;
 
 		//TODO: there has to be a way that does not involve us writing every possible system
 		ECS::TransformSystem m_transformSystem;

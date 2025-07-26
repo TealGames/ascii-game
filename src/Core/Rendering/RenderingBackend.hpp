@@ -1,6 +1,8 @@
 #pragma once
 #include "Utils/Data/ScreenPosition.hpp"
 #include "Utils/Data/Color.hpp"
+#include "Core/Rendering/Shader/Shader.hpp"
+#include "Core/Rendering/Buffers.hpp"
 
 namespace Rendering
 {
@@ -23,5 +25,7 @@ namespace Rendering
 
 		void DrawLine(const ScreenPosition& startPos, const ScreenPosition& endPos, const float thickness, const Utils::Color color);
 		void DrawRectangleLine(const ScreenPosition& pos, const float thickness, const Vec2& size, const Utils::Color color);
+
+		void DrawBatch(const Shader* shader, const Vertex* vertices, const size_t vertexSize, const IndexType* indices, const size_t indexSize);
 	}
 }

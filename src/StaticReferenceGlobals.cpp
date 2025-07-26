@@ -5,6 +5,7 @@
 #include "Utils/RaylibUtils.hpp"
 
 static const char* DEFAULT_FONT_PATH = "fonts/default.ttf";
+static const char* DEFAULT_FONT_PATH = "fonts/default.ttf";
 static AssetManagement::AssetManager* AssetManager;
 static const char* RAYLIB_DEFAULT_FONT_ASSET_NAME = "RaylibDefaultFont";
 

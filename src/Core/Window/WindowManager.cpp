@@ -4,16 +4,16 @@
 #include <format>
 
 #if defined(GLFW)
-#include "Core/Window/GLFW/GlfwWindow.hpp"
+#include "Platform/GLFW/GlfwWindow.hpp"
 #endif 
 
 #if defined(RAYLIB)
-#include "Core/Window/Raylib/RaylibWindow.hpp"
+#include "Platform/Raylib/RaylibWindow.hpp"
 #endif 
 
 namespace Core
 {
-	WindowManager::WindowManager() : m_windows(), m_windowLimit(-1)
+	WindowManager::WindowManager() : m_windows(), m_windowLimit(-1), m_OnWindowCreated(), m_OnWindowUpdated()
 	{ 
 #if defined(RAYLIB)
 		m_windowLimit = RAYLIB_WINDOW_LIMIT;
@@ -38,7 +38,9 @@ namespace Core
 			"is not supported or no active frameworks were selected", width, height, name));
 		return nullptr;
 #endif
-		return &(m_windows.back());
+		Window* windowCreated = &(m_windows.back());;
+		m_OnWindowCreated.Invoke(windowCreated);
+		return windowCreated;
 	}
 
 	void WindowManager::SetCurrentContextWindow(Window& window)
@@ -67,6 +69,7 @@ namespace Core
 			}
 
 			SetCurrentContextWindow(window);
+			m_OnWindowUpdated.Invoke(&window);
 			window.Update();
 		}
 		if (allWindowsInactiveFlag != nullptr)

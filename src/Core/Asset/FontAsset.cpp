@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Core/Asset/FontAsset.hpp"
 #include "Core/Analyzation/Debug.hpp"
-#include "Utils/RaylibUtils.hpp"
+//#include "Utils/RaylibUtils.hpp"
 #include "Utils/IOHandler.hpp"
 
 const std::string FontAsset::EXTENSION = ".ttf";

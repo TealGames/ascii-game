@@ -2,6 +2,7 @@
 #include "Core/Asset/Asset.hpp"
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <type_traits>
 #include <functional>
 #include <unordered_set>
@@ -47,6 +48,11 @@ namespace AssetManagement
 		/// [ASSET EXTENSION, ASSET PATH (relative to parent asset path)]
 		/// </summary>
 		std::unordered_map<std::string, std::unordered_set<std::string>> m_allFiles;
+		/// <summary>
+		/// The assets that are hidden and cannot be retrieved from asset lookup functions
+		/// and if set while registering assets, will be skipped when creating asset wrappers
+		/// </summary>
+		static std::unordered_set<std::string> m_hiddenAssetPaths;
 	public:
 
 	private:
@@ -175,6 +181,25 @@ namespace AssetManagement
 		~AssetManager();
 
 		void Init();
+		
+		/// <summary>
+		/// Note: the path has to be an asset parent directory path
+		/// </summary>
+		/// <param name="path"></param>
+		/// <param name="doHide"></param>
+		static void SetAssetHiddenStatus(const std::filesystem::path& path, const bool doHide);
+		/// <summary>
+		/// Note: path has to be valid asset parent directory path
+		/// </summary>
+		/// <param name="path"></param>
+		/// <returns></returns>
+		bool IsAssetHiddenFromPath(const std::filesystem::path& path) const;
+		/// <summary>
+		/// Note: this version requires iteration through all assets. Use path version instead.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <returns></returns>
+		bool IsAssetHidden(const std::string& name) const;
 
 		template<typename T>
 		requires IsAssetType<T>
@@ -191,10 +216,8 @@ namespace AssetManagement
 			{
 				if (!std::filesystem::is_regular_file(file)) continue;
 
-				//TODO: identity asset type from extension now int is placeholder
 				assetRelPath = GetRelativeAssetPath(file.path()).string();
-
-				//We add each file based on its extension to the list
+				if (IsAssetHiddenFromPath(assetRelPath)) continue;
 
 				if (!m_assets.empty() && m_assets.find(assetRelPath) != m_assets.end())
 					continue;
@@ -270,10 +293,10 @@ namespace AssetManagement
 		/// </summary>
 		/// <param name="directoryFile"></param>
 		/// <returns></returns>
-		std::filesystem::path CreateAssetPath(const std::filesystem::path& directoryFile) const;
-		std::filesystem::path GetRelativeAssetPath(const std::filesystem::path& longerPath) const;
-		std::filesystem::path GetAbsoluteAssetPath(const std::filesystem::path& assetRelativePath) const;
-		bool IsValidAssetPath(const std::filesystem::path& relativeAssetPath) const;
+		static std::filesystem::path CreateAssetPath(const std::filesystem::path& directoryFile);
+		static std::filesystem::path GetRelativeAssetPath(const std::filesystem::path& longerPath);
+		static std::filesystem::path GetAbsoluteAssetPath(const std::filesystem::path& assetRelativePath);
+		static bool IsValidAssetPath(const std::filesystem::path& relativeAssetPath);
 		/// <summary>
 		/// This is most used for assets that do not have an asset type associated with them
 		/// </summary>
@@ -301,6 +324,8 @@ namespace AssetManagement
 		/// <param name="name"></param>
 		/// <returns></returns>
 		Asset* TryGetAssetMutable(const std::string& name);
+		Asset* TryGetAssetFromLiteralMutable(const char* name);
+
 		Asset* TryGetAssetFromPathMutable(const std::filesystem::path& path);
 		Asset* TryGetRuntimeAssetMutable(const std::string& name);
 
@@ -320,6 +345,16 @@ namespace AssetManagement
 
 			return TryConvertAssetToTypeMutable<T>(maybeAsset);
 		}
+		template<typename T>
+		requires IsAssetType<T>
+		T* TryGetTypeAssetFromLiteralMutable(const char* name)
+		{
+			Asset* maybeAsset = TryGetAssetFromLiteralMutable(name);
+			if (maybeAsset == nullptr) return nullptr;
+
+			return TryConvertAssetToTypeMutable<T>(maybeAsset);
+		}
+
 		template<typename T>
 		requires IsAssetType<T>
 		T* TryGetTypeAssetFromPathMutable(const std::filesystem::path& path)

@@ -30,10 +30,6 @@ namespace IO
 		LogError(std::format("Comaping extension:{} and {}", path.extension().string(), extension.extension().string()));
 		return path.extension() == extension.extension();
 	}
-	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::string& extension)
-	{
-		return path.extension().string() == extension;
-	}
 
 	bool DoesDirectoryContainDirectory(const std::filesystem::path& parent, const std::filesystem::path& child)
 	{
@@ -166,6 +162,11 @@ namespace IO
 
 	bool TryExecuteOnFileByLine(const std::filesystem::path& path, const FileLineAction& action)
 	{
+		if (!action)
+		{
+			LogError(std::format("Attemtped to execute on file at path:{} by line with action that is NULL", path.string()));
+			return false;
+		}
 		const std::filesystem::path cleanedPath = CleanPath(path);
 
 		std::ifstream file(cleanedPath);
@@ -177,7 +178,7 @@ namespace IO
 		std::string line = "";
 		while (std::getline(file, line))
 		{
-			if (action) action(&line);
+			action(&line);
 		}
 		return true;
 	}

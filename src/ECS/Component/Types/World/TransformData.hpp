@@ -1,6 +1,9 @@
 #pragma once
 #include "Utils/Data/Vec2.hpp"
 #include "ECS/Component/Component.hpp"
+#include "glm/mat4x4.hpp"
+#include "glm/vec3.hpp"
+#include <glm/gtc/quaternion.hpp>
 
 //Since negative positions are not allowed
 const Vec2 NULL_POS = Vec2{ -1, -1 };
@@ -8,11 +11,12 @@ const Vec2 NULL_POS = Vec2{ -1, -1 };
 class TransformData : public Component
 {
 private:
-	Vec2 m_localPos;
+	glm::vec3 m_localPos;
 	//Vec2 m_lastLocalPos;
 	//Vec2 m_localPosLastFrame;
 
-	Vec2 m_localScale;
+	glm::vec3 m_localScale;
+	glm::quat m_localRotation;
 public:
 
 private:
@@ -40,6 +44,9 @@ public:
 	Vec2 GetLocalScale() const;
 	Vec2 GetGlobalScale() const;
 	void SetLocalScale(const Vec2 scale);
+
+	glm::mat4 GetLocalModelMatrix() const;
+	glm::mat4 GetWorldModelMatrix() const;
 
 	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;

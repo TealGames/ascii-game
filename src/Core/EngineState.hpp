@@ -1,4 +1,3 @@
-#pragma once
 #include <cstdint>
 
 enum class ExecutionState : std::uint8_t
@@ -15,7 +14,18 @@ enum class UpdateStatusCode : std::uint8_t
 	Error		= 2,
 };
 
-class Window;
+
+namespace Core { class Window; }
+namespace Rendering
+{
+	class GraphicsManager;
+	struct GraphicsContext
+	{
+		Core::Window* m_Window = nullptr;
+		const GraphicsManager* m_GraphicsManager = nullptr;
+	};
+}
+
 class EngineState
 {
 private:
@@ -23,7 +33,7 @@ private:
 
 public:
 	UpdateStatusCode m_LastUpdateStatus;
-	Window* m_Window;
+	Rendering::GraphicsContext m_GraphicsContext;
 
 private:
 public:
@@ -31,5 +41,7 @@ public:
 
 	void SetExecutionState(ExecutionState newState);
 	ExecutionState GetExecutionState() const;
+
+	void SetRenderingContext(const Rendering::GraphicsContext& context);
 };
 

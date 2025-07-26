@@ -1,0 +1,33 @@
+#include "Core/Rendering/GraphicsManager.hpp"
+#include "Core/Asset/AssetManager.hpp"
+#include "Core/Asset/ShaderAsset.hpp"
+
+namespace Rendering
+{
+	static const std::filesystem::path SHADERS_FOLDER = "shaders";
+	static const const char* DEFAULT_SHADER_NAME = "default";
+
+
+	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager) 
+		: m_assetManager(&assetManager), m_defaultShader(nullptr), m_shaders() {}
+
+	void GraphicsManager::LoadAllShaders()
+	{
+		m_defaultShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(DEFAULT_SHADER_NAME);
+		for (auto& shader : m_assetManager->GetAssetsOfTypeMutable<ShaderAsset>(SHADERS_FOLDER))
+		{
+			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShader());
+		}
+	}
+
+	const Shader* GraphicsManager::GetDefaultShader() const
+	{
+		return &m_defaultShader->GetShader();
+	}
+	const Shader* GraphicsManager::TryGetShader(const std::string& name) const
+	{
+		auto it = m_shaders.find(name.c_str());
+		if (it == m_shaders.end()) return nullptr;
+		return it->second;
+	}
+}

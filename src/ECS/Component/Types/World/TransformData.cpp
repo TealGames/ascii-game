@@ -5,6 +5,7 @@
 #include "Core/Analyzation/Debug.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Core/Serialization/JsonSerializers.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 TransformData::TransformData() : TransformData(Vec2{}) {}
 
@@ -82,6 +83,22 @@ Vec2 TransformData::GetGlobalScale() const
 void TransformData::SetLocalScale(const Vec2 scale)
 {
 	m_localScale = scale;
+}
+
+glm::mat4 TransformData::GetLocalModelMatrix() const
+{
+	glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), m_localScale);
+	glm::mat4 rotationMatrix = glm::mat4_cast(m_localRotation);
+	glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), m_localPos);
+
+	glm::mat4 modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+}
+glm::mat4 TransformData::GetWorldModelMatrix() const
+{
+	const EntityData* parent = GetEntity().GetParent();
+	if (parent == nullptr) return GetLocalModelMatrix();
+
+	return parent->GetTransform().GetWorldModelMatrix() * GetLocalModelMatrix();
 }
 
 void TransformData::InitFields()

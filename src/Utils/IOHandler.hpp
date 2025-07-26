@@ -9,7 +9,6 @@ namespace IO
 	std::filesystem::path CleanPath(const std::filesystem::path& path);
 	bool DoesPathExist(const std::filesystem::path& path);
 	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::filesystem::path& extension);
-	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::string& extension);
 
 	bool DoesDirectoryContainDirectory(const std::filesystem::path& parent, const std::filesystem::path& child);
 	std::optional<std::filesystem::path> GetFirstDirectory(const std::filesystem::path& path);

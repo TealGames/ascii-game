@@ -166,6 +166,7 @@ namespace Core
 		m_uiHierarchy(m_sceneManager.m_GlobalEntityManager, Vec2Int{SCREEN_WIDTH, SCREEN_HEIGHT}),
 		m_popupManager(m_uiHierarchy),
 		m_renderer(),
+		m_graphicsManager(m_assetManager),
 		m_transformSystem(),
 		m_entityRendererSystem(),
 		m_lightSystem(m_entityRendererSystem),
@@ -199,8 +200,11 @@ namespace Core
 		}
 		EngineLog("INITIALIZED ALL FRAMEWORKS");
 
-		Window* createdWindow = m_windowManager.CreateNewWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_ASPECT_RATIO, WINDOW_NAME, 
-			[this](Window& window)-> void {UpdateWindow(window); });
+		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void 
+			{m_engineState.SetRenderingContext(Rendering::GraphicsContext{ window, &m_graphicsManager }); });
+		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void {UpdateWindow(*window); });
+
+		Window* createdWindow = m_windowManager.CreateNewWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_ASPECT_RATIO, WINDOW_NAME, nullptr);
 
 		if (createdWindow==nullptr || !createdWindow->IsValid())
 		{
@@ -209,7 +213,7 @@ namespace Core
 		}
 		EngineLog("CREATED WINDOW");
 
-		m_renderer.InitBackend();
+		m_renderer.Init();
 
 		//Note: input relies on assets, and 
 		//asset manager needs to setup assets AFTER static global asset ref is set
@@ -231,8 +235,10 @@ namespace Core
 		m_uiSystemExecutor.Init();
 		GlobalEntityCreator::CreateGlobals(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
 
+
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
+		m_graphicsManager.LoadAllShaders();
 		m_sceneManager.LoadAllScenes();
 		//TODO: find a way to do this more procedurally
 		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {StartAll(); });

@@ -7,14 +7,21 @@ class Asset
 {
 private:
 	std::string m_name;
-	std::filesystem::path m_path;
+	std::filesystem::path m_absolutePath;
 	bool m_dependenciesSet;
 
 public:
+	static constexpr char WORD_SEPARATOR = '_';
 
 private:
 protected:
 	void MarkDependenciesSet();
+	/// <summary>
+	/// Overrides the default assetname generated from the asset file name to a custom one.
+	/// Note: this should rarely be used as it can mess with looking up asset by name.
+	/// </summary>
+	/// <param name="name"></param>
+	void OverrideAssetName(const std::string& name);
 
 public:
 	Asset(const std::filesystem::path& path, const bool hasDependencies);
@@ -22,7 +29,7 @@ public:
 
 	static std::string ExtractNameFromFile(const std::filesystem::path& path);
 
-	std::string GetName() const;
+	const std::string& GetName() const;
 
 	std::filesystem::path GetPathCopy() const;
 	const std::filesystem::path& GetPath() const;

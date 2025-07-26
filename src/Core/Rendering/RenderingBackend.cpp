@@ -3,7 +3,7 @@
 #include "Core/Analyzation/Debug.hpp"
 
 #ifdef OPENGL
-#include "glad/glad.h"
+#include "Utils/OpenGlUtils.hpp"
 #endif
 
 #ifdef GLFW
@@ -111,6 +111,13 @@ namespace Rendering
 		{
 #if defined(RAYLIB)
 			DrawRectangleLinesEx(Rectangle{pos.m_X, pos.m_Y, size.m_X, size.m_Y }, thickness, RaylibUtils::ToRaylibColor(color));
+#endif
+		}
+
+		void DrawBatch(const Shader* shader, const Vertex* vertices, const size_t vertexSize, const IndexType* indices, const size_t indexSize)
+		{
+#if defined(OPENGL)
+
 #endif
 		}
 	}

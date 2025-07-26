@@ -9,11 +9,13 @@
 #include "Core/Asset/TextureAsset.hpp"
 #include "Utils/Print.hpp"
 
-static bool THROW_ON_UNKNWON_ASSET = false;
+static constexpr bool THROW_ON_UNKNWON_ASSET = false;
+static constexpr bool PREVENT_HIDDEN_ASSET_LOOKUP = true;
 
 namespace AssetManagement
 {
 	std::filesystem::path AssetManager::ASSET_PATH = ASSET_PARENT_PATH "assets";
+	std::unordered_set<std::string> AssetManager::m_hiddenAssetPaths = {};
 
 	AssetManager::AssetManager() : m_assets(), m_runtimeAssets(), m_allFiles() 
 	{
@@ -49,6 +51,30 @@ namespace AssetManagement
 				return false;
 		}
 		return true;
+	}
+
+	void AssetManager::SetAssetHiddenStatus(const std::filesystem::path& path, const bool doHide)
+	{
+		if (!Assert(IsValidAssetPath(path), std::format("Attempted to set asset hidden status with path:{} "
+			"but it is not a valid asset path", path.string())))
+			return;
+
+		if (doHide) m_hiddenAssetPaths.insert(path.string());
+		else m_hiddenAssetPaths.erase(path.string());
+	}
+	bool AssetManager::IsAssetHiddenFromPath(const std::filesystem::path& path) const
+	{
+		if (m_hiddenAssetPaths.empty()) return false;
+		return m_hiddenAssetPaths.find(path.string()) != m_hiddenAssetPaths.end();
+	}
+	bool AssetManager::IsAssetHidden(const std::string& name) const
+	{
+		for (const auto& relPath : m_hiddenAssetPaths)
+		{
+			if (std::filesystem::path(relPath).stem() == name)
+				return true;
+		}
+		return false;
 	}
 
 	/// <summary>
@@ -99,23 +125,23 @@ namespace AssetManagement
 		return createdAsset;
 	}
 
-	std::filesystem::path AssetManager::CreateAssetPath(const std::filesystem::path& directoryFile) const
+	std::filesystem::path AssetManager::CreateAssetPath(const std::filesystem::path& directoryFile)
 	{
 		return ASSET_PATH / directoryFile;
 	}
-	std::filesystem::path AssetManager::GetRelativeAssetPath(const std::filesystem::path& longerPath) const
+	std::filesystem::path AssetManager::GetRelativeAssetPath(const std::filesystem::path& longerPath)
 	{
 		//Note: yes absolute path is redundant, but just in case longer path is already relative to asset, we 
 		//can't really figure that out easily, so do it just in cadse
 		//LogWarning(std::format("ASSET PATH:{} TARGET PATH:{} NEW PATH:{}", ASSET_PATH.string(), longerPath.string(), std::filesystem::relative(longerPath, ASSET_PATH).string()));
 		return std::filesystem::relative(longerPath, ASSET_PATH);
 	}
-	std::filesystem::path AssetManager::GetAbsoluteAssetPath(const std::filesystem::path& path) const
+	std::filesystem::path AssetManager::GetAbsoluteAssetPath(const std::filesystem::path& path)
 	{
 		return std::filesystem::current_path() / ASSET_PATH / path;
 	}
 
-	bool AssetManager::IsValidAssetPath(const std::filesystem::path& relativeAssetPath) const
+	bool AssetManager::IsValidAssetPath(const std::filesystem::path& relativeAssetPath)
 	{
 		return IO::DoesPathExist(GetAbsoluteAssetPath(relativeAssetPath));
 	}
@@ -202,11 +228,27 @@ namespace AssetManagement
 		}
 		return nullptr;
 	}
+	Asset* AssetManager::TryGetAssetFromLiteralMutable(const char* name)
+	{
+		for (const auto& asset : m_assets)
+		{
+			if (asset.second->GetName().c_str() == name)
+				return asset.second;
+		}
+		return nullptr;
+	}
+
 	Asset* AssetManager::TryGetAssetFromPathMutable(const std::filesystem::path& relPath)
 	{
 		if (!Assert(IsValidAssetPath(relPath), std::format("Attempted to get asset from path:{} MUTABLE"
 			"but it is not a valid asset path", relPath.string())))
 			return nullptr;
+
+		if (PREVENT_HIDDEN_ASSET_LOOKUP && IsAssetHiddenFromPath(relPath))
+		{
+			LogWarning(std::format("Attempted to get asset by path:{} but this asset was marked as hidden", relPath.string()));
+			return nullptr;
+		}
 
 		auto assetIt = m_assets.find(relPath.string());
 		if (assetIt == m_assets.end())

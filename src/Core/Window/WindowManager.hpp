@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Window/Window.hpp"
 #include <vector>
-#include <functional>
+#include "Utils/Data/Event.hpp"
 
 namespace Core
 {
@@ -11,6 +11,8 @@ namespace Core
 		size_t m_windowLimit;
 		std::vector<Window> m_windows;
 	public:
+		Event<void, Window*> m_OnWindowCreated;
+		Event<void, Window*> m_OnWindowUpdated;
 
 	private:
 		void SetCurrentContextWindow(Window& window);
