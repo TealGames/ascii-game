@@ -2,7 +2,7 @@
 #include "ECS/Systems/Types/World/PlayerSystem.hpp"
 #include "ECS/Component/Types/World/PhysicsBodyData.hpp"
 #include "ECS/Component/Types/World/CameraData.hpp"
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "raylib.h"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
@@ -55,7 +55,7 @@ namespace ECS
 					if (!Assert(camera != nullptr, std::format("Tried to get camera to convert screen "
 						"to world point for mouse position cheat but it is null"))) return;*/
 
-					WorldPosition worldPos = mainCamera.ScreenToWorldPosition(m_inputManager.GetMousePosition());
+					WorldPosition3D worldPos = mainCamera.ScreenToWorldPosition(m_inputManager.GetMousePosition());
 					player.GetEntityMutable().GetTransformMutable().SetLocalPos(worldPos);
 				}
 #endif

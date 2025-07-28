@@ -80,7 +80,7 @@ namespace GlobalEntityCreator
 
 		ColorGradient particleGradient = ColorGradient(Utils::COLOR_RED, Utils::COLOR_BLUE);
 		playerEntity.AddComponent<ParticleEmitterData>(ParticleEmitterData('W', FloatRange(1, 11), particleGradient, fontSettings,
-			RenderLayerType::Player, WorldPosition(), FloatRange(5, 16), float(5)));
+			RenderLayerType::Player, WorldPosition3D(), FloatRange(5, 16), float(5)));
 
 		//m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
 

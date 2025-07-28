@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 #include "ECS/Component/Component.hpp"
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 //#include "Utils/Data/WorldPosition.hpp"
 //#include "Utils/Data/Direction.hpp"
 //#include "Utils/Data/NormalizedPosition.hpp"

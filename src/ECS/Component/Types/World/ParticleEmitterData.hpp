@@ -13,7 +13,7 @@
 struct Particle
 {
 	TextChar m_TextChar;
-	WorldPosition m_Pos;
+	WorldPosition3D m_Pos;
 	Vec2 m_Velocity;
 	Vec2 m_FontArea;
 	/// <summary>
@@ -26,14 +26,14 @@ struct Particle
 	float m_LifeTime;
 
 	Particle(const TextChar& text, const Vec2& fontArea, 
-		const WorldPosition& pos, const Vec2& vel, const float& lifeTime);
+		const WorldPosition3D& pos, const Vec2& vel, const float& lifeTime);
 
 	void SetColorFromAliveTime(const ColorGradient& color);
 };
 
 struct ParticleEmitterData : Component
 {
-	WorldPosition m_originTransformOffset;
+	WorldPosition3D m_originTransformOffset;
 
 	WorldFontProperties m_FontData;
 	//The color of any particle over the course of its lifetime
@@ -62,9 +62,9 @@ struct ParticleEmitterData : Component
 	ParticleEmitterData();
 	ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
 		const WorldFontProperties& fontData, const RenderLayerType& renderLayers, 
-		const WorldPosition& transformOffset, const FloatRange& speedRange, const float& spawnRate);
+		const WorldPosition3D& transformOffset, const FloatRange& speedRange, const float& spawnRate);
 
-	WorldPosition GetOriginWorldPos() const;
+	WorldPosition3D GetOriginWorldPos() const;
 	void SetSpawnRate(const float& value);
 	/// <summary>
 	/// Gives an approximation for active particles at any time

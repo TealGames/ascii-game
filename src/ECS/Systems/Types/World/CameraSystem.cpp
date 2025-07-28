@@ -81,8 +81,8 @@ namespace ECS
 
         //LogError(std::format("Collapsing layers within viewport: {}", scene.ToStringLayers()));
 
-        const WorldPosition cameraBottomLeftWorldPos= cameraTransform.GetLocalPos() - (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
-        const WorldPosition cameraTopRightWorldPos = cameraTransform.GetLocalPos() + (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
+        const WorldPosition3D cameraBottomLeftWorldPos= cameraTransform.GetLocalPos() - (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
+        const WorldPosition3D cameraTopRightWorldPos = cameraTransform.GetLocalPos() + (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
         //TODO: this is inefficient because we render each pos within viewport, but even if some objects are within the same pos
         //the one behind it is still rendered. NOTE: it is difficult to find a solution when we might have small overlaps and we 
         //wanbt overlaps to be visible to ensure realism/not akward visuals + makes it difficult when using raylib

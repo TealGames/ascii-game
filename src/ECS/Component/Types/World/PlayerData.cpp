@@ -60,7 +60,7 @@ const bool& PlayerData::GetIsGrounded() const
 float PlayerData::GetVerticalDistanceToGround() const
 {
 	//WorldPosition bottomCenter = m_body->GetAABBWorldPos({ 0.5, 0 });
-	WorldPosition bottomCenter = m_body->GetCollisionBox().GetAABBWorldPos({ 0.5, 0 });
+	WorldPosition3D bottomCenter = m_body->GetCollisionBox().GetAABBWorldPos({ 0.5, 0 });
 	bottomCenter.m_Y -= 0.01;
 	float distance= m_body->GetPhysicsWorldSafe().Raycast(bottomCenter, { 0, -100 }).m_Displacement.m_Y;
 

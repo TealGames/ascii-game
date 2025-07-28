@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Core/Rendering/RenderLayer.hpp"
 #include "ECS/Component/Component.hpp"
 #include "Core/Visual/VisualData.hpp"

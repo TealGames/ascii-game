@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Utils/Data/NormalizedValue.hpp"
 
 /// <summary>

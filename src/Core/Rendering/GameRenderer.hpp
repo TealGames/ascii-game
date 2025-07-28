@@ -47,13 +47,13 @@ namespace Rendering
         Renderer();
         void Init();
 
-        void AddCircleCall(const WorldPosition& centerPos, const float radius, const Utils::Color color);
-        void AddRectangleCall(const WorldPosition& topLeftPos, const Vec2& size, const Utils::Color color);
-        void AddTextureCall(const WorldPosition& topLeftPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color);
-        void AddTextCall(const WorldPosition& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
+        void AddCircleCall(const WorldPosition3D& centerPos, const float radius, const Utils::Color color);
+        void AddRectangleCall(const WorldPosition3D& topLeftPos, const Vec2& size, const Utils::Color color);
+        void AddTextureCall(const WorldPosition3D& topLeftPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color);
+        void AddTextCall(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
 
-        void AddLineCall(const WorldPosition& startPos, const float thickness, const Vec2& length, const Utils::Color color);
-        void AddRectangleLineCall(const WorldPosition& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color);
+        void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Utils::Color color);
+        void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color);
 
         void PushCallsToBuffer(const std::vector<RenderCall>& calls);
         void MoveCallsToBuffer(std::vector<RenderCall>& calls);

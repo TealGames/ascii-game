@@ -33,14 +33,16 @@ namespace Conversions
 		
 	}*/
 
-	WorldPosition ScreenToWorldPosition(const CameraData& camera, const ScreenPosition& pos)
+	/*
+	WorldPosition3D ScreenToWorldPosition(const CameraData& camera, const ScreenPosition& pos)
 	{
-		WorldPosition bottomLeftPos = camera.GetEntity().GetTransform().GetGlobalPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
+		WorldPosition3D bottomLeftPos = camera.GetEntity().GetTransform().GetGlobalPos() - (camera.m_CameraSettings.m_WorldViewportSize / 2);
 		Vec2 screenPercent{ static_cast<float>(pos.m_X) / SCREEN_WIDTH, static_cast<float>(SCREEN_HEIGHT- pos.m_Y) / SCREEN_HEIGHT};
 
 		Vec2 worldSize = screenPercent * camera.m_CameraSettings.m_WorldViewportSize;
 		return bottomLeftPos + worldSize;
 	}
+	*/
 
 	ScreenPosition NormalizedScreenToPosition(const NormalizedPosition& normalized)
 	{

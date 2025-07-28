@@ -51,7 +51,7 @@ namespace ECS
 		/// <returns></returns>
 		Utils::Color GetColorFromMultiplier(const Utils::Color& originalColor, const Utils::Color& filterColor, const float& multiplier) const;
 
-		void CreateLightingForPoint(LightSourceData& data, const WorldPosition& centerPos,
+		void CreateLightingForPoint(LightSourceData& data, const WorldPosition3D& centerPos,
 			FragmentedTextBuffer& buffer, bool displayLightLevels);
 
 		void RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels = false);

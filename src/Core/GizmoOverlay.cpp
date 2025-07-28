@@ -30,7 +30,7 @@ GizmoOverlay::GizmoOverlay(ECS::UIRenderSystem& renderSystem, Physics::PhysicsMa
 			if (!Utils::HasFlagAll(m_activeGizmos, GizmoType::CollisionBoxOutline))
 				return;
 
-			const ScreenPosition aabbTopLeftScreenPos = cameraController.GetActiveCamera().WorldToScreenPosition(body->GetCollisionBox().GetAABBTopLeftWorldPos());
+			const ScreenPosition aabbTopLeftScreenPos = cameraController.GetActiveCamera().WorldToScreenPosition(Vec3(body->GetCollisionBox().GetAABBTopLeftWorldPos(), 0));
 			const Vec2 aabbScreenSize = cameraController.GetActiveCamera().WorldToScreenSize(body->GetCollisionBox().GetAABB().GetSize());
 			/*if (body->GetEntity().m_Name == "player") 
 				LogError(std::format("Player collider at screen:{} (top left world:{} center world:{}) Player world pos:{} size:{}", aabbTopLeftScreenPos.ToString(), 
@@ -40,13 +40,14 @@ GizmoOverlay::GizmoOverlay(ECS::UIRenderSystem& renderSystem, Physics::PhysicsMa
 		});
 }
 
-void GizmoOverlay::AddCollisionBoxGizmo(const ScreenPosition& pos, const Vec2& size)
+//TODO: rendering right now does not support ui elements because of world position verticies.
+void GizmoOverlay::AddCollisionBoxGizmo(const WorldPosition2D& pos, const Vec2& size)
 {
-	m_queuedCalls.emplace_back(Rendering::RectLineCall{ pos, LINE_THICKNESS, size, COLLIDER_OUTLINE_COLOR });
+	//m_queuedCalls.emplace_back(Rendering::RectLineCall{ pos, LINE_THICKNESS, size, COLLIDER_OUTLINE_COLOR });
 }
-void GizmoOverlay::AddRenderRectGizmo(const ScreenPosition& pos, const Vec2& size)
+void GizmoOverlay::AddRenderRectGizmo(const WorldPosition2D& pos, const Vec2& size)
 {
-	m_queuedCalls.emplace_back(Rendering::RectLineCall{ pos, LINE_THICKNESS, size, UI_RECT_OUTLINE_COLOR });
+	//m_queuedCalls.emplace_back(Rendering::RectLineCall{ pos, LINE_THICKNESS, size, UI_RECT_OUTLINE_COLOR });
 }
 
 void GizmoOverlay::MoveCallsToRenderBuffer(Rendering::Renderer& renderer)

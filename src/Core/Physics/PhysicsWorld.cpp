@@ -92,7 +92,7 @@ namespace Physics
 				//for things like grounded checks/gravity)
 				
 				//TODO: using global pos everywere is expensive, perhaps we can optimize by checking parents first?
-				const Vec2 incomingBToADir = GetVector(bodyB->GetEntity().GetTransform().GetGlobalPos(), bodyA->GetEntity().GetTransform().GetGlobalPos()).GetYAsVector();
+				const Vec2 incomingBToADir = bodyA->GetEntity().GetTransform().GetGlobalPos().GetXY().GetY() - bodyB->GetEntity().GetTransform().GetGlobalPos().GetXY();
 				const float dotProductBofA = DotProduct(incomingBToADir, bodyB->GetVelocity());
 				/*LogError(std::format("touching:{} DOT BETWEEN B-> A:{} bodyB vel:{} is:{}", std::to_string(collisionData.m_IntersectionData.IsTouchingIntersection()), incomingBToADir.ToString(),
 					bodyB->GetVelocity().ToString(), std::to_string(dotProductBofA)));*/
@@ -236,7 +236,7 @@ namespace Physics
 			"has no physicsBody", collision.ToString())))
 			return;
 
-		bool bothBodiesZeroVelocity = bodyA->GetVelocity() == Vec2::ZERO && bodyB->GetVelocity() == Vec2::ZERO;
+		bool bothBodiesZeroVelocity = bodyA->GetVelocity() == Vec2::Zero() && bodyB->GetVelocity() == Vec2::Zero();
 
 		//By default, we always want to push one of the bodies out
 		PushMovedBodyOut(entityA, entityB, *bodyA, *bodyB, collision);
@@ -320,7 +320,7 @@ namespace Physics
 		if (body.HasYConstraint()) moveY = 0;
 
 		//LogWarning(std::format("ENTITY SETTING POS: {}", std::to_string(xVelocity), std::to_string(yVelocity)));
-		entity.GetTransformMutable().SetLocalPosDelta(Vec2(moveX, moveY));
+		entity.GetTransformMutable().m_LocalPos += Vec3(moveX, moveY, 0);
 
 		//if (gravitySet) LogError(std::format("graivyt set for:{} new a:{} new v:{}", entity.GetName(), body.GetAcceleration().ToString(), body.GetVelocity().ToString()), true, false, false, true);
 
@@ -365,8 +365,8 @@ namespace Physics
 			LogError(std::format("Move delta:{} for collision:{} BMOVED:{} entityB:{}", std::to_string(moveDelta), 
 				collision.ToString(), std::to_string(isMoveEntityB), entityB.GetName()));*/
 
-		if (xIsMin) movedEntity->GetTransformMutable().SetLocalPosDeltaX(moveDelta);
-		else movedEntity->GetTransformMutable().SetLocalPosDeltaY(moveDelta);
+		if (xIsMin) movedEntity->GetTransformMutable().m_LocalPos.m_X += moveDelta;
+		else movedEntity->GetTransformMutable().m_LocalPos.m_Y+= moveDelta;
 
 		//Whichever one got moved out should not have any further movement to prevent potential jittering
 		//PhysicsBodyData& movedBody = aMovedLastFrame ? bodyA : bodyB;
@@ -386,7 +386,7 @@ namespace Physics
 		const float e = (bodyA.GetPhysicsProfile().GetRestitution() +
 			bodyB.GetPhysicsProfile().GetRestitution()) / 2;
 
-		const Vec2 collsionNormalA = GetCollisionNormalBodyB(intersectionData).GetOppositeDirection();
+		const Vec2 collsionNormalA = -GetCollisionNormalBodyB(intersectionData);
 
 		//If the collision normal is 0, it means no meaningful collision happened
 		//if (collsionNormalA.m_X == 0 && collsionNormalA.m_Y == 0) return;
@@ -463,7 +463,7 @@ namespace Physics
 		PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& intersectionData, 
 		const EntityType updateEntityType)
 	{
-		const Vec2 collsionNormalA = GetCollisionNormalBodyB(intersectionData).GetOppositeDirection();
+		const Vec2 collsionNormalA = -GetCollisionNormalBodyB(intersectionData);
 
 		const float averageRestitution = (bodyA.GetPhysicsProfile().GetRestitution() +
 			bodyB.GetPhysicsProfile().GetRestitution()) / 2;
@@ -483,7 +483,7 @@ namespace Physics
 		if (HasFlagEntityB(updateEntityType))
 		{
 			//Since collision normal is in terms of A, B's normal is the opposite direction
-			velocityNormal = collsionNormalA.GetOppositeDirection() * DotProduct(bodyB.GetVelocity(), collsionNormalA.GetOppositeDirection());
+			velocityNormal = -collsionNormalA * DotProduct(bodyB.GetVelocity(), -collsionNormalA);
 			newBodyNormal = velocityNormal * -(averageRestitution);
 			bodyB.SetVelocity(newBodyNormal + (bodyB.GetVelocity() - velocityNormal));
 		}
@@ -527,16 +527,16 @@ namespace Physics
 		return body1.GetCollisionBox().GetAABBMinDisplacement(body2.GetCollisionBox());
 	}
 
-	RaycastInfo PhysicsWorld::Raycast(const WorldPosition& origin, const Vec2& ray) const
+	RaycastInfo2D PhysicsWorld::Raycast2D(const WorldPosition2D& origin, const Vec2& ray) const
 	{
-		RaycastInfo result = {};
+		RaycastInfo2D result = {};
 		int xSign = Utils::GetSign(ray.m_X);
 		int ySign = Utils::GetSign(ray.m_Y);
-		WorldPosition rayEndPoint = GetVectorEndPoint(origin, ray);
+		WorldPosition2D rayEndPoint = origin + ray;
 		Vec2 rayDir = ray.GetNormalized();
 
-		WorldPosition boundsWorldMin = {};
-		WorldPosition boundsWorldMax = {};
+		WorldPosition2D boundsWorldMin = {};
+		WorldPosition2D boundsWorldMax = {};
 		
 		float t1 = 0;
 		float t2 = 0;
@@ -547,8 +547,8 @@ namespace Physics
 		
 		for (auto& body : m_bodies)
 		{
-			boundsWorldMin = body->GetCollisionBox().GetGlobalMin();
-			boundsWorldMax= body->GetCollisionBox().GetGlobalMax();
+			boundsWorldMin = body->GetCollisionBox().GetGlobalMin().GetXY();
+			boundsWorldMax = body->GetCollisionBox().GetGlobalMax().GetXY();
 
 			//TODO: perhaps optimizations could be made by checking to see if distance is too big to make it to this collider
 			//so we can just continue

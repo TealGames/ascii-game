@@ -2,7 +2,7 @@
 #include <vector>
 #include "Core/Visual/TextArray.hpp"
 #include "Core/Visual/TextBuffer.hpp"
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Utils/Data/NormalizedPosition.hpp" 
 #include "Utils/Data/WorldPosition.hpp"
 
@@ -196,7 +196,7 @@ public:
 	const FontProperties& GetFontData() const;*/
 
 	Vec2 GetPivotRelative() const;
-	WorldPosition GetPivotWorldPos(const WorldPosition& centerScreenPos) const;
+	WorldPosition3D GetPivotWorldPos(const WorldPosition3D& centerScreenPos) const;
 
 	//void AddVisualLocationToBuffer(const size_t& r, const size_t& c, FragmentedTextBuffer& buffer, const ) const;
 

@@ -2,7 +2,7 @@
 #include <functional>
 #include <type_traits>
 #include <utility>
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Utils/Data/Event.hpp"
 
 namespace Core

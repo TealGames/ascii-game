@@ -24,7 +24,7 @@ namespace ECS
 		const ColliderOutlineBuffer& GetColliderBuffer() const;
 		ColliderOutlineBuffer& GetColliderBufferMutable();
 
-		std::vector<CollisionBoxData*> FindBodiesContainingPos(Scene& scene, const WorldPosition& worldPos) const;
+		std::vector<CollisionBoxData*> FindBodiesContainingPos(Scene& scene, const WorldPosition3D& worldPos) const;
 	};
 }
 

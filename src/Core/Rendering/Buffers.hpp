@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "Core/Rendering/RenderObjectId.hpp"
-#include "glm/vec3.hpp"
+#include "Utils/Data/WorldPosition.hpp"
 
 namespace Rendering
 {
@@ -17,7 +17,7 @@ namespace Rendering
 
 	struct Vertex
 	{
-		glm::vec3 m_Pos;
+		WorldPosition3D m_Pos;
 	};
 
 	using VertexType = Vertex;
@@ -59,7 +59,7 @@ namespace Rendering
 	struct IndexBufferPlatformCallbacks
 	{
 		RenderObjectId(*m_AllocateFunc) (const IndexType*, const size_t);
-		void(*m_WriteFunc) (const RenderObjectId, const size_t, IndexType*, const size_t);
+		void(*m_WriteFunc) (const RenderObjectId, const size_t, const IndexType*, const size_t);
 		void(*m_DeallocateFunc)(const RenderObjectId);
 	};
 

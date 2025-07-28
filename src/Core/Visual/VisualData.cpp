@@ -240,7 +240,7 @@ Vec2 VisualData::GetPivotRelative() const
 {
 	return m_pivotRelative.GetPos();
 }
-WorldPosition VisualData::GetPivotWorldPos(const WorldPosition& centerScreenPos) const
+WorldPosition3D VisualData::GetPivotWorldPos(const WorldPosition3D& centerScreenPos) const
 {	
 	return (m_pivotRelative.GetPos() - PIVOT_CENTER) * GetWorldSize() + centerScreenPos;
 }

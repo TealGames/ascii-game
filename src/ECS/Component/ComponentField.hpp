@@ -1,8 +1,7 @@
 #pragma once
 #include <string>
 #include <variant>
-#include "Utils/Data/Vec2.hpp"
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include <type_traits>
 #include <typeinfo>
 #include <functional>

@@ -29,8 +29,8 @@ private:
 public:
 	GizmoOverlay(ECS::UIRenderSystem& renderSystem, Physics::PhysicsManager& physicsManager, const CameraController& cameraController);
 
-	void AddCollisionBoxGizmo(const ScreenPosition& pos, const Vec2& size);
-	void AddRenderRectGizmo(const ScreenPosition& pos, const Vec2& size);
+	void AddCollisionBoxGizmo(const WorldPosition2D& pos, const Vec2& size);
+	void AddRenderRectGizmo(const WorldPosition2D& pos, const Vec2& size);
 
 	void MoveCallsToRenderBuffer(Rendering::Renderer& renderer);
 

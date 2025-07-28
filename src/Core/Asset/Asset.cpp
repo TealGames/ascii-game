@@ -33,6 +33,10 @@ void Asset::OverrideAssetName(const std::string& name)
 {
 	m_name = name;
 }
+void Asset::OverrideAssetName(const std::string_view& name)
+{
+	m_name = std::string(name);
+}
 
 std::filesystem::path Asset::GetPathCopy() const
 {

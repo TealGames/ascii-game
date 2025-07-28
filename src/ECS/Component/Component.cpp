@@ -2,6 +2,7 @@
 #include "ECS/Component/Component.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 Component::Component() 
 	: m_MutatedThisFrame(false), m_IsEnabled(true), m_entity(nullptr), m_Fields() //m_dependencyLevel(dependency)

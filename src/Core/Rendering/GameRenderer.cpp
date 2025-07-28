@@ -50,7 +50,7 @@ namespace Rendering
                 //Vector2 drawPos = RaylibUtils::ToRaylibVector(c->m_Pos);
                 //Rectangle dest = { drawPos.x, drawPos.y, texSize.x*std::abs(scale.x), texSize.y*std::abs(scale.y)};
                 //DrawTexturePro(texData.m_Tex, source, dest, {0, 0}, 0, c->m_Color);
-                Backend::DrawTexture(c->m_Pos, texSize * Abs(texData.m_Scale), Vec2::ZERO, texSize * GetSign(texData.m_Scale), texData.m_Tex, 0, c->m_Color);
+                Backend::DrawTexture(c->m_Pos, texSize * Abs(texData.m_Scale), Vec2::Zero(), texSize * GetSign(texData.m_Scale), texData.m_Tex, 0, c->m_Color);
             }
             else if (const TextCall* c = std::get_if<TextCall>(&call))
             {
@@ -174,11 +174,11 @@ namespace Rendering
         m_batches.clear();
     }
 
-    void Renderer::AddCircleCall(const WorldPosition& centerPos, const float radius, const Utils::Color color)
+    void Renderer::AddCircleCall(const WorldPosition3D& centerPos, const float radius, const Utils::Color color)
     {
         m_renderCalls.emplace_back(CircleCall{ centerPos, radius, color });
     }
-    void Renderer::AddRectangleCall(const WorldPosition& topLeftPos, const Vec2& size, const Utils::Color color)
+    void Renderer::AddRectangleCall(const WorldPosition3D& topLeftPos, const Vec2& size, const Utils::Color color)
     {
         m_renderCalls.emplace_back(RectCall{ topLeftPos, size, color });
        
@@ -190,21 +190,21 @@ namespace Rendering
         IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2 };
         AddVerticesToBatch(m_defaultShader, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
     }
-    void Renderer::AddTextureCall(const WorldPosition& topLeftPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color)
+    void Renderer::AddTextureCall(const WorldPosition3D& topLeftPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color)
     {
         m_textureData.emplace_back(tex, scale);
         m_renderCalls.emplace_back(TextureCall{ static_cast<TextureID>(m_textureData.size() - 1), topLeftPos, color });
     }
-    void Renderer::AddTextCall(const WorldPosition& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color)
+    void Renderer::AddTextCall(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color)
     {
         m_textData.emplace_back(font, text, size, spacing);
         m_renderCalls.emplace_back(TextCall{ static_cast<TextID>(m_textData.size() - 1), topLeftPos, color });
     }
-    void Renderer::AddLineCall(const WorldPosition& startPos, const float thickness, const Vec2& length, const Utils::Color color)
+    void Renderer::AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Utils::Color color)
     {
         m_renderCalls.emplace_back(LineCall{ startPos, thickness, length, color });
     }
-    void Renderer::AddRectangleLineCall(const WorldPosition& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color)
+    void Renderer::AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color)
     {
         m_renderCalls.emplace_back(RectLineCall{ topLeftPos, thickness, size, color });
     }
@@ -252,7 +252,7 @@ namespace Rendering
                 //Vector2 drawPos = RaylibUtils::ToRaylibVector(c->m_Pos);
                 //Rectangle dest = { drawPos.x, drawPos.y, texSize.x*std::abs(scale.x), texSize.y*std::abs(scale.y)};
                 //DrawTexturePro(texData.m_Tex, source, dest, {0, 0}, 0, c->m_Color);
-                Backend::DrawTexture(c->m_Pos, texSize * Abs(texData.m_Scale), Vec2::ZERO, texSize * GetSign(texData.m_Scale), texData.m_Tex, 0, c->m_Color);
+                Backend::DrawTexture(c->m_Pos, texSize * Abs(texData.m_Scale), Vec2::Zero(), texSize * GetSign(texData.m_Scale), texData.m_Tex, 0, c->m_Color);
             }
             else if (const TextCall* c = std::get_if<TextCall>(&call))
             {

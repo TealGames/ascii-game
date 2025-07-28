@@ -41,7 +41,7 @@ public:
 	{
 		return std::format("[Time: {} Value: {}]", 
 			std::to_string(m_time), Utils::TryToString<T>(GetValue()).value_or(
-				std::format("PARSE FAILED: {}", Utils::GetTypeName<T>())));
+				std::format("PARSE FAILED: {}", Utils::ToStringTypeName<T>())));
 	}
 };
 

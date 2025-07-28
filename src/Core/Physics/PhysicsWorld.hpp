@@ -2,11 +2,12 @@
 #include <vector>
 #include <unordered_set>
 #include <cstdint>
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Utils/Data/WorldPosition.hpp"
 #include "Core/Collision/CollisionRegistry.hpp"
 #include "ECS/Component/Types/World/PhysicsBodyData.hpp"
 #include "Utils/Data/Event.hpp"
+#include "Math/Ray.hpp"
 
 class CollisionBoxData;
 namespace ECS
@@ -25,11 +26,11 @@ namespace Physics
 	bool HasFlagEntityA(const EntityType& entityType);
 	bool HasFlagEntityB(const EntityType& entityType);
 
-	struct RaycastInfo
+	struct RaycastInfo2D
 	{
 		PhysicsBodyData* m_BodyHit = nullptr;
-		WorldPosition m_HitPos = {};
-		Vec2 m_Displacement = Vec2::ZERO;
+		WorldPosition2D m_HitPos = {};
+		Vec2 m_Displacement = Vec2::Zero();
 	};
 
 	using PhysicsBodyCollection = std::vector<PhysicsBodyData*>;
@@ -153,7 +154,7 @@ namespace Physics
 		/// <param name="origin"></param>
 		/// <param name="ray"></param>
 		/// <returns></returns>
-		RaycastInfo Raycast(const WorldPosition& origin, const Vec2& ray) const;
+		RaycastInfo2D Raycast2D(const WorldPosition2D& origin, const Vec2& ray) const;
 	};
 
 	/// <summary>

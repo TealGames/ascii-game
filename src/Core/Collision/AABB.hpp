@@ -1,7 +1,6 @@
 #pragma once
-#include "Utils/Data/Vec2Int.hpp" 
 #include "Utils/Data/WorldPosition.hpp"
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Utils/Data/Direction.hpp"
 #include <string>
 #include <optional>
@@ -10,17 +9,17 @@
 namespace Physics
 {
 	//Axis aligned bounding box
-	struct AABB
+	struct AABB2D
 	{
-		WorldPosition m_MinPos;
-		WorldPosition m_MaxPos;
+		WorldPosition2D m_MinPos;
+		WorldPosition2D m_MaxPos;
 
-		AABB();
-		AABB(const Vec2& size);
-		AABB(const WorldPosition& minPos, const WorldPosition& maxPos);
+		AABB2D();
+		AABB2D(const Vec2& size);
+		AABB2D(const WorldPosition2D& minPos, const WorldPosition2D& maxPos);
 
-		WorldPosition GetGlobalMin(const WorldPosition& centerWorldPos) const;
-		WorldPosition GetGlobalMax(const WorldPosition& centerWorldPos) const;
+		WorldPosition2D GetGlobalMin(const WorldPosition2D& centerWorldPos) const;
+		WorldPosition2D GetGlobalMax(const WorldPosition2D& centerWorldPos) const;
 
 		/// <summary>
 		/// Gets the size in [WIDTH, HEIGHT]
@@ -40,10 +39,10 @@ namespace Physics
 		/// </summary>
 		/// <param name="relativePos"></param>
 		/// <returns></returns>
-		WorldPosition GetWorldPos(const WorldPosition& centerPos, const NormalizedPosition& relativePos) const;
+		WorldPosition2D GetWorldPos(const WorldPosition2D& centerPos, const NormalizedPosition& relativePos) const;
 
 		std::string ToString() const;
-		std::string ToString(const WorldPosition& transformPos) const;
+		std::string ToString(const WorldPosition2D& transformPos) const;
 	};
 
 	/*

@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Editor/Entity/ColorPopupUI.hpp"
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "raylib.h"
 #include "Utils/HelperFunctions.hpp"
 #include <limits>

@@ -7,6 +7,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Visual/VisualDataParser.hpp"
 #include "StaticReferenceGlobals.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 const std::string SpriteAnimationAsset::EXTENSION = ".sanim";
 

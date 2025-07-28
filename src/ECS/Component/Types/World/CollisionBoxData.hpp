@@ -43,8 +43,8 @@ using CollidingInfoCollection = std::vector<CollidingBoxInfo>;
 class CollisionBoxData : public Component
 {
 private:
-	Physics::AABB m_aabb;
-	WorldPosition m_transformOffset;
+	Physics::AABB2D m_aabb;
+	WorldPosition2D m_transformOffset;
 
 	CollidingInfoCollection m_collidingBoxes;
 
@@ -55,14 +55,14 @@ public:
 
 public:
 	bool Validate() override;
-	WorldPosition GetCenterGlobalPos() const;
+	WorldPosition2D GetCenterGlobalPos() const;
 
 	CollidingInfoCollection::iterator TryGetCollidingBoxIt(const CollisionBoxData& otherBox);
 
 public:
 	CollisionBoxData();
 	CollisionBoxData(const Json& json);
-	CollisionBoxData(const Vec2& worldSize, const WorldPosition& transformOffset);
+	CollisionBoxData(const Vec2& worldSize, const WorldPosition2D& transformOffset);
 
 	bool IsCollidingWithBox(const CollisionBoxData& otherBox) const;
 	bool TryAddCollidingBox(const CollisionBoxData& otherBox);
@@ -80,16 +80,16 @@ public:
 
 	bool operator==(const CollisionBoxData& other) const;
 
-	const Physics::AABB& GetAABB() const;
-	WorldPosition GetOffset() const;
+	const Physics::AABB2D& GetAABB() const;
+	WorldPosition2D GetOffset() const;
 
 	//bool HasValidTransform() const;
 	//void SetTransform(const TransformData& transform);
-	WorldPosition GetAABBCenterWorldPos() const;
-	WorldPosition GetGlobalMin() const;
-	WorldPosition GetGlobalMax() const;
+	WorldPosition2D GetAABBCenterWorldPos() const;
+	WorldPosition2D GetGlobalMin() const;
+	WorldPosition2D GetGlobalMax() const;
 
-	WorldPosition GetAABBTopLeftWorldPos() const;
+	WorldPosition2D GetAABBTopLeftWorldPos() const;
 
 	/// <summary>
 	/// Will get the AABB pos based on the relative pos of the AABB
@@ -97,9 +97,9 @@ public:
 	/// </summary>
 	/// <param name="relativePos"></param>
 	/// <returns></returns>
-	WorldPosition GetAABBWorldPos(const NormalizedPosition& relativePos) const;
+	WorldPosition2D GetAABBWorldPos(const NormalizedPosition& relativePos) const;
 
-	bool DoIntersect(const WorldPosition& pos) const;
+	bool DoIntersect(const WorldPosition2D& pos) const;
 	bool DoIntersect(const CollisionBoxData& otherBox) const;
 
 	/// <summary>

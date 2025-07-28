@@ -1,7 +1,5 @@
 #pragma once
 #include <variant>
-#include "Utils/Data/Vec2.hpp"
-#include "Utils/Data/Vec2Int.hpp"
 #include "Utils/Data/WorldPosition.hpp"
 #include "Utils/Data/Color.hpp"
 #include "Core/Rendering/Texture.hpp"
@@ -23,13 +21,13 @@ namespace Rendering
 
 	struct CircleCall
 	{
-		WorldPosition m_Pos;
+		WorldPosition3D m_Pos;
 		float m_Radius;
 		Utils::Color m_Color;
 	};
 	struct RectCall
 	{
-		WorldPosition m_Pos;
+		WorldPosition3D m_Pos;
 		Vec2 m_Size;
 		Utils::Color m_Color;
 	};
@@ -38,7 +36,7 @@ namespace Rendering
 	struct TextureCall
 	{
 		TextureID m_Id;
-		WorldPosition m_Pos;
+		WorldPosition3D m_Pos;
 		Utils::Color m_Color;
 	};
 	struct TextureCallData
@@ -51,7 +49,7 @@ namespace Rendering
 	struct TextCall
 	{
 		TextID m_Id;
-		WorldPosition m_Pos;
+		WorldPosition3D m_Pos;
 		Utils::Color m_Color;
 	};
 	struct TextCallData
@@ -64,14 +62,14 @@ namespace Rendering
 
 	struct LineCall
 	{
-		WorldPosition m_Pos;
+		WorldPosition3D m_Pos;
 		float m_Thickness;
 		Vec2 m_Length;
 		Utils::Color m_Color;
 	};
 	struct RectLineCall
 	{
-		WorldPosition m_Pos;
+		WorldPosition3D m_Pos;
 		float m_Thickness;
 		Vec2 m_Size;
 		Utils::Color m_Color;

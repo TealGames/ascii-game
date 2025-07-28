@@ -1,6 +1,8 @@
 #include "pch.hpp"
 #include "Core/Analyzation/Profiler.hpp"
 #include "Utils/HelperFunctions.hpp"
+#include "Utils/ToStringFunctions.hpp"
+#include "Utils/Math.hpp"
 #include <filesystem>
 #include <fstream>
 //#include "plplot/plstream.h"
@@ -93,7 +95,7 @@ Profiler::~Profiler()
 
 	data += std::format("\n\nTotalProfilerTime: {}", GetFormattedTime(m_profilerSummary.m_ProfilerCheckTime));
 
-	std::string fileName = Utils::FormatTime(Utils::GetCurrentTime()) + ".txt";
+	std::string fileName = Utils::ToStringTime(Utils::GetCurrentTime()) + ".txt";
 	std::replace(fileName.begin(), fileName.end(), ' ', '_');
 	std::replace(fileName.begin(), fileName.end(), ':', '_');
 	std::filesystem::path fullOutPath = OUT_FILE_PATH / fileName;
@@ -261,8 +263,8 @@ std::string Profiler::FormatRound(const ProcessRoundIntegralType& roundNumber)
 
 std::string GetFormattedTime(const float& usTime)
 {
-	return std::format("{}us ({}s)", Utils::ToStringDouble(usTime, PROCESS_TIME_PRECISION),
-		Utils::ToStringDouble(usTime / static_cast<float>(1'000'000), PROCESS_TIME_PRECISION));
+	return std::format("{}us ({}s)", Utils::ToString(usTime, PROCESS_TIME_PRECISION),
+		Utils::ToString(usTime / static_cast<float>(1'000'000), PROCESS_TIME_PRECISION));
 }
 
 void Profiler::UpdateProfilerSummary(const ProfilerProcess& process)

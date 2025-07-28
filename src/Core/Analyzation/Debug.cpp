@@ -4,6 +4,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "AnsiCodes.hpp"
 #include <filesystem>
+#include "Utils/ToStringFunctions.hpp"
 
 namespace DebugProperties
 {
@@ -109,7 +110,7 @@ void LogMessage(const LogType& logType, const CallerLogDetails logDetails, const
 	std::string logTypeMessage;
 	std::string timeFormatted = "";
 	if (logTime) timeFormatted = std::format("{}[{}{}{}]{}", ANSI_COLOR_WHITE, ANSI_COLOR_GRAY,
-		Utils::FormatTime(Utils::GetCurrentTime()), ANSI_COLOR_WHITE, ANSI_COLOR_CLEAR);
+		Utils::ToStringTime(Utils::GetCurrentTime()), ANSI_COLOR_WHITE, ANSI_COLOR_CLEAR);
 
 	const char* mainTextAnsiColor = nullptr;
 	switch (logType)

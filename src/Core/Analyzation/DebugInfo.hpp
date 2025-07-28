@@ -19,7 +19,7 @@ class UILayout;
 
 struct DebugMousePosition
 {
-	WorldPosition m_MouseWorldPos = {};
+	WorldPosition3D m_MouseWorldPos = {};
 	ScreenPosition m_MouseTextScreenPos = {};
 };
 

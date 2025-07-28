@@ -11,6 +11,7 @@
 #include <random>
 #include <stacktrace>
 #include "Utils/HelperFunctions.hpp"
+#include "Utils/Math.hpp"
 
 namespace Utils
 {
@@ -26,34 +27,6 @@ namespace Utils
 	LocalTime GetCurrentTime()
 	{
 		return GetLocalTime(std::chrono::system_clock::now());
-	}
-	std::string FormatTime(const LocalTime& time)
-	{
-		std::ostringstream oss;
-		oss << time;
-		std::string timeString = oss.str();
-
-		std::size_t nanosecondIndex = timeString.find('.');
-		if (nanosecondIndex != std::string::npos)
-		{
-			timeString = timeString.substr(0, nanosecondIndex);
-		}
-		return timeString;
-	}
-
-	std::string FormatTypeName(const std::string& typeName)
-	{
-		const std::string STRUCT_NAME = "struct";
-		const std::string CLASS_NAME = "class";
-		std::string result = typeName;
-
-		if (typeName.substr(0, STRUCT_NAME.size()) == STRUCT_NAME)
-			result = result.substr(STRUCT_NAME.size());
-
-		if (typeName.substr(0, CLASS_NAME.size()) == CLASS_NAME)
-			result = result.substr(CLASS_NAME.size());
-
-		return StringUtil::StringUtil(result).TrimSpaces().ToString();
 	}
 
 	std::string GetCurrentStackTrace() 
@@ -175,58 +148,6 @@ namespace Utils
 		return tokens;
 	}
 
-	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits)
-	{
-		std::ostringstream stream;
-		stream << std::setw(maxDigits) << std::setfill('0') << number;
-		return stream.str();
-	}
-
-	double ToRadians(const double deg)
-	{
-		return deg * (std::numbers::pi / 180.0);
-	}
-
-	double ToDegrees(const double rad)
-	{
-		return rad * (180.0 / std::numbers::pi);
-	}
-
-	/// <summary>
-	/// To handle approximate equivalence between floating numbers
-	/// </summary>
-	/// <param name="d1"></param>
-	/// <param name="d2"></param>
-	/// <returns></returns>
-	bool ApproximateEquals(double d1, double d2)
-	{
-		double diff = std::fabs(d2 - d1);
-		return diff < std::numeric_limits<double>().epsilon();
-	}
-
-	bool ApproximateEqualsF(float a, float b, const float relEps, const float absEps)
-	{
-		return std::fabs(a - b) <= std::fmax(relEps * std::fmax(std::fabs(a), std::fabs(b)), absEps);
-	}
-
-	bool IsPosInifinity(double value)
-	{
-		//Note: sign bit returns true if negative value
-		return std::isinf(value) && !std::signbit(value);
-	}
-
-	bool IsNegInifinity(double value)
-	{
-		//Note: sign bit returns true if negative value
-		return std::isinf(value) && std::signbit(value);
-	}
-
-	int GetSign(double num)
-	{
-		if (ApproximateEquals(num, 0)) return 0;
-		return num >= 0 ? 1 : -1;
-	}
-
 	inline bool IsNumber(char c)
 	{
 		return std::isdigit(c);
@@ -240,34 +161,6 @@ namespace Utils
 	inline bool IsLetterOrNumber(char c)
 	{
 		return std::isalnum(c);
-	}
-
-	float Roundf(const float& decimal, const std::uint8_t& places)
-	{
-		float factor = std::pow(10.0f, places);
-		return std::round(decimal * factor) / factor;
-	}
-
-	std::string ToString(const double& decimal)
-	{
-		//This trick will esssnetially display only sig fits when used without std::to_string
-		return std::format("{}", decimal);
-	}
-
-	size_t GetDigitPlaces(const double& decimal)
-	{
-		std::string sigFigStr = ToString(decimal);
-		if (sigFigStr.find(".") != std::string::npos) return sigFigStr.size() - 1;
-		return sigFigStr.size();
-	}
-
-	size_t GetDecimalPlaces(const double& decimal)
-	{
-		std::string sigFigStr = ToString(decimal);
-		size_t decimalPos = sigFigStr.find(".");
-
-		if (decimalPos == std::string::npos) return 0;
-		return sigFigStr.size() - decimalPos - 1;
 	}
 
 	int GenerateRandomInt(int minInclusive, int maxInclusive)
@@ -290,41 +183,6 @@ namespace Utils
 	{
 		if (std::abs(num1) < std::abs(num2)) return num1;
 		return num2;
-	}
-
-	std::string CollapseToSingleString(const std::vector<std::string>& vec)
-	{
-		return std::accumulate(vec.begin(), vec.end(), std::string());
-	}
-
-	std::string ToString(const char c)
-	{
-		return std::string(1, c);
-	}
-	std::string ToString(const std::uint8_t u8)
-	{
-		return std::to_string(static_cast<int>(u8));
-	}
-	std::string ToStringIterable(const std::vector<std::string>& strings)
-	{
-		return ToStringIterable<std::vector<std::string>, std::string>(strings);
-	}
-
-	std::string ToStringDouble(const double& d, const std::streamsize& precision, const bool& decimalPlacePrecision)
-	{
-		std::ostringstream oss;
-		std::streamsize finalPrecision = precision;
-		//If we do deciaml precision we must add the non-decimal places since by default
-		//string stream precision meants total number of sig figs
-		if (decimalPlacePrecision)
-		{
-			finalPrecision += (GetDigitPlaces(d) - GetDecimalPlaces(d));
-			//Assert(false, std::format("Trying to:{} prec:{} actual:{}", std::to_string(d), std::to_string(precision), std::to_string()));
-		}
-		
-		oss.precision(finalPrecision);
-		oss << d;
-		return oss.str();
 	}
 
 	bool HasFlag(unsigned int fullFlag, unsigned int hasFlag)

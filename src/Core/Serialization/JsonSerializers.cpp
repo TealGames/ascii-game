@@ -29,6 +29,51 @@ bool HasRequiredProperties(const Json& json, const std::vector<std::string>& pro
 	}
 	return hasAllProperties;
 }
+namespace Utils
+{
+	void from_json(const Json& json, Vec2& vec)
+	{
+		const char* X_PROPERTY = "X";
+		const char* Y_PROPERTY = "Y";
+		if (!HasRequiredProperties(json, { X_PROPERTY,  Y_PROPERTY })) return;
+
+		try
+		{
+			vec.m_X = json.at(X_PROPERTY).get<float>();
+			vec.m_Y = json.at(Y_PROPERTY).get<float>();
+		}
+		catch (const std::exception& e)
+		{
+			Assert(false, std::format("Tried to deserialize vec2:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		}
+	}
+	void to_json(Json& json, const Vec2& vec)
+	{
+		json = { {"X", vec.m_X}, {"Y", vec.m_Y} };
+	}
+
+	void from_json(const Json& json, Vec2Int& vec)
+	{
+		const char* X_PROPERTY = "X";
+		const char* Y_PROPERTY = "Y";
+		if (!HasRequiredProperties(json, { X_PROPERTY,  Y_PROPERTY })) return;
+
+		try
+		{
+			vec.m_X = json.at(X_PROPERTY).get<int>();
+			vec.m_Y = json.at(Y_PROPERTY).get<int>();
+		}
+		catch (const std::exception& e)
+		{
+			Assert(false, std::format("Tried to deserialize vec2int:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		}
+	}
+	void to_json(Json& json, const Vec2Int& vec)
+	{
+		json = { {"X", vec.m_X}, {"Y", vec.m_Y} };
+	}
+}
+
 void from_json(const Json& json, Vec2& vec)
 {
 	const char* X_PROPERTY = "X";
@@ -37,8 +82,8 @@ void from_json(const Json& json, Vec2& vec)
 
 	try
 	{
-		vec.m_X = json.at(X_PROPERTY).get<float>();
-		vec.m_Y = json.at(Y_PROPERTY).get<float>();
+		vec.x = json.at(X_PROPERTY).get<float>();
+		vec.y = json.at(Y_PROPERTY).get<float>();
 	}
 	catch (const std::exception& e)
 	{
@@ -47,7 +92,7 @@ void from_json(const Json& json, Vec2& vec)
 }
 void to_json(Json& json, const Vec2& vec)
 {
-	json = { {"X", vec.m_X}, {"Y", vec.m_Y} };
+	json = { {"X", vec.x}, {"Y", vec.y} };
 }
 
 void from_json(const Json& json, Vec2Int& vec)
@@ -58,8 +103,8 @@ void from_json(const Json& json, Vec2Int& vec)
 
 	try
 	{
-		vec.m_X = json.at(X_PROPERTY).get<int>();
-		vec.m_Y = json.at(Y_PROPERTY).get<int>();
+		vec.x = json.at(X_PROPERTY).get<int>();
+		vec.y = json.at(Y_PROPERTY).get<int>();
 	}
 	catch (const std::exception& e)
 	{
@@ -68,7 +113,55 @@ void from_json(const Json& json, Vec2Int& vec)
 }
 void to_json(Json& json, const Vec2Int& vec)
 {
-	json = { {"X", vec.m_X}, {"Y", vec.m_Y} };
+	json = { {"X", vec.x}, {"Y", vec.y} };
+}
+
+void from_json(const Json& json, Vec3& vec)
+{
+	const char* X_PROPERTY = "X";
+	const char* Y_PROPERTY = "Y";
+	const char* Z_PROPERTY = "Z";
+	if (!HasRequiredProperties(json, { X_PROPERTY,  Y_PROPERTY, Z_PROPERTY })) return;
+
+	try
+	{
+		vec.x = json.at(X_PROPERTY).get<float>();
+		vec.y = json.at(Y_PROPERTY).get<float>();
+		vec.z = json.at(Z_PROPERTY).get<float>();
+	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize vec3:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+	}
+}
+void to_json(Json& json, const Vec3& vec)
+{
+	json = { {"X", vec.x}, {"Y", vec.y}, {"Z", vec.z}};
+}
+
+void from_json(const Json& json, Quat& q)
+{
+	const char* X_PROPERTY = "X";
+	const char* Y_PROPERTY = "Y";
+	const char* Z_PROPERTY = "Z";
+	const char* W_PROPERTY = "W";
+	if (!HasRequiredProperties(json, { X_PROPERTY,  Y_PROPERTY, Z_PROPERTY, W_PROPERTY })) return;
+
+	try
+	{
+		q.x = json.at(X_PROPERTY).get<float>();
+		q.y = json.at(Y_PROPERTY).get<float>();
+		q.z = json.at(Z_PROPERTY).get<float>();
+		q.w = json.at(W_PROPERTY).get<float>();
+	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize quaternion:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+	}
+}
+void to_json(Json& json, const Quat& q)
+{
+	json = { {"X", q.x}, {"Y", q.y}, {"Z", q.z}, {"W", q.w}};
 }
 
 void from_json(const Json& json, FloatRange& range)
@@ -311,7 +404,7 @@ void from_json(const Json& json, WorldFontProperties& font)
 				return;
 			fontSize = maybeFontSize.value();
 		}
-		else fontSize = fontJson.get<Vec2>();
+		else fontSize = fontJson.get<Utils::Vec2>();
 
 		font = WorldFontProperties(fontSize, json.at(TRACKING_PROPERTY).get<float>(), *fontAsset);
 	}
@@ -375,7 +468,7 @@ void to_json(Json& json, const TextBufferCharPosition& textChar)
 
 namespace Physics
 {
-	void from_json(const Json& json, Physics::AABB& aabb)
+	void from_json(const Json& json, Physics::AABB2D& aabb)
 	{
 		const char* SIZE_PROPERTY = "Size";
 		if (!HasRequiredProperties(json, { SIZE_PROPERTY }))
@@ -383,14 +476,14 @@ namespace Physics
 
 		try
 		{
-			aabb = Physics::AABB(json.at(SIZE_PROPERTY).get<Vec2>());
+			aabb = Physics::AABB2D(json.at(SIZE_PROPERTY).get<Vec2>());
 		}
 		catch (const std::exception& e)
 		{
 			Assert(false, std::format("Tried to deserialize aabb:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 		}
 	}
-	void to_json(Json& json, const Physics::AABB& aabb)
+	void to_json(Json& json, const Physics::AABB2D& aabb)
 	{
 		json = { {"Size", aabb.GetSize()}};
 	}

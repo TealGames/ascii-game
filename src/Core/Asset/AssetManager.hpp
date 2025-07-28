@@ -5,12 +5,12 @@
 #include <unordered_set>
 #include <type_traits>
 #include <functional>
-#include <unordered_set>
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Asset/IDependableAsset.hpp"
 #include "Core/IValidateable.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "Utils/IOHandler.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 namespace AssetManagement
 {
@@ -150,7 +150,7 @@ namespace AssetManagement
 			{
 				LogError(std::format("Tried to get asset of type:{} name: {} Mutable "
 					"but an asset by that name could not be converted to that type. Real Type:{}. Error:{}",
-					Utils::GetTypeName<T>(), asset->GetName(), Utils::FormatTypeName(typeid(*(asset)).name()), e.what()));
+					Utils::ToStringTypeName<T>(), asset->GetName(), Utils::FormatTypeName(typeid(*(asset)).name()), e.what()));
 			}
 			return nullptr;
 		}
@@ -170,7 +170,7 @@ namespace AssetManagement
 			{
 				LogError(std::format("Tried to get asset of type:{} by name:{} IMMUTABLE "
 					"but an asset by that name could not be converted to the type:{}. Error:{}",
-					Utils::GetTypeName<T>(), Utils::FormatTypeName(typeid(*(asset)).name()), 
+					Utils::ToStringTypeName<T>(), Utils::FormatTypeName(typeid(*(asset)).name()),
 					asset->GetName(), e.what()));
 			}
 			return nullptr;
@@ -256,7 +256,7 @@ namespace AssetManagement
 		T* TryCreateEmptyAsset(const std::filesystem::path& assetPath)
 		{
 			if (!Assert(IsValidAssetPath(assetPath), std::format("Attempted to create an empty asset of type:{} at path:{} "
-				"but it is not a valid asset path", Utils::GetTypeName<T>(), assetPath.string())))
+				"but it is not a valid asset path", Utils::ToStringTypeName<T>(), assetPath.string())))
 				return false;
 
 			T* maybeExistingAsset= TryGetExistingAsset<T>(assetPath);
@@ -381,7 +381,7 @@ namespace AssetManagement
 		{
 			if (asset == nullptr) return false;
 
-			const std::string tTypeName = Utils::GetTypeName<T>();
+			const std::string tTypeName = Utils::ToStringTypeName<T>();
 			return tTypeName == Utils::FormatTypeName(typeid(*asset).name());
 		}
 
@@ -390,7 +390,7 @@ namespace AssetManagement
 		std::vector<T*> GetAssetsOfTypeMutable(const std::function<bool(const Asset&)>& assetPredicate = nullptr)
 		{
 			std::vector<T*> assets = {};
-			const std::string tTypeName = Utils::GetTypeName<T>();
+			const std::string tTypeName = Utils::ToStringTypeName<T>();
 			std::string assetTypeName = "";
 
 			for (auto& asset : m_assets)
@@ -421,7 +421,7 @@ namespace AssetManagement
 		std::vector<T*> GetAssetsOfTypeMutable(const std::filesystem::path& assetDirectory)
 		{
 			if (!Assert(IsValidAssetPath(assetDirectory), std::format("Attempted to get assets of type:{} from path:{} MUTABLE"
-				"but it is not a valid asset path", Utils::GetTypeName<T>(), assetDirectory.string())))
+				"but it is not a valid asset path", Utils::ToStringTypeName<T>(), assetDirectory.string())))
 				return {};
 
 			const std::string targetAssetPath = GetAbsoluteAssetPath(assetDirectory).string();
@@ -438,7 +438,7 @@ namespace AssetManagement
 		requires IsAssetType<T>&& std::is_base_of_v<IDependableAsset<Args...>, T>
 		void InitDependencies(std::add_lvalue_reference_t<Args>... args)
 		{
-			const std::string tTypeName = Utils::GetTypeName<T>();
+			const std::string tTypeName = Utils::ToStringTypeName<T>();
 			std::vector<T*> assets = GetAssetsOfTypeMutable<T>();
 			if (!Assert(!assets.empty(), std::format("Tried to init dependencies for type:{} "
 				"but no assets of that type were found", tTypeName)))

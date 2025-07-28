@@ -9,6 +9,7 @@
 #include "Core/UI/UIRect.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "Utils/HelperMacros.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 template<typename T>
 concept IsPopupType = std::is_base_of_v<PopupUI, T>;
@@ -66,8 +67,8 @@ private:
 		catch (const std::exception& e)
 		{
 			Assert(false, std::format("Tried to convert popup mutable of type:{} "
-				"but could not convert found type:{}", Utils::GetTypeName<T>(),
-				Utils::GetTypeName<decltype(*gui)>()));
+				"but could not convert found type:{}", Utils::ToStringTypeName<T>(),
+				Utils::ToStringTypeName<decltype(*gui)>()));
 		}
 		return nullptr;
 	}

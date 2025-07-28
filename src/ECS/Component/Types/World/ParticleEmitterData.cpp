@@ -5,7 +5,7 @@
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 
-Particle::Particle(const TextChar& text, const Vec2& fontArea, const WorldPosition& pos, const Vec2& vel, const float& lifeTime)
+Particle::Particle(const TextChar& text, const Vec2& fontArea, const WorldPosition3D& pos, const Vec2& vel, const float& lifeTime)
 	: m_TextChar(text), m_FontArea(fontArea), m_Pos(pos), m_Velocity(vel), m_AliveTime(0), m_LifeTime(lifeTime) {}
 
 void Particle::SetColorFromAliveTime(const ColorGradient& color)
@@ -18,7 +18,7 @@ ParticleEmitterData::ParticleEmitterData() : ParticleEmitterData('A', FloatRange
 
 ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTimeRange, const ColorGradient& colorOverTime, 
 	const WorldFontProperties& fontData, const RenderLayerType& renderLayers,
-	const WorldPosition& transformOffset, const FloatRange& speedRange, const float& spawnRate)
+	const WorldPosition3D& transformOffset, const FloatRange& speedRange, const float& spawnRate)
 	: Component(), 
 	m_Char(c), m_normalizedTime(0), m_lifetimeColor(colorOverTime), 
 	m_lifetimeRange(lifeTimeRange), 
@@ -32,7 +32,7 @@ ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTi
 		"but max particle approximation for reserving particle pool size was: {}", c, m_particles.GetMaxCapacity()));
 }
 
-WorldPosition ParticleEmitterData::GetOriginWorldPos() const
+WorldPosition3D ParticleEmitterData::GetOriginWorldPos() const
 {
 	return GetEntity().GetTransform().GetGlobalPos() + m_originTransformOffset;
 }
@@ -77,7 +77,7 @@ void ParticleEmitterData::Deserialize(const Json& json)
 	m_lifetimeColor = json.at("LifetimeColor").get<ColorGradient>();
 	m_FontData = json.at("FontData").get<WorldFontProperties>();
 	m_renderLayers = json.at("Layers").get<RenderLayerType>();
-	m_originTransformOffset = json.at("Offset").get<WorldPosition>();
+	m_originTransformOffset = json.at("Offset").get<WorldPosition3D>();
 	m_speedRange = json.at("SpeedRange").get<FloatRange>();
 	m_spawnRate = json.at("SpawnRate").get<float>();
 

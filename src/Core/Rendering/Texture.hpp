@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 
 namespace Rendering
 {

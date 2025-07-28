@@ -142,7 +142,7 @@ namespace ECS
 		return m_colliderOutlineBuffer;
 	}
 
-	std::vector<CollisionBoxData*> CollisionBoxSystem::FindBodiesContainingPos(Scene& scene, const WorldPosition& worldPos) const
+	std::vector<CollisionBoxData*> CollisionBoxSystem::FindBodiesContainingPos(Scene& scene, const WorldPosition3D& worldPos) const
 	{
 		std::vector<CollisionBoxData*> bodiesFound = {};
 

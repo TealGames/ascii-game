@@ -2,7 +2,7 @@
 #include <cmath>
 #include "ECS/Systems/Types/World/LightSourceSystem.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
 #include "Core/Visual/TextBuffer.hpp"
@@ -133,7 +133,7 @@ namespace ECS
     //TODO: this probably needs to be optimized
     //TODO: there is a lot of get flopped and conversions from cartesia and row col pos so that could be optimized
     void LightSourceSystem::CreateLightingForPoint(LightSourceData& data,
-        const WorldPosition& centerPos, FragmentedTextBuffer& buffer, bool displayLightLevels)
+        const WorldPosition3D& centerPos, FragmentedTextBuffer& buffer, bool displayLightLevels)
     {
         std::sort(buffer.begin(), buffer.end(), 
             [&centerPos](const TextBufferCharPosition& first, const TextBufferCharPosition& second) -> bool

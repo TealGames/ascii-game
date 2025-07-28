@@ -17,6 +17,7 @@
 #include "Core/Visual/VisualDataParser.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 const std::string SceneAsset::EXTENSION = ".json";
 const std::string SceneAsset::LEVEL_EXTENSION = ".level";
@@ -114,7 +115,7 @@ void SceneAsset::UpdateAssetFromFile()
 		{
 			currentComponentJson = entityComponentsJson[i];
 			componentName = currentComponentJson.at("Type").get<std::string>();
-			isTransformComponent = componentName == Utils::GetTypeName<TransformData>();
+			isTransformComponent = componentName == Utils::ToStringTypeName<TransformData>();
 			if (i == 0 && !Assert(isTransformComponent, std::format("Tried to parse scene file at path: '{}' "
 				"but found entity component that does not begin with Transform!", GetPathCopy().string())))
 				return;
@@ -136,41 +137,41 @@ void SceneAsset::UpdateAssetFromFile()
 				"for component: {} but current entity: {} is null", GetPathCopy().string(), componentName, entityName)))
 				return;
 
-			if (componentName == Utils::GetTypeName<AnimatorData>())
+			if (componentName == Utils::ToStringTypeName<AnimatorData>())
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<AnimatorData>());
 			}
-			else if (componentName == Utils::GetTypeName<CameraData>())
+			else if (componentName == Utils::ToStringTypeName<CameraData>())
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<CameraData>());
 			}
-			else if (componentName == Utils::GetTypeName<EntityRendererData>())
+			else if (componentName == Utils::ToStringTypeName<EntityRendererData>())
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<EntityRendererData>());
 				/*LogError(std::format("Deserialized entity renderer: {} to: {}", JsonUtils::ToStringProperties(currentComponentJson),
 					currentEntity->TryGetComponent<EntityRendererData>()->ToString()));*/
 			}
-			else if (componentName == Utils::GetTypeName<LightSourceData>())
+			else if (componentName == Utils::ToStringTypeName<LightSourceData>())
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<LightSourceData>());
 			}
-			else if (componentName == Utils::GetTypeName<PhysicsBodyData>())
+			else if (componentName == Utils::ToStringTypeName<PhysicsBodyData>())
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<PhysicsBodyData>());
 			}
-			else if (componentName == Utils::GetTypeName<PlayerData>())
+			else if (componentName == Utils::ToStringTypeName<PlayerData>())
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<PlayerData>());
 			}
-			else if (componentName == Utils::GetTypeName<SpriteAnimatorData>())
+			else if (componentName == Utils::ToStringTypeName<SpriteAnimatorData>())
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<SpriteAnimatorData>());
 			}
-			else if (componentName == Utils::GetTypeName<ParticleEmitterData>())
+			else if (componentName == Utils::ToStringTypeName<ParticleEmitterData>())
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<ParticleEmitterData>());
 			}
-			else if (componentName == Utils::GetTypeName<CollisionBoxData>())
+			else if (componentName == Utils::ToStringTypeName<CollisionBoxData>())
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<CollisionBoxData>());
 			}
@@ -281,45 +282,45 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 
 			try
 			{
-				if (componentName == Utils::GetTypeName<TransformData>())
+				if (componentName == Utils::ToStringTypeName<TransformData>())
 				{
 					serializedComponentJson = dynamic_cast<TransformData*>(component)->Serialize();
 				}
-				else if (componentName == Utils::GetTypeName<AnimatorData>())
+				else if (componentName == Utils::ToStringTypeName<AnimatorData>())
 				{
 					serializedComponentJson = dynamic_cast<AnimatorData*>(component)->Serialize();
 				}
-				else if (componentName == Utils::GetTypeName<CameraData>())
+				else if (componentName == Utils::ToStringTypeName<CameraData>())
 				{
 					serializedComponentJson = dynamic_cast<CameraData*>(component)->Serialize();
 				}
-				else if (componentName == Utils::GetTypeName<EntityRendererData>())
+				else if (componentName == Utils::ToStringTypeName<EntityRendererData>())
 				{
 					serializedComponentJson = dynamic_cast<EntityRendererData*>(component)->Serialize();
 					/*LogError(std::format("Serialized component entity renderer:{} converted:{} serialize:{}", 
 						JsonUtils::ToStringProperties(serializedComponentJson), converted->ToString(), JsonUtils::ToStringProperties(serialized)));*/
 				}
-				else if (componentName == Utils::GetTypeName<LightSourceData>())
+				else if (componentName == Utils::ToStringTypeName<LightSourceData>())
 				{
 					serializedComponentJson = dynamic_cast<LightSourceData*>(component)->Serialize();
 				}
-				else if (componentName == Utils::GetTypeName<PhysicsBodyData>())
+				else if (componentName == Utils::ToStringTypeName<PhysicsBodyData>())
 				{
 					serializedComponentJson = dynamic_cast<PhysicsBodyData*>(component)->Serialize();
 				}
-				else if (componentName == Utils::GetTypeName<PlayerData>())
+				else if (componentName == Utils::ToStringTypeName<PlayerData>())
 				{
 					serializedComponentJson = dynamic_cast<PlayerData*>(component)->Serialize();
 				}
-				else if (componentName == Utils::GetTypeName<SpriteAnimatorData>())
+				else if (componentName == Utils::ToStringTypeName<SpriteAnimatorData>())
 				{
 					serializedComponentJson = dynamic_cast<SpriteAnimatorData*>(component)->Serialize();
 				}
-				else if (componentName == Utils::GetTypeName<ParticleEmitterData>())
+				else if (componentName == Utils::ToStringTypeName<ParticleEmitterData>())
 				{
 					serializedComponentJson = dynamic_cast<ParticleEmitterData*>(component)->Serialize();
 				}
-				else if (componentName == Utils::GetTypeName<CollisionBoxData>())
+				else if (componentName == Utils::ToStringTypeName<CollisionBoxData>())
 				{
 					serializedComponentJson = dynamic_cast<CollisionBoxData*>(component)->Serialize();
 				}

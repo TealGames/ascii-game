@@ -6,7 +6,7 @@
 #include <optional>
 #include "Core/Input/InputAction.hpp"
 #include "Core/Input/InputDirection.hpp"
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 
 namespace Input
 {

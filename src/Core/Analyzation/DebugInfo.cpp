@@ -13,6 +13,7 @@
 #include "Core/UI/UIHierarchy.hpp"
 #include "ECS/Component/Types/UI/UILayout.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 const float TOP_LEFT_Y = 0.95;
 const float DEBUG_AREA_WIDTH = 0.3;
@@ -129,7 +130,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scen
 	SetProperty("GroundDist:", std::format("{} m", std::to_string(maybePlayer->GetVerticalDistanceToGround())));
 
 	ScreenPosition mouseScreenPos = input.GetMousePosition();
-	WorldPosition mouseWorld = mainCamera.ScreenToWorldPosition(mouseScreenPos);
+	WorldPosition3D mouseWorld = mainCamera.ScreenToWorldPosition(mouseScreenPos);
 	SetMouseDebugData(DebugMousePosition{ mouseWorld, ScreenPosition{mouseScreenPos.m_X + 15, mouseScreenPos.m_Y} });
 	//LogError(std::format("Finished update loop"));
 }

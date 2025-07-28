@@ -7,7 +7,7 @@
 #include "Core/Serialization/JsonSerializers.hpp"
 
 AABBIntersectionData::AABBIntersectionData() :
-	AABBIntersectionData(false, Vec2::ZERO) {}
+	AABBIntersectionData(false, Vec2::Zero()) {}
 
 AABBIntersectionData::AABBIntersectionData(const bool& intersect, const Vec2& depth) :
 	m_DoIntersect(intersect), m_Depth(depth) {}
@@ -34,7 +34,7 @@ std::string ToString(const CollisionFlag flag)
 
 CollidingBoxInfo::CollidingBoxInfo(const CollisionBoxData& box, const CollisionFlag& flag) : m_Box(&box), m_Flag(flag) {}
 
-CollisionBoxData::CollisionBoxData(const Vec2& worldSize, const WorldPosition& transformOffset) :
+CollisionBoxData::CollisionBoxData(const Vec2& worldSize, const WorldPosition2D& transformOffset) :
 	Component(), m_aabb(worldSize), m_transformOffset(transformOffset), m_collidingBoxes() {}
 
 CollisionBoxData::CollisionBoxData() :
@@ -168,45 +168,45 @@ bool CollisionBoxData::Validate()
 	return true;
 }
 
-WorldPosition CollisionBoxData::GetOffset() const
+WorldPosition2D CollisionBoxData::GetOffset() const
 {
 	return m_transformOffset;
 }
-WorldPosition CollisionBoxData::GetCenterGlobalPos() const
+WorldPosition2D CollisionBoxData::GetCenterGlobalPos() const
 {
-	return GetEntity().GetTransform().GetGlobalPos();
+	return GetEntity().GetTransform().GetGlobalPos().GetXY();
 }
-WorldPosition CollisionBoxData::GetGlobalMin() const
+WorldPosition2D CollisionBoxData::GetGlobalMin() const
 {
 	return m_aabb.GetGlobalMin(GetAABBCenterWorldPos());
 }
-WorldPosition CollisionBoxData::GetGlobalMax() const
+WorldPosition2D CollisionBoxData::GetGlobalMax() const
 {
 	return m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
 }
 
-const Physics::AABB& CollisionBoxData::GetAABB() const
+const Physics::AABB2D& CollisionBoxData::GetAABB() const
 {
 	return m_aabb;
 }
-WorldPosition CollisionBoxData::GetAABBCenterWorldPos() const
+WorldPosition2D CollisionBoxData::GetAABBCenterWorldPos() const
 {
 	return GetCenterGlobalPos() + m_transformOffset;
 }
-WorldPosition CollisionBoxData::GetAABBWorldPos(const NormalizedPosition& relativePos) const
+WorldPosition2D CollisionBoxData::GetAABBWorldPos(const NormalizedPosition& relativePos) const
 {
 	return m_aabb.GetWorldPos(GetAABBCenterWorldPos(), relativePos);
 }
 
-WorldPosition CollisionBoxData::GetAABBTopLeftWorldPos() const
+WorldPosition2D CollisionBoxData::GetAABBTopLeftWorldPos() const
 {
 	return GetAABBWorldPos(Vec2{ 0, 1 });
 }
 
-bool CollisionBoxData::DoIntersect(const WorldPosition& pos) const
+bool CollisionBoxData::DoIntersect(const WorldPosition2D& pos) const
 {
-	WorldPosition minPos = m_aabb.GetGlobalMin(GetAABBCenterWorldPos());
-	WorldPosition maxPos = m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
+	WorldPosition2D minPos = m_aabb.GetGlobalMin(GetAABBCenterWorldPos());
+	WorldPosition2D maxPos = m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
 
 	return minPos.m_X <= pos.m_X && pos.m_X <= maxPos.m_X &&
 		minPos.m_Y <= pos.m_Y && pos.m_Y <= maxPos.m_Y;
@@ -219,10 +219,10 @@ bool CollisionBoxData::DoIntersect(const CollisionBoxData& otherBox) const
 
 AABBIntersectionData CollisionBoxData::GetCollisionIntersectionData(const CollisionBoxData& otherBox) const
 {
-	const WorldPosition thisMinGlobal = GetGlobalMin();
-	const WorldPosition thisMaxGlobal = GetGlobalMax();
-	const WorldPosition otherMinGlobal = otherBox.GetGlobalMin();
-	const WorldPosition otherMaxGlobal = otherBox.GetGlobalMax();
+	const WorldPosition2D thisMinGlobal = GetGlobalMin();
+	const WorldPosition2D thisMaxGlobal = GetGlobalMax();
+	const WorldPosition2D otherMinGlobal = otherBox.GetGlobalMin();
+	const WorldPosition2D otherMaxGlobal = otherBox.GetGlobalMax();
 
 	
 	AABBIntersectionData result = {};
@@ -325,10 +325,10 @@ AABBIntersectionData CollisionBoxData::GetCollisionIntersectionData(const Collis
 
 Vec2 CollisionBoxData::GetAABBMinDisplacement(const CollisionBoxData& otherBox) const
 {
-	const WorldPosition thisMinGlobal = GetGlobalMin();
-	const WorldPosition thisMaxGlobal = GetGlobalMax();
-	const WorldPosition otherMinGlobal = otherBox.GetGlobalMin();
-	const WorldPosition otherMaxGlobal = otherBox.GetGlobalMax();
+	const WorldPosition2D thisMinGlobal = GetGlobalMin();
+	const WorldPosition2D thisMaxGlobal = GetGlobalMax();
+	const WorldPosition2D otherMinGlobal = otherBox.GetGlobalMin();
+	const WorldPosition2D otherMaxGlobal = otherBox.GetGlobalMax();
 
 	Vec2 displacement = {};
 
@@ -350,20 +350,20 @@ Vec2 CollisionBoxData::GetAABBMinDisplacement(const CollisionBoxData& otherBox) 
 
 Vec2 CollisionBoxData::GetAABBDirection(const CollisionBoxData& otherBox, const bool& considerCollisions) const
 {
-	const WorldPosition thisMinGlobal = GetGlobalMin();
-	const WorldPosition thisMaxGlobal = GetGlobalMax();
-	const WorldPosition otherMinGlobal = otherBox.GetGlobalMin();
-	const WorldPosition otherMaxGlobal = otherBox.GetGlobalMax();
+	const WorldPosition2D thisMinGlobal = GetGlobalMin();
+	const WorldPosition2D thisMaxGlobal = GetGlobalMax();
+	const WorldPosition2D otherMinGlobal = otherBox.GetGlobalMin();
+	const WorldPosition2D otherMaxGlobal = otherBox.GetGlobalMax();
 
-	return GetVector(GetAABBCenterWorldPos(), otherBox.GetAABBCenterWorldPos());
+	return otherBox.GetAABBCenterWorldPos() - GetAABBCenterWorldPos();
 
-	const Vec2 minVec = GetVector(thisMinGlobal, otherMinGlobal);
-	const Vec2 maxVec = GetVector(thisMaxGlobal, otherMaxGlobal);
+	const Vec2 minVec = otherMinGlobal- thisMinGlobal;
+	const Vec2 maxVec = otherMaxGlobal- thisMaxGlobal;
 
 	
 
-	Vec2 dir = Vec2::ZERO;
-	const WorldPosition& thisCenter = GetAABBCenterWorldPos();
+	Vec2 dir = Vec2::Zero();
+	const WorldPosition2D& thisCenter = GetAABBCenterWorldPos();
 	if (considerCollisions)
 	{
 		//If enttiy 2 is to the right of entity1 center x
@@ -423,8 +423,8 @@ std::string CollisionBoxData::ToStringRelative() const
 
 void CollisionBoxData::Deserialize(const Json& json)
 {
-	m_aabb = json.at("AABB").get<Physics::AABB>();
-	m_transformOffset = json.at("Offset").get<WorldPosition>();
+	m_aabb = json.at("AABB").get<Physics::AABB2D>();
+	m_transformOffset = json.at("Offset").get<WorldPosition2D>();
 }
 Json CollisionBoxData::Serialize()
 {

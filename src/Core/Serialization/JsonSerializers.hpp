@@ -1,7 +1,10 @@
 #pragma once
 #include "nlohmann/json.hpp"
-#include "Utils/Data/Vec2.hpp"
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
+#include "Math/Vec2.hpp"
+#include "Math/Vec3.hpp"
+#include "Math/Vec2Int.hpp"
+#include "Math/Quaternion.hpp"
 #include "Core/Rendering/RenderLayer.hpp"
 #include "Core/Visual/VisualData.hpp"
 #include "Core/Visual/TextArray.hpp"
@@ -21,6 +24,7 @@
 #include <vector>
 #include "Utils/Data/FloatRange.hpp"
 #include "Core/Asset/Asset.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 using Json = nlohmann::json;
 using JsonOrdered = nlohmann::ordered_json;
@@ -40,11 +44,26 @@ void InitJsonSerializationDependencies(SceneManagement::SceneManager& manager,
 
 bool HasRequiredProperties(const Json& json, const std::vector<std::string>& propertyNames);
 
+namespace Utils
+{
+	void from_json(const Json& json, Vec2& vec);
+	void to_json(Json& json, const Vec2& vec);
+
+	void from_json(const Json& json, Vec2Int& vec);
+	void to_json(Json& json, const Vec2Int& vec);
+}
+
 void from_json(const Json& json, Vec2& vec);
 void to_json(Json& json, const Vec2& vec);
 
 void from_json(const Json& json, Vec2Int& vec);
 void to_json(Json& json, const Vec2Int& vec);
+
+void from_json(const Json& json, Vec3& vec);
+void to_json(Json& json, const Vec3& vec);
+
+void from_json(const Json& json, Quat& q);
+void to_json(Json& json, const Quat& q);
 
 void from_json(const Json& json, FloatRange& range);
 void to_json(Json& json, const FloatRange& range);
@@ -93,8 +112,8 @@ void to_json(Json& json, const SpriteAnimation& anim);
 
 namespace Physics
 {
-	void from_json(const Json& json, Physics::AABB& aabb);
-	void to_json(Json& json, const Physics::AABB& aabb);
+	void from_json(const Json& json, Physics::AABB2D& aabb);
+	void to_json(Json& json, const Physics::AABB2D& aabb);
 }
 
 Json TrySerializeAsset(const Asset* asset);
@@ -112,7 +131,7 @@ T* TryDeserializeTypeAsset(const Json& json)
 	catch (const std::exception& e)
 	{
 		Assert(false, std::format("Tried to deserialize Asset into type:{} but ran into error:{}", 
-			Utils::GetTypeName<T>(), e.what()));
+			Utils::ToStringTypeName<T>(), e.what()));
 	}
 	return nullptr;
 }
@@ -132,7 +151,7 @@ std::vector<T*> TryDeserializeTypeAssets(const Json& json)
 	catch (const std::exception& e)
 	{
 		Assert(false, std::format("Tried to deserialize Asset into type:{} but ran into error:{}",
-			Utils::GetTypeName<T>(), e.what()));
+			Utils::ToStringTypeName<T>(), e.what()));
 	}
 	return {};
 }
@@ -228,7 +247,7 @@ T* TryDeserializeComponentSelf(const Json& json, EntityData& selfEntity, const b
 			{
 				SerializableComponent serializableComponent = json.get<SerializableComponent>();
 
-				const std::string tType = Utils::GetTypeName<T>();
+				const std::string tType = Utils::ToStringTypeName<T>();
 				const std::string jsonType = json.at("Component").get<std::string>();
 				if (!Assert(tType == jsonType, std::format("Tried to get component from SELF of entity:{} "
 					"but json type:{} does not match template:{}", selfEntity.ToString(), jsonType, tType)))
@@ -287,7 +306,7 @@ template<typename T>
 requires (!std::is_pointer_v<T>&& std::is_base_of_v<Component, T>)
 Json TrySerializeComponentSelf(const T* component, EntityData& selfEntity, const bool& isOptional = false)
 {
-	const std::string componentName = Utils::GetTypeName<T>();
+	const std::string componentName = Utils::ToStringTypeName<T>();
 
 	if (isOptional)
 	{

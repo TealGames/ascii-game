@@ -1,7 +1,7 @@
 #pragma once
 #include "pch.hpp"
 //#include "raylib.h"
-#include "Utils/Data/Vec2.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Core/UI/UIStyle.hpp"
 #include "StaticReferenceGlobals.hpp"
 #include "Utils/Data/ColorConstants.hpp"

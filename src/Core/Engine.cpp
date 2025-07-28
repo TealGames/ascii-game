@@ -124,6 +124,8 @@ namespace Core
 	//TODO: visual data has similar visual storing/creating functions so prevent the need for copying so much similar logic
 	//TODO: what if instead of rendering each segment as text, what if they were all textures with transparent backgrounds and characters made in photshop -> making it easier to have
 	//custom text arrangmenets
+	//TODO: to improve performance since we create many vectors, it may be a good idea to create vector views instead of doing .xy to create new ones if we do not need
+	//a new vector and only need to read, we can make views into existing memory and work with that especially if we only need components to create new vectors
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;

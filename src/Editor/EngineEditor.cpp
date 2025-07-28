@@ -274,7 +274,7 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 	//LogError(std::format("Is toggled:{} selected:{}", std::to_string(m_editModeToggle.IsToggled()), std::to_string(m_editModeInfo.m_Selected != nullptr)));
 
 	Vec2 mouseClickedPos = m_inputManager.GetMousePosition();
-	WorldPosition worldClickedPos = mainCamera.ScreenToWorldPosition(ScreenPosition(mouseClickedPos.m_X, mouseClickedPos.m_Y));
+	WorldPosition3D worldClickedPos = mainCamera.ScreenToWorldPosition(ScreenPosition(mouseClickedPos.m_X, mouseClickedPos.m_Y));
 	if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsPressed())
 	{
 		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(*activeScene, worldClickedPos);

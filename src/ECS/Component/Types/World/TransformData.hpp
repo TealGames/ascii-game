@@ -1,52 +1,62 @@
 #pragma once
-#include "Utils/Data/Vec2.hpp"
 #include "ECS/Component/Component.hpp"
-#include "glm/mat4x4.hpp"
-#include "glm/vec3.hpp"
-#include <glm/gtc/quaternion.hpp>
+//#include "Math/Vec3.hpp"
+//#include "Math/Mat4.hpp"
+//#include "Math/Quaternion.hpp"
+#include "Utils/Data/Vec3Type.hpp"
+#include "Utils/Data/Quaternion.hpp"
 
-//Since negative positions are not allowed
-const Vec2 NULL_POS = Vec2{ -1, -1 };
 
 class TransformData : public Component
 {
 private:
-	glm::vec3 m_localPos;
-	//Vec2 m_lastLocalPos;
+public:
+	static inline constexpr Vec3 DEFAULT_POS = Vec3::Zero();
+	static inline constexpr Vec3 DEFAULT_SCALE = Vec3::One();
+	static inline constexpr Quat DEFAULT_ROTATION = Quat::Identity();
+
+	Vec3 m_LocalPos;
+	//Vec2 m_lastLocalPos;Math
 	//Vec2 m_localPosLastFrame;
 
-	glm::vec3 m_localScale;
-	glm::quat m_localRotation;
-public:
+	Vec3 m_LocalScale;
+	Quat m_LocalRotation;
 
 private:
+	
+
 public:
-	TransformData();
 	TransformData(const Json& json);
-	TransformData(const Vec2& pos);
+	TransformData(const Vec3 pos= DEFAULT_POS, const Vec3 scale= DEFAULT_SCALE, 
+		const Quat rotation= DEFAULT_ROTATION);
 
 	//TODO: these position setting functions should get moved into transform
-	void SetLocalPos(const Vec2& newPos);
+	/*void SetLocalPos(const Vec3& newPos);
 	void SetLocalPosX(const float& newX);
 	void SetLocalPosY(const float& newY);
 
 	void SetLocalPosDeltaX(const float& xDelta);
 	void SetLocalPosDeltaY(const float& yDelta);
-	void SetLocalPosDelta(const Vec2& moveDelta);
+	void SetLocalPosDelta(const Vec2& moveDelta);*/
 
-	Vec2 GetLocalPos() const;
-	Vec2 GetGlobalPos() const;
-	//Vec2 GetLastPos() const;
-	//Vec2 GetLocalPosLastFrame() const;
-	//void SetLocalPosLastFrame(const Vec2& vec);
-	//bool HasMovedThisFrame() const;
+	static Mat4 CalculateTranslationMatrix(const Vec3& pos);
+	static Mat4 CalculateScaleMatrix(const Vec3& scale);
+	static Mat4 CalculateRotationMatrix(const Quat& rotation);
 
-	Vec2 GetLocalScale() const;
-	Vec2 GetGlobalScale() const;
-	void SetLocalScale(const Vec2 scale);
+	Mat4 CalculateLocalScaleMatrix() const;
+	Mat4 CalculateLocalTranslationMatrix() const;
+	Mat4 CalculateLocalRotationMatrix() const;
 
-	glm::mat4 GetLocalModelMatrix() const;
-	glm::mat4 GetWorldModelMatrix() const;
+	//Vec3 GetLocalPos() const;
+	Vec3 GetGlobalPos() const;
+
+	//Vec3 GetLocalScale() const;
+	Vec3 GetGlobalScale() const;
+	//void SetLocalScale(const Vec2 scale);
+	Quat GetGlobalRotation() const;
+
+	Mat4 GetLocalModelMatrix() const;
+	Mat4 GetWorldModelMatrix() const;
 
 	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;

@@ -2,7 +2,7 @@
 #include <optional>
 #include <vector>
 #include "ECS/Systems/SingleBodySystem.hpp"
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "ECS/Entity/Entity.hpp"
 #include "ECS/Component/Component.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"

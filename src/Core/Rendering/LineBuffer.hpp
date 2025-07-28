@@ -6,7 +6,7 @@ struct LineData
 	Vec2 m_StartPos;
 	Vec2 m_EndPos;
 
-	LineData(const WorldPosition& startPos, const WorldPosition& endPos);
+	LineData(const WorldPosition3D& startPos, const WorldPosition3D& endPos);
 };
 
 using LineBuffer = std::vector<LineData>;

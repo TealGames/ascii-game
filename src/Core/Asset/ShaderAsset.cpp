@@ -10,12 +10,18 @@ static constexpr char const* VERTEX_SHADER_IDENTIFIER = "vertex";
 ShaderAsset::ShaderAsset(const std::filesystem::path& path)
 	: Asset(path, false), m_shader(Rendering::CreateShader("", "")) 
 {
+	
+}
+
+void ShaderAsset::WriteToShaderFromFiles()
+{
+	const std::filesystem::path path = GetPath();
 	const std::string pathStr = path.string();
 	std::string_view pathView = std::string_view(pathStr);
-	if (!Assert(IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a shader asset from path:{}"
+	if (!Assert(IO::DoesPathHaveExtension(GetPath(), EXTENSION), std::format("Tried to create a shader asset from path:{}"
 		"but it does not have required shader extension:'{}'", pathStr, EXTENSION)))
 		return;
-	
+
 	const size_t lastSeparatorIndex = pathStr.find(Asset::WORD_SEPARATOR);
 	//If name has no separator it means it has no sahder identifier -> try to read as single file
 	if (lastSeparatorIndex == std::string::npos)
@@ -47,7 +53,7 @@ ShaderAsset::ShaderAsset(const std::filesystem::path& path)
 	}
 
 	//THIS POINT MEANS THERE ARE MULTIPLE FILES FOR THIS SHADER
-	const std::filesystem::path otherShaderPath = GetPath().parent_path() / (otherShaderName + path.extension());
+	const std::filesystem::path otherShaderPath = GetPath().parent_path() / (otherShaderName + path.extension().string());
 	//If we have split up shaders, we make the other asset path invalid for the assetmanager to set as asset so we do not
 	//have two assets with the same shader data as initialized with the opposing shader type
 	AssetManagement::AssetManager::SetAssetHiddenStatus(otherShaderPath, true);
@@ -59,7 +65,7 @@ ShaderAsset::ShaderAsset(const std::filesystem::path& path)
 	else
 	{
 		LogError(std::format("Attempted to set shader asset at path:{} source code from multiple files, "
-			"but current shader type could not get resolved:{}", pathStr, ::ToString(type)));
+			"but current shader type could not get resolved:{}", pathStr, Rendering::ToString(type)));
 	}
 }
 
@@ -70,7 +76,7 @@ void ShaderAsset::ReadShaderFromSingleFile()
 	std::string shaderSource[2] = {};
 
 	IO::TryExecuteOnFileByLine(GetPath(), 
-		[this](std::string* line)-> void 
+		[this, &maybeShaderMode, &shaderSource](const std::string* line)-> void
 		{
 			if (line->empty()) return;
 
@@ -86,13 +92,13 @@ void ShaderAsset::ReadShaderFromSingleFile()
 			}
 
 			if (!maybeShaderMode.has_value()) return;
-			shaderSource[(ShaderTypeIntegralType)maybeShaderMode.value()] += *line + "\n";
+			shaderSource[(Rendering::ShaderTypeIntegralType)maybeShaderMode.value()] += *line + "\n";
 		});
 
 	if (shaderSource[0].empty() || shaderSource[1].empty())
 	{
 		LogError(std::format("Tried to read sahder from single file at path:{} but some shader type was not found. "
-			"Vertex Found:{} Fragment found:{}", GetPath().c_str(), !shaderSource[0].empty(), !shaderSource[1].empty()));
+			"Vertex Found:{} Fragment found:{}", GetPath().string().c_str(), std::to_string(!shaderSource[0].empty()), std::to_string(!shaderSource[1].empty())));
 		return;
 	}
 	m_shader.SetSources(std::move(shaderSource[0]), std::move(shaderSource[1]));
@@ -104,5 +110,5 @@ const Rendering::Shader& ShaderAsset::GetShader() const
 }
 void ShaderAsset::UpdateAssetFromFile() 
 {
-
+	WriteToShaderFromFiles();
 }

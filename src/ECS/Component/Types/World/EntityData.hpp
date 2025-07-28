@@ -4,7 +4,6 @@
 #include "ECS/Entity/EntityRegistry.hpp"
 #include "ECS/Component/Types/World/TransformData.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
-#include <format>
 
 class UIPanel;
 
@@ -66,7 +65,7 @@ private:
 		if (!GlobalComponentInfo::PassesComponentRequirementCheck(*this, typeid(T)))
 		{
 			Assert(false, std::format("Attempted to add a component of type:'{}' to entity:{} "
-				"but it does not have the required components", Utils::GetTypeName<T>(), ToString()));
+				"but it does not have the required components", FormatComponentName(typeid(T)), ToString()));
 			throw std::invalid_argument("Missing required components");
 		}
 	}
@@ -517,7 +516,7 @@ ValidationAction CreateRequiredComponentFunction(const Types&... components) {
 					else
 					{
 						LogError(std::format("Entity:{} is missing required component of type:{}",
-							entity.ToString(), Utils::GetTypeName<Types>()));
+							entity.ToString(), FormatComponentName(typeid(Types))));
 						passesRequiredCheck = false;
 					}
 

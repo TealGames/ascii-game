@@ -5,8 +5,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/Data/Point4D.hpp"
 #include "Utils/Data/Point3D.hpp"
-#include "Utils/Data/Vec2.hpp"
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Core/PositionConversions.hpp"
 #include <optional>
 #include "Utils/Data/Color.hpp"

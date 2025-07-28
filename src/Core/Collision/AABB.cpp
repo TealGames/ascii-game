@@ -5,50 +5,50 @@
 
 namespace Physics
 {
-	AABB::AABB() : AABB(WorldPosition{}, WorldPosition{}) {}
-	AABB::AABB(const WorldPosition& minPos, const WorldPosition& maxPos)
+	AABB2D::AABB2D() : AABB2D(WorldPosition2D{}, WorldPosition2D{}) {}
+	AABB2D::AABB2D(const WorldPosition2D& minPos, const WorldPosition2D& maxPos)
 		: m_MinPos(minPos), m_MaxPos(maxPos) {}
 
-	AABB::AABB(const Vec2& size) : m_MinPos(size/2 * -1), m_MaxPos(size/2) {}
+	AABB2D::AABB2D(const Vec2& size) : m_MinPos(size/2 * -1), m_MaxPos(size/2) {}
 
-	WorldPosition AABB::GetGlobalMin(const WorldPosition& centerWorldPos) const
+	WorldPosition2D AABB2D::GetGlobalMin(const WorldPosition2D& centerWorldPos) const
 	{
 		return centerWorldPos + m_MinPos;
 	}
 
-	WorldPosition AABB::GetGlobalMax(const WorldPosition& centerWorldPos) const
+	WorldPosition2D AABB2D::GetGlobalMax(const WorldPosition2D& centerWorldPos) const
 	{
 		return centerWorldPos + m_MaxPos;
 	}
 
-	Vec2 AABB::GetSize() const
+	Vec2 AABB2D::GetSize() const
 	{
 		return { m_MaxPos.m_X- m_MinPos.m_X, 
 				 m_MaxPos.m_Y- m_MinPos.m_Y };
 	}
 
-	Vec2 AABB::GetHalfExtent() const
+	Vec2 AABB2D::GetHalfExtent() const
 	{
 		Vec2 size = GetSize();
 		return { size.m_X/2, size.m_Y/2 };
 	}
 
-	WorldPosition AABB::GetWorldPos(const WorldPosition& centerPos, const NormalizedPosition& relativePos) const
+	WorldPosition2D AABB2D::GetWorldPos(const WorldPosition2D& centerPos, const NormalizedPosition& relativePos) const
 	{
 		Vec2 boundSize = GetSize();
-		WorldPosition bottomLeftPos = centerPos - WorldPosition(boundSize.m_X / 2, boundSize.m_Y/2);
+		WorldPosition2D bottomLeftPos = centerPos - WorldPosition2D(boundSize.m_X / 2, boundSize.m_Y/2);
 		if (relativePos.GetPos() == Vec2{0, 0}) return bottomLeftPos;
 
-		return bottomLeftPos + WorldPosition(relativePos.GetPos().m_X * boundSize.m_X, relativePos.GetPos().m_Y * boundSize.m_Y);
+		return bottomLeftPos + WorldPosition2D(relativePos.GetPos().m_X * boundSize.m_X, relativePos.GetPos().m_Y * boundSize.m_Y);
 	}
 
-	std::string AABB::ToString(const WorldPosition& transformPos) const
+	std::string AABB2D::ToString(const WorldPosition2D& transformPos) const
 	{
 		return std::format("[GMin:{} GMax:{} Size: {}]", GetGlobalMin(transformPos).ToString(), 
 			GetGlobalMax(transformPos).ToString(), GetSize().ToString());
 	}
 
-	std::string AABB::ToString() const
+	std::string AABB2D::ToString() const
 	{
 		return std::format("[Min:{} Max:{} Size: {}]", m_MinPos.ToString(),
 			m_MaxPos.ToString(), GetSize().ToString());

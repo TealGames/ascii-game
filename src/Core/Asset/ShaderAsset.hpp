@@ -13,6 +13,7 @@ public:
 
 private:
 	void ReadShaderFromSingleFile();
+	void WriteToShaderFromFiles();
 public:
 	ShaderAsset(const std::filesystem::path& path);
 

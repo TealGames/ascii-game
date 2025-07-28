@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <string_view>
 #include <filesystem>
 #include "Core/Serialization/IJsonSerializable.hpp"
 
@@ -22,6 +23,7 @@ protected:
 	/// </summary>
 	/// <param name="name"></param>
 	void OverrideAssetName(const std::string& name);
+	void OverrideAssetName(const std::string_view& name);
 
 public:
 	Asset(const std::filesystem::path& path, const bool hasDependencies);

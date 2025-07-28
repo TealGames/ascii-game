@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include <vector>
 #include <optional>
-#include "Utils/HelperFunctions.hpp"
+#include "Utils/ToStringFunctions.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
 /// <summary>
