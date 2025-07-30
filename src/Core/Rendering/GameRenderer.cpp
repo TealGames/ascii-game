@@ -9,63 +9,46 @@
 #include "Utils/RaylibUtils.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #include "Core/Analyzation/Debug.hpp"
+#include "Core/EngineState.hpp"
+#include "Core/Camera/CameraController.hpp"
+
 namespace Rendering
 {
     constexpr bool DONT_RENDER_NON_UTILS = false;
+    constexpr size_t PRE_ALLOCATED_SHAPES = 10;
+    constexpr size_t PRE_ALLOCATED_INDICES_COUNT = PRE_ALLOCATED_SHAPES* 6;
+    constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = PRE_ALLOCATED_SHAPES * 4;
+
+    constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
+    constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
+
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
 
-    Renderer::Renderer() 
-        : m_renderCalls(), m_textData(), m_textureData(), m_batches(), m_currentBatchIndex(-1), m_flushType(BatchFlushType::StateChange)
+    Renderer::Renderer(const EngineState& engineState)
+        : m_engineState(&engineState), m_staticRenderData(),
+        m_renderCalls(), m_textData(), m_textureData(), m_batches(), m_flushType(BatchFlushType::StateChange), 
+        m_layout(Backend::CreateVertexLayout()), m_bufferController(&m_layout),
+        m_vertexBuffer(Backend::CreateVertexBuffer(nullptr, sizeof(VertexType), PRE_ALLOCATED_VERTICES_COUNT, VertexAttributeAdvance::Vertex)),
+        m_indexBuffer(Backend::CreateIndexBuffer(nullptr, PRE_ALLOCATED_INDICES_COUNT)), 
+        m_instancedBuffer(Backend::CreateVertexBuffer(nullptr, sizeof(InstanceData), PRE_ALLOCATED_SHAPES, VertexAttributeAdvance::Instance))
     {
         //We reserve one for current batch, but also keep it as vector for future in case we do rendering in one go
         m_batches.reserve(1);
+
+        const BindIndex vertexBindIndex= m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
+        std::vector<VertexAttribute> vertexAttributes = { VertexAttribute{0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Pos)} };
+        m_bufferController.AddVertexBufferAttributes(vertexBindIndex, vertexAttributes);
+
+        const BindIndex instancedBindIndex= m_bufferController.AddVertexBuffer(&m_instancedBuffer, nullptr);
+        std::vector<VertexAttribute> instancedAttributes = { 
+            VertexAttribute{1, 4, VertexAttributeBaseType::Float, false, offsetof(InstanceData, m_Color)} };
+        m_bufferController.AddVertexBufferAttributes(instancedBindIndex, instancedAttributes);
+        m_bufferController.AddVertexBufferMatrix4Attribute(instancedBindIndex, 2, false, sizeof(Vec4), offsetof(InstanceData, m_ModelMatrix));
     }
 
     void Renderer::Init()
     {
         Rendering::Backend::LoadBackend();
-    }
-
-    void Renderer::CreateBatches()
-    {
-        for (const auto& call : m_renderCalls)
-        {
-            if (const CircleCall* c = std::get_if<CircleCall>(&call))
-            {
-                Backend::DrawCircle(c->m_Pos, c->m_Radius, c->m_Color);
-            }
-            else if (const RectCall* c = std::get_if<RectCall>(&call))
-            {
-                //if (RaylibUtils::ColorEqual(c->m_Color, RED)) LogError(std::format("Drawing red rectangle at:{}", c->m_Pos.ToString()));
-                Backend::DrawRectangle(c->m_Pos, c->m_Size, c->m_Color);
-            }
-            else if (const TextureCall* c = std::get_if<TextureCall>(&call))
-            {
-                TextureCallData& texData = m_textureData[c->m_Id];
-                //Vector2 scale = RaylibUtils::ToRaylibVector(texData.m_Scale);
-
-                const Vec2 texSize = Vec2(texData.m_Tex.GetWidth(), texData.m_Tex.GetHeight());
-
-                //Rectangle source = { 0.0f, 0.0f, texSize.x * Utils::GetSign(scale.x), texSize.y* Utils::GetSign(scale.y)};
-                //Vector2 drawPos = RaylibUtils::ToRaylibVector(c->m_Pos);
-                //Rectangle dest = { drawPos.x, drawPos.y, texSize.x*std::abs(scale.x), texSize.y*std::abs(scale.y)};
-                //DrawTexturePro(texData.m_Tex, source, dest, {0, 0}, 0, c->m_Color);
-                Backend::DrawTexture(c->m_Pos, texSize * Abs(texData.m_Scale), Vec2::Zero(), texSize * GetSign(texData.m_Scale), texData.m_Tex, 0, c->m_Color);
-            }
-            else if (const TextCall* c = std::get_if<TextCall>(&call))
-            {
-                TextCallData& textData = m_textData[c->m_Id];
-                Backend::DrawText(c->m_Pos, textData.m_Font, textData.m_Text, textData.m_FontSize, textData.m_Spacing, c->m_Color);
-            }
-            else if (const LineCall* c = std::get_if<LineCall>(&call))
-            {
-                Backend::DrawLine(c->m_Pos, c->m_Pos + c->m_Length, c->m_Thickness, c->m_Color);
-            }
-            else if (const RectLineCall* c = std::get_if<RectLineCall>(&call))
-            {
-                Backend::DrawRectangleLine(c->m_Pos, c->m_Thickness, c->m_Size, c->m_Color);
-            }
-        }
     }
 
     /*
@@ -145,32 +128,59 @@ namespace Rendering
         if (m_batches.empty())
         {
             m_batches.push_back(RenderBatch{ shader, {}, {} });
-            m_currentBatchIndex++;
         }
 
-        const size_t firstVertexIndex = m_batches[m_currentBatchIndex].m_Vertices.size();
-        m_batches[m_currentBatchIndex].m_Vertices.insert(m_batches[m_currentBatchIndex].m_Vertices.begin(), 
-            vertexArray, vertexArray+ vertexSize);
+        const size_t firstVertexIndex = m_batches.back().m_Vertices.size();
+        m_batches.back().m_Vertices.insert(m_batches.back().m_Vertices.begin(),
+            vertexArray, vertexArray + vertexSize);
 
         //Update the indices to match the start of new index
         for (size_t i = 0; i < indicesSize; i++)
             *(indexArray + i) += firstVertexIndex;
 
-        m_batches[m_currentBatchIndex].m_VertexIndices.insert(m_batches[m_currentBatchIndex].m_VertexIndices.end(), 
-            indexArray, indexArray+ indicesSize);
+        m_batches.back().m_VertexIndices.insert(m_batches.back().m_VertexIndices.end(),
+            indexArray, indexArray + indicesSize);
     }
 
     void Renderer::FlushBatches()
     {
-        for (const auto& batch : m_batches)
+        //We only do this the first time we flush a batch during this frame
+        if (!m_staticRenderData.m_UpdatedDataThisFrame)
+        {
+            const CameraData& activeCamera = m_engineState->m_CameraController->GetActiveCamera();
+            m_staticRenderData.m_ViewMatrix = activeCamera.CalculateViewMatrix();
+            m_staticRenderData.m_ProjectionMatrix = activeCamera.CalculateProjectionMatrix();
+            m_staticRenderData.m_UpdatedDataThisFrame = true;
+        }
+
+        for (auto& batch : m_batches)
         {
             batch.m_Shader->BindActive();
-            Backend::DrawBatch(batch.m_Shader, &batch.m_Vertices[0], batch.m_Vertices.size(), 
-                &batch.m_VertexIndices[0], batch.m_VertexIndices.size());
+
+            if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, VIEW_MATRIX_UNIFORM_NAME, 
+                m_staticRenderData.m_ViewMatrix.GetMemPointer()))
+                return;
+            if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, PROJ_MATRIX_UNIFORM_NAME, 
+                m_staticRenderData.m_ProjectionMatrix.GetMemPointer()))
+                return;
+
+            const size_t drawVertexCount = batch.m_Vertices.size();
+            const size_t drawIndexCount = batch.m_VertexIndices.size();
+            const size_t drawInstanceCount = batch.m_InstanceData.size();
+            m_vertexBuffer.WriteData(0, &batch.m_Vertices[0], drawVertexCount);
+            m_indexBuffer.WriteData(0, &batch.m_VertexIndices[0], drawIndexCount);
+            m_instancedBuffer.WriteData(0, &batch.m_InstanceData[0], drawInstanceCount);
+
+            //When we upload to gpu, we can get rid of cpu side buffer data
+            batch.m_VertexIndices.clear();
+            batch.m_Vertices.clear();
+            batch.m_InstanceData.clear();
+
+            Backend::DrawUploadedIndexBufferInstaced(0, drawIndexCount, drawInstanceCount);
+
             batch.m_Shader->UnbindActive();
         }
         
-        m_currentBatchIndex = -1;
         m_batches.clear();
     }
 
@@ -178,35 +188,35 @@ namespace Rendering
     {
         m_renderCalls.emplace_back(CircleCall{ centerPos, radius, color });
     }
-    void Renderer::AddRectangleCall(const WorldPosition3D& topLeftPos, const Vec2& size, const Utils::Color color)
+    void Renderer::AddRectangleCall(const WorldPosition3D& worldPos, const Vec2& size, const Utils::Color color)
     {
-        m_renderCalls.emplace_back(RectCall{ topLeftPos, size, color });
+        m_renderCalls.emplace_back(RectCall{ worldPos, size, color });
        
         constexpr size_t VERTEX_COUNT = 4;
-        const Vertex vertices[VERTEX_COUNT] = { {topLeftPos}, {topLeftPos + WorldPosition(0, -size.m_Y)},
-                                     {topLeftPos + WorldPosition(size.m_X, -size.m_Y)}, {topLeftPos + WorldPosition(size.m_X, 0)} };
+        const Vertex vertices[VERTEX_COUNT] = { {worldPos}, {worldPos + WorldPosition3D(0, -size.m_Y, 0)},
+                                     {worldPos + WorldPosition3D(size.m_X, -size.m_Y, 0)}, {worldPos + WorldPosition3D(size.m_X, 0, 0)} };
 
         constexpr size_t INDEX_COUNT = 6;
         IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2 };
         AddVerticesToBatch(m_defaultShader, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
     }
-    void Renderer::AddTextureCall(const WorldPosition3D& topLeftPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color)
+    void Renderer::AddTextureCall(const WorldPosition3D& worldPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color)
     {
         m_textureData.emplace_back(tex, scale);
-        m_renderCalls.emplace_back(TextureCall{ static_cast<TextureID>(m_textureData.size() - 1), topLeftPos, color });
+        m_renderCalls.emplace_back(TextureCall{ static_cast<TextureID>(m_textureData.size() - 1), worldPos, color });
     }
-    void Renderer::AddTextCall(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color)
+    void Renderer::AddTextCall(const WorldPosition3D& worldPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color)
     {
         m_textData.emplace_back(font, text, size, spacing);
-        m_renderCalls.emplace_back(TextCall{ static_cast<TextID>(m_textData.size() - 1), topLeftPos, color });
+        m_renderCalls.emplace_back(TextCall{ static_cast<TextID>(m_textData.size() - 1), worldPos, color });
     }
     void Renderer::AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Utils::Color color)
     {
         m_renderCalls.emplace_back(LineCall{ startPos, thickness, length, color });
     }
-    void Renderer::AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color)
+    void Renderer::AddRectangleLineCall(const WorldPosition3D& worldPos, const float thickness, const Vec2& size, const Utils::Color color)
     {
-        m_renderCalls.emplace_back(RectLineCall{ topLeftPos, thickness, size, color });
+        m_renderCalls.emplace_back(RectLineCall{ worldPos, thickness, size, color });
     }
 
     void Renderer::PushCallsToBuffer(const std::vector<RenderCall>& calls)
@@ -228,8 +238,8 @@ namespace Rendering
         Backend::BeginRenderingMarker();
         Backend::ClearBackground();
         //ClearBackground(BLACK);
-
-        //LogError(std::format("Frame has: {} render calls", std::to_string(RenderCalls.size())));
+        
+        /*
         for (const auto& call : m_renderCalls)
         {
             if (const CircleCall* c= std::get_if<CircleCall>(&call))
@@ -268,10 +278,12 @@ namespace Rendering
                 Backend::DrawRectangleLine(c->m_Pos, c->m_Thickness, c->m_Size, c->m_Color);
             }
         }
+        */
         if (!m_batches.empty()) FlushBatches();
         Backend::EndRenderingMarker();
 
         ClearCommandBuffers();
+        m_staticRenderData.m_UpdatedDataThisFrame = false;
     }
 
     void Renderer::ClearCommandBuffers()

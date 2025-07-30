@@ -136,7 +136,7 @@ namespace ECS
         const WorldPosition3D& centerPos, FragmentedTextBuffer& buffer, bool displayLightLevels)
     {
         std::sort(buffer.begin(), buffer.end(), 
-            [&centerPos](const TextBufferCharPosition& first, const TextBufferCharPosition& second) -> bool
+            [&centerPos](const TextBufferCharPosition2D& first, const TextBufferCharPosition2D& second) -> bool
             {
                 return GetDistance(centerPos, first.m_Pos) < GetDistance(centerPos, second.m_Pos);
                 
@@ -166,7 +166,7 @@ namespace ECS
     }
 
     Utils::Color LightSourceSystem::CalculateNewColor(LightSourceData& data,
-        const TextBufferCharPosition& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
+        const TextBufferCharPosition2D& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
         //Log(std::format("Distance between {} and {} is: {}",
         //currentPos.ToString(), centerPos.ToString(), std::to_string(distanceToCenter)));

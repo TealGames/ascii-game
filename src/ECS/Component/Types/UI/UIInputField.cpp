@@ -5,7 +5,7 @@
 #include "Core/Analyzation/Debug.hpp"
 #include "Utils/StringUtil.hpp"
 #include "StaticGlobals.hpp"
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Utils/RaylibUtils.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UIPanel.hpp"

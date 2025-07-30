@@ -31,7 +31,7 @@ GizmoOverlay::GizmoOverlay(ECS::UIRenderSystem& renderSystem, Physics::PhysicsMa
 				return;
 
 			const ScreenPosition aabbTopLeftScreenPos = cameraController.GetActiveCamera().WorldToScreenPosition(Vec3(body->GetCollisionBox().GetAABBTopLeftWorldPos(), 0));
-			const Vec2 aabbScreenSize = cameraController.GetActiveCamera().WorldToScreenSize(body->GetCollisionBox().GetAABB().GetSize());
+			const Vec2 aabbScreenSize = cameraController.GetActiveCamera().WorldToScreenSize(0, Vec3(body->GetCollisionBox().GetAABB().GetSize(), 0));
 			/*if (body->GetEntity().m_Name == "player") 
 				LogError(std::format("Player collider at screen:{} (top left world:{} center world:{}) Player world pos:{} size:{}", aabbTopLeftScreenPos.ToString(), 
 					body->GetCollisionBox().GetAABBTopLeftWorldPos().ToString(), body->GetCollisionBox().GetAABBCenterWorldPos().ToString(), body->GetEntity().GetTransform().GetGlobalPos().ToString(),

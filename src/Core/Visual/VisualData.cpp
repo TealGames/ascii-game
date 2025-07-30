@@ -150,7 +150,7 @@ void VisualData::AddToCreatedBuffer(const size_t& r, const size_t& c, const size
 			if (charSize.m_X < predefinedCharArea->m_X) pivotDiff += (*predefinedCharArea - charSize) / 2 * Vec2(1, -1);
 		}
 
-		m_buffer.push_back(TextBufferCharPosition(pivotDiff, textChar, fontData));
+		m_buffer.push_back(TextBufferCharPosition2D(pivotDiff, textChar, fontData));
 		/*LogError(std::format("Adding visual data char:{} current norm:{} pivot:{} pivots diff:{} size diff:{} ", m_buffer.back().ToString(),
 			currPosNormalized.GetPos().ToString(), relativePivotPos.GetPos().ToString(), (relativePivotPos.GetPos() - currPosNormalized.GetPos()).ToString(), pivotDiff.ToString()));*/
 	}
@@ -242,7 +242,7 @@ Vec2 VisualData::GetPivotRelative() const
 }
 WorldPosition3D VisualData::GetPivotWorldPos(const WorldPosition3D& centerScreenPos) const
 {	
-	return (m_pivotRelative.GetPos() - PIVOT_CENTER) * GetWorldSize() + centerScreenPos;
+	return WorldPosition3D((m_pivotRelative.GetPos() - PIVOT_CENTER) * GetWorldSize() + centerScreenPos.GetXY(), centerScreenPos.m_Z);
 }
 
 std::string VisualData::ToString() const

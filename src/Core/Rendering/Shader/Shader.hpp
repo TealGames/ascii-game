@@ -13,13 +13,26 @@ namespace Rendering
 	};
 	std::string ToString(const ShaderType type);
 
+	enum class UniformType : std::uint8_t
+	{
+		Float = 0,
+		Int = 1,
+		Vector2 = 2,
+		Vector3 = 3,
+		Vector4 = 4,
+		Matrix4x4 = 5,
+	};
+
+
 	class Shader;
 	struct ShaderPlatformCallbacks
 	{
-		RenderObjectId(*m_InitFunc) (const char*, const char*);
-		void(*m_BindActiveFunc) (const Shader&);
-		void(*m_UnbindActiveFunc) (const Shader&);
+		RenderObjectId(*m_InitFunc) (const char* vertexSource, const char* fragmentSource);
+		void(*m_BindActiveFunc) (const Shader& shader);
+		void(*m_UnbindActiveFunc) (const Shader& shader);
+		bool(*m_TrySetUniformFunc) (const Shader& shader, const UniformType uniform, const char* uniformName, const void* valuePtr);
 	};
+
 
 	class Shader
 	{
@@ -49,6 +62,8 @@ namespace Rendering
 
 		void BindActive() const;
 		void UnbindActive() const;
+
+		bool TrySetUniform(const UniformType type, const char* uniformName, const void* valuePtr) const;
 
 		//ShaderType GetType() const;
 	};

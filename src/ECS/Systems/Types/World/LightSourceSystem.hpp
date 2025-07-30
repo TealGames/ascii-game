@@ -56,7 +56,7 @@ namespace ECS
 
 		void RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
-		Utils::Color CalculateNewColor(LightSourceData& data, const TextBufferCharPosition& bufferPos, const float& distance, 
+		Utils::Color CalculateNewColor(LightSourceData& data, const TextBufferCharPosition2D& bufferPos, const float& distance, 
 			std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:

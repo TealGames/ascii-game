@@ -4,6 +4,7 @@
 #include "Core/Rendering/RenderingBackend.hpp"
 #include <cstdint>
 
+class EngineState;
 class UIHierarchy;
 class DebugInfo;
 class CommandConsole;
@@ -11,12 +12,25 @@ class EntityEditorUI;
 
 namespace Rendering
 {
+    struct Vertex
+    {
+        WorldPosition3D m_Pos;
+    };
+    struct InstanceData
+    {
+        Utils::Color m_Color;
+        Mat4 m_ModelMatrix;
+    };
+    using VertexType = Vertex;
+    using InstanceType = InstanceData;
+
     class Shader;
     struct RenderBatch
     {
         const Shader* m_Shader = nullptr;
         std::vector<Vertex> m_Vertices = {};
         std::vector<IndexType> m_VertexIndices = {};
+        std::vector<InstanceData> m_InstanceData = {};
     };
 
     enum class BatchFlushType : std::uint8_t
@@ -25,9 +39,19 @@ namespace Rendering
         FrameEnd        = 1,
     };
 
+    struct StaticFrameRenderData
+    {
+        bool m_UpdatedDataThisFrame = false;
+        Mat4 m_ViewMatrix = {};
+        Mat4 m_ProjectionMatrix = {};
+    };
+
     class Renderer
     {
     private:
+        const EngineState* m_engineState;
+        struct StaticFrameRenderData m_staticRenderData;
+
         std::vector<RenderCall> m_renderCalls;
         std::vector<TextCallData> m_textData;
         std::vector<TextureCallData> m_textureData;
@@ -36,15 +60,20 @@ namespace Rendering
 
         BatchFlushType m_flushType;
         std::vector<RenderBatch> m_batches;
-        size_t m_currentBatchIndex;
+
+        VertexLayout m_layout;
+        BufferController m_bufferController;
+
+        IndexBuffer m_indexBuffer;
+        VertexBuffer m_vertexBuffer;
+        VertexBuffer m_instancedBuffer;
     public:
 
     private:
-        void CreateBatches();
         void AddVerticesToBatch(const Shader* shader, const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize);
         void FlushBatches();
     public:
-        Renderer();
+        Renderer(const EngineState& engineState);
         void Init();
 
         void AddCircleCall(const WorldPosition3D& centerPos, const float radius, const Utils::Color color);

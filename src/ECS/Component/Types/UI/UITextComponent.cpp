@@ -264,11 +264,10 @@ UIRect UITextComponent::Render(const UIRect& rect)
 					renderInfo.m_RenderSize.ToString(), usableSize.ToString(), std::to_string(m_fontData.m_Size),
 					std::to_string(HasFontSizeFactor()), std::to_string(GetFontSizeFromArea(usableSize)), RaylibUtils::ToString(spaceUsed)));
 			}*/
-	//LogError(std::format("started drawing test"));
-	m_renderer->GetRendererMutable().AddTextCall(topLeftPos, m_fontData.m_FontAsset->GetFont(), m_text.c_str(), m_fontData.m_Size, m_fontData.m_Tracking, m_color);
-	//LogError(std::format("Finsihed drawing test"));
-	//if (DRAW_RENDER_BOUNDS) DrawRectangleLines(topLeftPos.x, topLeftPos.y, spaceUsed.x, spaceUsed.y, YELLOW);
-	//Note: although we use a different top left pos for actual text due to padding, the full object starts at the render info top left
+
+	//TODO: add ui render call
+	//m_renderer->GetRendererMutable().AddTextCall(topLeftPos, m_fontData.m_FontAsset->GetFont(), m_text.c_str(), m_fontData.m_Size, m_fontData.m_Tracking, m_color);
+
 	return rect;
 }
 //ScreenPosition TextGUI::CalculateSize(const RenderInfo& renderInfo) const

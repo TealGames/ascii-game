@@ -98,7 +98,7 @@ namespace ECS
 	{
 		for (auto& layer : renderLayers)
 		{
-			layer->AddText(TextBufferCharPosition(particle.m_Pos, 
+			layer->AddText(TextBufferCharPosition2D(particle.m_Pos, 
 				particle.m_TextChar, data.m_FontData));
 		}
 	}

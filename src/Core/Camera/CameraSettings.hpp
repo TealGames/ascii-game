@@ -71,7 +71,15 @@ public:
 		const float farDistance= DEFAULT_FAR_DISTANCE, const float fieldOfViewYRadians= DEFAULT_FIELD_OF_VIEW_Y_RAD);
 
 	bool HasNoFollowTarget() const;
-	WorldPosition2D CalculateViewportSize() const;
+	/// <summary>
+	/// Calculates the viewport size of the camera (2D plane) at the camera depth (distance from camera forward dir)
+	/// NOte: camera depth does not matter for orthographic, but is crucial for perspective projection
+	/// Note: depth is regardless of near or far clipping plane -> it is just distance from camera,
+	/// since far and near planes do not affect view size, just what is renderedcx
+	/// </summary>
+	/// <param name="cameraDepth"></param>
+	/// <returns></returns>
+	WorldPosition2D CalculateViewportSize(const float cameraDepth=0) const;
 	void UpdateViewportSize();
 
 	float CalculateAspectRatio() const;

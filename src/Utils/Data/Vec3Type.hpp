@@ -235,7 +235,6 @@ public:
 		return *this;
 	}
 };
-using Wack = Vec<float, 3>;
 
 /*
 template<typename IntegralType>
@@ -516,4 +515,18 @@ Vec<T, 3> Round(const Vec<T, 3>& vec, const std::uint8_t& decimalPlaces = 5)
 {
 	return Vec<T, 3>(Utils::Roundf(vec.m_X, decimalPlaces), 
 		Utils::Roundf(vec.m_Y, decimalPlaces), Utils::Roundf(vec.m_Z, decimalPlaces));
+}
+
+/// <summary>
+/// Return true if the point is wtihin the bounding volume formed by the min (forwardmost bottom left pos)
+/// and the max (backmost top right pos)
+/// </summary>
+/// <param name="point"></param>
+/// <param name="min"></param>
+/// <param name="max"></param>
+/// <returns></returns>
+bool IsPointWithinBounds(const Vec3& point, const Vec3& min, const Vec3& max) {
+	return (point.m_X >= min.m_X && point.m_X <= max.m_X) &&
+		   (point.m_Y >= min.m_Y && point.m_Y <= max.m_Y) &&
+		   (point.m_Z >= min.m_Z && point.m_Z <= max.m_Z);
 }

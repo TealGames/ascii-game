@@ -10,7 +10,7 @@ namespace ECS
 	{
 	private:
 		//ColliderOutlineBuffer m_colliderOutlineBuffer;
-		LineBuffer m_lineBuffer;
+		//LineBuffer m_lineBuffer;
 		Physics::PhysicsManager& m_physicsManager;
 
 	public:
@@ -23,8 +23,8 @@ namespace ECS
 		//const ColliderOutlineBuffer& GetColliderBuffer() const;
 		//ColliderOutlineBuffer& GetColliderBufferMutable();
 
-		const LineBuffer& GetLineBuffer() const;
-		LineBuffer& GetLineBufferMutable();
+		/*const LineBuffer& GetLineBuffer() const;
+		LineBuffer& GetLineBufferMutable();*/
 	};
 }
 

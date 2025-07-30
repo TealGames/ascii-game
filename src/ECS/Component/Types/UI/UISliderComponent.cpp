@@ -58,8 +58,8 @@ void UISliderComponent::SetValueDelta(const float delta)
 float UISliderComponent::GetMinValue() const { return m_minMaxValues.m_X; }
 float UISliderComponent::GetMaxValue() const { return m_minMaxValues.m_Y; }
 
-int UISliderComponent::GetMinValueInt() const { return m_minMaxValues.XAsInt(); }
-int UISliderComponent::GetMaxValueInt() const { return m_minMaxValues.YAsInt(); }
+int UISliderComponent::GetMinValueInt() const { return static_cast<int>(m_minMaxValues.m_X); }
+int UISliderComponent::GetMaxValueInt() const { return static_cast<int>(m_minMaxValues.m_Y); }
 
 float UISliderComponent::GetValue() const { return m_value; };
 float UISliderComponent::GetValueNormalized() const { return (m_value / m_minMaxValues.m_Y) + m_minMaxValues.m_X; }

@@ -5,6 +5,7 @@
 #include "Core/Scene/SceneManager.hpp"
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/FontAsset.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 SceneManagement::SceneManager* SceneManager = nullptr;
 AssetManagement::AssetManager* AssetManager = nullptr;
@@ -82,8 +83,8 @@ void from_json(const Json& json, Vec2& vec)
 
 	try
 	{
-		vec.x = json.at(X_PROPERTY).get<float>();
-		vec.y = json.at(Y_PROPERTY).get<float>();
+		vec.m_X = json.at(X_PROPERTY).get<float>();
+		vec.m_Y = json.at(Y_PROPERTY).get<float>();
 	}
 	catch (const std::exception& e)
 	{
@@ -92,7 +93,7 @@ void from_json(const Json& json, Vec2& vec)
 }
 void to_json(Json& json, const Vec2& vec)
 {
-	json = { {"X", vec.x}, {"Y", vec.y} };
+	json = { {"X", vec.m_X}, {"Y", vec.m_Y} };
 }
 
 void from_json(const Json& json, Vec2Int& vec)
@@ -103,8 +104,8 @@ void from_json(const Json& json, Vec2Int& vec)
 
 	try
 	{
-		vec.x = json.at(X_PROPERTY).get<int>();
-		vec.y = json.at(Y_PROPERTY).get<int>();
+		vec.m_X = json.at(X_PROPERTY).get<int>();
+		vec.m_Y = json.at(Y_PROPERTY).get<int>();
 	}
 	catch (const std::exception& e)
 	{
@@ -113,7 +114,7 @@ void from_json(const Json& json, Vec2Int& vec)
 }
 void to_json(Json& json, const Vec2Int& vec)
 {
-	json = { {"X", vec.x}, {"Y", vec.y} };
+	json = { {"X", vec.m_X}, {"Y", vec.m_Y} };
 }
 
 void from_json(const Json& json, Vec3& vec)
@@ -125,9 +126,9 @@ void from_json(const Json& json, Vec3& vec)
 
 	try
 	{
-		vec.x = json.at(X_PROPERTY).get<float>();
-		vec.y = json.at(Y_PROPERTY).get<float>();
-		vec.z = json.at(Z_PROPERTY).get<float>();
+		vec.m_X = json.at(X_PROPERTY).get<float>();
+		vec.m_Y = json.at(Y_PROPERTY).get<float>();
+		vec.m_Z = json.at(Z_PROPERTY).get<float>();
 	}
 	catch (const std::exception& e)
 	{
@@ -136,7 +137,7 @@ void from_json(const Json& json, Vec3& vec)
 }
 void to_json(Json& json, const Vec3& vec)
 {
-	json = { {"X", vec.x}, {"Y", vec.y}, {"Z", vec.z}};
+	json = { {"X", vec.m_X}, {"Y", vec.m_Y}, {"Z", vec.m_Z}};
 }
 
 void from_json(const Json& json, Quat& q)
@@ -149,10 +150,10 @@ void from_json(const Json& json, Quat& q)
 
 	try
 	{
-		q.x = json.at(X_PROPERTY).get<float>();
-		q.y = json.at(Y_PROPERTY).get<float>();
-		q.z = json.at(Z_PROPERTY).get<float>();
-		q.w = json.at(W_PROPERTY).get<float>();
+		q.m_X = json.at(X_PROPERTY).get<float>();
+		q.m_Y = json.at(Y_PROPERTY).get<float>();
+		q.m_Z = json.at(Z_PROPERTY).get<float>();
+		q.m_W = json.at(W_PROPERTY).get<float>();
 	}
 	catch (const std::exception& e)
 	{
@@ -161,7 +162,7 @@ void from_json(const Json& json, Quat& q)
 }
 void to_json(Json& json, const Quat& q)
 {
-	json = { {"X", q.x}, {"Y", q.y}, {"Z", q.z}, {"W", q.w}};
+	json = { {"X", q.m_X}, {"Y", q.m_Y}, {"Z", q.m_Z}, {"W", q.m_W}};
 }
 
 void from_json(const Json& json, FloatRange& range)
@@ -404,7 +405,7 @@ void from_json(const Json& json, WorldFontProperties& font)
 				return;
 			fontSize = maybeFontSize.value();
 		}
-		else fontSize = fontJson.get<Utils::Vec2>();
+		else fontSize = fontJson.get<Vec2>();
 
 		font = WorldFontProperties(fontSize, json.at(TRACKING_PROPERTY).get<float>(), *fontAsset);
 	}
@@ -423,7 +424,7 @@ void to_json(Json& json, const WorldFontProperties& font)
 	else json["FontSize"] = font.m_RectSize;
 }
 
-void from_json(const Json& json, TextBufferCharPosition& textChar)
+void from_json(const Json& json, TextBufferCharPosition2D& textChar)
 {
 	const char* TEXT_CHAR_PROPERTY = "Text";
 	const char* FONT_PROEPRTY = "Font";
@@ -446,7 +447,7 @@ void from_json(const Json& json, TextBufferCharPosition& textChar)
 	//else fontSize = fontJson.get<float>();
 	try
 	{
-		textChar = TextBufferCharPosition(json.at(POS_PROPERTY).get<Vec2>(), 
+		textChar = TextBufferCharPosition2D(json.at(POS_PROPERTY).get<Vec2>(), 
 			json.at(TEXT_CHAR_PROPERTY).get<TextChar>(), json.at(FONT_PROEPRTY).get<WorldFontProperties>());
 	}
 	catch (const std::exception& e)
@@ -454,7 +455,7 @@ void from_json(const Json& json, TextBufferCharPosition& textChar)
 		Assert(false, std::format("Tried to deserialize text buffer pos:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
-void to_json(Json& json, const TextBufferCharPosition& textChar)
+void to_json(Json& json, const TextBufferCharPosition2D& textChar)
 {
 	/*json["Font"] = TrySerializeFont(textChar.m_FontData.m_Font);
 
@@ -500,7 +501,7 @@ void from_json(const Json& json, VisualData& visualData)
 
 	try
 	{
-		auto textChars = json.at(BUFFER_PROPERTY).get<std::vector<TextBufferCharPosition>>();
+		auto textChars = json.at(BUFFER_PROPERTY).get<std::vector<TextBufferCharPosition2D>>();
 
 		Vec2 pivotPos = VisualData::DEFAULT_PIVOT;
 		Json pivotJson = json.at(PIVOT_PROPERTY);
@@ -853,15 +854,15 @@ void from_json(const Json& json, AnimationPropertyVariant& variant)
 	try
 	{
 		std::string propertyType = json.at(TYPE_PROPERTY).get<std::string>();
-		if (propertyType == Utils::GetTypeName<int>())
+		if (propertyType == Utils::ToStringTypeName<int>())
 		{
 			variant = AnimationPropertyVariant(json.at(PROPERTY_PROPERTY).get<AnimationProperty<int>>());
 		}
-		else if (propertyType == Utils::GetTypeName<float>())
+		else if (propertyType == Utils::ToStringTypeName<float>())
 		{
 			variant = json.at(PROPERTY_PROPERTY).get<AnimationProperty<float>>();
 		}
-		else if (propertyType == Utils::GetTypeName<std::uint8_t>())
+		else if (propertyType == Utils::ToStringTypeName<std::uint8_t>())
 		{
 			variant = json.at(PROPERTY_PROPERTY).get<AnimationProperty<std::uint8_t>>();
 		}
@@ -880,18 +881,18 @@ void to_json(Json& json, const AnimationPropertyVariant& var)
 {
 	if (std::holds_alternative<AnimationProperty<int>>(var))
 	{
-		json = { {"Type", Utils::GetTypeName<int>() }, 
+		json = { {"Type", Utils::ToStringTypeName<int>() },
 			{"Property", std::any_cast<AnimationProperty<int>>(var)}};
 	}
 	else if (std::holds_alternative<AnimationProperty<float>>(var))
 	{
-		json = { {"Type", Utils::GetTypeName<float>() },
+		json = { {"Type", Utils::ToStringTypeName<float>() },
 			   {"Property", std::any_cast<AnimationProperty<float>>(var)} };
 
 	}
 	else if (std::holds_alternative<AnimationProperty<std::uint8_t>>(var))
 	{
-		json = { {"Type", Utils::GetTypeName<std::uint8_t>() },
+		json = { {"Type", Utils::ToStringTypeName<std::uint8_t>() },
 			{"Property", std::any_cast<AnimationProperty<std::uint8_t>>(var)} };
 	}
 	else

@@ -142,6 +142,10 @@ namespace Core
 		}
 		return WindowViewportRect{ offset, correctedSize};
 	}
+	Vec2Int Window::CalculateRenderSize() const
+	{
+		return CalculateViewportRect(m_size.m_X, m_size.m_Y).m_Size;
+	}
 
 	std::string Window::ToString() const
 	{

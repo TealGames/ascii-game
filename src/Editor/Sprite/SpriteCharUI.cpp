@@ -20,7 +20,7 @@ RenderInfo SpriteCharGUI::Render(const RenderInfo& renderInfo)
 }
 */
 
-TextBufferCharPosition SpriteCharUI::GetAsTextBufferChar() const
+TextBufferCharPosition2D SpriteCharUI::GetAsTextBufferChar() const
 {
-	return TextBufferCharPosition();
+	return TextBufferCharPosition2D();
 }

@@ -422,7 +422,7 @@ std::vector<const RenderLayer*> Scene::GetAllLayers() const
 	return layers;
 }
 
-void Scene::AddToLayer(const RenderLayerType& layers, TextBufferCharPosition& textBufferPos)
+void Scene::AddToLayer(const RenderLayerType& layers, TextBufferCharPosition2D& textBufferPos)
 {
 	if (layers == RenderLayerType::None) return;
 

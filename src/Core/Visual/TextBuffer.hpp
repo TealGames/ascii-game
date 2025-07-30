@@ -1,23 +1,36 @@
 #pragma once
-#include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Data/WorldPosition.hpp"
 #include "Core/Visual/TextArray.hpp"
 #include "Core/Rendering/FontData.hpp"
 
 //TODO: perhaps the camera or something should group together into a new structure with the same font and font size
 //so that we do not need to repeat the same data for mutliple entries
-struct TextBufferCharPosition
+struct TextBufferCharPosition2D
 {
-	ScreenPosition m_Pos;
+	WorldPosition2D m_Pos;
 	TextChar m_Text;
 	WorldFontProperties m_FontData;
 
-	TextBufferCharPosition();
-	TextBufferCharPosition(const ScreenPosition& pos, const TextChar& textChar, const WorldFontProperties& font);
+	TextBufferCharPosition2D();
+	TextBufferCharPosition2D(const WorldPosition2D& pos, const TextChar& textChar, const WorldFontProperties& font);
 	Vec2 GetWorldSize() const;
 
 	std::string ToString() const;
 };
-std::string ToString(const std::vector<TextBufferCharPosition>& chars);
+std::string ToString(const std::vector<TextBufferCharPosition2D>& chars);
+
+struct TextBufferCharPosition3D
+{
+	WorldPosition3D m_Pos;
+	TextChar m_Text;
+	WorldFontProperties m_FontData;
+
+	TextBufferCharPosition3D();
+	TextBufferCharPosition3D(const WorldPosition3D& pos, const TextChar& textChar, const WorldFontProperties& font);
+	Vec2 GetWorldSize() const;
+
+	std::string ToString() const;
+};
 
 struct TextBufferChar
 {
@@ -31,7 +44,7 @@ struct TextBufferChar
 	std::string ToString() const;
 };
 
-using FragmentedTextBuffer = std::vector<TextBufferCharPosition>;
+using FragmentedTextBuffer = std::vector<TextBufferCharPosition2D>;
 
 //template<typename T>
 //struct TexturePosition

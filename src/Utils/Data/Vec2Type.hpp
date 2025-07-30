@@ -16,8 +16,8 @@ private:
 public:
 	union
 	{
-		struct { T m_X, m_Y, m_Z; };
-		T m_Components[3];
+		struct { T m_X, m_Y; };
+		T m_Components[2];
 	};
 
 public:
@@ -252,7 +252,7 @@ T DotProduct(const Vec<T, 2>& vecA, const Vec<T, 2>& vecB)
 template<typename T>
 Vec<T, 2> Abs(const Vec<T, 2>& vec)
 {
-	return Vec<T>(std::abs(vec.m_X), std::abs(vec.m_Y));
+	return Vec<T, 2>(std::abs(vec.m_X), std::abs(vec.m_Y));
 }
 
 template<typename T>
@@ -261,3 +261,15 @@ Vec2Int GetSign(const Vec<T, 2>& vec)
 	return Vec2(Utils::GetSign(vec.m_X), Utils::GetSign(vec.m_Y));
 }
 
+/// <summary>
+/// Return true if the point is wtihin the bounding volume formed by the min (bottom left pos)
+/// and the max (top right pos)
+/// </summary>
+/// <param name="point"></param>
+/// <param name="min"></param>
+/// <param name="max"></param>
+/// <returns></returns>
+bool IsPointWithinBounds(const Vec2& point, const Vec2& min, const Vec2& max) {
+	return (point.m_X >= min.m_X && point.m_X <= max.m_X) &&
+		(point.m_Y >= min.m_Y && point.m_Y <= max.m_Y);
+}

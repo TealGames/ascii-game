@@ -93,16 +93,69 @@ public:
 	{
 		if (r >= ROW_SIZE || c >= COL_SIZE)
 		{
-			throw std::invalid_argument(std::format("Invalid matrix4x4 get access:({}, {})", r, c));
+			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] get access:({}, {})", ROW_SIZE, COL_SIZE, r, c));
 			return 0;
 		}
 		return m_elements[c][r];
 	}
+	std::array<float, COL_SIZE> GetRowArray(const std::uint8_t r) const
+	{
+		if (r >= ROW_SIZE)
+		{
+			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] row get access:{}", ROW_SIZE, COL_SIZE, r));
+			return {};
+		}
+		std::array<float, COL_SIZE> result = {};
+		for (size_t c = 0; c < COL_SIZE; c++)
+		{
+			result[c] = m_elements[c][r];
+		}
+		return result;
+	}
+	Vec<float, COL_SIZE> GetRowVector(const std::uint8_t r) const
+	{
+		if (r >= ROW_SIZE)
+		{
+			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] row get access:{}", ROW_SIZE, COL_SIZE, r));
+			return {};
+		}
+		Vec<float, COL_SIZE> result = {};
+		for (size_t c = 0; c < COL_SIZE; c++)
+		{
+			result[c] = m_elements[c][r];
+		}
+		return result;
+	}
+	std::array<float, ROW_SIZE> GetColArray(const std::uint8_t c) const
+	{
+		if (c >= COL_SIZE)
+		{
+			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] col get access:{}", ROW_SIZE, COL_SIZE, c));
+			return {};
+		}
+		std::array<float, ROW_SIZE> result = {};
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			result[r] = m_elements[c][r];
+		}
+		return result;
+	}
+	Vec<float, ROW_SIZE> GetColVector(const std::uint8_t c) const
+	{
+		if (c >= COL_SIZE)
+		{
+			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] row get access:{}", ROW_SIZE, COL_SIZE, c));
+			return {};
+		}
+		return m_elements[c];
+	}
+
+
 	void Set(const std::uint8_t r, const std::uint8_t c, const float newVal)
 	{
 		if (r >= ROW_SIZE || c >= COL_SIZE)
 		{
-			throw std::invalid_argument(std::format("Invalid matrix4x4 set access:({}, {})", r, c));
+			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] set access:({}, {})", ROW_SIZE, r, c));
 			return;
 		}
 		m_elements[c][r] = newVal;

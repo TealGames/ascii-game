@@ -43,7 +43,7 @@ namespace ECS
 		/// <param name="sceneManager">Manager needed to retrieve viewed data</param>
 		/// <param name="followTarget">The object that that camera attempts to follow</param>
 		/// <param name="viewportSize">THe amount of text vewied in WIDTH, HEIGHT</param>
-		CameraSystem(Rendering::Renderer& renderer, ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer);
+		CameraSystem(Rendering::Renderer& renderer);
 		//Camera(Transform& transform, const Vec2Int& viewportSize);
 
 		void UpdateCameraPosition(CameraData& cameraData);

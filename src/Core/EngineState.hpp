@@ -26,6 +26,7 @@ namespace Rendering
 	};
 }
 
+class CameraController;
 class EngineState
 {
 private:
@@ -34,6 +35,7 @@ private:
 public:
 	UpdateStatusCode m_LastUpdateStatus;
 	Rendering::GraphicsContext m_GraphicsContext;
+	CameraController* m_CameraController;
 
 private:
 public:
@@ -41,7 +43,5 @@ public:
 
 	void SetExecutionState(ExecutionState newState);
 	ExecutionState GetExecutionState() const;
-
-	void SetRenderingContext(const Rendering::GraphicsContext& context);
 };
 

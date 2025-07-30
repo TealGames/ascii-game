@@ -58,7 +58,7 @@ public:
     RenderLayer();
     RenderLayer(const FragmentedTextBuffer& buffer);
 
-    void AddText(const TextBufferCharPosition& bufferPos);
+    void AddText(const TextBufferCharPosition2D& bufferPos);
 
     FragmentedTextBuffer& GetBufferMutable();
     const FragmentedTextBuffer& GetBuffer() const;

@@ -26,6 +26,8 @@ inline const char* MAIN_INPUT_PROFILE_MOVE_ACTION = "Move";
 #define GLFW
 #define OPENGL
 //#define DIRECTX
+//#define VULKAN
+//#define METAL
 
 #define RAYLIB
 

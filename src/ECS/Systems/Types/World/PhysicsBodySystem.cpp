@@ -16,7 +16,7 @@ namespace ECS
 	static constexpr bool DRAW_BODY_VELOCITY_VECTORS = true;
 
 	PhysicsBodySystem::PhysicsBodySystem(Physics::PhysicsManager& physicsManager) 
-		: m_lineBuffer(), m_physicsManager(physicsManager) 
+		: m_physicsManager(physicsManager) //m_lineBuffer(),
 	{
 		GlobalComponentInfo::AddComponentInfo(typeid(PhysicsBodyData), 
 			ComponentInfo(CreateComponentTypes<CollisionBoxData>(), CreateRequiredComponentFunction(CollisionBoxData()),
@@ -42,7 +42,7 @@ namespace ECS
 		//TODO: when physics world provides optimization then use it
 		//if (!RENDER_COLLIDER_OUTLINES) return;
 		//m_colliderOutlineBuffer.ClearAll();
-		m_lineBuffer.clear();
+		//m_lineBuffer.clear();
 
 		auto& bodies = m_physicsManager.GetPhysicsWorldMutable().GetBodiesMutable();
 		EntityData* entity = nullptr;
@@ -53,15 +53,15 @@ namespace ECS
 			entity = &(body->GetEntityMutable());
 
 			float velocityMagnitude = body->GetVelocity().GetMagnitude();
-			if (DRAW_BODY_VELOCITY_VECTORS && !Utils::ApproximateEqualsF(velocityMagnitude, 0))
+			/*if (DRAW_BODY_VELOCITY_VECTORS && !Utils::ApproximateEqualsF(velocityMagnitude, 0))
 			{
 				m_lineBuffer.emplace_back(entity->GetTransformMutable().GetGlobalPos(),
 					GetVectorEndPoint(entity->GetTransformMutable().GetGlobalPos(), body->GetVelocity()));
-			}
+			}*/
 		}
 	}
 
-	const LineBuffer& PhysicsBodySystem::GetLineBuffer() const
+	/*const LineBuffer& PhysicsBodySystem::GetLineBuffer() const
 	{
 		return m_lineBuffer;
 	}
@@ -69,6 +69,6 @@ namespace ECS
 	LineBuffer& PhysicsBodySystem::GetLineBufferMutable()
 	{
 		return m_lineBuffer;
-	}
+	}*/
 }
 

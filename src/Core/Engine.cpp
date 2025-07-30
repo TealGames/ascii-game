@@ -167,7 +167,7 @@ namespace Core
 		m_UIInteractionManager(m_inputManager, m_uiHierarchy),
 		m_uiHierarchy(m_sceneManager.m_GlobalEntityManager, Vec2Int{SCREEN_WIDTH, SCREEN_HEIGHT}),
 		m_popupManager(m_uiHierarchy),
-		m_renderer(),
+		m_renderer(m_engineState),
 		m_graphicsManager(m_assetManager),
 		m_transformSystem(),
 		m_entityRendererSystem(),
@@ -178,7 +178,7 @@ namespace Core
 		m_collisionBoxSystem(m_collisionRegistry),
 		m_physicsBodySystem(m_physicsManager),
 		m_playerSystem(m_inputManager),
-		m_cameraSystem(m_renderer, &(m_collisionBoxSystem.GetColliderBufferMutable()), &(m_physicsBodySystem.GetLineBufferMutable())),
+		m_cameraSystem(m_renderer),
 		m_particleEmitterSystem(),
 		m_triggerSystem(),
 		m_uiSystemExecutor(m_engineState, m_renderer, m_uiHierarchy, m_popupManager),
@@ -191,6 +191,7 @@ namespace Core
 		m_gameManager(m_uiHierarchy)
 
 	{
+		m_engineState.m_CameraController = &m_cameraController;
 		EngineLog("FINISHED SYSTEM CONSTRUCTORS");
 
 		BasicResult<bool> frameworkInitResult = FrameworkInit();
@@ -203,7 +204,7 @@ namespace Core
 		EngineLog("INITIALIZED ALL FRAMEWORKS");
 
 		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void 
-			{m_engineState.SetRenderingContext(Rendering::GraphicsContext{ window, &m_graphicsManager }); });
+			{m_engineState.m_GraphicsContext= Rendering::GraphicsContext{ window, &m_graphicsManager }; });
 		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void {UpdateWindow(*window); });
 
 		Window* createdWindow = m_windowManager.CreateNewWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_ASPECT_RATIO, WINDOW_NAME, nullptr);

@@ -2,6 +2,7 @@
 #include "Core/Time/TimerBase.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Analyzation/Debug.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 TimerResult::TimerResult() : TimerResult({}, {}, 0) {}
 
@@ -19,7 +20,7 @@ std::string TimerResult::ToString() const
 
 std::string ToString(const LocalTime& time)
 {
-	return Utils::FormatTime(time);
+	return Utils::ToStringTime(time);
 	//return std::string(std::put_time(std::localtime(&time)));
 
 	/*std::tm* now = std::localtime_s(&time);

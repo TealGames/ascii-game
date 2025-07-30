@@ -34,8 +34,7 @@ namespace Templates
 		UITextureData& onTex = onTexEntity->AddComponent(UITextureData(*AssetManager->TryGetTypeAssetFromPathMutable<TextureAsset>("textures/dropdown_icon_toggled.png")));
 		toggle.m_OnValueSet.AddListener([onTexEntity](bool isChecked)-> void
 			{
-				float oldScaleY = onTexEntity->GetTransformMutable().GetLocalScale().m_Y;
-				onTexEntity->GetTransformMutable().SetLocalScale({ 1, -oldScaleY });
+				onTexEntity->GetTransformMutable().m_LocalScale.m_Y *= -1; 
 			});
 
 		return std::make_tuple(toggleEntity, toggleTransform, &toggle);
@@ -57,8 +56,7 @@ namespace Templates
 		UITextureData& onTex = onTexEntity->AddComponent(UITextureData(*AssetManager->TryGetTypeAssetFromPathMutable<TextureAsset>("textures/x_icon.png")));
 		toggle.m_OnValueSet.AddListener([onTexEntity](bool isChecked)-> void
 			{
-				float oldScaleY = onTexEntity->GetTransformMutable().GetLocalScale().m_Y;
-				onTexEntity->GetTransformMutable().SetLocalScale({ 1, -oldScaleY });
+				onTexEntity->GetTransformMutable().m_LocalScale.m_Y *= -1;
 			});
 
 		toggle.SetStateTextures(&onTex, nullptr);

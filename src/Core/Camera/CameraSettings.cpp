@@ -27,9 +27,15 @@ bool CameraSettings::HasNoFollowTarget() const
     return m_FollowTarget == nullptr;
 }
 
-WorldPosition2D CameraSettings::CalculateViewportSize() const
+WorldPosition2D CameraSettings::CalculateViewportSize(const float cameraDepth) const
 {
-    return WorldPosition2D{ m_LensSize, m_LensSize / m_AspectRatio.m_X * m_AspectRatio.m_Y };
+    if (m_ProjectionType== ProjectionType::Orthographic)
+        return WorldPosition2D{ m_LensSize, m_LensSize / m_AspectRatio.m_X * m_AspectRatio.m_Y };
+    else
+    {
+        const float viewHeight = 2.0f * cameraDepth * std::tan(m_FieldOfViewYRadians * 0.5f);
+        return WorldPosition2D{ viewHeight * CalculateAspectRatio(), viewHeight};
+    }
 }
 void CameraSettings::UpdateViewportSize()
 {

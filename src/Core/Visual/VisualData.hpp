@@ -196,6 +196,12 @@ public:
 	const FontProperties& GetFontData() const;*/
 
 	Vec2 GetPivotRelative() const;
+	/// <summary>
+	/// Gets the pivot position in the world.
+	/// Note: since visual is 2d, the whole visual will inherit the center pos z coord
+	/// </summary>
+	/// <param name="centerScreenPos"></param>
+	/// <returns></returns>
 	WorldPosition3D GetPivotWorldPos(const WorldPosition3D& centerScreenPos) const;
 
 	//void AddVisualLocationToBuffer(const size_t& r, const size_t& c, FragmentedTextBuffer& buffer, const ) const;

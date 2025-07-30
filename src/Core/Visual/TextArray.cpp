@@ -4,7 +4,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/RaylibUtils.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "Core/Asset/FontAsset.hpp"
 

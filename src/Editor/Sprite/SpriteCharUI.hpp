@@ -19,6 +19,6 @@ public:
 	void Update();
 	//RenderInfo Render(const RenderInfo& renderInfo) override;
 
-	TextBufferCharPosition GetAsTextBufferChar() const;
+	TextBufferCharPosition2D GetAsTextBufferChar() const;
 };
 

@@ -4,6 +4,7 @@
 #include <optional>
 #include "Utils/Data/WorldPosition.hpp"
 #include "Utils/Data/ScreenPosition.hpp"
+#include "Math/Ray.hpp"
 #include "raylib.h"
 
 class Scene;
@@ -19,7 +20,7 @@ class UILayout;
 
 struct DebugMousePosition
 {
-	WorldPosition3D m_MouseWorldPos = {};
+	Ray3D m_MouseClickedRay = {};
 	ScreenPosition m_MouseTextScreenPos = {};
 };
 

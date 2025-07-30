@@ -1,6 +1,6 @@
 #pragma once
 #include "nlohmann/json.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Data/Vec3Type.hpp"
 #include "Math/Vec2.hpp"
 #include "Math/Vec3.hpp"
 #include "Math/Vec2Int.hpp"
@@ -98,8 +98,8 @@ void to_json(Json& json, const TextCharArrayPosition& textChar);
 void from_json(const Json& json, WorldFontProperties& font);
 void to_json(Json& json, const WorldFontProperties& font);
 
-void from_json(const Json& json, TextBufferCharPosition& textChar);
-void to_json(Json& json, const TextBufferCharPosition& textChar);
+void from_json(const Json& json, TextBufferCharPosition2D& textChar);
+void to_json(Json& json, const TextBufferCharPosition2D& textChar);
 
 void from_json(const Json& json, VisualData& visualData);
 void to_json(Json& json, const VisualData& visualData);

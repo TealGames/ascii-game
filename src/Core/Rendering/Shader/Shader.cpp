@@ -82,6 +82,16 @@ namespace Rendering
 		m_platformCallbacks.m_UnbindActiveFunc(*this);
 	}
 
+	bool Shader::TrySetUniform(const UniformType type, const char* uniformName, const void* valuePtr) const
+	{
+		if (!m_platformCallbacks.m_TrySetUniformFunc(*this, type, uniformName, valuePtr))
+		{
+			LogError(std::format("Attempted to set uniform of name:{} in shader but resulted in error", uniformName));
+			return false;
+		}
+		return true;
+	}
+
 	Shader CreateShader(const std::string& vertexSource, const std::string& fragmentSource)
 	{
 #if defined(OPENGL)

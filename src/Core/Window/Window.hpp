@@ -104,6 +104,7 @@ namespace Core
 		bool IsVsyncEnabled() const;
 
 		WindowViewportRect CalculateViewportRect(const int newWidth, const int newHeight) const;
+		Vec2Int CalculateRenderSize() const;
 
 		std::string ToString() const;
 	};

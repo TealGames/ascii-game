@@ -547,8 +547,8 @@ namespace Physics
 		
 		for (auto& body : m_bodies)
 		{
-			boundsWorldMin = body->GetCollisionBox().GetGlobalMin().GetXY();
-			boundsWorldMax = body->GetCollisionBox().GetGlobalMax().GetXY();
+			boundsWorldMin = body->GetCollisionBox().GetGlobalMin();
+			boundsWorldMax = body->GetCollisionBox().GetGlobalMax();
 
 			//TODO: perhaps optimizations could be made by checking to see if distance is too big to make it to this collider
 			//so we can just continue

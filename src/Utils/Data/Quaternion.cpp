@@ -1,5 +1,6 @@
 #include "Utils/Data/Quaternion.hpp"
 #include <format>
+#include <numbers>
 
 Vec3 Quat::ToEulerAngles() const
 {
@@ -14,7 +15,7 @@ Vec3 Quat::ToEulerAngles() const
     const double sinp = 2 * (m_W * m_Y - m_Z * m_X);
     double pitch = 0;
     if (std::abs(sinp) >= 1)
-        pitch = std::copysign(M_PI / 2, sinp); 
+        pitch = std::copysign(std::numbers::pi / 2, sinp);
     else
         pitch = std::asin(sinp);
 
@@ -25,14 +26,14 @@ Vec3 Quat::ToEulerAngles() const
     return Vec3(roll, pitch, yaw);
 }
 
-constexpr Quat Quat::ToQuaternion(const Vec3& radianEulerAngles)
+Quat Quat::ToQuaternion(const Vec3& radianEulerAngles)
 {
-    const double cy = std::cos(eulerAngle.m_Z * 0.5);
-    const double sy = std::sin(eulerAngle.m_Z * 0.5);
-    const double cp = std::cos(eulerAngle.m_Y * 0.5);
-    const double sp = std::sin(eulerAngle.m_Y * 0.5);
-    const double cr = std::cos(eulerAngle.m_X * 0.5);
-    const double sr = std::sin(eulerAngle.m_X * 0.5);
+    const double cy = std::cos(radianEulerAngles.m_Z * 0.5);
+    const double sy = std::sin(radianEulerAngles.m_Z * 0.5);
+    const double cp = std::cos(radianEulerAngles.m_Y * 0.5);
+    const double sp = std::sin(radianEulerAngles.m_Y * 0.5);
+    const double cr = std::cos(radianEulerAngles.m_X * 0.5);
+    const double sr = std::sin(radianEulerAngles.m_X * 0.5);
 
     Quat q = {};
     q.m_W = cr * cp * cy + sr * sp * sy;
@@ -41,11 +42,15 @@ constexpr Quat Quat::ToQuaternion(const Vec3& radianEulerAngles)
     q.m_Z = cr * cp * sy - sr * sp * cy;
     return q;
 }
+void Quat::SetToEulerAngle(const Vec3& radianEulerAngle)
+{
+    *this = ToQuaternion(radianEulerAngle);
+}
 
 Vec3 Quat::ApplyRotationToDir(const Vec3& v) const
 {
     const Vec3 u(m_X, m_Y, m_Z);
-    return 2.0f * DotProduct(u, v) * u + (m_W * m_W - DotProduct(u, u)) * v + 2.0f * m_W * CrossProduct(u, v);
+    return u * 2.0f * DotProduct(u, v) + v * (m_W * m_W - DotProduct(u, u)) + CrossProduct(u, v) * m_W * 2.0f;
 }
 
 Quat Quat::operator*(const Quat& other) const
@@ -61,7 +66,7 @@ Quat Quat::operator*(const Quat& other) const
 }
 Quat& Quat::operator*=(const Quat& other)
 {
-    if (other != *this)
+    if (&other != this)
     {
         *this = *this * other;
     }

@@ -30,7 +30,7 @@ public:
 	constexpr Quat() : Quat(Identity()) {}
 	constexpr Quat(const float x, const float y, const float z, const float w) :
 		m_X(x), m_Y(y), m_Z(z), m_W(w) {}
-	constexpr Quat(const Vec3& radianEulerAngles) : Quat(ToQuaternion(radianEulerAngles)) {}
+	Quat(const Vec3& radianEulerAngles) : Quat(ToQuaternion(radianEulerAngles)) {}
 
 	static inline constexpr Quat Identity()
 	{
@@ -38,7 +38,8 @@ public:
 	}
 
 	Vec3 ToEulerAngles() const;
-	static constexpr Quat ToQuaternion(const Vec3& radianEulerAngles);
+	void SetToEulerAngle(const Vec3& radianEulerAngle);
+	static Quat ToQuaternion(const Vec3& radianEulerAngles);
 
 	/// <summary>
 	/// Applies this rotation to the vec3 direction. Note: this does NOT convert 

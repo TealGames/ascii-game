@@ -1,8 +1,10 @@
 #version 330 core
 
 layout(location=0) in vec3 aPosition;
+
+//This is instanced per object
 layout(location=1) in vec4 aColor;
-//This is instanced per object not per vertex
+//This is also instanced
 layout(location=2) in mat4 aModelMatrix;
 
 //Passed to fragment shader

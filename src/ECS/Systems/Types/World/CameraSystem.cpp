@@ -23,11 +23,10 @@ namespace ECS
     static constexpr bool DO_SIZE_SCALING = true;
     static constexpr float FONT_SIZE_FACTOR = 0.1;
 
-	CameraSystem::CameraSystem(Rendering::Renderer& renderer, ColliderOutlineBuffer* colliderBuffer, LineBuffer* lineBuffer) :
+	CameraSystem::CameraSystem(Rendering::Renderer& renderer) :
         m_renderer(&renderer)//, m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
 	{
         GlobalComponentInfo::AddComponentInfo(typeid(CameraData), ComponentInfo(DependencyType::Entity));
-        //LogWarning(std::format("CREATED CAMERA SYSTEM: {}", std::to_string(colliderBuffer!=nullptr)));
 	}
 
     void CameraSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
@@ -36,32 +35,16 @@ namespace ECS
         ProfilerTimer timer("CameraSystem::SystemUpdate");
 #endif 
 
-        //m_currentFrameBuffer.clear();
-
-        //TODO: somthing was wrong with dirty counting )(most likely) so the optimization was not working
-        //so instead use dirty from entities not from componentns
-        //if (CACHE_LAST_BUFFER && !scene.HasDirtyComponents() && !mainCamera.m_LastFrameBuffer.empty())
-        //{
-        //    //Log("NO camera render update");
-        //    m_currentFrameBuffer = mainCamera.m_LastFrameBuffer;
-        //    //Rendering::RenderBuffer(data.m_LastFrameBuffer.value());
-        //    return;
-        //}
-
         scene.IncreaseFrameDirtyComponentCount();
         if (!mainCamera.m_CameraSettings.HasNoFollowTarget()) UpdateCameraPosition(mainCamera);
 
         CollapseLayersWithinViewport(scene, mainCamera);
-        //if (CACHE_LAST_BUFFER) mainCamera.m_LastFrameBuffer = m_currentFrameBuffer;
     }
 
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
     void CameraSystem::UpdateCameraPosition(CameraData& cameraData)
     {
-        /*Log(std::format("Main camera trans: {} follow trans: {}", mainCamera.m_Transform.m_Pos.ToString(), 
-            std::to_string(cameraData.m_CameraSettings.m_FollowTarget!=nullptr)));*/
-        //Log(std::format("Main camera trans: {} follow trans: ", mainCamera.m_Transform.m_Pos.ToString()));
-        cameraData.GetEntityMutable().GetTransformMutable().SetLocalPos(cameraData.m_CameraSettings.m_FollowTarget->GetTransform().GetLocalPos());
+        cameraData.GetEntityMutable().GetTransformMutable().m_LocalPos= cameraData.m_CameraSettings.m_FollowTarget->GetTransform().GetGlobalPos();
     }
 
     void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData)
@@ -70,19 +53,12 @@ namespace ECS
         float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_CameraSettings.m_WorldViewportSize.m_X, 
                                      SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y);
 
-       /* LogWarning(std::format("COLLAPSING CAMERA with scale: {} wdith factor: {} height factoer: {}",
-            std::to_string(scaleFactor), std::to_string(SCREEN_WIDTH / cameraData.m_CameraSettings.m_WorldViewportSize.m_X), 
-            std::to_string(SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y)));*/
-
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
-        //Log(std::format("Total layers: {}", std::to_string(layers.size())));
         ScreenPosition newScreenPos = {};
         Vec2 screenSize = {};
 
-        //LogError(std::format("Collapsing layers within viewport: {}", scene.ToStringLayers()));
+        std::array<InfinitePlane3D, 6> viewPlanes = cameraData.CalculateFrustumPlanes();
 
-        const WorldPosition3D cameraBottomLeftWorldPos= cameraTransform.GetLocalPos() - (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
-        const WorldPosition3D cameraTopRightWorldPos = cameraTransform.GetLocalPos() + (cameraData.m_CameraSettings.m_WorldViewportSize / 2);
         //TODO: this is inefficient because we render each pos within viewport, but even if some objects are within the same pos
         //the one behind it is still rendered. NOTE: it is difficult to find a solution when we might have small overlaps and we 
         //wanbt overlaps to be visible to ensure realism/not akward visuals + makes it difficult when using raylib
@@ -92,64 +68,19 @@ namespace ECS
             //LogWarning(std::format("Found layer with buffer size:{}", layer->GetBuffer().size()));
             for (const auto& textBufferPos : layer->GetBuffer())
             {
-                if (!IsWithinBounds(textBufferPos.m_Pos, cameraBottomLeftWorldPos, cameraTopRightWorldPos))
+                if (!cameraData.DoesViewVolumeContainPosOptimized(textBufferPos.m_Pos, &viewPlanes))
                     continue;
              
+                //TODO: add rendering
+                /*
                 newScreenPos = cameraData.WorldToScreenPosition(textBufferPos.m_Pos);
                 screenSize = cameraData.WorldToScreenSize(textBufferPos.m_FontData.m_RectSize);
 
                 m_renderer->AddTextCall(newScreenPos, textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_Text.m_Char,
                    GetBestFontSize(textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_FontData.m_Tracking, screenSize, textBufferPos.m_Text.m_Char), 
                     textBufferPos.m_FontData.m_Tracking, textBufferPos.m_Text.m_Color);
-               /* LogWarning(std::format("Adding text call at:{} font size:{} color:{} char:{}", newScreenPos.ToString(), textBufferPos.m_FontData.m_Size, 
-                    RaylibUtils::ToString(textBufferPos.m_Text.m_Color), textBufferPos.m_Text.m_Char));*/
-                //m_currentFrameBuffer.back().m_Pos = Vec2(static_cast<float>(newScreenPos.m_X), static_cast<float>(newScreenPos.m_Y));
+                    */
             }
         }
-        //LogError(std::format("Completed layers"));
-
-        /*
-        if (DO_SIZE_SCALING)
-        {
-            if (m_colliderOutlineBuffer != nullptr && m_colliderOutlineBuffer->HasData())
-            {
-                //LogWarning("DOING SIZE SCALING");
-                for (auto& outline : m_colliderOutlineBuffer->m_RectangleBuffer)
-                {
-                    outline.m_Size = outline.m_Size * scaleFactor;
-                }
-            }
-        }
-
-        if (m_lineBuffer != nullptr && !m_lineBuffer->empty())
-        {
-            for (auto& line : *m_lineBuffer)
-            {
-                ScreenPosition startScreenPos = Conversions::WorldToScreenPosition(cameraData, line.m_StartPos);
-                line.m_StartPos = { static_cast<float>(startScreenPos.m_X), static_cast<float>(startScreenPos.m_Y)};
-
-                ScreenPosition endScreenPos = Conversions::WorldToScreenPosition(cameraData, line.m_EndPos);
-                line.m_EndPos = { static_cast<float>(endScreenPos.m_X), static_cast<float>(endScreenPos.m_Y) };
-            }
-        }
-
-        if (CACHE_LAST_BUFFER) cameraData.m_LastFrameBuffer = m_currentFrameBuffer;
-        */
     }
-    
-   /* const FragmentedTextBuffer& CameraSystem::GetCurrentFrameBuffer() const
-    {
-        if (m_currentFrameBuffer.empty()) return {};
-        return m_currentFrameBuffer;
-    }
-
-    const ColliderOutlineBuffer* CameraSystem::GetCurrentColliderOutlineBuffer() const
-    {
-        return m_colliderOutlineBuffer;
-    }
-
-    const LineBuffer* CameraSystem::GetCurrentLineBuffer() const
-    {
-        return m_lineBuffer;
-    }*/
 }

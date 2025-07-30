@@ -75,7 +75,7 @@ RenderLayerType GetLayersFromStrings(const std::vector<std::string> layerStrs)
 RenderLayer::RenderLayer() : m_buffer{} {}
 RenderLayer::RenderLayer(const FragmentedTextBuffer& buffer) : m_buffer(buffer) {}
 
-void RenderLayer::AddText(const TextBufferCharPosition& bufferPos)
+void RenderLayer::AddText(const TextBufferCharPosition2D& bufferPos)
 {
 	m_buffer.push_back(bufferPos);
 }

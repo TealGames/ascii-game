@@ -143,12 +143,14 @@ UIRect UISelectableData::RenderOverlay(const UIRect& elementRendered)
 void UISelectableData::DrawDisabledOverlay(const UIRect& renderInfo)
 {
 	UIRendererData* renderer = GetEntityMutable().TryGetComponentMutable<UIRendererData>();
-	renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), DISABLED_COLOR);
+	//TODO: add ui render call
+	//renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), DISABLED_COLOR);
 }
 void UISelectableData::DrawHoverOverlay(const UIRect& renderInfo)
 {
 	UIRendererData* renderer = GetEntityMutable().TryGetComponentMutable<UIRendererData>();
-	renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), HOVER_COLOR);
+	//TODO: add ui render call
+	//renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), HOVER_COLOR);
 }
 
 void UISelectableData::InitFields()

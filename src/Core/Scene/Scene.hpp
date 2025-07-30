@@ -102,7 +102,7 @@ public:
 	std::vector<const RenderLayer*> GetLayers(const RenderLayerType& renderLayers) const;
 	std::vector<const RenderLayer*> GetAllLayers() const;
 
-	void AddToLayer(const RenderLayerType& type, TextBufferCharPosition& texture);
+	void AddToLayer(const RenderLayerType& type, TextBufferCharPosition2D& texture);
 	std::vector<FragmentedTextBuffer*> GetLayerBufferMutable(const RenderLayerType& renderLayers);
 	/// <summary>
 	/// Gets all render layer buffers in ascending sorted order

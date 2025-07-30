@@ -16,8 +16,8 @@ private:
 public:
 	union
 	{
-		struct { T m_X, m_Y, m_Z; };
-		T m_Components[3];
+		struct { T m_X, m_Y, m_Z, m_W; };
+		T m_Components[4];
 	};
 
 public:
@@ -57,7 +57,7 @@ public:
 	Vec<T, 2> GetXZ() const { return Vec<T, 2>(m_X, m_Z); }
 
 	Vec<T, 3> GetXYZ() const { return Vec<T, 3>(m_X, m_Y, m_Z); }
-	Vec<T, 3> GetYZW() const { return Vec<T, 3>(m_y, m_Z, m_W); }
+	Vec<T, 3> GetYZW() const { return Vec<T, 3>(m_Y, m_Z, m_W); }
 
 	/// <summary>
 	/// Returns a pointer to the first value in vector, 
@@ -78,7 +78,7 @@ public:
 	/// Same as dot product of itself
 	/// </summary>
 	/// <returns></returns>
-	float GetMagnitudeSquared() const { return m_X * m_X + m_Y * m_Y + m_Z * m_Z + m_W * m_W };
+	float GetMagnitudeSquared() const { return m_X * m_X + m_Y * m_Y + m_Z * m_Z + m_W * m_W; }
 
 	Vec GetNormalized() const
 	{

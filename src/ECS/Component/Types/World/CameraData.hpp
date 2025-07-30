@@ -4,15 +4,20 @@
 #include "ECS/Component/Component.hpp"
 #include "Utils/Data/WorldPosition.hpp"
 #include "Core/Visual/TextBuffer.hpp"
-#include "Utils/Data/Matrix.hpp"
+#include "Math/Ray.hpp"
+#include "Math/Plane.hpp"
+#include "Math/PlatformMath.hpp"
 #include <vector>
 
 class CameraData : public Component
 {
 public:
 	CameraSettings m_CameraSettings;
-	std::vector<TextBufferCharPosition> m_LastFrameBuffer;
+	std::vector<TextBufferCharPosition2D> m_LastFrameBuffer;
 
+private:
+	WorldPosition3D CalculateNearPlaneWorldCenter(const WorldPosition3D& globalPos) const;
+	WorldPosition3D CalculateFarPlaneWorldCenter(const WorldPosition3D& globalPos) const;
 public:
 	CameraData();
 	CameraData(const Json& json);
@@ -23,18 +28,18 @@ public:
 
 	float GetNearDistance() const;
 	float GetFarDistance() const;
+	float GetViewDistance() const;
 
 	ScreenPosition WorldToScreenPosition(const WorldPosition3D& pos) const;
-	WorldPosition3D ScreenToWorldPosition(const ScreenPosition& pos) const;
-	Vec2 WorldToScreenSize(const Vec2& worldSize) const;
-
 	/// <summary>
-	/// Gets the local forward direction of the camera. 
-	/// May change based on the framework. (0, 0, -1) is the most common one
-	/// used in OpenGL, Vulkan but DirectX uses (0, 0, 1)
+	/// Converts screen position. Top left is (0,0) bottom right is (screen width, screen height)
+	/// X -> increases RIGHT, y-> increases DOWN
 	/// </summary>
+	/// <param name="pos"></param>
 	/// <returns></returns>
-	Vec3 GetLocalForward() const;
+	Ray3D ScreenToWorldPosition(const ScreenPosition& pos) const;
+	Vec2 WorldToScreenSize(const float cameraDepthDistance, const Vec3& worldSize) const;
+
 	/// <summary>
 	/// Gets the FORWARD direction of this camera using its rotation and 
 	/// local forward direction
@@ -46,12 +51,29 @@ public:
 	WorldPosition3D CalculateFarPlaneWorldCenter() const;
 
 	/// <summary>
+	/// Calculates the planes that make up the view frustum in the order:
+	/// LEFT, RIGHT, BOTTOM, TOP, NEAR, FAR
+	/// </summary>
+	/// <returns></returns>
+	std::array<InfinitePlane3D, 6> CalculateFrustumPlanes() const;
+	/// <summary>
+	/// Checks whether the point is within the view volume/frustum 
+	/// and can be rendered. Provide the precalculated planes to prevent
+	/// unnecessary plane calculates if this is called many times
+	/// </summary>
+	/// <param name="point"></param>
+	/// <param name="precalculatedPlanes"></param>
+	/// <returns></returns>
+	bool DoesViewVolumeContainPosOptimized(const WorldPosition3D& point, 
+		const std::array<InfinitePlane3D, 6>* precalculatedPlanes) const;
+	bool DoesViewVolumeContainPos(const WorldPosition3D& point) const;
+
+	/// <summary>
 	/// Calculates the view matrix that converts world space into camera's view.
 	/// It essentially moves the world into the camera's view
 	/// </summary>
 	/// <returns></returns>
 	Mat4 CalculateViewMatrix() const;
-
 	/// <summary>
 	/// Calculates the camera's view space into 2d plane screen space
 	/// based on the projection type that is used

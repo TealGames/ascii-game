@@ -6,7 +6,7 @@ template<typename T, size_t N>
 requires std::is_arithmetic_v<T>
 struct Vec
 {
-	T m_elements[N];
+	T m_Components[N];
 
 	T& operator[](const size_t index)
 	{

@@ -16,8 +16,8 @@ void UIPanel::SetColor(const Utils::Color color)
 
 UIRect UIPanel::Render(const UIRect& renderInfo)
 {
-	//if (GetEntity().m_Name == "ConsoleInput") LogError(std::format("Rendering input field panel color:{}", RaylibUtils::ToString(m_color)));
-	m_renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), m_color);
+	//TODO: add ui render call
+	//m_renderer->GetRendererMutable().AddRectangleCall(renderInfo.m_TopLeftPos, renderInfo.GetSize(), m_color);
 	return renderInfo;
 }
 

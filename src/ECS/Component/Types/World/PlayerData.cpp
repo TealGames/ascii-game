@@ -60,9 +60,9 @@ const bool& PlayerData::GetIsGrounded() const
 float PlayerData::GetVerticalDistanceToGround() const
 {
 	//WorldPosition bottomCenter = m_body->GetAABBWorldPos({ 0.5, 0 });
-	WorldPosition3D bottomCenter = m_body->GetCollisionBox().GetAABBWorldPos({ 0.5, 0 });
+	WorldPosition2D bottomCenter = m_body->GetCollisionBox().GetAABBWorldPos({ 0.5, 0 });
 	bottomCenter.m_Y -= 0.01;
-	float distance= m_body->GetPhysicsWorldSafe().Raycast(bottomCenter, { 0, -100 }).m_Displacement.m_Y;
+	float distance= m_body->GetPhysicsWorldSafe().Raycast2D(bottomCenter, { 0, -100 }).m_Displacement.m_Y;
 
 	/*LogError(std::format("Player min: {} max: {} bottom center: {} trans: {} ray result: {}", m_body->GetAABBWorldPos({0,0}).ToString(), 
 		m_body->GetAABBWorldPos({1, 1}).ToString(), bottomCenter.ToString(), m_body->GetEntitySafeMutable().m_Transform.m_Pos.ToString(), std::to_string(distance)));*/

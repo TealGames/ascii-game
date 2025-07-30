@@ -15,9 +15,10 @@ namespace Rendering
 		//	return -1;
 		//}
 
-		static std::uint32_t CompileShader(const std::uint32_t shaderType, const char* shaderSource)
+		static std::uint32_t CompileShader(const RenderObjectId shaderType, const char* shaderSource)
 		{
-			GL_CALL(const std::uint32_t shaderId = glCreateShader(shaderType));
+			RenderObjectId shaderId= INVALID_OBJ_ID;
+			GL_CALL(shaderId = glCreateShader(shaderType));
 			GL_CALL(glShaderSource(shaderId, 1, &shaderSource, nullptr));
 			GL_CALL(glCompileShader(shaderId));
 
@@ -39,9 +40,13 @@ namespace Rendering
 
 		static RenderObjectId CreateShaderProgram(const char* vertexShader, const char* fragmentShader)
 		{
-			GL_CALL(std::uint32_t programId = glCreateProgram());
-			GL_CALL(std::uint32_t vsId = CompileShader(GL_VERTEX_SHADER, vertexShader));
-			GL_CALL(std::uint32_t fsId = CompileShader(GL_FRAGMENT_SHADER, fragmentShader));
+			RenderObjectId programId = INVALID_OBJ_ID;
+			GL_CALL(programId = glCreateProgram());
+
+			RenderObjectId vsId = INVALID_OBJ_ID;
+			RenderObjectId fsId = INVALID_OBJ_ID;
+			GL_CALL(vsId = CompileShader(GL_VERTEX_SHADER, vertexShader));
+			GL_CALL(fsId = CompileShader(GL_FRAGMENT_SHADER, fragmentShader));
 
 			GL_CALL(glAttachShader(programId, vsId));
 			GL_CALL(glAttachShader(programId, fsId));
@@ -64,13 +69,57 @@ namespace Rendering
 			glUseProgram(0);
 		}
 
+		static bool TrySetShaderUniform(const Shader& shader, const UniformType uniform, const char* uniformName, const void* valuePtr)
+		{
+			const RenderObjectId programId = shader.GetId();
+			const int location = glGetUniformLocation(programId, uniformName);
+			if (location != -1)
+			{
+				LogError("OpenGL: Invalid uniform location. Possibly undefined uniform name or wrong spelling");
+				return false;
+			}
+			
+			if (uniform == UniformType::Float)
+				GL_CALL(glUniform1f(location, *static_cast<const float*>(valuePtr)));
+			else if (uniform == UniformType::Int)
+				GL_CALL(glUniform1i(location, *static_cast<const int*>(valuePtr)));
+			else if (uniform == UniformType::Vector2)
+			{
+				const float* floatArr = static_cast<const float*>(valuePtr);
+				GL_CALL(glUniform2f(location, floatArr[0], floatArr[1]));
+			}
+			else if (uniform == UniformType::Vector3)
+			{
+				const float* floatArr = static_cast<const float*>(valuePtr);
+				GL_CALL(glUniform3f(location, floatArr[0], floatArr[1], floatArr[2]));
+			}
+			else if (uniform == UniformType::Vector4)
+			{
+				const float* floatArr = static_cast<const float*>(valuePtr);
+				GL_CALL(glUniform4f(location, floatArr[0], floatArr[1], floatArr[2], floatArr[3]));
+			}
+			else if (uniform == UniformType::Matrix4x4)
+			{
+				const float* floatMat = static_cast<const float*>(valuePtr);
+				GL_CALL(glUniformMatrix4fv(location, 1, GL_FALSE, floatMat));
+			}
+			else
+			{
+				LogError("OpenGL: Uniform type has no corresponding actions");
+				return false;
+			}
+
+			return true;
+		}
+
 		Shader CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
 		{
 			return Shader(vertexShader, fragmentShader, ShaderPlatformCallbacks
 				{
 					CreateShaderProgram,
 					BindActive,
-					UnbindActive
+					UnbindActive,
+					TrySetShaderUniform
 				});
 		}
 	}

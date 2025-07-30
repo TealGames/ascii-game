@@ -1,7 +1,7 @@
 #pragma once
 #include "Utils/Data/WorldPosition.hpp"
 
-class Ray2
+class Ray2D
 {
 private:
 public:
@@ -10,14 +10,14 @@ public:
 
 private:
 public:
-	Ray2();
-	Ray2(const WorldPosition2D& pos, const Vec2& length);
+	Ray2D();
+	Ray2D(const WorldPosition2D& pos, const Vec2& length);
 
 	WorldPosition2D GetEndpoint() const;
 	Vec2 GetDir() const;
 };
 
-class Ray3
+class Ray3D
 {
 private:
 public:
@@ -26,8 +26,8 @@ public:
 
 private:
 public:
-	Ray3();
-	Ray3(const WorldPosition3D& pos, const Vec3& length);
+	Ray3D();
+	Ray3D(const WorldPosition3D& pos, const Vec3& length);
 
 	WorldPosition3D GetEndpoint() const;
 	Vec3 GetDir() const;
