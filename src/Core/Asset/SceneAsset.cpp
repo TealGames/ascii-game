@@ -115,16 +115,16 @@ void SceneAsset::UpdateAssetFromFile()
 		{
 			currentComponentJson = entityComponentsJson[i];
 			componentName = currentComponentJson.at("Type").get<std::string>();
-			isTransformComponent = componentName == Utils::ToStringTypeName<TransformData>();
+			isTransformComponent = componentName == Utils::ToStringTypeName<TransformComponent>();
 			if (i == 0 && !Assert(isTransformComponent, std::format("Tried to parse scene file at path: '{}' "
 				"but found entity component that does not begin with Transform!", GetPathCopy().string())))
 				return;
 
 			if (isTransformComponent)
 			{
-				TransformData newEntityTransfrom = {};
+				TransformComponent newEntityTransfrom = {};
 				newEntityTransfrom.Deserialize(currentComponentJson);
-				currentEntity = &(GetSceneMutable().CreateEntity(entityName, TransformData(newEntityTransfrom)));
+				currentEntity = &(GetSceneMutable().CreateEntity(entityName, TransformComponent(newEntityTransfrom)));
 				//LogError(std::format("Found component json; {} for entoty; {} entity json: {}", 
 				//JsonUtils::ToStringProperties(currentComponentJson), JsonUtils::ToStringProperties(entityComponentsJson), entityName));
 
@@ -141,9 +141,9 @@ void SceneAsset::UpdateAssetFromFile()
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<AnimatorData>());
 			}
-			else if (componentName == Utils::ToStringTypeName<CameraData>())
+			else if (componentName == Utils::ToStringTypeName<CameraComponent>())
 			{
-				componentCreated = &(currentEntity->GetOrAddComponentMutable<CameraData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<CameraComponent>());
 			}
 			else if (componentName == Utils::ToStringTypeName<EntityRendererData>())
 			{
@@ -282,17 +282,17 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 
 			try
 			{
-				if (componentName == Utils::ToStringTypeName<TransformData>())
+				if (componentName == Utils::ToStringTypeName<TransformComponent>())
 				{
-					serializedComponentJson = dynamic_cast<TransformData*>(component)->Serialize();
+					serializedComponentJson = dynamic_cast<TransformComponent*>(component)->Serialize();
 				}
 				else if (componentName == Utils::ToStringTypeName<AnimatorData>())
 				{
 					serializedComponentJson = dynamic_cast<AnimatorData*>(component)->Serialize();
 				}
-				else if (componentName == Utils::ToStringTypeName<CameraData>())
+				else if (componentName == Utils::ToStringTypeName<CameraComponent>())
 				{
-					serializedComponentJson = dynamic_cast<CameraData*>(component)->Serialize();
+					serializedComponentJson = dynamic_cast<CameraComponent*>(component)->Serialize();
 				}
 				else if (componentName == Utils::ToStringTypeName<EntityRendererData>())
 				{
@@ -379,7 +379,7 @@ bool SceneAsset::TryLoadLevelBackground()
 		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_GROUND_PROPERTY_NAME)), groundVisual.ToString())))
 		return false;
 
-	EntityData& groundEntity = GetSceneMutable().CreateEntity("Ground", TransformData(Vec2{ 0,-10 }));
+	EntityData& groundEntity = GetSceneMutable().CreateEntity("Ground", TransformComponent(Vec2{ 0,-10 }));
 	groundEntity.m_IsSerializable = false;
 	EntityRendererData& groundRenderer = groundEntity.AddComponent<EntityRendererData>(EntityRendererData(groundVisual, RenderLayerType::Background));
 
@@ -396,7 +396,7 @@ bool SceneAsset::TryLoadLevelBackground()
 		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_BACKGOUND_PROPERTY_NAME)), backgroundVisual.ToString())))
 		return false;
 
-	EntityData& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformData(Vec2{ 0,5}));
+	EntityData& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformComponent(Vec2{ 0,5}));
 	backgroundEntity.m_IsSerializable = false;
 	EntityRendererData& backgroundRenderer = backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
 	return true;

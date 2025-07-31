@@ -143,7 +143,7 @@ namespace Rendering
 #endif
 		}
 
-		void DrawUploadedIndexBufferInstaced(const size_t& indicesStartByteOffset, const size_t& drawIndexCount, const size_t& drawInstanceCount)
+		void DrawUploadedIndexBufferInstanced(const size_t& indicesStartByteOffset, const size_t& drawIndexCount, const size_t& drawInstanceCount)
 		{
 #if defined(OPENGL)
 			glDrawElementsInstanced(GL_TRIANGLES, drawIndexCount, GL_UNSIGNED_INT, (const void*)indicesStartByteOffset, drawInstanceCount);

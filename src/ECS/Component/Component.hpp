@@ -30,7 +30,7 @@ enum class HighestDependecyLevel
 constexpr const char* ENTITY_DEPENDENCY_FLAG = "Entity";
 
 class EntityData;
-class TransformData;
+class TransformComponent;
 
 class Component
 {
@@ -38,16 +38,18 @@ private:
 	//Guaranteed to not be nullptr (but cant be a ref to allow it to be set
 	//not on construction without the need to have it as constructor arg
 	EntityData* m_entity;
-	//HighestDependecyLevel m_dependencyLevel;
+	
+protected:
+	/// <summary>
+	/// If true, signifies that this object has been modified.
+	/// Useful for optimization (lazy initialization for example and using it as a flag for updating values
+	/// only when necessary)
+	/// </summary>
+	mutable bool m_isDirty;
+
 public:
 	friend class EntityData;
-	/// <summary>
-	///	If true, it signifies that this component data has been mutatated this frame. 
-	/// This flag is useful for component systems that may use last frame buffers for
-	/// optimization and can be checked to make sure we do not use last frame data if it has changed 
-	/// this past frame
-	/// </summary>
-	bool m_MutatedThisFrame;
+	
 	/// <summary>
 	/// If true, component is enabled, otherwise it is disabled. 
 	/// Note: this does not change anything directly as components need to check this 
@@ -64,8 +66,8 @@ public:
 
 	EntityData& GetEntityMutable();
 	const EntityData& GetEntity() const;
-	TransformData& GetTransformMutable();
-	const TransformData& GetTransform() const;
+	TransformComponent& GetTransformMutable();
+	const TransformComponent& GetTransform() const;
 
 	ECS::EntityID GetEntityID() const;
 	/// <summary>
@@ -73,6 +75,8 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	bool IsInActiveAndEnabledState() const;
+
+	void SetDirty(const bool isDirty);
 
 	std::vector<ComponentField>& GetFieldsMutable();
 	/// <summary>

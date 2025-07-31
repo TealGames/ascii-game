@@ -14,7 +14,7 @@ namespace ECS
 
 	private:
 	public:
-		virtual void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) = 0;
+		virtual void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) = 0;
 	};
 
 	/// <summary>

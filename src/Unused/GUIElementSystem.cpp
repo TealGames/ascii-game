@@ -4,7 +4,7 @@
 namespace ECS
 {
 	GUIElementSystem::GUIElementSystem() {}
-	void GUIElementSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+	void GUIElementSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
 	{
 
 	}

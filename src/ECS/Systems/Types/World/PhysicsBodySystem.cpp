@@ -32,7 +32,7 @@ namespace ECS
 				}));
 	}
 
-	void PhysicsBodySystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+	void PhysicsBodySystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("PhysicsBodySystem::SystemUpdate");

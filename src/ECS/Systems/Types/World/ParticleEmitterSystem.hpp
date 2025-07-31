@@ -16,10 +16,12 @@ namespace ECS
 		void AddParticleToLayers(const ParticleEmitterData& data, 
 			const Particle& particle, std::vector<RenderLayer*>& renderLayers);
 
+		Vec2 GenerateRandomDir() const;
+
 	public:
 		ParticleEmitterSystem();
 
-		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
 	};
 
 }

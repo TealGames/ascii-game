@@ -147,9 +147,7 @@ namespace Rendering
         //We only do this the first time we flush a batch during this frame
         if (!m_staticRenderData.m_UpdatedDataThisFrame)
         {
-            const CameraData& activeCamera = m_engineState->m_CameraController->GetActiveCamera();
-            m_staticRenderData.m_ViewMatrix = activeCamera.CalculateViewMatrix();
-            m_staticRenderData.m_ProjectionMatrix = activeCamera.CalculateProjectionMatrix();
+            m_staticRenderData.m_CameraData = &m_engineState->m_CameraController->GetActiveCamera().GetLastUpdateData();
             m_staticRenderData.m_UpdatedDataThisFrame = true;
         }
 
@@ -158,10 +156,10 @@ namespace Rendering
             batch.m_Shader->BindActive();
 
             if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, VIEW_MATRIX_UNIFORM_NAME, 
-                m_staticRenderData.m_ViewMatrix.GetMemPointer()))
+                m_staticRenderData.m_CameraData->m_ViewMatrix.GetMemPointer()))
                 return;
             if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, PROJ_MATRIX_UNIFORM_NAME, 
-                m_staticRenderData.m_ProjectionMatrix.GetMemPointer()))
+                m_staticRenderData.m_CameraData->m_PlatformProjectionMatrix.GetMemPointer()))
                 return;
 
             const size_t drawVertexCount = batch.m_Vertices.size();
@@ -176,7 +174,7 @@ namespace Rendering
             batch.m_Vertices.clear();
             batch.m_InstanceData.clear();
 
-            Backend::DrawUploadedIndexBufferInstaced(0, drawIndexCount, drawInstanceCount);
+            Backend::DrawUploadedIndexBufferInstanced(0, drawIndexCount, drawInstanceCount);
 
             batch.m_Shader->UnbindActive();
         }

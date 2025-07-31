@@ -270,7 +270,7 @@ namespace Input
 
 		return it->second.GetState().IsState(state);
 	}
-	const KeyState& InputManager::GetKeyState(const KeyboardKey& key) const
+	KeyState InputManager::GetKeyState(const KeyboardKey& key) const
 	{
 		auto it = m_keyboardStates.find(key);
 		if (!Assert(it != m_keyboardStates.end(), std::format("InputManager: Tried to get key state in for key: {} "

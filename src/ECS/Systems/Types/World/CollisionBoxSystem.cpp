@@ -14,7 +14,7 @@ namespace ECS
 
 	CollisionBoxSystem::CollisionBoxSystem(CollisionRegistry& registry) : m_collisionRegistry(registry) {}
 
-	void CollisionBoxSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+	void CollisionBoxSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("CollisionBoxSystem::SystemUpdate");

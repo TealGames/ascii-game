@@ -434,9 +434,9 @@ void Scene::AddToLayer(const RenderLayerType& layers, TextBufferCharPosition2D& 
 	}
 }
 
-std::vector<FragmentedTextBuffer*> Scene::GetLayerBufferMutable(const RenderLayerType& renderLayers)
+std::vector<FragmentedTextBuffer2D*> Scene::GetLayerBufferMutable(const RenderLayerType& renderLayers)
 {
-	std::vector<FragmentedTextBuffer*> buffers = {};
+	std::vector<FragmentedTextBuffer2D*> buffers = {};
 	if (renderLayers == RenderLayerType::None) return buffers;
 
 	for (auto& layer : m_layers)
@@ -446,9 +446,9 @@ std::vector<FragmentedTextBuffer*> Scene::GetLayerBufferMutable(const RenderLaye
 	}
 	return buffers;
 }
-std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer*>> Scene::GetAllLayerBufferMutable()
+std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer2D*>> Scene::GetAllLayerBufferMutable()
 {
-	std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer*>> buffers = {};
+	std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer2D*>> buffers = {};
 	for (auto& layer : m_layers)
 	{
 		buffers.emplace_back(std::make_tuple(layer.first, &layer.second.GetBufferMutable()));
@@ -555,7 +555,7 @@ std::vector<EntityData*> Scene::GetAllEntitiesMutable()
 	return entities;
 }
 
-EntityData& Scene::CreateEntity(const std::string& name, const TransformData& transform)
+EntityData& Scene::CreateEntity(const std::string& name, const TransformComponent& transform)
 {
 	EntityData& createdEntity = m_registry.CreateNewEntity(name, transform);
 	m_localRootEntities.emplace_back(&createdEntity);

@@ -116,8 +116,8 @@ public:
 	ECS::EntityRegistry& GetRegistryMutable();
 	const ECS::EntityRegistry& GetRegistry() const;
 
-	TransformData& GetTransformMutable();
-	const TransformData& GetTransform() const;
+	TransformComponent& GetTransformMutable();
+	const TransformComponent& GetTransform() const;
 
 	bool IsEntityActive() const;
 	/// <summary>
@@ -271,12 +271,15 @@ public:
 
 	EntityData* GetParentMutable();
 	const EntityData* GetParent() const;
+	const TransformComponent* GetParentTransform() const;
+	TransformComponent* GetParentTransformMutable();
+
 	bool HasParent() const;
 	EntityData* GetHighestParentMutable();
 	const EntityData* GetHighestParent() const;
 	int GetChildCount() const;
 
-	EntityData& CreateChild(const std::string& name, const TransformData& transform);
+	EntityData& CreateChild(const std::string& name, const TransformComponent& transform);
 	EntityData& CreateChild(const std::string& name);
 
 	/// <summary>
@@ -291,7 +294,7 @@ public:
 	/// <returns></returns>
 	template<typename ...ComponentT>
 	requires Utils::AllSameBaseType<Component, ComponentT...>
-	std::tuple<EntityData*, ComponentT*...> CreateChild(const std::string& name, const TransformData& transform, const ComponentT&... components)
+	std::tuple<EntityData*, ComponentT*...> CreateChild(const std::string& name, const TransformComponent& transform, const ComponentT&... components)
 	{
 		EntityData& entity = m_registry->CreateNewEntity(name, transform);
 		auto tuple= std::make_tuple<EntityData*, ComponentT*...>(&entity, (&entity.AddComponent<ComponentT>(components))...);
@@ -302,7 +305,7 @@ public:
 
 	template<typename ...ComponentT>
 	requires Utils::AllSameBaseType<Component, ComponentT...>
-	std::tuple<EntityData*, UITransformData*, ComponentT*...> CreateChildUI(const std::string& name, const TransformData& transform, 
+	std::tuple<EntityData*, UITransformData*, ComponentT*...> CreateChildUI(const std::string& name, const TransformComponent& transform, 
 		const UITransformData& uitransform, const ComponentT&... components)
 	{
 		return CreateChild<UITransformData, ComponentT...>(name, transform, uitransform, components...);
@@ -311,7 +314,7 @@ public:
 	requires Utils::AllSameBaseType<Component, ComponentT...>
 	std::tuple<EntityData*, UITransformData*, ComponentT*...> CreateChildUI(const std::string& name, const ComponentT&... components)
 	{
-		return CreateChildUI<ComponentT...>(name, TransformData(), UITransformData(), components...);
+		return CreateChildUI<ComponentT...>(name, TransformComponent(), UITransformData(), components...);
 	}
 
 	/// <summary>

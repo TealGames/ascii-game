@@ -44,7 +44,8 @@ struct TextBufferChar
 	std::string ToString() const;
 };
 
-using FragmentedTextBuffer = std::vector<TextBufferCharPosition2D>;
+using FragmentedTextBuffer2D = std::vector<TextBufferCharPosition2D>;
+using FragmentedTextBuffer3D = std::vector<TextBufferCharPosition3D>;
 
 //template<typename T>
 //struct TexturePosition

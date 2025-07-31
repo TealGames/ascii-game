@@ -89,11 +89,11 @@ template<typename T>
 ComponentType GetComponentFromType()
 {
 	//TODO: maybe a static map would be faster with O(1) lookup then checking every possible option?
-	if (typeid(T) == typeid(CameraData)) return ComponentType::Camera;
+	if (typeid(T) == typeid(CameraComponent)) return ComponentType::Camera;
 	if (typeid(T) == typeid(EntityRendererData)) return ComponentType::EntityRenderer;
 	if (typeid(T) == typeid(LightSourceData)) return ComponentType::LightSource;
 	if (typeid(T) == typeid(InputData)) return ComponentType::Player;
-	if (typeid(T) == typeid(TransformData)) return ComponentType::Transform;
+	if (typeid(T) == typeid(TransformComponent)) return ComponentType::Transform;
 	//if (typeid(T) == typeid(AnimatorData)) return ComponentType::Animator;
 	
 	Log(LogType::Error, std::format("Tried to parse type: {} "

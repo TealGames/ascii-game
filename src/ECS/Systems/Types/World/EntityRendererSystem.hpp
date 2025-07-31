@@ -9,23 +9,24 @@
 #include "ECS/Component/Types/World/EntityRendererData.hpp"
 #include "ECS/Systems/MultiBodySystem.hpp"
 
+namespace Rendering { class Renderer; }
 namespace ECS
 {
 	class EntityRendererSystem : MultiBodySystem
 	{
 	private:
-
+		Rendering::Renderer* m_renderer;
 	public:
 
 	private:
-		void AddTextToBuffer(FragmentedTextBuffer& buffer, EntityRendererData& data, const CameraData& mainCamer);
+		void AddTextToRenderer(EntityRendererData& data, const CameraComponent& mainCamer);
 
 	public:
-		EntityRendererSystem();
+		EntityRendererSystem(Rendering::Renderer& renderer);
 
 		std::string GetVisualString(const EntityRendererData& data) const;
 
-		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
 	};
 }
 

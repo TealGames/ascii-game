@@ -12,7 +12,7 @@ namespace Input
 {
 	class InputManager;
 }
-class CameraData;
+class CameraComponent;
 class UIHierarchy;
 class UITransformData;
 class UITextComponent;
@@ -46,7 +46,7 @@ public:
 	void CreateUI(UIHierarchy& hierarchy);
 
 	//void ClearProperties();
-	void Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera);
+	void Update(const float& deltaTime, const float& timeStep, Scene& activeScene, const Input::InputManager& input, const CameraComponent& mainCamera);
 	//bool TryRender() override;
 
 	void SetProperty(const std::string& name, const std::string& value);

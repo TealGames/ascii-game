@@ -36,7 +36,7 @@ private:
    
     RawTextBufferBlock m_rawTextBuffer;
     TextBuffer m_defaultSquaredTextBuffer;*/
-    FragmentedTextBuffer m_buffer;
+    FragmentedTextBuffer2D m_buffer;
 
 public:
     //const Utils::Point2DInt m_CharSpacing;
@@ -56,12 +56,12 @@ private:
 
 public:
     RenderLayer();
-    RenderLayer(const FragmentedTextBuffer& buffer);
+    RenderLayer(const FragmentedTextBuffer2D& buffer);
 
     void AddText(const TextBufferCharPosition2D& bufferPos);
 
-    FragmentedTextBuffer& GetBufferMutable();
-    const FragmentedTextBuffer& GetBuffer() const;
+    FragmentedTextBuffer2D& GetBufferMutable();
+    const FragmentedTextBuffer2D& GetBuffer() const;
     /*/// <summary>
     /// If the buffer is not fully square, you can choose this constructor to 
     /// shape it into a square shape

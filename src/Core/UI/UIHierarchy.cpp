@@ -18,7 +18,7 @@ UIHierarchy::UIHierarchy(GlobalEntityManager& globalEntityManager, const Vec2Int
 void UIHierarchy::Init()
 {
 	//m_rootElements.reserve(TOP_LAYER);
-	EntityData& uiRootEntity = m_globalEntityManager->CreateGlobalEntity(ROOT_UI_ENTITY_NAME, TransformData());
+	EntityData& uiRootEntity = m_globalEntityManager->CreateGlobalEntity(ROOT_UI_ENTITY_NAME, TransformComponent());
 	UITransformData& rootTransform = uiRootEntity.AddComponent<UITransformData>();
 	LogWarning(std::format("Root transform: {}", rootTransform.ToString()));
 	m_uiRoot = &rootTransform;
@@ -79,7 +79,7 @@ UITransformData* UIHierarchy::CreateNewLayer(const UILayer layer)
 		return nullptr;
 	}
 
-	EntityData& layerRoot= m_uiRoot->GetEntityMutable().CreateChild(std::format("Layer{}", std::to_string(layer)), TransformData());
+	EntityData& layerRoot= m_uiRoot->GetEntityMutable().CreateChild(std::format("Layer{}", std::to_string(layer)), TransformComponent());
 	UITransformData& rootElement = layerRoot.AddComponent<UITransformData>();
 	m_layerRoots[layer] = &rootElement;
 

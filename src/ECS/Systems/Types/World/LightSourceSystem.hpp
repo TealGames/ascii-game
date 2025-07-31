@@ -52,9 +52,9 @@ namespace ECS
 		Utils::Color GetColorFromMultiplier(const Utils::Color& originalColor, const Utils::Color& filterColor, const float& multiplier) const;
 
 		void CreateLightingForPoint(LightSourceData& data, const WorldPosition3D& centerPos,
-			FragmentedTextBuffer& buffer, bool displayLightLevels);
+			FragmentedTextBuffer2D& buffer, bool displayLightLevels);
 
-		void RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels = false);
+		void RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer2D*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
 		Utils::Color CalculateNewColor(LightSourceData& data, const TextBufferCharPosition2D& bufferPos, const float& distance, 
 			std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
@@ -73,7 +73,7 @@ namespace ECS
 		//=1 creates linear and >1 creates exponential decay</param>
 		LightSourceSystem(const EntityRendererSystem& renderer);
 
-		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
 	};
 
 }

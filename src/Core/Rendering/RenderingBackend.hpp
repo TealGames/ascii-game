@@ -31,6 +31,6 @@ namespace Rendering
 		void DrawRectangleLine(const WorldPosition3D& pos, const float thickness, const Vec2& size, const Utils::Color color);
 
 		void DrawUploadedIndexBuffer(const size_t& indicesStartByteOffset, const size_t& drawIndexCount);
-		void DrawUploadedIndexBufferInstaced(const size_t& indicesStartByteOffset, const size_t& drawIndexCount, const size_t& drawInstanceCount);
+		void DrawUploadedIndexBufferInstanced(const size_t& indicesStartByteOffset, const size_t& drawIndexCount, const size_t& drawInstanceCount);
 	}
 }

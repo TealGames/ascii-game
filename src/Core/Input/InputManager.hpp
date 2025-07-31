@@ -75,7 +75,7 @@ namespace Input
 		std::vector<MouseButton> GetAllMouseButtons();
 		std::vector<GamepadButton> GetAllGamepadButtons();
 
-		const KeyState& GetKeyState(const KeyboardKey& key) const;
+		KeyState GetKeyState(const KeyboardKey& key) const;
 		bool IsKeyPressed(const KeyboardKey& key) const;
 		bool IsKeyDown(const KeyboardKey& key) const;
 		bool IsKeyReleased(const KeyboardKey& key) const;

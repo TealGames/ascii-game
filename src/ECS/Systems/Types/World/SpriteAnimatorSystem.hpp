@@ -17,6 +17,6 @@ namespace ECS
 		void SetVisual(EntityData& entity, const SpriteAnimation& animation) const;
 	public:
 		SpriteAnimatorSystem(EntityRendererSystem& entityRenderer);
-		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
 	};
 }

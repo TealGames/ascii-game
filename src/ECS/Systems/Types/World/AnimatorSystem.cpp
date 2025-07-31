@@ -15,7 +15,7 @@ namespace ECS
 {
 	AnimatorSystem::AnimatorSystem() {}
 
-	void AnimatorSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+	void AnimatorSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("AnimatorSystem::SystemUpdate");
@@ -70,7 +70,7 @@ namespace ECS
 								ExtractedType convertedLerpedValue = static_cast<ExtractedType>(std::lerp(static_cast<double>(currentFrame.GetValue()),
 									static_cast<double>(nextFrame.GetValue()), lerpVal));
 								maybeProperty->TrySetValue(convertedLerpedValue);
-								maybeProperty->m_ComponentFieldRef.GetComponentDataMutable()->m_MutatedThisFrame = true;
+								//maybeProperty->m_ComponentFieldRef.GetComponentDataMutable()->m_MutatedThisFrame = true;
 							}
 							else
 							{

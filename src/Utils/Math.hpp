@@ -4,6 +4,18 @@
 namespace Utils
 {
 	/// <summary>
+	/// Computes a power as just repeated multiplication
+	/// Faster than std::pow because std::pow must account for complex
+	/// edge cases so it uses a process that uses logs and exponents (which are 
+	/// typically approximated with series expansion = SLOW) and this does not 
+	/// need to account for those edge cases so it can do it fast
+	/// </summary>
+	/// <param name="base"></param>
+	/// <param name="exponent"></param>
+	/// <returns></returns>
+	float FastIntPow(float base, int exponent);
+
+	/// <summary>
 	/// Handles approximate values for floats for values close to 0 (by checking absolute diff < abs epsilon)
 	/// and also for large positive and small negatives aka big deltas/big abs values 
 	/// (by checking scaled relative epsilon based on max abs value < diff)

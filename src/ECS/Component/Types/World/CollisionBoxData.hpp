@@ -38,7 +38,7 @@ struct CollidingBoxInfo
 	CollidingBoxInfo(const CollisionBoxData& box, const CollisionFlag& flag);
 };
 
-class TransformData;
+class TransformComponent;
 using CollidingInfoCollection = std::vector<CollidingBoxInfo>;
 class CollisionBoxData : public Component
 {

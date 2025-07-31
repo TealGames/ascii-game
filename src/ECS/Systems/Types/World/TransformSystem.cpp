@@ -9,7 +9,7 @@
 
 namespace ECS
 {
-	void TransformSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) {}
+	void TransformSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) {}
 
 	/*void TransformSystem::UpdateLastFramePos(Scene& scene)
 	{

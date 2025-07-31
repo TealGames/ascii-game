@@ -31,7 +31,7 @@ namespace ECS
 			}));
 	}
 
-	void PlayerSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+	void PlayerSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("PlayerSystem::SystemUpdate");
@@ -55,25 +55,31 @@ namespace ECS
 					if (!Assert(camera != nullptr, std::format("Tried to get camera to convert screen "
 						"to world point for mouse position cheat but it is null"))) return;*/
 
-					WorldPosition3D worldPos = mainCamera.ScreenToWorldPosition(m_inputManager.GetMousePosition());
-					player.GetEntityMutable().GetTransformMutable().SetLocalPos(worldPos);
+					Ray3D worldRay = mainCamera.ScreenToWorldPosition(m_inputManager.GetMousePosition());
+					player.GetEntityMutable().GetTransformMutable().m_localPos = worldRay.m_Origin;
 				}
 #endif
 
-				/*LogWarning(std::format("Player is at pos:{} (transform addr:{}) collider pos:{}", player.GetEntity().GetTransform().GetGlobalPos().ToString(), 
+				/*LogWarning(std::format("Player is at pos:{} (transform addr:{}) collider pos:{}", player.GetEntity().GetTransform().GetGlobalPos().ToString(),
 					Utils::ToStringPointerAddress(&player.GetEntity().GetTransform()),
 					player.GetBodyMutableSafe().GetCollisionBox().GetTransform().GetGlobalPos().ToString()));*/
 
 				const Input::InputProfile* inputProfile = m_inputManager.TryGetProfile(MAIN_INPUT_PROFILE_NAME);
-				if (!Assert(inputProfile != nullptr, std::format("Tried to move player in PlayerSystem "
-					"but the input profile: '{}' was not found", MAIN_INPUT_PROFILE_NAME)))
+				if (inputProfile == nullptr)
+				{
+					LogError(std::format("Tried to move player in PlayerSystem "
+						"but the input profile: '{}' was not found", MAIN_INPUT_PROFILE_NAME));
 					return;
-
+				}
+						
 				const Input::CompoundInput* moveCompound = inputProfile->TryGetCompoundInputAction(MAIN_INPUT_PROFILE_MOVE_ACTION);
-				if (!Assert(moveCompound != nullptr, std::format("Tried to move player in PlayerSystem "
-					"but the move compound: '{}' was not found in input profile: {}",
-					MAIN_INPUT_PROFILE_MOVE_ACTION, MAIN_INPUT_PROFILE_NAME)))
+				if (moveCompound == nullptr)
+				{
+					LogError(std::format("Tried to move player in PlayerSystem "
+						"but the move compound: '{}' was not found in input profile: {}",
+						MAIN_INPUT_PROFILE_MOVE_ACTION, MAIN_INPUT_PROFILE_NAME));
 					return;
+				}
 
 				player.SetFrameInput(moveCompound->GetCompoundInputDown());
 
@@ -81,10 +87,10 @@ namespace ECS
 				//velocity with zero EVEN WHEN WE HAD INPUT (meaning that input was canceled)
 				//we need to update the last frame input so the input system does not think
 				//the last input was successful (otherwise we could get bad input delta)
-				if (player.GetLastFrameInput() != Vec2Int::ZERO &&
-					player.GetBodyMutableSafe().GetVelocity() == Vec2::ZERO)
+				if (player.GetLastFrameInput() != Vec2Int::Zero() &&
+					player.GetBodyMutableSafe().GetVelocity() == Vec2::Zero())
 				{
-					player.SetFrameInput(Vec2Int::ZERO);
+					player.SetFrameInput(Vec2Int::Zero());
 				}
 				
 
@@ -93,7 +99,7 @@ namespace ECS
 
 				Vec2Int inputDelta = player.GetInputDelta();
 				Vec2 dirDelta = Vec2(inputDelta.m_X, inputDelta.m_Y);
-				if (dirDelta == Vec2::ZERO) return;
+				if (dirDelta == Vec2::Zero()) return;
 
 				//Auto jumping occurs when we are grounded but the input is held (meaning we might not have been changed since last frame
 				//but to make sure we immediately jump back up, we ignore it and consider it anways) 

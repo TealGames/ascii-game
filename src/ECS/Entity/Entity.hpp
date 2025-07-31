@@ -13,7 +13,7 @@
 #include "Core/Analyzation/Debug.hpp"
 #include "Core/IValidateable.hpp"
 
-class TransformData;
+class TransformComponent;
 class EntityData;
 
 namespace ECS

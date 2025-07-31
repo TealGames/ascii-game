@@ -55,11 +55,11 @@ EngineEditor::~EngineEditor()
 
 void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 {
-	m_commandConsole.AddPrompt(new CommandPrompt<std::string, float, float>("setpos", { "EntityName", "PosX", "PosY" },
-		[this](const std::string& entityName, const float& x, const float& y) -> void {
+	m_commandConsole.AddPrompt(new CommandPrompt<std::string, float, float, float>("setpos", { "EntityName", "PosX", "PosY", "PosZ"},
+		[this](const std::string& entityName, const float x, const float y, const float z) -> void {
 			if (EntityData* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
 			{
-				entity->GetTransformMutable().SetLocalPos({x, y});
+				entity->GetTransformMutable().m_localPos = WorldPosition3D(x, y, z);
 			}
 		}));
 
@@ -257,7 +257,7 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		"there are no active scenes right now", activeScene->GetName())))
 		return;
 
-	const CameraData& mainCamera = m_cameraController.GetActiveCamera();
+	const CameraComponent& mainCamera = m_cameraController.GetActiveCamera();
 
 	//Assert(false, std::format("Entity editor update"));
 	//m_commandConsole.Update();
@@ -274,10 +274,10 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 	//LogError(std::format("Is toggled:{} selected:{}", std::to_string(m_editModeToggle.IsToggled()), std::to_string(m_editModeInfo.m_Selected != nullptr)));
 
 	Vec2 mouseClickedPos = m_inputManager.GetMousePosition();
-	WorldPosition3D worldClickedPos = mainCamera.ScreenToWorldPosition(ScreenPosition(mouseClickedPos.m_X, mouseClickedPos.m_Y));
+	Ray3D worldClickedRay = mainCamera.ScreenToWorldPosition(ScreenPosition(mouseClickedPos.m_X, mouseClickedPos.m_Y));
 	if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsPressed())
 	{
-		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(*activeScene, worldClickedPos);
+		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(*activeScene, worldClickedRay.m_Origin.GetXY());
 		if (!entitiesWithinPos.empty())
 		{
 			m_editModeInfo.m_Selected = &(entitiesWithinPos[0]->GetEntityMutable());
@@ -290,12 +290,13 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 	{
 		//If we are in edit mode holding the down button (and not selected selectable this frame-> meaning click might correspond to selectable click not edit mode click) 
 		// we can move the selected entity to that pos
+		//Note: we only change the xy and keep z the same since that cannot be resolved just from a screen click
 		if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsDownForTime(HELD_TIME_FOR_OBJECT_MOVE) &&
 			!m_guiSelector.SelectedSelectableThisFrame() && m_editModeInfo.m_Selected != nullptr)
 		{
 			/*Assert(false, std::format("Is down for:{} needed:{}", std::to_string(m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().GetCurrentDownTime()), 
 			std::to_string(HELD_TIME_FOR_OBJECT_MOVE)));*/
-			m_editModeInfo.m_Selected->GetTransformMutable().SetLocalPos(worldClickedPos);
+			m_editModeInfo.m_Selected->GetTransformMutable().m_localPos.SetXY(worldClickedRay.m_Origin.GetXY());
 		}
 
 		const Vec2 mousePos = m_inputManager.GetMousePosition();

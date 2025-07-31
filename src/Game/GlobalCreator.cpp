@@ -35,7 +35,7 @@ namespace GlobalEntityCreator
 		//LogError(std::format("Is valid preset font:{}", std::to_string(RaylibUtils::IsValidFont(visualPreset.m_Font))));
 
 
-		EntityData& playerEntity = globalsManager.CreateGlobalEntity("player", TransformData(Vec2{ 10, 5 }));
+		EntityData& playerEntity = globalsManager.CreateGlobalEntity("player", TransformComponent(Vec2{ 10, 5 }));
 		CollisionBoxData& playerCollider = playerEntity.AddComponent<CollisionBoxData>(CollisionBoxData(Vec2(2, 2), Vec2(0, 0)));
 		/*Assert(false, std::format("Created player collider:{} min:{} max:{}", playerCollider.ToStringRelative(), 
 			playerCollider.GetGlobalMin().ToString(), playerCollider.GetGlobalMax().ToString()));*/
@@ -84,11 +84,11 @@ namespace GlobalEntityCreator
 
 		//m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
 
-		EntityData& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformData(Vec2{ 0, 0 }));
-		CameraData& cameraData = mainCameraEntity.AddComponent<CameraData>(CameraData{ CameraSettings{SCREEN_ASPECT_RATIO, 60, &playerEntity} });
+		EntityData& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformComponent(Vec2{ 0, 0 }));
+		CameraComponent& cameraData = mainCameraEntity.AddComponent<CameraComponent>(CameraComponent{ CameraSettings{SCREEN_ASPECT_RATIO, 60, &playerEntity} });
 		cameraController.TryRegisterCamera(cameraData);
 
-		EntityData& trigger = globalsManager.CreateGlobalEntity("Trigger", TransformData(Vec2{15, 0}));
+		EntityData& trigger = globalsManager.CreateGlobalEntity("Trigger", TransformComponent(Vec2{15, 0}));
 		CollisionBoxData& triggerCollider = trigger.AddComponent<CollisionBoxData>(CollisionBoxData(Vec2(5, 5), Vec2(0, 0)));
 		TriggerData& triggerData= trigger.AddComponent<TriggerData>(TriggerData(&triggerCollider));
 		//triggerData.m_OnExit.AddListener([](const CollisionBoxData* enteredBody)-> void { LogError(std::format("EXIITNG"), true, false, false, true); });

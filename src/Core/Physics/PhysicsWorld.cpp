@@ -92,7 +92,8 @@ namespace Physics
 				//for things like grounded checks/gravity)
 				
 				//TODO: using global pos everywere is expensive, perhaps we can optimize by checking parents first?
-				const Vec2 incomingBToADir = bodyA->GetEntity().GetTransform().GetGlobalPos().GetXY().GetY() - bodyB->GetEntity().GetTransform().GetGlobalPos().GetXY();
+				const Vec2 incomingBToADir = bodyA->GetEntityMutable().GetTransformMutable().GetGlobalPos().GetXY().GetY() - 
+					bodyB->GetEntityMutable().GetTransformMutable().GetGlobalPos().GetXY();
 				const float dotProductBofA = DotProduct(incomingBToADir, bodyB->GetVelocity());
 				/*LogError(std::format("touching:{} DOT BETWEEN B-> A:{} bodyB vel:{} is:{}", std::to_string(collisionData.m_IntersectionData.IsTouchingIntersection()), incomingBToADir.ToString(),
 					bodyB->GetVelocity().ToString(), std::to_string(dotProductBofA)));*/
@@ -320,7 +321,7 @@ namespace Physics
 		if (body.HasYConstraint()) moveY = 0;
 
 		//LogWarning(std::format("ENTITY SETTING POS: {}", std::to_string(xVelocity), std::to_string(yVelocity)));
-		entity.GetTransformMutable().m_LocalPos += Vec3(moveX, moveY, 0);
+		entity.GetTransformMutable().GetLocalPosMutable() += Vec3(moveX, moveY, 0);
 
 		//if (gravitySet) LogError(std::format("graivyt set for:{} new a:{} new v:{}", entity.GetName(), body.GetAcceleration().ToString(), body.GetVelocity().ToString()), true, false, false, true);
 
@@ -365,8 +366,8 @@ namespace Physics
 			LogError(std::format("Move delta:{} for collision:{} BMOVED:{} entityB:{}", std::to_string(moveDelta), 
 				collision.ToString(), std::to_string(isMoveEntityB), entityB.GetName()));*/
 
-		if (xIsMin) movedEntity->GetTransformMutable().m_LocalPos.m_X += moveDelta;
-		else movedEntity->GetTransformMutable().m_LocalPos.m_Y+= moveDelta;
+		if (xIsMin) movedEntity->GetTransformMutable().GetLocalPosMutable().m_X += moveDelta;
+		else movedEntity->GetTransformMutable().GetLocalPosMutable().m_Y += moveDelta;
 
 		//Whichever one got moved out should not have any further movement to prevent potential jittering
 		//PhysicsBodyData& movedBody = aMovedLastFrame ? bodyA : bodyB;

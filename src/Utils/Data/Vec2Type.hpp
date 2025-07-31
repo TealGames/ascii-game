@@ -269,7 +269,14 @@ Vec2Int GetSign(const Vec<T, 2>& vec)
 /// <param name="min"></param>
 /// <param name="max"></param>
 /// <returns></returns>
-bool IsPointWithinBounds(const Vec2& point, const Vec2& min, const Vec2& max) {
+template<typename T>
+bool IsPointWithinBounds(const Vec<T, 2>& point, const Vec<T, 2>& min, const Vec<T, 2>& max) {
 	return (point.m_X >= min.m_X && point.m_X <= max.m_X) &&
 		(point.m_Y >= min.m_Y && point.m_Y <= max.m_Y);
 }
+
+inline Vec2 GetDirVector(const float radianAngle)
+{
+	return Vec2(std::cosf(radianAngle), std::sinf(radianAngle));
+}
+

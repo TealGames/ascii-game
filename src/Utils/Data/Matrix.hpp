@@ -44,7 +44,7 @@ public:
 
 	const float* GetMemPointer() const
 	{
-		return m_elements;
+		return &m_elements[0][0];
 	}
 
 	std::array<float, MATRIX_SIZE> GetElementsRowMajor() const

@@ -23,7 +23,7 @@ namespace ECS
 	{
 	}
 
-    void LightSourceSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+    void LightSourceSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("LightSourceSystem::SystemUpdate"); 
@@ -38,7 +38,7 @@ namespace ECS
         //which can prevent the ned for pointers
 
         
-        std::vector<FragmentedTextBuffer*> affectedLayerBuffers = {};
+        std::vector<FragmentedTextBuffer2D*> affectedLayerBuffers = {};
         scene.OperateOnComponents<LightSourceData>(
             [this, &scene, &affectedLayerBuffers](LightSourceData& data)-> void
             {
@@ -98,15 +98,12 @@ namespace ECS
                 //}
 
                 scene.IncreaseFrameDirtyComponentCount();
-                //if (CACHE_LAST_BUFFER && !data.m_LastFrameData.empty()) data.m_LastFrameData.clear();
                 RenderLight(data, affectedLayerBuffers);
-                data.m_MutatedThisFrame = false;
-                //std::cout << "Rendering lgiht" << std::endl;
             });
             
     }
 
-	void LightSourceSystem::RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer*>& buffers, bool displayLightLevels)
+	void LightSourceSystem::RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer2D*>& buffers, bool displayLightLevels)
     {
         //TODO: right now we use only the transform pos, but we should also use every pos on player too
         
@@ -133,19 +130,19 @@ namespace ECS
     //TODO: this probably needs to be optimized
     //TODO: there is a lot of get flopped and conversions from cartesia and row col pos so that could be optimized
     void LightSourceSystem::CreateLightingForPoint(LightSourceData& data,
-        const WorldPosition3D& centerPos, FragmentedTextBuffer& buffer, bool displayLightLevels)
+        const WorldPosition3D& centerPos, FragmentedTextBuffer2D& buffer, bool displayLightLevels)
     {
         std::sort(buffer.begin(), buffer.end(), 
             [&centerPos](const TextBufferCharPosition2D& first, const TextBufferCharPosition2D& second) -> bool
             {
-                return GetDistance(centerPos, first.m_Pos) < GetDistance(centerPos, second.m_Pos);
-                
+                //Note: since we only care about the greater distance (and not actual value) we can avoid the expensive sqrt operation
+                return (first.m_Pos - centerPos.GetXY()).GetMagnitudeSquared() < (second.m_Pos - centerPos.GetXY()).GetMagnitudeSquared();
             });
 
         float centerDistance = 0;
         for (auto& bufferPos : buffer)
         {
-            centerDistance = GetDistance(centerPos, bufferPos.m_Pos);
+            centerDistance = (bufferPos.m_Pos - centerPos.GetXY()).GetMagnitude();
             if (centerDistance > data.m_LightRadius) break;
 
             bufferPos.m_Text.m_Color = CalculateNewColor(data, bufferPos, centerDistance, nullptr, nullptr);
@@ -155,6 +152,7 @@ namespace ECS
     std::uint8_t LightSourceSystem::CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const
     {
         //We do radius +1 since we want there to be 0 light when we go PAST the radius
+        //NOTE: pow is expensive and can take 50-100 clock cycles
         return data.m_Intensity* std::powf(1 - (distance / (data.m_LightRadius + 1)), data.m_FalloffStrength);
     }
 

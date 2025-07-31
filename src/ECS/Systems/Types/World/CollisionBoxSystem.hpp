@@ -19,7 +19,7 @@ namespace ECS
 
 	public:
 		CollisionBoxSystem(CollisionRegistry& registry);
-		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
 
 		const ColliderOutlineBuffer& GetColliderBuffer() const;
 		ColliderOutlineBuffer& GetColliderBufferMutable();

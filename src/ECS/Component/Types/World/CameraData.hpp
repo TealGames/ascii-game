@@ -9,19 +9,31 @@
 #include "Math/PlatformMath.hpp"
 #include <vector>
 
-class CameraData : public Component
+enum class ProjectionMatrixType : std::uint8_t
 {
+	Platform	=0,
+	Engine		=1
+};
+
+struct CameraPrecalculatedData
+{
+	Mat4 m_ViewMatrix = {};
+	Mat4 m_PlatformProjectionMatrix = {};
+	std::array<InfinitePlane3D, 6> m_FrustumPlanes = {};
+};
+
+class CameraComponent : public Component
+{
+private:
+	CameraPrecalculatedData m_lastUpdateData;
 public:
 	CameraSettings m_CameraSettings;
-	std::vector<TextBufferCharPosition2D> m_LastFrameBuffer;
 
 private:
-	WorldPosition3D CalculateNearPlaneWorldCenter(const WorldPosition3D& globalPos) const;
-	WorldPosition3D CalculateFarPlaneWorldCenter(const WorldPosition3D& globalPos) const;
 public:
-	CameraData();
-	CameraData(const Json& json);
-	CameraData(const CameraSettings& cameraSettings);
+	CameraComponent();
+	CameraComponent(const Json& json);
+	CameraComponent(const CameraSettings& cameraSettings);
 
 	void SetNearDistance(const float near);
 	void SetFarDistance(const float far);
@@ -76,10 +88,14 @@ public:
 	Mat4 CalculateViewMatrix() const;
 	/// <summary>
 	/// Calculates the camera's view space into 2d plane screen space
-	/// based on the projection type that is used
+	/// based on the projection type that is used FOR THE CURRENTLY
+	/// USED RENDERING PLATFORM (Platform) OR for this engine (ENGINE)
 	/// </summary>
 	/// <returns></returns>
-	Mat4 CalculateProjectionMatrix() const;
+	Mat4 CalculateProjectionMatrix(const ProjectionMatrixType type) const;
+
+	void UpdatePrecalculatedData();
+	const CameraPrecalculatedData& GetLastUpdateData() const;
 
 	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;

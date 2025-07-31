@@ -10,7 +10,7 @@ bool CameraController::Validate()
 		std::format("Validated camera controller but there are no cameras set which is not allowed"));
 }
 
-bool CameraController::TryRegisterCamera(CameraData& camera, const PriorityType& priority)
+bool CameraController::TryRegisterCamera(CameraComponent& camera, const PriorityType& priority)
 {
 	//We make sure it is disabled by default so it does not attempt to render
 	//until this controller decides what camera should be rendered
@@ -32,7 +32,7 @@ void CameraController::UpdateActiveCamera()
 	}
 }
 
-CameraData& CameraController::GetActiveCameraMutable()
+CameraComponent& CameraController::GetActiveCameraMutable()
 {
 	if (!Assert(!m_priorityCameras.empty(), std::format("Tried to get active camera MUTABLE from "
 		"camera controller, but there are no cameras registered!")))
@@ -41,7 +41,7 @@ CameraData& CameraController::GetActiveCameraMutable()
 	return *(std::prev(m_priorityCameras.end())->second);
 }
 
-const CameraData& CameraController::GetActiveCamera() const
+const CameraComponent& CameraController::GetActiveCamera() const
 {
 	if (!Assert(!m_priorityCameras.empty(), std::format("Tried to get active camera from "
 		"camera controller, but there are no cameras registered!")))
@@ -50,14 +50,14 @@ const CameraData& CameraController::GetActiveCamera() const
 	return *(std::prev(m_priorityCameras.end())->second);
 }
 
-bool CameraController::TrySetCameraPriority(const CameraData& camera, const PriorityType& priority)
+bool CameraController::TrySetCameraPriority(const CameraComponent& camera, const PriorityType& priority)
 {
-	const CameraData* targetCameraPtr = &camera;
+	const CameraComponent* targetCameraPtr = &camera;
 	for (auto& priorityCamera : m_priorityCameras)
 	{
 		if (priorityCamera.second == targetCameraPtr)
 		{
-			CameraData* mutableCamera = priorityCamera.second;
+			CameraComponent* mutableCamera = priorityCamera.second;
 			m_priorityCameras.extract(priorityCamera.first);
 			m_priorityCameras.emplace(priority, mutableCamera);
 			return true;
@@ -65,7 +65,7 @@ bool CameraController::TrySetCameraPriority(const CameraData& camera, const Prio
 	}
 	return false;
 }
-bool CameraController::TrySetCurrentCamera(const CameraData& camera)
+bool CameraController::TrySetCurrentCamera(const CameraComponent& camera)
 {
 	return TrySetCameraPriority(camera, MAX_PRIORITY);
 }

@@ -88,7 +88,7 @@ private:
 	/// NOTE: all positions all based on the left side (image each char is on a rect, the top left pos is
 	/// the coorindate used for the buffer)
 	/// </summary>
-	FragmentedTextBuffer m_buffer;
+	FragmentedTextBuffer2D m_buffer;
 	Vec2 m_worldSize;
 public:
 
@@ -115,7 +115,7 @@ public:
 	/// </summary>
 	/// <param name="rawBuffer"></param>
 	/// <param name="relativePivotPos"></param>
-	VisualData(const FragmentedTextBuffer& rawBuffer, const NormalizedPosition& relativePivotPos);
+	VisualData(const FragmentedTextBuffer2D& rawBuffer, const NormalizedPosition& relativePivotPos);
 
 	/// <summary>
 	/// This overload uses a 2d array of data with char, color and font
@@ -189,7 +189,7 @@ public:
 	/// <param name="transformPos"></param>
 	/// <returns></returns>
 	//void AddTextPositionsToBuffer(const WorldPosition& globalTransformPos, FragmentedTextBuffer& buffer) const;
-	const FragmentedTextBuffer& GetBuffer() const;
+	const FragmentedTextBuffer2D& GetBuffer() const;
 	/*const Vec2& GetCharSpacing() const;
 	const Font& GetFont() const;
 	float GetFontSize() const;

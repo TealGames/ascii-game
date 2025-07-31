@@ -126,7 +126,7 @@ namespace Rendering
 		if (m_currentBindIndex == std::numeric_limits<BindIndex>::max())
 		{
 			LogError(std::format("Reached the max limit of binding indices in buffer controller"));
-			return;
+			return 0;
 		}
 
 		return m_currentBindIndex++;

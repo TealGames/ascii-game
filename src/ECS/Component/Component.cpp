@@ -5,7 +5,7 @@
 #include "Utils/ToStringFunctions.hpp"
 
 Component::Component() 
-	: m_MutatedThisFrame(false), m_IsEnabled(true), m_entity(nullptr), m_Fields() //m_dependencyLevel(dependency)
+	: m_isDirty(false), m_IsEnabled(true), m_entity(nullptr), m_Fields() //m_dependencyLevel(dependency)
 {
 }
 
@@ -33,13 +33,17 @@ const EntityData& Component::GetEntity() const
 	return *m_entity;
 }
 
-TransformData& Component::GetTransformMutable() { return GetEntityMutable().GetTransformMutable(); }
-const TransformData& Component::GetTransform() const { return GetEntity().GetTransform(); }
+TransformComponent& Component::GetTransformMutable() { return GetEntityMutable().GetTransformMutable(); }
+const TransformComponent& Component::GetTransform() const { return GetEntity().GetTransform(); }
 ECS::EntityID Component::GetEntityID() const { return GetEntity().GetId(); }
 
 bool Component::IsInActiveAndEnabledState() const
 {
 	return m_IsEnabled && GetEntity().IsEntityActive();
+}
+void Component::SetDirty(const bool isDirty)
+{
+	m_isDirty = isDirty;
 }
 
 void Component::InitFields()

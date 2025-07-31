@@ -18,7 +18,7 @@ namespace ECS
 	class Entity;
 }
 class Scene;
-class CameraData;
+class CameraComponent;
 class TimeKeeper;
 class CameraController;
 class UIInteractionManager;

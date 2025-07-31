@@ -26,30 +26,30 @@ namespace ECS
 	CameraSystem::CameraSystem(Rendering::Renderer& renderer) :
         m_renderer(&renderer)//, m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
 	{
-        GlobalComponentInfo::AddComponentInfo(typeid(CameraData), ComponentInfo(DependencyType::Entity));
+        GlobalComponentInfo::AddComponentInfo(typeid(CameraComponent), ComponentInfo(DependencyType::Entity));
 	}
 
-    void CameraSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+    void CameraSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("CameraSystem::SystemUpdate");
 #endif 
 
-        scene.IncreaseFrameDirtyComponentCount();
         if (!mainCamera.m_CameraSettings.HasNoFollowTarget()) UpdateCameraPosition(mainCamera);
+        mainCamera.UpdatePrecalculatedData();
 
-        CollapseLayersWithinViewport(scene, mainCamera);
+        //CollapseLayersWithinViewport(scene, mainCamera);
     }
 
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
-    void CameraSystem::UpdateCameraPosition(CameraData& cameraData)
+    void CameraSystem::UpdateCameraPosition(CameraComponent& cameraData)
     {
-        cameraData.GetEntityMutable().GetTransformMutable().m_LocalPos= cameraData.m_CameraSettings.m_FollowTarget->GetTransform().GetGlobalPos();
+        cameraData.GetEntityMutable().GetTransformMutable().m_localPos= cameraData.m_CameraSettings.m_FollowTarget->GetTransform().GetGlobalPos();
     }
 
-    void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData)
+    void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraComponent& cameraData)
     {
-        const TransformData& cameraTransform = cameraData.GetEntity().GetTransform();
+        const TransformComponent& cameraTransform = cameraData.GetEntity().GetTransform();
         float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_CameraSettings.m_WorldViewportSize.m_X, 
                                      SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y);
 

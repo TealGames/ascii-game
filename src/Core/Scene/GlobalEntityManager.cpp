@@ -87,7 +87,7 @@ bool GlobalEntityManager::HasGlobalEntity(const std::string& name) const
 	return HasGlobalEntity(name, true);
 }
 
-EntityData& GlobalEntityManager::CreateGlobalEntity(const std::string& name, const TransformData& transform)
+EntityData& GlobalEntityManager::CreateGlobalEntity(const std::string& name, const TransformComponent& transform)
 {
 	std::string cleanedName = CleanName(name);
 	//Since we want cleaned name to use in error message, we choose to not clean second time when checking for entity

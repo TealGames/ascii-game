@@ -4,7 +4,7 @@
 #include "Core/Input/InputManager.hpp"
 
 class UIHierarchy;
-class CameraData;
+class CameraComponent;
 class CameraController;
 class PopupUIManager;
 namespace AssetManagement { class AssetManager; };

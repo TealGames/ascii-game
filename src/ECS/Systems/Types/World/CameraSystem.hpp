@@ -19,7 +19,7 @@
 namespace Rendering { class Renderer; }
 namespace ECS
 {
-	class CameraSystem : public SingleBodySystem<CameraData>
+	class CameraSystem : public SingleBodySystem<CameraComponent>
 	{
 	private:
 		Rendering::Renderer* m_renderer;
@@ -30,7 +30,7 @@ namespace ECS
 	public:
 
 	private:
-		void CollapseLayersWithinViewport(const Scene& scene, CameraData& cameraData);
+		void CollapseLayersWithinViewport(const Scene& scene, CameraComponent& cameraData);
 
 		//bool IsWithinViewport(const TransformData& camera, const WorldPosition& pos) const;
 
@@ -46,9 +46,9 @@ namespace ECS
 		CameraSystem(Rendering::Renderer& renderer);
 		//Camera(Transform& transform, const Vec2Int& viewportSize);
 
-		void UpdateCameraPosition(CameraData& cameraData);
+		void UpdateCameraPosition(CameraComponent& cameraData);
 
-		void SystemUpdate(Scene& scene, CameraData& component, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& component, const float& deltaTime) override;
 
 		/*const FragmentedTextBuffer& GetCurrentFrameBuffer() const;
 		const ColliderOutlineBuffer* GetCurrentColliderOutlineBuffer() const;

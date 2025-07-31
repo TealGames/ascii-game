@@ -350,7 +350,7 @@ namespace Core
 
 		m_inputManager.Update(unscaledDeltaTime);
 
-		const FragmentedTextBuffer* frameBuffer = nullptr;
+		const FragmentedTextBuffer2D* frameBuffer = nullptr;
 		Scene* activeScene = nullptr;
 		if (m_editor.IsInGameView())
 		{
@@ -372,7 +372,7 @@ namespace Core
 			}
 
 			m_cameraController.UpdateActiveCamera();
-			CameraData& mainCamera = m_cameraController.GetActiveCameraMutable();
+			CameraComponent& mainCamera = m_cameraController.GetActiveCameraMutable();
 
 			std::string cameraSceneName = mainCamera.GetEntity().m_SceneName;
 			if (!Assert(cameraSceneName == EntityData::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
@@ -405,8 +405,9 @@ namespace Core
 			m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 			m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 			m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
-			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
+
 			m_gameManager.GameUpdate();
+			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 		}
 
 		m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());

@@ -5,7 +5,7 @@ namespace ECS
 {
 	EntitySystem::EntitySystem() {}
 
-	void EntitySystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+	void EntitySystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
 	{
 
 	}

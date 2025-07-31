@@ -42,6 +42,12 @@ public:
 	Vec<T, 2> GetYZ() const { return Vec<T, 2>(m_Y, m_Z); }
 	Vec<T, 2> GetXZ() const { return Vec<T, 2>(m_X, m_Z); }
 
+	void SetXY(const Vec<T, 2> vec)
+	{
+		m_X = vec.m_X;
+		m_Y = vec.m_Y;
+	}
+
 	/// <summary>
 	/// Returns a pointer to the first value in vector, 
 	/// allowing user to treat vector components as array due to 

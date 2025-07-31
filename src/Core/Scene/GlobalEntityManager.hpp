@@ -58,7 +58,7 @@ public:
 	bool HasGlobalEntity(const ECS::EntityID& id) const;
 	bool HasGlobalEntity(const std::string& name) const;
 	
-	EntityData& CreateGlobalEntity(const std::string& name, const TransformData& transform);
+	EntityData& CreateGlobalEntity(const std::string& name, const TransformComponent& transform);
 	//EntityData& CreateGlobalEntity(const std::string& name, TransformData&& transform);
 
 	EntityData* TryGetGlobalEntityMutable(const ECS::EntityID& id);

@@ -40,7 +40,7 @@ void PlayerData::TrySetInitialJumpSpeed()
 	//Assert(false, std::format("Init speed:{}", std::to_string(m_initialJumpSpeed)));
 }
 
-const float& PlayerData::GetMoveSpeed() const
+float PlayerData::GetMoveSpeed() const
 {
 	return m_xMoveSpeed;
 }
@@ -48,11 +48,11 @@ float PlayerData::CalculateInitialJumpSpeed() const
 {
 	return std::sqrt(2 * std::abs(GetBodySafe().GetGravity()) * m_maxJumpHeight);
 }
-const float& PlayerData::GetInitialJumpSpeed() const
+float PlayerData::GetInitialJumpSpeed() const
 {
 	return m_initialJumpSpeed;
 }
-const bool& PlayerData::GetIsGrounded() const
+bool PlayerData::GetIsGrounded() const
 {
 	return !m_body->IsExperiencingGravity();
 }
@@ -87,12 +87,12 @@ const PhysicsBodyData& PlayerData::GetBodySafe() const
 	return *m_body;
 }
 
-const Vec2Int& PlayerData::GetFrameInput() const
+Vec2Int PlayerData::GetFrameInput() const
 {
 	return m_currentFrameDirectionalInput;
 }
 
-const Vec2Int& PlayerData::GetLastFrameInput() const
+Vec2Int PlayerData::GetLastFrameInput() const
 {
 	return m_lastFrameDirectionalInput;
 }

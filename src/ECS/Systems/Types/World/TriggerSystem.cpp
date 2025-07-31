@@ -23,7 +23,7 @@ namespace ECS
 				}));
 	}
 
-	void TriggerSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+	void TriggerSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("TriggerSystem::SystemUpdate");

@@ -48,9 +48,9 @@ const ECS::EntityRegistry& EntityData::GetRegistry() const
 //	return ECS::Entity(GetEntitySafeMutable().GetRegistryMutable(), m_parentId);
 //}
 
-TransformData& EntityData::GetTransformMutable()
+TransformComponent& EntityData::GetTransformMutable()
 {
-	TransformData* transform = TryGetComponentMutable<TransformData>();
+	TransformComponent* transform = TryGetComponentMutable<TransformComponent>();
 	if (transform == nullptr)
 	{
 		Assert(false, std::format("Attempted to get transform MUTABLE from entity:{} but failed", ToString()));
@@ -58,9 +58,9 @@ TransformData& EntityData::GetTransformMutable()
 	}
 	return *transform;
 }
-const TransformData& EntityData::GetTransform() const
+const TransformComponent& EntityData::GetTransform() const
 {
-	const TransformData* transform = TryGetComponent<TransformData>();
+	const TransformComponent* transform = TryGetComponent<TransformComponent>();
 	if (transform == nullptr)
 	{
 		Assert(false, std::format("Attempted to get transform IMMUTABLE from entity:{} but failed", ToString()));
@@ -208,14 +208,27 @@ EntityData* EntityData::GetParentMutable()
 {
 	if (ECS::IsValidID(m_parentId)) 
 		return m_registry->TryGetEntityMutable(m_parentId);
-	else return nullptr;
+	return nullptr;
 }
 const EntityData* EntityData::GetParent() const
 {
 	if (ECS::IsValidID(m_parentId))
 		return m_registry->TryGetEntityMutable(m_parentId);
-	else return nullptr;
+	 nullptr;
 }
+const TransformComponent* EntityData::GetParentTransform() const
+{
+	if (ECS::IsValidID(m_parentId))
+		return m_registry->TryGetComponent<TransformComponent>(m_parentId);
+	return nullptr;
+}
+TransformComponent* EntityData::GetParentTransformMutable()
+{
+	if (ECS::IsValidID(m_parentId))
+		return m_registry->TryGetComponentMutable<TransformComponent>(m_parentId);
+	return nullptr;
+}
+
 bool EntityData::HasParent() const
 {
 	return ECS::IsValidID(m_parentId);
@@ -249,13 +262,13 @@ const EntityData* EntityData::GetHighestParent() const
 
 int EntityData::GetChildCount() const { return m_childrenIds.size(); }
 
-EntityData& EntityData::CreateChild(const std::string& name, const TransformData& transform)
+EntityData& EntityData::CreateChild(const std::string& name, const TransformComponent& transform)
 {
 	return *(std::get<0>(CreateChild<>(name, transform)));
 }
 EntityData& EntityData::CreateChild(const std::string& name)
 {
-	return CreateChild(name, TransformData());
+	return CreateChild(name, TransformComponent());
 }
 
 size_t EntityData::PushChild(EntityData& entity)

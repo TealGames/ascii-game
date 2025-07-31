@@ -5,7 +5,7 @@
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 
-Particle::Particle(const TextChar& text, const Vec2& fontArea, const WorldPosition3D& pos, const Vec2& vel, const float& lifeTime)
+Particle::Particle(const TextChar& text, const Vec2& fontArea, const WorldPosition3D& pos, const Vec3& vel, const float& lifeTime)
 	: m_TextChar(text), m_FontArea(fontArea), m_Pos(pos), m_Velocity(vel), m_AliveTime(0), m_LifeTime(lifeTime) {}
 
 void Particle::SetColorFromAliveTime(const ColorGradient& color)

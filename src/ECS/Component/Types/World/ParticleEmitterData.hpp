@@ -14,7 +14,7 @@ struct Particle
 {
 	TextChar m_TextChar;
 	WorldPosition3D m_Pos;
-	Vec2 m_Velocity;
+	Vec3 m_Velocity;
 	Vec2 m_FontArea;
 	/// <summary>
 	/// The current duration in seconds this particle has been alive for
@@ -26,7 +26,7 @@ struct Particle
 	float m_LifeTime;
 
 	Particle(const TextChar& text, const Vec2& fontArea, 
-		const WorldPosition3D& pos, const Vec2& vel, const float& lifeTime);
+		const WorldPosition3D& pos, const Vec3& vel, const float& lifeTime);
 
 	void SetColorFromAliveTime(const ColorGradient& color);
 };

@@ -5,6 +5,30 @@
 
 namespace Utils
 {
+	float FastIntPow(float base, int exponent)
+	{
+		if (exponent == 0) return 1.0f;
+		
+		if (exponent > 0)
+		{
+			while (exponent != 0)
+			{
+				base *= base;
+				exponent--;
+			}
+		}
+		else
+		{
+			exponent *= -1;
+			while (exponent != 0)
+			{
+				base /= base;
+				exponent--;
+			}
+		}
+		return base;
+	}
+
 	bool ApproximateEqualsF(float a, float b, const float relEps, const float absEps)
 	{
 		return std::fabs(a - b) <= std::fmax(relEps * std::fmax(std::fabs(a), std::fabs(b)), absEps);
@@ -12,7 +36,7 @@ namespace Utils
 
 	float Roundf(const float& decimal, const std::uint8_t& places)
 	{
-		float factor = std::pow(10.0f, places);
+		float factor = FastIntPow(10.0f, places);
 		return std::round(decimal * factor) / factor;
 	}
 
@@ -36,7 +60,6 @@ namespace Utils
 	{
 		return deg * (std::numbers::pi / 180.0);
 	}
-
 	double ToDegrees(const double rad)
 	{
 		return rad * (180.0 / std::numbers::pi);

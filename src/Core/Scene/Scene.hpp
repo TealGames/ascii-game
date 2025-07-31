@@ -103,12 +103,12 @@ public:
 	std::vector<const RenderLayer*> GetAllLayers() const;
 
 	void AddToLayer(const RenderLayerType& type, TextBufferCharPosition2D& texture);
-	std::vector<FragmentedTextBuffer*> GetLayerBufferMutable(const RenderLayerType& renderLayers);
+	std::vector<FragmentedTextBuffer2D*> GetLayerBufferMutable(const RenderLayerType& renderLayers);
 	/// <summary>
 	/// Gets all render layer buffers in ascending sorted order
 	/// </summary>
 	/// <returns></returns>
-	std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer*>> GetAllLayerBufferMutable();
+	std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer2D*>> GetAllLayerBufferMutable();
 	//std::vector<TextBuffer*> GetTextBuffersMutable(const RenderLayerType& renderLayers);
 	//void SetLayers(const RenderLayerType& renderLayers, const std::vector<TextCharPosition>& positions);
 	//void SetLayers(const RenderLayerType& renderLayers, const std::vector<ColorPosition>& positions);
@@ -147,7 +147,7 @@ public:
 	std::vector<const EntityData*> GetLocalEntities() const;
 	std::vector<EntityData*> GetLocalEntitiesMutable();
 	
-	EntityData& CreateEntity(const std::string& name, const TransformData& transform);
+	EntityData& CreateEntity(const std::string& name, const TransformComponent& transform);
 	bool HasEntity(const ECS::EntityID& id);
 	/// <summary>
 	/// Will try to find an entity within the scene (global or local)

@@ -26,7 +26,7 @@ VisualDataPreset::VisualDataPreset(const FontAsset& font, const float& fontSize,
 VisualData::VisualData() : VisualData({}, Vec2(), NormalizedPosition()) {}
 
 
-VisualData::VisualData(const FragmentedTextBuffer& rawBuffer, const NormalizedPosition& relativePivotPos) :
+VisualData::VisualData(const FragmentedTextBuffer2D& rawBuffer, const NormalizedPosition& relativePivotPos) :
 	m_buffer(rawBuffer), m_pivotRelative(relativePivotPos), m_worldSize() {}
 
 VisualData::VisualData(const std::vector<std::vector<TextBufferChar>>& rawBuffer, const Vec2& charSpacing,
@@ -212,7 +212,7 @@ Vec2 VisualData::GetWorldSize() const
 	//return {std::abs(maxPos.m_X- minPos.m_X), std::abs(maxPos.m_Y- minPos.m_Y)};
 }
 
-const FragmentedTextBuffer& VisualData::GetBuffer() const
+const FragmentedTextBuffer2D& VisualData::GetBuffer() const
 {
 	return m_buffer;
 }

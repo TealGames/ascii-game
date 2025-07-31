@@ -33,9 +33,9 @@ public:
 	//TODO: what if the wrong boddy is provided meaning one that does not share the same entity as this
 	PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const float& maxJumpHeight);
 
-	const float& GetMoveSpeed() const;
-	const float& GetInitialJumpSpeed() const;
-	const bool& GetIsGrounded() const;
+	float GetMoveSpeed() const;
+	float GetInitialJumpSpeed() const;
+	bool GetIsGrounded() const;
 
 	/// <summary>
 	/// Will send out a raycast until a ground is found (or ray ends)
@@ -47,8 +47,8 @@ public:
 	PhysicsBodyData& GetBodyMutableSafe();
 	const PhysicsBodyData& GetBodySafe() const;
 
-	const Vec2Int& GetFrameInput() const;
-	const Vec2Int& GetLastFrameInput() const;
+	Vec2Int GetFrameInput() const;
+	Vec2Int GetLastFrameInput() const;
 	Vec2Int GetInputDelta() const;
 	bool HasInputChanged() const;
 

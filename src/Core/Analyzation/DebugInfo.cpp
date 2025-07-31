@@ -96,7 +96,7 @@ const std::optional<DebugMousePosition>& DebugInfo::GetMouseDebugData() const
 	return m_mouseDebugData;
 }
 
-void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scene& activeScene, const Input::InputManager& input, const CameraData& mainCamera)
+void DebugInfo::Update(const float& deltaTime, const float& timeStep, Scene& activeScene, const Input::InputManager& input, const CameraComponent& mainCamera)
 {
 	bool isActive = m_isEnabled;
 	if (input.IsKeyPressed(TOGGLE_DEBUG_INFO_KEY))
@@ -112,7 +112,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scen
 	SetProperty("DeltaTime", std::format("{} s", std::to_string(deltaTime)));
 	SetProperty("TimeStep", std::format("{} s", std::to_string(timeStep)));
 
-	const EntityData* playerEntity = activeScene.TryGetEntity("player", true);
+	EntityData* playerEntity = activeScene.TryGetEntityMutable("player", true);
 	if (!Assert(playerEntity != nullptr, std::format("Tried to update properties"
 		"for debug info but player could not be in active scene")))
 		return;
@@ -123,7 +123,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, const Scen
 	const PhysicsBodyData* maybePhysics = playerEntity->TryGetComponent<PhysicsBodyData>();
 	const PlayerData* maybePlayer = playerEntity->TryGetComponent<PlayerData>();
 	SetProperty("Input", std::format("{}", maybePlayer->GetFrameInput().ToString()));
-	SetProperty("PlayerGPos", std::format("{} m", playerEntity->GetTransform().GetGlobalPos().ToString()));
+	SetProperty("PlayerGPos", std::format("{} m", playerEntity->GetTransformMutable().GetGlobalPos().ToString()));
 	SetProperty("PlayerVel", std::format("{} m/s", maybePhysics->GetVelocity().ToString(3, VectorForm::Component)));
 	SetProperty("PlayerAcc", std::format("{} m/s2", maybePhysics->GetAcceleration().ToString(3, VectorForm::Component)));
 	SetProperty("Grounded:", std::format("{}", std::to_string(maybePlayer->GetIsGrounded())));

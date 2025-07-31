@@ -11,7 +11,7 @@ namespace ECS
 	private:
 	public:
 		GUIElementSystem();
-		void SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
 	};
 }
 

@@ -6,7 +6,7 @@
 #include <format>
 
 class EntityData;
-class TransformData;
+class TransformComponent;
 
 namespace ECS
 {
@@ -35,7 +35,7 @@ namespace ECS
 		EntityRegistry();
 
 		bool IsValidID(const EntityID& id) const;
-		EntityData& CreateNewEntity(const std::string& name, const TransformData& transform);
+		EntityData& CreateNewEntity(const std::string& name, const TransformComponent& transform);
 
 		EntityData* TryGetEntityMutable(const EntityID id);
 		const EntityData* TryGetEntity(const EntityID id) const;

@@ -6,90 +6,140 @@
 #include "Core/Serialization/JsonSerializers.hpp"
 //#include "glm/gtc/matrix_transform.hpp"
 
-TransformData::TransformData(const Json& json) : TransformData()
+TransformComponent::TransformComponent(const Json& json) : TransformComponent()
 {
 	Deserialize(json);
 }
 
-TransformData::TransformData(const Vec3 pos, const Vec3 scale, const Quat rotation):
+TransformComponent::TransformComponent(const Vec3 pos, const Vec3 scale, const Quat rotation):
 	Component(),
-	m_LocalPos(pos), //m_localPosLastFrame(NULL_POS), 
-	m_LocalScale(scale),
-	m_LocalRotation(rotation)
+	m_localPos(pos), //m_localPosLastFrame(NULL_POS), 
+	m_localScale(scale),
+	m_localRotation(rotation),
+	m_lastUpdateData()
 {
+	//By default we set dirty so that global pos can be calculated 
+	//the first time we retrieve it
+	m_isDirty = true;
+}
+
+const Vec3& TransformComponent::GetGlobalPos() const
+{
+	//TODO: isnt it a little hacky to use MUTABLE modifier to the last update data
+	//so you can modify internal state even in const function?
+	if (m_isDirty)
+	{
+		const TransformComponent* parent = GetEntity().GetParentTransform();
+		if (parent == nullptr)
+		{
+			m_lastUpdateData.m_GlobalPos = m_localPos;
+		}
+		else if (!parent->m_isDirty)
+		{
+			m_lastUpdateData.m_GlobalPos = parent->m_lastUpdateData.m_GlobalPos * m_localPos;
+		}
+		else m_lastUpdateData.m_GlobalPos = parent->GetGlobalPos() * m_localPos;
+		m_isDirty = false;
+	}
+
+	return m_lastUpdateData.m_GlobalPos;
+}
+const Vec3& TransformComponent::GetGlobalScale() const
+{
+	if (m_isDirty)
+	{
+		const TransformComponent* parent = GetEntity().GetParentTransform();
+		if (parent == nullptr)
+		{
+			m_lastUpdateData.m_GlobalScale = m_localScale;
+		}
+		else if (!parent->m_isDirty)
+		{
+			m_lastUpdateData.m_GlobalScale = parent->m_lastUpdateData.m_GlobalScale * m_localScale;
+		}
+		else m_lastUpdateData.m_GlobalScale = parent->GetGlobalScale() * m_localScale;
+		m_isDirty = false;
+	}
+
+	return m_lastUpdateData.m_GlobalScale;
+}
+const Quat& TransformComponent::GetGlobalRotation() const
+{
+	if (m_isDirty)
+	{
+		const TransformComponent* parent = GetEntity().GetParentTransform();
+		if (parent == nullptr)
+		{
+			m_lastUpdateData.m_GlobalRotation = m_localRotation;
+		}
+		else if (!parent->m_isDirty)
+		{
+			m_lastUpdateData.m_GlobalRotation = parent->m_lastUpdateData.m_GlobalRotation * m_localRotation;
+		}
+		else m_lastUpdateData.m_GlobalRotation = parent->GetGlobalRotation() * m_localRotation;
+		m_isDirty = false;
+	}
+
+	return m_lastUpdateData.m_GlobalRotation;
+}
+
+void TransformComponent::SetChildrenDirty()
+{
+	for (auto& child : GetEntityMutable().GetChildrenOfTypeMutable<TransformComponent>())
+	{
+		//If we reach a child that is already dirty, it means the its children SHOULD ALREADY BE DIRTY
+		//(because the dirty setting only occurs on pos, scale, rot mutation)
+		if (child->m_isDirty)
+			continue;
+		
+		child->m_isDirty = true;
+		child->SetChildrenDirty();
+	}
+}
+
+const Vec3& TransformComponent::GetLocalPos() const
+{
+	return m_localPos;
+}
+const Vec3& TransformComponent::GetLocalScaleMutable() const
+{
+	return m_localScale;
+}
+const Quat& TransformComponent::GetLocalRotationMutable() const
+{
+	return m_localRotation;
+}
+
+Vec3& TransformComponent::GetLocalPosMutable()
+{
+	if (!m_isDirty)
+	{
+		m_isDirty = true;
+		SetChildrenDirty();
+	}
 	
+	return m_localPos;
 }
-
-//void TransformData::SetLocalPos(const Vec2& newPos)
-//{
-//	SetLocalPosX(newPos.m_X);
-//	SetLocalPosY(newPos.m_Y);
-//}
-//void TransformData::SetLocalPosX(const float& newX)
-//{
-//	m_localPos.x = newX;
-//}
-//void TransformData::SetLocalPosY(const float& newY)
-//{
-//	m_localPos.y = newY;
-//}
-//void TransformData::SetLocalPosDeltaX(const float& xDelta)
-//{
-//	SetLocalPosX(m_localPos.x + xDelta);
-//}
-//void TransformData::SetLocalPosDeltaY(const float& yDelta)
-//{
-//	SetLocalPosY(m_localPos.y + yDelta);
-//}
-//void TransformData::SetLocalPosDelta(const Vec2& moveDelta)
-//{
-//	SetLocalPosDeltaX(moveDelta.m_X);
-//	SetLocalPosDeltaY(moveDelta.m_Y);
-//}
-//
-//Vec2 TransformData::GetLocalPos() const
-//{
-//	return m_localPos;
-//}
-Vec3 TransformData::GetGlobalPos() const
+Vec3& TransformComponent::GetLocalScaleMutable()
 {
-	const EntityData* parentEntity = GetEntity().GetParent();
-	return parentEntity != nullptr ? parentEntity->GetTransform().GetGlobalPos() + m_LocalPos : m_LocalPos;
+	if (!m_isDirty)
+	{
+		m_isDirty = true;
+		SetChildrenDirty();
+	}
+	return m_localScale;
 }
-//Vec2 TransformData::GetLocalPosLastFrame() const
-//{
-//	return m_localPosLastFrame;
-//}
-//void TransformData::SetLocalPosLastFrame(const Vec2& pos)
-//{
-//	m_localPosLastFrame = pos;
-//}
-//bool TransformData::HasMovedThisFrame() const
-//{
-//	return m_localPosLastFrame == NULL_POS || m_localPos != m_localPosLastFrame;
-//}
-
-//Vec2 TransformData::GetLocalScale() const
-//{
-//	return m_localScale;
-//}
-Vec3 TransformData::GetGlobalScale() const
+Quat& TransformComponent::GetLocalRotationMutable()
 {
-	const EntityData* parentEntity = GetEntity().GetParent();
-	return parentEntity != nullptr ? parentEntity->GetTransform().GetGlobalScale() * m_LocalScale : m_LocalScale;
+	if (!m_isDirty)
+	{
+		m_isDirty = true;
+		SetChildrenDirty();
+	}
+	return m_localRotation;
 }
 
-Quat TransformData::GetGlobalRotation() const
-{
-	const EntityData* parentEntity = GetEntity().GetParent();
-	return parentEntity != nullptr ? parentEntity->GetTransform().GetGlobalRotation() * m_LocalRotation : m_LocalRotation;
-}
-//void TransformData::SetLocalScale(const Vec2 scale)
-//{
-//	m_localScale = scale;
-//}
-
-Mat4 TransformData::CalculateTranslationMatrix(const Vec3& pos)
+Mat4 TransformComponent::CalculateTranslationMatrix(const Vec3& pos)
 {
 	return Mat4(std::array<std::array<float, 4>, 4>
 	{{
@@ -99,7 +149,7 @@ Mat4 TransformData::CalculateTranslationMatrix(const Vec3& pos)
 		{ {pos.m_X, pos.m_Y, pos.m_Z, 1} }
 		}});
 }
-Mat4 TransformData::CalculateScaleMatrix(const Vec3& scale)
+Mat4 TransformComponent::CalculateScaleMatrix(const Vec3& scale)
 {
 	return Mat4(std::array<std::array<float, 4>, 4>
 	{{
@@ -109,7 +159,7 @@ Mat4 TransformData::CalculateScaleMatrix(const Vec3& scale)
 		{ {0, 0, 0, 1} }
 		}});
 }
-Mat4 TransformData::CalculateRotationMatrix(const Quat& rotation)
+Mat4 TransformComponent::CalculateRotationMatrix(const Quat& rotation)
 {
 	const float x = rotation.m_X, y = rotation.m_Y, z = rotation.m_Z, w = rotation.m_W;
 
@@ -126,24 +176,24 @@ Mat4 TransformData::CalculateRotationMatrix(const Quat& rotation)
 		} });
 }
 
-Mat4 TransformData::CalculateLocalTranslationMatrix() const
+Mat4 TransformComponent::CalculateLocalTranslationMatrix() const
 {
-	return CalculateTranslationMatrix(m_LocalPos);
+	return CalculateTranslationMatrix(m_localPos);
 }
-Mat4 TransformData::CalculateLocalScaleMatrix() const
+Mat4 TransformComponent::CalculateLocalScaleMatrix() const
 {
-	return CalculateScaleMatrix(m_LocalScale);
+	return CalculateScaleMatrix(m_localScale);
 }
-Mat4 TransformData::CalculateLocalRotationMatrix() const
+Mat4 TransformComponent::CalculateLocalRotationMatrix() const
 {
-	return CalculateRotationMatrix(m_LocalRotation);
+	return CalculateRotationMatrix(m_localRotation);
 }
 
-Mat4 TransformData::GetLocalModelMatrix() const
+Mat4 TransformComponent::GetLocalModelMatrix() const
 {
 	return CalculateLocalTranslationMatrix() * CalculateLocalRotationMatrix() * CalculateLocalScaleMatrix();
 }
-Mat4 TransformData::GetWorldModelMatrix() const
+Mat4 TransformComponent::GetWorldModelMatrix() const
 {
 	const EntityData* parent = GetEntity().GetParent();
 	if (parent == nullptr) return GetLocalModelMatrix();
@@ -151,26 +201,48 @@ Mat4 TransformData::GetWorldModelMatrix() const
 	return parent->GetTransform().GetWorldModelMatrix() * GetLocalModelMatrix();
 }
 
-void TransformData::InitFields()
+void TransformComponent::UpdatePrecalculatedData()
+{
+	const EntityData* parentEntity = GetEntity().GetParent();
+	if (parentEntity == nullptr)
+	{
+		m_lastUpdateData.m_GlobalPos = m_localPos;
+		m_lastUpdateData.m_GlobalScale = m_localScale;
+		m_lastUpdateData.m_GlobalRotation = m_localRotation;
+	}
+	else
+	{
+		const TransformPrecalculatedData& parentData = parentEntity->GetTransform().GetLastUpdateData();
+		m_lastUpdateData.m_GlobalPos = parentData.m_GlobalPos * m_localPos;
+		m_lastUpdateData.m_GlobalScale = parentData.m_GlobalScale * m_localScale;
+		m_lastUpdateData.m_GlobalRotation = parentData.m_GlobalRotation * m_localRotation;
+	}
+}
+const TransformPrecalculatedData& TransformComponent::GetLastUpdateData() const
+{
+	return m_lastUpdateData;
+}
+
+void TransformComponent::InitFields()
 {
 	//TODO: implement
 	//m_Fields = { ComponentField("Pos", &m_LocalPos) };
 }
 
-void TransformData::Deserialize(const Json& json)
+void TransformComponent::Deserialize(const Json& json)
 {
-	m_LocalPos = json.value("LocPos", DEFAULT_POS);
-	m_LocalScale = json.value("LocScale", DEFAULT_SCALE);
-	m_LocalRotation = json.value("LocRot", DEFAULT_ROTATION);
+	m_localPos = json.value("LocPos", DEFAULT_POS);
+	m_localScale = json.value("LocScale", DEFAULT_SCALE);
+	m_localRotation = json.value("LocRot", DEFAULT_ROTATION);
 	//m_localPosLastFrame = json.at("LastFramePos").get<Vec2>();
 }
-Json TransformData::Serialize()
+Json TransformComponent::Serialize()
 {
-	return { {"Pos", m_LocalPos}, {"LocScale", m_LocalScale}, {"LocRot", m_LocalRotation}}; //{"LastFramePos", m_localPosLastFrame}};
+	return { {"Pos", m_localPos}, {"LocScale", m_localScale}, {"LocRot", m_localRotation}}; //{"LastFramePos", m_localPosLastFrame}};
 }
 
-std::string TransformData::ToString() const
+std::string TransformComponent::ToString() const
 {
 	return std::format("[<Transform> LPos: {} LScale:{} LRotation:{}]", 
-		m_LocalPos.ToString(), m_LocalScale.ToString(), m_LocalRotation.ToString());
+		m_localPos.ToString(), m_localScale.ToString(), m_localRotation.ToString());
 }

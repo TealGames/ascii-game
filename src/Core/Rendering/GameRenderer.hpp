@@ -9,6 +9,7 @@ class UIHierarchy;
 class DebugInfo;
 class CommandConsole;
 class EntityEditorUI;
+class CameraPrecalculatedData;
 
 namespace Rendering
 {
@@ -42,8 +43,7 @@ namespace Rendering
     struct StaticFrameRenderData
     {
         bool m_UpdatedDataThisFrame = false;
-        Mat4 m_ViewMatrix = {};
-        Mat4 m_ProjectionMatrix = {};
+        const CameraPrecalculatedData* m_CameraData = {};
     };
 
     class Renderer

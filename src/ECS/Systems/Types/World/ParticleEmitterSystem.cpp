@@ -13,7 +13,7 @@ namespace ECS
 {
 	ParticleEmitterSystem::ParticleEmitterSystem() {}
 
-	void ParticleEmitterSystem::SystemUpdate(Scene& scene, CameraData& mainCamera, const float& deltaTime)
+	void ParticleEmitterSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("AnimatorSystem::SystemUpdate");
@@ -70,21 +70,23 @@ namespace ECS
 				const int wholeParticlesToSpawn = static_cast<int>(fractionalParticlesToSpawn);
 				data.m_lastFrameFractionParticles = fractionalParticlesToSpawn - wholeParticlesToSpawn;
 
-				Vec2 randomDir = {};
-				Vec2 randomVel = {};
+				Vec3 randomVel = {};
 				float randomLifeTime = 0;
 				const Utils::Color initialColor = data.m_lifetimeColor.GetFirstColor(true);
 				for (int i = 0; i < wholeParticlesToSpawn; i++)
 				{
-					randomDir = GenerateRandomDir();
-					randomVel = GetVector(data.m_speedRange.GetRandom(), randomDir.GetAngle());
+					//TODO: right not we only support generating random particles in x and y dir, not z
+					randomVel = Vec3(GenerateRandomDir() * data.m_speedRange.GetRandom(), 0);
 					randomLifeTime = data.m_lifetimeRange.GetRandom();
 
 					Particle* particlePtr = data.m_particles.TryAdd(Particle(TextChar(initialColor, data.m_Char), data.m_FontData.m_RectSize,
 						data.GetOriginWorldPos(), randomVel, randomLifeTime));
-					if (!Assert(particlePtr != nullptr, std::format("Attempted to create particle in emitter system "
-						"for entity:{} particle:{} but failed", data.GetEntity().ToString(), data.ToString())))
+					if (particlePtr == nullptr)
+					{
+						LogError(std::format("Attempted to create particle in emitter system "
+							"for entity:{} particle:{} but failed", data.GetEntity().ToString(), data.ToString()));
 						return;
+					}
 
 					AddParticleToLayers(data, *particlePtr, renderLayers);
 				}
@@ -98,8 +100,13 @@ namespace ECS
 	{
 		for (auto& layer : renderLayers)
 		{
-			layer->AddText(TextBufferCharPosition2D(particle.m_Pos, 
+			layer->AddText(TextBufferCharPosition2D(particle.m_Pos.GetXY(),
 				particle.m_TextChar, data.m_FontData));
 		}
+	}
+
+	Vec2 ParticleEmitterSystem::GenerateRandomDir() const
+	{
+		return GetDirVector(Utils::GenerateRandomDouble(0, 2 * std::numbers::pi));
 	}
 }
