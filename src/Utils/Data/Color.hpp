@@ -28,6 +28,8 @@ namespace Utils
 
 		std::string ToString() const;
 	};
+
+	Color GetColorFromHex(const std::uint32_t& hexNumber);
 }
 
 

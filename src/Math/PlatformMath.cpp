@@ -1,5 +1,4 @@
 #include "Math/PlatformMath.hpp"
-#include "StaticGlobals.hpp"
 
 namespace PlatformMath
 {

@@ -11,14 +11,14 @@ bool IsAngledDirection(const MoveDirection& dir)
 
 Vec2 GetVectorFromDirection(const MoveDirection& dir)
 {
-	if (dir == MoveDirection::North) return Vec2::NORTH;
-	else if (dir == MoveDirection::South) return Vec2::SOUTH;
-	else if (dir == MoveDirection::East) return Vec2::EAST;
-	else if (dir == MoveDirection::West) return Vec2::WEST;
-	else if (dir == MoveDirection::Northeast) return Vec2::NORTHEAST;
-	else if (dir == MoveDirection::Northwest) return Vec2::NORTHWEST;
-	else if (dir == MoveDirection::Southeast) return Vec2::SOUTHEAST;
-	else if (dir == MoveDirection::Southwest) return Vec2::SOUTHWEST;
+	if (dir == MoveDirection::North) return Vec2(0, 1);
+	else if (dir == MoveDirection::South) return Vec2(0, -1);
+	else if (dir == MoveDirection::East) return Vec2(1, 0);
+	else if (dir == MoveDirection::West) return Vec2(-1, 0);
+	else if (dir == MoveDirection::Northeast) return Vec2(0.5f, 0.5f);
+	else if (dir == MoveDirection::Northwest) return Vec2(-0.5f, 0.5f);
+	else if (dir == MoveDirection::Southeast) return Vec2(0.5f, -0.5f);
+	else if (dir == MoveDirection::Southwest) return Vec2(-0.5f, -0.5f);
 
 	LogError(std::format("Tried to get vector from direction but no actions could be found"));
 	return {};
@@ -58,10 +58,10 @@ std::optional<MoveDirection> TryConvertStringToDirection(const std::string& str,
 
 std::optional<MoveDirection> TryConvertVectorToDirection(const Vec2& vec, const bool& ignoreAngledDirs)
 {
-	if (vec == Vec2::NORTH) return MoveDirection::North;
-	else if (vec == Vec2::SOUTH) return MoveDirection::South;
-	else if (vec == Vec2::EAST) return MoveDirection::East;
-	else if (vec == Vec2::WEST) return MoveDirection::West;
+	if (Utils::ApproximateEqualsF(vec.m_Y, 1)) return MoveDirection::North;
+	else if (Utils::ApproximateEqualsF(vec.m_Y, -1)) return MoveDirection::South;
+	else if (Utils::ApproximateEqualsF(vec.m_X, 1)) return MoveDirection::East;
+	else if (Utils::ApproximateEqualsF(vec.m_X, -1)) return MoveDirection::West;
 
 	if (ignoreAngledDirs) return std::nullopt;
 

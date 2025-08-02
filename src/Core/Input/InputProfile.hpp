@@ -32,7 +32,7 @@ namespace Input
 		const std::vector<const InputAction*> GetActions() const;
 		const InputAction* TryGetInputAction(const std::string& name) const;
 		bool TryAddAction(const InputAction& action);
-		bool TryAddAction(const std::string& inputName, const std::vector<const InputKey*>& keybinds);
+		bool TryAddAction(const std::string& inputName, const std::vector<const InputKeyState*>& keybinds);
 
 		const std::vector<const CompoundInput*> GetCompoundActions() const;
 		const CompoundInput* TryGetCompoundInputAction(const std::string& name) const;

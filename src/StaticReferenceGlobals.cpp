@@ -5,7 +5,6 @@
 #include "Utils/RaylibUtils.hpp"
 
 static const char* DEFAULT_FONT_PATH = "fonts/default.ttf";
-static const char* DEFAULT_FONT_PATH = "fonts/default.ttf";
 static AssetManagement::AssetManager* AssetManager;
 static const char* RAYLIB_DEFAULT_FONT_ASSET_NAME = "RaylibDefaultFont";
 
@@ -14,7 +13,7 @@ namespace StaticReferenceGlobals
 	void Init(AssetManagement::AssetManager& assetManager)
 	{
 		AssetManager = &assetManager;
-		AssetManager->CreateRuntimeAsset<FontAsset>(RAYLIB_DEFAULT_FONT_ASSET_NAME, FontAsset(GetFontDefault()));
+		//AssetManager->CreateRuntimeAsset<FontAsset>(RAYLIB_DEFAULT_FONT_ASSET_NAME, FontAsset(GetFontDefault()));
 	}
 
 	const FontAsset& StaticReferenceGlobals::GetGlobalFont()

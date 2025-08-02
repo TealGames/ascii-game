@@ -85,10 +85,12 @@ namespace JsonConstants
 		return std::nullopt;
 		//return TryGetConstantValue<Font>(FONT_CONSTANTS, constant);
 	}
-	std::optional<std::string> TryGetFontConstant(const Font& font)
+	std::optional<std::string> TryGetFontConstant(const Rendering::Font& font)
 	{
-		if (RaylibUtils::FontEqual(font, GetFontDefault())) return DEFAULT_FONT_NAME;
+		//TODO: implement
 		return std::nullopt;
+		/*if (RaylibUtils::FontEqual(font, GetFontDefault())) return DEFAULT_FONT_NAME;
+		return std::nullopt;*/
 		/*return TryGetValueConstant<Font>(FONT_CONSTANTS, font,
 			[](const Font& font1, const Font& font2)-> bool { return RaylibUtils::FontEqual(font1, font2); });*/
 	}

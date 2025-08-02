@@ -44,10 +44,13 @@ namespace Input
 
 	void CompoundInput::AddEntry(const InputDirection& dir, const InputAction& action)
 	{
-		if (!Assert(!HasDirection(dir), std::format("Tried to add compound input entry of action: {} "
-			"to dir: {} that already contains an input action", action.ToString(), Input::ToString(dir))))
+		if (HasDirection(dir))
+		{
+			LogError(std::format("Tried to add compound input entry of action: {} "
+				"to dir: {} that already contains an input action", action.ToString(), Input::ToString(dir)));
 			return;
-
+		}
+		
 		m_dirKeys.emplace(dir, action);
 	}
 

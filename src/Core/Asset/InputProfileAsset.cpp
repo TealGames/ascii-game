@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "Core/Input/InputProfileAsset.hpp"
+#include "Core/Asset/InputProfileAsset.hpp"
 #include <fstream>
 #include "Core/Input/InputManager.hpp"
 #include "Utils/IOHandler.hpp"
@@ -16,8 +16,8 @@ static constexpr char COMPOUND_INPUT_IDENTIFIER = '>';
 InputProfileAsset::InputProfileAsset(const std::filesystem::path& path)
 	: Asset(path, true), m_profile(std::nullopt), m_inputManager(nullptr)
 {
-	if (!Assert(IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a input profile asset from path:'{}' "
-		"but it does not have required extension:'{}'", path.string(), EXTENSION)))
+	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a input asset from path:{} (extension:{})"
+		"but it does not have required input extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
 		return;
 }
 
@@ -107,40 +107,12 @@ void InputProfileAsset::UpdateAssetFromFile()
 		size_t keybindEndIndex = line.size() - 1;
 		if (commaIndex != std::string::npos) keybindEndIndex = commaIndex - 1;
 
-		std::optional<Input::DeviceType> currentDevice = std::nullopt;
-		std::vector<const Input::InputKey*> keybinds = {};
-		const Input::InputKey* currentInputKey = nullptr;
-		std::any inputAsEnum;
+		std::vector<const Input::InputKeyState*> keybinds = {};
+		const Input::InputKeyState* currentInputKey = nullptr;
 		do
 		{
 			keybindName = line.substr(keybindStartIndex, keybindEndIndex - keybindStartIndex + 1);
-			inputAsEnum.reset();
-
-			//TODO: perhaps the profile.txt should implicity say what devide the input is for and/or
-			//also add the option to list out the CORRESPONDING key for different devices 
-			currentDevice = Input::TryGetStringKeyDevice(keybindName, &inputAsEnum);
-			if (!Assert(currentDevice.has_value(),
-				std::format("Could not deduce the device from keybind name: '{}' of input profile: '{}'", keybindName, GetName())))
-				return;
-
-			if (currentDevice.value() == Input::DeviceType::Keyboard)
-			{
-				currentInputKey = GetInputManager().GetInputKey(std::any_cast<KeyboardKey>(inputAsEnum));
-			}
-			else if (currentDevice.value() == Input::DeviceType::Mouse)
-			{
-				currentInputKey = GetInputManager().GetInputKey(std::any_cast<MouseButton>(inputAsEnum));
-			}
-			else if (currentDevice.value() == Input::DeviceType::Gamepad)
-			{
-				currentInputKey = GetInputManager().GetInputKey(std::any_cast<GamepadButton>(inputAsEnum));
-			}
-			else
-			{
-				LogError(std::format("Tried to convert input key: '{}' from input profile: '{}' "
-					"to raylib enum but there no device actions for: {}", keybindName, GetName(), Input::ToString(currentDevice.value())));
-				return;
-			}
+			currentInputKey = GetInputManager().GetInputKey(Input::ToKeyCode(keybindName));
 			keybinds.push_back(currentInputKey);
 
 			//We then try to find the comma again and move the start index past the last end index

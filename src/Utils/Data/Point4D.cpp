@@ -3,7 +3,7 @@
 #include "Utils/Data/Point3D.hpp"
 #include "Utils/Data/Point2D.hpp"
 #include <cmath>
-#include "Utils/HelperFunctions.hpp"
+#include "Utils/Math.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
 namespace Utils
@@ -88,10 +88,10 @@ namespace Utils
 
 	bool Point4D::operator==(const Point4D& otherPos) const
 	{
-		return Utils::ApproximateEquals(m_X, otherPos.m_X) &&
-			   Utils::ApproximateEquals(m_Y, otherPos.m_Y) && 
-			   Utils::ApproximateEquals(m_Z, otherPos.m_Z) &&
-			   Utils::ApproximateEquals(m_W, otherPos.m_W);
+		return Utils::ApproximateEqualsF(m_X, otherPos.m_X) &&
+			   Utils::ApproximateEqualsF(m_Y, otherPos.m_Y) && 
+			   Utils::ApproximateEqualsF(m_Z, otherPos.m_Z) &&
+			   Utils::ApproximateEqualsF(m_W, otherPos.m_W);
 	}
 
 	Point4D& Point4D::operator=(const Point4D& newPos)

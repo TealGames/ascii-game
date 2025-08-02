@@ -2,13 +2,13 @@
 #include "ECS/Component/ComponentField.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
-ComponentField::ComponentField(const std::string& name, const ComponentFieldVariant& value, const bool& isWritable)
+ComponentField::ComponentField(const char* name, const ComponentFieldVariant& value, const bool isWritable)
 	: m_FieldName(name), m_Value(value), m_MaybeSetFunction(std::nullopt), m_isReadonly(!isWritable)
 {
 	//Assert(false, std::format("Tried to create field but wtih value: {}", std::get<Utils::Point2D*>(value)->ToString()));
 }
 
-ComponentField::ComponentField(const std::string& name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value)
+ComponentField::ComponentField(const char* name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value)
 	: m_FieldName(name), m_Value(value), m_MaybeSetFunction(setAction), m_isReadonly(false)
 {
 	if (!Assert(setAction.index() == m_Value.index(), std::format("Tried to create a component field named: '{}' with set action, "
@@ -30,6 +30,7 @@ bool ComponentField::HasSetFunction() const
 
 const std::type_info& ComponentField::GetCurrentType() const
 {
+	//TODO: use visit
 	if (IsCurrentType<int>()) return typeid(int);
 	else if (IsCurrentType<float>()) return typeid(float);
 	else if (IsCurrentType<std::uint8_t>()) return typeid(std::uint8_t);
@@ -45,6 +46,7 @@ const std::type_info& ComponentField::GetCurrentType() const
 
 std::string ComponentField::ToString() const
 {
+	//TODO: use visit
 	std::string valueText = "";
 	if (IsCurrentType<int>())
 		valueText = std::to_string(*(TryGetValue<int>()));

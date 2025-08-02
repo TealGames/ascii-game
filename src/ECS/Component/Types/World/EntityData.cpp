@@ -214,7 +214,7 @@ const EntityData* EntityData::GetParent() const
 {
 	if (ECS::IsValidID(m_parentId))
 		return m_registry->TryGetEntityMutable(m_parentId);
-	 nullptr;
+	 return nullptr;
 }
 const TransformComponent* EntityData::GetParentTransform() const
 {

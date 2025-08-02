@@ -158,7 +158,7 @@ public:
 
 	Vec operator*(const float scalar) const
 	{
-		return Vec{ m_X * scalar, m_Y * scalar, m_Z * scalar };
+		return Vec(m_X * scalar, m_Y * scalar, m_Z * scalar);
 	}
 	Vec operator*(const int scalar) const
 	{
@@ -182,7 +182,7 @@ public:
 			return *this;
 		}
 
-		return Vec{ m_X / scalar, m_Y / scalar, m_Z / scalar };
+		return Vec(m_X / scalar, m_Y / scalar, m_Z / scalar);
 	}
 	Vec operator/(const int scalar) const
 	{
@@ -463,6 +463,9 @@ public:
 using Vec3 = Vec<float, 3>;
 using Vec3Int = Vec<int, 3>;
 
+extern template class Vec<float, 3>;
+extern template class Vec<int, 3>;
+
 /// <summary>
 /// Returns the scalar dot product. 
 /// -> This essentially finds how much one vector is aligned in terms of the other (where order does NOT matter and produces the same result)
@@ -500,8 +503,8 @@ template<typename T>
 Vec<T, 3> CrossProduct(const Vec<T, 3>& vecA, const Vec<T, 3>& vecB)
 {
 	return Vec<T, 3>(vecA.m_Y * vecB.m_Z - vecA.m_Z * vecB.m_Y, 
-								  vecA.m_Z * vecB.m_X - vecA.m_X * vecB.m_Z,
-								  vecA.m_X * vecB.m_Y - vecA.m_Y * vecB.m_X);
+					 vecA.m_Z * vecB.m_X - vecA.m_X * vecB.m_Z,
+					 vecA.m_X * vecB.m_Y - vecA.m_Y * vecB.m_X);
 }
 
 template<typename T>
@@ -531,7 +534,8 @@ Vec<T, 3> Round(const Vec<T, 3>& vec, const std::uint8_t& decimalPlaces = 5)
 /// <param name="min"></param>
 /// <param name="max"></param>
 /// <returns></returns>
-bool IsPointWithinBounds(const Vec3& point, const Vec3& min, const Vec3& max) {
+template<typename T>
+bool IsPointWithinBounds(const Vec<T, 3>& point, const Vec<T, 3>& min, const Vec<T, 3>& max) {
 	return (point.m_X >= min.m_X && point.m_X <= max.m_X) &&
 		   (point.m_Y >= min.m_Y && point.m_Y <= max.m_Y) &&
 		   (point.m_Z >= min.m_Z && point.m_Z <= max.m_Z);

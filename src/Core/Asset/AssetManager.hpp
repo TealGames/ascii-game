@@ -193,7 +193,7 @@ namespace AssetManagement
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
-		bool IsAssetHiddenFromPath(const std::filesystem::path& path) const;
+		bool IsAssetHiddenFromPath(std::filesystem::path path, const bool isAbsolutePath) const;
 		/// <summary>
 		/// Note: this version requires iteration through all assets. Use path version instead.
 		/// </summary>
@@ -205,7 +205,7 @@ namespace AssetManagement
 		requires IsAssetType<T>
 		void RegisterAssets(std::vector<T*>* outTypeAssetsCreated)
 		{
-			if (!Assert(std::filesystem::exists(ASSET_PATH), std::format("Tried to add all assets at path:{} "
+			if (!Assert(IO::DoesPathExist(ASSET_PATH), std::format("Tried to add all assets at path:{} "
 				"but path is invalid", ASSET_PATH.string())))
 				return;
 
@@ -217,7 +217,15 @@ namespace AssetManagement
 				if (!std::filesystem::is_regular_file(file)) continue;
 
 				assetRelPath = GetRelativeAssetPath(file.path()).string();
-				if (IsAssetHiddenFromPath(assetRelPath)) continue;
+
+				/*LogWarning(std::format("Is asset path:{} hidden:{}({}) VALUE:{}", assetRelPath, 
+					Utils::ToStringIterable<std::unordered_set<std::string>, std::string>(m_hiddenAssetPaths), m_hiddenAssetPaths.size(), 
+					IsAssetHiddenFromPath(assetRelPath, false)));*/
+				if (IsAssetHiddenFromPath(assetRelPath, false))
+				{
+					LogWarning(std::format("Skipping hidden asset at path:{}", assetRelPath));
+					continue;
+				}
 
 				if (!m_assets.empty() && m_assets.find(assetRelPath) != m_assets.end())
 					continue;

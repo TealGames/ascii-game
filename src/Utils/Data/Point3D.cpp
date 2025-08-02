@@ -1,7 +1,8 @@
 #include "pch.hpp"
 #include "Utils/Data/Point3D.hpp"
 #include <cmath>
-#include "Utils/HelperFunctions.hpp"
+#include "Utils/ToStringFunctions.hpp"
+#include "Utils/Math.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
 namespace Utils
@@ -35,8 +36,8 @@ namespace Utils
 
 	std::string Point3D::ToString() const
 	{
-		std::string str = std::format("({},{},{})", Utils::ToStringDouble(m_X, 3), 
-			Utils::ToStringDouble(m_Y, 3), Utils::ToStringDouble(m_Z, 3));
+		std::string str = std::format("({},{},{})", Utils::ToString(m_X, 3), 
+			Utils::ToString(m_Y, 3), Utils::ToString(m_Z, 3));
 		return str;
 	}
 
@@ -79,9 +80,9 @@ namespace Utils
 
 	bool Point3D::operator==(const Point3D& otherPos) const
 	{
-		return Utils::ApproximateEquals(m_X, otherPos.m_X) &&
-			   Utils::ApproximateEquals(m_Y, otherPos.m_Y) &&
-			   Utils::ApproximateEquals(m_Z, otherPos.m_Z);
+		return Utils::ApproximateEqualsF(m_X, otherPos.m_X) &&
+			   Utils::ApproximateEqualsF(m_Y, otherPos.m_Y) &&
+			   Utils::ApproximateEqualsF(m_Z, otherPos.m_Z);
 	}
 
 	Point3D& Point3D::operator=(const Point3D& newPos)

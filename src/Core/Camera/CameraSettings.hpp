@@ -70,7 +70,6 @@ public:
 		const ProjectionType projection= DEFAULT_PROJECTION, const float nearDistance= DEFAULT_NEAR_DISTANCE, 
 		const float farDistance= DEFAULT_FAR_DISTANCE, const float fieldOfViewYRadians= DEFAULT_FIELD_OF_VIEW_Y_RAD);
 
-	bool HasNoFollowTarget() const;
 	/// <summary>
 	/// Calculates the viewport size of the camera (2D plane) at the camera depth (distance from camera forward dir)
 	/// NOte: camera depth does not matter for orthographic, but is crucial for perspective projection
@@ -86,9 +85,6 @@ public:
 	float CalculateFovX() const;
 
 	void SetFieldOfViewYDegrees(const float fovY);
-
-	void SetFollowNoTarget();
-	void SetFollowTarget(const EntityData& entity);
 
 	std::string ToString() const;
 };

@@ -1,8 +1,6 @@
 #pragma once
 #include <cmath>
-#include <numbers>
 #include "VecBase.hpp"
-#include "VectorEnums.hpp"
 #include "Utils/Math.hpp"
 #include "Vec2Type.hpp"
 #include "Vec3Type.hpp"
@@ -147,7 +145,6 @@ public:
 	{
 		return Vec{ m_X * otherVec.m_X, m_Y * otherVec.m_Y, m_Z * otherVec.m_Z, m_W * otherVec.m_W };
 	}
-
 	Vec operator*(const float scalar) const
 	{
 		return Vec{ m_X * scalar, m_Y * scalar, m_Z * scalar, m_W * scalar };
@@ -156,6 +153,7 @@ public:
 	{
 		return Vec{ m_X * scalar, m_Y * scalar, m_Z * scalar, m_W * scalar };
 	}
+
 	Vec operator/(const Vec& other) const
 	{
 		if (Utils::ApproximateEqualsF(m_X,0) || Utils::ApproximateEqualsF(other.m_Y,0) 
@@ -186,6 +184,14 @@ public:
 		}
 
 		return Vec{ m_X / scalar, m_Y / scalar, m_Z / scalar, m_W / scalar };
+	}
+	Vec& operator/=(const float scalar)
+	{
+		return *this = *this / scalar;
+	}
+	Vec& operator/=(const int scalar)
+	{
+		return *this = *this / scalar;
 	}
 
 	bool operator==(const Vec& otherVec) const

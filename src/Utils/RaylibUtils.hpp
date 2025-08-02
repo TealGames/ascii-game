@@ -1,4 +1,6 @@
 #pragma once
+#include "StaticGlobals.hpp"
+#ifdef RAYLIB
 #include <string>
 #include <cstdint>
 #include "raylib.h"
@@ -56,4 +58,6 @@ namespace RaylibUtils
 	std::string MouseButtonToString(const MouseButton& button);
 	std::string GamepadButtonToString(const GamepadButton& button);
 }
+
+#endif
 

@@ -25,7 +25,8 @@ static constexpr float TOGGLE_LAYOUT_WIDTH_PER_TOGGLE = 0.03;
 static constexpr float TOFFLE_LAYOUT_WIDTH_SPACING = 0.05;
 static const NormalizedPosition MOUSE_POS_TEXT_SIZE = {0.1, 0.05};
 
-static constexpr KeyboardKey PAUSE_TOGGLE_KEY = KEY_P;
+static constexpr Input::KeyCode PAUSE_TOGGLE_KEY = Input::KeyCode::P;
+static constexpr Input::KeyCode SELECT_KEY = Input::KeyCode::MouseLeft;
 static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
 
 EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
@@ -59,7 +60,7 @@ void EngineEditor::InitConsoleCommands(ECS::PlayerSystem& playerSystem)
 		[this](const std::string& entityName, const float x, const float y, const float z) -> void {
 			if (EntityData* entity = m_sceneManager.GetActiveSceneMutable()->TryGetEntityMutable(entityName, true))
 			{
-				entity->GetTransformMutable().m_localPos = WorldPosition3D(x, y, z);
+				entity->GetTransformMutable().GetLocalPosMutable() = WorldPosition3D(x, y, z);
 			}
 		}));
 
@@ -275,7 +276,7 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 
 	Vec2 mouseClickedPos = m_inputManager.GetMousePosition();
 	Ray3D worldClickedRay = mainCamera.ScreenToWorldPosition(ScreenPosition(mouseClickedPos.m_X, mouseClickedPos.m_Y));
-	if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsPressed())
+	if (m_inputManager.GetInputKey(SELECT_KEY)->GetState().IsPressed())
 	{
 		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(*activeScene, worldClickedRay.m_Origin.GetXY());
 		if (!entitiesWithinPos.empty())
@@ -291,12 +292,12 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		//If we are in edit mode holding the down button (and not selected selectable this frame-> meaning click might correspond to selectable click not edit mode click) 
 		// we can move the selected entity to that pos
 		//Note: we only change the xy and keep z the same since that cannot be resolved just from a screen click
-		if (m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().IsDownForTime(HELD_TIME_FOR_OBJECT_MOVE) &&
+		if (m_inputManager.GetInputKey(SELECT_KEY)->GetState().IsDownForTime(HELD_TIME_FOR_OBJECT_MOVE) &&
 			!m_guiSelector.SelectedSelectableThisFrame() && m_editModeInfo.m_Selected != nullptr)
 		{
 			/*Assert(false, std::format("Is down for:{} needed:{}", std::to_string(m_inputManager.GetInputKey(MOUSE_BUTTON_LEFT)->GetState().GetCurrentDownTime()), 
 			std::to_string(HELD_TIME_FOR_OBJECT_MOVE)));*/
-			m_editModeInfo.m_Selected->GetTransformMutable().m_localPos.SetXY(worldClickedRay.m_Origin.GetXY());
+			m_editModeInfo.m_Selected->GetTransformMutable().GetLocalPosMutable().SetXY(worldClickedRay.m_Origin.GetXY());
 		}
 
 		const Vec2 mousePos = m_inputManager.GetMousePosition();

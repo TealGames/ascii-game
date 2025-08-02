@@ -12,10 +12,9 @@
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 
 
-static constexpr KeyboardKey SUBMIT_KEY = KEY_ENTER;
-static constexpr KeyboardKey ESCAPE_KEY = KEY_COMMA;
-static constexpr KeyboardKey DELETE_KEY = KEY_BACKSPACE;
-static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
+static constexpr Input::KeyCode SUBMIT_KEY = Input::KeyCode::Enter;
+static constexpr Input::KeyCode ESCAPE_KEY = Input::KeyCode::Escape;
+static constexpr Input::KeyCode DELETE_KEY = Input::KeyCode::Delete;
 static constexpr float FONT_SIZE = 10;
 
 static constexpr std::uint8_t MAX_DECIMAL_PLCES = 3;
@@ -146,7 +145,7 @@ void UIInputField::Update()
 }
 
 void UIInputField::SetSubmitAction(const InputFieldAction& action) { m_submitAction = action; }
-void UIInputField::SetKeyPressAction(const KeyboardKey key, const InputFieldAction& action)
+void UIInputField::SetKeyPressAction(const Input::KeyCode key, const InputFieldAction& action)
 {
 	m_keyActions.emplace(key, action);
 }

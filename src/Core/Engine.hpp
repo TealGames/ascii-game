@@ -1,10 +1,8 @@
 #pragma once
 #include <chrono>
-#include <optional>
 #include <format>
 #include <string>
 #include <cstdint>
-#include <type_traits>
 #include "Core/Scene/SceneManager.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
 #include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
@@ -36,7 +34,6 @@
 #include "Core/GizmoOverlay.hpp"
 #include "Core/Window/WindowManager.hpp"
 #include "Core/Rendering/GraphicsManager.hpp"
-#include "Core/FrameworkManager.hpp"
 
 namespace Core
 {

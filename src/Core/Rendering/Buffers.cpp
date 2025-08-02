@@ -3,15 +3,12 @@
 
 namespace Rendering
 {
-	/// <summary>
-	/// Will create a vertex buffer. 
-	/// </summary>
-	/// <param name="vertexArray"></param>
-	/// <param name="size"></param>
-	/// <param name="callbacks"></param>
+	VertexBuffer::VertexBuffer() : m_id(INVALID_OBJ_ID), m_callbacks(), m_dataUsed(), m_maxVertexCount(),
+		m_AdvanceType(VertexAttributeAdvance::Vertex), m_elementSize() {}
+
 	VertexBuffer::VertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType,
 		const VertexBufferPlatformCallbacks callbacks)
-		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_MaxVertexCount(elementSize), 
+		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_maxVertexCount(elementSize), 
 		m_AdvanceType(advanceType), m_elementSize(elementSize)
 	{
 		m_id = m_callbacks.m_AllocateFunc(vertexArray, arraySize * m_elementSize);
@@ -23,8 +20,10 @@ namespace Rendering
 	}
 	void VertexBuffer::Deallocate()
 	{
+		if (m_id == INVALID_OBJ_ID)
+			return;
+
 		m_callbacks.m_DeallocateFunc(m_id);
-		m_id = INVALID_OBJ_ID;
 	}
 
 	void VertexBuffer::WriteData(const size_t& elementOffset, const void* vertexArray, const size_t& elementCount)
@@ -32,17 +31,27 @@ namespace Rendering
 		m_callbacks.m_WriteFunc(m_id, elementOffset * m_elementSize, vertexArray, elementCount * m_elementSize);
 		//If we have already uploaded max data, then it means we are overriding existing data,
 		//which would not change the total data used
-		if (m_dataUsed < m_MaxVertexCount) m_dataUsed += elementCount;
+		if (m_dataUsed < m_maxVertexCount) m_dataUsed += elementCount;
 	}
 	size_t VertexBuffer::GetUploadedSize() const { return m_dataUsed; }
-	bool VertexBuffer::HasFilledMaxSize() const { return m_dataUsed >= m_MaxVertexCount; }
+	bool VertexBuffer::HasFilledMaxSize() const { return m_dataUsed >= m_maxVertexCount; }
 
 	size_t VertexBuffer::GetElementSize() const { return m_elementSize; }
 	RenderObjectId VertexBuffer::GetId() const { return m_id; }
 
+	VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept
+	{
+		m_callbacks = std::exchange(other.m_callbacks, {});
+		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
+		m_dataUsed = std::exchange(other.m_dataUsed, 0);
+		m_elementSize = std::exchange(other.m_elementSize, 0);
+		m_maxVertexCount = std::exchange(other.m_maxVertexCount, 0);
+		return *this;
+	}
 
+	IndexBuffer::IndexBuffer() : m_id(INVALID_OBJ_ID), m_callbacks(), m_dataUsed(), m_maxIndexCount() {}
 	IndexBuffer::IndexBuffer(const IndexType* indexArray, const size_t arraySize, const IndexBufferPlatformCallbacks& callbacks)
-		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_MaxIndexCount(arraySize)
+		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_maxIndexCount(arraySize)
 	{
 		m_id= m_callbacks.m_AllocateFunc(indexArray, arraySize * sizeof(IndexType));
 		m_dataUsed = indexArray == nullptr ? 0 : arraySize;
@@ -56,7 +65,7 @@ namespace Rendering
 		m_callbacks.m_WriteFunc(m_id, elementOffset * sizeof(IndexType), indexArray, elementCount * sizeof(IndexType));
 		//If we have already uploaded max data, then it means we are overriding existing data,
 		//which would not change the total data used
-		if (m_dataUsed < m_MaxIndexCount) m_dataUsed += elementCount;
+		if (m_dataUsed < m_maxIndexCount) m_dataUsed += elementCount;
 	}
 	size_t IndexBuffer::GetUploadedSize() const
 	{
@@ -64,27 +73,52 @@ namespace Rendering
 	}
 	bool IndexBuffer::HasFilledMaxSize() const
 	{
-		return m_dataUsed >= m_MaxIndexCount;
+		return m_dataUsed >= m_maxIndexCount;
 	}
 	void IndexBuffer::Deallocate()
 	{
+		if (m_id == INVALID_OBJ_ID)
+			return;
+
 		m_callbacks.m_DeallocateFunc(m_id);
-		m_id = INVALID_OBJ_ID;
 	}
 	RenderObjectId IndexBuffer::GetId() const
 	{
 		return m_id;
 	}
+	IndexBuffer& IndexBuffer::operator=(IndexBuffer&& other) noexcept
+	{
+		m_callbacks = std::exchange(other.m_callbacks, {});
+		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
+		m_dataUsed = std::exchange(other.m_dataUsed, 0);
+		m_maxIndexCount = std::exchange(other.m_maxIndexCount, 0);
+		return *this;
+	}
+
 
 
 	VertexLayout::VertexLayout(const VertexLayoutCallbacks& callbacks) : m_layout(), m_callbacks(callbacks), m_implState()
 	{
 		m_callbacks.m_InitFunc(m_implState);
 	}
+	VertexLayout::VertexLayout() : m_layout(), m_callbacks(), m_implState() {}
+	VertexLayout::~VertexLayout()
+	{
+		Deallocate();
+	}
+
+	void VertexLayout::Deallocate()
+	{
+		if (m_layout.empty())
+			return;
+
+		m_callbacks.m_DeallocateFunc(m_implState);
+	}
 
 	void VertexLayout::AddAttribute(const VertexAttribute& attribute)
 	{
-		m_callbacks.m_AddAttributeFunc(m_implState, attribute);
+		m_layout.push_back(attribute);
+		m_callbacks.m_AddAttributeFunc(m_implState, m_layout.back());
 	}
 	void VertexLayout::LinkToBuffer(const RenderObjectId id, const size_t elementSize, const BindIndex bindIndex)
 	{
@@ -112,6 +146,13 @@ namespace Rendering
 				return &attribute;
 		}
 		return nullptr;
+	}
+	VertexLayout& VertexLayout::operator=(VertexLayout&& other) noexcept
+	{
+		m_layout = std::exchange(other.m_layout, {});
+		m_implState = std::exchange(other.m_implState, {});
+		m_callbacks = std::exchange(other.m_callbacks, {});
+		return *this;
 	}
 
 

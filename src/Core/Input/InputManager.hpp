@@ -5,13 +5,12 @@
 #include <optional>
 #include <filesystem>
 #include "Utils/Data/Direction.hpp"
-#include "raylib.h"
+//#include "raylib.h"
 #include "Utils/Data/Point2DInt.hpp"
 #include "Core/Input/CompoundInput.hpp"
 #include "Core/Input/InputKey.hpp"
-#include "Core/Input/InputProfile.hpp"
 #include "Utils/Data/ScreenPosition.hpp"
-#include "Core/Input/InputProfileAsset.hpp"
+#include "Core/Asset/InputProfileAsset.hpp"
 
 //TODO: predefined data like compounds should be mutated and set up to work with file loading
 //rather than force user to add all compounds themselves (should leave option, but mainly all should be 
@@ -20,6 +19,10 @@
 namespace AssetManagement
 {
 	class AssetManager;
+}
+namespace Core
+{
+	class WindowManager;
 }
 
 /// <summary>
@@ -40,47 +43,44 @@ namespace Input
 		AssetManagement::AssetManager& m_assetManager;
 		std::unordered_map<std::string, InputProfileAsset*> m_profiles;
 
-		std::unordered_map<KeyboardKey, InputKey> m_keyboardStates;
-		std::unordered_map<MouseButton, InputKey> m_mouseStates;
-		std::unordered_map<GamepadButton, InputKey> m_gamepadStates;
+		mutable std::unordered_map<KeyCode, InputKeyState> m_keyStates;
+		ScreenPosition m_mousePos;
 
-		std::vector<int> m_capturedKeys;
+		/// <summary>
+		/// Stores all the keys that have been added this frame
+		/// </summary>
+		std::vector<KeyCode> m_frameKeyQueue;
 		std::string m_charKeysPressed;
 
 	public:
 		static const std::string PROFILE_PREFIX;
 
 	private:
-		bool IsKeyDown(const DeviceType& device, const int& keyValue);
-		bool IsKeyPressed(const DeviceType& device, const int& keyValue);
-		bool IsKeyReleased(const DeviceType& device, const int& keyValue);
-
-		void UpdateState(const DeviceType& device, const int& keyValue, 
+		auto LazyAddKeyState(const KeyCode code) const;
+		void ForceAddMissingKeys() const;
+		void ThrowIfNullKeyCode(const KeyCode code) const;
+		void UpdateState(const KeyCode keyValue,
 			InputState& inputState, const float& deltaTime);
 
 	public:
-		InputManager(AssetManagement::AssetManager& assetManager);
+		InputManager(AssetManagement::AssetManager& assetManager, Core::WindowManager& windowManager);
 		void Init();
 
-		void SetInputCooldown(const std::map<KeyboardKey, float>& keyCooldownTime);
+		void SetInputCooldown(const std::map<KeyCode, float>& keyCooldownTime);
 		void SetInputCooldown(const float& allKeyCooldownTime);
 		void Update(const float& deltaTime);
 
 		//void AddProfile(const std::string& name, const std::filesystem::path& profilePath);
 		const InputProfile* TryGetProfile(const std::string& name) const;
 
-		bool IsKeyState(const KeyboardKey& key, const KeyState& state) const;
+		bool IsKeyState(const KeyCode& key, const KeyState& state) const;
 
-		std::vector<KeyboardKey> GetAllKeyboardKeys();
-		std::vector<MouseButton> GetAllMouseButtons();
-		std::vector<GamepadButton> GetAllGamepadButtons();
+		KeyState GetKeyState(const KeyCode& key) const;
+		bool IsKeyPressed(const KeyCode& key) const;
+		bool IsKeyDown(const KeyCode& key) const;
+		bool IsKeyReleased(const KeyCode& key) const;
 
-		KeyState GetKeyState(const KeyboardKey& key) const;
-		bool IsKeyPressed(const KeyboardKey& key) const;
-		bool IsKeyDown(const KeyboardKey& key) const;
-		bool IsKeyReleased(const KeyboardKey& key) const;
-
-		std::vector<const InputKey*> GetAllKeysWithState(const KeyState& state) const;
+		std::vector<const InputKeyState*> GetAllKeysWithState(const KeyState& state) const;
 		std::vector<std::string> GetAllKeysWithStateAsString(const KeyState& state) const;
 
 		std::string GetCharsPressedSinceLastFrame() const;
@@ -91,9 +91,7 @@ namespace Input
 		/// <returns></returns>
 		ScreenPosition GetMousePosition() const;
 
-		const InputKey* GetInputKey(const KeyboardKey& key) const;
-		const InputKey* GetInputKey(const MouseButton& button) const;
-		const InputKey* GetInputKey(const GamepadButton& button) const;
+		const InputKeyState* GetInputKey(const KeyCode& key) const;
 	};
 }
 

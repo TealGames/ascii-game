@@ -11,11 +11,11 @@ namespace Input
 	private:
 	public:
 		std::string m_Name;
-		std::vector<const InputKey*> m_Keys;
+		std::vector<const InputKeyState*> m_Keys;
 
 	private:
 	public:
-		InputAction(const std::string& name, const std::vector<const InputKey*>& keys);
+		InputAction(const std::string& name, const std::vector<const InputKeyState*>& keys);
 
 		bool IsDown() const;
 		bool IsPressed() const;

@@ -20,8 +20,8 @@ static const std::string TIME_PROPERTY_NAME_START = "T";
 
 SpriteAnimationAsset::SpriteAnimationAsset(const std::filesystem::path& path) : Asset(path, false), m_animation()
 {
-	if (!Assert(IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a sprite animation asset from path:'{}' "
-		"but it does not have required extension:'{}'", path.string(), EXTENSION)))
+	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a sprite animation asset from path:{} (extension:{})"
+		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
 		return;
 
 	UpdateAssetFromFile();

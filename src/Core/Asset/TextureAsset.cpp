@@ -7,6 +7,9 @@ const std::string TextureAsset::EXTENSION = ".png";
 TextureAsset::TextureAsset(const std::filesystem::path& path)
 	: Asset(path, false), m_texture() 
 {
+	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a texture asset from path:{} (extension:{})"
+		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
+		return;
 	//LOAD TEXTURE
 	//m_texture= LoadTexture(path.string().c_str());
 }

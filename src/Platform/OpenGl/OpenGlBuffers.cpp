@@ -1,4 +1,6 @@
 #include "Platform/OpenGl/OpenGlBuffers.hpp"
+
+#ifdef OPENGL
 #include "Utils/OpenGlUtils.hpp"
 
 namespace Rendering
@@ -81,52 +83,66 @@ namespace Rendering
 					DeallocateIndexBuffer
 				});
 		}
-	}
 
-
-	static void InitVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState)
-	{
-		RenderObjectId id = INVALID_OBJ_ID;
-		GL_CALL(glCreateVertexArrays(1, &id));
-		GL_CALL(glBindVertexArray(id));
-		implState = std::bit_cast<std::array<std::byte, IMPL_STATE_SIZE>>(id);
-	}
-
-	static void AddVertexLayoutAttribute(std::array<std::byte, IMPL_STATE_SIZE>& implState, const VertexAttribute& attribute)
-	{
-		const RenderObjectId id = std::bit_cast<RenderObjectId>(implState);
-		GL_CALL(glEnableVertexArrayAttrib(id, attribute.m_ShaderLocation));
-
-		GLuint componentType = GL_FLOAT;
-		if (attribute.m_Type == VertexAttributeBaseType::Float)
-			componentType = GL_FLOAT;
-		else
+		static void InitVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState)
 		{
-			LogError(std::format("Attempted to add vertex layout attribute "
-				"but the component type has no corresponding opengl type"));
-			return;
+			RenderObjectId id = INVALID_OBJ_ID;
+			GL_CALL(glCreateVertexArrays(1, &id));
+			GL_CALL(glBindVertexArray(id));
+			implState = std::bit_cast<std::array<std::byte, IMPL_STATE_SIZE>>(id);
 		}
-		GL_CALL(glVertexArrayAttribFormat(id, attribute.m_ShaderLocation, attribute.m_ComponentCount, componentType, attribute.m_Normalize, attribute.m_ByteOffset));
-		GL_CALL(glVertexArrayAttribBinding(id, attribute.m_ShaderLocation, attribute.m_BindIndex));
 
-		if (attribute.m_AdvanceType == VertexAttributeAdvance::Instance)
-			GL_CALL(glVertexArrayBindingDivisor(id, attribute.m_ShaderLocation, 1));
-	}
+		static void AddVertexLayoutAttribute(std::array<std::byte, IMPL_STATE_SIZE>& implState, const VertexAttribute& attribute)
+		{
+			const RenderObjectId id = std::bit_cast<RenderObjectId>(implState);
+			GL_CALL(glEnableVertexArrayAttrib(id, attribute.m_ShaderLocation));
 
-	static void BindBufferToVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState, const RenderObjectId bufferId, const size_t elementSize, const BindIndex bindIndex)
-	{
-		const RenderObjectId id = std::bit_cast<RenderObjectId>(implState);
-		GL_CALL(glVertexArrayVertexBuffer(id, bindIndex, bufferId, 0, elementSize));
-	}
-
-	VertexLayout CreateVertexLayout()
-	{
-		return VertexLayout(
-			VertexLayoutCallbacks
+			GLuint componentType = GL_FLOAT;
+			if (attribute.m_Type == VertexAttributeBaseType::Float)
+				componentType = GL_FLOAT;
+			else
 			{
-				InitVertexLayout,
-				AddVertexLayoutAttribute,
-				BindBufferToVertexLayout
-			});
+				LogError(std::format("Attempted to add vertex layout attribute "
+					"but the component type has no corresponding opengl type"));
+				return;
+			}
+			GL_CALL(glVertexArrayAttribFormat(id, attribute.m_ShaderLocation, attribute.m_ComponentCount, componentType, attribute.m_Normalize, attribute.m_ByteOffset));
+			GL_CALL(glVertexArrayAttribBinding(id, attribute.m_ShaderLocation, attribute.m_BindIndex));
+
+			if (attribute.m_AdvanceType == VertexAttributeAdvance::Instance)
+				GL_CALL(glVertexArrayBindingDivisor(id, attribute.m_ShaderLocation, 1));
+		}
+
+		static void BindBufferToVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState, const RenderObjectId bufferId, const size_t elementSize, const BindIndex bindIndex)
+		{
+			const RenderObjectId vertexArrayObjId = std::bit_cast<RenderObjectId>(implState);
+			if (vertexArrayObjId == INVALID_OBJ_ID || bufferId==INVALID_OBJ_ID)
+			{
+				LogError(std::format("OPENGL: Attempted to bind buffer:{} to vertex layout:{} "
+					"but the buffer and/or vertex array object has invalid id", bufferId, vertexArrayObjId));
+				return;
+			}
+			//LogError(std::format("buffer id:{} ({}) id:{}({}) element size:{} bindIndex:{}", bufferId, glIsBuffer(bufferId), vertexArrayObjId, glIsBuffer(vertexArrayObjId), elementSize, bindIndex));
+			GL_CALL(glVertexArrayVertexBuffer(vertexArrayObjId, bindIndex, bufferId, 0, elementSize));
+		}
+
+		static void DeallocateVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState)
+		{
+			const RenderObjectId id = std::bit_cast<RenderObjectId>(implState);
+			GL_CALL(glDeleteVertexArrays(1, &id));
+		}
+
+		VertexLayout CreateVertexLayout()
+		{
+			return VertexLayout(
+				VertexLayoutCallbacks
+				{
+					InitVertexLayout,
+					AddVertexLayoutAttribute,
+					BindBufferToVertexLayout,
+					DeallocateVertexLayout
+				});
+		}
 	}
 }
+#endif

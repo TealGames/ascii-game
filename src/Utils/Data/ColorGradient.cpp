@@ -1,7 +1,8 @@
 #include <limits>
 #include "pch.hpp"
 #include "Utils/Data/ColorGradient.hpp"
-#include "Utils/HelperFunctions.hpp"
+#include "Utils/ToStringFunctions.hpp"
+#include "Utils/Math.hpp"	
 //#include "Utils/RaylibUtils.hpp"
 #include "Core/Analyzation/Debug.hpp"
 

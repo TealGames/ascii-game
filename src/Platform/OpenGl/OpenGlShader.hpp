@@ -1,4 +1,6 @@
 #pragma once
+
+#ifdef OPENGL
 #include "Core/Rendering/Shader/Shader.hpp"
 
 namespace Rendering
@@ -8,3 +10,4 @@ namespace Rendering
 		Shader CreateShader(const std::string& vertexShader, const std::string& fragmentSahder);
 	}
 }
+#endif

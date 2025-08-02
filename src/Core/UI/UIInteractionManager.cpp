@@ -6,7 +6,7 @@
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 
 //TODO: these should all be changed to be parsed or retrieved from ui layer of input profile from input manager
-static constexpr MouseButton SELECT_KEY = MOUSE_BUTTON_LEFT;
+static constexpr Input::KeyCode SELECT_KEY = Input::KeyCode::MouseLeft;
 static Input::KeyState CLICK_INPUT_STATE = Input::KeyState::Released;
 /// <summary>
 /// If true, will deselect the current selected obj if clicked on empty space

@@ -1,36 +1,49 @@
 #include "pch.hpp"
 #include "Core/Input/InputManager.hpp"
-#include "Utils/HelperFunctions.hpp"
 #include "Core/Analyzation/Debug.hpp"
-#include <cctype>
-#include "Core/Input/InputProfileAsset.hpp"
 #include "Core/Asset/AssetManager.hpp"
+#include "Core/Window/WindowManager.hpp"
 
 namespace Input
 {
 	const std::filesystem::path InputManager::INPUT_PROFILES_FOLDER = "input";
 	//const std::string InputManager::PROFILE_PREFIX = "profile_";
 
-	InputManager::InputManager(AssetManagement::AssetManager& assetManager)
-		: m_assetManager(assetManager), m_keyboardStates(), m_mouseStates(), m_gamepadStates(), m_profiles{}
+	auto InputManager::LazyAddKeyState(const KeyCode code) const
 	{
-		
+		return m_keyStates.emplace(code, InputKeyState(code, InputState()));
+	}
+
+	InputManager::InputManager(AssetManagement::AssetManager& assetManager, Core::WindowManager& windowManager)
+		: m_assetManager(assetManager), m_keyStates(), m_profiles{}, m_mousePos()
+	{
+		windowManager.m_OnInput.AddListener([this](Core::Window*, const Core::WindowInputEventInfo event) -> void
+			{
+				if (event.m_EventType == Core::WindowInputEventType::ButtonPress)
+				{
+					auto it = m_keyStates.find(event.m_KeyUpdated);
+					if (it == m_keyStates.end()) it = LazyAddKeyState(event.m_KeyUpdated).first;
+
+					it->second.GetStateMutable().SetState(event.m_KeyState);
+					m_frameKeyQueue.emplace_back(event.m_KeyUpdated);
+				}
+				else if (event.m_EventType == Core::WindowInputEventType::MouseMove)
+				{
+					m_mousePos = event.m_NewCursorPos;
+				}
+				else
+				{
+					LogError(std::format("Window input event occured but it has no actions defined in input manager"));
+				}
+			});
 	}
 
 	void InputManager::Init()
 	{
-		for (const auto& key : GetAllKeyboardKeys())
-		{
-			m_keyboardStates.emplace(key, InputKey(key, InputState()));
-		}
-		for (const auto& key : GetAllMouseButtons())
-		{
-			m_mouseStates.emplace(key, InputKey(key, InputState()));
-		}
-		for (const auto& key : GetAllGamepadButtons())
-		{
-			m_gamepadStates.emplace(key, InputKey(key, InputState()));
-		}
+		//for (const auto& key : GetAllKeyboardKeys())
+		//{
+		//	m_keyStates.emplace(key, InputKeyState(key, InputState()));
+		//}
 
 		//if (allInputProfilePath.empty()) return;
 		//LogWarning(std::format("Does input path exist:{}", std::to_string(m_assetManager.IsValidAssetPath(INPUT_PROFILES_FOLDER))));
@@ -65,68 +78,55 @@ namespace Input
 		//		"but ran into error: {}", allInputProfilePath.string(), e.what()));
 		//}
 	}
+	void InputManager::ForceAddMissingKeys() const
+	{
+		for (const auto& keyboardKey : GetAllKeyboardKeys())
+		{
+			if (m_keyStates.find(keyboardKey) == m_keyStates.end())
+				LazyAddKeyState(keyboardKey);
+		}
+		for (const auto& mouseButton : GetAllMouseButtons())
+		{
+			if (m_keyStates.find(mouseButton) == m_keyStates.end())
+				LazyAddKeyState(mouseButton);
+		}
+		for (const auto& gamepadButton : GetAllGamepadButtons())
+		{
+			if (m_keyStates.find(gamepadButton) == m_keyStates.end())
+				LazyAddKeyState(gamepadButton);
+		}
+	}
+	void InputManager::ThrowIfNullKeyCode(const KeyCode code) const
+	{
+		if (code == KeyCode::Null)
+		{
+			LogError(std::format("Quering null key code is not supported"));
+			throw std::invalid_argument("Invalid keycode");
+		}
+	}
 
 	void InputManager::SetInputCooldown(const float& allKeyCooldownTime)
 	{
-		for (auto& key : m_keyboardStates)
+		for (auto& key : m_keyStates)
 		{
 			key.second.GetStateMutable().SetCooldownTime(allKeyCooldownTime);
 		}
 	}
-	void InputManager::SetInputCooldown(const std::map<KeyboardKey, float>& keyCooldownTime)
+	void InputManager::SetInputCooldown(const std::map<KeyCode, float>& keyCooldownTime)
 	{
 		if (keyCooldownTime.empty()) return;
 
-		auto it = m_keyboardStates.end();
+		auto it = m_keyStates.end();
 		for (const auto& cooldownTime : keyCooldownTime)
 		{
-			it = m_keyboardStates.find(cooldownTime.first);
-			if (it == m_keyboardStates.end()) continue;
+			it = m_keyStates.find(cooldownTime.first);
+			if (it == m_keyStates.end()) continue;
 
 			it->second.GetStateMutable().SetCooldownTime(cooldownTime.second);
 		}
 	}
 
-	bool InputManager::IsKeyDown(const DeviceType& device, const int& keyValue)
-	{
-		if (device == DeviceType::Keyboard) return ::IsKeyDown(keyValue);
-		else if (device == DeviceType::Mouse) return ::IsMouseButtonDown(keyValue);
-		else if (device == DeviceType::Gamepad) return ::IsGamepadButtonDown(0, keyValue);
-		else
-		{
-			LogError(std::format("Tried to check if key: '{}' of device type: {} is DOWN but this device has no actions!", 
-				std::to_string(keyValue), ToString(device)));
-			return false;
-		}
-	}
-
-	bool InputManager::IsKeyPressed(const DeviceType& device, const int& keyValue)
-	{
-		if (device == DeviceType::Keyboard) return ::IsKeyPressed(keyValue);
-		else if (device == DeviceType::Mouse) return ::IsMouseButtonPressed(keyValue);
-		else if (device == DeviceType::Gamepad) return ::IsGamepadButtonPressed(0, keyValue);
-		else
-		{
-			LogError(std::format("Tried to check if key: '{}' of device type: {} is PRESSED but this device has no actions!",
-				std::to_string(keyValue), ToString(device)));
-			return false;
-		}
-	}
-
-	bool InputManager::IsKeyReleased(const DeviceType& device, const int& keyValue)
-	{
-		if (device == DeviceType::Keyboard) return ::IsKeyReleased(keyValue);
-		else if (device == DeviceType::Mouse) return ::IsMouseButtonReleased(keyValue);
-		else if (device == DeviceType::Gamepad) return ::IsGamepadButtonReleased(0, keyValue);
-		else
-		{
-			LogError(std::format("Tried to check if key: '{}' of device type: {} is RELEASED but this device has no actions!",
-				std::to_string(keyValue), ToString(device)));
-			return false;
-		}
-	}
-
-	void InputManager::UpdateState(const DeviceType& device, const int& keyValue, InputState& inputState, const float& deltaTime)
+	void InputManager::UpdateState(const KeyCode keyValue, InputState& inputState, const float& deltaTime)
 	{
 		//First we update any deltas to cooldown
 		if (inputState.InCooldown())
@@ -137,74 +137,44 @@ namespace Input
 		//We then check again (in case we might have left cooldown after delta finished cooldown)
 		if (!inputState.InCooldown())
 		{
-			if (IsKeyPressed(device, keyValue)) inputState.SetState(KeyState::Pressed);
-			else if (IsKeyDown(device, keyValue))
+			if (inputState.GetState()== KeyState::Down)
 			{
 				//Only if the state is already down do we apply the delta time since if we just set it now
 				//the held time might be off
-				inputState.SetState(KeyState::Down);
 				inputState.SetDownTimeDelta(deltaTime);
-				//LogError(std::format("INput state for; {} IS: {}", std::to_string(keyValue), ToString(inputState.GetState())));
 			}
-			else if (IsKeyReleased(device, keyValue)) 
-				inputState.SetState(KeyState::Released);
-			else
-			{
-				//If we are not pressing anything, but last frame we released and we have cooldown
+			//If we are not pressing anything, but last frame we released and we have cooldown
 				//we only set the state for cooldown so it gets updated next frame
-				if (inputState.IsReleased() && inputState.HasCooldown())
-				{
-					inputState.SetState(KeyState::Cooldown);
-				}
-				//Othwewise no cooldown means we can just go back to neutral
-				else inputState.SetState(KeyState::Neutral);
+			else if(inputState.IsReleased() && inputState.HasCooldown())
+			{
+				inputState.SetState(KeyState::Cooldown);
 			}
+			else inputState.SetState(KeyState::Neutral);
 		}
 	}
 
 	void InputManager::Update(const float& deltaTime)
 	{
-		for (auto& inputState : m_keyboardStates)
+		for (auto& inputState : m_keyStates)
 		{
-			UpdateState(DeviceType::Keyboard, static_cast<int>(inputState.first), 
+			UpdateState(inputState.first, 
 				inputState.second.GetStateMutable(), deltaTime);
 		}
 
-		for (auto& inputState : m_mouseStates)
-		{
-			UpdateState(DeviceType::Mouse, static_cast<int>(inputState.first), 
-				inputState.second.GetStateMutable(), deltaTime);
-		}
-
-		for (auto& inputState : m_gamepadStates)
-		{
-			UpdateState(DeviceType::Gamepad, static_cast<int>(inputState.first), 
-				inputState.second.GetStateMutable(), deltaTime);
-		}
-
-		m_capturedKeys.clear();
 		m_charKeysPressed.clear();
+		
+		char keyChar = 0;
+		const bool shiftPressed = InputManager::IsKeyPressed(KeyCode::ShiftLeft) ||
+								  InputManager::IsKeyPressed(KeyCode::ShiftRight);
+		const bool capsLocked = InputManager::IsKeyPressed(KeyCode::CapsLock);
 
-		//Since getkeypressed ia a queue and does not retain info after going through current frame's keys
-		//we must store them at the start of every update
-		int key = ::GetKeyPressed();
-		char keyPressed = '0';
-		while (key > 0)
+		for (size_t i=0; i<m_frameKeyQueue.size(); i++)
 		{
-			if (key >= 32 && key <= 126)
-			{
-				keyPressed = static_cast<char>(key);
-				if (InputManager::IsKeyPressed(KeyboardKey::KEY_LEFT_SHIFT) || 
-					InputManager::IsKeyPressed(KeyboardKey::KEY_RIGHT_SHIFT))
-				{
-					keyPressed= std::toupper(keyPressed);
-				}
-				m_charKeysPressed += keyPressed;
-			}
-			m_capturedKeys.emplace_back(key);
-
-			key = ::GetKeyPressed();
+			keyChar = GetKeyCodeAsChar(m_frameKeyQueue[i], shiftPressed, capsLocked);
+			if (keyChar != 0)
+				m_charKeysPressed += keyChar;
 		}
+		m_frameKeyQueue.clear();
 
 		/*if (IsKeyPressed(KeyboardKey::KEY_TAB)) Assert(false, std::format("PRESS TAB"));
 		LogWarning(std::format("Key state:{}", ToString(GetKeyState(KeyboardKey::KEY_TAB))));*/
@@ -223,37 +193,6 @@ namespace Input
 		return &(it->second->GetProfile());
 	}
 
-	std::vector<KeyboardKey> InputManager::GetAllKeyboardKeys()
-	{
-		std::vector<KeyboardKey> keys = {};
-		for (int keyCode = static_cast<int>(KEY_BACK); 
-			keyCode <= static_cast<int>(KEY_KB_MENU); keyCode++)
-		{
-			keys.emplace_back(static_cast<KeyboardKey>(keyCode));
-		}
-		return keys;
-	}
-	std::vector<MouseButton> InputManager::GetAllMouseButtons()
-	{
-		std::vector<MouseButton> keys = {};
-		for (int keyCode = static_cast<int>(MOUSE_BUTTON_LEFT); 
-			keyCode <= static_cast<int>(MOUSE_BUTTON_BACK); keyCode++)
-		{
-			keys.emplace_back(static_cast<MouseButton>(keyCode));
-		}
-		return keys;
-	}
-	std::vector<GamepadButton> InputManager::GetAllGamepadButtons()
-	{
-		std::vector<GamepadButton> keys = {};
-		for (int keyCode = static_cast<int>(GAMEPAD_BUTTON_LEFT_FACE_UP); 
-			keyCode <= static_cast<int>(GAMEPAD_BUTTON_RIGHT_THUMB); keyCode++)
-		{
-			keys.emplace_back(static_cast<GamepadButton>(keyCode));
-		}
-		return keys;
-	}
-
 	/*CompoundInputCollection::iterator TryGetCompoundIteratorMutable(const std::string& name)
 	{
 		return CompoundInput.find(name);
@@ -263,73 +202,74 @@ namespace Input
 		return CompoundInput.find(name);
 	}*/
 
-	bool InputManager::IsKeyState(const KeyboardKey& key, const KeyState& state) const
+	bool InputManager::IsKeyState(const KeyCode& key, const KeyState& state) const
 	{
-		auto it = m_keyboardStates.find(key);
-		if (it == m_keyboardStates.end()) return false;
+		ThrowIfNullKeyCode(key);
+		auto it = m_keyStates.find(key);
+
+		//If we have not registered a key -> it means it has no event yet
+		//so here we can get away with no lazy instantiation and checking for neutral state
+		if (it == m_keyStates.end())
+			return state == KeyState::Neutral;
 
 		return it->second.GetState().IsState(state);
 	}
-	KeyState InputManager::GetKeyState(const KeyboardKey& key) const
+	KeyState InputManager::GetKeyState(const KeyCode& key) const
 	{
-		auto it = m_keyboardStates.find(key);
-		if (!Assert(it != m_keyboardStates.end(), std::format("InputManager: Tried to get key state in for key: {} "
-			"but that key does not exist", std::to_string(key))))
-			throw std::invalid_argument("Invalid key state");
+		ThrowIfNullKeyCode(key);
 
+		auto it = m_keyStates.find(key);
+		if (it == m_keyStates.end())
+		{
+			it = LazyAddKeyState(key).first;
+		}
+			
 		return it->second.GetState().GetState();
 	}
-	bool InputManager::IsKeyPressed(const KeyboardKey& key) const
+	bool InputManager::IsKeyPressed(const KeyCode& key) const
 	{
+		ThrowIfNullKeyCode(key);
 		return IsKeyState(key, KeyState::Pressed);
 	}
-	bool InputManager::IsKeyDown(const KeyboardKey& key) const
+	bool InputManager::IsKeyDown(const KeyCode& key) const
 	{
+		ThrowIfNullKeyCode(key);
 		return IsKeyState(key, KeyState::Down);
 	}
-	bool InputManager::IsKeyReleased(const KeyboardKey& key) const
+	bool InputManager::IsKeyReleased(const KeyCode& key) const
 	{
+		ThrowIfNullKeyCode(key);
 		return IsKeyState(key, KeyState::Released);
 	}
 
-	std::vector<const InputKey*> InputManager::GetAllKeysWithState(const KeyState& state) const
+	std::vector<const InputKeyState*> InputManager::GetAllKeysWithState(const KeyState& state) const
 	{
-		std::vector<const InputKey*> keys = {};
-		for (const auto& keyboardKey : m_keyboardStates)
+		//Only if state is neutral (the default state for keys that are not pressed)
+		//do we then have to force all missing keys to be added
+		if (state == KeyState::Neutral)
+			ForceAddMissingKeys();
+
+		//TODO: what should happen considering we have lazy instantion for keys? should those be ignored?
+		//or should we force add all if the state is only neutral?
+		std::vector<const InputKeyState*> keys = {};
+		for (const auto& key : m_keyStates)
 		{
-			if (keyboardKey.second.GetState().IsState(state)) 
-				keys.emplace_back(&keyboardKey.second);
-		}
-		for (const auto& mouseButton : m_mouseStates)
-		{
-			if (mouseButton.second.GetState().IsState(state))
-				keys.emplace_back(&mouseButton.second);
-		}
-		for (const auto& gamepadButton : m_gamepadStates)
-		{
-			if (gamepadButton.second.GetState().IsState(state))
-				keys.emplace_back(&gamepadButton.second);
+			if (key.second.GetState().IsState(state)) 
+				keys.emplace_back(&key.second);
 		}
 
 		return keys;
 	}
 	std::vector<std::string> InputManager::GetAllKeysWithStateAsString(const KeyState& state) const
 	{
+		if (state == KeyState::Neutral)
+			ForceAddMissingKeys();
+
 		std::vector<std::string> keys = {};
-		for (const auto& keyboardKey : m_keyboardStates)
+		for (const auto& key : m_keyStates)
 		{
-			if (keyboardKey.second.GetState().IsState(state))
-				keys.emplace_back(keyboardKey.second.ToString(false, false));
-		}
-		for (const auto& mouseButton : m_mouseStates)
-		{
-			if (mouseButton.second.GetState().IsState(state))
-				keys.emplace_back(mouseButton.second.ToString(false, false));
-		}
-		for (const auto& gamepadButton : m_gamepadStates)
-		{
-			if (gamepadButton.second.GetState().IsState(state))
-				keys.emplace_back(gamepadButton.second.ToString(false, false));
+			if (key.second.GetState().IsState(state))
+				keys.emplace_back(key.second.ToString(false, false));
 		}
 
 		return keys;
@@ -342,30 +282,20 @@ namespace Input
 
 	ScreenPosition InputManager::GetMousePosition() const
 	{
-		Vector2 mousePos= ::GetMousePosition();
-		return {mousePos.x, mousePos.y};
+		return m_mousePos;
 	}
 
-	const InputKey* InputManager::GetInputKey(const KeyboardKey& key) const
+	const InputKeyState* InputManager::GetInputKey(const KeyCode& key) const
 	{
-		auto it = m_keyboardStates.find(key);
-		if (it != m_keyboardStates.end()) return &(it->second);
+		ThrowIfNullKeyCode(key);
+
+		auto it = m_keyStates.find(key);
+		if (it == m_keyStates.end())
+		{
+			it = LazyAddKeyState(key).first;
+		}
 		
-		return nullptr;
-	}
-	const InputKey* InputManager::GetInputKey(const MouseButton& button) const
-	{
-		auto it = m_mouseStates.find(button);
-		if (it != m_mouseStates.end()) return &(it->second);
-
-		return nullptr;
-	}
-	const InputKey* InputManager::GetInputKey(const GamepadButton& button) const
-	{
-		auto it = m_gamepadStates.find(button);
-		if (it != m_gamepadStates.end()) return &(it->second);
-
-		return nullptr;
+		return &(it->second);
 	}
 
 	/*bool TryAddCompoundInput(const std::string& name, const CompoundDirectionCollection& keys)

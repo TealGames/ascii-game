@@ -8,10 +8,12 @@
 #include <limits>
 #include <fstream>
 #include <filesystem>
-#include <random>
-#include <stacktrace>
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/Math.hpp"
+
+#if _HAS_CXX23
+#include <stacktrace>
+#endif
 
 namespace Utils
 {
@@ -163,20 +165,17 @@ namespace Utils
 		return std::isalnum(c);
 	}
 
-	int GenerateRandomInt(int minInclusive, int maxInclusive)
+	int GenerateRandomInt(int minInclusive, int maxExclusive)
 	{
-		std::random_device rd;
-		std::mt19937 engine(rd());
-		std::uniform_int_distribution<int> dist(minInclusive, maxInclusive);
-		return dist(engine);
+		return GenerateRandomIntNum<int>(minInclusive, maxExclusive);
 	}
-
 	double GenerateRandomDouble(double minInclusive, double maxExclusive)
 	{
-		std::random_device rd;
-		std::mt19937 engine(rd());
-		std::uniform_real_distribution<double> dist(minInclusive, maxExclusive);
-		return dist(engine);
+		return GenerateRandomRealNum<double>(minInclusive, maxExclusive);
+	}
+	float GenerateRandomFloat(float minInclusive, float maxExclusive)
+	{
+		return GenerateRandomRealNum<float>(minInclusive, maxExclusive);
 	}
 
 	float MinAbs(const float& num1, const float& num2)

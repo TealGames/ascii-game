@@ -1,5 +1,6 @@
-#include "Core/Window/Raylib/RaylibWindow.hpp"
-#include "StaticGlobals.hpp"
+#include "Platform/Raylib/RaylibWindow.hpp"
+
+#ifdef RAYLIB
 #include "raylib.h"
 
 namespace Core
@@ -26,16 +27,22 @@ namespace Core
 			{
 				//TODO: implement
 			},
+			//Set vsync func
+			[](Window& window, const bool vsyncEnabled) -> void
+			{
+				//TODO: set vsync
+			},
 			//IsActive
 			[](Window& window)-> bool
 			{
 				return WindowShouldClose();
 			},
 			//Shutdown
-			[](Window& window)-> void
+			[](Window& window, const bool isLastWindow)-> void
 			{
 				CloseWindow();
 			}
 			}, updateCallback);
 	}
 }
+#endif

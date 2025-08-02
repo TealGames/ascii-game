@@ -16,6 +16,7 @@
 #include "Utils/RaylibUtils.hpp"
 #endif 
 
+static bool BackendLoaded = false;
 
 namespace Rendering
 {
@@ -32,6 +33,11 @@ namespace Rendering
 #else
 			LogError("Attempted to load rendering backend but either no rendering library is active or it has no defined actions");
 #endif
+			BackendLoaded = true;
+		}
+		bool IsBackendLoaded()
+		{
+			return BackendLoaded;
 		}
 
 		void SetViewport(const int x, const int y, const int width, const int height)

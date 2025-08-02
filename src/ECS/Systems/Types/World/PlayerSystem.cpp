@@ -3,7 +3,6 @@
 #include "ECS/Component/Types/World/PhysicsBodyData.hpp"
 #include "ECS/Component/Types/World/CameraData.hpp"
 #include "Utils/Data/Vec2Type.hpp"
-#include "raylib.h"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "StaticGlobals.hpp"
@@ -49,20 +48,15 @@ namespace ECS
 			{
 				playerCount++;
 #ifdef ALLOW_PLAYER_CHEATS
-				if (m_cheatsEnabled && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+				//TODO: add player cheats
+				/*if (m_cheatsEnabled && IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
 				{
-					/*CameraData* camera = scene.TryGetMainCameraMutable();
-					if (!Assert(camera != nullptr, std::format("Tried to get camera to convert screen "
-						"to world point for mouse position cheat but it is null"))) return;*/
-
 					Ray3D worldRay = mainCamera.ScreenToWorldPosition(m_inputManager.GetMousePosition());
-					player.GetEntityMutable().GetTransformMutable().m_localPos = worldRay.m_Origin;
-				}
+					player.GetEntityMutable().GetTransformMutable().GetLocalPosMutable() = worldRay.m_Origin;
+				}*/
 #endif
-
-				/*LogWarning(std::format("Player is at pos:{} (transform addr:{}) collider pos:{}", player.GetEntity().GetTransform().GetGlobalPos().ToString(),
-					Utils::ToStringPointerAddress(&player.GetEntity().GetTransform()),
-					player.GetBodyMutableSafe().GetCollisionBox().GetTransform().GetGlobalPos().ToString()));*/
+				Vec2Int shit = {};
+				LogError(shit.ToString());
 
 				const Input::InputProfile* inputProfile = m_inputManager.TryGetProfile(MAIN_INPUT_PROFILE_NAME);
 				if (inputProfile == nullptr)

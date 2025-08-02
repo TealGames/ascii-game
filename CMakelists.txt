@@ -33,11 +33,17 @@ add_subdirectory("dependencies/glfw-3.4")
 add_subdirectory("dependencies/glad")
 add_subdirectory("dependencies/json")
 add_subdirectory("dependencies/entt")
-add_subdirectory("dependencies/raylib")
-add_subdirectory("dependencies/glm")
+#add_subdirectory("dependencies/raylib")
+#add_subdirectory("dependencies/glm")
 #add_subdirectory("dependencies/PLplot")
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
+#line below for printing source files included:
+message(STATUS "SOURCES:")
+foreach(src ${SOURCES})
+    message(STATUS " - ${src}")
+endforeach()
+
 file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS src/*.hpp)
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
@@ -48,7 +54,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE dependencies)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 #TODO: remove this since this is for raylib only because it has no include folder
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/raylib/src)
+#target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/raylib/src)
 
 #For better file reading/writing use the RESOURCES_PATH macro
 if(PRODUCTION_BUILD)
@@ -65,4 +71,11 @@ if (MSVC)
 	#this line removes console from build
 	#set_target_properties("${CMAKE_PROJECT_NAME}" PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS/ENTRY:mainCRTStartup")
 endif()
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad glm nlohmann_json::nlohmann_json EnTT raylib)
+
+target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC GLFW=1) 
+target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC OPENGL=1) 
+#target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RAYLIB=1) 
+#target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC GLM=1) 
+
+#Removed: glm, raylib
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad nlohmann_json::nlohmann_json EnTT)

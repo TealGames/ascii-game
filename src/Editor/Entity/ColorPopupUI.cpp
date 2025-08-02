@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "Editor/Entity/ColorPopupUI.hpp"
 #include "Utils/Data/Vec2Type.hpp"
-#include "raylib.h"
 #include "Utils/HelperFunctions.hpp"
 #include <limits>
 #include "Utils/RaylibUtils.hpp"
@@ -75,8 +74,7 @@ void ColorPopupUI::AddPopupElements()
 			const std::string hexInput = Utils::TryExtractHexadecimal(input);
 			if (hexInput.size()!= 6 && hexInput.size()!=8) return;
 
-			Color color = RaylibUtils::GetColorFromHex(std::stoi(hexInput, nullptr, 16));
-			SetColor(RaylibUtils::FromRaylibColor(color));
+			SetColor(Utils::GetColorFromHex(std::stoi(hexInput, nullptr, 16)));
 		});
 	//m_rSlider.TryCenter(true, false);
 	

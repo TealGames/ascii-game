@@ -5,7 +5,8 @@
 #include "Utils/Data/WorldPosition.hpp"
 #include "Utils/Data/ScreenPosition.hpp"
 #include "Math/Ray.hpp"
-#include "raylib.h"
+#include "Core/Input/InputKey.hpp"
+//#include "raylib.h"
 
 class Scene;
 namespace Input
@@ -37,7 +38,7 @@ private:
 
 	bool m_isEnabled;
 public:
-	static constexpr KeyboardKey TOGGLE_DEBUG_INFO_KEY = KEY_TAB;
+	static constexpr Input::KeyCode TOGGLE_DEBUG_INFO_KEY = Input::KeyCode::Tab;
 
 private:
 public:

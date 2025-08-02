@@ -62,7 +62,8 @@ namespace Rendering
 	{
 		if (m_vertexSourceCode.empty() || m_fragmentSourceCode.empty())
 		{
-			LogWarning(std::format("Exiting from shader initialization due to empty vertex and/or fragment source code"));
+			LogWarning(std::format("Exiting from shader initialization due to empty vertex "
+				"and/or fragment source code. Vertex:{} \nFragment:{}", m_vertexSourceCode, m_fragmentSourceCode));
 			return;
 		}
 

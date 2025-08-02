@@ -49,6 +49,8 @@ namespace Rendering
     class Renderer
     {
     private:
+        bool m_isInit;
+
         const EngineState* m_engineState;
         struct StaticFrameRenderData m_staticRenderData;
 
@@ -68,13 +70,14 @@ namespace Rendering
         VertexBuffer m_vertexBuffer;
         VertexBuffer m_instancedBuffer;
     public:
-
+       
     private:
         void AddVerticesToBatch(const Shader* shader, const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize);
         void FlushBatches();
     public:
         Renderer(const EngineState& engineState);
         void Init();
+        bool WasInit() const;
 
         void AddCircleCall(const WorldPosition3D& centerPos, const float radius, const Utils::Color color);
         void AddRectangleCall(const WorldPosition3D& topLeftPos, const Vec2& size, const Utils::Color color);

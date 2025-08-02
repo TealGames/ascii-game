@@ -1,4 +1,5 @@
 #pragma once
+#ifdef GLM
 #include <glm/gtc/quaternion.hpp>
 
 namespace Math
@@ -12,3 +13,4 @@ namespace Math
 		inline constexpr Quat IDENTITY = { 0, 0, 0, 1 };
 	}
 }
+#endif

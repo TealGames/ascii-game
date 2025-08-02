@@ -21,3 +21,15 @@ struct Vec
 		return m_Components[index];
 	}
 };
+
+template<typename T, size_t N>
+requires std::is_arithmetic_v<T>
+T Sum(const Vec<T, N>& vec)
+{
+	T result = 0;
+	for (const auto& component : vec.m_Components)
+	{
+		result += component;
+	}
+	return result;
+}

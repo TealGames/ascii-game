@@ -15,6 +15,8 @@
 #include <ranges>
 #include <utility>
 #include <array>
+#include <random>
+
 
 namespace Utils
 {
@@ -382,6 +384,26 @@ namespace Utils
 
 	int GenerateRandomInt(int minInclusive, int maxInclusive);
 	double GenerateRandomDouble(double minInclusive, double maxExclusive);
+	float GenerateRandomFloat(float minInclusive, float maxExclusive);
+
+	template<typename T>
+	requires std::is_floating_point_v<T>
+	T GenerateRandomRealNum(const T& minInclusive, const T& maxExclusive)
+	{
+		std::random_device rd;
+		std::mt19937 engine(rd());
+		std::uniform_real_distribution<T> dist(minInclusive, maxExclusive);
+		return dist(engine);
+	}
+	template<typename T>
+	requires std::is_integral_v<T>
+	T GenerateRandomIntNum(const T& minInclusive, const T& maxExclusive)
+	{
+		std::random_device rd;
+		std::mt19937 engine(rd());
+		std::uniform_int_distribution<T> dist(minInclusive, maxExclusive);
+		return dist(engine);
+	}
 
 	/// <summary>
 	/// Will returns the minimum value considering their ABSOLUTE VALUE (disregarding sign)

@@ -1,5 +1,7 @@
-#include "Utils/ToStringFunctions.hpp
+#include "Utils/ToStringFunctions.hpp"
+#include <Utils/StringUtil.hpp>
 #include "Utils/Math.hpp"
+#include <numeric>
 
 namespace Utils
 {
@@ -9,7 +11,7 @@ namespace Utils
 
 		//The precision is the total number of digits, so we do 
 		// decimal places + number of non-decimal digit places (total digits - decimal digits)
-		oss.precision(decimalPlaces + (GetDigitPlaces(d)- GetDecimalPlaces(d));
+		oss.precision(decimalPlaces + (GetDigitPlaces(d)- GetDecimalPlaces(d)));
 		oss << d;
 		return oss.str();
 	}

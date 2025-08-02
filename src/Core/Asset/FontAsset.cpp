@@ -4,13 +4,13 @@
 //#include "Utils/RaylibUtils.hpp"
 #include "Utils/IOHandler.hpp"
 
-const std::string FontAsset::EXTENSION = ".ttf";
+const char* FontAsset::EXTENSION = ".ttf";
 
 FontAsset::FontAsset(const std::filesystem::path& path) 
 	: Asset(path, false), m_font()
 {
-	if (!Assert(IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a font asset from path:{}"
-		"but it does not have required font extension:'{}'", path.string(), EXTENSION)))
+	if (!Assert(path.extension()== EXTENSION, std::format("Tried to create a font asset from path:{} (extension:{})"
+		"but it does not have required font extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
 		return;
 
 	const std::string pathString = path.string();

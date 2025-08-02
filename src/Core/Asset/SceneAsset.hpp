@@ -16,6 +16,7 @@ class SceneAsset : public Asset, public IDependableAsset<GlobalEntityManager, As
 private:
 	AssetManagement::AssetManager* m_assetManager;
 	std::optional<Scene> m_scene;
+	std::filesystem::path m_levelFilePath;
 public:
 	static const std::string EXTENSION;
 	static const std::string LEVEL_EXTENSION;

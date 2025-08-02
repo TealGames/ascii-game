@@ -20,7 +20,7 @@ public:
 
 private:
 public:
-	constexpr MatrixType() : MatrixType({}) {}
+	constexpr MatrixType() : m_elements() {}
 	constexpr MatrixType(const float rowMajorElements[ROW_SIZE][COL_SIZE]) : m_elements() 
 	{
 		for (size_t r = 0; r < ROW_SIZE; r++)

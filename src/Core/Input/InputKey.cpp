@@ -5,10 +5,6 @@
 
 namespace Input
 {
-	static KeyboardKey DEFAULT_KEYBOARD_KEY = KEY_A;
-	static MouseButton DEFAULT_MOUSE_BUTTON = MOUSE_BUTTON_MIDDLE;
-	static GamepadButton DEFAULT_GAMEPAD_BUTTON = GAMEPAD_BUTTON_MIDDLE;
-
 	std::string ToString(const DeviceType& device)
 	{
 		if (device == DeviceType::Keyboard) return "Keyboard";
@@ -20,100 +16,190 @@ namespace Input
 		LogError(err);
 		throw std::invalid_argument(err);
 	}
-	std::optional<DeviceType> TryGetStringKeyDevice(const std::string& str, std::any* outInputAsEnum)
+
+	static const std::unordered_map<std::string, KeyCode>& GetKeyMap() 
 	{
-		auto maybeKeyboard = RaylibUtils::TryStringToKeyboardKey(str);
-		if (maybeKeyboard.has_value())
-		{
-			if (outInputAsEnum != nullptr) *outInputAsEnum = maybeKeyboard.value();
-			return DeviceType::Keyboard;
-		}
-
-		auto maybeMouse = RaylibUtils::TryStringToMouseButton(str);
-		if (maybeMouse.has_value())
-		{
-			if (outInputAsEnum != nullptr) *outInputAsEnum = maybeMouse.value();
-			return DeviceType::Mouse;
-		}
-
-		auto maybeGamepad = RaylibUtils::TryStringToGamepadButton(str);
-		if (maybeGamepad.has_value())
-		{
-			if (outInputAsEnum != nullptr) *outInputAsEnum = maybeGamepad.value();
-			return DeviceType::Gamepad;
-		}
-
-		return std::nullopt;
+		static const std::unordered_map<std::string, KeyCode> map = {
+		#define X(name, val) {#name, KeyCode::name},
+			KEY_CODE_ENUM_LIST
+		#undef X
+		};
+		return map;
 	}
 
-	InputKey::InputKey(const KeyboardKey& key, const InputState& state)
-		: m_deviceType(DeviceType::Keyboard), m_keyValue(static_cast<int>(key)), m_state(state)
+	KeyCode ToKeyCode(const std::string& str)
+	{
+		const auto& map = GetKeyMap();
+		auto it = map.find(str);
+		if (it != map.end())
+			return it->second;
+
+		return KeyCode::Null;
+	}
+	std::string ToString(const KeyCode keyCode)
+	{
+		switch (keyCode) 
+		{
+#define X(name, val) case KeyCode::name: return #name;
+			KEY_CODE_ENUM_LIST
+#undef X
+			default: return "Unknown";
+		}
+	}
+
+	DeviceType GetDeviceFromKeyCode(const KeyCode keyCode)
+	{
+		if (FIRST_MOUSE_CODE <= keyCode && keyCode <= LAST_MOUSE_CODE) return DeviceType::Mouse;
+		if (FIRST_KEYBOARD_CODE <= keyCode && keyCode <= LAST_KEYBOARD_CODE) return DeviceType::Gamepad;
+		if (FIRST_GAMEPAD_CODE <= keyCode && keyCode <= LAST_GAMEPAD_CODE) return DeviceType::Keyboard;
+		
+		LogError(std::format("Attempted to get device from key code but found no actions"));
+		throw std::invalid_argument("Missing keycode to device action");
+	}
+	bool IsKeyCodeTextConvertible(const KeyCode keyCode)
+	{
+		return (keyCode >= KeyCode::Space && keyCode <= KeyCode::GraveAccent);
+	}
+	char GetKeyCodeAsChar(const KeyCode code, const bool isShiftPressed, const bool isCapsLockPressed)
+	{
+		if (!IsKeyCodeTextConvertible(code))
+			return 0;
+
+		const char textCode = static_cast<KeyCodeIntegralType>(code);
+		if (code >= KeyCode::A && code <= KeyCode::Z)
+		{
+			//Since the keycode for alphabet chars is by default uppercase, we can directly
+			//return the converted value
+			if (isShiftPressed != isCapsLockPressed)
+				return textCode;
+			//If both cpas lock and shift is false = OR both are true (shift on caps lock makes lowercase)
+			//then we do lowercase
+			else return std::tolower(textCode);
+		}
+
+		if (isShiftPressed)
+		{
+			if (code == KeyCode::Num1)
+				return '!';
+			else if (code == KeyCode::Num2)
+				return '@';
+			else if (code == KeyCode::Num3)
+				return '#';
+			else if (code == KeyCode::Num4)
+				return '$';
+			else if (code == KeyCode::Num5)
+				return '%';
+			else if (code == KeyCode::Num6)
+				return '^';
+			else if (code == KeyCode::Num7)
+				return '&';
+			else if (code == KeyCode::Num8)
+				return '*';
+			else if (code == KeyCode::Num9)
+				return '(';
+			else if (code == KeyCode::Num0)
+				return ')';
+
+			else if (code == KeyCode::GraveAccent)
+				return '~';
+			else if (code == KeyCode::Minus)
+				return '_';
+			else if (code == KeyCode::Equal)
+				return '+';
+			else if (code == KeyCode::BracketLeft)
+				return '{';
+			else if (code == KeyCode::BracketRight)
+				return '}';
+			else if (code == KeyCode::Backslash)
+				return '|';
+			else if (code == KeyCode::Semicolon)
+				return ':';
+			else if (code == KeyCode::Apostrophe)
+				return '\"';
+			else if (code == KeyCode::Comma)
+				return '<';
+			else if (code == KeyCode::Period)
+				return '>';
+			else if (code == KeyCode::Slash)
+				return '?';
+		}
+
+		return textCode;
+	}
+
+
+	std::array<KeyCode, KEYBOARD_KEY_COUNT> GetAllKeyboardKeys()
+	{
+		std::array<KeyCode, KEYBOARD_KEY_COUNT> keys = {};
+		size_t i = 0;
+		for (KeyCodeIntegralType keyCode = static_cast<KeyCodeIntegralType>(FIRST_KEYBOARD_CODE);
+			keyCode <= static_cast<KeyCodeIntegralType>(LAST_KEYBOARD_CODE); keyCode++)
+		{
+			keys[i++] = static_cast<KeyCode>(keyCode);
+		}
+		return keys;
+	}
+	std::array<KeyCode, MOUSE_KEY_COUNT> GetAllMouseButtons()
+	{
+		std::array<KeyCode, MOUSE_KEY_COUNT> keys = {};
+		size_t i = 0;
+		for (int keyCode = static_cast<int>(FIRST_MOUSE_CODE);
+			keyCode <= static_cast<int>(LAST_MOUSE_CODE); keyCode++)
+		{
+			keys[i++] = static_cast<KeyCode>(keyCode);
+		}
+		return keys;
+	}
+	std::array<KeyCode, GAMEPAD_KEY_COUNT> GetAllGamepadButtons()
+	{
+		std::array<KeyCode, GAMEPAD_KEY_COUNT> keys = {};
+		size_t i = 0;
+		for (int keyCode = static_cast<int>(FIRST_GAMEPAD_CODE);
+			keyCode <= static_cast<int>(LAST_GAMEPAD_CODE); keyCode++)
+		{
+			keys[i++] = static_cast<KeyCode>(keyCode);
+		}
+		return keys;
+	}
+
+	InputKeyState::InputKeyState(const KeyCode& key, const InputState& state)
+		: m_deviceType(GetDeviceFromKeyCode(key)), m_keyCode(key), m_state(state)
 	{}
 
-	InputKey::InputKey(const MouseButton& button, const InputState& state)
-		: m_deviceType(DeviceType::Mouse), m_keyValue(static_cast<int>(button)), m_state(state)
-	{}
-
-	InputKey::InputKey(const GamepadButton& button, const InputState& state)
-		: m_deviceType(DeviceType::Gamepad), m_keyValue(static_cast<int>(button)), m_state(state)
-	{}
-
-	bool InputKey::IsDevice(const DeviceType& device) const
+	bool InputKeyState::IsDevice(const DeviceType& device) const
 	{
 		return m_deviceType == device;
 	}
 
-	KeyboardKey InputKey::GetAsKeyboard() const
+	KeyCode InputKeyState::GetKeyCode() const
 	{
-		if (!Assert(IsDevice(DeviceType::Keyboard), std::format("Tried to get input key: {} as invalid device type: {}",
-			std::to_string(m_keyValue), Input::ToString(m_deviceType))))
-			return DEFAULT_KEYBOARD_KEY;
-
-		return static_cast<KeyboardKey>(m_keyValue);
+		return m_keyCode;
 	}
 
-	MouseButton InputKey::GetAsMouse() const
-	{
-		if (!Assert(IsDevice(DeviceType::Mouse), std::format("Tried to get input key: {} as invalid device type: {}",
-			std::to_string(m_keyValue), Input::ToString(m_deviceType))))
-			return DEFAULT_MOUSE_BUTTON;
-
-		return static_cast<MouseButton>(m_keyValue);
-	}
-
-	GamepadButton InputKey::GetAsGamepad() const
-	{
-		if (!Assert(IsDevice(DeviceType::Gamepad), std::format("Tried to get input key: {} as invalid device type: {}",
-			std::to_string(m_keyValue), Input::ToString(m_deviceType))))
-			return DEFAULT_GAMEPAD_BUTTON;
-
-		return static_cast<GamepadButton>(m_keyValue);
-	}
-
-	const InputState& InputKey::GetState() const
+	const InputState& InputKeyState::GetState() const
 	{
 		return m_state;
 	}
-	InputState& InputKey::GetStateMutable()
+	InputState& InputKeyState::GetStateMutable()
 	{
 		return m_state;
 	}
 
-	std::string InputKey::ToString(const bool showDeviceName, const bool showState) const
+	std::string InputKeyState::ToString(const bool showDeviceName, const bool showState) const
 	{
 		std::string resultString = "";
 		std::string deviceName = Input::ToString(m_deviceType);
-		std::string keybindName = "";
+		std::string keybindName = std::to_string(static_cast<KeyCodeIntegralType>(m_keyCode));
 
-		if (IsDevice(DeviceType::Keyboard)) keybindName = RaylibUtils::KeyboardKeyToString(GetAsKeyboard());
+		/*if (IsDevice(DeviceType::Keyboard)) keybindName = RaylibUtils::KeyboardKeyToString(GetAsKeyboard());
 		else if (IsDevice(DeviceType::Gamepad)) keybindName = RaylibUtils::GamepadButtonToString(GetAsGamepad());
-		else if (IsDevice(DeviceType::Mouse)) keybindName = RaylibUtils::MouseButtonToString(GetAsMouse());
-		else
+		else if (IsDevice(DeviceType::Mouse)) keybindName = RaylibUtils::MouseButtonToString(GetAsMouse());*/
+		/*else
 		{
 			LogError(std::format("Tried to convert input key to string but device: "
 				"{} failed to convert", deviceName));
 			return "";
-		}
+		}*/
 		resultString = "[" + keybindName;
 
 		if (showDeviceName) resultString += std::format("({})", deviceName);

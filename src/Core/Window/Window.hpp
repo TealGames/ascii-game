@@ -4,23 +4,23 @@
 #include <utility>
 #include "Utils/Data/Vec2Type.hpp"
 #include "Utils/Data/Event.hpp"
+#include "Core/Input/InputKey.hpp"
+#include "Utils/Data/ScreenPosition.hpp"
 
 namespace Core
 {
 	class Window;
 	struct WindowPlatformCallbacks
 	{
-		std::function<bool(Window&, int,int, const char*)> m_InitFunc;
-		std::function<void(Window&)> m_UpdateFunc;
-		std::function<void(Window&, int, int)> m_ResizeFunc;
-		std::function<void(Window&, bool)> m_SetVsyncFunc;
-		std::function<bool(Window&)> m_IsActiveFunc;
-		std::function<void(Window&)> m_ShutdownFunc;
+		bool(*m_InitFunc)(Window&, int width, int height, const char* windowName);
+		void(*m_UpdateFunc)(Window&);
+		void(*m_ResizeFunc)(Window&, int width, int height);
+		void(*m_SetVsyncFunc)(Window&, bool vsyncEnabled);
+		bool(*m_IsActiveFunc)(Window&);
+		void(*m_ShutdownFunc)(Window&, bool isLastWindow);
 
 		bool HasAllValidCallbacks();
 	};
-
-	using UpdateCallbackType = std::function<void(Window&)>;
 
 	/// <summary>
 	/// This represents the viewport rect based in the window space
@@ -32,11 +32,42 @@ namespace Core
 		Vec2Int m_Size;
 	};
 
+	enum class WindowInputEventType : std::uint8_t
+	{
+		/// <summary>
+		/// If the mouse position has updated
+		/// </summary>
+		MouseMove	= 0,
+		/// <summary>
+		/// If the mouse is being dragged
+		/// </summary>
+		MouseDrag	= 1,
+		/// <summary>
+		/// If any button is pressed (includes gamepad, keyboard, mouse buttons)
+		/// </summary>
+		ButtonPress	= 2,
+	};
+
+	struct WindowInputEventInfo
+	{
+		WindowInputEventType m_EventType = WindowInputEventType::MouseMove;
+		ScreenPosition m_NewCursorPos = {};
+		Input::KeyCode m_KeyUpdated = Input::KeyCode::Null;
+		Input::KeyState m_KeyState = Input::KeyState::Neutral;
+
+		WindowInputEventInfo(const ScreenPosition newCursorPos);
+		WindowInputEventInfo(const Input::KeyCode keyCode, const Input::KeyState state);
+	};
+
+	using UpdateCallbackType = void(*)(Window&);
+	using InputEventCallbackType = std::function<void(Window&, const WindowInputEventInfo& inputEventInfo)>;
+
 	class Window
 	{
 	private:
 		WindowPlatformCallbacks m_platformCallbacks;
 		UpdateCallbackType m_updateCallback;
+		InputEventCallbackType m_inputEventCallback;
 		void* m_nativeState;
 
 		Vec2Int m_size;
@@ -52,8 +83,12 @@ namespace Core
 		bool Init(const int width, const int height, const char* windowName);
 	public:
 		Window(const int width, const int height, const Vec2Int aspectRatioConstraint, const char* windowName, const bool hasNativeState,
-			const WindowPlatformCallbacks& callbacks, const UpdateCallbackType& updateCallback);
+			const WindowPlatformCallbacks& callbacks, const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback);
+		Window(const Window&) = delete;
+		Window(Window&&) noexcept;
 		~Window();
+
+		void RegisterInput(const WindowInputEventInfo& info);
 
 		bool HasValidPlatformCallbacks();
 		bool IsValid();
@@ -62,7 +97,7 @@ namespace Core
 		void Update();
 
 		bool IsActive();
-		void Shutdown();
+		void Shutdown(const bool isLastWindow);
 
 		template<typename T, typename...Args>
 		T& CreateNativeWindowState(Args&& ...args)
@@ -107,5 +142,7 @@ namespace Core
 		Vec2Int CalculateRenderSize() const;
 
 		std::string ToString() const;
+
+		Window& operator=(const Window&) = delete;
 	};
 }

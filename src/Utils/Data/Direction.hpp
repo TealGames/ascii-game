@@ -2,18 +2,7 @@
 #include "Utils/Data/Vec2Type.hpp"
 #include <optional>
 #include <string>
-
-enum class MoveDirection
-{
-	North,
-	Northeast,
-	East,
-	Southeast,
-	South,
-	Southwest,
-	West,
-	Northwest,
-};
+#include "Utils/Data/DirectionEnums.hpp"
 
 bool IsAngledDirection(const MoveDirection& dir);
 

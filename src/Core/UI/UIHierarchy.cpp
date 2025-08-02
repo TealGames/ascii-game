@@ -20,7 +20,7 @@ void UIHierarchy::Init()
 	//m_rootElements.reserve(TOP_LAYER);
 	EntityData& uiRootEntity = m_globalEntityManager->CreateGlobalEntity(ROOT_UI_ENTITY_NAME, TransformComponent());
 	UITransformData& rootTransform = uiRootEntity.AddComponent<UITransformData>();
-	LogWarning(std::format("Root transform: {}", rootTransform.ToString()));
+	//(std::format("Root transform: {}", rootTransform.ToString()));
 	m_uiRoot = &rootTransform;
 
 	if (m_uiRoot == nullptr)
@@ -31,7 +31,6 @@ void UIHierarchy::Init()
 
 	EntityData::OnChildElementAdded.AddListener([this](EntityData* parentEntity, EntityData* childEntity, size_t childIndex)-> void 
 		{
-			//LogWarning(std::format("Child element added:{}", childEntity->ToString()));
 			if (!childEntity->HasComponent<UITransformData>())
 				return;
 
@@ -40,7 +39,7 @@ void UIHierarchy::Init()
 			{
 				currentParent = currentParent->GetParentMutable();
 			}
-			LogWarning(std::format("Added highest parent:{}", currentParent->ToString()));
+			//LogWarning(std::format("Added highest parent:{}", currentParent->ToString()));
 			if (currentParent->GetId() != m_uiRoot->GetEntityID()) return;
 
 			m_OnElementAdded.Invoke(currentParent->TryGetComponentMutable<UITransformData>());

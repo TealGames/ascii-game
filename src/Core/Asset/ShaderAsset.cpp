@@ -10,19 +10,20 @@ static constexpr char const* VERTEX_SHADER_IDENTIFIER = "vertex";
 ShaderAsset::ShaderAsset(const std::filesystem::path& path)
 	: Asset(path, false), m_shader(Rendering::CreateShader("", "")) 
 {
-	
+	WriteToShaderFromFiles();
 }
 
 void ShaderAsset::WriteToShaderFromFiles()
 {
 	const std::filesystem::path path = GetPath();
-	const std::string pathStr = path.string();
-	std::string_view pathView = std::string_view(pathStr);
-	if (!Assert(IO::DoesPathHaveExtension(GetPath(), EXTENSION), std::format("Tried to create a shader asset from path:{}"
-		"but it does not have required shader extension:'{}'", pathStr, EXTENSION)))
+	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a shader asset from path:{} (extension:{})"
+		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
 		return;
 
-	const size_t lastSeparatorIndex = pathStr.find(Asset::WORD_SEPARATOR);
+	const std::string fileNameStr = path.stem().string();
+	std::string_view pathView = std::string_view(fileNameStr);
+
+	const size_t lastSeparatorIndex = fileNameStr.find(Asset::WORD_SEPARATOR);
 	//If name has no separator it means it has no sahder identifier -> try to read as single file
 	if (lastSeparatorIndex == std::string::npos)
 	{
@@ -60,12 +61,23 @@ void ShaderAsset::WriteToShaderFromFiles()
 	//We only want the non-shader type part of the name to be set as real asset name
 	OverrideAssetName(shaderName);
 
-	if (type == Rendering::ShaderType::Vertex) m_shader.SetSources(IO::TryReadFileFull(GetPath()), IO::TryReadFileFull(otherShaderPath));
-	else if (type == Rendering::ShaderType::Fragment) m_shader.SetSources(IO::TryReadFileFull(otherShaderPath), IO::TryReadFileFull(GetPath()));
+	const std::string thisShaderSource = IO::TryReadFileFull(GetPath());
+	const std::string otherShaderSource = IO::TryReadFileFull(otherShaderPath);
+	if (thisShaderSource.empty() || otherShaderSource.empty())
+	{
+		LogError(std::format("Attempted to read shader in asset from two separate sources "
+			"but found at least one empty source. Vertex:{} Fragment:{}", 
+			type == Rendering::ShaderType::Vertex? thisShaderSource : otherShaderSource, 
+			type == Rendering::ShaderType::Fragment? thisShaderSource : otherShaderSource));
+		return;
+	}
+
+	if (type == Rendering::ShaderType::Vertex) m_shader.SetSources(thisShaderSource, otherShaderSource);
+	else if (type == Rendering::ShaderType::Fragment) m_shader.SetSources(otherShaderSource, thisShaderSource);
 	else
 	{
 		LogError(std::format("Attempted to set shader asset at path:{} source code from multiple files, "
-			"but current shader type could not get resolved:{}", pathStr, Rendering::ToString(type)));
+			"but current shader type could not get resolved:{}", path.string(), Rendering::ToString(type)));
 	}
 }
 

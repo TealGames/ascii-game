@@ -74,7 +74,7 @@ class UISelectableData;
 namespace ECS { class UIInputFieldSystem; }
 
 using InputFieldAction = std::function<void(std::string input)>;
-using InputFieldKeyActions = std::unordered_map<KeyboardKey, InputFieldAction>;
+using InputFieldKeyActions = std::unordered_map<Input::KeyCode, InputFieldAction>;
 class UIInputField : public Component
 {
 private:
@@ -134,7 +134,7 @@ public:
 	const InputFieldType& GetFieldType() const;
 
 	void SetSubmitAction(const InputFieldAction& action);
-	void SetKeyPressAction(const KeyboardKey key, const InputFieldAction& action);
+	void SetKeyPressAction(const Input::KeyCode key, const InputFieldAction& action);
 	void SetSettings(const UIStyle& settings);
 
 	void OverrideInput(const std::string& str);

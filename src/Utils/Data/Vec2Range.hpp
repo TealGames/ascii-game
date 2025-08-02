@@ -1,5 +1,5 @@
 #pragma once
-#include "Vec2.hpp"`
+#include "Utils/Data/Vec2Type.hpp"
 
 struct Vec2Range
 {
@@ -8,6 +8,6 @@ struct Vec2Range
 
 	Vec2Range(const Vec2& minVec, const Vec2& maxVec);
 
-	Vec2 GetRnadom() const;
+	Vec2 GetRandom() const;
 };
 

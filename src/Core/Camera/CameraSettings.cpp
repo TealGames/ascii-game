@@ -13,20 +13,6 @@ CameraSettings::CameraSettings(const Vec2Int& aspectRatio, const float& lensSize
     m_FollowTarget(followTarget), m_NearDistance(nearDistance), m_FarDistance(farDistance), 
     m_ProjectionType(projection), m_FieldOfViewYRadians(m_FieldOfViewYRadians){}
 
-void CameraSettings::SetFollowNoTarget()
-{
-    m_FollowTarget = nullptr;
-}
-void CameraSettings::SetFollowTarget(const EntityData& entity)
-{
-    m_FollowTarget = &entity;
-}
-
-bool CameraSettings::HasNoFollowTarget() const
-{
-    return m_FollowTarget == nullptr;
-}
-
 WorldPosition2D CameraSettings::CalculateViewportSize(const float cameraDepth) const
 {
     if (m_ProjectionType== ProjectionType::Orthographic)

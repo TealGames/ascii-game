@@ -1,5 +1,4 @@
 #pragma once
-#include "raylib.h"
 #include "ECS/Component/Component.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include <vector>

@@ -22,6 +22,7 @@
 #include <type_traits>
 #include <cstdint>
 #include <vector>
+#include <optional>
 #include "Utils/Data/FloatRange.hpp"
 #include "Core/Asset/Asset.hpp"
 #include "Utils/ToStringFunctions.hpp"

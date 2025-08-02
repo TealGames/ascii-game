@@ -5,7 +5,7 @@
 
 namespace Input
 {
-	InputAction::InputAction(const std::string& name, const std::vector<const InputKey*>& keys) :
+	InputAction::InputAction(const std::string& name, const std::vector<const InputKeyState*>& keys) :
 		m_Name(name), m_Keys(keys) {}
 
 	bool InputAction::IsDown() const

@@ -10,7 +10,7 @@ private:
 	Rendering::Font m_font;
 
 public:
-	static const std::string EXTENSION;
+	static const char* EXTENSION;
 
 private:
 public:

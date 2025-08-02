@@ -1,4 +1,7 @@
 #pragma once
+#include "StaticGlobals.hpp"
+
+#ifdef OPENGL
 #include "glad/glad.h"
 #include "Core/Analyzation/Debug.hpp"
 
@@ -6,7 +9,11 @@ namespace OpenGlUtils
 {
 	inline void GLClearError()
 	{
-		while (glGetError() != GL_NO_ERROR);
+		volatile int dummy = 0;
+		while (glGetError() != GL_NO_ERROR)
+		{
+			dummy++;
+		}
 	}
 
 	inline bool GLLogCall(const char* function, const char* file, int line)
@@ -26,4 +33,6 @@ namespace OpenGlUtils
 	x;\
 	ASSERT(OpenGlUtils::GLLogCall(#x, __FILE__, __LINE__))\
 }while(0)
+
+#endif
 

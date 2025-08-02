@@ -35,7 +35,7 @@ namespace ECS
         ProfilerTimer timer("CameraSystem::SystemUpdate");
 #endif 
 
-        if (!mainCamera.m_CameraSettings.HasNoFollowTarget()) UpdateCameraPosition(mainCamera);
+        if (mainCamera.HasFollowTarget()) UpdateCameraPosition(mainCamera);
         mainCamera.UpdatePrecalculatedData();
 
         //CollapseLayersWithinViewport(scene, mainCamera);
@@ -44,14 +44,15 @@ namespace ECS
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
     void CameraSystem::UpdateCameraPosition(CameraComponent& cameraData)
     {
-        cameraData.GetEntityMutable().GetTransformMutable().m_localPos= cameraData.m_CameraSettings.m_FollowTarget->GetTransform().GetGlobalPos();
+        cameraData.GetEntityMutable().GetTransformMutable().GetLocalPosMutable() = cameraData.GetFollowTarget()->GetTransform().GetGlobalPos();
     }
-
+    
+    /*
     void CameraSystem::CollapseLayersWithinViewport(const Scene& scene, CameraComponent& cameraData)
     {
         const TransformComponent& cameraTransform = cameraData.GetEntity().GetTransform();
-        float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_CameraSettings.m_WorldViewportSize.m_X, 
-                                     SCREEN_HEIGHT / cameraData.m_CameraSettings.m_WorldViewportSize.m_Y);
+        float scaleFactor = std::max(SCREEN_WIDTH/cameraData.m_cameraSettings.m_WorldViewportSize.m_X, 
+                                     SCREEN_HEIGHT / cameraData.m_cameraSettings.m_WorldViewportSize.m_Y);
 
         const std::vector<const RenderLayer*> layers = scene.GetAllLayers();
         ScreenPosition newScreenPos = {};
@@ -72,15 +73,16 @@ namespace ECS
                     continue;
              
                 //TODO: add rendering
-                /*
-                newScreenPos = cameraData.WorldToScreenPosition(textBufferPos.m_Pos);
-                screenSize = cameraData.WorldToScreenSize(textBufferPos.m_FontData.m_RectSize);
+                
+               // newScreenPos = cameraData.WorldToScreenPosition(textBufferPos.m_Pos);
+                //screenSize = cameraData.WorldToScreenSize(textBufferPos.m_FontData.m_RectSize);
 
-                m_renderer->AddTextCall(newScreenPos, textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_Text.m_Char,
-                   GetBestFontSize(textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_FontData.m_Tracking, screenSize, textBufferPos.m_Text.m_Char), 
-                    textBufferPos.m_FontData.m_Tracking, textBufferPos.m_Text.m_Color);
-                    */
+                //m_renderer->AddTextCall(newScreenPos, textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_Text.m_Char,
+                //GetBestFontSize(textBufferPos.m_FontData.m_FontAsset->GetFont(), textBufferPos.m_FontData.m_Tracking, screenSize, textBufferPos.m_Text.m_Char), 
+                //textBufferPos.m_FontData.m_Tracking, textBufferPos.m_Text.m_Color);
+                    
             }
         }
     }
+    */
 }

@@ -59,21 +59,19 @@ namespace Rendering
 		/// </summary>
 		size_t m_dataUsed;
 		size_t m_elementSize;
+
+		size_t m_maxVertexCount;
 	public:
-		const size_t m_MaxVertexCount;
 		VertexAttributeAdvance m_AdvanceType;
 
 	private:
 		void Deallocate();
 	public:
-		/// <summary>
-		/// Will create a vertex buffer. 
-		/// </summary>
-		/// <param name="vertexArray"></param>
-		/// <param name="size"></param>
-		/// <param name="callbacks"></param>
+		VertexBuffer();
 		VertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType,
 			const VertexBufferPlatformCallbacks callbacks);
+		VertexBuffer(const VertexBuffer&) = delete;
+		VertexBuffer(VertexBuffer&&) = delete;
 		~VertexBuffer();
 
 		void WriteData(const size_t& elementOffset, const void* vertexArray, const size_t& elementCount);
@@ -82,6 +80,9 @@ namespace Rendering
 
 		size_t GetElementSize() const;
 		RenderObjectId GetId() const;
+
+		VertexBuffer& operator=(const VertexBuffer&) = delete;
+		VertexBuffer& operator=(VertexBuffer&&) noexcept;
 	};
 
 	using IndexType = std::uint32_t;
@@ -102,21 +103,18 @@ namespace Rendering
 		/// Size in bytes is m_dataUsed * sizeof(IndexType)
 		/// </summary>
 		size_t m_dataUsed;
+		size_t m_maxIndexCount;
 	public:
-		const size_t m_MaxIndexCount;
 
 	private:
 		void Deallocate();
 	public:
-		/// <summary>
-		/// Will create an index buffer. 
-		/// Note: size is in element count
-		/// </summary>
-		/// <param name="indexArray"></param>
-		/// <param name="size"></param>
-		/// <param name="callbacks"></param>
+		IndexBuffer();
 		IndexBuffer(const IndexType* indexArray, const size_t elementCount,
 			const IndexBufferPlatformCallbacks& callbacks);
+		IndexBuffer(const IndexBuffer& other) = delete;
+		IndexBuffer(IndexBuffer&& other) = delete;
+
 		~IndexBuffer();
 
 		void WriteData(const size_t elementOffset, const IndexType* indexArray, const size_t elementCount);
@@ -125,6 +123,9 @@ namespace Rendering
 		
 		inline constexpr size_t GetElementSize() const { return sizeof(IndexType); }
 		RenderObjectId GetId() const;
+
+		IndexBuffer& operator=(const IndexBuffer&) = delete;
+		IndexBuffer& operator=(IndexBuffer&&) noexcept;
 	};
 
 	/// <summary>
@@ -173,6 +174,7 @@ namespace Rendering
 		void(*m_InitFunc)(std::array<std::byte, IMPL_STATE_SIZE>&);
 		void(*m_AddAttributeFunc)(std::array<std::byte, IMPL_STATE_SIZE>&, const VertexAttribute&);
 		void(*m_BindVertexBufferFunc)(std::array<std::byte, IMPL_STATE_SIZE>&, const RenderObjectId, const size_t, const BindIndex);
+		void(*m_DeallocateFunc)(std::array<std::byte, IMPL_STATE_SIZE>&);
 	};
 
 	class VertexLayout
@@ -185,8 +187,13 @@ namespace Rendering
 
 	private:
 		void LinkToBuffer(const RenderObjectId id, const size_t elementSize, const BindIndex bindIndex);
+		void Deallocate();
 	public:
+		VertexLayout();
 		VertexLayout(const VertexLayoutCallbacks& callbacks);
+		VertexLayout(const VertexLayout&) = delete;
+		VertexLayout(VertexLayout&&) = delete;
+		~VertexLayout();
 
 		void AddAttribute(const VertexAttribute& attribute);
 		//Note: index buffers are NOT linked to vertex layout explicitly
@@ -194,6 +201,9 @@ namespace Rendering
 
 		const VertexAttribute* GetAttributeByLocation(const std::uint8_t shaderLocation) const;
 		const VertexAttribute* GetAttributeByBindIndex(const std::uint8_t bindIndex) const;
+
+		VertexLayout& operator=(const VertexLayout&) = delete;
+		VertexLayout& operator=(VertexLayout&& other) noexcept;
 	};
 
 	struct BufferData

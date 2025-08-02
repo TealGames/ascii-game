@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Utils/Data/Point2DInt.hpp"
-#include "Utils/HelperFunctions.hpp"
+#include "Utils/Math.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
 namespace Utils
@@ -77,8 +77,8 @@ namespace Utils
 
 	bool Point2DInt::operator==(const Point2DInt& otherPos) const
 	{
-		bool sameX = Utils::ApproximateEquals(m_X, otherPos.m_X);
-		bool sameY = Utils::ApproximateEquals(m_Y, otherPos.m_Y);
+		bool sameX = Utils::ApproximateEqualsF(m_X, otherPos.m_X);
+		bool sameY = Utils::ApproximateEqualsF(m_Y, otherPos.m_Y);
 		return sameX && sameY;
 	}
 

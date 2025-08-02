@@ -18,6 +18,8 @@
 //	Vector2
 //};
 
+//template class Vec<float, 2>;
+//template class Vec<int, 2>;
 
 //TODO: ideally we would not use a direct value but rather a function to set those values to add some abstraction
 //and allow some clamping or other import actions to be taken if neccessary
@@ -25,21 +27,21 @@ using ComponentFieldVariant = std::variant<std::string*, int*, float*, std::uint
 using ComponentFieldSetAction = std::variant<std::function<void(std::string)>, std::function<void(int)>, std::function<void(float)>, 
 	std::function<void(std::uint8_t)>, std::function<void(bool)>, std::function<void(Vec2)>, std::function<void(Vec2Int)>, std::function<void(Utils::Color)>>;
 
-struct ComponentField
+class ComponentField
 {
 private:
 	bool m_isReadonly;
 
 public:
-	std::string m_FieldName;
+	const char* m_FieldName;
 	ComponentFieldVariant m_Value;
 	std::optional<ComponentFieldSetAction> m_MaybeSetFunction;
 
 	//ComponentFieldType m_Type;
 private:
 public:
-	ComponentField(const std::string& name, const ComponentFieldVariant& value, const bool& isWritable=true);
-	ComponentField(const std::string& name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value);
+	ComponentField(const char* name, const ComponentFieldVariant& value, const bool isWritable=true);
+	ComponentField(const char* name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value);
 
 	const std::type_info& GetCurrentType() const;
 	std::string ToString() const;
@@ -78,13 +80,12 @@ public:
 		{
 			if (HasSetFunction())
 			{
-				if (!Assert(IsSetFunctionofType<T>(), std::format("Tried to set value of field: '{}' of type: {} "
-					"with a set function but set function does not match that type", m_FieldName, GetCurrentType().name())))
+				if (!IsSetFunctionofType<T>())
+				{
+					LogError(std::format("Tried to set value of field: '{}' of type: {} "
+						"with a set function but set function does not match that type", m_FieldName, GetCurrentType().name()));
 					throw std::invalid_argument("Invalid set function type");
-
-				/*if (!Assert(m_MaybeSetFunction.value()!=nullptr, std::format("Tried to set value of field: '{}' of type: {} "
-						"with a set function that is NULL", m_FieldName, GetCurrentType().name())))
-					throw std::invalid_argument("Invalid set function");*/
+				}
 
 				std::get<std::function<void(T)>>(m_MaybeSetFunction.value())(value);
 			}

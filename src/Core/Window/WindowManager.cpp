@@ -21,7 +21,7 @@ namespace Core
 	}
 
 	Window* WindowManager::CreateNewWindow(const int width, const int height, 
-		const Vec2Int constrainedApsectRatio, const char* name, const UpdateCallbackType& updateCallback)
+		const Vec2Int constrainedApsectRatio, const char* name, const UpdateCallbackType updateCallback)
 	{
 		if (m_windows.size() >= m_windowLimit)
 		{
@@ -30,7 +30,8 @@ namespace Core
 		}
 
 #if defined(GLFW)
-		m_windows.emplace_back(std::move(CreateGlfwWindow(width, height, constrainedApsectRatio, name, updateCallback)));
+		m_windows.emplace_back(std::move(Glfw::CreateWindow(width, height, constrainedApsectRatio, name, updateCallback, 
+			[this](Window& window, const WindowInputEventInfo info) -> void {return RegisterInput(window, info); })));
 #elif defined(RAYLIB)
 		m_windows.emplace_back(std::move(CreateRaylibWindow(width, height, constrainedApsectRatio, name, updateCallback)))
 #else
@@ -46,13 +47,17 @@ namespace Core
 	void WindowManager::SetCurrentContextWindow(Window& window)
 	{
 #if defined(GLFW)
-		SetCurrentContextWindow(window);
+		Glfw::SetCurrentContextWindow(window);
 #elif defined(RAYLIB)
 		return;
 #else
 		LogError(std::format("Attempted to set the current context window as{} but the active framework has no actions, "
 			"is not supported or no active frameworks were selected", window.ToString()));
 #endif
+	}
+	void WindowManager::RegisterInput(Window& window, const WindowInputEventInfo& info)
+	{
+		m_OnInput.Invoke(&window, info);
 	}
 
 	void WindowManager::UpdateAllWindows(bool* allWindowsInactiveFlag)
@@ -83,7 +88,7 @@ namespace Core
 
 		for (auto& window : m_windows)
 		{
-			window.Shutdown();
+			window.Shutdown(m_windows.size()==1);
 		}
 	}
 }

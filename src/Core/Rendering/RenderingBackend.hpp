@@ -11,6 +11,8 @@ namespace Rendering
 	namespace Backend
 	{
 		void LoadBackend();
+		bool IsBackendLoaded();
+
 		void SetViewport(const int x, const int y, const int width, const int height);
 		
 		VertexBuffer CreateVertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType);

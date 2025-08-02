@@ -11,12 +11,11 @@
 #include "ECS/Component/Types/UI/UILayout.hpp"
 #include "StaticGlobals.hpp"
 #include "Core/Input/InputManager.hpp"
-#include "raylib.h"
 
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
-static constexpr KeyboardKey LAST_COMMAND_KEY = KEY_ONE;
+static constexpr Input::KeyCode LAST_COMMAND_KEY = Input::KeyCode::Num1;
 
-static const Color CONSOLE_COLOR = { GRAY.r, GRAY.g, GRAY.b, 100 };
+static const Utils::Color CONSOLE_COLOR = { Utils::COLOR_GRAY, 100 };
 static constexpr float CONSOLE_HEIGHT = 0.05;
 static const NormalizedPosition OUTPUT_MESSAGE_AREA = {0.6, 0.2};
 
@@ -28,7 +27,7 @@ static constexpr int COMMAND_CONSOLE_TEXT_INDENT = 10;
 static constexpr std::uint16_t MESSAGE_MAX_LENGTH = 50;
 
 static constexpr char COMMAND_CHAR = '/';
-static constexpr KeyboardKey TOGGLE_COMMAND_CONSOLE_KEY = KEY_TAB;
+static constexpr Input::KeyCode TOGGLE_COMMAND_CONSOLE_KEY = Input::KeyCode::Tab;
 
 CommandConsole::CommandConsole(const Input::InputManager& input, UIInteractionManager& selector) :
 	m_inputManager(input), m_prompts(), m_messageCloseTimes(), 

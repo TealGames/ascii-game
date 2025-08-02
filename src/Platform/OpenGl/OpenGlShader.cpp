@@ -1,4 +1,6 @@
 #include "Platform/OpenGl/OpenGlShader.hpp"
+
+#ifdef OPENGL
 #include "Core/Analyzation/Debug.hpp"
 #include "Utils/OpenGlUtils.hpp"
 
@@ -124,3 +126,4 @@ namespace Rendering
 		}
 	}
 }
+#endif

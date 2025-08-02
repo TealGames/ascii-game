@@ -11,6 +11,7 @@
 #include "Core/Analyzation/Debug.hpp"
 #include "Core/EngineState.hpp"
 #include "Core/Camera/CameraController.hpp"
+#include "Core/Rendering/GraphicsManager.hpp"
 
 namespace Rendering
 {
@@ -25,30 +26,39 @@ namespace Rendering
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
 
     Renderer::Renderer(const EngineState& engineState)
-        : m_engineState(&engineState), m_staticRenderData(),
+        : m_isInit(false), m_engineState(&engineState), m_staticRenderData(), m_defaultShader(nullptr),
         m_renderCalls(), m_textData(), m_textureData(), m_batches(), m_flushType(BatchFlushType::StateChange), 
-        m_layout(Backend::CreateVertexLayout()), m_bufferController(&m_layout),
-        m_vertexBuffer(Backend::CreateVertexBuffer(nullptr, sizeof(VertexType), PRE_ALLOCATED_VERTICES_COUNT, VertexAttributeAdvance::Vertex)),
-        m_indexBuffer(Backend::CreateIndexBuffer(nullptr, PRE_ALLOCATED_INDICES_COUNT)), 
-        m_instancedBuffer(Backend::CreateVertexBuffer(nullptr, sizeof(InstanceData), PRE_ALLOCATED_SHAPES, VertexAttributeAdvance::Instance))
+        m_layout(), m_bufferController(&m_layout),
+        m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer()
     {
-        //We reserve one for current batch, but also keep it as vector for future in case we do rendering in one go
-        m_batches.reserve(1);
-
-        const BindIndex vertexBindIndex= m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
-        std::vector<VertexAttribute> vertexAttributes = { VertexAttribute{0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Pos)} };
-        m_bufferController.AddVertexBufferAttributes(vertexBindIndex, vertexAttributes);
-
-        const BindIndex instancedBindIndex= m_bufferController.AddVertexBuffer(&m_instancedBuffer, nullptr);
-        std::vector<VertexAttribute> instancedAttributes = { 
-            VertexAttribute{1, 4, VertexAttributeBaseType::Float, false, offsetof(InstanceData, m_Color)} };
-        m_bufferController.AddVertexBufferAttributes(instancedBindIndex, instancedAttributes);
-        m_bufferController.AddVertexBufferMatrix4Attribute(instancedBindIndex, 2, false, sizeof(Vec4), offsetof(InstanceData, m_ModelMatrix));
+        
     }
 
     void Renderer::Init()
     {
-        Rendering::Backend::LoadBackend();
+        //We reserve one for current batch, but also keep it as vector for future in case we do rendering in one go
+        m_batches.reserve(1);
+
+        m_layout = Backend::CreateVertexLayout();
+        m_vertexBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(VertexType), PRE_ALLOCATED_VERTICES_COUNT, VertexAttributeAdvance::Vertex);
+        m_indexBuffer = Backend::CreateIndexBuffer(nullptr, PRE_ALLOCATED_INDICES_COUNT);
+        m_instancedBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(InstanceData), PRE_ALLOCATED_SHAPES, VertexAttributeAdvance::Instance);
+
+        const BindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
+        std::vector<VertexAttribute> vertexAttributes = { VertexAttribute{0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Pos)} };
+        m_bufferController.AddVertexBufferAttributes(vertexBindIndex, vertexAttributes);
+
+        const BindIndex instancedBindIndex = m_bufferController.AddVertexBuffer(&m_instancedBuffer, nullptr);
+        std::vector<VertexAttribute> instancedAttributes = {
+            VertexAttribute{1, 4, VertexAttributeBaseType::Float, false, offsetof(InstanceData, m_Color)} };
+        m_bufferController.AddVertexBufferAttributes(instancedBindIndex, instancedAttributes);
+        m_bufferController.AddVertexBufferMatrix4Attribute(instancedBindIndex, 2, false, sizeof(Vec4), offsetof(InstanceData, m_ModelMatrix));
+
+        m_isInit = true;
+    }
+    bool Renderer::WasInit() const
+    {
+        return m_isInit;
     }
 
     /*
@@ -149,6 +159,11 @@ namespace Rendering
         {
             m_staticRenderData.m_CameraData = &m_engineState->m_CameraController->GetActiveCamera().GetLastUpdateData();
             m_staticRenderData.m_UpdatedDataThisFrame = true;
+        }
+
+        if (m_defaultShader == nullptr)
+        {
+            m_defaultShader = m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultShader();
         }
 
         for (auto& batch : m_batches)

@@ -6,7 +6,7 @@
 #include "VectorEnums.hpp"
 #include "Utils/Math.hpp"
 #include "Utils/ToStringFunctions.hpp"
-
+#include "Utils/Data/DirectionEnums.hpp"
 
 template<typename T>
 requires std::is_arithmetic_v<T>
@@ -155,7 +155,7 @@ public:
 
 	Vec operator*(const float scalar) const
 	{
-		return Vec{ m_X * scalar, m_Y * scalar };
+		return Vec(m_X * scalar, m_Y * scalar);
 	}
 	Vec operator*(const int scalar) const
 	{
@@ -178,7 +178,7 @@ public:
 			return *this;
 		}
 
-		return Vec{ m_X / scalar, m_Y / scalar };
+		return Vec(m_X / scalar, m_Y / scalar);
 	}
 	Vec operator/(const int scalar) const
 	{
@@ -238,6 +238,9 @@ public:
 using Vec2 = Vec<float, 2>;
 using Vec2Int = Vec<int, 2>;
 
+extern template class Vec<float, 2>;
+extern template class Vec<int, 2>;
+
 //	Returns the scalar dot product. 
 // -> This essentially finds how much one vector is aligned in terms of the other (where order does NOT matter and produces the same result)
 // -> If one vector is a unit vector, it essnetially then can find how much of a vector is in the same direction as the unit vector
@@ -261,6 +264,15 @@ Vec2Int GetSign(const Vec<T, 2>& vec)
 	return Vec2(Utils::GetSign(vec.m_X), Utils::GetSign(vec.m_Y));
 }
 
+template<typename T>
+Vec<T, 2> GetNormal(const Vec<T, 2>& vec, const RotationDirection dir)
+{
+	if (dir == RotationDirection::Clockwise)
+		return Vec<T, 2>(vec.m_Y, -vec.m_X);
+	else
+		return Vec<T, 2>(-vec.m_Y, vec.m_X);
+}
+
 /// <summary>
 /// Return true if the point is wtihin the bounding volume formed by the min (bottom left pos)
 /// and the max (top right pos)
@@ -270,7 +282,8 @@ Vec2Int GetSign(const Vec<T, 2>& vec)
 /// <param name="max"></param>
 /// <returns></returns>
 template<typename T>
-bool IsPointWithinBounds(const Vec<T, 2>& point, const Vec<T, 2>& min, const Vec<T, 2>& max) {
+bool IsPointWithinBounds(const Vec<T, 2>& point, const Vec<T, 2>& min, const Vec<T, 2>& max) 
+{
 	return (point.m_X >= min.m_X && point.m_X <= max.m_X) &&
 		(point.m_Y >= min.m_Y && point.m_Y <= max.m_Y);
 }
@@ -279,4 +292,3 @@ inline Vec2 GetDirVector(const float radianAngle)
 {
 	return Vec2(std::cosf(radianAngle), std::sinf(radianAngle));
 }
-

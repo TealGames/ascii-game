@@ -178,7 +178,7 @@ namespace Input
 		m_actions.emplace(action.m_Name, action);
 		return true;
 	}
-	bool InputProfile::TryAddAction(const std::string& inputName, const std::vector<const InputKey*>& keybinds)
+	bool InputProfile::TryAddAction(const std::string& inputName, const std::vector<const InputKeyState*>& keybinds)
 	{
 		m_actions.emplace(inputName, InputAction(inputName, keybinds));
 		return true;

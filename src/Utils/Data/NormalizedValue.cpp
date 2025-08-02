@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Utils/Data/NormalizedValue.hpp"
-#include "Utils/HelperFunctions.hpp"
+#include "Utils/Math.hpp"
 
 NormalizedValue::NormalizedValue() : NormalizedValue(0) {}
 NormalizedValue::NormalizedValue(const float value) 
@@ -81,7 +81,7 @@ bool NormalizedValue::operator>=(const NormalizedValue& other) const
 }
 bool NormalizedValue::operator<(const NormalizedValue& other) const
 {
-	return *this < other;
+	return m_value < other.m_value;
 }
 bool NormalizedValue::operator<=(const NormalizedValue& other) const
 {

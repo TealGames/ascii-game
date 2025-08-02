@@ -13,14 +13,16 @@ namespace Core
 	public:
 		Event<void, Window*> m_OnWindowCreated;
 		Event<void, Window*> m_OnWindowUpdated;
+		Event<void, Window*, const WindowInputEventInfo> m_OnInput;
 
 	private:
 		void SetCurrentContextWindow(Window& window);
+		void RegisterInput(Window& window, const WindowInputEventInfo& info);
 	public:
 		WindowManager();
 
 		Window* CreateNewWindow(const int width, const int height, const Vec2Int constrainedApsectRatio, const char* name, 
-			const UpdateCallbackType& updateCallback=nullptr);
+			const UpdateCallbackType updateCallback=nullptr);
 
 		/// <summary>
 		/// Updates all windows and returns true if at leaast one was updated

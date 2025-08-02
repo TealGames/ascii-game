@@ -83,8 +83,8 @@ Array2DPosition Array2DPosition::operator/(const int factor) const
 
 bool Array2DPosition::operator==(const Array2DPosition& otherPos) const
 {
-	bool sameX = Utils::ApproximateEquals(GetRow(), otherPos.GetRow());
-	bool sameY = Utils::ApproximateEquals(GetCol(), otherPos.GetCol());
+	bool sameX = Utils::ApproximateEqualsF(GetRow(), otherPos.GetRow());
+	bool sameY = Utils::ApproximateEqualsF(GetCol(), otherPos.GetCol());
 	return sameX && sameY;
 }
 

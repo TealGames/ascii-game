@@ -1,5 +1,4 @@
 #pragma once
-#include "raylib.h"
 #include <functional>
 #include "Core/UI/UIStyle.hpp"
 #include "Core/UI/UIRect.hpp"

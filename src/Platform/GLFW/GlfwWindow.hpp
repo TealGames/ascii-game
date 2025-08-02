@@ -1,8 +1,15 @@
 #pragma once
+
+#ifdef GLFW
 #include "Core/Window/Window.hpp"
 
 namespace Core
 {
-	Window CreateGlfwWindow(const int width, const int height, const Vec2Int aspectRatioCosntraint, const char* windowName, const UpdateCallbackType& updateCallback);
-	void SetCurrentContextWindow(Window& window);
+	namespace Glfw
+	{
+		Window CreateWindow(const int width, const int height, const Vec2Int aspectRatioCosntraint, const char* windowName,
+			const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback);
+		void SetCurrentContextWindow(Window& window);
+	}
 }
+#endif

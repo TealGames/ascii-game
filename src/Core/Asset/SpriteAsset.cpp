@@ -6,7 +6,12 @@
 const std::string SpriteAsset::EXTENSION = ".json";
 
 SpriteAsset::SpriteAsset(const std::filesystem::path& path) 
-	: Asset(path, false), m_visual() {}
+	: Asset(path, false), m_visual() 
+{
+	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a sprite asset from path:{} (extension:{})"
+		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
+		return;
+}
 
 const VisualData& SpriteAsset::GetVisual() const
 {

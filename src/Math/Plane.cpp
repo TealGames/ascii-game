@@ -23,7 +23,7 @@ Vec3 InfinitePlane3D::GetShortestVectorToOrigin() const
 }
 float InfinitePlane3D::GetPointDistanceFromPlane(const Vec3& pos) const
 {
-	return GetNormal() * pos + m_Equation.m_W;
+	return Sum(GetNormal() * pos) + m_Equation.m_W;
 }
 bool InfinitePlane3D::IsPointOnPlane(const Vec3& pos) const
 {

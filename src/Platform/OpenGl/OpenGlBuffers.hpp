@@ -1,4 +1,6 @@
 #pragma once
+
+#ifdef OPENGL
 #include "Core/Rendering/Buffers.hpp"
 
 namespace Rendering
@@ -11,3 +13,4 @@ namespace Rendering
 		VertexLayout CreateVertexLayout();
 	}
 }
+#endif

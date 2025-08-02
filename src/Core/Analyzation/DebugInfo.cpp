@@ -103,12 +103,13 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, Scene& act
 	{
 		m_isEnabled = !m_isEnabled;
 	}
+
 	m_containerLayout->GetEntityMutable().TrySetEntityActive(m_isEnabled);
 	//Log(std::format("Debug info active:{}", m_containerLayout->GetEntityMutable().IsEntityActive()));
 	if (!m_isEnabled) return;
 
 	m_nextIndex = 0;
-	SetProperty("FPS", std::format("{} fps", std::to_string(GetFPS())));
+	SetProperty("FPS", std::format("{} fps", std::to_string(1.0f/deltaTime)));
 	SetProperty("DeltaTime", std::format("{} s", std::to_string(deltaTime)));
 	SetProperty("TimeStep", std::format("{} s", std::to_string(timeStep)));
 

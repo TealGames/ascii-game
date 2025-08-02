@@ -2,11 +2,12 @@
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "Core/Asset/SceneAsset.hpp"
-#include "Core/Input/InputProfileAsset.hpp"
+#include "Core/Asset/InputProfileAsset.hpp"
 #include "Core/Asset/SpriteAnimationAsset.hpp"
 #include "Core/Asset/SpriteAsset.hpp"
 #include "Core/Asset/FontAsset.hpp"
 #include "Core/Asset/TextureAsset.hpp"
+#include "Core/Asset/ShaderAsset.hpp"
 #include "Utils/Print.hpp"
 
 static constexpr bool THROW_ON_UNKNWON_ASSET = false;
@@ -59,12 +60,18 @@ namespace AssetManagement
 			"but it is not a valid asset path", path.string())))
 			return;
 
-		if (doHide) m_hiddenAssetPaths.insert(path.string());
-		else m_hiddenAssetPaths.erase(path.string());
+		const std::filesystem::path relPath = GetRelativeAssetPath(path);
+		if (doHide) m_hiddenAssetPaths.insert(relPath.string());
+		else m_hiddenAssetPaths.erase(relPath.string());
 	}
-	bool AssetManager::IsAssetHiddenFromPath(const std::filesystem::path& path) const
+	bool AssetManager::IsAssetHiddenFromPath(std::filesystem::path path, const bool isAbsolutePath) const
 	{
 		if (m_hiddenAssetPaths.empty()) return false;
+		if (!Assert(IsValidAssetPath(path), std::format("Attempted to get whether asset is hidden at path:{} "
+			"but it is not a valid asset path", path.string())))
+			return false;
+
+		if (isAbsolutePath) path = GetRelativeAssetPath(path);
 		return m_hiddenAssetPaths.find(path.string()) != m_hiddenAssetPaths.end();
 	}
 	bool AssetManager::IsAssetHidden(const std::string& name) const
@@ -88,6 +95,7 @@ namespace AssetManagement
 		const std::string fileExtension = assetPath.extension().string();
 
 		Asset* createdAsset = nullptr;
+		//TODO: there has to be a better way of creating assets then doing each one
 		if (fileExtension == SceneAsset::EXTENSION)
 		{
 			createdAsset = CreateAssetFromFile<SceneAsset>(assetPath);
@@ -111,6 +119,10 @@ namespace AssetManagement
 		else if (fileExtension == TextureAsset::EXTENSION)
 		{
 			createdAsset = CreateAssetFromFile<TextureAsset>(assetPath);
+		}
+		else if (fileExtension == ShaderAsset::EXTENSION)
+		{
+			createdAsset = CreateAssetFromFile<ShaderAsset>(assetPath);
 		}
 		else
 		{
@@ -244,7 +256,7 @@ namespace AssetManagement
 			"but it is not a valid asset path", relPath.string())))
 			return nullptr;
 
-		if (PREVENT_HIDDEN_ASSET_LOOKUP && IsAssetHiddenFromPath(relPath))
+		if (PREVENT_HIDDEN_ASSET_LOOKUP && IsAssetHiddenFromPath(relPath, false))
 		{
 			LogWarning(std::format("Attempted to get asset by path:{} but this asset was marked as hidden", relPath.string()));
 			return nullptr;

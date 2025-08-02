@@ -26,11 +26,18 @@ static const char* LEVEL_GROUND_PROPERTY_NAME = "Ground";
 static const char* LEVEL_BACKGOUND_PROPERTY_NAME = "Background";
 
 SceneAsset::SceneAsset(const std::filesystem::path& path) : 
-	Asset(path, true), m_assetManager(nullptr), m_scene(std::nullopt) 
+	Asset(path, true), m_assetManager(nullptr), m_scene(std::nullopt), m_levelFilePath()
 {
-	if (!Assert(IO::DoesPathHaveExtension(path, EXTENSION), std::format("Tried to create a scene asset from path:'{}' "
-		"but it does not have required extension:'{}'", path.string(), EXTENSION)))
+	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a scene asset from path:{} (extension:{})"
+		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
 		return;
+
+	std::filesystem::path maybePath = GetPath().parent_path() / (GetName() + LEVEL_EXTENSION);
+	if (IO::DoesPathExist(maybePath))
+	{
+		m_levelFilePath = maybePath;
+		AssetManagement::AssetManager::SetAssetHiddenStatus(maybePath, true);
+	}
 }
 
 AssetManagement::AssetManager& SceneAsset::GetAssetManagerMutable()
@@ -362,14 +369,12 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 bool SceneAsset::TryLoadLevelBackground()
 {
 	//TODO: right now we expect the level to have the same name but with different extension
-	std::filesystem::path maybePath = GetPath().parent_path() / (GetName() + LEVEL_EXTENSION);
-	if (!Assert(IO::DoesPathExist(maybePath), std::format("Attempted to load level background for scene asset:{} "
-		"but could not find level from asset manager using name:{} extension:{}", ToString(), GetName(), LEVEL_EXTENSION)))
+	if (m_levelFilePath.empty())
 		return false;
 
 	//std::ifstream fstream(maybePath);
 	//std::vector<std::vector<TextCharArrayPosition>> visualPositions = {};
-	Fig levelFig = Fig(maybePath);
+	Fig levelFig = Fig(m_levelFilePath);
 	//LogWarning(std::format("Try load level background fig:{}", levelFig.ToString()));
 	//Assert(false, std::format("Level fig:{}", levelFig.ToString()));
 

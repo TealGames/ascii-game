@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include "raylib.h"
 #include <unordered_map>
 #include "ECS/Component/Component.hpp"
 #include "Utils/Data/Point2DInt.hpp"

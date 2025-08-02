@@ -1,8 +1,10 @@
-#include "pch.hpp"
 #include "Utils/RaylibUtils.hpp"
+
+#ifdef RAYLIB
+#include "pch.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include <limits>
-#include "Utils/Data/Vec2Int.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 
 namespace RaylibUtils
 {
@@ -175,10 +177,10 @@ namespace RaylibUtils
 		DrawLine(startPos.m_X, startPos.m_Y, endPos.m_X, endPos.m_Y, color);
 		
 		const float& triangleSideLength = dir.GetMagnitude() / 3;
-		const Vec2 lineNormalDir = dir.GetNormal().GetNormalized();
+		const Vec2 lineNormalDir = GetNormal(dir, RotationDirection::Clockwise).GetNormalized();
 
 		const Vec2 p1 = endPos + (lineNormalDir * triangleSideLength / 2);
-		const Vec2 p2 = endPos + (lineNormalDir.GetOppositeDirection() * triangleSideLength / 2);
+		const Vec2 p2 = endPos + (-lineNormalDir * triangleSideLength / 2);
 		const Vec2 p3 = endPos + dir.GetNormalized() * triangleSideLength / 2 * std::sqrtf(3);
 		DrawTriangle(ToRaylibVector(p1), ToRaylibVector(p2), ToRaylibVector(p3), color);
 	}
@@ -307,3 +309,4 @@ namespace RaylibUtils
 		return "";
 	}
 }
+#endif

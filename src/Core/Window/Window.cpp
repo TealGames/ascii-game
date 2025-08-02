@@ -12,11 +12,16 @@ namespace Core
 		return m_InitFunc && m_UpdateFunc && m_IsActiveFunc && m_ShutdownFunc;
 	}
 
+	WindowInputEventInfo::WindowInputEventInfo(const ScreenPosition newCursorPos)
+		: m_EventType(WindowInputEventType::MouseMove), m_NewCursorPos(newCursorPos) {}
+	WindowInputEventInfo::WindowInputEventInfo(const Input::KeyCode keyCode, const Input::KeyState state)
+		: m_EventType(WindowInputEventType::ButtonPress), m_KeyUpdated(keyCode), m_KeyState(state) {}
+
 	const Vec2Int Window::NO_ASPECT_RATIO_CONSTRAINT = Vec2Int(-1, -1);
 
 	Window::Window(const int width, const int height, const Vec2Int aspectRatioConstraint, const char* windowName, const bool hasNativeState,
-		const WindowPlatformCallbacks& callbacks, const UpdateCallbackType& updateCallback)
-		: m_platformCallbacks(callbacks), m_nativeState(nullptr), m_updateCallback(updateCallback), 
+		const WindowPlatformCallbacks& callbacks, const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback)
+		: m_platformCallbacks(callbacks), m_nativeState(nullptr), m_updateCallback(updateCallback), m_inputEventCallback(inputCallback),
 		m_size(width, height), m_windowName(windowName), m_aspectRatioConstraint(aspectRatioConstraint), m_vsyncEnabled(false)
 	{
 		bool success = Init(width, height, windowName);
@@ -34,10 +39,36 @@ namespace Core
 
 		SetVSync(DEFAULT_VSYNC_ENABLED);
 	}
+	Window::Window(Window&& other) noexcept
+	{
+		m_platformCallbacks = std::exchange(other.m_platformCallbacks, {});
+		m_updateCallback = std::exchange(other.m_updateCallback, {});
+		m_inputEventCallback = std::exchange(other.m_inputEventCallback, {});
+
+		m_size = std::exchange(other.m_size, {});
+		m_aspectRatioConstraint = std::exchange(other.m_aspectRatioConstraint, {});
+		m_windowName= std::exchange(other.m_windowName, "");
+		m_vsyncEnabled = std::exchange(other.m_vsyncEnabled, false);
+		m_OnResize = std::exchange(m_OnResize, {});
+		
+		m_nativeState = other.m_nativeState;
+		other.m_nativeState = nullptr;
+	}
 
 	Window::~Window()
 	{
+		if (m_nativeState == nullptr)
+			return;
+
 		delete m_nativeState;
+	}
+
+	void Window::RegisterInput(const WindowInputEventInfo& info)
+	{
+		if (m_inputEventCallback == nullptr)
+			return;
+
+		m_inputEventCallback(*this, info);
 	}
 
 	bool Window::HasValidPlatformCallbacks()
@@ -69,9 +100,9 @@ namespace Core
 	{
 		return m_platformCallbacks.m_IsActiveFunc(*this);
 	}
-	void Window::Shutdown()
+	void Window::Shutdown(const bool isLastWindow)
 	{
-		m_platformCallbacks.m_ShutdownFunc(*this);
+		m_platformCallbacks.m_ShutdownFunc(*this, isLastWindow);
 	}
 	void Window::SetSize(const int width, const int height)
 	{

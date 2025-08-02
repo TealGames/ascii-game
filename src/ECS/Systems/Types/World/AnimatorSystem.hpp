@@ -74,6 +74,7 @@ namespace ECS
 			catch (const std::exception& e)
 			{
 				LogError(std::format("Tried to use index:{} ({}) of keyframes:{}", nextKeyframeIndex, index+1, property.m_Keyframes.size()));
+				throw std::invalid_argument("Invalid next key frame call");
 			}
 		}
 

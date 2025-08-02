@@ -1,31 +1,23 @@
 #include "pch.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Scene/SceneManager.hpp"
-#include "raylib.h"
 #include "StaticGlobals.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
-#include "Utils/HelperFunctions.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
 #include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
 #include "ECS/Systems/Types/World/CameraSystem.hpp"
 #include "ECS/Systems/Types/World/LightSourceSystem.hpp"
-#include "ECS/Systems/Types/World/InputSystem.hpp"
 #include "ECS/Systems/Types/World/AnimatorSystem.hpp"
 #include "ECS/Systems/Types/World/SpriteAnimatorSystem.hpp"
 #include "ECS/Systems/Types/World/PhysicsBodySystem.hpp"
 #include "Core/UIElementTemplates.hpp"
-#include "Utils/Data/Array2DPosition.hpp"
-#include "Core/Time/TimerBase.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
-#include "Core/PositionConversions.hpp"
-#include "Core/Analyzation/DebugInfo.hpp"
-#include "Core/Input/InputProfileAsset.hpp"
+#include "Core/Asset/InputProfileAsset.hpp"
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "Game/GlobalCreator.hpp"
 #include "Core/Asset/GlobalColorCodes.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
-#include "Fig/Fig.hpp"
 #include "AnsiCodes.hpp"
 
 
@@ -126,6 +118,9 @@ namespace Core
 	//custom text arrangmenets
 	//TODO: to improve performance since we create many vectors, it may be a good idea to create vector views instead of doing .xy to create new ones if we do not need
 	//a new vector and only need to read, we can make views into existing memory and work with that especially if we only need components to create new vectors
+	//TODO: make an interaction profile that sotres all the current interaction keycodes (like select = mousebuttomleft) and make design extensible so that you can choose
+	//a new dvice and then it can have different keycode values. so maybe there is a default profile for each device and then when switching, a different one is activated
+	//TODO: right now for shader asset (and scene asset) we avoid asset manager dependency by using static member function for setting asset hidden, which should not be allowed
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -146,11 +141,8 @@ namespace Core
 		EMPTY_CHAR_PLACEHOLDER, 'O','U', 'T', 'P', 'U', 'T', EMPTY_CHAR_PLACEHOLDER,
 		'F', 'O', 'U', 'N', 'D'} });*/
 
-	const KeyboardKey TOGGLE_PAUSE_UPDATE_KEY = KEY_F1;
-
 	void Engine::Destroy()
 	{
-		CloseWindow();
 		EngineLog("DESTROYED ENGINE");
 	}
 
@@ -161,7 +153,7 @@ namespace Core
 		m_globalInitializer(m_assetManager),
 		m_collisionRegistry(),
 		m_sceneManager(m_assetManager),
-		m_inputManager(m_assetManager),
+		m_inputManager(m_assetManager, m_windowManager),
 		m_cameraController(),
 		m_physicsManager(m_sceneManager, m_collisionRegistry),
 		m_UIInteractionManager(m_inputManager, m_uiHierarchy),
@@ -170,7 +162,7 @@ namespace Core
 		m_renderer(m_engineState),
 		m_graphicsManager(m_assetManager),
 		m_transformSystem(),
-		m_entityRendererSystem(),
+		m_entityRendererSystem(m_renderer),
 		m_lightSystem(m_entityRendererSystem),
 		//m_inputSystem(m_inputManager),
 		m_spriteAnimatorSystem(m_entityRendererSystem),
@@ -194,17 +186,11 @@ namespace Core
 		m_engineState.m_CameraController = &m_cameraController;
 		EngineLog("FINISHED SYSTEM CONSTRUCTORS");
 
-		BasicResult<bool> frameworkInitResult = FrameworkInit();
-		if (frameworkInitResult.HasError())
-		{
-			LogError(std::format("Attempted to init all frameworks but got error: {}", 
-				*frameworkInitResult.TryGetError()));
-			return;
-		}
-		EngineLog("INITIALIZED ALL FRAMEWORKS");
-
-		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void 
-			{m_engineState.m_GraphicsContext= Rendering::GraphicsContext{ window, &m_graphicsManager }; });
+		m_windowManager.m_OnWindowCreated.AddListener([this](Window* window)-> void 
+			{
+				if (!m_renderer.WasInit()) m_renderer.Init();
+				m_engineState.m_GraphicsContext= Rendering::GraphicsContext{ window, &m_graphicsManager }; 
+			});
 		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void {UpdateWindow(*window); });
 
 		Window* createdWindow = m_windowManager.CreateNewWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_ASPECT_RATIO, WINDOW_NAME, nullptr);
@@ -215,8 +201,6 @@ namespace Core
 			return;
 		}
 		EngineLog("CREATED WINDOW");
-
-		m_renderer.Init();
 
 		//Note: input relies on assets, and 
 		//asset manager needs to setup assets AFTER static global asset ref is set
@@ -305,7 +289,6 @@ namespace Core
 
 	Engine::~Engine()
 	{
-		FrameworkShutdown();
 		//m_commandConsole.DeletePrompts();
 	}
 
@@ -341,6 +324,7 @@ namespace Core
 		ProfilerTimer timer("Engine::Update");
 #endif 
 		//LogWarning(std::format("FPS:{}", GetFPS()));
+		LogWarning("UPDATE CALLED");
 
 		m_timeKeeper.UpdateTimeStart();
 		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
@@ -354,8 +338,6 @@ namespace Core
 		Scene* activeScene = nullptr;
 		if (m_editor.IsInGameView())
 		{
-			FrameworkUpdate();
-
 			activeScene = m_sceneManager.GetActiveSceneMutable();
 			if (!Assert(activeScene != nullptr, "Tried to update the active scene but there "
 				"are none set as active right now"))
@@ -440,12 +422,6 @@ namespace Core
 		bool allWindowsActive = true;
 		while (allWindowsActive)
 		{
-			if (IsKeyPressed(TOGGLE_PAUSE_UPDATE_KEY))
-			{
-				std::cin.get();
-				Utils::ClearSTDCIN();
-			}
-
 			m_windowManager.UpdateAllWindows(&allWindowsActive);
 
 			if (m_engineState.m_LastUpdateStatus == UpdateStatusCode::Error)

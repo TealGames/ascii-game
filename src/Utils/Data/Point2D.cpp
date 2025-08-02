@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include <cmath>
 #include "Utils/Data/Point2D.hpp"
-#include "Utils/HelperFunctions.hpp"
+#include "Utils/Math.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
 namespace Utils
@@ -79,8 +79,8 @@ namespace Utils
 
 	bool Point2D::operator==(const Point2D& otherPos) const
 	{
-		return Utils::ApproximateEquals(m_X, otherPos.m_X) &&
-			Utils::ApproximateEquals(m_Y, otherPos.m_Y);
+		return Utils::ApproximateEqualsF(m_X, otherPos.m_X) &&
+			Utils::ApproximateEqualsF(m_Y, otherPos.m_Y);
 	}
 
 	Point2D& Point2D::operator=(const Point2D& newPos)

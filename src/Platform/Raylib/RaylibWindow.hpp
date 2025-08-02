@@ -1,4 +1,6 @@
 #pragma once
+
+#ifdef RAYLIB
 #include "Core/Window/Window.hpp"
 
 namespace Core
@@ -7,3 +9,4 @@ namespace Core
 
 	Window CreateRaylibWindow(const int width, const int height, const Vec2Int constrainedAspectRatio, const char* windowName, const UpdateCallbackType& updateCallback);
 }
+#endif
