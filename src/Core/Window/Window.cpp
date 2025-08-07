@@ -19,37 +19,26 @@ namespace Core
 
 	const Vec2Int Window::NO_ASPECT_RATIO_CONSTRAINT = Vec2Int(-1, -1);
 
-	Window::Window(const int width, const int height, const Vec2Int aspectRatioConstraint, const char* windowName, const bool hasNativeState,
-		const WindowPlatformCallbacks& callbacks, const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback)
-		: m_platformCallbacks(callbacks), m_nativeState(nullptr), m_updateCallback(updateCallback), m_inputEventCallback(inputCallback),
-		m_size(width, height), m_windowName(windowName), m_aspectRatioConstraint(aspectRatioConstraint), m_vsyncEnabled(false)
+	Window::Window(const WindowId id, const int width, const int height, const Vec2Int aspectRatioConstraint, const char* windowName, 
+		const WindowPlatformCallbacks& callbacks, const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback,
+		const CloseCallback& closeCallback)
+		: m_id(id), m_platformCallbacks(callbacks), m_nativeState(nullptr), m_updateCallback(updateCallback), m_inputEventCallback(inputCallback),
+		m_size(width, height), m_windowName(windowName), m_aspectRatioConstraint(aspectRatioConstraint), m_vsyncEnabled(false), m_closeCallback(closeCallback)
 	{
-		bool success = Init(width, height, windowName);
-		if (!success)
-		{
-			LogError(std::format("Failed to init window named:{} after executing init callback", windowName));
-			return;
-		}
-		if (hasNativeState && m_nativeState == nullptr)
-		{
-			LogError("Attempted to initialize window, but native state is null when window constructor has native state TRUE"
-				"after invoking framework specific window init callback");
-			return;
-		}
-
-		SetVSync(DEFAULT_VSYNC_ENABLED);
+		
 	}
 	Window::Window(Window&& other) noexcept
 	{
+		m_id = std::exchange(other.m_id, -1);
 		m_platformCallbacks = std::exchange(other.m_platformCallbacks, {});
-		m_updateCallback = std::exchange(other.m_updateCallback, {});
-		m_inputEventCallback = std::exchange(other.m_inputEventCallback, {});
+		m_updateCallback = std::move(other.m_updateCallback);
+		m_inputEventCallback = std::move(other.m_inputEventCallback);
 
 		m_size = std::exchange(other.m_size, {});
 		m_aspectRatioConstraint = std::exchange(other.m_aspectRatioConstraint, {});
 		m_windowName= std::exchange(other.m_windowName, "");
 		m_vsyncEnabled = std::exchange(other.m_vsyncEnabled, false);
-		m_OnResize = std::exchange(m_OnResize, {});
+		m_OnResize = std::move(m_OnResize);
 		
 		m_nativeState = other.m_nativeState;
 		other.m_nativeState = nullptr;
@@ -62,6 +51,7 @@ namespace Core
 
 		delete m_nativeState;
 	}
+	WindowId Window::GetId() const { return m_id; }
 
 	void Window::RegisterInput(const WindowInputEventInfo& info)
 	{
@@ -92,9 +82,15 @@ namespace Core
 			m_updateCallback(*this);
 	}
 
-	bool Window::Init(const int width, const int height, const char* windowName)
+	void Window::Init()
 	{
-		return m_platformCallbacks.m_InitFunc(*this, width, height, windowName);
+		if (!m_platformCallbacks.m_InitFunc(*this, m_size.m_X, m_size.m_Y, m_windowName))
+		{
+			LogError(std::format("Failed to init window named:{} after executing init callback", m_windowName));
+			return;
+		}
+
+		SetVSync(DEFAULT_VSYNC_ENABLED);
 	}
 	bool Window::IsActive()
 	{
@@ -103,6 +99,15 @@ namespace Core
 	void Window::Shutdown(const bool isLastWindow)
 	{
 		m_platformCallbacks.m_ShutdownFunc(*this, isLastWindow);
+		if (m_closeCallback) m_closeCallback(*this);
+	}
+	void Window::SetNativeState(void* state)
+	{
+		m_nativeState = state;
+	}
+	void* Window::GetNativeStateMutable()
+	{
+		return m_nativeState;
 	}
 	void Window::SetSize(const int width, const int height)
 	{

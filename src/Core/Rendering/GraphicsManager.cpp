@@ -14,6 +14,11 @@ namespace Rendering
 	void GraphicsManager::LoadAllShaders()
 	{
 		m_defaultShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(DEFAULT_SHADER_NAME);
+		if (m_defaultShader == nullptr)
+		{
+			LogError(std::format("Failed to load default shader by name:{}", DEFAULT_SHADER_NAME));
+			return;
+		}
 		for (auto& shader : m_assetManager->GetAssetsOfTypeMutable<ShaderAsset>(SHADERS_FOLDER))
 		{
 			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShader());
@@ -22,6 +27,8 @@ namespace Rendering
 
 	const Shader* GraphicsManager::GetDefaultShader() const
 	{
+		/*LogError(std::format("Getting default shader:{} vsource:{} fragsource:{}", m_defaultShader->ToString(), 
+			m_defaultShader->GetShader().GetVertexSource(), m_defaultShader->GetShader().GetFragmnetSource()));*/
 		return &m_defaultShader->GetShader();
 	}
 	const Shader* GraphicsManager::TryGetShader(const std::string& name) const

@@ -55,8 +55,6 @@ namespace ECS
 					player.GetEntityMutable().GetTransformMutable().GetLocalPosMutable() = worldRay.m_Origin;
 				}*/
 #endif
-				Vec2Int shit = {};
-				LogError(shit.ToString());
 
 				const Input::InputProfile* inputProfile = m_inputManager.TryGetProfile(MAIN_INPUT_PROFILE_NAME);
 				if (inputProfile == nullptr)

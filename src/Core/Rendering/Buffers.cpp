@@ -46,6 +46,7 @@ namespace Rendering
 		m_dataUsed = std::exchange(other.m_dataUsed, 0);
 		m_elementSize = std::exchange(other.m_elementSize, 0);
 		m_maxVertexCount = std::exchange(other.m_maxVertexCount, 0);
+		m_AdvanceType = other.m_AdvanceType;
 		return *this;
 	}
 

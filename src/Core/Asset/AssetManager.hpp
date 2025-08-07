@@ -28,6 +28,7 @@ namespace AssetManagement
 		/// The asset parent folder relative to the location of the executable file
 		/// </summary>
 		static std::filesystem::path ASSET_PATH;
+		static constexpr bool PREVENT_HIDDEN_ASSET_LOOKUP = true;
 
 		//TODO: asset manager should probably get optimized to have faster lookups maybe with 
 		//SparseSet, esepcially when doing lookups of the same asset type
@@ -142,17 +143,15 @@ namespace AssetManagement
 			if (asset == nullptr) 
 				return nullptr;
 
-			try
+			if (Utils::ToStringTypeName<T>() != Utils::FormatTypeName(typeid(*(asset)).name()))
 			{
-				return dynamic_cast<T*>(asset);
+				LogError(std::format("Tried to get asset of type:'{}' name:'{}' Mutable "
+					"but an asset by that name could not be converted to that type. Real Type:'{}'",
+					Utils::ToStringTypeName<T>(), asset->GetName(), Utils::FormatTypeName(typeid(*(asset)).name())));
+				return nullptr;
 			}
-			catch (const std::exception& e)
-			{
-				LogError(std::format("Tried to get asset of type:{} name: {} Mutable "
-					"but an asset by that name could not be converted to that type. Real Type:{}. Error:{}",
-					Utils::ToStringTypeName<T>(), asset->GetName(), Utils::FormatTypeName(typeid(*(asset)).name()), e.what()));
-			}
-			return nullptr;
+
+			return dynamic_cast<T*>(asset);
 		}
 
 		template<typename T>
@@ -331,11 +330,21 @@ namespace AssetManagement
 		/// </summary>
 		/// <param name="name"></param>
 		/// <returns></returns>
-		Asset* TryGetAssetMutable(const std::string& name);
-		Asset* TryGetAssetFromLiteralMutable(const char* name);
+		//Asset* TryGetAssetMutable(const std::string& name);
+		//Asset* TryGetAssetFromLiteralMutable(const char* name);
 
 		Asset* TryGetAssetFromPathMutable(const std::filesystem::path& path);
-		Asset* TryGetRuntimeAssetMutable(const std::string& name);
+		//Asset* TryGetRuntimeAssetMutable(const std::string& name);
+
+		/*template<typename T>
+		requires IsAssetType<T>
+		T* TryGetTypeAssetMutable(const std::string& name)
+		{
+			Asset* maybeAsset = TryGetAssetMutable(name);
+			if (maybeAsset == nullptr) return nullptr;
+
+			return TryConvertAssetToTypeMutable<T>(maybeAsset);
+		}*/
 
 		/// <summary>
 		/// Note: this function is slow since it requires iteration through all assets to find one that matches name.
@@ -346,21 +355,36 @@ namespace AssetManagement
 		/// <returns></returns>
 		template<typename T>
 		requires IsAssetType<T>
-		T* TryGetTypeAssetMutable(const std::string& name)
-		{
-			Asset* maybeAsset = TryGetAssetMutable(name);
-			if (maybeAsset == nullptr) return nullptr;
-
-			return TryConvertAssetToTypeMutable<T>(maybeAsset);
-		}
-		template<typename T>
-		requires IsAssetType<T>
 		T* TryGetTypeAssetFromLiteralMutable(const char* name)
 		{
-			Asset* maybeAsset = TryGetAssetFromLiteralMutable(name);
+			/*Asset* maybeAsset = TryGetAssetFromLiteralMutable(name);
 			if (maybeAsset == nullptr) return nullptr;
 
-			return TryConvertAssetToTypeMutable<T>(maybeAsset);
+			return TryConvertAssetToTypeMutable<T>(maybeAsset);*/
+
+			for (const auto& asset : m_assets)
+			{
+				/*LogWarning(std::format("checking asset:'{}' for target:'{}' comp:{}", asset.second->GetName(), name,
+					strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size())));*/
+
+				if (strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size()) != 0 || 
+					Utils::ToStringTypeName<T>() != Utils::FormatTypeName(typeid(*asset.second).name()))
+					continue;
+
+				if (PREVENT_HIDDEN_ASSET_LOOKUP)
+				{
+					const std::filesystem::path relPath = GetRelativeAssetPath(asset.second->GetPath());
+					if (IsAssetHiddenFromPath(relPath, false))
+					{
+						LogWarning(std::format("Attempted to get asset by path:{} but this asset was marked as hidden", relPath.string()));
+						return nullptr;
+					}
+				}
+
+				//LogWarning(std::format("Returning shader:{}", asset.second->ToString()));
+				return TryConvertAssetToTypeMutable<T>(asset.second);
+			}
+			return nullptr;
 		}
 
 		template<typename T>
@@ -376,10 +400,19 @@ namespace AssetManagement
 		requires IsAssetType<T>
 		T* TryGetRuntimeTypeAssetMutable(const std::string& name)
 		{
-			Asset* maybeAsset = TryGetRuntimeAssetMutable(name);
-			if (maybeAsset == nullptr) return nullptr;
+			for (const auto& asset : m_runtimeAssets)
+			{
+				/*LogWarning(std::format("checking asset:'{}' for target:'{}' comp:{}", asset.second->GetName(), name,
+					strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size())));*/
 
-			return TryConvertAssetToTypeMutable<T>(maybeAsset);
+				if (asset.second->GetName()!= name || 
+					Utils::ToStringTypeName<T>() != Utils::FormatTypeName(typeid(*asset.second).name()))
+					continue;
+
+				//LogWarning(std::format("Returning shader:{}", asset.second->ToString()));
+				return TryConvertAssetToTypeMutable<T>(asset.second);
+			}
+			return nullptr;
 		}
 
 

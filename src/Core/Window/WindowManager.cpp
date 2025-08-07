@@ -19,6 +19,13 @@ namespace Core
 		m_windowLimit = RAYLIB_WINDOW_LIMIT;
 #endif
 	}
+	WindowId WindowManager::GetNextAvailableWindowId() const
+	{
+		//TODO: implement
+		if (m_windows.empty())
+			return 0;
+		return (m_windows.end()--)->first + 1;
+	}
 
 	Window* WindowManager::CreateNewWindow(const int width, const int height, 
 		const Vec2Int constrainedApsectRatio, const char* name, const UpdateCallbackType updateCallback)
@@ -29,9 +36,13 @@ namespace Core
 			return nullptr;
 		}
 
+		Window* windowCreated = nullptr;
+		const WindowId windowId = GetNextAvailableWindowId();
+
 #if defined(GLFW)
-		m_windows.emplace_back(std::move(Glfw::CreateWindow(width, height, constrainedApsectRatio, name, updateCallback, 
-			[this](Window& window, const WindowInputEventInfo info) -> void {return RegisterInput(window, info); })));
+		windowCreated = new Window(Glfw::CreateWindow(windowId, width, height, constrainedApsectRatio, name, updateCallback,
+			[this](Window& window, const WindowInputEventInfo info) -> void {return RegisterInput(window, info); },
+			[this](Window& window) -> void { CloseWindow(window.GetId()); }));
 #elif defined(RAYLIB)
 		m_windows.emplace_back(std::move(CreateRaylibWindow(width, height, constrainedApsectRatio, name, updateCallback)))
 #else
@@ -39,7 +50,11 @@ namespace Core
 			"is not supported or no active frameworks were selected", width, height, name));
 		return nullptr;
 #endif
-		Window* windowCreated = &(m_windows.back());;
+		m_windows.emplace(windowId, windowCreated);
+
+		//Note: init and constructor separated in case we need to pass on resources 
+		//from one obj to another before it is actually created (to prevent null references in native state callbacks)
+		windowCreated->Init();
 		m_OnWindowCreated.Invoke(windowCreated);
 		return windowCreated;
 	}
@@ -60,35 +75,43 @@ namespace Core
 		m_OnInput.Invoke(&window, info);
 	}
 
-	void WindowManager::UpdateAllWindows(bool* allWindowsInactiveFlag)
+	void WindowManager::UpdateAllWindows()
 	{
 		if (m_windows.empty()) return;
 
 		int inactiveCount = 0;
-		for (auto& window : m_windows)
+		for (auto it = m_windows.rbegin(); it != m_windows.rend(); ++it)
 		{
-			if (!window.IsActive())
+			if (!it->second->IsActive())
 			{
-				inactiveCount++;
+				it->second->Shutdown(m_windows.size() == 1);
 				continue;
 			}
 
-			SetCurrentContextWindow(window);
-			m_OnWindowUpdated.Invoke(&window);
-			window.Update();
+			SetCurrentContextWindow(*it->second);
+			m_OnWindowUpdated.Invoke(it->second);
+
+			//LogWarning("Updating window");
+			it->second->Update();
 		}
-		if (allWindowsInactiveFlag != nullptr)
-			*allWindowsInactiveFlag = inactiveCount == m_windows.size();
-
 	}
-
+	size_t WindowManager::GetActiveWindowCount() const
+	{
+		return m_windows.size();
+	}
+	void WindowManager::CloseWindow(const WindowId id)
+	{
+		delete m_windows[id];
+		m_windows.erase(id);
+	}
 	void WindowManager::CloseAllWindows()
 	{
 		if (m_windows.empty()) return;
 
 		for (auto& window : m_windows)
 		{
-			window.Shutdown(m_windows.size()==1);
+			window.second->Shutdown(m_windows.size()==1);
 		}
+		m_windows.clear();
 	}
 }

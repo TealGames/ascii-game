@@ -13,6 +13,8 @@
 #include "Core/Camera/CameraController.hpp"
 #include "Core/Rendering/GraphicsManager.hpp"
 
+#include "Utils/Data/ColorConstants.hpp"
+
 namespace Rendering
 {
     constexpr bool DONT_RENDER_NON_UTILS = false;
@@ -23,10 +25,27 @@ namespace Rendering
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
 
+    std::string Vertex::ToString() const
+    {
+        return std::format("[{}]", m_Pos.ToString());
+    }
+    std::string InstanceData::ToString() const
+    {
+        return std::format("[Color:{} ModelMatrix:{}]", m_Color.ToString(), m_ModelMatrix.ToString());
+    }
+
+    std::string RenderBatch::ToString() const
+    {
+        return std::format("[Batch Vertices:{} Indices:{} Instances:{}]", 
+            Utils::ToStringIterable<std::vector<VertexType>, VertexType>(m_Vertices),
+            Utils::ToStringIterable<std::vector<IndexType>, IndexType>(m_VertexIndices),
+            Utils::ToStringIterable<std::vector<InstanceType>, InstanceType>(m_InstanceData));
+    }
+
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
 
     Renderer::Renderer(const EngineState& engineState)
-        : m_isInit(false), m_engineState(&engineState), m_staticRenderData(), m_defaultShader(nullptr),
+        : m_isInit(false), m_engineState(&engineState), m_staticRenderData(),
         m_renderCalls(), m_textData(), m_textureData(), m_batches(), m_flushType(BatchFlushType::StateChange), 
         m_layout(), m_bufferController(&m_layout),
         m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer()
@@ -131,15 +150,39 @@ namespace Rendering
         EndDrawing();
     }
     */
-
-    void Renderer::AddVerticesToBatch(const Shader* shader, const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize)
+    const Shader* Renderer::GetDefaultShader() const
     {
-        //TODO: add a check if the currrent call has a shader that does not match the current batch
-        if (m_batches.empty())
+        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultShader();
+    }
+    void Renderer::FrameRenderDataUpdateCheck()
+    {
+        if (!m_staticRenderData.m_UpdatedDataThisFrame)
         {
-            m_batches.push_back(RenderBatch{ shader, {}, {} });
+            m_staticRenderData.m_CameraData = &m_engineState->m_CameraController->GetActiveCamera().GetLastUpdateData();
+            m_staticRenderData.m_UpdatedDataThisFrame = true;
+        }
+    }
+    StaticFrameRenderData& Renderer::GetThisFrameRenderData()
+    {
+        FrameRenderDataUpdateCheck();
+        return m_staticRenderData;
+    }
+
+    void Renderer::AddVerticesToBatch(const Shader* shader,
+        const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize)
+    {
+        bool hasStateChange = !m_batches.empty() && m_batches.back().m_Shader != shader;
+        if (m_flushType==BatchFlushType::StateChange && hasStateChange)
+        {
+            FlushBatches();
         }
 
+        if (m_batches.empty() || hasStateChange)
+        {
+            //LogError(std::format("Adding new batch"));
+            m_batches.push_back(RenderBatch{ shader, {}, {} });
+        }
+       
         const size_t firstVertexIndex = m_batches.back().m_Vertices.size();
         m_batches.back().m_Vertices.insert(m_batches.back().m_Vertices.begin(),
             vertexArray, vertexArray + vertexSize);
@@ -151,24 +194,27 @@ namespace Rendering
         m_batches.back().m_VertexIndices.insert(m_batches.back().m_VertexIndices.end(),
             indexArray, indexArray + indicesSize);
     }
+    void Renderer::AddInstanceDataToBatch(const Mat4& modelMatrix, const Utils::Color& color)
+    {
+        m_batches.back().m_InstanceData.emplace_back(color.GetNormalized(), modelMatrix);
+        //m_batches.back().m_InstanceData.emplace_back(color.GetNormalized(), Mat4::GetIdentity());
+    }
 
     void Renderer::FlushBatches()
     {
         //We only do this the first time we flush a batch during this frame
-        if (!m_staticRenderData.m_UpdatedDataThisFrame)
-        {
-            m_staticRenderData.m_CameraData = &m_engineState->m_CameraController->GetActiveCamera().GetLastUpdateData();
-            m_staticRenderData.m_UpdatedDataThisFrame = true;
-        }
-
-        if (m_defaultShader == nullptr)
-        {
-            m_defaultShader = m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultShader();
-        }
+        FrameRenderDataUpdateCheck();
 
         for (auto& batch : m_batches)
         {
+            if (batch.m_Shader == nullptr)
+            {
+                LogError(std::format("Tried to flush current batch in renderer, but batch shader was null"));
+                return;
+            }
             batch.m_Shader->BindActive();
+
+            //const Mat4 identity = Mat4::GetIdentity();
 
             if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, VIEW_MATRIX_UNIFORM_NAME, 
                 m_staticRenderData.m_CameraData->m_ViewMatrix.GetMemPointer()))
@@ -176,6 +222,15 @@ namespace Rendering
             if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, PROJ_MATRIX_UNIFORM_NAME, 
                 m_staticRenderData.m_CameraData->m_PlatformProjectionMatrix.GetMemPointer()))
                 return;
+
+            /*
+            if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, VIEW_MATRIX_UNIFORM_NAME,
+                identity.GetMemPointer()))
+                return;
+            if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, PROJ_MATRIX_UNIFORM_NAME,
+                identity.GetMemPointer()))
+                return;
+            */
 
             const size_t drawVertexCount = batch.m_Vertices.size();
             const size_t drawIndexCount = batch.m_VertexIndices.size();
@@ -189,7 +244,9 @@ namespace Rendering
             batch.m_Vertices.clear();
             batch.m_InstanceData.clear();
 
+           // LogError(std::format("Drawing vertices:{} indices:{} isntances:{}", drawVertexCount, drawInstanceCount, drawInstanceCount));
             Backend::DrawUploadedIndexBufferInstanced(0, drawIndexCount, drawInstanceCount);
+            //Backend::DrawUploadedIndexBuffer(0, drawIndexCount);
 
             batch.m_Shader->UnbindActive();
         }
@@ -201,17 +258,51 @@ namespace Rendering
     {
         m_renderCalls.emplace_back(CircleCall{ centerPos, radius, color });
     }
-    void Renderer::AddRectangleCall(const WorldPosition3D& worldPos, const Vec2& size, const Utils::Color color)
+    void Renderer::AddRectangleCall2D(const WorldPosition3D& centerLocalPos, const Vec2& size, const Mat4& modelMatrix, const Utils::Color& color)
     {
-        m_renderCalls.emplace_back(RectCall{ worldPos, size, color });
-       
         constexpr size_t VERTEX_COUNT = 4;
-        const Vertex vertices[VERTEX_COUNT] = { {worldPos}, {worldPos + WorldPosition3D(0, -size.m_Y, 0)},
-                                     {worldPos + WorldPosition3D(size.m_X, -size.m_Y, 0)}, {worldPos + WorldPosition3D(size.m_X, 0, 0)} };
+        const WorldPosition3D halfSize = Vec3(size / 2, 0);
+        //const WorldPosition3D centerPos = {0, 0, 0};
+        //Start with top right vertex, then bottom right, then bottom left, top left
+        const Vertex vertices[VERTEX_COUNT] = { {centerLocalPos + halfSize}, {centerLocalPos + halfSize * Vec3(1, -1, 0)},
+                                     {centerLocalPos + halfSize * Vec3(-1, -1, 0)}, {centerLocalPos + halfSize * Vec3(-1, 1, 0)} };
+        /*
+        const Vertex vertices[VERTEX_COUNT] = { {centerPos + halfSize}, {centerPos + halfSize * Vec3(1, -1, 0)},
+                                    {centerPos + halfSize * Vec3(-1, -1, 0)}, {centerPos + halfSize * Vec3(-1, 1, 0)} };
+        */
+
+        /* for (const auto& vertex : vertices)
+         {
+             LogWarning(std::format("Vertex:{} screen:{}", vertex.ToString(),
+                 m_engineState->m_CameraController->GetActiveCamera().WorldToNdcPosition(vertex.m_Pos, ProjectionMatrixType::Platform).ToString()));
+         }
+         LogError("ASS");*/
 
         constexpr size_t INDEX_COUNT = 6;
         IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2 };
-        AddVerticesToBatch(m_defaultShader, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
+        AddVerticesToBatch(GetDefaultShader(), vertices, VERTEX_COUNT, indices, INDEX_COUNT);
+        AddInstanceDataToBatch(modelMatrix, color);
+    }
+    void Renderer::AddRectangleCall3D(const WorldPosition3D& centerLocalPos, const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color)
+    {
+        constexpr size_t VERTEX_COUNT = 8;
+        const WorldPosition3D halfSize = size / 2;
+        Vertex vertices[VERTEX_COUNT] = { {centerLocalPos + halfSize}, {centerLocalPos + halfSize * Vec3(1, -1, 1)},
+                                          {centerLocalPos + halfSize * Vec3(-1, -1, 1)}, {centerLocalPos + halfSize * Vec3(-1, 1, 1)},
+                                          {centerLocalPos + halfSize * Vec3(1, 1, -1)},  {centerLocalPos + halfSize * Vec3(1, -1, -1)},
+                                          {centerLocalPos + halfSize * Vec3(-1, -1, -1)}, {centerLocalPos + halfSize * Vec3(-1, 1, -1)}};
+
+        constexpr size_t INDEX_COUNT = 36;
+        //Front face, back face, right, left, top, bottom
+        IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2,
+                                           4, 5, 6, 4, 7, 6,
+                                           4, 5, 1, 4, 0, 1,
+                                           7, 6, 2, 7, 3, 2,
+                                           4, 0, 3, 4, 7, 3,
+                                           5, 1, 2, 5, 6, 2};
+
+        AddVerticesToBatch(GetDefaultShader(), vertices, VERTEX_COUNT, indices, INDEX_COUNT);
+        AddInstanceDataToBatch(modelMatrix, color);
     }
     void Renderer::AddTextureCall(const WorldPosition3D& worldPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color)
     {
@@ -252,6 +343,7 @@ namespace Rendering
         Backend::ClearBackground();
         //ClearBackground(BLACK);
         
+        //LogWarning(std::format("batch coumt:{}", m_batches.size()));
         /*
         for (const auto& call : m_renderCalls)
         {
@@ -292,7 +384,11 @@ namespace Rendering
             }
         }
         */
-        if (!m_batches.empty()) FlushBatches();
+        if (!m_batches.empty())
+        {
+            //LogError(std::format("Flushing batches at render end: {}", ToStringAll()));
+            FlushBatches();
+        }
         Backend::EndRenderingMarker();
 
         ClearCommandBuffers();
@@ -304,5 +400,20 @@ namespace Rendering
         m_textData.clear();
         m_textureData.clear();
         m_renderCalls.clear();
+    }
+
+    std::string Renderer::ToStringBatches() const
+    {
+        std::string result = "";
+        for (const auto& batch : m_batches)
+        {
+            result += "\nBatch:" + batch.ToString() + "\n";
+        }
+        return result;
+    }
+    std::string Renderer::ToStringAll()
+    {
+        return std::format("DUMPING RENDERER DATA:\nCameraState:{}\nBatches:{}", 
+            GetThisFrameRenderData().m_CameraData->ToString(), ToStringBatches());
     }
 }

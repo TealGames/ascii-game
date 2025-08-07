@@ -1,6 +1,5 @@
 #pragma once
-#include <cstdint>
-#include <string>
+#include "Utils/Data/Vec4Type.hpp"
 
 namespace Utils
 {
@@ -23,6 +22,12 @@ namespace Utils
 			Color(rgColor.m_R, rgColor.m_G, b, a) {}
 		constexpr Color(const Color rgbColor, const std::uint8_t a) :
 			Color(rgbColor.m_R, rgbColor.m_G, rgbColor.m_B, a) {}
+
+		/// <summary>
+		/// Will get the color for each rgba value between 0 and 1
+		/// </summary>
+		/// <returns></returns>
+		Vec4 GetNormalized() const;
 
 		auto operator<=>(const Color&) const = default;
 

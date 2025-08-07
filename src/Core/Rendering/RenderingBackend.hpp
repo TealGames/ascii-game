@@ -12,6 +12,7 @@ namespace Rendering
 	{
 		void LoadBackend();
 		bool IsBackendLoaded();
+		const std::string GetBackendVersion();
 
 		void SetViewport(const int x, const int y, const int width, const int height);
 		

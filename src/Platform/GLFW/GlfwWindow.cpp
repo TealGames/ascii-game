@@ -9,16 +9,12 @@ namespace Core
 {
 	namespace Glfw
 	{
-		struct GlfwWindowState
-		{
-			GLFWwindow* m_Window;
-			inline static bool m_GlfwInit = false;
-		};
+		inline static bool m_GlfwInit = false;
 
-		Window CreateWindow(const int width, const int height, const Vec2Int aspectRatioCosntraint, const char* windowName,
-			const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback)
+		Window CreateWindow (const WindowId id, const int width, const int height, const Vec2Int aspectRatioCosntraint, const char* windowName,
+			const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback, const CloseCallback& closeCallback)
 		{
-			return Window(width, height, aspectRatioCosntraint, windowName, true, WindowPlatformCallbacks
+			return Window(id, width, height, aspectRatioCosntraint, windowName, WindowPlatformCallbacks
 				{
 					//Init
 					[](Window& window, const int width, const int height, const char* windowName) -> bool
@@ -26,8 +22,16 @@ namespace Core
 						glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 						glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 						glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#ifdef _DEBUG
+						glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
+#endif
+						//Enables depth in framebuffer for opengl ->
+						//this allows opengl to not render pixels that are behind other pixels
+						//in z space (note vertex shader still runs same amount -> fragment shader skips hidden pixels)
+						//Note: 24 is a common option since most gpu have support + >16 <32 and is nice middleground
+						glfwWindowHint(GLFW_DEPTH_BITS, 24);
 
-						if (!GlfwWindowState::m_GlfwInit)
+						if (!m_GlfwInit)
 						{
 							if (!glfwInit())
 							{
@@ -39,7 +43,7 @@ namespace Core
 								{
 									LogError(std::format("Encountered glfw error({}):{}", errorCode, description));
 								});
-							GlfwWindowState::m_GlfwInit = true;
+							m_GlfwInit = true;
 						}
 
 						GLFWwindow* glfwWindow = glfwCreateWindow(width, height, windowName, nullptr, nullptr);
@@ -48,7 +52,8 @@ namespace Core
 							LogError("Failed to create GLFW window");
 							return false;
 						}
-						GlfwWindowState& state = window.CreateNativeWindowState<GlfwWindowState>(glfwWindow);
+						//GlfwWindowState& state = window.CreateNativeWindowState<GlfwWindowState>(glfwWindow);
+						window.SetNativeState(glfwWindow);
 
 						SetCurrentContextWindow(window);
 						glfwSetWindowUserPointer(glfwWindow, &window);
@@ -58,7 +63,7 @@ namespace Core
 						Rendering::Backend::SetViewport(0, 0, width, height);
 
 						//Note: WE CANNOT USE CAPTURE GROUPS BECAUSE OF C-STyLE FUNC POINTERS IN GLFW
-						glfwSetWindowSizeCallback(state.m_Window, [](GLFWwindow* glfwWindow , int w, int h) -> void
+						glfwSetWindowSizeCallback(glfwWindow, [](GLFWwindow* glfwWindow , int w, int h) -> void
 							{
 								//glViewport(0, 0, w, h);
 								Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
@@ -66,18 +71,18 @@ namespace Core
 								Rendering::Backend::SetViewport(viewportRect.m_StartPos.m_X, viewportRect.m_StartPos.m_Y, viewportRect.m_Size.m_X, viewportRect.m_Size.m_Y);
 							});
 
-						glfwSetScrollCallback(state.m_Window, [](GLFWwindow*, double xOffset, double yOffset) -> void
+						glfwSetScrollCallback(glfwWindow, [](GLFWwindow*, double xOffset, double yOffset) -> void
 							{
 								//TODO: implement
 							});
-						glfwSetCursorPosCallback(state.m_Window, [](GLFWwindow* glfwWindow, double xPos, double yPos) -> void
+						glfwSetCursorPosCallback(glfwWindow, [](GLFWwindow* glfwWindow, double xPos, double yPos) -> void
 							{
 								Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
 								window->RegisterInput(WindowInputEventInfo(ScreenPosition(xPos, yPos)));
 							});
 						//NoteL modifier keys are keys like nums lock, caps lock, shift that can be pressed with another key ->
 						//they recevie their own event, but when antoehr key (if any) has event, it sets modiferKeys args (so easier to parse multi-key presses)
-						glfwSetKeyCallback(state.m_Window, [](GLFWwindow* glfwWindow, int key, int scanCode, int action, int modifierKeys) -> void
+						glfwSetKeyCallback(glfwWindow, [](GLFWwindow* glfwWindow, int key, int scanCode, int action, int modifierKeys) -> void
 							{
 								Input::KeyState keyState = Input::KeyState::Neutral;
 								if (action == GLFW_PRESS) keyState = Input::KeyState::Pressed;
@@ -103,51 +108,49 @@ namespace Core
 				//Update func
 				[](Window& window) -> void
 				{
-					GlfwWindowState* state = window.GetNativeStateMutable<GlfwWindowState>();
-					glfwSwapBuffers(state->m_Window);
+					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+					glfwSwapBuffers(glfwWindow);
 					glfwPollEvents();
 				},
 				//Resize func
 				[](Window& window, const int width, const int height) -> void
 				{
-					GlfwWindowState* state = window.GetNativeStateMutable<GlfwWindowState>();
-					glfwSetWindowSize(state->m_Window, width, height);
+					GLFWwindow* glfwWIndow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+					glfwSetWindowSize(glfwWIndow, width, height);
 				},
 				//Set vsync func
 				[](Window& window, const bool vsyncEnabled) -> void
 				{
-					GlfwWindowState* state = window.GetNativeStateMutable<GlfwWindowState>();
 					if (vsyncEnabled) glfwSwapInterval(1);
 					else glfwSwapInterval(0);
 				},
 				//IsActive
 				[](Window& window)-> bool
 				{
-					GlfwWindowState* state = window.GetNativeStateMutable<GlfwWindowState>();
-					return glfwWindowShouldClose(state->m_Window);
+					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+					return !glfwWindowShouldClose(glfwWindow);
 				},
 				//Shutdown
 				[](Window& window, const bool isLastWindow)-> void
 				{
-					GlfwWindowState* state = window.GetNativeStateMutable<GlfwWindowState>();
-					if (state->m_Window != nullptr)
+					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+					if (glfwWindow != nullptr)
 					{
-						glfwDestroyWindow(state->m_Window);
-						state->m_Window = nullptr;
+						glfwDestroyWindow(glfwWindow);
+						window.SetNativeState(nullptr);
 					}
 					if (isLastWindow) glfwTerminate();
 				}
-				}, updateCallback, inputCallback);
+				}, updateCallback, inputCallback, closeCallback);
 		}
 
 		void SetCurrentContextWindow(Window& window)
 		{
-			GlfwWindowState* state = window.GetNativeStateMutable<GlfwWindowState>();
-			const GLFWwindow* currentContextWindow = glfwGetCurrentContext();
-			if (currentContextWindow == state->m_Window)
+			GLFWwindow* targetGlfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+			if (glfwGetCurrentContext() == targetGlfwWindow)
 				return;
 
-			glfwMakeContextCurrent(state->m_Window);
+			glfwMakeContextCurrent(targetGlfwWindow);
 		}
 	}
 }

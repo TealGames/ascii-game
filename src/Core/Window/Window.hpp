@@ -61,13 +61,18 @@ namespace Core
 
 	using UpdateCallbackType = void(*)(Window&);
 	using InputEventCallbackType = std::function<void(Window&, const WindowInputEventInfo& inputEventInfo)>;
+	using CloseCallback = std::function<void(Window&)>;
+
+	using WindowId = std::uint8_t;
 
 	class Window
 	{
 	private:
+		WindowId m_id;
 		WindowPlatformCallbacks m_platformCallbacks;
 		UpdateCallbackType m_updateCallback;
 		InputEventCallbackType m_inputEventCallback;
+		CloseCallback m_closeCallback;
 		void* m_nativeState;
 
 		Vec2Int m_size;
@@ -80,13 +85,17 @@ namespace Core
 		Event<void, Vec2Int> m_OnResize;
 
 	private:
-		bool Init(const int width, const int height, const char* windowName);
 	public:
-		Window(const int width, const int height, const Vec2Int aspectRatioConstraint, const char* windowName, const bool hasNativeState,
-			const WindowPlatformCallbacks& callbacks, const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback);
+		Window(const WindowId id, const int width, const int height, const Vec2Int aspectRatioConstraint, const char* windowName, 
+			const WindowPlatformCallbacks& callbacks, const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback, 
+			const CloseCallback& m_closeCallback);
 		Window(const Window&) = delete;
 		Window(Window&&) noexcept;
 		~Window();
+
+		void Init();
+
+		WindowId GetId() const;
 
 		void RegisterInput(const WindowInputEventInfo& info);
 
@@ -99,7 +108,9 @@ namespace Core
 		bool IsActive();
 		void Shutdown(const bool isLastWindow);
 
-		template<typename T, typename...Args>
+		void SetNativeState(void* state);
+		void* GetNativeStateMutable();
+		/*template<typename T, typename...Args>
 		T& CreateNativeWindowState(Args&& ...args)
 		{
 			m_nativeState = static_cast<void*>(new T(std::forward<Args>(args)...));
@@ -117,7 +128,7 @@ namespace Core
 		{
 			if (m_nativeState == nullptr) return nullptr;
 			return static_cast<const T*>(m_nativeState);
-		}
+		}*/
 
 		void SetSize(const int width, const int height);
 

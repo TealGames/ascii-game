@@ -2,7 +2,7 @@
 #include "Core/Engine.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "StaticGlobals.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "EngineLog.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
 #include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
@@ -19,6 +19,7 @@
 #include "Core/Asset/GlobalColorCodes.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "AnsiCodes.hpp"
+#include "Utils/Data/ColorConstants.hpp"
 
 
 namespace Core
@@ -125,7 +126,6 @@ namespace Core
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
 	constexpr bool SHOW_FPS = true;
-	constexpr bool DO_ENGINE_LOGS = true;
 
 	constexpr std::streamsize DOUBLE_LOG_PRECISION = 8;
 
@@ -191,7 +191,10 @@ namespace Core
 				if (!m_renderer.WasInit()) m_renderer.Init();
 				m_engineState.m_GraphicsContext= Rendering::GraphicsContext{ window, &m_graphicsManager }; 
 			});
-		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void {UpdateWindow(*window); });
+		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void 
+			{
+				UpdateWindow(*window); 
+			});
 
 		Window* createdWindow = m_windowManager.CreateNewWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_ASPECT_RATIO, WINDOW_NAME, nullptr);
 
@@ -308,11 +311,6 @@ namespace Core
 			return;
 	}
 
-	void Engine::EngineLog(const std::string& log) const
-	{
-		if (!DO_ENGINE_LOGS) return;
-		LogMessage(LogType::Log, CallerLogDetails::None, log, false, true, ANSI_COLOR_BLUE, false);
-	}
 	void Engine::SetUpdateStatusCode(const UpdateStatusCode& code)
 	{
 		m_engineState.m_LastUpdateStatus = code;
@@ -324,7 +322,7 @@ namespace Core
 		ProfilerTimer timer("Engine::Update");
 #endif 
 		//LogWarning(std::format("FPS:{}", GetFPS()));
-		LogWarning("UPDATE CALLED");
+		//LogWarning("UPDATE CALLED");
 
 		m_timeKeeper.UpdateTimeStart();
 		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
@@ -397,6 +395,21 @@ namespace Core
 		m_uiSystemExecutor.SystemsUpdate(m_sceneManager.m_GlobalEntityManager, unscaledDeltaTime);
 
 		m_gizmosOverlay.MoveCallsToRenderBuffer(m_renderer);
+
+		const Vec3 objectCenter = Vec3(0, 0, 4.8);
+		static Quat rot = Quat::Identity();
+		rot *= Vec3{ 0, 0.3f * unscaledDeltaTime, 0};
+		const Mat4 modelMatrix = CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
+		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 
+			CalculateRotationMatrix(rot) * CalculateTranslationMatrix(-Vec3::Zero())  * CalculateScaleMatrix(Vec3::One());*/
+
+		LogWarning(std::format("Object rot is:{}", rot.ToDegrees().ToString()));
+		//LogError(std::format("Model matrix:{}", modelMatrix.ToString()));
+		//m_renderer.AddRectangleCall2D(Vec3(0, 0, 4.8), Vec2(0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
+		
+		m_renderer.AddRectangleCall3D(Vec3::Zero(), Vec3(0.13, 0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
+		//bool inView = m_cameraController.GetActiveCamera().DoesViewVolumeContainPos(Vec3(-10, 0, 0));
+		//LogError(std::format("rectange oirign screen pos:{}", m_cameraController.GetActiveCamera().WorldToScreenPosition(Vec3(0, 0, 4.9)).ToString()));
 		m_renderer.RenderBuffer();
 
 		//if (m_editor.IsInGameView())
@@ -419,10 +432,18 @@ namespace Core
 	{
 		m_engineState.SetExecutionState(ExecutionState::Update);
 
-		bool allWindowsActive = true;
-		while (allWindowsActive)
+		bool anyWindowActive = m_windowManager.GetActiveWindowCount()>0;
+		while (anyWindowActive)
 		{
-			m_windowManager.UpdateAllWindows(&allWindowsActive);
+			try
+			{
+				m_windowManager.UpdateAllWindows();
+				anyWindowActive = m_windowManager.GetActiveWindowCount() > 0;
+			}
+			catch (const std::exception& e)
+			{
+				LogError(std::format("Encountered window update error:{}", e.what()));
+			}
 
 			if (m_engineState.m_LastUpdateStatus == UpdateStatusCode::Error)
 			{

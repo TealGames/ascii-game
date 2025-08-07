@@ -214,13 +214,13 @@ UIRect UITextComponent::Render(const UIRect& rect)
 	if (m_text.empty()) 
 		return {};
 
-	if (!Assert(m_fontData.HasValidFont(), std::format("Tried to render text GUI:{} of entity:{} "
-		"but font is invalid", ToString(), GetEntity().ToString())))
+	if (!m_fontData.HasValidFont())
+	{
+		//TODO: unccomment
+		/*LogError(std::format("Tried to render text GUI:{} of entity:{} "
+			"but font is invalid", ToString(), GetEntity().ToString()));*/
 		return {};
-
-	/*if (m_text == "Background")
-		throw std::invalid_argument("Invalid state when redenring background");*/
-		//LogError(std::format("Rendering entity:{} text:{}", GetEntity().m_Name, m_text));
+	}
 
 	const Vec2 usableSize = CalculateUsableSpace(rect);
 	if (HasFontSizeFactor())

@@ -44,7 +44,9 @@ namespace ECS
     //TODO: this should be modified to have a follow delay, lookeahead blocks, etc to be more dynamic
     void CameraSystem::UpdateCameraPosition(CameraComponent& cameraData)
     {
-        cameraData.GetEntityMutable().GetTransformMutable().GetLocalPosMutable() = cameraData.GetFollowTarget()->GetTransform().GetGlobalPos();
+        //Note: we only set x y so that the depth is not messed up with objects moving farther or towards
+        cameraData.GetEntityMutable().GetTransformMutable().GetLocalPosMutable().
+            SetXY(cameraData.GetFollowTarget()->GetTransform().GetGlobalPos().GetXY());
     }
     
     /*

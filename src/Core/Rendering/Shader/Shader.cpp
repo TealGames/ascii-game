@@ -92,6 +92,10 @@ namespace Rendering
 		}
 		return true;
 	}
+	std::string Shader::ToString() const
+	{
+		return std::format("[Shader Id:{} Vertex:\n{}\nFragment:{}]", m_id, m_vertexSourceCode, m_fragmentSourceCode);
+	}
 
 	Shader CreateShader(const std::string& vertexSource, const std::string& fragmentSource)
 	{

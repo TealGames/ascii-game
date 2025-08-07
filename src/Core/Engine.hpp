@@ -98,7 +98,6 @@ namespace Core
 		/// <returns></returns>
 		void UpdateWindow(Window& window);
 
-		void EngineLog(const std::string& log) const;
 		void SetUpdateStatusCode(const UpdateStatusCode& code);
 
 	public:

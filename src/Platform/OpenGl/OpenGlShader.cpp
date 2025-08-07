@@ -2,6 +2,7 @@
 
 #ifdef OPENGL
 #include "Core/Analyzation/Debug.hpp"
+#include <format>
 #include "Utils/OpenGlUtils.hpp"
 
 namespace Rendering
@@ -74,10 +75,18 @@ namespace Rendering
 		static bool TrySetShaderUniform(const Shader& shader, const UniformType uniform, const char* uniformName, const void* valuePtr)
 		{
 			const RenderObjectId programId = shader.GetId();
-			const int location = glGetUniformLocation(programId, uniformName);
-			if (location != -1)
+			if (glIsProgram(programId) == GL_FALSE)
 			{
-				LogError("OpenGL: Invalid uniform location. Possibly undefined uniform name or wrong spelling");
+				LogError(std::format("OpenGL: Attempted to set shader:{} uniform:{} but shader program with that id does not exist", 
+					shader.ToString(), uniformName));
+				return false;
+			}
+
+			const int location = glGetUniformLocation(programId, uniformName);
+			if (location == -1)
+			{
+				LogError(std::format("OpenGL: Invalid uniform location when setting shader:{} uniform:{}. "
+					"Possibly undefined uniform name or wrong spelling", shader.ToString(), uniformName));
 				return false;
 			}
 			

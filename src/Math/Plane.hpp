@@ -79,6 +79,8 @@ struct InfinitePlane3D
 	bool IsPointBackOfPlane(const Vec3& pos) const;
 
 	void NormalizeNormal();
+
+	std::string ToString() const;
 };
 
 /// <summary>

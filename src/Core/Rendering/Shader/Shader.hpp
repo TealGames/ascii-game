@@ -65,6 +65,7 @@ namespace Rendering
 
 		bool TrySetUniform(const UniformType type, const char* uniformName, const void* valuePtr) const;
 
+		std::string ToString() const;
 		//ShaderType GetType() const;
 	};
 

@@ -78,12 +78,12 @@ namespace ECS
 			if (!mainCamera.DoesViewVolumeContainPos(Vec3(charPos.m_Pos, zPos)))
 				continue;
 
-			if (!charPos.m_FontData.HasValidFont())
+			/*if (!charPos.m_FontData.HasValidFont())
 			{
 				LogError(std::format("Attempted to add text positions to buffer "
 					"but found invalid font on char pos:{}", charPos.ToString()));
 				return;
-			}
+			}*/
 
 			//TODO: add each char as a renderer text call
 			//m_renderer->AddTextCall(data.GetTransform().GetLocalPos(), charPos.m_FontData.m_FontAsset->GetFont(), charPos.m_Text.m_Char, charPos.m_FontData.m_)

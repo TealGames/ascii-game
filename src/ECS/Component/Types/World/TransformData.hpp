@@ -6,11 +6,16 @@
 #include "Utils/Data/Vec3Type.hpp"
 #include "Utils/Data/Quaternion.hpp"
 
+inline constexpr Vec3 DEFAULT_POS = Vec3::Zero();
+inline constexpr Vec3 DEFAULT_SCALE = Vec3::One();
+inline constexpr Quat DEFAULT_ROTATION = Quat::Identity();
+
 struct TransformPrecalculatedData
 {
-	Vec3 m_GlobalPos;
-	Vec3 m_GlobalScale;
-	Quat m_GlobalRotation;
+	Vec3 m_GlobalPos = DEFAULT_POS;
+	Vec3 m_GlobalScale = DEFAULT_SCALE;
+	Quat m_GlobalRotation = DEFAULT_ROTATION;
+	Mat4 m_GlobalModelMatrix = Mat4::GetIdentity();
 };
 
 class TransformComponent : public Component
@@ -23,12 +28,11 @@ private:
 
 	mutable TransformPrecalculatedData m_lastUpdateData;
 public:
-	static inline constexpr Vec3 DEFAULT_POS = Vec3::Zero();
-	static inline constexpr Vec3 DEFAULT_SCALE = Vec3::One();
-	static inline constexpr Quat DEFAULT_ROTATION = Quat::Identity();
-
 private:
 	void SetChildrenDirty();
+	//Mat4 CalculateLocalModelMatrix() const;
+
+	void UpdatePrecalculatedData() const;
 
 public:
 	TransformComponent(const Json& json);
@@ -44,17 +48,10 @@ public:
 	void SetLocalPosDeltaY(const float& yDelta);
 	void SetLocalPosDelta(const Vec2& moveDelta);*/
 
-	static Mat4 CalculateTranslationMatrix(const Vec3& pos);
-	static Mat4 CalculateScaleMatrix(const Vec3& scale);
-	static Mat4 CalculateRotationMatrix(const Quat& rotation);
-
-	Mat4 CalculateLocalScaleMatrix() const;
-	Mat4 CalculateLocalTranslationMatrix() const;
-	Mat4 CalculateLocalRotationMatrix() const;
-
 	const Vec3& GetGlobalPos() const;
 	const Vec3& GetGlobalScale() const;
 	const Quat& GetGlobalRotation() const;
+	const Mat4& GetWorldModelMatrix() const;
 
 	const Vec3& GetLocalPos() const;
 	const Vec3& GetLocalScaleMutable() const;
@@ -64,10 +61,6 @@ public:
 	Vec3& GetLocalScaleMutable();
 	Quat& GetLocalRotationMutable();
 
-	Mat4 GetLocalModelMatrix() const;
-	Mat4 GetWorldModelMatrix() const;
-
-	void UpdatePrecalculatedData();
 	const TransformPrecalculatedData& GetLastUpdateData() const;
 
 	//std::vector<std::string> GetDependencyFlags() const override;
@@ -77,3 +70,8 @@ public:
 	void Deserialize(const Json& json) override;
 	Json Serialize() override;
 };
+
+Mat4 CalculateTranslationMatrix(const Vec3& pos);
+Mat4 CalculateScaleMatrix(const Vec3& scale);
+Mat4 CalculateRotationMatrix(const Quat& rotation);
+Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Vec3& pos, const Vec3& scale, const Quat& rotation);

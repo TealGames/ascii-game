@@ -5,6 +5,7 @@
 #include "Vec2Type.hpp"
 #include "Vec3Type.hpp"
 #include "Utils/ToStringFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 template<typename T>
 requires std::is_arithmetic_v<T>
@@ -101,13 +102,20 @@ public:
 	T& operator[](const size_t index)
 	{
 		if (index >= 4)
+		{
+			LogError(std::format("Invalid vec4 index:{}", index));
 			throw std::invalid_argument(std::format("Invalid vec4 index:{}", index));
+		}
+			
 		return m_Components[index];
 	}
 	const T& operator[](const size_t index) const
 	{
 		if (index >= 4)
+		{
+			LogError(std::format("Invalid vec4 index:{}", index));
 			throw std::invalid_argument(std::format("Invalid vec4 index:{}", index));
+		}
 		return m_Components[index];
 	}
 
@@ -159,8 +167,8 @@ public:
 		if (Utils::ApproximateEqualsF(m_X,0) || Utils::ApproximateEqualsF(other.m_Y,0) 
 			|| Utils::ApproximateEqualsF(other.m_Z,0), Utils::ApproximateEqualsF(other.m_W, 0))
 		{
-			throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
-			return *this;
+			LogError(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
+			throw std::invalid_argument("Divide vec4 by 0");
 		}
 
 		return Vec{ m_X / other.m_X, m_Y / other.m_Y, m_Z / other.m_Z, m_W / other.m_W };
@@ -169,8 +177,8 @@ public:
 	{
 		if (Utils::ApproximateEqualsF(scalar, 0))
 		{
-			throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0 value scalar", ToString()));
-			return *this;
+			LogError(std::format("Tried to divide a vector: {} by a 0 float scalar:{}", ToString(), scalar));
+			throw std::invalid_argument("Divide vec4 by 0");
 		}
 
 		return Vec{ m_X / scalar, m_Y / scalar, m_Z / scalar, m_W / scalar };
@@ -179,8 +187,8 @@ public:
 	{
 		if (scalar == 0)
 		{
-			throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0 value scalar", ToString()));
-			return *this;
+			LogError(std::format("Tried to divide a vector: {} by a 0 int scalar:{}", ToString(), scalar));
+			throw std::invalid_argument("Divide vec4 by 0");
 		}
 
 		return Vec{ m_X / scalar, m_Y / scalar, m_Z / scalar, m_W / scalar };

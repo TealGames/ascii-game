@@ -11,7 +11,6 @@
 #include "Utils/Print.hpp"
 
 static constexpr bool THROW_ON_UNKNWON_ASSET = false;
-static constexpr bool PREVENT_HIDDEN_ASSET_LOOKUP = true;
 
 namespace AssetManagement
 {
@@ -231,7 +230,7 @@ namespace AssetManagement
 		return IO::TryWriteFile(path, newContents);
 	}*/
 
-	Asset* AssetManager::TryGetAssetMutable(const std::string& name)
+	/*Asset* AssetManager::TryGetAssetMutable(const std::string& name)
 	{
 		for (const auto& asset : m_assets)
 		{
@@ -239,16 +238,32 @@ namespace AssetManagement
 				return asset.second;
 		}
 		return nullptr;
-	}
-	Asset* AssetManager::TryGetAssetFromLiteralMutable(const char* name)
+	}*/
+	/*Asset* AssetManager::TryGetAssetFromLiteralMutable(const char* name)
 	{
 		for (const auto& asset : m_assets)
 		{
-			if (asset.second->GetName().c_str() == name)
+			LogWarning(std::format("checking asset:'{}' for target:'{}' comp:{}", asset.second->GetName(), name, 
+				strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size())));
+
+			if (strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size()) == 0)
+			{
+				if (PREVENT_HIDDEN_ASSET_LOOKUP)
+				{
+					const std::filesystem::path relPath = GetRelativeAssetPath(asset.second->GetPath());
+					if (IsAssetHiddenFromPath(relPath, false))
+					{
+						LogWarning(std::format("Attempted to get asset by path:{} but this asset was marked as hidden", relPath.string()));
+						return nullptr;
+					}
+				}
+
+				LogWarning(std::format("Returning shader:{}", asset.second->ToString()));
 				return asset.second;
+			}
 		}
 		return nullptr;
-	}
+	}*/
 
 	Asset* AssetManager::TryGetAssetFromPathMutable(const std::filesystem::path& relPath)
 	{
@@ -277,10 +292,10 @@ namespace AssetManagement
 
 		return assetIt->second;
 	}
-	Asset* AssetManager::TryGetRuntimeAssetMutable(const std::string& name)
+	/*Asset* AssetManager::TryGetRuntimeAssetMutable(const std::string& name)
 	{
 		auto assetIt = m_runtimeAssets.find(name);
 		if (assetIt == m_runtimeAssets.end()) return nullptr;
 		return assetIt->second;
-	}
+	}*/
 }

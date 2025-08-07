@@ -6,6 +6,7 @@
 #include "Utils/Math.hpp"
 #include "Vec2Type.hpp"
 #include "Utils/ToStringFunctions.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 template<typename T>
 requires std::is_arithmetic_v<T>
@@ -155,8 +156,11 @@ public:
 	{
 		return Vec{ m_X * otherVec.m_X, m_Y * otherVec.m_Y, m_Z * otherVec.m_Z };
 	}
-
 	Vec operator*(const float scalar) const
+	{
+		return Vec(m_X * scalar, m_Y * scalar, m_Z * scalar);
+	}
+	Vec operator*(const double scalar) const
 	{
 		return Vec(m_X * scalar, m_Y * scalar, m_Z * scalar);
 	}
@@ -168,8 +172,8 @@ public:
 	{
 		if (Utils::ApproximateEqualsF(other.m_X, 0) || Utils::ApproximateEqualsF(other.m_Y, 0) || Utils::ApproximateEqualsF(other.m_Z, 0))
 		{
-			throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
-			return *this;
+			LogError(std::format("Tried to divide a vector: {} by a 0 value vector:{}", ToString(), other.ToString()));
+			throw std::invalid_argument("Division by zero");
 		}
 
 		return Vec{ m_X / other.m_X, m_Y / other.m_Y, m_Z / other.m_Z };
@@ -178,8 +182,8 @@ public:
 	{
 		if (Utils::ApproximateEqualsF(scalar, 0))
 		{
-			throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0 value scalar", ToString()));
-			return *this;
+			LogError(std::format("Tried to divide a vector: {} by a 0 value float scalar", ToString()));
+			throw std::invalid_argument("Division by zero");
 		}
 
 		return Vec(m_X / scalar, m_Y / scalar, m_Z / scalar);
@@ -188,8 +192,8 @@ public:
 	{
 		if (scalar == 0)
 		{
-			throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0 value scalar", ToString()));
-			return *this;
+			LogError(std::format("Tried to divide a vector: {} by a 0 value int scalar", ToString()));
+			throw std::invalid_argument("Division by zero");
 		}
 
 		return Vec{ m_X / scalar, m_Y / scalar, m_Z / scalar };

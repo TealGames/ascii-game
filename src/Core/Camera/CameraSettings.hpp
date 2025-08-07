@@ -36,8 +36,8 @@ public:
 
 	WorldPosition2D m_WorldViewportSize;
 
-	constexpr static inline float DEFAULT_NEAR_DISTANCE = 0;
-	constexpr static inline float DEFAULT_FAR_DISTANCE = 1000;
+	constexpr static inline float DEFAULT_NEAR_DISTANCE = 0.1f;
+	constexpr static inline float DEFAULT_FAR_DISTANCE = 100;
 	/// <summary>
 	/// The farthest distance from the camera position that is rendered. 
 	/// This value MUST BE POSITIVE REGARDLESS OF FORWARD DIR (AND GREATER THAN NEAR DISTANCE)
@@ -46,6 +46,7 @@ public:
 	/// <summary>
 	/// The closest distance from the camera position that is rendered.
 	/// This value MUST BE POSITIVE REGARDLESS OF FORWARD DIR (AND SMALLER THAN FAR DISTANCE)
+	/// AND MUST BE >0 OTHERWISE MATRIX CAN GET MESSED UP
 	/// </summary>
 	float m_NearDistance;
 
@@ -53,7 +54,7 @@ public:
 	ProjectionType m_ProjectionType;
 
 	//Default is 60 degrees
-	constexpr static inline float DEFAULT_FIELD_OF_VIEW_Y_RAD = 3.14159 / 3;
+	constexpr static inline float DEFAULT_FIELD_OF_VIEW_Y_RAD = 3.14159 / 2;
 	/// <summary>
 	/// The field of view Y angle (from top to bottom) -> how much the player 
 	/// sees vertically. It is easier to use y fov because it can remain the same 

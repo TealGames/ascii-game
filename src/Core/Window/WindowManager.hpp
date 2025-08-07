@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Window/Window.hpp"
-#include <vector>
+#include <map>
 #include "Utils/Data/Event.hpp"
 
 namespace Core
@@ -9,7 +9,10 @@ namespace Core
 	{
 	private:
 		size_t m_windowLimit;
-		std::vector<Window> m_windows;
+		/// <summary>
+		/// Stores the windows with the id
+		/// </summary>
+		std::map<WindowId, Window*> m_windows;
 	public:
 		Event<void, Window*> m_OnWindowCreated;
 		Event<void, Window*> m_OnWindowUpdated;
@@ -18,17 +21,17 @@ namespace Core
 	private:
 		void SetCurrentContextWindow(Window& window);
 		void RegisterInput(Window& window, const WindowInputEventInfo& info);
+		WindowId GetNextAvailableWindowId() const;
 	public:
 		WindowManager();
 
 		Window* CreateNewWindow(const int width, const int height, const Vec2Int constrainedApsectRatio, const char* name, 
 			const UpdateCallbackType updateCallback=nullptr);
 
-		/// <summary>
-		/// Updates all windows and returns true if at leaast one was updated
-		/// </summary>
-		/// <returns></returns>
-		void UpdateAllWindows(bool* allWindowsInactiveFlag=nullptr);
+		void UpdateAllWindows();
+		void CloseWindow(const WindowId id);
 		void CloseAllWindows();
+
+		size_t GetActiveWindowCount() const;
 	};
 }

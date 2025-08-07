@@ -2,11 +2,13 @@
 #include <array>
 #include <cstdint>
 #include <format>
-#include "Vec4Type.hpp"
+#include <string>
+#include "Utils/Data/Vec4Type.hpp"
 
 //TODO: add other matrix operations like inversion, row swapping, gausian elimination, determinant
 
 template<size_t ROW_SIZE, size_t COL_SIZE>
+requires (ROW_SIZE >0 && COL_SIZE >0)
 class MatrixType
 {
 private:
@@ -54,7 +56,7 @@ public:
 		{
 			for (size_t c = 0; c < COL_SIZE; c++)
 			{
-				arr[r * ROW_SIZE + c] = m_elements[c][r];
+				arr[r * COL_SIZE + c] = m_elements[c][r];
 			}
 		}
 		return arr;
@@ -69,7 +71,7 @@ public:
 				arr[c * COL_SIZE + r] = m_elements[c][r];
 			}
 		}
-		return m_elements;
+		return arr;
 	}
 
 	std::array<std::array<float, COL_SIZE>, ROW_SIZE> GetElements2DRowMajor() const
@@ -178,14 +180,14 @@ public:
 		return result;
 	}
 
-	MatrixType GetIdentity() const requires (ROW_SIZE == COL_SIZE)
+	static constexpr MatrixType GetIdentity() requires (ROW_SIZE == COL_SIZE)
 	{
-		MatrixType<COL_SIZE, ROW_SIZE> result = {};
+		MatrixType<ROW_SIZE, COL_SIZE> result = {};
 		for (size_t c = 0; c < COL_SIZE; c++)
 		{
 			for (size_t r = 0; r < ROW_SIZE; r++)
 			{
-				result.m_elements[c][r] == (c == r) ? 1 : 0;
+				result.m_elements[c][r] = (c == r) ? 1 : 0;
 			}
 		}
 		return result;
@@ -265,9 +267,9 @@ public:
 
 	template<size_t OTHER_ROW_SIZE, size_t OTHER_COL_SIZE>
 	requires (COL_SIZE == OTHER_ROW_SIZE)
-	MatrixType operator*(const MatrixType<OTHER_ROW_SIZE, OTHER_COL_SIZE>& other) const
+	MatrixType<ROW_SIZE, OTHER_COL_SIZE> operator*(const MatrixType<OTHER_ROW_SIZE, OTHER_COL_SIZE>& other) const
 	{
-		MatrixType result = {};
+		MatrixType<ROW_SIZE, OTHER_COL_SIZE> result = {};
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
 			for (size_t otherC = 0; otherC < OTHER_COL_SIZE; otherC++)
@@ -293,6 +295,23 @@ public:
 				result[r] += m_elements[c][r] * vec[c];
 			}
 		}
+		return result;
+	}
+
+	std::string ToString(const bool newLineOnRow=true) const
+	{
+		std::string result = "";
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			if (newLineOnRow) result += '\n';
+			result += '[' + std::to_string(m_elements[0][r]);
+			for (size_t c = 1; c < COL_SIZE; c++)
+			{
+				result += ',' + std::to_string(m_elements[c][r]);
+			}
+			result += ']';
+		}
+		if (newLineOnRow) result += '\n';
 		return result;
 	}
 };

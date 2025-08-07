@@ -15,15 +15,11 @@ enum class NdcRange : std::uint8_t
 	NegOneToOne	= 1
 };
 /// <summary>
-/// The normalized device coordinates for z axis for this engine.
+/// The normalized device coordinates for all axes in XYZ order for this engine.
 /// It must be maintained across systems for rendering consistency (but is used as reference
 /// point for conversion into different ndc ranges for different rendering platforms)
 /// </summary>
-inline constexpr NdcRange ENGINE_NDC_RANGE_Z = NdcRange::ZeroToOne;
-
-//Note: the x and y ndc coords are the same for all major renderers so this is not as import as z
-inline constexpr NdcRange ENGINE_NDC_RANGE_Y = NdcRange::NegOneToOne;
-inline constexpr NdcRange ENGINE_NDC_RANGE_X = NdcRange::NegOneToOne;
+inline constexpr std::array<NdcRange, 3> ENGINE_NDC_RANGES = { NdcRange::NegOneToOne, NdcRange::NegOneToOne, NdcRange::ZeroToOne };
 
 /// <summary>
 /// The sign of z as you move forward by default.
@@ -37,14 +33,15 @@ enum class ZForwardSign : std::uint8_t
 };
 inline constexpr ZForwardSign ENGINE_FORWARD_SIGN_Z = ZForwardSign::Negative;
 inline constexpr Vec3 ENGINE_FORWARD_DIR = ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative ? Vec3(0, 0, -1) : Vec3(0, 0, 1);
+inline constexpr Vec3 ENGINE_UP_DIR = Vec3(0, 1, 0);
 
 namespace PlatformMath
 {
-	Mat4 CalculatePerspectiveViewMatrix(const NdcRange ndcZRange, const ZForwardSign sign, 
+	Mat4 CalculatePerspectiveProjMatrix(const NdcRange ndcZRange, const ZForwardSign sign, 
 		const float fovY, const float aspectRatio, const float zNear, const float zFar);
-	Mat4 CalculateOrthographicViewMatrix(const NdcRange ndcZRange, const ZForwardSign sign, 
+	Mat4 CalculateOrthographicProjMatrix(const NdcRange ndcZRange, const ZForwardSign sign, 
 		const float maxWorldX, const float minWorldX, const float maxWorldY, const float minWorldY, const float zNear, const float zFar);
 
-	Mat4 CalculatePlatformPerspectiveViewMatrix(const float fovY, const float aspectRatio, const float zNear, const float zFar);
-	Mat4 CalculatePlatformOrthographicViewMatrix(const float maxWorldX, const float minWorldX, const float maxWorldY, const float minWorldY, const float zNear, const float zFar);
+	Mat4 CalculatePlatformPerspectiveProjMatrix(const float fovY, const float aspectRatio, const float zNear, const float zFar);
+	Mat4 CalculatePlatformOrthographicProjMatrix(const float maxWorldX, const float minWorldX, const float maxWorldY, const float minWorldY, const float zNear, const float zFar);
 }

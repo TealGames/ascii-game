@@ -16,11 +16,16 @@ namespace Rendering
     struct Vertex
     {
         WorldPosition3D m_Pos;
+
+        std::string ToString() const;
     };
+    
     struct InstanceData
     {
-        Utils::Color m_Color;
+        Vec4 m_Color;
         Mat4 m_ModelMatrix;
+
+        std::string ToString() const;
     };
     using VertexType = Vertex;
     using InstanceType = InstanceData;
@@ -29,11 +34,13 @@ namespace Rendering
     struct RenderBatch
     {
         const Shader* m_Shader = nullptr;
-        std::vector<Vertex> m_Vertices = {};
+        std::vector<VertexType> m_Vertices = {};
         std::vector<IndexType> m_VertexIndices = {};
-        std::vector<InstanceData> m_InstanceData = {};
-    };
+        std::vector<InstanceType> m_InstanceData = {};
 
+        std::string ToString() const;
+    };
+  
     enum class BatchFlushType : std::uint8_t
     {
         StateChange     = 0,
@@ -52,13 +59,11 @@ namespace Rendering
         bool m_isInit;
 
         const EngineState* m_engineState;
-        struct StaticFrameRenderData m_staticRenderData;
+        StaticFrameRenderData m_staticRenderData;
 
         std::vector<RenderCall> m_renderCalls;
         std::vector<TextCallData> m_textData;
         std::vector<TextureCallData> m_textureData;
-
-        const Shader* m_defaultShader;
 
         BatchFlushType m_flushType;
         std::vector<RenderBatch> m_batches;
@@ -72,15 +77,22 @@ namespace Rendering
     public:
        
     private:
-        void AddVerticesToBatch(const Shader* shader, const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize);
+        void AddVerticesToBatch(const Shader* shader,
+            const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize);
+        void AddInstanceDataToBatch(const Mat4& modelMatrix, const Utils::Color& color);
         void FlushBatches();
+
+        const Shader* GetDefaultShader() const;
+        void FrameRenderDataUpdateCheck();
+        StaticFrameRenderData& GetThisFrameRenderData();
     public:
         Renderer(const EngineState& engineState);
         void Init();
         bool WasInit() const;
 
         void AddCircleCall(const WorldPosition3D& centerPos, const float radius, const Utils::Color color);
-        void AddRectangleCall(const WorldPosition3D& topLeftPos, const Vec2& size, const Utils::Color color);
+        void AddRectangleCall2D(const WorldPosition3D& centerLocalPos, const Vec2& size, const Mat4& modelMatrix, const Utils::Color& color);
+        void AddRectangleCall3D(const WorldPosition3D& centerLocalPos, const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color);
         void AddTextureCall(const WorldPosition3D& topLeftPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color);
         void AddTextCall(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
 
@@ -92,5 +104,8 @@ namespace Rendering
 
         void RenderBuffer();
         void ClearCommandBuffers();
+
+        std::string ToStringBatches() const;
+        std::string ToStringAll();
     };
 }

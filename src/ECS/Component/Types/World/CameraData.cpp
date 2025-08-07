@@ -8,6 +8,18 @@
 #include "Utils/Data/Vec4Type.hpp"
 #include "Math/PlatformMath.hpp"
 
+std::string CameraPrecalculatedData::ToString() const
+{
+	std::string frustumPlanesStr = "";
+	for (const auto& plane : m_FrustumPlanes)
+	{
+		frustumPlanesStr += plane.ToString() + ",";
+	}
+	return std::format("[ViewMatrix:{} PlatformProjMatrix:{} EngineProjMatrix:{} FrustumPlanes:{}]", 
+		m_ViewMatrix.ToString(), m_PlatformProjectionMatrix.ToString(), m_EngineProjectionMatrix.ToString(), 
+		frustumPlanesStr);
+}
+
 CameraComponent::CameraComponent() : CameraComponent(CameraSettings()) {}
 
 CameraComponent::CameraComponent(const Json& json) : CameraComponent()
@@ -61,15 +73,87 @@ float CameraComponent::GetNearDistance() const { return m_cameraSettings.m_NearD
 float CameraComponent::GetFarDistance() const { return m_cameraSettings.m_FarDistance; }
 float CameraComponent::GetViewDistance() const { return GetFarDistance() - GetNearDistance(); }
 
+Vec3 CameraComponent::WorldToNdcPosition(const WorldPosition3D& pos, const ProjectionMatrixType matrixType) const
+{
+	const Vec4 clipPos = (matrixType == ProjectionMatrixType::Engine ? m_lastUpdateData.m_EngineProjectionMatrix
+		: m_lastUpdateData.m_PlatformProjectionMatrix) * m_lastUpdateData.m_ViewMatrix * Vec4(pos, 1);
+
+	if (Utils::ApproximateEqualsF(clipPos.m_W, 0))
+		return INVALID_NDC_POS;
+	return clipPos.GetXYZ() / clipPos.m_W;
+	
+}
+
 ScreenPosition CameraComponent::WorldToScreenPosition(const WorldPosition3D& pos) const
 {
 	//Note: we must use 4d vector for matrix multiplication -> 1 for w just means it is a point (0 would mean direction)
-	const Vec4 clipPos = m_lastUpdateData.m_EngineProjectionMatrix * m_lastUpdateData.m_ViewMatrix * Vec4(pos, 1);
-	Vec3 ndcPos = clipPos.GetXYZ() / clipPos.m_W;
-	//This ensures that we have x and y normalized from 0 to 1
-	if (ENGINE_NDC_RANGE_X == NdcRange::NegOneToOne) ndcPos.m_X = (ndcPos.m_X + 1) * 0.5;
-	if (ENGINE_NDC_RANGE_Y == NdcRange::NegOneToOne) ndcPos.m_Y = (ndcPos.m_Y + 1) * 0.5;
+	/*const Vec4 posViewMat = m_lastUpdateData.m_EngineProjectionMatrix * Vec4(0, 0, 0, 1);
+	LogError(std::format("engine:{} default proj:{} new math:{}", 
+		m_lastUpdateData.m_EngineProjectionMatrix.ToString(), 
+		m_lastUpdateData.m_PlatformProjectionMatrix.ToString(), posViewMat.ToString()));*/
+	/*
+	float A[4][4] = {
+		{1,  2,  3,  4} ,
+  {5,  6,  7,  8},
+  {9, 10, 11, 12},
+  {13,14, 15, 16}
+	};
+	const Mat4 a{ A };
+	const Vec4 b(1, 2, 3, 4);
+	LogError(std::format("A*b={}", (a * b).ToString()));
 
+	float B[4][4] = {
+		{17, 18, 19, 20},
+		{21, 22, 23, 24},
+		{25, 26, 27, 28},
+		{29, 30, 31, 32}
+	};
+	*/
+	//const Mat4 b{ B };
+	//LogError(std::format("A*b={} \nB*A={}", (a*b).ToString(), (b*a).ToString()));
+	
+	//LogError(std::format("projViewmat:{}", projViewMat.ToString()));
+	const Vec4 clipPos = m_lastUpdateData.m_EngineProjectionMatrix * m_lastUpdateData.m_ViewMatrix * Vec4(pos, 1);
+	/*LogError(std::format("Got clip pos:{} ViewMatrix:{} engineProjMatrix:{} pos:{}", clipPos.ToString(), 
+		m_lastUpdateData.m_ViewMatrix.ToString(), m_lastUpdateData.m_EngineProjectionMatrix.ToString(), Vec4(pos,1).ToString()));*/
+
+	//Mat4 projViewMat = m_lastUpdateData.m_EngineProjectionMatrix * m_lastUpdateData.m_ViewMatrix;
+	/*LogError(std::format("\nCamera transfrom:{} \ncamera viewportsize:{} \nSettings:{}\nPreclac data:{}\nproj:{} \nview:{} \npos:{} (IN VIEW:{}) \nproj*view={} "
+		"\nprojView*pos={} clip pos:{}",
+		GetTransform().ToString(), m_cameraSettings.CalculateViewportSize(m_cameraSettings.m_NearDistance).ToString(),
+		m_cameraSettings.ToString(), m_lastUpdateData.ToString(),
+		m_lastUpdateData.m_EngineProjectionMatrix.ToString(),
+		m_lastUpdateData.m_ViewMatrix.ToString(), Vec4(pos, 1).ToString(), DoesViewVolumeContainPos(pos),
+		projViewMat.ToString(), (projViewMat * Vec4(pos, 1)).ToString(), clipPos.ToString()));*/
+
+	//This means we are outside view and cannot flatten 4d pos -> 3d
+	if (Utils::ApproximateEqualsF(clipPos.m_W, 0))
+	{
+		LogError(std::format("Attempted to convert world pos:{} (clip pos:{}) to screen using camera:{}"
+			"but that world pos is outside the camera view and thus cannot be mapped to a valid screen position. "
+			"View area at its z depth:{}", pos.ToString(), clipPos.ToString(), GetTransform().ToString(),
+			m_cameraSettings.CalculateViewportSize(pos.m_Z- m_cameraSettings.m_NearDistance).ToString()));
+		return {};
+	}
+
+	Vec3 ndcPos = clipPos.GetXYZ() / clipPos.m_W;
+	for (size_t i=0; i<3; i++)
+	{
+		if (ndcPos[i] > 1 || (ENGINE_NDC_RANGES[i] == NdcRange::NegOneToOne && ndcPos[i] < -1) ||
+			(ENGINE_NDC_RANGES[i] == NdcRange::ZeroToOne && ndcPos[i] < 0))
+		{
+			LogError(std::format("Attempted to convert world pos:{} (ndc pos:{}) to screen using camera:{}"
+				"but that world pos is outside the camera view and thus cannot be mapped to a valid screen position. "
+				"View Area at itsz depth:{}", pos.ToString(), ndcPos.ToString(), GetTransform().ToString(), 
+				m_cameraSettings.CalculateViewportSize(pos.m_Z- m_cameraSettings.m_NearDistance).ToString()));
+			return {};
+		}
+	}
+
+	//This ensures that we have x and y normalized from 0 to 1
+	if (ENGINE_NDC_RANGES[0] == NdcRange::NegOneToOne) ndcPos.m_X = (ndcPos.m_X + 1) * 0.5;
+	if (ENGINE_NDC_RANGES[1] == NdcRange::NegOneToOne) ndcPos.m_Y = (ndcPos.m_Y + 1) * 0.5;
+	//LogError(std::format("ndc pos:{}", ndcPos.ToString()));
 	//Note: since we use top left as origin for screen pos (and y increases down), we have to invert y pos
 	return ScreenPosition(ndcPos.m_X * SCREEN_WIDTH, (1- ndcPos.m_Y)*SCREEN_HEIGHT);
 }
@@ -99,6 +183,14 @@ Vec2 CameraComponent::WorldToScreenSize(const float cameraDepthDistance, const V
 Vec3 CameraComponent::CalculateWorldForward() const
 {
 	return GetTransform().GetGlobalRotation().ApplyRotationToDir(ENGINE_FORWARD_DIR);
+}
+Vec3 CameraComponent::CalculateWorldUp() const
+{
+	return GetTransform().GetGlobalRotation().ApplyRotationToDir(ENGINE_UP_DIR);
+}
+Vec3 CameraComponent::CalculateWorldRight() const
+{
+	return CrossProduct(CalculateWorldUp(), CalculateWorldForward()).GetNormalized();
 }
 
 WorldPosition3D CameraComponent::CalculateNearPlaneWorldCenter() const
@@ -144,9 +236,9 @@ bool CameraComponent::DoesViewVolumeContainPos(const WorldPosition3D& point) con
 Mat4 CameraComponent::CalculateViewMatrix() const
 {
 	//Since the rotation matrix is a special kind of matrix its inverse == tranpose (this is not normally true)
-	const Mat4 invertedRotationMatrix = TransformComponent::CalculateRotationMatrix(GetTransform().GetGlobalRotation()).Transpose();
+	const Mat4 invertedRotationMatrix = CalculateRotationMatrix(GetTransform().GetGlobalRotation()).Transpose();
 	const Vec4 rotatedTranslation = invertedRotationMatrix * Vec4(-GetTransform().GetGlobalPos(), 1.0f);
-	return invertedRotationMatrix * TransformComponent::CalculateTranslationMatrix(rotatedTranslation.GetXYZ());
+	return invertedRotationMatrix * CalculateTranslationMatrix(rotatedTranslation.GetXYZ());
 }
 
 Mat4 CameraComponent::CalculateProjectionMatrix(const ProjectionMatrixType type) const
@@ -157,11 +249,11 @@ Mat4 CameraComponent::CalculateProjectionMatrix(const ProjectionMatrixType type)
 	{
 		if (type == ProjectionMatrixType::Engine)
 		{
-			return PlatformMath::CalculatePerspectiveViewMatrix(ENGINE_NDC_RANGE_Z, ENGINE_FORWARD_SIGN_Z, m_cameraSettings.m_FieldOfViewYRadians,
+			return PlatformMath::CalculatePerspectiveProjMatrix(ENGINE_NDC_RANGES[2], ENGINE_FORWARD_SIGN_Z, m_cameraSettings.m_FieldOfViewYRadians,
 				m_cameraSettings.CalculateAspectRatio(), zNear, zFar);
 		}
 
-		return PlatformMath::CalculatePlatformPerspectiveViewMatrix(m_cameraSettings.m_FieldOfViewYRadians, 
+		return PlatformMath::CalculatePlatformPerspectiveProjMatrix(m_cameraSettings.m_FieldOfViewYRadians, 
 			m_cameraSettings.CalculateAspectRatio(), zNear, zFar);
 	}
 	else
@@ -173,9 +265,9 @@ Mat4 CameraComponent::CalculateProjectionMatrix(const ProjectionMatrixType type)
 		const float t = globalPos.m_Y + m_cameraSettings.m_WorldViewportSize.m_Y / 2;
 
 		if (type == ProjectionMatrixType::Engine)
-			PlatformMath::CalculateOrthographicViewMatrix(ENGINE_NDC_RANGE_Z, ENGINE_FORWARD_SIGN_Z, r, l, t, b, zNear, zFar);
+			PlatformMath::CalculateOrthographicProjMatrix(ENGINE_NDC_RANGES[2], ENGINE_FORWARD_SIGN_Z, r, l, t, b, zNear, zFar);
 
-		return PlatformMath::CalculatePlatformOrthographicViewMatrix(r, l, t, b, zNear, zFar);
+		return PlatformMath::CalculatePlatformOrthographicProjMatrix(r, l, t, b, zNear, zFar);
 	}
 }
 
@@ -185,6 +277,8 @@ void CameraComponent::UpdatePrecalculatedData()
 	m_lastUpdateData.m_ViewMatrix = CalculateViewMatrix();
 	m_lastUpdateData.m_PlatformProjectionMatrix = CalculateProjectionMatrix(ProjectionMatrixType::Platform);
 	m_lastUpdateData.m_EngineProjectionMatrix = CalculateProjectionMatrix(ProjectionMatrixType::Engine);
+	/*LogError(std::format("view mat:{} pproj:{} eproj:{}", m_lastUpdateData.m_ViewMatrix.ToString(), 
+		m_lastUpdateData.m_PlatformProjectionMatrix.ToString(), m_lastUpdateData.m_EngineProjectionMatrix.ToString()));*/
 	m_lastUpdateData.m_FrustumPlanes = CalculateFrustumPlanes();
 }
 const CameraPrecalculatedData& CameraComponent::GetLastUpdateData() const { return m_lastUpdateData; }
@@ -200,7 +294,7 @@ void CameraComponent::InitFields()
 
 std::string CameraComponent::ToString() const
 {
-	return std::format("[Camera Settings:{}]", 
+	return std::format("[Camera Settings:{}]",
 		m_cameraSettings.ToString());
 }
 

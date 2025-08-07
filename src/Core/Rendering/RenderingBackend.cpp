@@ -1,6 +1,7 @@
 #include "Core/Rendering/RenderingBackend.hpp"
 #include "StaticGlobals.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "EngineLog.hpp"
+#include <ostream>
 
 #ifdef OPENGL
 #include "Utils/OpenGlUtils.hpp"
@@ -30,14 +31,94 @@ namespace Rendering
 				LogError("GLAD (OpenGL loader) init failed");
 				return;
 			}
+
+			//Enable not culling back faces
+			/*glEnable(GL_CULL_FACE);
+			glCullFace(GL_BACK); 
+			glFrontFace(GL_CCW); */
+
+			//Enable depth testing -> if you draw triangles on top of one another, will resolve the one on bottom
+			//based on position and not draw order
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
+
+			GL_CALL(glEnable(GL_DEBUG_OUTPUT));
+			GL_CALL(glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS));
+			GL_CALL(glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE,
+				0, nullptr, GL_TRUE));
+
+			GL_CALL(glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)-> void
+				{
+					LogError("CALLBACK");
+					return;
+
+					const char* sourceStr = "NULL";
+					if (source == GL_DEBUG_SOURCE_API) sourceStr = "OpenGlAPI";
+					else if (source == GL_DEBUG_SOURCE_WINDOW_SYSTEM) sourceStr = "Window";
+					else if (source == GL_DEBUG_SOURCE_SHADER_COMPILER) sourceStr = "ShaderCompiler";
+					else if (source == GL_DEBUG_SOURCE_THIRD_PARTY) sourceStr = "ThirdParty";
+					else if (source == GL_DEBUG_SOURCE_APPLICATION) sourceStr = "MyDebugMessage";
+					else if (source == GL_DEBUG_SOURCE_OTHER) sourceStr = "Other";
+
+					const char* debugTypeStr = "NULL";
+					if (type == GL_DEBUG_TYPE_ERROR) debugTypeStr = "Error";
+					else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR) debugTypeStr = "DeprecatedBehavior";
+					else if (type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR) debugTypeStr = "UndefinedBehavior";
+					else if (type == GL_DEBUG_TYPE_PORTABILITY) debugTypeStr = "NonPortableBehavior";
+					else if (type == GL_DEBUG_TYPE_PERFORMANCE) debugTypeStr = "Performance";
+					else if (type == GL_DEBUG_TYPE_MARKER) debugTypeStr = "CommandStreamAnnotation";
+					else if (type == GL_DEBUG_TYPE_PUSH_GROUP) debugTypeStr = "PushGroupMessage";
+					else if (type == GL_DEBUG_TYPE_POP_GROUP) debugTypeStr = "PopGroupMessage";
+					else if (type == GL_DEBUG_TYPE_OTHER) debugTypeStr = "Other";
+
+					LogType logType = LogType::Log;
+					const char* severityStr = "NULL";
+					if (severity == GL_DEBUG_SEVERITY_HIGH)
+					{
+						severityStr = "High";
+						logType = LogType::Error;
+					}
+					else if (severity == GL_DEBUG_SEVERITY_MEDIUM)
+					{
+						severityStr = "Medium";
+						logType = LogType::Error;
+					}
+					else if (severity == GL_DEBUG_SEVERITY_LOW)
+					{
+						severityStr = "Low";
+						logType = LogType::Warning;
+					}
+					else if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) severityStr = "Notifcation";
+
+					const std::string formattedMessage = std::format("[OPENGL] [Source:{} | Type:{} | Severity:{}]: {}",
+						sourceStr, debugTypeStr, severityStr, message);
+
+					if ((logType & LogType::Error) != 0) LogError(formattedMessage);
+					else if ((logType & LogType::Warning) != 0) LogWarning(formattedMessage);
+					else Log(formattedMessage);
+
+				}, nullptr));
 #else
 			LogError("Attempted to load rendering backend but either no rendering library is active or it has no defined actions");
 #endif
+
 			BackendLoaded = true;
+			Core::EngineLog(std::format("LOADED RENDER BACKEND:{}", GetBackendVersion()));
 		}
 		bool IsBackendLoaded()
 		{
 			return BackendLoaded;
+		}
+		const std::string GetBackendVersion()
+		{
+			if (!BackendLoaded)
+				return "[Backend_Not_Loaded]";
+
+#if defined(OPENGL)
+			std::ostringstream oss;
+			oss << glGetString(GL_VERSION);
+			return "OpenGL "+ oss.str();
+#endif
 		}
 
 		void SetViewport(const int x, const int y, const int width, const int height)
@@ -79,7 +160,7 @@ namespace Rendering
 		{
 #if defined(OPENGL)
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 #elif defined(RAYLIB)
 			ClearBackground(BLACK);
@@ -152,7 +233,8 @@ namespace Rendering
 		void DrawUploadedIndexBufferInstanced(const size_t& indicesStartByteOffset, const size_t& drawIndexCount, const size_t& drawInstanceCount)
 		{
 #if defined(OPENGL)
-			glDrawElementsInstanced(GL_TRIANGLES, drawIndexCount, GL_UNSIGNED_INT, (const void*)indicesStartByteOffset, drawInstanceCount);
+			//LogError("DRAWING");
+			GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, drawIndexCount, GL_UNSIGNED_INT, (const void*)indicesStartByteOffset, drawInstanceCount));
 #endif
 		}
 	}

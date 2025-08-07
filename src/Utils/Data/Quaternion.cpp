@@ -2,7 +2,7 @@
 #include <format>
 #include <numbers>
 
-Vec3 Quat::ToEulerAngles() const
+Vec3 Quat::ToRadians() const
 {
     //Note: ROLL(X) PITCH (y), YAW(Z)
     //Note: this method is th Tait-Bryan angle sequence (meaning we apply rotation in ZYX order)
@@ -25,6 +25,10 @@ Vec3 Quat::ToEulerAngles() const
 
     return Vec3(roll, pitch, yaw);
 }
+Vec3 Quat::ToDegrees() const
+{
+    return ToRadians() * Utils::RAD_TO_DEG_CONSTANT;
+}
 
 Quat Quat::ToQuaternion(const Vec3& radianEulerAngles)
 {
@@ -42,9 +46,13 @@ Quat Quat::ToQuaternion(const Vec3& radianEulerAngles)
     q.m_Z = cr * cp * sy - sr * sp * cy;
     return q;
 }
-void Quat::SetToEulerAngle(const Vec3& radianEulerAngle)
+void Quat::SetAsRadians(const Vec3& radianEulerAngle)
 {
     *this = ToQuaternion(radianEulerAngle);
+}
+void Quat::SetAsDegrees(const Vec3& degreeEulerAngle)
+{
+    SetAsRadians(degreeEulerAngle * Utils::DEG_TO_RAD_CONSTANT);
 }
 
 Vec3 Quat::ApplyRotationToDir(const Vec3& v) const
@@ -73,8 +81,18 @@ Quat& Quat::operator*=(const Quat& other)
     return *this;
 }
 
+Quat Quat::operator*(const Vec3& radianEulerAngle) const
+{
+    return *this * Quat::ToQuaternion(radianEulerAngle);
+}
+Quat& Quat::operator*=(const Vec3& radianEulerAngle)
+{
+    *this = *this * Quat::ToQuaternion(radianEulerAngle);
+    return *this;
+}
+
 std::string Quat::ToString(const AngleType angleType) const
 {
-    if (angleType == AngleType::Euler) return ToEulerAngles().ToString();
+    if (angleType == AngleType::Euler) return ToRadians().ToString();
     return std::format("({},{},{},{})", m_X, m_Y, m_Z, m_W);
 }

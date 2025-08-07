@@ -37,9 +37,12 @@ public:
 		return Quat(0, 0, 0, 1);
 	}
 
-	Vec3 ToEulerAngles() const;
-	void SetToEulerAngle(const Vec3& radianEulerAngle);
+	Vec3 ToRadians() const;
+	Vec3 ToDegrees() const;
 	static Quat ToQuaternion(const Vec3& radianEulerAngles);
+
+	void SetAsRadians(const Vec3& radianEulerAngle);
+	void SetAsDegrees(const Vec3& degreeEulerAngle);
 
 	/// <summary>
 	/// Applies this rotation to the vec3 direction. Note: this does NOT convert 
@@ -54,6 +57,17 @@ public:
 
 	Quat operator*(const Quat& other) const;
 	Quat& operator*=(const Quat& other);
+
+	/// <summary>
+	/// Applies a rotation to this quaternion using euler angles in radians.
+	/// Note: while you can use SetRad(ToRad() + radDelta) for updating rotation
+	/// it is best to use the direct quaternion, which is used here.
+	/// Note: Multiplication is what applies rotations to quaternions not addition
+	/// </summary>
+	/// <param name="radianEulerAngle"></param>
+	/// <returns></returns>
+	Quat operator*(const Vec3& radianEulerAngle) const;
+	Quat& operator*=(const Vec3& radianEulerAngle);
 
 	std::string ToString(const AngleType angleType = AngleType::Euler) const;
 };

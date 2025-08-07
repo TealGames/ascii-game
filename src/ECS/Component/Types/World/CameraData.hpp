@@ -18,7 +18,11 @@ struct CameraPrecalculatedData
 	Mat4 m_PlatformProjectionMatrix = {};
 	Mat4 m_EngineProjectionMatrix = {};
 	std::array<InfinitePlane3D, 6> m_FrustumPlanes = {};
+
+	std::string ToString() const;
 };
+
+constexpr Vec3 INVALID_NDC_POS = {-2, -2, -2};
 
 class CameraComponent : public Component
 {
@@ -67,6 +71,12 @@ public:
 
 	ScreenPosition WorldToScreenPosition(const WorldPosition3D& pos) const;
 	/// <summary>
+	/// Will get the world position to its normalized device coor
+	/// </summary>
+	/// <param name="pos"></param>
+	/// <returns></returns>
+	Vec3 WorldToNdcPosition(const WorldPosition3D& pos, const ProjectionMatrixType matrixType) const;
+	/// <summary>
 	/// Converts screen position. Top left is (0,0) bottom right is (screen width, screen height)
 	/// X -> increases RIGHT, y-> increases DOWN
 	/// </summary>
@@ -81,6 +91,8 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	Vec3 CalculateWorldForward() const;
+	Vec3 CalculateWorldUp() const;
+	Vec3 CalculateWorldRight() const;
 	WorldPosition3D CalculateNearPlaneWorldCenter() const;
 	WorldPosition3D CalculateFarPlaneWorldCenter() const;
 	bool DoesViewVolumeContainPos(const WorldPosition3D& point) const;

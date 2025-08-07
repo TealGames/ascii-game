@@ -43,6 +43,11 @@ void InfinitePlane3D::NormalizeNormal()
 	m_Equation /= m_Equation.GetXYZ().GetMagnitude();
 }
 
+std::string InfinitePlane3D::ToString() const
+{
+	return std::format("[InfPlane3D eq:{}]", m_Equation.ToString());
+}
+
 InfinitePlane3D NormalizePlaneNormal(const InfinitePlane3D& plane)
 {
 	return InfinitePlane3D(plane.m_Equation / plane.m_Equation.GetXYZ().GetMagnitude());

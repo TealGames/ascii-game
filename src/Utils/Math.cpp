@@ -1,7 +1,6 @@
 #include "Utils/Math.hpp"
 #include <cmath>
 #include <sstream>
-#include <numbers>
 
 namespace Utils
 {
@@ -58,11 +57,11 @@ namespace Utils
 
 	double ToRadians(const double deg)
 	{
-		return deg * (std::numbers::pi / 180.0);
+		return deg * DEG_TO_RAD_CONSTANT;
 	}
 	double ToDegrees(const double rad)
 	{
-		return rad * (180.0 / std::numbers::pi);
+		return rad * RAD_TO_DEG_CONSTANT;
 	}
 
 	bool IsPosInifinity(double value)

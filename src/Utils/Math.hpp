@@ -1,8 +1,11 @@
 #pragma once
 #include <string>
+#include <numbers>
 
 namespace Utils
 {
+	constexpr double RAD_TO_DEG_CONSTANT = std::numbers::pi / 180.0;
+	constexpr double DEG_TO_RAD_CONSTANT = 180.0 / std::numbers::pi;
 	/// <summary>
 	/// Computes a power as just repeated multiplication
 	/// Faster than std::pow because std::pow must account for complex

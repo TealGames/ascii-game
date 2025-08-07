@@ -2,15 +2,16 @@
 
 namespace PlatformMath
 {
-	Mat4 CalculatePerspectiveViewMatrix(const NdcRange ndcZRange, const ZForwardSign sign, 
+	Mat4 CalculatePerspectiveProjMatrix(const NdcRange ndcZRange, const ZForwardSign sign, 
 		const float f, const float aspect, const float zNear, const float zFar)
 	{
+		const float fov_scale = 1 / std::tan(f / 2);
 		std::array<std::array<float, 4>, 4> matrix =
 		{ {
-			{{f/aspect, 0,	0,	0}},
-			{{0,		f,	0,	0}},
-			{{0,		0,	0,	0}},
-			{{0,		0,	0,	0}}
+			{{fov_scale /aspect, 0,			0,	0}},
+			{{0,				 fov_scale,	0,	0}},
+			{{0,				 0,			0,	0}},
+			{{0,				 0,			0,	0}}
 		} };
 
 		//Right handedness
@@ -18,31 +19,36 @@ namespace PlatformMath
 		{
 			if (ndcZRange == NdcRange::ZeroToOne)
 			{
-				matrix[2] = { {0, 0, zFar / (zNear - zFar), (zNear * zFar) / (zNear - zFar)} };
+				matrix[2] = { {0, 0, -zFar / (zNear - zFar), -zNear * zFar / (zNear - zFar)} };
+				matrix[3] = { {0, 0, -1, 0}};
 			}
+			//-1 to 1
 			else
 			{
-				matrix[2] = { {0, 0, (zFar + zNear) / (zNear - zFar), (2* zFar * zNear) / (zNear - zFar)} };
+				matrix[2] = { {0, 0, (zFar + zNear) / (zNear - zFar), (2 * zFar * zNear) / (zNear - zFar)} };
+				matrix[3] = { {0, 0, -1, 0} };
 			}
-			matrix[3] = { {0, 0, -1, 0} };
 		}
 		//Left handedness
 		else
 		{
 			if (ndcZRange == NdcRange::ZeroToOne)
 			{
-				matrix[2] = { {0, 0, zFar / (zFar - zNear), (-zNear * zFar) / (zFar- zNear)} };
+				matrix[2] = { {0, 0, zFar / (zFar - zNear), (-zNear * zFar) / (zFar - zNear)} };
+				matrix[3] = { {0, 0, 1, 0} };
 			}
+			//-1 to 1
 			else
 			{
-				matrix[2] = { {0, 0, (zNear + zFar) / (zFar - zNear), (-2* zNear * zFar) / (zFar - zNear)} };
+				matrix[2] = { {0, 0, (zNear + zFar) / (zFar - zNear), (-2 * zNear * zFar) / (zFar - zNear)} };
+				matrix[3] = { {0, 0, 1, 0} };
 			}
-			matrix[3] = { {0, 0, 1, 0} };
 		}
+		/*LogError(std::format("Matches:{}", Mat4(matrix).ToString()));*/
 		return Mat4(matrix);
 	}
 
-	Mat4 CalculateOrthographicViewMatrix(const NdcRange ndcZRange, const ZForwardSign sign, 
+	Mat4 CalculateOrthographicProjMatrix(const NdcRange ndcZRange, const ZForwardSign sign, 
 		const float r, const float l, const float t, const float b, const float zNear, const float zFar)
 	{
 		std::array<std::array<float, 4>, 4> matrix =
@@ -80,10 +86,10 @@ namespace PlatformMath
 		return Mat4(matrix);
 	}
 
-	Mat4 CalculatePlatformPerspectiveViewMatrix(const float fovY, const float aspectRatio, const float zNear, const float zFar)
+	Mat4 CalculatePlatformPerspectiveProjMatrix(const float fovY, const float aspectRatio, const float zNear, const float zFar)
 	{
 #if defined(OPENGL)
-		return CalculatePerspectiveViewMatrix(NdcRange::NegOneToOne, ZForwardSign::Negative, fovY, aspectRatio, zNear, zFar);
+		return CalculatePerspectiveProjMatrix(NdcRange::NegOneToOne, ZForwardSign::Negative, fovY, aspectRatio, zNear, zFar);
 #elif defined(DIRECTX)
 		return CalculatePerspectiveViewMatrix(NdcZRange::ZeroToOne, ZForwardSign::Positive, fovY, aspectRatio, zNear, zFar);
 #elif defined(VULKAN)
@@ -96,10 +102,10 @@ namespace PlatformMath
 #endif
 	}
 
-	Mat4 CalculatePlatformOrthographicViewMatrix(const float maxWorldX, const float minWorldX, const float maxWorldY, const float minWorldY, const float zNear, const float zFar)
+	Mat4 CalculatePlatformOrthographicProjMatrix(const float maxWorldX, const float minWorldX, const float maxWorldY, const float minWorldY, const float zNear, const float zFar)
 	{
 #if defined(OPENGL)
-		return CalculateOrthographicViewMatrix(NdcRange::NegOneToOne, ZForwardSign::Negative, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
+		return CalculateOrthographicProjMatrix(NdcRange::NegOneToOne, ZForwardSign::Negative, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #elif defined(DIRECTX)
 		return CalculateOrthographicViewMatrix(NdcZRange::ZeroToOne, ZForwardSign::Positive, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #elif defined(VULKAN)
