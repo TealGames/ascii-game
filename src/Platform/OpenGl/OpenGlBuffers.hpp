@@ -1,5 +1,4 @@
 #pragma once
-
 #ifdef OPENGL
 #include "Core/Rendering/Buffers.hpp"
 

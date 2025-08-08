@@ -33,6 +33,7 @@ add_subdirectory("dependencies/glfw-3.4")
 add_subdirectory("dependencies/glad")
 add_subdirectory("dependencies/json")
 add_subdirectory("dependencies/entt")
+add_subdirectory("dependencies/stb")
 #add_subdirectory("dependencies/raylib")
 #add_subdirectory("dependencies/glm")
 #add_subdirectory("dependencies/PLplot")
@@ -78,4 +79,4 @@ target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC OPENGL=1)
 #target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC GLM=1) 
 
 #Removed: glm, raylib
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad nlohmann_json::nlohmann_json EnTT)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw glad nlohmann_json::nlohmann_json EnTT stb)
