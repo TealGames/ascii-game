@@ -18,9 +18,10 @@
 namespace Rendering
 {
     constexpr bool DONT_RENDER_NON_UTILS = false;
-    constexpr size_t PRE_ALLOCATED_SHAPES = 10;
-    constexpr size_t PRE_ALLOCATED_INDICES_COUNT = PRE_ALLOCATED_SHAPES* 6;
-    constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = PRE_ALLOCATED_SHAPES * 4;
+    constexpr size_t PRE_ALLOCATED_SHAPES = 30;
+    constexpr size_t PRE_ALLOCATED_INDICES_COUNT = 600;
+    constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = 200;
+    constexpr size_t CIRCLE_SIDE_COUNT = 12;
 
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
@@ -168,11 +169,10 @@ namespace Rendering
         return m_staticRenderData;
     }
 
-    void Renderer::AddVerticesToBatch(const Shader* shader,
-        const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize)
+    void Renderer::BatchStateChangeCheck(const Shader* shader)
     {
         bool hasStateChange = !m_batches.empty() && m_batches.back().m_Shader != shader;
-        if (m_flushType==BatchFlushType::StateChange && hasStateChange)
+        if (m_flushType == BatchFlushType::StateChange && hasStateChange)
         {
             FlushBatches();
         }
@@ -180,23 +180,46 @@ namespace Rendering
         if (m_batches.empty() || hasStateChange)
         {
             //LogError(std::format("Adding new batch"));
-            m_batches.push_back(RenderBatch{ shader, {}, {} });
+            m_batches.push_back(RenderBatch{ shader});
         }
-       
-        const size_t firstVertexIndex = m_batches.back().m_Vertices.size();
-        m_batches.back().m_Vertices.insert(m_batches.back().m_Vertices.begin(),
-            vertexArray, vertexArray + vertexSize);
+    }
 
+    void Renderer::AddVerticesToBatch(const Shader* shader,
+        const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize)
+    {
+        BatchStateChangeCheck(shader);
+       
+        const size_t& firstVertexIndex = m_batches.back().m_IndexOffset;
         //Update the indices to match the start of new index
         for (size_t i = 0; i < indicesSize; i++)
             *(indexArray + i) += firstVertexIndex;
 
+        m_batches.back().m_Vertices.insert(m_batches.back().m_Vertices.begin(),
+            vertexArray, vertexArray + vertexSize);
         m_batches.back().m_VertexIndices.insert(m_batches.back().m_VertexIndices.end(),
             indexArray, indexArray + indicesSize);
     }
+    void Renderer::AddVertexToBatch(const Shader* shader, const Vertex& vertex)
+    {
+        BatchStateChangeCheck(shader);
+        m_batches.back().m_Vertices.emplace_back(vertex);
+    }
+    void Renderer::AddIndexToBatch(const IndexType& index)
+    {
+        m_batches.back().m_VertexIndices.push_back(index + m_batches.back().m_IndexOffset);
+    }
+    void Renderer::AddIndicesToBatch(const std::array<IndexType, 3>& arr)
+    {
+        m_batches.back().m_VertexIndices.insert(m_batches.back().m_VertexIndices.end(),
+            arr.begin(), arr.end());
+    }
+
     void Renderer::AddInstanceDataToBatch(const Mat4& modelMatrix, const Utils::Color& color)
     {
         m_batches.back().m_InstanceData.emplace_back(color.GetNormalized(), modelMatrix);
+        //Note: every time we add new instance data to the batch, we increase the index offset since we know
+        //the current model has finished
+        m_batches.back().m_IndexOffset = m_batches.back().m_Vertices.size();
         //m_batches.back().m_InstanceData.emplace_back(color.GetNormalized(), Mat4::GetIdentity());
     }
 
@@ -253,19 +276,44 @@ namespace Rendering
         
         m_batches.clear();
     }
-
-    void Renderer::AddCircleCall(const WorldPosition3D& centerPos, const float radius, const Utils::Color color)
+    void Renderer::AddPolygonCall2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color)
     {
-        m_renderCalls.emplace_back(CircleCall{ centerPos, radius, color });
+        //m_renderCalls.emplace_back(CircleCall{ centerPos, radius, color });
+
+        const float angleStep = 2 * std::numbers::pi / sides;
+        const size_t vertexCount = sides + 1;
+        Vertex* vertices = (Vertex*)alloca(sizeof(Vertex) * vertexCount);
+        vertices[0] = {};
+        for (size_t i = 1; i < vertexCount; i++)
+        {
+            vertices[i] = {};
+            vertices[i].m_Pos = WorldPosition3D(std::cosf(i * angleStep) * radius, std::sinf(i * angleStep) * radius, 0);
+        }
+
+        const size_t indexCount = sides * 3;
+        IndexType* indices = (IndexType*)alloca(sizeof(IndexType) * indexCount);
+        for (size_t i = 0; i < sides; i++)
+        {
+            indices[i * 3] = 0;
+            indices[i * 3 + 1] = i + 1;
+            //The last vertex index needs to wrap around to start with index 1
+            indices[i * 3 + 2] = i < sides - 1 ? i + 2 : 1;
+        }
+        AddVerticesToBatch(GetDefaultShader(), vertices, vertexCount, indices, indexCount);
+        AddInstanceDataToBatch(modelMatrix, color);
     }
-    void Renderer::AddRectangleCall2D(const WorldPosition3D& centerLocalPos, const Vec2& size, const Mat4& modelMatrix, const Utils::Color& color)
+    void Renderer::AddCircleCall2D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
+    {
+        AddPolygonCall2D(radius, CIRCLE_SIDE_COUNT, modelMatrix, color);
+    }
+    void Renderer::AddRectangleCall2D(const Vec2& size, const Mat4& modelMatrix, const Utils::Color& color)
     {
         constexpr size_t VERTEX_COUNT = 4;
         const WorldPosition3D halfSize = Vec3(size / 2, 0);
         //const WorldPosition3D centerPos = {0, 0, 0};
         //Start with top right vertex, then bottom right, then bottom left, top left
-        const Vertex vertices[VERTEX_COUNT] = { {centerLocalPos + halfSize}, {centerLocalPos + halfSize * Vec3(1, -1, 0)},
-                                     {centerLocalPos + halfSize * Vec3(-1, -1, 0)}, {centerLocalPos + halfSize * Vec3(-1, 1, 0)} };
+        const Vertex vertices[VERTEX_COUNT] = { halfSize, {halfSize * Vec3(1, -1, 0)},
+                                     {halfSize * Vec3(-1, -1, 0)}, {halfSize * Vec3(-1, 1, 0)} };
         /*
         const Vertex vertices[VERTEX_COUNT] = { {centerPos + halfSize}, {centerPos + halfSize * Vec3(1, -1, 0)},
                                     {centerPos + halfSize * Vec3(-1, -1, 0)}, {centerPos + halfSize * Vec3(-1, 1, 0)} };
@@ -280,27 +328,6 @@ namespace Rendering
 
         constexpr size_t INDEX_COUNT = 6;
         IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2 };
-        AddVerticesToBatch(GetDefaultShader(), vertices, VERTEX_COUNT, indices, INDEX_COUNT);
-        AddInstanceDataToBatch(modelMatrix, color);
-    }
-    void Renderer::AddRectangleCall3D(const WorldPosition3D& centerLocalPos, const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color)
-    {
-        constexpr size_t VERTEX_COUNT = 8;
-        const WorldPosition3D halfSize = size / 2;
-        Vertex vertices[VERTEX_COUNT] = { {centerLocalPos + halfSize}, {centerLocalPos + halfSize * Vec3(1, -1, 1)},
-                                          {centerLocalPos + halfSize * Vec3(-1, -1, 1)}, {centerLocalPos + halfSize * Vec3(-1, 1, 1)},
-                                          {centerLocalPos + halfSize * Vec3(1, 1, -1)},  {centerLocalPos + halfSize * Vec3(1, -1, -1)},
-                                          {centerLocalPos + halfSize * Vec3(-1, -1, -1)}, {centerLocalPos + halfSize * Vec3(-1, 1, -1)}};
-
-        constexpr size_t INDEX_COUNT = 36;
-        //Front face, back face, right, left, top, bottom
-        IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2,
-                                           4, 5, 6, 4, 7, 6,
-                                           4, 5, 1, 4, 0, 1,
-                                           7, 6, 2, 7, 3, 2,
-                                           4, 0, 3, 4, 7, 3,
-                                           5, 1, 2, 5, 6, 2};
-
         AddVerticesToBatch(GetDefaultShader(), vertices, VERTEX_COUNT, indices, INDEX_COUNT);
         AddInstanceDataToBatch(modelMatrix, color);
     }
@@ -321,6 +348,110 @@ namespace Rendering
     void Renderer::AddRectangleLineCall(const WorldPosition3D& worldPos, const float thickness, const Vec2& size, const Utils::Color color)
     {
         m_renderCalls.emplace_back(RectLineCall{ worldPos, thickness, size, color });
+    }
+
+    void Renderer::AddBoxCall3D(const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color)
+    {
+        constexpr size_t VERTEX_COUNT = 8;
+        const WorldPosition3D halfSize = size / 2;
+        Vertex vertices[VERTEX_COUNT] = { halfSize, { halfSize * Vec3(1, -1, 1)},
+                                          { halfSize * Vec3(-1, -1, 1)}, { halfSize * Vec3(-1, 1, 1)},
+                                          { halfSize * Vec3(1, 1, -1)},  { halfSize * Vec3(1, -1, -1)},
+                                          { halfSize * Vec3(-1, -1, -1)}, { halfSize * Vec3(-1, 1, -1)} };
+
+        constexpr size_t INDEX_COUNT = 36;
+        //Front face, back face, right, left, top, bottom
+        IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2,
+                                           4, 5, 6, 4, 7, 6,
+                                           4, 5, 1, 4, 0, 1,
+                                           7, 6, 2, 7, 3, 2,
+                                           4, 0, 3, 4, 7, 3,
+                                           5, 1, 2, 5, 6, 2 };
+
+        AddVerticesToBatch(GetDefaultShader(), vertices, VERTEX_COUNT, indices, INDEX_COUNT);
+        AddInstanceDataToBatch(modelMatrix, color);
+    }
+    void Renderer::AddSphereCall3D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
+    {
+        //Note: this is the default UV method with longitudinal/"slices" (vertical) and latitudinal/"stacks" (horizontal) lines
+        constexpr size_t HORIZONTAL_LINE_COUNT = 8;
+        //Best shape is formed with 1.5 factor 
+        constexpr size_t VERTICAL_LINE_COUNT = HORIZONTAL_LINE_COUNT * 1.5f;
+
+        //Here we build all the other vertices and indices making sure to create 2 triangles of every quad possible on the sphere
+        IndexType aIndex = 0, bIndex = 0;
+        float u = 0, v = 0, phi = 0, theta = 0;
+        IndexType nextV = 0, cIndex = 0, dIndex = 0;
+        Vec3 pos = {};
+        //The way this works is we go through every possible horizontal line and create vertex of curr horizontal line
+        //as well as every possible vertical line. 
+        //Note: we skip horizontal count+1 iteration because last row has no indices left to go lower
+        //but vertical needs the one extra iteration to connect
+        for (size_t hi = 0; hi < HORIZONTAL_LINE_COUNT; hi++) 
+        {
+            //Note: we add one here because we do not want 0 angle horizontal line (since then all rings vertices are at the topmost point)
+            //(and for symmetry, we do the same for bottom) so instead we just offset this range by 2
+            v = (hi + 1) / (float)(HORIZONTAL_LINE_COUNT);
+            phi = v * std::numbers::pi;
+
+            for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++) 
+            {
+                u = vi / (float)VERTICAL_LINE_COUNT;
+                theta = u * 2 * std::numbers::pi;
+
+                pos = Vec3(sinf(phi) * cosf(theta), cosf(phi), sinf(phi) * sinf(theta));
+
+                AddVertexToBatch(GetDefaultShader(), Vertex{ pos * radius });
+                Vec3 normal = pos.GetNormalized();
+                Vec2 uv = Vec2(u, v);
+
+                if (hi == HORIZONTAL_LINE_COUNT-1) continue;
+                // For the layout imagine this shape (where A is current point)
+                // Note: There are HORIZONTAL_COUNT + 1 total vertex indices per horizontal line (since we need it to
+                // wrap around and connect with first point and VERTICAL_COUNT + 1 total vertex indices per vertical line
+                //  A --- B
+                //  |   / |
+                //  |  /  |
+                //  | /   |
+                //  C --- D
+
+                nextV = (vi + 1) % VERTICAL_LINE_COUNT;
+
+                //We create them in order A, B, C, D
+                //Note: no modulus needed since 
+                aIndex = hi * (VERTICAL_LINE_COUNT)+vi;
+                bIndex = hi * (VERTICAL_LINE_COUNT)+nextV;
+                cIndex = (hi + 1) * (VERTICAL_LINE_COUNT)+vi;
+                dIndex = (hi + 1) * (VERTICAL_LINE_COUNT)+nextV;
+
+                AddIndicesToBatch({ aIndex, cIndex, bIndex });
+                AddIndicesToBatch({ bIndex, cIndex, dIndex });
+            }
+        }
+
+        //First we build the north pole vertex and create the indices
+        AddVertexToBatch(GetDefaultShader(), Vertex{ Vec3(0.0f, radius, 0.0f) });
+        IndexType poleIndex = HORIZONTAL_LINE_COUNT * VERTICAL_LINE_COUNT;
+        for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
+        {
+            aIndex = vi;
+            bIndex = (aIndex + 1) % VERTICAL_LINE_COUNT;
+            AddIndicesToBatch({aIndex, poleIndex, bIndex });
+        }
+
+        //Finally, we connect all the bottom latitude/row verticies to the south pole vertex
+        AddVertexToBatch(GetDefaultShader(), Vertex{ Vec3(0.0f, -1.5*radius, 0.0f) });
+        poleIndex++;
+        const IndexType bottomStartIndex = poleIndex - VERTICAL_LINE_COUNT - 1;
+        for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
+        {
+            aIndex = bottomStartIndex + vi;
+            if (vi < VERTICAL_LINE_COUNT - 1) bIndex = aIndex + 1;
+            else bIndex = bottomStartIndex;
+            AddIndicesToBatch({ aIndex, poleIndex, bIndex });
+        }
+       
+        AddInstanceDataToBatch(modelMatrix, color);
     }
 
     void Renderer::PushCallsToBuffer(const std::vector<RenderCall>& calls)

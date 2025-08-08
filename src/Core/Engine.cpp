@@ -321,12 +321,12 @@ namespace Core
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("Engine::Update");
 #endif 
-		//LogWarning(std::format("FPS:{}", GetFPS()));
 		//LogWarning("UPDATE CALLED");
 
 		m_timeKeeper.UpdateTimeStart();
 		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
 		const float unscaledDeltaTime = m_timeKeeper.GetLastIndependentDeltaTime();
+		LogWarning(std::format("FPS:{}", 1 / unscaledDeltaTime));
 		/*LogWarning(std::format("Update scaled dt:{} unscaled:{} scale:{} FPS (raylib):{} FPS(engine):{}", 
 			scaledDeltaTime, unscaledDeltaTime, m_timeKeeper.GetTimeScale(), GetFPS(), 1/unscaledDeltaTime));*/
 
@@ -400,14 +400,17 @@ namespace Core
 		static Quat rot = Quat::Identity();
 		rot *= Vec3{ 0, 0.3f * unscaledDeltaTime, 0};
 		const Mat4 modelMatrix = CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
+		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Utils::COLOR_BLUE
+		//m_renderer.AddCircleCall2D(0.13f, modelMatrix, Utils::COLOR_RED);
+		m_renderer.AddSphereCall3D(0.13f, modelMatrix, Utils::COLOR_GREEN);
+
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 
 			CalculateRotationMatrix(rot) * CalculateTranslationMatrix(-Vec3::Zero())  * CalculateScaleMatrix(Vec3::One());*/
 
-		LogWarning(std::format("Object rot is:{}", rot.ToDegrees().ToString()));
-		//LogError(std::format("Model matrix:{}", modelMatrix.ToString()));
+		//LogWarning(std::format("Object rot is:{}", rot.ToDegrees().ToString()));
 		//m_renderer.AddRectangleCall2D(Vec3(0, 0, 4.8), Vec2(0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
 		
-		m_renderer.AddRectangleCall3D(Vec3::Zero(), Vec3(0.13, 0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
+		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
 		//bool inView = m_cameraController.GetActiveCamera().DoesViewVolumeContainPos(Vec3(-10, 0, 0));
 		//LogError(std::format("rectange oirign screen pos:{}", m_cameraController.GetActiveCamera().WorldToScreenPosition(Vec3(0, 0, 4.9)).ToString()));
 		m_renderer.RenderBuffer();

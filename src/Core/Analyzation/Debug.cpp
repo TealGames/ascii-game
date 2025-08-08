@@ -105,7 +105,14 @@ void LogMessage(const LogType& logType, const CallerLogDetails logDetails, const
 		return;
 
 	std::string stackTraceMessage = message;
-	if (showStackTrace) stackTraceMessage += std::format("\n-------> STACK TRACE: {}", Utils::GetCurrentStackTrace());
+	if (showStackTrace)
+	{
+#if !_HAS_CXX23
+		stackTraceMessage += "\nSTACK TRACE: NULL (need C++23)";
+#elif
+		stackTraceMessage += std::format("\n-------> STACK TRACE: {}", Utils::GetCurrentStackTrace());
+#endif
+	}
 
 	std::string logTypeMessage;
 	std::string timeFormatted = "";

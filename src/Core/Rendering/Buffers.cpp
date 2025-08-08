@@ -8,7 +8,7 @@ namespace Rendering
 
 	VertexBuffer::VertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType,
 		const VertexBufferPlatformCallbacks callbacks)
-		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_maxVertexCount(elementSize), 
+		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_maxVertexCount(arraySize), 
 		m_AdvanceType(advanceType), m_elementSize(elementSize)
 	{
 		m_id = m_callbacks.m_AllocateFunc(vertexArray, arraySize * m_elementSize);
@@ -28,6 +28,13 @@ namespace Rendering
 
 	void VertexBuffer::WriteData(const size_t& elementOffset, const void* vertexArray, const size_t& elementCount)
 	{
+		if (elementCount + elementOffset > m_maxVertexCount)
+		{
+			LogError(std::format("Attempted to write data to vertex buffer with element offset + count:{} "
+				"that is greater than reserved size:{}", elementOffset + elementCount, m_maxVertexCount));
+			return;
+		}
+
 		m_callbacks.m_WriteFunc(m_id, elementOffset * m_elementSize, vertexArray, elementCount * m_elementSize);
 		//If we have already uploaded max data, then it means we are overriding existing data,
 		//which would not change the total data used
@@ -50,9 +57,9 @@ namespace Rendering
 		return *this;
 	}
 
-	IndexBuffer::IndexBuffer() : m_id(INVALID_OBJ_ID), m_callbacks(), m_dataUsed(), m_maxIndexCount() {}
+	IndexBuffer::IndexBuffer() : m_id(INVALID_OBJ_ID), m_callbacks(), m_dataUsed(), m_maxElementCount() {}
 	IndexBuffer::IndexBuffer(const IndexType* indexArray, const size_t arraySize, const IndexBufferPlatformCallbacks& callbacks)
-		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_maxIndexCount(arraySize)
+		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_maxElementCount(arraySize)
 	{
 		m_id= m_callbacks.m_AllocateFunc(indexArray, arraySize * sizeof(IndexType));
 		m_dataUsed = indexArray == nullptr ? 0 : arraySize;
@@ -63,10 +70,17 @@ namespace Rendering
 	}
 	void IndexBuffer::WriteData(const size_t elementOffset, const IndexType* indexArray, const size_t elementCount)
 	{
+		if (elementOffset + elementCount > m_maxElementCount)
+		{
+			LogError(std::format("Attempted to write data to index buffer with element offset + count:{} "
+				"that is greater than reserved size:{}", elementOffset + elementCount, m_maxElementCount));
+			return;
+		}
+
 		m_callbacks.m_WriteFunc(m_id, elementOffset * sizeof(IndexType), indexArray, elementCount * sizeof(IndexType));
 		//If we have already uploaded max data, then it means we are overriding existing data,
 		//which would not change the total data used
-		if (m_dataUsed < m_maxIndexCount) m_dataUsed += elementCount;
+		if (m_dataUsed < m_maxElementCount) m_dataUsed += elementCount;
 	}
 	size_t IndexBuffer::GetUploadedSize() const
 	{
@@ -74,7 +88,7 @@ namespace Rendering
 	}
 	bool IndexBuffer::HasFilledMaxSize() const
 	{
-		return m_dataUsed >= m_maxIndexCount;
+		return m_dataUsed >= m_maxElementCount;
 	}
 	void IndexBuffer::Deallocate()
 	{
@@ -92,7 +106,7 @@ namespace Rendering
 		m_callbacks = std::exchange(other.m_callbacks, {});
 		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
 		m_dataUsed = std::exchange(other.m_dataUsed, 0);
-		m_maxIndexCount = std::exchange(other.m_maxIndexCount, 0);
+		m_maxElementCount = std::exchange(other.m_maxElementCount, 0);
 		return *this;
 	}
 

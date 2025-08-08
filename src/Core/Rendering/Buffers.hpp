@@ -103,7 +103,7 @@ namespace Rendering
 		/// Size in bytes is m_dataUsed * sizeof(IndexType)
 		/// </summary>
 		size_t m_dataUsed;
-		size_t m_maxIndexCount;
+		size_t m_maxElementCount;
 	public:
 
 	private:

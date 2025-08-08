@@ -35,6 +35,14 @@ namespace Rendering
     {
         const Shader* m_Shader = nullptr;
         std::vector<VertexType> m_Vertices = {};
+
+        /// <summary>
+        /// Since we use local indices for easier calcualtions
+        /// we need a way to convert to global vertex index for a batch
+        /// so we add offset to all indices added (offset is just size of 
+        /// vertex count prior to the first model instance being added
+        /// </summary>
+        IndexType m_IndexOffset = 0;
         std::vector<IndexType> m_VertexIndices = {};
         std::vector<InstanceType> m_InstanceData = {};
 
@@ -77,9 +85,14 @@ namespace Rendering
     public:
        
     private:
+        void BatchStateChangeCheck(const Shader* shader);
         void AddVerticesToBatch(const Shader* shader,
             const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize);
+        void AddVertexToBatch(const Shader* shader, const Vertex& vertex);
+        void AddIndexToBatch(const IndexType& index);
+        void AddIndicesToBatch(const std::array<IndexType, 3>& arr);
         void AddInstanceDataToBatch(const Mat4& modelMatrix, const Utils::Color& color);
+
         void FlushBatches();
 
         const Shader* GetDefaultShader() const;
@@ -90,11 +103,14 @@ namespace Rendering
         void Init();
         bool WasInit() const;
 
-        void AddCircleCall(const WorldPosition3D& centerPos, const float radius, const Utils::Color color);
-        void AddRectangleCall2D(const WorldPosition3D& centerLocalPos, const Vec2& size, const Mat4& modelMatrix, const Utils::Color& color);
-        void AddRectangleCall3D(const WorldPosition3D& centerLocalPos, const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color);
+        void AddPolygonCall2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color);
+        void AddCircleCall2D(const float radius, const Mat4& modelMatrix, const Utils::Color color);
+        void AddRectangleCall2D(const Vec2& size, const Mat4& modelMatrix, const Utils::Color& color);
         void AddTextureCall(const WorldPosition3D& topLeftPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color);
         void AddTextCall(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
+
+        void AddBoxCall3D(const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color);
+        void AddSphereCall3D(const float radius, const Mat4& modelMatrix, const Utils::Color color);
 
         void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Utils::Color color);
         void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color);

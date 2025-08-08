@@ -35,7 +35,7 @@ namespace Utils
 	{
 #if !_HAS_CXX23
 		throw std::invalid_argument("Attempted to get current stack trace on a C++ version that does not support it (Need C++23)");
-		return "";
+		return "[INVALID OPERATION StackStrace needs C++23]";
 #else
 		std::ostringstream stream;
 		stream << std::stacktrace::current();

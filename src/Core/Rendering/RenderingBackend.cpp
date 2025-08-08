@@ -49,7 +49,6 @@ namespace Rendering
 
 			GL_CALL(glDebugMessageCallback([](GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)-> void
 				{
-					LogError("CALLBACK");
 					return;
 
 					const char* sourceStr = "NULL";
