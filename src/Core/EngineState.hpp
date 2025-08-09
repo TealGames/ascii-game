@@ -22,7 +22,7 @@ namespace Rendering
 	struct GraphicsContext
 	{
 		Core::Window* m_Window = nullptr;
-		const GraphicsManager* m_GraphicsManager = nullptr;
+		GraphicsManager* m_GraphicsManager = nullptr;
 	};
 }
 

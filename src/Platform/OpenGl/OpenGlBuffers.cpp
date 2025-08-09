@@ -22,6 +22,13 @@ namespace Rendering
 				//TODO: for SYNCRHONIZATION BIT you must be sure no other read/write is occuring to this location (ENSURE THREAD SAFTETY)
 				GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT));
 
+			if (dataPtr == nullptr)
+			{
+				LogError(std::format("Attempted to write to vertex buffer with id:{} "
+					"but the dataptr retrieved to copy is null", id));
+				return;
+			}
+
 			memcpy(dataPtr, vertexArray, totalByteSize);
 			GL_CALL(glUnmapNamedBuffer(id));
 		}
@@ -64,7 +71,12 @@ namespace Rendering
 				//Note: WRITE BIT-> write operation, INVALIDATE_RAMGE -> deleting old memory, UNSYNCRHOZIED-> do not stall gpu while completing operation
 				//TODO: for SYNCRHONIZATION BIT you must be sure no other read/write is occuring to this location (ENSURE THREAD SAFTETY)
 				GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT));
-
+			if (dataPtr == nullptr)
+			{
+				LogError(std::format("Attempted to write to index buffer with id:{} "
+					"but the dataptr retrieved to copy is null", id));
+				return;
+			}
 			memcpy(dataPtr, vertexArray, bufferByteSize);
 			GL_CALL(glUnmapNamedBuffer(id));
 		}
@@ -107,13 +119,14 @@ namespace Rendering
 				return;
 			}
 			GL_CALL(glVertexArrayAttribFormat(id, attribute.m_ShaderLocation, attribute.m_ComponentCount, componentType, attribute.m_Normalize, attribute.m_ByteOffset));
-			GL_CALL(glVertexArrayAttribBinding(id, attribute.m_ShaderLocation, attribute.m_BindIndex));
+			GL_CALL(glVertexArrayAttribBinding(id, attribute.m_ShaderLocation, attribute.m_BufferBindIndex));
 
-			if (attribute.m_AdvanceType == VertexAttributeAdvance::Instance)
-				GL_CALL(glVertexArrayBindingDivisor(id, attribute.m_ShaderLocation, 1));
+			/*if (attribute.m_AdvanceType == VertexAttributeAdvance::Instance)
+				GL_CALL(glVertexArrayBindingDivisor(id, attribute.m_ShaderLocation, 1));*/
 		}
 
-		static void BindBufferToVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState, const RenderObjectId bufferId, const size_t elementSize, const BindIndex bindIndex)
+		static void BindBufferToVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState, const RenderObjectId bufferId, 
+			const size_t elementSize, const VertexLayoutBindIndex bindIndex, const VertexAttributeAdvance advanceType)
 		{
 			const RenderObjectId vertexArrayObjId = std::bit_cast<RenderObjectId>(implState);
 			if (vertexArrayObjId == INVALID_OBJ_ID || bufferId==INVALID_OBJ_ID)
@@ -124,6 +137,11 @@ namespace Rendering
 			}
 			//LogError(std::format("buffer id:{} ({}) id:{}({}) element size:{} bindIndex:{}", bufferId, glIsBuffer(bufferId), vertexArrayObjId, glIsBuffer(vertexArrayObjId), elementSize, bindIndex));
 			GL_CALL(glVertexArrayVertexBuffer(vertexArrayObjId, bindIndex, bufferId, 0, elementSize));
+
+			if (advanceType == VertexAttributeAdvance::Instance)
+			{
+				GL_CALL(glVertexArrayBindingDivisor(vertexArrayObjId, bindIndex, 1));
+			}
 		}
 
 		static void DeallocateVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState)

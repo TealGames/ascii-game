@@ -8,7 +8,6 @@ class TextureAsset : public Asset
 private:
 	Rendering::Texture m_texture;
 public:
-	static const std::string EXTENSION;
 
 private:
 public:
@@ -17,8 +16,11 @@ public:
 
 	bool IsValidTexture() const;
 	const Rendering::Texture& GetTexture() const;
+	Rendering::Texture& GetTextureMutable();
 	//VisualData& GetTextureMutable();
 
 	void UpdateAssetFromFile() override;
 };
+
+bool HasTextureExtension(const std::string& extension);
 

@@ -135,13 +135,14 @@ namespace Rendering
 		m_layout.push_back(attribute);
 		m_callbacks.m_AddAttributeFunc(m_implState, m_layout.back());
 	}
-	void VertexLayout::LinkToBuffer(const RenderObjectId id, const size_t elementSize, const BindIndex bindIndex)
+	void VertexLayout::LinkToBuffer(const RenderObjectId id, const size_t elementSize, 
+		const VertexAttributeAdvance advance, const VertexLayoutBindIndex bindIndex)
 	{
-		m_callbacks.m_BindVertexBufferFunc(m_implState, id, elementSize, bindIndex);
+		m_callbacks.m_BindVertexBufferFunc(m_implState, id, elementSize, bindIndex, advance);
 	}
-	void VertexLayout::LinkToBuffer(const VertexBuffer& buffer, const BindIndex bindIndex)
+	void VertexLayout::LinkToBuffer(const VertexBuffer& buffer, const VertexLayoutBindIndex bindIndex)
 	{
-		LinkToBuffer(buffer.GetId(), buffer.GetElementSize(), bindIndex);
+		LinkToBuffer(buffer.GetId(), buffer.GetElementSize(), buffer.m_AdvanceType, bindIndex);
 	}
 
 	const VertexAttribute* VertexLayout::GetAttributeByLocation(const std::uint8_t shaderLocation) const
@@ -157,7 +158,7 @@ namespace Rendering
 	{
 		for (const auto& attribute : m_layout)
 		{
-			if (attribute.m_BindIndex == bindIndex)
+			if (attribute.m_BufferBindIndex == bindIndex)
 				return &attribute;
 		}
 		return nullptr;
@@ -174,12 +175,12 @@ namespace Rendering
 	BufferController::BufferController(VertexLayout* vertexLayout) 
 		: m_layout(vertexLayout), m_bufferData(), m_currentBindIndex(0) {}
 
-	BindIndex BufferController::AddVertexBuffer(VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer)
+	VertexLayoutBindIndex BufferController::AddVertexBuffer(VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer)
 	{
 		m_layout->LinkToBuffer(*vertexBuffer, m_currentBindIndex);
 		m_bufferData.emplace_back(m_currentBindIndex, vertexBuffer, indexBuffer);
 
-		if (m_currentBindIndex == std::numeric_limits<BindIndex>::max())
+		if (m_currentBindIndex == std::numeric_limits<VertexLayoutBindIndex>::max())
 		{
 			LogError(std::format("Reached the max limit of binding indices in buffer controller"));
 			return 0;
@@ -187,7 +188,7 @@ namespace Rendering
 
 		return m_currentBindIndex++;
 	}
-	BufferData* BufferController::GetBufferDataMutable(const BindIndex bindIndex)
+	BufferData* BufferController::GetBufferDataMutable(const VertexLayoutBindIndex bindIndex)
 	{
 		if (m_bufferData.empty()) 
 			return nullptr;
@@ -200,27 +201,23 @@ namespace Rendering
 		return nullptr;
 	}
 
-	void BufferController::AddVertexBufferAttributes(const BindIndex bufferBindIndex, std::vector<VertexAttribute>& attributes)
+	void BufferController::AddVertexBufferAttributes(const VertexLayoutBindIndex bufferBindIndex, std::vector<VertexAttribute>& attributes)
 	{
 		BufferData* bufferData = GetBufferDataMutable(bufferBindIndex);
 		for (auto& attribute : attributes)
 		{
-			attribute.m_AdvanceType = bufferData->m_VertexBuffer->m_AdvanceType;
-			attribute.m_BindIndex = bufferBindIndex;
-
+			attribute.m_BufferBindIndex = bufferBindIndex;
 			m_layout->AddAttribute(attribute);
 		}
 	}
-	void BufferController::AddVertexBufferMatrix4Attribute(const BindIndex bufferBindIndex, const ShaderLocation startLocation,
+	void BufferController::AddVertexBufferMatrix4Attribute(const VertexLayoutBindIndex bufferBindIndex, const ShaderLocation startLocation,
 		const bool normalize, const size_t matrixColumnTypeSize, const ByteOffset initialByteOffset)
 	{
-		BufferData* bufferData = GetBufferDataMutable(bufferBindIndex);
-		const VertexAttributeAdvance advanceType = bufferData->m_VertexBuffer->m_AdvanceType;
 		for (std::uint8_t i = 0; i < 4; i++)
 		{
 			m_layout->AddAttribute(VertexAttribute(startLocation + i, 4, VertexAttributeBaseType::Float, normalize,
 				//For the offset, we assume it is tightly packed with no alignment
-				initialByteOffset + matrixColumnTypeSize * i, bufferBindIndex, advanceType));
+				initialByteOffset + matrixColumnTypeSize * i, bufferBindIndex));
 		}
 	}
 }

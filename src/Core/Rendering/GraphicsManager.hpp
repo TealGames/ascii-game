@@ -14,6 +14,7 @@ namespace Rendering
 	private:
 		AssetManagement::AssetManager* m_assetManager;
 		ShaderAsset* m_defaultShader;
+		ShaderAsset* m_textureShader;
 
 		std::unordered_map<std::string_view, const Shader*> m_shaders;
 	public:
@@ -25,6 +26,7 @@ namespace Rendering
 		void LoadAllShaders();
 
 		const Shader* GetDefaultShader() const;
+		const Shader* GetTextureShader() const;
 		const Shader* TryGetShader(const std::string& name) const;
 	};
 }

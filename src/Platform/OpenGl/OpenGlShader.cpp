@@ -22,6 +22,8 @@ namespace Rendering
 		{
 			RenderObjectId shaderId= INVALID_OBJ_ID;
 			GL_CALL(shaderId = glCreateShader(shaderType));
+			//TODO: consider making multiple sources with one with ifdef statements to support one shader creating multiple others based on some
+			//compile time flags, especially if there is a lot of repetitive stuff in multiple shader
 			GL_CALL(glShaderSource(shaderId, 1, &shaderSource, nullptr));
 			GL_CALL(glCompileShader(shaderId));
 
@@ -72,28 +74,47 @@ namespace Rendering
 			glUseProgram(0);
 		}
 
+		static RenderObjectId GetActiveShaderProgramId()
+		{
+			GLint currentProgramId = INVALID_OBJ_ID;
+			glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgramId);
+			return currentProgramId;
+		}
+
 		static bool TrySetShaderUniform(const Shader& shader, const UniformType uniform, const char* uniformName, const void* valuePtr)
 		{
 			const RenderObjectId programId = shader.GetId();
 			if (glIsProgram(programId) == GL_FALSE)
 			{
-				LogError(std::format("OpenGL: Attempted to set shader:{} uniform:{} but shader program with that id does not exist", 
+				LogError(std::format("OpenGL: Attempted to set shader:{} uniform:{} but shader program with that id does not exist",
 					shader.ToString(), uniformName));
 				return false;
 			}
 
-			const int location = glGetUniformLocation(programId, uniformName);
+			int location = -1;
+			GL_CALL(location = glGetUniformLocation(programId, uniformName));
 			if (location == -1)
 			{
 				LogError(std::format("OpenGL: Invalid uniform location when setting shader:{} uniform:{}. "
 					"Possibly undefined uniform name or wrong spelling", shader.ToString(), uniformName));
 				return false;
 			}
-			
+
+			if (GetActiveShaderProgramId() != programId)
+			{
+				LogError(std::format("OpenGL: Attempted to set shader:{} uniform:'{}' but that shader program is not currently bound."
+					"OpenGL requires uniform setting to be done on the active shader", shader.ToString(), uniformName));
+				return false;
+			}
+
 			if (uniform == UniformType::Float)
+			{
 				GL_CALL(glUniform1f(location, *static_cast<const float*>(valuePtr)));
-			else if (uniform == UniformType::Int)
+			}
+			else if (uniform == UniformType::Int || uniform == UniformType::Sampler2D)
+			{
 				GL_CALL(glUniform1i(location, *static_cast<const int*>(valuePtr)));
+			}
 			else if (uniform == UniformType::Vector2)
 			{
 				const float* floatArr = static_cast<const float*>(valuePtr);
@@ -122,6 +143,42 @@ namespace Rendering
 
 			return true;
 		}
+		static bool TryGetShaderUniform(const Shader& shader, const UniformType uniform, const char* uniformName, void* outputPtr)
+		{
+			const RenderObjectId programId = shader.GetId();
+			if (glIsProgram(programId) == GL_FALSE)
+			{
+				LogError(std::format("OpenGL: Attempted to get shader:{} uniform:{} but shader program with that id does not exist",
+					shader.ToString(), uniformName));
+				return false;
+			}
+
+			int location = -1;
+			GL_CALL(location= glGetUniformLocation(programId, uniformName));
+			if (location == -1)
+			{
+				LogError(std::format("OpenGL: Invalid uniform location when getting shader:{} uniform:{}. "
+					"Possibly undefined uniform name or wrong spelling", shader.ToString(), uniformName));
+				return false;
+			}
+
+			if (uniform == UniformType::Float || uniform == UniformType::Vector2 || uniform == UniformType::Vector3
+				|| uniform == UniformType::Vector4 || uniform == UniformType::Matrix4x4)
+			{
+				GL_CALL(glGetUniformfv(programId, location, static_cast<float*>(outputPtr)));
+			}
+			else if (uniform == UniformType::Int || uniform == UniformType::Sampler2D)
+			{
+				GL_CALL(glGetUniformiv(programId, location, static_cast<int*>(outputPtr)));
+			}
+			else
+			{
+				LogError("OpenGL: Uniform type has no corresponding actions");
+				return false;
+			}
+
+			return true;
+		}
 
 		Shader CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
 		{
@@ -130,7 +187,8 @@ namespace Rendering
 					CreateShaderProgram,
 					BindActive,
 					UnbindActive,
-					TrySetShaderUniform
+					TrySetShaderUniform,
+					TryGetShaderUniform
 				});
 		}
 	}

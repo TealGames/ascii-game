@@ -42,6 +42,10 @@ namespace Rendering
 			glEnable(GL_DEPTH_TEST);
 			glDepthFunc(GL_LESS);
 
+			//Enables alpha transparency
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 			GL_CALL(glEnable(GL_DEBUG_OUTPUT));
 			GL_CALL(glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS));
 			GL_CALL(glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE,
@@ -233,6 +237,19 @@ namespace Rendering
 		{
 #if defined(OPENGL)
 			//LogError("DRAWING");
+			int program = -1;
+			glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+			//LogError(std::format("Current program: {}", program));
+
+			glActiveTexture(GL_TEXTURE0);
+
+			GLint boundTex = 0;
+			static GLint prevBound = 0;
+			glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTex);
+			if (prevBound == 0) prevBound = boundTex;
+			LogWarning(std::format("RENDERING: Texture bound at slot:{} has id:{}", 0, boundTex));
+			if (boundTex==0 || boundTex != prevBound) LogError(std::format("tex changed and/or 0 id bound:{} prev:{}", boundTex, prevBound));
+
 			GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, drawIndexCount, GL_UNSIGNED_INT, (const void*)indicesStartByteOffset, drawInstanceCount));
 #endif
 		}

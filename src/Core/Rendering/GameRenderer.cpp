@@ -25,6 +25,7 @@ namespace Rendering
 
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
+    constexpr const char* TEXTURE_UNIFORM_NAME = "uTexture";
 
     std::string Vertex::ToString() const
     {
@@ -37,7 +38,8 @@ namespace Rendering
 
     std::string RenderBatch::ToString() const
     {
-        return std::format("[Batch Vertices:{} Indices:{} Instances:{}]", 
+        return std::format("[Batch Shader:{} Texture:{}Vertices:{} Indices:{} Instances:{}]", 
+            m_Shader!=nullptr, m_Texture!=nullptr,
             Utils::ToStringIterable<std::vector<VertexType>, VertexType>(m_Vertices),
             Utils::ToStringIterable<std::vector<IndexType>, IndexType>(m_VertexIndices),
             Utils::ToStringIterable<std::vector<InstanceType>, InstanceType>(m_InstanceData));
@@ -48,7 +50,7 @@ namespace Rendering
     Renderer::Renderer(const EngineState& engineState)
         : m_isInit(false), m_engineState(&engineState), m_staticRenderData(),
         m_renderCalls(), m_textData(), m_textureData(), m_batches(), m_flushType(BatchFlushType::StateChange), 
-        m_layout(), m_bufferController(&m_layout),
+        m_layout(), m_bufferController(&m_layout), m_textureController(),
         m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer()
     {
         
@@ -64,15 +66,16 @@ namespace Rendering
         m_indexBuffer = Backend::CreateIndexBuffer(nullptr, PRE_ALLOCATED_INDICES_COUNT);
         m_instancedBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(InstanceData), PRE_ALLOCATED_SHAPES, VertexAttributeAdvance::Instance);
 
-        const BindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
-        std::vector<VertexAttribute> vertexAttributes = { VertexAttribute{0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Pos)} };
+        const VertexLayoutBindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
+        std::vector<VertexAttribute> vertexAttributes = { VertexAttribute(0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Pos)), 
+                                                          VertexAttribute(1, 2, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_UVPos)) };
         m_bufferController.AddVertexBufferAttributes(vertexBindIndex, vertexAttributes);
 
-        const BindIndex instancedBindIndex = m_bufferController.AddVertexBuffer(&m_instancedBuffer, nullptr);
+        const VertexLayoutBindIndex instancedBindIndex = m_bufferController.AddVertexBuffer(&m_instancedBuffer, nullptr);
         std::vector<VertexAttribute> instancedAttributes = {
-            VertexAttribute{1, 4, VertexAttributeBaseType::Float, false, offsetof(InstanceData, m_Color)} };
+            VertexAttribute(2, 4, VertexAttributeBaseType::Float, false, offsetof(InstanceData, m_Color)) };
         m_bufferController.AddVertexBufferAttributes(instancedBindIndex, instancedAttributes);
-        m_bufferController.AddVertexBufferMatrix4Attribute(instancedBindIndex, 2, false, sizeof(Vec4), offsetof(InstanceData, m_ModelMatrix));
+        m_bufferController.AddVertexBufferMatrix4Attribute(instancedBindIndex, 3, false, sizeof(Vec4), offsetof(InstanceData, m_ModelMatrix));
 
         m_isInit = true;
     }
@@ -155,6 +158,10 @@ namespace Rendering
     {
         return m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultShader();
     }
+    const Shader* Renderer::GetTextureShader() const
+    {
+        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetTextureShader();
+    }
     void Renderer::FrameRenderDataUpdateCheck()
     {
         if (!m_staticRenderData.m_UpdatedDataThisFrame)
@@ -169,9 +176,9 @@ namespace Rendering
         return m_staticRenderData;
     }
 
-    void Renderer::BatchStateChangeCheck(const Shader* shader)
+    void Renderer::BatchStateChangeCheck(const Shader* shader, Texture* texture)
     {
-        bool hasStateChange = !m_batches.empty() && m_batches.back().m_Shader != shader;
+        bool hasStateChange = !m_batches.empty() && (m_batches.back().m_Shader != shader || m_batches.back().m_Texture != texture);
         if (m_flushType == BatchFlushType::StateChange && hasStateChange)
         {
             FlushBatches();
@@ -179,15 +186,14 @@ namespace Rendering
 
         if (m_batches.empty() || hasStateChange)
         {
-            //LogError(std::format("Adding new batch"));
-            m_batches.push_back(RenderBatch{ shader});
+            m_batches.emplace_back(shader, texture);
         }
     }
 
-    void Renderer::AddVerticesToBatch(const Shader* shader,
+    void Renderer::AddVerticesToBatch(const Shader* shader, Texture* texture,
         const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize)
     {
-        BatchStateChangeCheck(shader);
+        BatchStateChangeCheck(shader, texture);
        
         const size_t& firstVertexIndex = m_batches.back().m_IndexOffset;
         //Update the indices to match the start of new index
@@ -198,10 +204,12 @@ namespace Rendering
             vertexArray, vertexArray + vertexSize);
         m_batches.back().m_VertexIndices.insert(m_batches.back().m_VertexIndices.end(),
             indexArray, indexArray + indicesSize);
+
+        LogWarning(std::format("Adding new batch vertices:{}", m_batches.back().ToString()));
     }
     void Renderer::AddVertexToBatch(const Shader* shader, const Vertex& vertex)
     {
-        BatchStateChangeCheck(shader);
+        BatchStateChangeCheck(shader, nullptr);
         m_batches.back().m_Vertices.emplace_back(vertex);
     }
     void Renderer::AddIndexToBatch(const IndexType& index)
@@ -236,9 +244,8 @@ namespace Rendering
                 return;
             }
             batch.m_Shader->BindActive();
-
-            //const Mat4 identity = Mat4::GetIdentity();
-
+            LogWarning(std::format("Active program binded:{}", batch.m_Shader->GetId()));
+           
             if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, VIEW_MATRIX_UNIFORM_NAME, 
                 m_staticRenderData.m_CameraData->m_ViewMatrix.GetMemPointer()))
                 return;
@@ -246,14 +253,18 @@ namespace Rendering
                 m_staticRenderData.m_CameraData->m_PlatformProjectionMatrix.GetMemPointer()))
                 return;
 
-            /*
-            if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, VIEW_MATRIX_UNIFORM_NAME,
-                identity.GetMemPointer()))
-                return;
-            if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, PROJ_MATRIX_UNIFORM_NAME,
-                identity.GetMemPointer()))
-                return;
-            */
+            if (batch.m_Texture != nullptr)
+            {
+                TextureSlotIndex slot= m_textureController.AddTextureToAvailableSlot(batch.m_Texture);
+                
+                if (!batch.m_Shader->TrySetUniform(UniformType::Sampler2D, TEXTURE_UNIFORM_NAME, &slot))
+                    return;
+
+                int textureSlot = 0;
+                batch.m_Shader->TryGetUniform(UniformType::Sampler2D, TEXTURE_UNIFORM_NAME, &textureSlot);
+                LogWarning(std::format("Getting uniform:{} actual:{}", textureSlot, slot));
+            }
+            LogWarning(std::format("Flushing batch:{} vertex count:{} index:{}", batch.ToString(), batch.m_Vertices.size(), batch.m_VertexIndices.size()));
 
             const size_t drawVertexCount = batch.m_Vertices.size();
             const size_t drawIndexCount = batch.m_VertexIndices.size();
@@ -267,10 +278,11 @@ namespace Rendering
             batch.m_Vertices.clear();
             batch.m_InstanceData.clear();
 
-           // LogError(std::format("Drawing vertices:{} indices:{} isntances:{}", drawVertexCount, drawInstanceCount, drawInstanceCount));
+            LogWarning(std::format("Drawing vertices:{} indices:{} isntances:{}", drawVertexCount, drawIndexCount, drawInstanceCount));
             Backend::DrawUploadedIndexBufferInstanced(0, drawIndexCount, drawInstanceCount);
             //Backend::DrawUploadedIndexBuffer(0, drawIndexCount);
 
+            m_textureController.ClearAllSlots();
             batch.m_Shader->UnbindActive();
         }
         
@@ -280,6 +292,7 @@ namespace Rendering
     {
         //m_renderCalls.emplace_back(CircleCall{ centerPos, radius, color });
 
+        //TODO: the polygon and circle calls 2d should instead be textures that are drawon on quads to allow for batching
         const float angleStep = 2 * std::numbers::pi / sides;
         const size_t vertexCount = sides + 1;
         Vertex* vertices = (Vertex*)alloca(sizeof(Vertex) * vertexCount);
@@ -299,42 +312,38 @@ namespace Rendering
             //The last vertex index needs to wrap around to start with index 1
             indices[i * 3 + 2] = i < sides - 1 ? i + 2 : 1;
         }
-        AddVerticesToBatch(GetDefaultShader(), vertices, vertexCount, indices, indexCount);
+        AddVerticesToBatch(GetDefaultShader(), nullptr, vertices, vertexCount, indices, indexCount);
         AddInstanceDataToBatch(modelMatrix, color);
     }
     void Renderer::AddCircleCall2D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
     {
         AddPolygonCall2D(radius, CIRCLE_SIDE_COUNT, modelMatrix, color);
     }
-    void Renderer::AddRectangleCall2D(const Vec2& size, const Mat4& modelMatrix, const Utils::Color& color)
+
+    void Renderer::AddRectangleCall2DMulti(const Shader* shader, Texture* texture, const Vec2& worldSize,
+        const Mat4& modelMatrix, const Utils::Color& color)
     {
         constexpr size_t VERTEX_COUNT = 4;
-        const WorldPosition3D halfSize = Vec3(size / 2, 0);
-        //const WorldPosition3D centerPos = {0, 0, 0};
+        const WorldPosition3D halfSize = Vec3(worldSize / 2, 0);
         //Start with top right vertex, then bottom right, then bottom left, top left
-        const Vertex vertices[VERTEX_COUNT] = { halfSize, {halfSize * Vec3(1, -1, 0)},
-                                     {halfSize * Vec3(-1, -1, 0)}, {halfSize * Vec3(-1, 1, 0)} };
-        /*
-        const Vertex vertices[VERTEX_COUNT] = { {centerPos + halfSize}, {centerPos + halfSize * Vec3(1, -1, 0)},
-                                    {centerPos + halfSize * Vec3(-1, -1, 0)}, {centerPos + halfSize * Vec3(-1, 1, 0)} };
-        */
-
-        /* for (const auto& vertex : vertices)
-         {
-             LogWarning(std::format("Vertex:{} screen:{}", vertex.ToString(),
-                 m_engineState->m_CameraController->GetActiveCamera().WorldToNdcPosition(vertex.m_Pos, ProjectionMatrixType::Platform).ToString()));
-         }
-         LogError("ASS");*/
+        const Vertex vertices[VERTEX_COUNT] = { Vertex(halfSize, UV(1, 1)), Vertex(halfSize * Vec3(1, -1, 0), UV(1, 0)),
+                                     Vertex(halfSize * Vec3(-1, -1, 0), UV(0 ,0)), Vertex(halfSize * Vec3(-1, 1, 0), UV(0, 1))};
 
         constexpr size_t INDEX_COUNT = 6;
         IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2 };
-        AddVerticesToBatch(GetDefaultShader(), vertices, VERTEX_COUNT, indices, INDEX_COUNT);
+        AddVerticesToBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
         AddInstanceDataToBatch(modelMatrix, color);
     }
-    void Renderer::AddTextureCall(const WorldPosition3D& worldPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color)
+    void Renderer::AddRectangleCall2D(const Vec2& worldSize, const Mat4& modelMatrix, const Utils::Color& color)
     {
-        m_textureData.emplace_back(tex, scale);
-        m_renderCalls.emplace_back(TextureCall{ static_cast<TextureID>(m_textureData.size() - 1), worldPos, color });
+        AddRectangleCall2DMulti(GetDefaultShader(), nullptr, worldSize, modelMatrix, color);
+    }
+    void Renderer::AddTextureCall(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Utils::Color color)
+    {
+        //AddRectangleCall2DMulti(GetTextureShader(), &tex, worldSize, modelMatrix, color);
+        AddRectangleCall2DMulti(GetTextureShader(), &tex, worldSize, modelMatrix, color);
+        //m_textureData.emplace_back(tex, scale);
+        //m_renderCalls.emplace_back(TextureCall{ static_cast<TextureID>(m_textureData.size() - 1), worldPos, color });
     }
     void Renderer::AddTextCall(const WorldPosition3D& worldPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color)
     {
@@ -354,10 +363,10 @@ namespace Rendering
     {
         constexpr size_t VERTEX_COUNT = 8;
         const WorldPosition3D halfSize = size / 2;
-        Vertex vertices[VERTEX_COUNT] = { halfSize, { halfSize * Vec3(1, -1, 1)},
-                                          { halfSize * Vec3(-1, -1, 1)}, { halfSize * Vec3(-1, 1, 1)},
-                                          { halfSize * Vec3(1, 1, -1)},  { halfSize * Vec3(1, -1, -1)},
-                                          { halfSize * Vec3(-1, -1, -1)}, { halfSize * Vec3(-1, 1, -1)} };
+        Vertex vertices[VERTEX_COUNT] = { Vertex(halfSize, UV()),                       Vertex(halfSize * Vec3(1, -1, 1), UV()),
+                                          Vertex(halfSize * Vec3(-1, -1, 1), UV()),     Vertex(halfSize * Vec3(-1, 1, 1), UV()),
+                                          Vertex(halfSize * Vec3(1, 1, -1), UV()),      Vertex(halfSize * Vec3(1, -1, -1), UV()),
+                                          Vertex(halfSize * Vec3(-1, -1, -1), UV()),    Vertex(halfSize * Vec3(-1, 1, -1), UV()) };
 
         constexpr size_t INDEX_COUNT = 36;
         //Front face, back face, right, left, top, bottom
@@ -368,7 +377,7 @@ namespace Rendering
                                            4, 0, 3, 4, 7, 3,
                                            5, 1, 2, 5, 6, 2 };
 
-        AddVerticesToBatch(GetDefaultShader(), vertices, VERTEX_COUNT, indices, INDEX_COUNT);
+        AddVerticesToBatch(GetDefaultShader(), nullptr, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
         AddInstanceDataToBatch(modelMatrix, color);
     }
     void Renderer::AddSphereCall3D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
@@ -401,7 +410,7 @@ namespace Rendering
 
                 pos = Vec3(sinf(phi) * cosf(theta), cosf(phi), sinf(phi) * sinf(theta));
 
-                AddVertexToBatch(GetDefaultShader(), Vertex{ pos * radius });
+                AddVertexToBatch(GetDefaultShader(), Vertex{ pos * radius, UV(u, v) });
                 Vec3 normal = pos.GetNormalized();
                 Vec2 uv = Vec2(u, v);
 
@@ -430,7 +439,7 @@ namespace Rendering
         }
 
         //First we build the north pole vertex and create the indices
-        AddVertexToBatch(GetDefaultShader(), Vertex{ Vec3(0.0f, radius, 0.0f) });
+        AddVertexToBatch(GetDefaultShader(), Vertex{ Vec3(0.0f, radius, 0.0f), UV(1.0f, 1.0f)});
         IndexType poleIndex = HORIZONTAL_LINE_COUNT * VERTICAL_LINE_COUNT;
         for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
         {
@@ -440,7 +449,7 @@ namespace Rendering
         }
 
         //Finally, we connect all the bottom latitude/row verticies to the south pole vertex
-        AddVertexToBatch(GetDefaultShader(), Vertex{ Vec3(0.0f, -1.5*radius, 0.0f) });
+        AddVertexToBatch(GetDefaultShader(), Vertex{ Vec3(0.0f, -1.5*radius, 0.0f), UV(0.0f, 0.0f)});
         poleIndex++;
         const IndexType bottomStartIndex = poleIndex - VERTICAL_LINE_COUNT - 1;
         for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)

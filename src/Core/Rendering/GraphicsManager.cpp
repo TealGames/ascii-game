@@ -6,14 +6,16 @@ namespace Rendering
 {
 	static const std::filesystem::path SHADERS_FOLDER = "shaders";
 	static const const char* DEFAULT_SHADER_NAME = "default";
+	static const const char* TEXTURE_SHADER_NAME = "texture";
 
 
 	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager) 
-		: m_assetManager(&assetManager), m_defaultShader(nullptr), m_shaders() {}
+		: m_assetManager(&assetManager), m_defaultShader(nullptr), m_textureShader(nullptr), m_shaders() {}
 
 	void GraphicsManager::LoadAllShaders()
 	{
 		m_defaultShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(DEFAULT_SHADER_NAME);
+		m_textureShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(TEXTURE_SHADER_NAME);
 		if (m_defaultShader == nullptr)
 		{
 			LogError(std::format("Failed to load default shader by name:{}", DEFAULT_SHADER_NAME));
@@ -30,6 +32,10 @@ namespace Rendering
 		/*LogError(std::format("Getting default shader:{} vsource:{} fragsource:{}", m_defaultShader->ToString(), 
 			m_defaultShader->GetShader().GetVertexSource(), m_defaultShader->GetShader().GetFragmnetSource()));*/
 		return &m_defaultShader->GetShader();
+	}
+	const Shader* GraphicsManager::GetTextureShader() const
+	{
+		return &m_textureShader->GetShader();
 	}
 	const Shader* GraphicsManager::TryGetShader(const std::string& name) const
 	{

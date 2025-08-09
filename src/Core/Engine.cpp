@@ -21,6 +21,8 @@
 #include "AnsiCodes.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 
+#include "Core/Asset/TextureAsset.hpp"
+
 
 namespace Core
 {
@@ -122,6 +124,9 @@ namespace Core
 	//TODO: make an interaction profile that sotres all the current interaction keycodes (like select = mousebuttomleft) and make design extensible so that you can choose
 	//a new dvice and then it can have different keycode values. so maybe there is a default profile for each device and then when switching, a different one is activated
 	//TODO: right now for shader asset (and scene asset) we avoid asset manager dependency by using static member function for setting asset hidden, which should not be allowed
+	//TODO: consider making a shader asset that can create multiple shader programs (store all of them? or maybe create glsl files and then force asset generation?)
+	//but it should be done by having one shader with ifdef macros and then defining them or not based on some flag or user command args that then get passed as multiple sources
+	//into opengl when compiling shader
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -398,11 +403,14 @@ namespace Core
 
 		const Vec3 objectCenter = Vec3(0, 0, 4.8);
 		static Quat rot = Quat::Identity();
-		rot *= Vec3{ 0, 0.3f * unscaledDeltaTime, 0};
+		//rot *= Vec3{ 0, 0.3f * unscaledDeltaTime, 0};
 		const Mat4 modelMatrix = CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
 		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Utils::COLOR_BLUE
 		//m_renderer.AddCircleCall2D(0.13f, modelMatrix, Utils::COLOR_RED);
-		m_renderer.AddSphereCall3D(0.13f, modelMatrix, Utils::COLOR_GREEN);
+		//m_renderer.AddSphereCall3D(0.13f, modelMatrix, Utils::COLOR_GREEN);
+		//m_renderer.AddRectangleCall2D(Vec2(0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
+		Rendering::Texture& tex= m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/x_icon.png")->GetTextureMutable();
+		m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
 
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 
 			CalculateRotationMatrix(rot) * CalculateTranslationMatrix(-Vec3::Zero())  * CalculateScaleMatrix(Vec3::One());*/

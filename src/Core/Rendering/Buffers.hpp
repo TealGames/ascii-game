@@ -138,7 +138,7 @@ namespace Rendering
 		Float	= 0,
 	};
 
-	using BindIndex = std::uint8_t;
+	using VertexLayoutBindIndex = std::uint8_t;
 	using ShaderLocation = std::uint8_t;
 	using ComponentCount = std::uint8_t;
 	using ByteOffset = std::uint8_t;
@@ -164,8 +164,11 @@ namespace Rendering
 		/// </summary>
 		ByteOffset m_ByteOffset = 0;
 
-		BindIndex m_BindIndex = 0;
-		VertexAttributeAdvance m_AdvanceType;
+		/// <summary>
+		/// The bind index connects the vertex attribute of a buffer to 
+		/// the vertex array object
+		/// </summary>
+		VertexLayoutBindIndex m_BufferBindIndex = 0;
 	};
 
 	inline constexpr size_t IMPL_STATE_SIZE = 4;
@@ -173,7 +176,8 @@ namespace Rendering
 	{
 		void(*m_InitFunc)(std::array<std::byte, IMPL_STATE_SIZE>&);
 		void(*m_AddAttributeFunc)(std::array<std::byte, IMPL_STATE_SIZE>&, const VertexAttribute&);
-		void(*m_BindVertexBufferFunc)(std::array<std::byte, IMPL_STATE_SIZE>&, const RenderObjectId, const size_t, const BindIndex);
+		void(*m_BindVertexBufferFunc)(std::array<std::byte, IMPL_STATE_SIZE>&, const RenderObjectId, const size_t elementSize, 
+			const VertexLayoutBindIndex, const VertexAttributeAdvance advanceType);
 		void(*m_DeallocateFunc)(std::array<std::byte, IMPL_STATE_SIZE>&);
 	};
 
@@ -186,7 +190,8 @@ namespace Rendering
 	public:
 
 	private:
-		void LinkToBuffer(const RenderObjectId id, const size_t elementSize, const BindIndex bindIndex);
+		void LinkToBuffer(const RenderObjectId id, const size_t elementSize, 
+			const VertexAttributeAdvance advance, const VertexLayoutBindIndex bindIndex);
 		void Deallocate();
 	public:
 		VertexLayout();
@@ -197,7 +202,7 @@ namespace Rendering
 
 		void AddAttribute(const VertexAttribute& attribute);
 		//Note: index buffers are NOT linked to vertex layout explicitly
-		void LinkToBuffer(const VertexBuffer& buffer, const BindIndex bindIndex);
+		void LinkToBuffer(const VertexBuffer& buffer, const VertexLayoutBindIndex bindIndex);
 
 		const VertexAttribute* GetAttributeByLocation(const std::uint8_t shaderLocation) const;
 		const VertexAttribute* GetAttributeByBindIndex(const std::uint8_t bindIndex) const;
@@ -213,7 +218,7 @@ namespace Rendering
 		/// vertex layout. Note: INDEX BUFFERS DO NOT HAVE BIND INDICES
 		/// SINCE THEY ARE IMPLICITLY BOUND AFTER CREATION (OPENGL)
 		/// </summary>
-		BindIndex m_VertexBufferBindIndex = 0;
+		VertexLayoutBindIndex m_VertexBufferBindIndex = 0;
 		VertexBuffer* m_VertexBuffer = nullptr;
 		IndexBuffer* m_IndexBuffer = nullptr;
 	};
@@ -223,15 +228,15 @@ namespace Rendering
 	private:
 		VertexLayout* m_layout;
 		std::vector<BufferData> m_bufferData;
-		BindIndex m_currentBindIndex;
+		VertexLayoutBindIndex m_currentBindIndex;
 	public:
 
 	private:
 	public:
 		BufferController(VertexLayout* vertexLayout);
 
-		BindIndex AddVertexBuffer(VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer);
-		BufferData* GetBufferDataMutable(const BindIndex bindIndex);
+		VertexLayoutBindIndex AddVertexBuffer(VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer);
+		BufferData* GetBufferDataMutable(const VertexLayoutBindIndex bindIndex);
 
 		/// <summary>
 		/// Will add all the attributes to the buffer.
@@ -240,7 +245,7 @@ namespace Rendering
 		/// </summary>
 		/// <param name="bufferBindIndex"></param>
 		/// <param name="attributes"></param>
-		void AddVertexBufferAttributes(const BindIndex bufferBindIndex, std::vector<VertexAttribute>& attributes);
+		void AddVertexBufferAttributes(const VertexLayoutBindIndex bufferBindIndex, std::vector<VertexAttribute>& attributes);
 
 		/// <summary>
 		/// Rather than creating the 4 separate attributes for every column, you can plug in some basic data and the 
@@ -253,7 +258,7 @@ namespace Rendering
 		/// <param name="startLocation"></param>
 		/// <param name="normalize"></param>
 		/// <param name="initialByteOffset"></param>
-		void AddVertexBufferMatrix4Attribute(const BindIndex bufferBindIndex, const ShaderLocation startLocation, 
+		void AddVertexBufferMatrix4Attribute(const VertexLayoutBindIndex bufferBindIndex, const ShaderLocation startLocation, 
 			const bool normalize, const size_t matrixColumnTypeSize, const ByteOffset initialByteOffset);
 	};
 }

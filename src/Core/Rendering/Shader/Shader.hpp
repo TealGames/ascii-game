@@ -21,8 +21,13 @@ namespace Rendering
 		Vector3 = 3,
 		Vector4 = 4,
 		Matrix4x4 = 5,
+		/// <summary>
+		/// Represents a special value that holds the 
+		/// texture slot index that the sampler uses for the
+		/// texture. NOTE: sampler uniform must be get/set with int*
+		/// </summary>
+		Sampler2D	  = 6,
 	};
-
 
 	class Shader;
 	struct ShaderPlatformCallbacks
@@ -31,8 +36,8 @@ namespace Rendering
 		void(*m_BindActiveFunc) (const Shader& shader);
 		void(*m_UnbindActiveFunc) (const Shader& shader);
 		bool(*m_TrySetUniformFunc) (const Shader& shader, const UniformType uniform, const char* uniformName, const void* valuePtr);
+		bool(*m_TryGetUniformFunc) (const Shader& shader, const UniformType uniform, const char* uniformName, void* outputPtr);
 	};
-
 
 	class Shader
 	{
@@ -64,6 +69,7 @@ namespace Rendering
 		void UnbindActive() const;
 
 		bool TrySetUniform(const UniformType type, const char* uniformName, const void* valuePtr) const;
+		bool TryGetUniform(const UniformType type, const char* uniformName, void* outputValue) const;
 
 		std::string ToString() const;
 		//ShaderType GetType() const;

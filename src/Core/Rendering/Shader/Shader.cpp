@@ -92,6 +92,15 @@ namespace Rendering
 		}
 		return true;
 	}
+	bool Shader::TryGetUniform(const UniformType type, const char* uniformName, void* outputValue) const
+	{
+		if (!m_platformCallbacks.m_TryGetUniformFunc(*this, type, uniformName, outputValue))
+		{
+			LogError(std::format("Attempted to get uniform of name:{} in shader but resulted in error", uniformName));
+			return false;
+		}
+		return true;
+	}
 	std::string Shader::ToString() const
 	{
 		return std::format("[Shader Id:{} Vertex:\n{}\nFragment:{}]", m_id, m_vertexSourceCode, m_fragmentSourceCode);

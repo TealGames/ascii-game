@@ -2,6 +2,7 @@
 #include "Core/Rendering/RenderCall.hpp"
 #include "Core/Rendering/Buffers.hpp"
 #include "Core/Rendering/RenderingBackend.hpp"
+#include "Core/Rendering/TextureController.hpp"
 #include <cstdint>
 
 class EngineState;
@@ -16,6 +17,7 @@ namespace Rendering
     struct Vertex
     {
         WorldPosition3D m_Pos;
+        UV m_UVPos;
 
         std::string ToString() const;
     };
@@ -34,6 +36,7 @@ namespace Rendering
     struct RenderBatch
     {
         const Shader* m_Shader = nullptr;
+        Texture* m_Texture = nullptr;
         std::vector<VertexType> m_Vertices = {};
 
         /// <summary>
@@ -78,6 +81,7 @@ namespace Rendering
 
         VertexLayout m_layout;
         BufferController m_bufferController;
+        TextureController m_textureController;
 
         IndexBuffer m_indexBuffer;
         VertexBuffer m_vertexBuffer;
@@ -85,8 +89,8 @@ namespace Rendering
     public:
        
     private:
-        void BatchStateChangeCheck(const Shader* shader);
-        void AddVerticesToBatch(const Shader* shader,
+        void BatchStateChangeCheck(const Shader* shader, Texture* texture);
+        void AddVerticesToBatch(const Shader* shader, Texture* texture,
             const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize);
         void AddVertexToBatch(const Shader* shader, const Vertex& vertex);
         void AddIndexToBatch(const IndexType& index);
@@ -96,8 +100,12 @@ namespace Rendering
         void FlushBatches();
 
         const Shader* GetDefaultShader() const;
+        const Shader* GetTextureShader() const;
         void FrameRenderDataUpdateCheck();
         StaticFrameRenderData& GetThisFrameRenderData();
+
+        void AddRectangleCall2DMulti(const Shader* shader, Texture* texture, const Vec2& worldSize, 
+            const Mat4& modelMatrix, const Utils::Color& color);
     public:
         Renderer(const EngineState& engineState);
         void Init();
@@ -105,8 +113,8 @@ namespace Rendering
 
         void AddPolygonCall2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color);
         void AddCircleCall2D(const float radius, const Mat4& modelMatrix, const Utils::Color color);
-        void AddRectangleCall2D(const Vec2& size, const Mat4& modelMatrix, const Utils::Color& color);
-        void AddTextureCall(const WorldPosition3D& topLeftPos, const Texture& tex, const float rotation, const Vec2 scale, const Utils::Color color);
+        void AddRectangleCall2D(const Vec2& worldSize, const Mat4& modelMatrix, const Utils::Color& color);
+        void AddTextureCall(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Utils::Color color);
         void AddTextCall(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
 
         void AddBoxCall3D(const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color);

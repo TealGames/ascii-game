@@ -115,7 +115,7 @@ namespace AssetManagement
 		{
 			createdAsset = CreateAssetFromFile<FontAsset>(assetPath);
 		}
-		else if (fileExtension == TextureAsset::EXTENSION)
+		else if (HasTextureExtension(fileExtension))
 		{
 			createdAsset = CreateAssetFromFile<TextureAsset>(assetPath);
 		}
