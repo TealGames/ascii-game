@@ -207,9 +207,8 @@ namespace Rendering
 
         LogWarning(std::format("Adding new batch vertices:{}", m_batches.back().ToString()));
     }
-    void Renderer::AddVertexToBatch(const Shader* shader, const Vertex& vertex)
+    void Renderer::AddVertexToBatch(const Vertex& vertex)
     {
-        BatchStateChangeCheck(shader, nullptr);
         m_batches.back().m_Vertices.emplace_back(vertex);
     }
     void Renderer::AddIndexToBatch(const IndexType& index)
@@ -288,7 +287,261 @@ namespace Rendering
         
         m_batches.clear();
     }
-    void Renderer::AddPolygonCall2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color)
+
+    Vec3Int Renderer::CalculateFaceSizeForTexture(const WorldPosition3D& worldSize, const Vec2Int textureSize)
+    {
+        return Vec3Int(worldSize.m_X / (2*worldSize.m_X + 2*worldSize.m_Z) * textureSize.m_X, 
+                       worldSize.m_Y / (worldSize.m_Y + 2 * worldSize.m_Z) * textureSize.m_Y, 
+                       worldSize.m_Z/ (2*worldSize.m_Z + 2*worldSize.m_X) * textureSize.m_X);
+    }
+
+
+
+    void Renderer::AddCallRectangle2DMulti(const Shader* shader, Texture* texture, const Vec2& worldSize,
+        const Mat4& modelMatrix, const Utils::Color& color)
+    {
+        constexpr size_t VERTEX_COUNT = 4;
+        const WorldPosition3D halfSize = Vec3(worldSize / 2, 0);
+        //Start with top right vertex, then bottom right, then bottom left, top left
+        const Vertex vertices[VERTEX_COUNT] = { Vertex(halfSize, UV(1, 1)), Vertex(halfSize * Vec3(1, -1, 0), UV(1, 0)),
+                                     Vertex(halfSize * Vec3(-1, -1, 0), UV(0 ,0)), Vertex(halfSize * Vec3(-1, 1, 0), UV(0, 1)) };
+
+        constexpr size_t INDEX_COUNT = 6;
+        IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2 };
+        AddVerticesToBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
+        AddInstanceDataToBatch(modelMatrix, color);
+    }
+    void Renderer::AddCallBox3DMulti(const Shader* shader, Texture* texture, const Vec3& size,
+        const Mat4& modelMatrix, const Utils::Color& color)
+    {
+        if (texture == nullptr)
+        {
+            constexpr size_t VERTEX_COUNT = 8;
+            const WorldPosition3D halfSize = size / 2;
+            Vertex vertices[VERTEX_COUNT] = { Vertex(halfSize, UV()),                       Vertex(halfSize * Vec3(1, -1, 1), UV()),
+                                              Vertex(halfSize * Vec3(-1, -1, 1), UV()),     Vertex(halfSize * Vec3(-1, 1, 1), UV()),
+                                              Vertex(halfSize * Vec3(1, 1, -1), UV()),      Vertex(halfSize * Vec3(1, -1, -1), UV()),
+                                              Vertex(halfSize * Vec3(-1, -1, -1), UV()),    Vertex(halfSize * Vec3(-1, 1, -1), UV()) };
+
+            constexpr size_t INDEX_COUNT = 36;
+            //Front face, back face, right, left, top, bottom
+            IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2,
+                                               4, 5, 6, 4, 7, 6,
+                                               4, 5, 1, 4, 0, 1,
+                                               7, 6, 2, 7, 3, 2,
+                                               4, 0, 3, 4, 7, 3,
+                                               5, 1, 2, 5, 6, 2 };
+            AddVerticesToBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
+            AddInstanceDataToBatch(modelMatrix, color);
+            return;
+        }
+
+        const WorldPosition3D halfSize = size / 2;
+        //ORDER is front face [top right, bottom right, bottom left, top left]
+        //and then back face(looking from front face side) [top right, bottom right, bottom left, top left]
+        /*
+                  7------4
+                 /|     /|
+                3------0 |
+                |  6 --| 5
+                | /    |/
+                2------1
+        */
+        const std::array<Vec3, 8> edges = 
+        {
+            //FRONT FACE
+            halfSize,
+            halfSize* Vec3(1, -1, 1),
+            halfSize* Vec3(-1, -1, 1),
+            halfSize* Vec3(-1, 1, 1),
+            //BACK FACE
+            halfSize* Vec3(1, 1, -1),
+            halfSize* Vec3(1, -1, -1),
+            halfSize* Vec3(-1, -1, -1),
+            halfSize* Vec3(-1, 1, -1)
+        };
+
+        //The size is in x, y, z axis 
+        const Vec2 textureSize = Vec2(texture->GetWidth(), texture->GetHeight());
+        //The size in texture pixel coords based on its world size
+        const Vec3Int pixelSize = CalculateFaceSizeForTexture(size, texture->GetSize());
+
+        const Vec2 frontBackFaceSize = Vec2(pixelSize.m_X, pixelSize.m_Y) / textureSize;
+        const Vec2 leftRightFaceSize = Vec2(pixelSize.m_Z, pixelSize.m_Y) / textureSize;
+        const Vec2 topBottomFaceSize = Vec2(pixelSize.m_X, pixelSize.m_Z) / textureSize;
+        std::array<Vec2, 14> uvs = {};
+        //LEFT FACE (bottom left, top left, bottom right, top right)
+        uvs[0] = Vec2(topBottomFaceSize.m_Y, 0);
+        uvs[1] = uvs[0] + Vec2(0, leftRightFaceSize.m_Y);
+        uvs[2] = uvs[0] + Vec2(leftRightFaceSize.m_X, 0);
+        uvs[3] = uvs[0] + leftRightFaceSize;
+        //FRONT FACE (bottom right, top right)
+        uvs[4] = uvs[2] + Vec2(frontBackFaceSize.m_X, 0);
+        uvs[5] = uvs[4] + Vec2(0, frontBackFaceSize.m_Y);
+        //TOP FACE (top left, top right)
+        uvs[6] = uvs[3] + Vec2(0, topBottomFaceSize.m_Y);
+        uvs[7] = uvs[6] + Vec2(topBottomFaceSize.m_X, 0);
+        //BOTTOM FACE (bottom left, bottom right)
+        uvs[8] = uvs[2] - Vec2(0, topBottomFaceSize.m_Y);
+        uvs[9] = uvs[8] + Vec2(topBottomFaceSize.m_X,0);
+        //RIGHT FACE (bottom right, top right)
+        uvs[10] = uvs[4] + Vec2(leftRightFaceSize.m_X, 0);
+        uvs[11] = uvs[4] + Vec2(0, leftRightFaceSize.m_Y);
+        //BACK FACE (bottom right, top right)
+        uvs[12] = uvs[10] + Vec2(frontBackFaceSize.m_X, 0);
+        uvs[13] = uvs[12] + Vec2(0, frontBackFaceSize.m_Y);
+        //UV INDEX PLACEMENT:
+        /*
+                    6-------7
+                    |  TOP  |
+            1-------3-------5-------11-------13
+            | LEFT  | FRONT | RIGHT | BACK   |
+            0-------2-------4-------10-------12
+                    | BOTTOM|
+                    8-------9
+        */
+
+        //FACE ORDER: Front, back, right, left, top, bottom
+        //FACE EDGE ORDER: top right, bottom right, bottom left, top left
+        //NOTE: all vertices are as if you are looking north with forward face in front of you
+        constexpr size_t VERTEX_COUNT = 24;
+        Vertex vertices[VERTEX_COUNT] = {};
+        //FRONT FACE (0, 1, 2, 3)
+        vertices[0] = Vertex(edges[0], uvs[5]);
+        vertices[1] = Vertex(edges[1], uvs[4]);
+        vertices[2] = Vertex(edges[2], uvs[2]);
+        vertices[3] = Vertex(edges[3], uvs[3]);
+        //BACK FACE (4, 5, 6, 7)
+        vertices[4] = Vertex(edges[4], uvs[11]);
+        vertices[5] = Vertex(edges[5], uvs[10]);
+        vertices[6] = Vertex(edges[6], uvs[12]);
+        vertices[7] = Vertex(edges[7], uvs[13]);
+        //RIGHT FACE (4, 5, 1, 0)
+        vertices[8] = Vertex(edges[4], uvs[11]);
+        vertices[9] = Vertex(edges[5], uvs[10]);
+        vertices[10] = Vertex(edges[1], uvs[4]);
+        vertices[11] = Vertex(edges[0], uvs[5]);
+        //LEFT FACE (7, 6, 2, 3)
+        vertices[12] = Vertex(edges[7], uvs[1]);
+        vertices[13] = Vertex(edges[6], uvs[0]);
+        vertices[14] = Vertex(edges[2], uvs[2]);
+        vertices[15] = Vertex(edges[3], uvs[3]);
+        //TOP FACE (4, 0, 3, 7)
+        vertices[16] = Vertex(edges[4], uvs[7]);
+        vertices[17] = Vertex(edges[0], uvs[5]);
+        vertices[18] = Vertex(edges[3], uvs[3]);
+        vertices[19] = Vertex(edges[7], uvs[6]);
+        //BOTTOM FACE (5, 1, 2, 6)
+        vertices[20] = Vertex(edges[5], uvs[9]);
+        vertices[21] = Vertex(edges[1], uvs[4]);
+        vertices[22] = Vertex(edges[2], uvs[8]);
+        vertices[23] = Vertex(edges[6], uvs[2]);
+
+        constexpr size_t INDEX_COUNT = 36;
+        
+        IndexType indices[INDEX_COUNT] = 
+        { 
+            /*FRONT FACE*/ 0,  1,  2,  0,  3,  2, 
+            /*BACK FACE*/  4,  5,  6,  4,  7,  6,
+            /*RIGHT FACE*/ 8,  9,  10, 8,  11, 10,
+            /*LEFT FACE*/  12, 13, 14, 12, 15, 14,
+            /*TOP FACE*/   16, 17, 18, 16, 19, 18,
+            /*BOTTOM FACE*/5,  1,  2,  5,  6,  2
+        };
+
+        AddVerticesToBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
+        AddInstanceDataToBatch(modelMatrix, color);
+    }
+    void Renderer::AddCallSphere3DMulti(const Shader* shader, Texture* texture, const float radius,
+        const Mat4& modelMatrix, const Utils::Color color)
+    {
+        BatchStateChangeCheck(shader, texture);
+
+        //TODO: right now we do not have very good uv mapping for spheres-> need to increase verticies at poles for increased precision
+
+        //Note: this is the default UV method with longitudinal/"slices" (vertical) and latitudinal/"stacks" (horizontal) lines
+        constexpr size_t HORIZONTAL_LINE_COUNT = 8;
+        //Best shape is formed with 1.5 factor 
+        constexpr size_t VERTICAL_LINE_COUNT = HORIZONTAL_LINE_COUNT * 1.5f;
+
+        //Here we build all the other vertices and indices making sure to create 2 triangles of every quad possible on the sphere
+        IndexType aIndex = 0, bIndex = 0;
+        float u = 0, v = 0, phi = 0, theta = 0;
+        IndexType nextV = 0, cIndex = 0, dIndex = 0;
+        Vec3 pos = {};
+        //The way this works is we go through every possible horizontal line and create vertex of curr horizontal line
+        //as well as every possible vertical line. 
+        //Note: we skip horizontal count+1 iteration because last row has no indices left to go lower
+        //but vertical needs the one extra iteration to connect
+        for (size_t hi = 0; hi < HORIZONTAL_LINE_COUNT; hi++)
+        {
+            //Note: we add one here because we do not want 0 angle horizontal line (since then all rings vertices are at the topmost point)
+            //(and for symmetry, we do the same for bottom) so instead we just offset this range by 2
+            v = (hi + 1) / (float)(HORIZONTAL_LINE_COUNT);
+            phi = v * std::numbers::pi;
+
+            for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
+            {
+                u = vi / (float)VERTICAL_LINE_COUNT;
+                theta = u * 2 * std::numbers::pi;
+
+                pos = Vec3(sinf(phi) * cosf(theta), cosf(phi), sinf(phi) * sinf(theta));
+
+                AddVertexToBatch(Vertex{ pos * radius, UV(u, v) });
+                Vec3 normal = pos.GetNormalized();
+                Vec2 uv = Vec2(u, v);
+
+                if (hi == HORIZONTAL_LINE_COUNT - 1) continue;
+                // For the layout imagine this shape (where A is current point)
+                // Note: There are HORIZONTAL_COUNT + 1 total vertex indices per horizontal line (since we need it to
+                // wrap around and connect with first point and VERTICAL_COUNT + 1 total vertex indices per vertical line
+                //  A --- B
+                //  |   / |
+                //  |  /  |
+                //  | /   |
+                //  C --- D
+
+                nextV = (vi + 1) % VERTICAL_LINE_COUNT;
+
+                //We create them in order A, B, C, D
+                //Note: no modulus needed since 
+                aIndex = hi * (VERTICAL_LINE_COUNT)+vi;
+                bIndex = hi * (VERTICAL_LINE_COUNT)+nextV;
+                cIndex = (hi + 1) * (VERTICAL_LINE_COUNT)+vi;
+                dIndex = (hi + 1) * (VERTICAL_LINE_COUNT)+nextV;
+
+                AddIndicesToBatch({ aIndex, cIndex, bIndex });
+                AddIndicesToBatch({ bIndex, cIndex, dIndex });
+            }
+        }
+
+        //First we build the north pole vertex and create the indices
+        AddVertexToBatch(Vertex{ Vec3(0.0f, radius, 0.0f), UV(1.0f, 1.0f) });
+        IndexType poleIndex = HORIZONTAL_LINE_COUNT * VERTICAL_LINE_COUNT;
+        for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
+        {
+            aIndex = vi;
+            bIndex = (aIndex + 1) % VERTICAL_LINE_COUNT;
+            AddIndicesToBatch({ aIndex, poleIndex, bIndex });
+        }
+
+        //Finally, we connect all the bottom latitude/row verticies to the south pole vertex
+        AddVertexToBatch(Vertex{ Vec3(0.0f, -1.5 * radius, 0.0f), UV(0.0f, 0.0f) });
+        poleIndex++;
+        const IndexType bottomStartIndex = poleIndex - VERTICAL_LINE_COUNT - 1;
+        for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
+        {
+            aIndex = bottomStartIndex + vi;
+            if (vi < VERTICAL_LINE_COUNT - 1) bIndex = aIndex + 1;
+            else bIndex = bottomStartIndex;
+            AddIndicesToBatch({ aIndex, poleIndex, bIndex });
+        }
+
+        AddInstanceDataToBatch(modelMatrix, color);
+    }
+
+
+    void Renderer::AddCallPolygon2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color)
     {
         //m_renderCalls.emplace_back(CircleCall{ centerPos, radius, color });
 
@@ -315,36 +568,41 @@ namespace Rendering
         AddVerticesToBatch(GetDefaultShader(), nullptr, vertices, vertexCount, indices, indexCount);
         AddInstanceDataToBatch(modelMatrix, color);
     }
-    void Renderer::AddCircleCall2D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
+    void Renderer::AddCallCircle2D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
     {
-        AddPolygonCall2D(radius, CIRCLE_SIDE_COUNT, modelMatrix, color);
+        AddCallPolygon2D(radius, CIRCLE_SIDE_COUNT, modelMatrix, color);
+    }
+    void Renderer::AddCallRectangle2D(const Vec2& worldSize, const Mat4& modelMatrix, const Utils::Color& color)
+    {
+        AddCallRectangle2DMulti(GetDefaultShader(), nullptr, worldSize, modelMatrix, color);
     }
 
-    void Renderer::AddRectangleCall2DMulti(const Shader* shader, Texture* texture, const Vec2& worldSize,
-        const Mat4& modelMatrix, const Utils::Color& color)
+    void Renderer::AddCallBox3D(const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color)
     {
-        constexpr size_t VERTEX_COUNT = 4;
-        const WorldPosition3D halfSize = Vec3(worldSize / 2, 0);
-        //Start with top right vertex, then bottom right, then bottom left, top left
-        const Vertex vertices[VERTEX_COUNT] = { Vertex(halfSize, UV(1, 1)), Vertex(halfSize * Vec3(1, -1, 0), UV(1, 0)),
-                                     Vertex(halfSize * Vec3(-1, -1, 0), UV(0 ,0)), Vertex(halfSize * Vec3(-1, 1, 0), UV(0, 1))};
+        AddCallBox3DMulti(GetDefaultShader(), nullptr, size, modelMatrix, color);
+    }
+    void Renderer::AddCallSphere3D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
+    {
+        AddCallSphere3DMulti(GetDefaultShader(), nullptr, radius, modelMatrix, color);
+    }
 
-        constexpr size_t INDEX_COUNT = 6;
-        IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2 };
-        AddVerticesToBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
-        AddInstanceDataToBatch(modelMatrix, color);
-    }
-    void Renderer::AddRectangleCall2D(const Vec2& worldSize, const Mat4& modelMatrix, const Utils::Color& color)
-    {
-        AddRectangleCall2DMulti(GetDefaultShader(), nullptr, worldSize, modelMatrix, color);
-    }
-    void Renderer::AddTextureCall(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Utils::Color color)
+    void Renderer::AddCallTexture2D(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Utils::Color color)
     {
         //AddRectangleCall2DMulti(GetTextureShader(), &tex, worldSize, modelMatrix, color);
-        AddRectangleCall2DMulti(GetTextureShader(), &tex, worldSize, modelMatrix, color);
+        AddCallRectangle2DMulti(GetTextureShader(), &tex, worldSize, modelMatrix, color);
         //m_textureData.emplace_back(tex, scale);
         //m_renderCalls.emplace_back(TextureCall{ static_cast<TextureID>(m_textureData.size() - 1), worldPos, color });
     }
+    void Renderer::AddCallTextureSphere3D(const float radius, Texture& tex, const Mat4& modelMatrix, const Utils::Color color)
+    {
+        AddCallSphere3DMulti(GetTextureShader(), &tex, radius, modelMatrix, color);
+    }
+    void Renderer::AddCallTextureBox3D(const Vec3& size, Texture& tex, const Mat4& modelMatrix, const Utils::Color& color)
+    {
+        AddCallBox3DMulti(GetTextureShader(), &tex, size, modelMatrix, color);
+    }
+
+
     void Renderer::AddTextCall(const WorldPosition3D& worldPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color)
     {
         m_textData.emplace_back(font, text, size, spacing);
@@ -357,110 +615,6 @@ namespace Rendering
     void Renderer::AddRectangleLineCall(const WorldPosition3D& worldPos, const float thickness, const Vec2& size, const Utils::Color color)
     {
         m_renderCalls.emplace_back(RectLineCall{ worldPos, thickness, size, color });
-    }
-
-    void Renderer::AddBoxCall3D(const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color)
-    {
-        constexpr size_t VERTEX_COUNT = 8;
-        const WorldPosition3D halfSize = size / 2;
-        Vertex vertices[VERTEX_COUNT] = { Vertex(halfSize, UV()),                       Vertex(halfSize * Vec3(1, -1, 1), UV()),
-                                          Vertex(halfSize * Vec3(-1, -1, 1), UV()),     Vertex(halfSize * Vec3(-1, 1, 1), UV()),
-                                          Vertex(halfSize * Vec3(1, 1, -1), UV()),      Vertex(halfSize * Vec3(1, -1, -1), UV()),
-                                          Vertex(halfSize * Vec3(-1, -1, -1), UV()),    Vertex(halfSize * Vec3(-1, 1, -1), UV()) };
-
-        constexpr size_t INDEX_COUNT = 36;
-        //Front face, back face, right, left, top, bottom
-        IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2,
-                                           4, 5, 6, 4, 7, 6,
-                                           4, 5, 1, 4, 0, 1,
-                                           7, 6, 2, 7, 3, 2,
-                                           4, 0, 3, 4, 7, 3,
-                                           5, 1, 2, 5, 6, 2 };
-
-        AddVerticesToBatch(GetDefaultShader(), nullptr, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
-        AddInstanceDataToBatch(modelMatrix, color);
-    }
-    void Renderer::AddSphereCall3D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
-    {
-        //Note: this is the default UV method with longitudinal/"slices" (vertical) and latitudinal/"stacks" (horizontal) lines
-        constexpr size_t HORIZONTAL_LINE_COUNT = 8;
-        //Best shape is formed with 1.5 factor 
-        constexpr size_t VERTICAL_LINE_COUNT = HORIZONTAL_LINE_COUNT * 1.5f;
-
-        //Here we build all the other vertices and indices making sure to create 2 triangles of every quad possible on the sphere
-        IndexType aIndex = 0, bIndex = 0;
-        float u = 0, v = 0, phi = 0, theta = 0;
-        IndexType nextV = 0, cIndex = 0, dIndex = 0;
-        Vec3 pos = {};
-        //The way this works is we go through every possible horizontal line and create vertex of curr horizontal line
-        //as well as every possible vertical line. 
-        //Note: we skip horizontal count+1 iteration because last row has no indices left to go lower
-        //but vertical needs the one extra iteration to connect
-        for (size_t hi = 0; hi < HORIZONTAL_LINE_COUNT; hi++) 
-        {
-            //Note: we add one here because we do not want 0 angle horizontal line (since then all rings vertices are at the topmost point)
-            //(and for symmetry, we do the same for bottom) so instead we just offset this range by 2
-            v = (hi + 1) / (float)(HORIZONTAL_LINE_COUNT);
-            phi = v * std::numbers::pi;
-
-            for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++) 
-            {
-                u = vi / (float)VERTICAL_LINE_COUNT;
-                theta = u * 2 * std::numbers::pi;
-
-                pos = Vec3(sinf(phi) * cosf(theta), cosf(phi), sinf(phi) * sinf(theta));
-
-                AddVertexToBatch(GetDefaultShader(), Vertex{ pos * radius, UV(u, v) });
-                Vec3 normal = pos.GetNormalized();
-                Vec2 uv = Vec2(u, v);
-
-                if (hi == HORIZONTAL_LINE_COUNT-1) continue;
-                // For the layout imagine this shape (where A is current point)
-                // Note: There are HORIZONTAL_COUNT + 1 total vertex indices per horizontal line (since we need it to
-                // wrap around and connect with first point and VERTICAL_COUNT + 1 total vertex indices per vertical line
-                //  A --- B
-                //  |   / |
-                //  |  /  |
-                //  | /   |
-                //  C --- D
-
-                nextV = (vi + 1) % VERTICAL_LINE_COUNT;
-
-                //We create them in order A, B, C, D
-                //Note: no modulus needed since 
-                aIndex = hi * (VERTICAL_LINE_COUNT)+vi;
-                bIndex = hi * (VERTICAL_LINE_COUNT)+nextV;
-                cIndex = (hi + 1) * (VERTICAL_LINE_COUNT)+vi;
-                dIndex = (hi + 1) * (VERTICAL_LINE_COUNT)+nextV;
-
-                AddIndicesToBatch({ aIndex, cIndex, bIndex });
-                AddIndicesToBatch({ bIndex, cIndex, dIndex });
-            }
-        }
-
-        //First we build the north pole vertex and create the indices
-        AddVertexToBatch(GetDefaultShader(), Vertex{ Vec3(0.0f, radius, 0.0f), UV(1.0f, 1.0f)});
-        IndexType poleIndex = HORIZONTAL_LINE_COUNT * VERTICAL_LINE_COUNT;
-        for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
-        {
-            aIndex = vi;
-            bIndex = (aIndex + 1) % VERTICAL_LINE_COUNT;
-            AddIndicesToBatch({aIndex, poleIndex, bIndex });
-        }
-
-        //Finally, we connect all the bottom latitude/row verticies to the south pole vertex
-        AddVertexToBatch(GetDefaultShader(), Vertex{ Vec3(0.0f, -1.5*radius, 0.0f), UV(0.0f, 0.0f)});
-        poleIndex++;
-        const IndexType bottomStartIndex = poleIndex - VERTICAL_LINE_COUNT - 1;
-        for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
-        {
-            aIndex = bottomStartIndex + vi;
-            if (vi < VERTICAL_LINE_COUNT - 1) bIndex = aIndex + 1;
-            else bIndex = bottomStartIndex;
-            AddIndicesToBatch({ aIndex, poleIndex, bIndex });
-        }
-       
-        AddInstanceDataToBatch(modelMatrix, color);
     }
 
     void Renderer::PushCallsToBuffer(const std::vector<RenderCall>& calls)

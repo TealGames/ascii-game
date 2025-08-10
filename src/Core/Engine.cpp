@@ -401,16 +401,18 @@ namespace Core
 
 		m_gizmosOverlay.MoveCallsToRenderBuffer(m_renderer);
 
-		const Vec3 objectCenter = Vec3(0, 0, 4.8);
+		const Vec3 objectCenter = Vec3(0, 0, 4.6);
 		static Quat rot = Quat::Identity();
-		//rot *= Vec3{ 0, 0.3f * unscaledDeltaTime, 0};
+		rot *= Vec3{ 0, 0.3f * unscaledDeltaTime, 0};
 		const Mat4 modelMatrix = CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
 		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Utils::COLOR_BLUE
 		//m_renderer.AddCircleCall2D(0.13f, modelMatrix, Utils::COLOR_RED);
 		//m_renderer.AddSphereCall3D(0.13f, modelMatrix, Utils::COLOR_GREEN);
 		//m_renderer.AddRectangleCall2D(Vec2(0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
-		Rendering::Texture& tex= m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/x_icon.png")->GetTextureMutable();
-		m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
+		Rendering::Texture& tex= m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/test.jpg")->GetTextureMutable();
+		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
+		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Utils::COLOR_BLUE);
+		m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
 
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 
 			CalculateRotationMatrix(rot) * CalculateTranslationMatrix(-Vec3::Zero())  * CalculateScaleMatrix(Vec3::One());*/

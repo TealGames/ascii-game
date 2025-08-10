@@ -92,7 +92,7 @@ namespace Rendering
         void BatchStateChangeCheck(const Shader* shader, Texture* texture);
         void AddVerticesToBatch(const Shader* shader, Texture* texture,
             const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize);
-        void AddVertexToBatch(const Shader* shader, const Vertex& vertex);
+        void AddVertexToBatch(const Vertex& vertex);
         void AddIndexToBatch(const IndexType& index);
         void AddIndicesToBatch(const std::array<IndexType, 3>& arr);
         void AddInstanceDataToBatch(const Mat4& modelMatrix, const Utils::Color& color);
@@ -104,21 +104,39 @@ namespace Rendering
         void FrameRenderDataUpdateCheck();
         StaticFrameRenderData& GetThisFrameRenderData();
 
-        void AddRectangleCall2DMulti(const Shader* shader, Texture* texture, const Vec2& worldSize, 
+        void AddCallRectangle2DMulti(const Shader* shader, Texture* texture, const Vec2& worldSize, 
             const Mat4& modelMatrix, const Utils::Color& color);
+        void AddCallBox3DMulti(const Shader* shader, Texture* texture, const Vec3& worldSize,
+            const Mat4& modelMatrix, const Utils::Color& color);
+        void AddCallSphere3DMulti(const Shader* shader, Texture* texture, const float radius, 
+            const Mat4& modelMatrix, const Utils::Color color);
+
+        /// <summary>
+        /// Will calculate the length, width and height of a cube in terms of pixels
+        /// relative to the texture size based on its world size. 
+        /// Note: world size expects size along x, y, z axes (and returns in the same order)
+        /// </summary>
+        /// <param name="worldPos"></param>
+        /// <param name="textureSize"></param>
+        /// <returns></returns>
+        Vec3Int CalculateFaceSizeForTexture(const WorldPosition3D& worldSize, const Vec2Int textureSize);
+
     public:
         Renderer(const EngineState& engineState);
         void Init();
         bool WasInit() const;
 
-        void AddPolygonCall2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color);
-        void AddCircleCall2D(const float radius, const Mat4& modelMatrix, const Utils::Color color);
-        void AddRectangleCall2D(const Vec2& worldSize, const Mat4& modelMatrix, const Utils::Color& color);
-        void AddTextureCall(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Utils::Color color);
-        void AddTextCall(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
+        void AddCallPolygon2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color);
+        void AddCallCircle2D(const float radius, const Mat4& modelMatrix, const Utils::Color color);
+        void AddCallRectangle2D(const Vec2& worldSize, const Mat4& modelMatrix, const Utils::Color& color);
 
-        void AddBoxCall3D(const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color);
-        void AddSphereCall3D(const float radius, const Mat4& modelMatrix, const Utils::Color color);
+        void AddCallBox3D(const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color);
+        void AddCallSphere3D(const float radius, const Mat4& modelMatrix, const Utils::Color color);
+
+        void AddCallTexture2D(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Utils::Color color);
+        void AddCallTextureSphere3D(const float radius, Texture& tex, const Mat4& modelMatrix, const Utils::Color color);
+        void AddCallTextureBox3D(const Vec3& size, Texture& tex, const Mat4& modelMatrix, const Utils::Color& color);
+        void AddTextCall(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
 
         void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Utils::Color color);
         void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color);
