@@ -23,10 +23,21 @@ TransformComponent::TransformComponent(const Vec3 pos, const Vec3 scale, const Q
 	//the first time we retrieve it
 	m_isDirty = true;
 }
+bool TransformComponent::ForceUpdateIfDirty() const
+{
+	const bool needsUpdate = m_isDirty;
+	if (needsUpdate)
+	{
+		UpdatePrecalculatedData();
+		m_isDirty = false;
+	}
+	return needsUpdate;
+}
 void TransformComponent::UpdatePrecalculatedData() const
 {
 	const TransformComponent* parent = GetEntity().GetParentTransform();
 
+	//m_lastUpdateData.m_UpdatedThisFrame = true;
 	if (parent == nullptr)
 	{
 		m_lastUpdateData.m_GlobalPos = m_localPos; 
@@ -224,7 +235,8 @@ void TransformComponent::Deserialize(const Json& json)
 {
 	m_localPos = json.value("LocPos", DEFAULT_POS);
 	m_localScale = json.value("LocScale", DEFAULT_SCALE);
-	m_localRotation = json.value("LocRot", DEFAULT_ROTATION);
+	m_localRotation = json.value("LocRot", DEFAULT_ROTATION); 
+	m_isDirty = true;
 	//m_localPosLastFrame = json.at("LastFramePos").get<Vec2>();
 }
 Json TransformComponent::Serialize()

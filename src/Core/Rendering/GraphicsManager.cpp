@@ -33,9 +33,17 @@ namespace Rendering
 			m_defaultShader->GetShader().GetVertexSource(), m_defaultShader->GetShader().GetFragmnetSource()));*/
 		return &m_defaultShader->GetShader();
 	}
+	Shader* GraphicsManager::GetDefaultShaderMutable()
+	{
+		return &m_defaultShader->GetShaderMutable();
+	}
 	const Shader* GraphicsManager::GetTextureShader() const
 	{
 		return &m_textureShader->GetShader();
+	}
+	Shader* GraphicsManager::GetTextureShaderMutable()
+	{
+		return &m_textureShader->GetShaderMutable();
 	}
 	const Shader* GraphicsManager::TryGetShader(const std::string& name) const
 	{

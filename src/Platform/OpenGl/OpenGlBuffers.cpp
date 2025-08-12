@@ -96,6 +96,37 @@ namespace Rendering
 				});
 		}
 
+		static RenderObjectId AllocateUniformBuffer(const size_t byteSize)
+		{
+			RenderObjectId id = INVALID_OBJ_ID;
+			GL_CALL(glCreateBuffers(1, &id));
+			GL_CALL(glNamedBufferData(id, byteSize, nullptr, GL_DYNAMIC_DRAW));
+			return id;
+		}
+		static void BindUniformBuffer(const RenderObjectId id, const UniformBufferBindIndex bindIndex)
+		{
+			GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, bindIndex, id));
+		}
+		static void WriteUniformBuffer(const RenderObjectId id, const size_t byteOffset, const size_t writeByteSize, const void* data)
+		{
+			GL_CALL(glNamedBufferSubData(id, byteOffset, writeByteSize, data));
+		}
+		static void DeallocateUniformBuffer(const RenderObjectId id)
+		{
+			GL_CALL(glDeleteBuffers(1, &id));
+		}
+		UniformBuffer CreateUniformBuffer()
+		{
+			return UniformBuffer(
+				UniformBufferPlatformCallbacks
+				{
+					AllocateUniformBuffer,
+					BindUniformBuffer,
+					WriteUniformBuffer,
+					DeallocateUniformBuffer
+				});
+		}
+
 		static void InitVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState)
 		{
 			RenderObjectId id = INVALID_OBJ_ID;

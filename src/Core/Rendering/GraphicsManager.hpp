@@ -26,7 +26,10 @@ namespace Rendering
 		void LoadAllShaders();
 
 		const Shader* GetDefaultShader() const;
+		Shader* GetDefaultShaderMutable();
 		const Shader* GetTextureShader() const;
+		Shader* GetTextureShaderMutable();
+
 		const Shader* TryGetShader(const std::string& name) const;
 	};
 }

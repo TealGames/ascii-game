@@ -137,11 +137,16 @@ namespace Rendering
 			return OpenGl::CreateVertexBuffer(vertexArray, elementSize, arraySize, advanceType);
 #endif
 		}
-
 		IndexBuffer CreateIndexBuffer(const IndexType* indexArray, const size_t elementCount)
 		{
 #if defined(OPENGL)
 			return OpenGl::CreateIndexBuffer(indexArray, elementCount);
+#endif
+		}
+		UniformBuffer CreateUniformBuffer()
+		{
+#if defined(OPENGL)
+			return OpenGl::CreateUniformBuffer();
 #endif
 		}
 

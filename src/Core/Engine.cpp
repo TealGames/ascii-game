@@ -127,6 +127,9 @@ namespace Core
 	//TODO: consider making a shader asset that can create multiple shader programs (store all of them? or maybe create glsl files and then force asset generation?)
 	//but it should be done by having one shader with ifdef macros and then defining them or not based on some flag or user command args that then get passed as multiple sources
 	//into opengl when compiling shader
+	//TODO: make camera system precalculated data update lazy and should only update when a value for it updates (view matrix-> transform updates, proj matrix-> setting updates)
+	//TODO: ideally instead of checking each frame if a shader needs uniform buffer, we would have centralzied assigner that goes through every shader, looks through
+	//every possible uniform block and ifnds the correct one it needs based on a registry
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -202,8 +205,7 @@ namespace Core
 			});
 
 		Window* createdWindow = m_windowManager.CreateNewWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_ASPECT_RATIO, WINDOW_NAME, nullptr);
-
-		if (createdWindow==nullptr || !createdWindow->IsValid())
+		if (createdWindow == nullptr || !createdWindow->IsValid())
 		{
 			LogError(std::format("Failed to create valid window"));
 			return;
@@ -379,6 +381,7 @@ namespace Core
 			//Note: technically transform system should be using scaled time but since it is possible to change pos
 			//even when time is stopped we need to make sure it updates just in case
 			m_transformSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
+			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 
 			m_playerSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 			m_collisionBoxSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
@@ -392,7 +395,6 @@ namespace Core
 			m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 
 			m_gameManager.GameUpdate();
-			m_cameraSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 		}
 
 		m_editor.Update(unscaledDeltaTime, scaledDeltaTime, m_timeKeeper.GetTimeScale());
@@ -412,7 +414,7 @@ namespace Core
 		Rendering::Texture& tex= m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/test.jpg")->GetTextureMutable();
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Utils::COLOR_BLUE);
-		m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
+		m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), tex, modelMatrix, Utils::Color(Utils::COLOR_BLUE, 15));
 
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 
 			CalculateRotationMatrix(rot) * CalculateTranslationMatrix(-Vec3::Zero())  * CalculateScaleMatrix(Vec3::One());*/

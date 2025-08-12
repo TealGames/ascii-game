@@ -34,8 +34,6 @@ public:
 	//TODO: controlling viewport by multiplying aspect ratio by lens size feels akward find a better way
 	float m_LensSize;
 
-	WorldPosition2D m_WorldViewportSize;
-
 	constexpr static inline float DEFAULT_NEAR_DISTANCE = 0.1f;
 	constexpr static inline float DEFAULT_FAR_DISTANCE = 100;
 	/// <summary>
@@ -80,7 +78,6 @@ public:
 	/// <param name="cameraDepth"></param>
 	/// <returns></returns>
 	WorldPosition2D CalculateViewportSize(const float cameraDepth=0) const;
-	void UpdateViewportSize();
 
 	float CalculateAspectRatio() const;
 	float CalculateFovX() const;

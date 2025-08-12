@@ -12,6 +12,7 @@
 #include "Core/EngineState.hpp"
 #include "Core/Camera/CameraController.hpp"
 #include "Core/Rendering/GraphicsManager.hpp"
+#include "Core/Rendering/RenderingBackend.hpp"
 
 #include "Utils/Data/ColorConstants.hpp"
 
@@ -48,10 +49,10 @@ namespace Rendering
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
 
     Renderer::Renderer(const EngineState& engineState)
-        : m_isInit(false), m_engineState(&engineState), m_staticRenderData(),
+        : m_isInit(false), m_engineState(&engineState), m_uniformData(), //m_staticRenderData(),
         m_renderCalls(), m_textData(), m_textureData(), m_batches(), m_flushType(BatchFlushType::StateChange), 
         m_layout(), m_bufferController(&m_layout), m_textureController(),
-        m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer()
+        m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer(), m_uniformBuffer()
     {
         
     }
@@ -65,6 +66,7 @@ namespace Rendering
         m_vertexBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(VertexType), PRE_ALLOCATED_VERTICES_COUNT, VertexAttributeAdvance::Vertex);
         m_indexBuffer = Backend::CreateIndexBuffer(nullptr, PRE_ALLOCATED_INDICES_COUNT);
         m_instancedBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(InstanceData), PRE_ALLOCATED_SHAPES, VertexAttributeAdvance::Instance);
+        m_uniformBuffer = Backend::CreateUniformBuffer();
 
         const VertexLayoutBindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
         std::vector<VertexAttribute> vertexAttributes = { VertexAttribute(0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Pos)), 
@@ -154,14 +156,15 @@ namespace Rendering
         EndDrawing();
     }
     */
-    const Shader* Renderer::GetDefaultShader() const
+    Shader* Renderer::GetDefaultShader() const
     {
-        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultShader();
+        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultShaderMutable();
     }
-    const Shader* Renderer::GetTextureShader() const
+    Shader* Renderer::GetTextureShader() const
     {
-        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetTextureShader();
+        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetTextureShaderMutable();
     }
+    /*
     void Renderer::FrameRenderDataUpdateCheck()
     {
         if (!m_staticRenderData.m_UpdatedDataThisFrame)
@@ -175,8 +178,9 @@ namespace Rendering
         FrameRenderDataUpdateCheck();
         return m_staticRenderData;
     }
+    */
 
-    void Renderer::BatchStateChangeCheck(const Shader* shader, Texture* texture)
+    void Renderer::BatchStateChangeCheck(Shader* shader, Texture* texture)
     {
         bool hasStateChange = !m_batches.empty() && (m_batches.back().m_Shader != shader || m_batches.back().m_Texture != texture);
         if (m_flushType == BatchFlushType::StateChange && hasStateChange)
@@ -190,7 +194,7 @@ namespace Rendering
         }
     }
 
-    void Renderer::AddVerticesToBatch(const Shader* shader, Texture* texture,
+    void Renderer::AddVerticesToBatch(Shader* shader, Texture* texture,
         const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize)
     {
         BatchStateChangeCheck(shader, texture);
@@ -233,7 +237,32 @@ namespace Rendering
     void Renderer::FlushBatches()
     {
         //We only do this the first time we flush a batch during this frame
-        FrameRenderDataUpdateCheck();
+        //FrameRenderDataUpdateCheck();
+
+        if (!m_uniformBuffer.IsAllocated())
+        {
+            m_uniformBuffer.AllocateFromShaderUniformBlock(*GetDefaultShader(), "CameraBlock");
+            m_bufferController.AddUniformBuffer(&m_uniformBuffer);
+        }
+        const CameraPrecalculatedData& cameraData = m_engineState->m_CameraController->GetActiveCamera().GetLastUpdateData();
+        //TODO: this is still a problem since multiple flushes per frame means multiple updates
+        if (!m_uniformData.m_UpdatedThisFrame && Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::PlatformProjMatrix, 
+            CameraPrecalculatedDataUpdate::ViewMatrix))
+        {
+            if (!m_uniformBuffer.TryWriteData("viewMatrix", sizeof(Mat4), cameraData.m_ViewMatrix.GetMemPointer()))
+            {
+                LogError(std::format("Attempted to write view matrix to uniform buffer but failed"));
+                return;
+            }
+            if (!m_uniformBuffer.TryWriteData("projectionMatrix", sizeof(Mat4), cameraData.m_PlatformProjectionMatrix.GetMemPointer()))
+            {
+                LogError(std::format("Attempted to write projection matrix to uniform buffer but failed"));
+                return;
+            }
+
+            m_uniformData.m_UpdatedThisFrame = true;
+            //LogError(std::format("Updated camera matrices v:{} p:{}", cameraData.m_ViewMatrix.ToString(), cameraData.m_PlatformProjectionMatrix.ToString()));
+        }
 
         for (auto& batch : m_batches)
         {
@@ -242,15 +271,18 @@ namespace Rendering
                 LogError(std::format("Tried to flush current batch in renderer, but batch shader was null"));
                 return;
             }
+            batch.m_Shader->BindUniformBlockIfNeeded(m_uniformBuffer.GetName(), m_uniformBuffer.GetBindIndex());
             batch.m_Shader->BindActive();
-            LogWarning(std::format("Active program binded:{}", batch.m_Shader->GetId()));
+            //LogWarning(std::format("Active program binded:{}", batch.m_Shader->GetId()));
            
+            /*
             if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, VIEW_MATRIX_UNIFORM_NAME, 
                 m_staticRenderData.m_CameraData->m_ViewMatrix.GetMemPointer()))
                 return;
             if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, PROJ_MATRIX_UNIFORM_NAME, 
                 m_staticRenderData.m_CameraData->m_PlatformProjectionMatrix.GetMemPointer()))
                 return;
+                */
 
             if (batch.m_Texture != nullptr)
             {
@@ -297,7 +329,7 @@ namespace Rendering
 
 
 
-    void Renderer::AddCallRectangle2DMulti(const Shader* shader, Texture* texture, const Vec2& worldSize,
+    void Renderer::AddCallRectangle2DMulti(Shader* shader, Texture* texture, const Vec2& worldSize,
         const Mat4& modelMatrix, const Utils::Color& color)
     {
         constexpr size_t VERTEX_COUNT = 4;
@@ -311,7 +343,7 @@ namespace Rendering
         AddVerticesToBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
         AddInstanceDataToBatch(modelMatrix, color);
     }
-    void Renderer::AddCallBox3DMulti(const Shader* shader, Texture* texture, const Vec3& size,
+    void Renderer::AddCallBox3DMulti(Shader* shader, Texture* texture, const Vec3& size,
         const Mat4& modelMatrix, const Utils::Color& color)
     {
         if (texture == nullptr)
@@ -452,7 +484,7 @@ namespace Rendering
         AddVerticesToBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
         AddInstanceDataToBatch(modelMatrix, color);
     }
-    void Renderer::AddCallSphere3DMulti(const Shader* shader, Texture* texture, const float radius,
+    void Renderer::AddCallSphere3DMulti(Shader* shader, Texture* texture, const float radius,
         const Mat4& modelMatrix, const Utils::Color color)
     {
         BatchStateChangeCheck(shader, texture);
@@ -686,7 +718,7 @@ namespace Rendering
         Backend::EndRenderingMarker();
 
         ClearCommandBuffers();
-        m_staticRenderData.m_UpdatedDataThisFrame = false;
+        m_uniformData.m_UpdatedThisFrame = false;
     }
 
     void Renderer::ClearCommandBuffers()
@@ -708,6 +740,6 @@ namespace Rendering
     std::string Renderer::ToStringAll()
     {
         return std::format("DUMPING RENDERER DATA:\nCameraState:{}\nBatches:{}", 
-            GetThisFrameRenderData().m_CameraData->ToString(), ToStringBatches());
+            m_engineState->m_CameraController->GetActiveCamera().ToString(), ToStringBatches());
     }
 }

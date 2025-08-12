@@ -1,7 +1,13 @@
 #version 330 core
 
-uniform mat4 uViewMatrix;
-uniform mat4 uProjectionMatrix;
+layout(std140) uniform CameraBlock 
+{
+    mat4 viewMatrix;
+    mat4 projectionMatrix;
+} uCameraBlock;
+
+//uniform mat4 uViewMatrix;
+//uniform mat4 uProjectionMatrix;
 
 layout(location=0) in vec3 aPosition;
 //Note: location 1 reserved for tex coords
@@ -16,7 +22,7 @@ out vec4 vColor;
 
 void main()
 {
-    gl_Position= uProjectionMatrix * uViewMatrix * aModelMatrix * vec4(aPosition, 1.0);
+    gl_Position= uCameraBlock.projectionMatrix * uCameraBlock.viewMatrix * aModelMatrix * vec4(aPosition, 1.0);
     //gl_Position= vec4(aPosition.xy, 0.5, 1);
     vColor= aColor;
 };

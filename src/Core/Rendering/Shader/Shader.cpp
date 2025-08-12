@@ -17,8 +17,15 @@ namespace Rendering
 		return "";
 	}
 
+	std::string UniformBlockMember::ToString() const
+	{
+		return std::format("[Name:{} Offset:{} ArrSize:{} ArrStride:{} MatStride:{}]", 
+			m_Name, m_ByteOffset, m_ArraySize, m_ArrayByteStride, m_MatrixBytStride);
+	}
+
 	Shader::Shader(const std::string& vertexSource, const std::string& fragmentSource, const ShaderPlatformCallbacks& callbacks)
-		: m_platformCallbacks(callbacks), m_vertexSourceCode(vertexSource), m_fragmentSourceCode(fragmentSource), m_id(INVALID_OBJ_ID) 
+		: m_platformCallbacks(callbacks), m_vertexSourceCode(vertexSource), m_fragmentSourceCode(fragmentSource), m_id(INVALID_OBJ_ID),
+		m_boundUniformBlocksCount(0)
 	{
 		Init();
 	}
@@ -38,6 +45,25 @@ namespace Rendering
 	bool Shader::IsValid() const
 	{
 		return m_id != INVALID_OBJ_ID;
+	}
+	bool Shader::HasUniformBlocks() const
+	{
+		return !m_uniformBlockData.empty();
+	}
+	bool Shader::HasAllUniformBlocksBounds() const
+	{
+		return m_boundUniformBlocksCount >= m_uniformBlockData.size();
+	}
+	bool Shader::NeedsUniformBlockBound(const std::string& name) const
+	{
+		if (HasAllUniformBlocksBounds())
+			return false;
+
+		auto it = m_uniformBlockData.find(name);
+		if (it == m_uniformBlockData.end())
+			return false;
+
+		return it->second.m_BufferBindIndex == INVALID_BUFFER_BIND_INDEX;
 	}
 
 	const std::string& Shader::GetVertexSource() const
@@ -67,23 +93,29 @@ namespace Rendering
 			return;
 		}
 
-		m_id= m_platformCallbacks.m_InitFunc(GetVertexSourceCStyle(), GetFragmentSourceCStyle());
+		m_id= m_platformCallbacks.m_InitFunc(GetVertexSourceCStyle(), GetFragmentSourceCStyle(), m_uniformBlockData);
 		if (m_id == INVALID_OBJ_ID)
 		{
 			LogError(std::format("Attempted to init shader with invalid render object id:{}", m_id));
 		}
 	}
 
-	void Shader::BindActive() const
+	void Shader::BindActive()
 	{
+		if (!HasAllUniformBlocksBounds())
+		{
+			LogError(std::format("Attempted to bind shader:{} active, but that is not allowed "
+				"until all uniform blocks have a buffer bound", ToString()));
+			return;
+		}
 		m_platformCallbacks.m_BindActiveFunc(*this);
 	}
-	void Shader::UnbindActive() const
+	void Shader::UnbindActive()
 	{
 		m_platformCallbacks.m_UnbindActiveFunc(*this);
 	}
 
-	bool Shader::TrySetUniform(const UniformType type, const char* uniformName, const void* valuePtr) const
+	bool Shader::TrySetUniform(const UniformType type, const char* uniformName, const void* valuePtr)
 	{
 		if (!m_platformCallbacks.m_TrySetUniformFunc(*this, type, uniformName, valuePtr))
 		{
@@ -101,6 +133,48 @@ namespace Rendering
 		}
 		return true;
 	}
+
+	bool Shader::TryBindUniformBlock(const char* blockName, const UniformBufferBindIndex index)
+	{
+		if (m_uniformBlockData.empty())
+		{
+			LogError(std::format("Attempted to bind uniform block of named:{} but shader:{} has no uniform blocks", 
+				blockName, ToString()));
+			return false;
+		}
+
+		//Note: we do not check if valid name because that is essnetially done in bind callback
+		if (!m_platformCallbacks.m_TryBindUniformBlockFunc(*this, blockName, index))
+		{
+			LogError(std::format("Attempted to bind uniform block of name:{} in shader but resulted in error", blockName));
+			return false;
+		}
+
+		auto& blockData = m_uniformBlockData[std::string(blockName)];
+		//If the previous index was invalid it means this is a new block that is bound
+		if (blockData.m_BufferBindIndex == INVALID_BUFFER_BIND_INDEX)
+			m_boundUniformBlocksCount++;
+		else blockData.m_BufferBindIndex = index;
+
+		return true;
+	}
+	bool Shader::BindUniformBlockIfNeeded(const std::string& name, const UniformBufferBindIndex index)
+	{
+		if (HasAllUniformBlocksBounds())
+			return false;
+
+		return TryBindUniformBlock(name.c_str(), index);
+	}
+	bool Shader::TryGetUniformBlockMembers(const char* blockName, std::vector<UniformBlockMember>& members, size_t* fullSize) const
+	{
+		if (!m_platformCallbacks.TryGetUniformBlockMembers(*this, blockName, members, fullSize))
+		{
+			LogError(std::format("Attempted to get uniform block members of name:{} in shader but resulted in error", blockName));
+			return false;
+		}
+		return true;
+	}
+
 	std::string Shader::ToString() const
 	{
 		return std::format("[Shader Id:{} Vertex:\n{}\nFragment:{}]", m_id, m_vertexSourceCode, m_fragmentSourceCode);

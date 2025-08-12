@@ -16,18 +16,20 @@ struct TransformPrecalculatedData
 	Vec3 m_GlobalScale = DEFAULT_SCALE;
 	Quat m_GlobalRotation = DEFAULT_ROTATION;
 	Mat4 m_GlobalModelMatrix = Mat4::GetIdentity();
+	//bool m_UpdatedThisFrame = false;
 };
 
+//namespace ECS { class TransformSystem; }
 class TransformComponent : public Component
 {
 private:
 	Vec3 m_localPos;
-
 	Vec3 m_localScale;
 	Quat m_localRotation;
 
 	mutable TransformPrecalculatedData m_lastUpdateData;
 public:
+	//friend class ECS::TransformSystem;
 private:
 	void SetChildrenDirty();
 	//Mat4 CalculateLocalModelMatrix() const;
@@ -38,6 +40,13 @@ public:
 	TransformComponent(const Json& json);
 	TransformComponent(const Vec3 pos= DEFAULT_POS, const Vec3 scale= DEFAULT_SCALE, 
 		const Quat rotation= DEFAULT_ROTATION);
+
+	/// <summary>
+	/// Will force an update to transform if it is dirty.
+	/// Returns true if it was dirty/updated, otherwise false
+	/// </summary>
+	/// <returns></returns>
+	bool ForceUpdateIfDirty() const;
 
 	//TODO: these position setting functions should get moved into transform
 	/*void SetLocalPos(const Vec3& newPos);

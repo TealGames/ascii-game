@@ -44,6 +44,32 @@ public:
 		}
 	}
 
+	static constexpr MatrixType GetIdentity() requires (ROW_SIZE == COL_SIZE)
+	{
+		MatrixType<ROW_SIZE, COL_SIZE> result = {};
+		for (size_t c = 0; c < COL_SIZE; c++)
+		{
+			for (size_t r = 0; r < ROW_SIZE; r++)
+			{
+				result.m_elements[c][r] = (c == r) ? 1 : 0;
+			}
+		}
+		return result;
+	}
+
+	bool IsZero() const
+	{
+		for (size_t c = 0; c < COL_SIZE; c++)
+		{
+			for (size_t r = 0; r < ROW_SIZE; r++)
+			{
+				if (!Utils::ApproximateEqualsF(m_elements[r][c], 0.0f))
+					return false;
+			}
+		}
+		return true;
+	}
+
 	const float* GetMemPointer() const
 	{
 		return &m_elements[0][0];
@@ -175,19 +201,6 @@ public:
 			for (size_t r = 0; r < ROW_SIZE; r++)
 			{
 				result.m_elements[r][c] = m_elements[c][r];
-			}
-		}
-		return result;
-	}
-
-	static constexpr MatrixType GetIdentity() requires (ROW_SIZE == COL_SIZE)
-	{
-		MatrixType<ROW_SIZE, COL_SIZE> result = {};
-		for (size_t c = 0; c < COL_SIZE; c++)
-		{
-			for (size_t r = 0; r < ROW_SIZE; r++)
-			{
-				result.m_elements[c][r] = (c == r) ? 1 : 0;
 			}
 		}
 		return result;

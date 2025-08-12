@@ -10,7 +10,6 @@ layout(location=0) out vec4 color;
 void main()
 {
 	vec4 texColor= texture(uTexture, vTexCoords);
-	//color=mix(vColor, texColor, vColor.a);
-	color=texColor;
-	//color= vColor;
+	color=vec4(mix(texColor.rgb, vColor.rgb, vColor.a), texColor.a);
+	//color=texColor;
 };

@@ -5,6 +5,7 @@
 #include "Math/Ray.hpp"
 #include "Math/Plane.hpp"
 #include "Utils/Data/Matrix.hpp"
+#include "Utils/HelperMacros.hpp"
 
 enum class ProjectionMatrixType : std::uint8_t
 {
@@ -12,25 +13,38 @@ enum class ProjectionMatrixType : std::uint8_t
 	Engine		=1
 };
 
+enum class CameraPrecalculatedDataUpdate : std::uint8_t
+{
+	None=				0,
+	ViewMatrix=			1,
+	PlatformProjMatrix= 1<<1,
+	EngineProjMatrix=	1<<2,
+	FrustumPlanes=		1<<3,
+	All=				0xFF
+};
+FLAG_ENUM_OPERATORS(CameraPrecalculatedDataUpdate)
+
 struct CameraPrecalculatedData
 {
 	Mat4 m_ViewMatrix = {};
 	Mat4 m_PlatformProjectionMatrix = {};
 	Mat4 m_EngineProjectionMatrix = {};
 	std::array<InfinitePlane3D, 6> m_FrustumPlanes = {};
+	CameraPrecalculatedDataUpdate m_UpdatedThisFrame;
 
 	std::string ToString() const;
 };
 
 constexpr Vec3 INVALID_NDC_POS = {-2, -2, -2};
 
+namespace ECS { class CameraSystem; }
 class CameraComponent : public Component
 {
 private:
-	CameraPrecalculatedData m_lastUpdateData;
+	mutable CameraPrecalculatedData m_lastUpdateData;
 	CameraSettings m_cameraSettings;
 public:
-	
+	friend class ECS::CameraSystem;
 private:
 	/// <summary>
 	/// Calculates the planes that make up the view frustum in the order:
@@ -56,6 +70,13 @@ public:
 	CameraComponent();
 	CameraComponent(const Json& json);
 	CameraComponent(const CameraSettings& cameraSettings);
+
+	/// <summary>
+	/// Returns dirty if the camera had settings updated OR its transform was updated
+	/// to ensure that any get functions lazily updates their values
+	/// </summary>
+	/// <returns></returns>
+	bool IsDirty() const override;
 
 	void SetFollowNoTarget();
 	void SetFollowTarget(const EntityData& entity);
@@ -97,7 +118,7 @@ public:
 	WorldPosition3D CalculateFarPlaneWorldCenter() const;
 	bool DoesViewVolumeContainPos(const WorldPosition3D& point) const;
 
-	void UpdatePrecalculatedData();
+	//void UpdatePrecalculatedData();
 	const CameraPrecalculatedData& GetLastUpdateData() const;
 
 	//std::vector<std::string> GetDependencyFlags() const override;

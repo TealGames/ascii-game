@@ -20,7 +20,9 @@ std::string CameraPrecalculatedData::ToString() const
 		frustumPlanesStr);
 }
 
-CameraComponent::CameraComponent() : CameraComponent(CameraSettings()) {}
+CameraComponent::CameraComponent() : CameraComponent(CameraSettings()) 
+{
+}
 
 CameraComponent::CameraComponent(const Json& json) : CameraComponent()
 {
@@ -28,7 +30,15 @@ CameraComponent::CameraComponent(const Json& json) : CameraComponent()
 }
 
 CameraComponent::CameraComponent(const CameraSettings& cameraSettings) :
-	Component(), m_cameraSettings(cameraSettings), m_lastUpdateData() {}
+	Component(), m_cameraSettings(cameraSettings), m_lastUpdateData() 
+{
+	m_isDirty = true;
+}
+
+bool CameraComponent::IsDirty() const
+{
+	return m_isDirty || GetTransform().IsDirty();
+}
 
 void CameraComponent::SetFollowNoTarget()
 {
@@ -75,8 +85,8 @@ float CameraComponent::GetViewDistance() const { return GetFarDistance() - GetNe
 
 Vec3 CameraComponent::WorldToNdcPosition(const WorldPosition3D& pos, const ProjectionMatrixType matrixType) const
 {
-	const Vec4 clipPos = (matrixType == ProjectionMatrixType::Engine ? m_lastUpdateData.m_EngineProjectionMatrix
-		: m_lastUpdateData.m_PlatformProjectionMatrix) * m_lastUpdateData.m_ViewMatrix * Vec4(pos, 1);
+	const Vec4 clipPos = (matrixType == ProjectionMatrixType::Engine ? GetLastUpdateData().m_EngineProjectionMatrix
+		: GetLastUpdateData().m_PlatformProjectionMatrix) * GetLastUpdateData().m_ViewMatrix * Vec4(pos, 1);
 
 	if (Utils::ApproximateEqualsF(clipPos.m_W, 0))
 		return INVALID_NDC_POS;
@@ -113,7 +123,7 @@ ScreenPosition CameraComponent::WorldToScreenPosition(const WorldPosition3D& pos
 	//LogError(std::format("A*b={} \nB*A={}", (a*b).ToString(), (b*a).ToString()));
 	
 	//LogError(std::format("projViewmat:{}", projViewMat.ToString()));
-	const Vec4 clipPos = m_lastUpdateData.m_EngineProjectionMatrix * m_lastUpdateData.m_ViewMatrix * Vec4(pos, 1);
+	const Vec4 clipPos = GetLastUpdateData().m_EngineProjectionMatrix * GetLastUpdateData().m_ViewMatrix * Vec4(pos, 1);
 	/*LogError(std::format("Got clip pos:{} ViewMatrix:{} engineProjMatrix:{} pos:{}", clipPos.ToString(), 
 		m_lastUpdateData.m_ViewMatrix.ToString(), m_lastUpdateData.m_EngineProjectionMatrix.ToString(), Vec4(pos,1).ToString()));*/
 
@@ -160,19 +170,37 @@ ScreenPosition CameraComponent::WorldToScreenPosition(const WorldPosition3D& pos
 Ray3D CameraComponent::ScreenToWorldPosition(const ScreenPosition& pos) const
 {
 	const WorldPosition3D cameraPos = GetEntity().GetTransform().GetGlobalPos();
-	const WorldPosition2D bottomLeftPos = cameraPos.GetXY() - (m_cameraSettings.m_WorldViewportSize / 2);
-	Vec2 screenPercent{ pos.m_X / SCREEN_WIDTH, (SCREEN_HEIGHT - pos.m_Y) / SCREEN_HEIGHT };
+	const Vec2 nearSize = m_cameraSettings.CalculateViewportSize(m_cameraSettings.m_NearDistance);
+	//const WorldPosition2D bottomLeftPos = cameraPos.GetXY() - (m_cameraSettings.m_WorldViewportSize / 2);
+	const Vec2 screenPercent{ pos.m_X / SCREEN_WIDTH, (SCREEN_HEIGHT - pos.m_Y) / SCREEN_HEIGHT };
+	const float camX = (screenPercent.m_X - 0.5f) * nearSize.m_X;
+	const float camY = (0.5f- screenPercent.m_Y) * nearSize.m_Y;
 
-	Vec2 worldSize = screenPercent * m_cameraSettings.m_WorldViewportSize;
+	const Vec3 nearPoint = cameraPos + CalculateWorldForward() * m_cameraSettings.m_NearDistance + 
+		CalculateWorldRight() * camX + CalculateWorldUp() * camY;
+
+	Vec3 dir = {};
+	WorldPosition3D origin = {};
+	if (m_cameraSettings.m_ProjectionType == ProjectionType::Orthographic)
+	{
+		origin = nearPoint;
+		dir = CalculateWorldForward();
+	}
+	else
+	{
+		origin = cameraPos;
+		dir = (nearPoint - cameraPos).GetNormalized();
+	}
+	//const Vec3 dir = GetTransform().GetGlobalRotation().ApplyRotationToDir(Vec3(0, 0, 1)) * ;
 	//LogWarning(std::format("CAMERA SHIT coord:{} screen percetn:{} viewport size:{}", pos.ToString(), screenPercent.ToString(), m_CameraSettings.m_WorldViewportSize.ToString()));
-	return Ray3D(WorldPosition3D(bottomLeftPos + worldSize, CalculateNearPlaneWorldCenter().m_Z), Vec3(0, 0, GetViewDistance()));
+	return Ray3D(origin, dir * GetViewDistance());
 }
 Vec2 CameraComponent::WorldToScreenSize(const float cameraDepthDistance, const Vec3& worldSize) const
 {
 	//if orthographic, since the size does not change as you move away, we just get fraction of world
 	//object to viewport area within screen and we do not care about depth (Z axis) since it stays the same no matter the depth
 	if (m_cameraSettings.m_ProjectionType== ProjectionType::Orthographic)	
-		return worldSize.GetXY() / m_cameraSettings.m_WorldViewportSize * Vec2(SCREEN_WIDTH, SCREEN_HEIGHT);
+		return worldSize.GetXY() / m_cameraSettings.CalculateViewportSize() * Vec2(SCREEN_WIDTH, SCREEN_HEIGHT);
 	else
 	{
 		const Vec2 frustrumSize = m_cameraSettings.CalculateViewportSize(cameraDepthDistance);
@@ -204,6 +232,8 @@ WorldPosition3D CameraComponent::CalculateFarPlaneWorldCenter() const
 
 std::array<InfinitePlane3D, 6> CameraComponent::CalculateFrustumPlanes() const
 {
+	//Note: here we must use data directly not via function to prevent recursive loop + 
+	//since we calculate this last, we are guaranteed to have the most updated proj and view matrix
 	const Mat4 viewProjection = m_lastUpdateData.m_EngineProjectionMatrix * m_lastUpdateData.m_ViewMatrix;
 
 	/// LEFT, RIGHT, BOTTOM, TOP, NEAR, FAR
@@ -223,7 +253,7 @@ std::array<InfinitePlane3D, 6> CameraComponent::CalculateFrustumPlanes() const
 
 bool CameraComponent::DoesViewVolumeContainPos(const WorldPosition3D& point) const
 {
-	for (const auto& plane : m_lastUpdateData.m_FrustumPlanes)
+	for (const auto& plane : GetLastUpdateData().m_FrustumPlanes)
 	{
 		//Note: the furstum planes have normals that point inward, so "forward" is considering inside frustum
 		//and back of plane is considered outside view area
@@ -259,10 +289,11 @@ Mat4 CameraComponent::CalculateProjectionMatrix(const ProjectionMatrixType type)
 	else
 	{
 		const WorldPosition3D globalPos = GetTransform().GetGlobalPos();
-		const float l = globalPos.m_X - m_cameraSettings.m_WorldViewportSize.m_X / 2;
-		const float r = globalPos.m_X + m_cameraSettings.m_WorldViewportSize.m_X / 2;
-		const float b = globalPos.m_Y - m_cameraSettings.m_WorldViewportSize.m_Y / 2;
-		const float t = globalPos.m_Y + m_cameraSettings.m_WorldViewportSize.m_Y / 2;
+		const Vec2 viewportSize = m_cameraSettings.CalculateViewportSize();
+		const float l = globalPos.m_X - viewportSize.m_X / 2;
+		const float r = globalPos.m_X + viewportSize.m_X / 2;
+		const float b = globalPos.m_Y - viewportSize.m_Y / 2;
+		const float t = globalPos.m_Y + viewportSize.m_Y / 2;
 
 		if (type == ProjectionMatrixType::Engine)
 			PlatformMath::CalculateOrthographicProjMatrix(ENGINE_NDC_RANGES[2], ENGINE_FORWARD_SIGN_Z, r, l, t, b, zNear, zFar);
@@ -271,17 +302,41 @@ Mat4 CameraComponent::CalculateProjectionMatrix(const ProjectionMatrixType type)
 	}
 }
 
+/*
 void CameraComponent::UpdatePrecalculatedData()
 {
 	//TODO: do we need platform or engine frustum planes?
 	m_lastUpdateData.m_ViewMatrix = CalculateViewMatrix();
 	m_lastUpdateData.m_PlatformProjectionMatrix = CalculateProjectionMatrix(ProjectionMatrixType::Platform);
 	m_lastUpdateData.m_EngineProjectionMatrix = CalculateProjectionMatrix(ProjectionMatrixType::Engine);
-	/*LogError(std::format("view mat:{} pproj:{} eproj:{}", m_lastUpdateData.m_ViewMatrix.ToString(), 
-		m_lastUpdateData.m_PlatformProjectionMatrix.ToString(), m_lastUpdateData.m_EngineProjectionMatrix.ToString()));*/
+	//LogError(std::format("view mat:{} pproj:{} eproj:{}", m_lastUpdateData.m_ViewMatrix.ToString(), 
+	//m_lastUpdateData.m_PlatformProjectionMatrix.ToString(), m_lastUpdateData.m_EngineProjectionMatrix.ToString()));
 	m_lastUpdateData.m_FrustumPlanes = CalculateFrustumPlanes();
 }
-const CameraPrecalculatedData& CameraComponent::GetLastUpdateData() const { return m_lastUpdateData; }
+*/
+const CameraPrecalculatedData& CameraComponent::GetLastUpdateData() const 
+{ 
+	const bool cameraMoved = GetTransform().IsDirty();
+	const bool cameraSettingsUpdated = m_isDirty;
+	if (cameraMoved)
+	{
+		m_lastUpdateData.m_ViewMatrix = CalculateViewMatrix();
+		m_lastUpdateData.m_UpdatedThisFrame |= CameraPrecalculatedDataUpdate::ViewMatrix;
+	}
+	if (cameraSettingsUpdated)
+	{
+		m_lastUpdateData.m_PlatformProjectionMatrix = CalculateProjectionMatrix(ProjectionMatrixType::Platform);
+		m_lastUpdateData.m_EngineProjectionMatrix = CalculateProjectionMatrix(ProjectionMatrixType::Engine);
+		m_lastUpdateData.m_UpdatedThisFrame |= CameraPrecalculatedDataUpdate::EngineProjMatrix | CameraPrecalculatedDataUpdate::PlatformProjMatrix;
+		m_isDirty = false;
+	}
+	if (cameraMoved || cameraSettingsUpdated)
+	{
+		m_lastUpdateData.m_FrustumPlanes = CalculateFrustumPlanes();
+		m_lastUpdateData.m_UpdatedThisFrame |= CameraPrecalculatedDataUpdate::FrustumPlanes;
+	}
+	return m_lastUpdateData; 
+}
 
 void CameraComponent::InitFields()
 {
@@ -302,12 +357,13 @@ void CameraComponent::Deserialize(const Json& json)
 {
 	m_cameraSettings.m_AspectRatio = json.at("AspectRatio").get<Vec2Int>();
 	m_cameraSettings.m_LensSize = json.at("LensSize").get<float>();
-	m_cameraSettings.UpdateViewportSize();
 
 	EntityData* maybeFollowTarget = TryDeserializeEntity(json.at("FollowTarget"), true);
 
 	if (maybeFollowTarget != nullptr) SetFollowTarget(*maybeFollowTarget);
 	else SetFollowNoTarget();
+
+	m_isDirty = true;
 }
 Json CameraComponent::Serialize()
 {

@@ -9,8 +9,8 @@ CameraSettings::CameraSettings() : CameraSettings(Vec2Int{1,1}, 20, nullptr) {}
 
 CameraSettings::CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const EntityData* followTarget, 
     const ProjectionType projection, const float nearDistance, const float farDistance, const float fieldOfViewYRadians)
-    : m_AspectRatio(aspectRatio), m_LensSize(lensSize), m_WorldViewportSize(CalculateViewportSize()),
-    m_FollowTarget(followTarget), m_NearDistance(nearDistance), m_FarDistance(farDistance), 
+    : m_AspectRatio(aspectRatio), m_LensSize(lensSize), m_FollowTarget(followTarget), 
+    m_NearDistance(nearDistance), m_FarDistance(farDistance), 
     m_ProjectionType(projection), m_FieldOfViewYRadians(fieldOfViewYRadians)
 {
     if (Utils::ApproximateEqualsF(m_NearDistance, 0))
@@ -29,10 +29,6 @@ WorldPosition2D CameraSettings::CalculateViewportSize(const float cameraDepth) c
         return WorldPosition2D{ viewHeight * CalculateAspectRatio(), viewHeight};
     }
 }
-void CameraSettings::UpdateViewportSize()
-{
-    m_WorldViewportSize = CalculateViewportSize();
-}
 
 float CameraSettings::CalculateAspectRatio() const
 {
@@ -50,6 +46,6 @@ void CameraSettings::SetFieldOfViewYDegrees(const float fovY)
 
 std::string CameraSettings::ToString() const
 {
-    return std::format("[Apsect:{} LensSize:{} ViewSize:{} Follow:{} near:{} far:{} FovY:{} rad ]", m_AspectRatio.ToString(), std::to_string(m_LensSize), 
-        m_WorldViewportSize.ToString(), m_FollowTarget!=nullptr? m_FollowTarget->ToString() : "NONE", m_NearDistance, m_FarDistance, m_FieldOfViewYRadians);
+    return std::format("[Apsect:{} LensSize:{} Follow:{} near:{} far:{} FovY:{} rad ]", m_AspectRatio.ToString(), std::to_string(m_LensSize), 
+        m_FollowTarget!=nullptr? m_FollowTarget->ToString() : "NONE", m_NearDistance, m_FarDistance, m_FieldOfViewYRadians);
 }

@@ -18,5 +18,6 @@ public:
 	ShaderAsset(const std::filesystem::path& path);
 
 	const Rendering::Shader& GetShader() const;
+	Rendering::Shader& GetShaderMutable();
 	void UpdateAssetFromFile() override;
 };

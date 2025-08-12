@@ -120,6 +120,10 @@ const Rendering::Shader& ShaderAsset::GetShader() const
 {
 	return m_shader;
 }
+Rendering::Shader& ShaderAsset::GetShaderMutable()
+{
+	return m_shader;
+}
 void ShaderAsset::UpdateAssetFromFile() 
 {
 	WriteToShaderFromFiles();

@@ -41,6 +41,7 @@ bool Component::IsInActiveAndEnabledState() const
 {
 	return m_IsEnabled && GetEntity().IsEntityActive();
 }
+bool Component::IsDirty() const { return m_isDirty; }
 void Component::SetDirty(const bool isDirty)
 {
 	m_isDirty = isDirty;

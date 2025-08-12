@@ -1,8 +1,8 @@
 #pragma once
 #include "Core/Rendering/RenderCall.hpp"
 #include "Core/Rendering/Buffers.hpp"
-#include "Core/Rendering/RenderingBackend.hpp"
 #include "Core/Rendering/TextureController.hpp"
+#include "Utils/Data/Matrix.hpp"
 #include <cstdint>
 
 class EngineState;
@@ -35,7 +35,7 @@ namespace Rendering
     class Shader;
     struct RenderBatch
     {
-        const Shader* m_Shader = nullptr;
+        Shader* m_Shader = nullptr;
         Texture* m_Texture = nullptr;
         std::vector<VertexType> m_Vertices = {};
 
@@ -58,10 +58,15 @@ namespace Rendering
         FrameEnd        = 1,
     };
 
-    struct StaticFrameRenderData
+   /* struct StaticFrameRenderData
     {
         bool m_UpdatedDataThisFrame = false;
         const CameraPrecalculatedData* m_CameraData = {};
+    };*/
+
+    struct UniformBufferData
+    {
+        bool m_UpdatedThisFrame = false;
     };
 
     class Renderer
@@ -70,7 +75,8 @@ namespace Rendering
         bool m_isInit;
 
         const EngineState* m_engineState;
-        StaticFrameRenderData m_staticRenderData;
+        //StaticFrameRenderData m_staticRenderData;
+        UniformBufferData m_uniformData;
 
         std::vector<RenderCall> m_renderCalls;
         std::vector<TextCallData> m_textData;
@@ -86,11 +92,12 @@ namespace Rendering
         IndexBuffer m_indexBuffer;
         VertexBuffer m_vertexBuffer;
         VertexBuffer m_instancedBuffer;
+        UniformBuffer m_uniformBuffer;
     public:
        
     private:
-        void BatchStateChangeCheck(const Shader* shader, Texture* texture);
-        void AddVerticesToBatch(const Shader* shader, Texture* texture,
+        void BatchStateChangeCheck(Shader* shader, Texture* texture);
+        void AddVerticesToBatch(Shader* shader, Texture* texture,
             const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize);
         void AddVertexToBatch(const Vertex& vertex);
         void AddIndexToBatch(const IndexType& index);
@@ -99,16 +106,17 @@ namespace Rendering
 
         void FlushBatches();
 
-        const Shader* GetDefaultShader() const;
-        const Shader* GetTextureShader() const;
-        void FrameRenderDataUpdateCheck();
-        StaticFrameRenderData& GetThisFrameRenderData();
+        Shader* GetDefaultShader() const;
+        Shader* GetTextureShader() const;
 
-        void AddCallRectangle2DMulti(const Shader* shader, Texture* texture, const Vec2& worldSize, 
+        //void FrameRenderDataUpdateCheck();
+        //StaticFrameRenderData& GetThisFrameRenderData();
+
+        void AddCallRectangle2DMulti(Shader* shader, Texture* texture, const Vec2& worldSize, 
             const Mat4& modelMatrix, const Utils::Color& color);
-        void AddCallBox3DMulti(const Shader* shader, Texture* texture, const Vec3& worldSize,
+        void AddCallBox3DMulti(Shader* shader, Texture* texture, const Vec3& worldSize,
             const Mat4& modelMatrix, const Utils::Color& color);
-        void AddCallSphere3DMulti(const Shader* shader, Texture* texture, const float radius, 
+        void AddCallSphere3DMulti(Shader* shader, Texture* texture, const float radius, 
             const Mat4& modelMatrix, const Utils::Color color);
 
         /// <summary>

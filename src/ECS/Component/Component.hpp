@@ -76,6 +76,7 @@ public:
 	/// <returns></returns>
 	bool IsInActiveAndEnabledState() const;
 
+	virtual bool IsDirty() const;
 	void SetDirty(const bool isDirty);
 
 	std::vector<ComponentField>& GetFieldsMutable();

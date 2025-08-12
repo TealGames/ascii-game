@@ -36,8 +36,7 @@ namespace ECS
 #endif 
 
         if (mainCamera.HasFollowTarget()) UpdateCameraPosition(mainCamera);
-        mainCamera.UpdatePrecalculatedData();
-
+        mainCamera.m_lastUpdateData.m_UpdatedThisFrame = CameraPrecalculatedDataUpdate::None;
         //CollapseLayersWithinViewport(scene, mainCamera);
     }
 

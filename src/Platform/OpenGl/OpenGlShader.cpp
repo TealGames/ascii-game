@@ -43,7 +43,8 @@ namespace Rendering
 			return shaderId;
 		}
 
-		static RenderObjectId CreateShaderProgram(const char* vertexShader, const char* fragmentShader)
+		static RenderObjectId CreateShaderProgram(const char* vertexShader, const char* fragmentShader, 
+			std::unordered_map<std::string, UniformBlockData>& blockData)
 		{
 			RenderObjectId programId = INVALID_OBJ_ID;
 			GL_CALL(programId = glCreateProgram());
@@ -61,6 +62,24 @@ namespace Rendering
 			//We only need the shaders to create the single shader program, then they can be deleted
 			GL_CALL(glDeleteShader(vsId));
 			GL_CALL(glDeleteShader(fsId));
+
+			GLint blockCount = 0;
+			GL_CALL(glGetProgramiv(programId, GL_ACTIVE_UNIFORM_BLOCKS, &blockCount));
+
+			if (blockCount > 0)
+			{
+				blockData.reserve(blockCount);
+
+				constexpr size_t MAX_NAME_CHAR_COUNT = 30;
+				char nameBuffer[MAX_NAME_CHAR_COUNT];
+				GLsizei nameLength = 0;
+
+				for (GLint i = 0; i < blockCount; i++) 
+				{
+					GL_CALL(glGetActiveUniformBlockName(programId, i, sizeof(nameBuffer), &nameLength, nameBuffer));
+					blockData.emplace(std::string(nameBuffer, nameLength), UniformBlockData{});
+				}
+			}
 
 			return programId;
 		}
@@ -180,6 +199,98 @@ namespace Rendering
 			return true;
 		}
 
+		static bool TryBindShaderUniformBlock(const Shader& shader, const char* uniformName, const UniformBufferBindIndex bindIndex)
+		{
+			const RenderObjectId programId = shader.GetId();
+			if (glIsProgram(programId) == GL_FALSE)
+			{
+				LogError(std::format("OpenGL: Attempted to set shader:{} uniform block:{} but shader program with that id does not exist",
+					shader.ToString(), uniformName));
+				return false;
+			}
+
+			GLuint blockIndex = GL_INVALID_INDEX;
+			GL_CALL(blockIndex = glGetUniformBlockIndex(shader.GetId(), uniformName));
+			if (blockIndex == GL_INVALID_INDEX)
+			{
+				LogError(std::format("OpenGL: Invalid uniform block location when setting shader:{} uniform block:{}. "
+					"Possibly undefined uniform name or wrong spelling", shader.ToString(), uniformName));
+				return false;
+			}
+			GL_CALL(glUniformBlockBinding(shader.GetId(), blockIndex, bindIndex));
+			return true;
+		}
+		static bool TryGetUniformBlockMembers(const Shader& shader, const char* uniformName, std::vector<UniformBlockMember>& members, size_t* fullSize)
+		{
+			const RenderObjectId programId = shader.GetId();
+			if (glIsProgram(programId) == GL_FALSE)
+			{
+				LogError(std::format("OpenGL: Attempted to get shader:{} uniform block members for:{} but shader program with that id does not exist",
+					shader.ToString(), uniformName));
+				return false;
+			}
+
+			GLuint blockIndex = GL_INVALID_INDEX;
+			GL_CALL(blockIndex = glGetUniformBlockIndex(shader.GetId(), uniformName));
+			if (blockIndex == GL_INVALID_INDEX)
+			{
+				LogError(std::format("OpenGL: Invalid uniform block location when getting uniform block members of shader:{} uniform block:{}. "
+					"Possibly undefined uniform name or wrong spelling. NOTE: USE THE UNIFORM BLOCK TYPE NOT THE INSTANCE NAME", shader.ToString(), uniformName));
+				return false;
+			}
+
+			GLint uniformCount = 0;
+			GL_CALL(glGetActiveUniformBlockiv(shader.GetId(), blockIndex, GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS, &uniformCount));
+
+			GLuint* uniformIndices = (GLuint*)alloca(sizeof(GLuint) * uniformCount);
+			//Note: for some reason opengl gives indices as ints, but we need to use them as uints -> 
+			// shouldn't be a problem just reinterpreting (assuming the index < INT_MAX)
+			GL_CALL(glGetActiveUniformBlockiv(shader.GetId(), blockIndex, GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES, reinterpret_cast<GLint*>(uniformIndices)));
+
+			GLint* offsets= (GLint*)alloca(sizeof(GLint) * uniformCount);
+			GLint* sizes= (GLint*)alloca(sizeof(GLint) * uniformCount);
+			GLint* arrayStrides = (GLint*)alloca(sizeof(GLint) * uniformCount);
+			GLint* matrixStrides= (GLint*)alloca(sizeof(GLint) * uniformCount);
+
+			GL_CALL(glGetActiveUniformsiv(shader.GetId(), uniformCount, uniformIndices, GL_UNIFORM_OFFSET, offsets));
+			GL_CALL(glGetActiveUniformsiv(shader.GetId(), uniformCount, uniformIndices, GL_UNIFORM_SIZE, sizes));
+			GL_CALL(glGetActiveUniformsiv(shader.GetId(), uniformCount, uniformIndices, GL_UNIFORM_ARRAY_STRIDE, arrayStrides));
+			GL_CALL(glGetActiveUniformsiv(shader.GetId(), uniformCount, uniformIndices, GL_UNIFORM_MATRIX_STRIDE, matrixStrides));
+
+			members.reserve(uniformCount);
+
+			constexpr size_t MAX_NAME_LENGTH = 30;
+			char nameBuffer[MAX_NAME_LENGTH] = {};
+			GLsizei nameLength = 0;
+			std::string nameStr = "";
+			for (size_t i = 0; i < uniformCount; i++)
+			{
+				GL_CALL(glGetActiveUniformName(shader.GetId(), uniformIndices[i], sizeof(nameBuffer), &nameLength, nameBuffer));
+				if (nameLength > MAX_NAME_LENGTH)
+				{
+					LogError(std::format("OpenGL: Attempted to read uniform buffer block:{} of shader:{} "
+						"but found uniform member at index:{} with name size:{} greater than max size:{}", 
+						uniformName, shader.ToString(), i, nameLength, MAX_NAME_LENGTH));
+					return false;
+				}
+				//Note: we cutoff the first part to dot since that is the block type or instance name which we dont need
+				nameStr = std::string(nameBuffer, nameLength);
+				nameStr= nameStr.substr(nameStr.find('.') + 1);
+				LogWarning(std::format("Creating name str:{} len:{} og:{}", nameStr, nameLength, std::string(nameBuffer, nameLength)));
+
+				if (i < members.size())
+					members[i] = UniformBlockMember(nameStr, offsets[i], sizes[i], arrayStrides[i], matrixStrides[i]);
+				else members.emplace_back(nameStr, offsets[i], sizes[i], arrayStrides[i]);
+			}
+			if (fullSize != nullptr)
+			{
+				GLint blockSize = 0;
+				GL_CALL(glGetActiveUniformBlockiv(shader.GetId(), blockIndex, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize));
+				*fullSize = blockSize;
+			}
+			return true;
+		}
+
 		Shader CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
 		{
 			return Shader(vertexShader, fragmentShader, ShaderPlatformCallbacks
@@ -188,7 +299,9 @@ namespace Rendering
 					BindActive,
 					UnbindActive,
 					TrySetShaderUniform,
-					TryGetShaderUniform
+					TryGetShaderUniform,
+					TryBindShaderUniformBlock,
+					TryGetUniformBlockMembers
 				});
 		}
 	}

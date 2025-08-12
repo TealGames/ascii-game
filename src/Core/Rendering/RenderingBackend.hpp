@@ -1,7 +1,7 @@
 #pragma once
 #include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Data/WorldPosition.hpp"
 #include "Utils/Data/Color.hpp"
-#include "Core/Rendering/Shader/Shader.hpp"
 #include "Core/Rendering/Buffers.hpp"
 
 namespace Rendering
@@ -18,6 +18,7 @@ namespace Rendering
 		
 		VertexBuffer CreateVertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType);
 		IndexBuffer CreateIndexBuffer(const IndexType* indexArray, const size_t elementCount);
+		UniformBuffer CreateUniformBuffer();
 		VertexLayout CreateVertexLayout();
 
 		void BeginRenderingMarker();
