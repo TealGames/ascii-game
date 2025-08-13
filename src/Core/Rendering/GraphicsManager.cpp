@@ -7,6 +7,7 @@ namespace Rendering
 	static const std::filesystem::path SHADERS_FOLDER = "shaders";
 	static const const char* DEFAULT_SHADER_NAME = "default";
 	static const const char* TEXTURE_SHADER_NAME = "texture";
+	static const const char* FORWAR_RENDER_SHADER_NAME = "forward_render";
 
 
 	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager) 
@@ -16,6 +17,7 @@ namespace Rendering
 	{
 		m_defaultShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(DEFAULT_SHADER_NAME);
 		m_textureShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(TEXTURE_SHADER_NAME);
+		m_forwardRenderShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(FORWAR_RENDER_SHADER_NAME);
 		if (m_defaultShader == nullptr)
 		{
 			LogError(std::format("Failed to load default shader by name:{}", DEFAULT_SHADER_NAME));
@@ -44,6 +46,14 @@ namespace Rendering
 	Shader* GraphicsManager::GetTextureShaderMutable()
 	{
 		return &m_textureShader->GetShaderMutable();
+	}
+	const Shader* GraphicsManager::GetFowardRenderShader() const
+	{
+		return &m_forwardRenderShader->GetShader();
+	}
+	Shader* GraphicsManager::GetForwardRenderShaderMutable()
+	{
+		return &m_forwardRenderShader->GetShaderMutable();
 	}
 	const Shader* GraphicsManager::TryGetShader(const std::string& name) const
 	{

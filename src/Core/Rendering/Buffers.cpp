@@ -113,10 +113,10 @@ namespace Rendering
 	}
 
 
-	UniformBuffer::UniformBuffer()
-		: m_platformCallbacks(), m_bindIndex(INVALID_BUFFER_BIND_INDEX), m_id(INVALID_OBJ_ID) {}
+	UniformBuffer::UniformBuffer() : UniformBuffer(UniformBufferPlatformCallbacks{}) {}
 	UniformBuffer::UniformBuffer(const UniformBufferPlatformCallbacks callbacks)
-		: m_platformCallbacks(callbacks), m_bindIndex(INVALID_BUFFER_BIND_INDEX), m_id(INVALID_OBJ_ID), m_members(), m_blockName()
+		: m_platformCallbacks(callbacks), m_bindIndex(INVALID_BUFFER_BIND_INDEX), 
+		m_id(INVALID_OBJ_ID), m_members(), m_blockName(),m_allocatedByteSize(0)
 	{
 		
 	}
@@ -125,6 +125,7 @@ namespace Rendering
 		if (m_id == INVALID_OBJ_ID)
 			return;
 
+		m_allocatedByteSize = 0;
 		m_platformCallbacks.m_DeallocateFunc(m_id);
 	}
 	bool UniformBuffer::IsAllocated() const
@@ -143,6 +144,7 @@ namespace Rendering
 			m_members.emplace(member.m_Name, member);
 		}
 		m_id= m_platformCallbacks.m_AllocateFunc(fullSize);
+		m_allocatedByteSize = fullSize;
 		m_blockName = std::string(blockName);
 	}
 	void UniformBuffer::LinkToUniformBindingPoint(const UniformBufferBindIndex bindIndex)
@@ -152,6 +154,13 @@ namespace Rendering
 	}
 	void UniformBuffer::WriteData(const size_t byteOffset, const size_t writeByteSize, const void* data)
 	{
+		if (byteOffset + writeByteSize > m_allocatedByteSize)
+		{
+			LogError(std::format("Attempted to write data to uniform buffer named:{} with offset:{} size:{} "
+				"which is past allocated size:{}", m_blockName, byteOffset, writeByteSize, m_allocatedByteSize));
+			return;
+		}
+
 		m_platformCallbacks.m_WriteFunc(m_id, byteOffset, writeByteSize, data);
 	}
 	bool UniformBuffer::TryWriteData(const char* name, const size_t writeSize, const void* data)
@@ -293,6 +302,7 @@ namespace Rendering
 	UniformBufferBindIndex UniformBuffer::GetBindIndex() const { return m_bindIndex; }
 	RenderObjectId UniformBuffer::GetId() const { return m_id; }
 	std::string UniformBuffer::GetName() const { return m_blockName; }
+	size_t UniformBuffer::GetSize() const { return m_allocatedByteSize; }
 
 	UniformBuffer& UniformBuffer::operator=(UniformBuffer&& other) noexcept
 	{
@@ -301,11 +311,11 @@ namespace Rendering
 		m_id= std::exchange(other.m_id, INVALID_OBJ_ID);
 		m_members = std::exchange(other.m_members, {});
 		m_blockName = std::exchange(other.m_blockName, {});
+		m_allocatedByteSize = std::exchange(other.m_allocatedByteSize, {});
 		return *this;
 	}
 	std::string UniformBuffer::ToString() const
 	{
-		;
 		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable<std::vector<UniformBlockMember>, UniformBlockMember>
 			(Utils::GetValuesFromMap<std::string, UniformBlockMember>(m_members.cbegin(), m_members.cend())));
 	}
@@ -422,12 +432,12 @@ namespace Rendering
 			m_layout->AddAttribute(attribute);
 		}
 	}
-	void BufferController::AddVertexBufferMatrix4Attribute(const VertexLayoutBindIndex bufferBindIndex, const ShaderLocation startLocation,
+	void BufferController::AddVertexBufferMatrixAttribute(const Vec2Int& matrixSize, const VertexLayoutBindIndex bufferBindIndex, const ShaderLocation startLocation,
 		const bool normalize, const size_t matrixColumnTypeSize, const ByteOffset initialByteOffset)
 	{
-		for (std::uint8_t i = 0; i < 4; i++)
+		for (std::uint8_t i = 0; i < matrixSize.m_X; i++)
 		{
-			m_layout->AddAttribute(VertexAttribute(startLocation + i, 4, VertexAttributeBaseType::Float, normalize,
+			m_layout->AddAttribute(VertexAttribute(startLocation + i, matrixSize.m_Y, VertexAttributeBaseType::Float, normalize,
 				//For the offset, we assume it is tightly packed with no alignment
 				initialByteOffset + matrixColumnTypeSize * i, bufferBindIndex));
 		}

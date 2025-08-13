@@ -11,14 +11,16 @@
 #include "Core/Analyzation/Debug.hpp"
 #include "Core/EngineState.hpp"
 #include "Core/Camera/CameraController.hpp"
+#include "ECS/Component/Types/World/TransformData.hpp"
 #include "Core/Rendering/GraphicsManager.hpp"
 #include "Core/Rendering/RenderingBackend.hpp"
+#include "Math/PlatformMath.hpp"
 
 #include "Utils/Data/ColorConstants.hpp"
 
 namespace Rendering
 {
-    constexpr bool DONT_RENDER_NON_UTILS = false;
+    constexpr bool DO_LIGHTING = true;
     constexpr size_t PRE_ALLOCATED_SHAPES = 30;
     constexpr size_t PRE_ALLOCATED_INDICES_COUNT = 600;
     constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = 200;
@@ -26,7 +28,7 @@ namespace Rendering
 
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
-    constexpr const char* TEXTURE_UNIFORM_NAME = "uTexture";
+    constexpr const char* TEXTURE_UNIFORM_NAME = "uAlbedo";
 
     std::string Vertex::ToString() const
     {
@@ -36,6 +38,14 @@ namespace Rendering
     {
         return std::format("[Color:{} ModelMatrix:{}]", m_Color.ToString(), m_ModelMatrix.ToString());
     }
+
+    PointLightData::PointLightData() : PointLightData({}, {}, 0) {}
+    PointLightData::PointLightData(const WorldPosition3D& pos, const Vec4& color, const float radius)
+        : m_Pos(pos), m_Color(color), m_Radius(radius), _padding0(0), _padding1{} {}
+
+    DirectionalLightData::DirectionalLightData() : DirectionalLightData({}, {}) {}
+    DirectionalLightData::DirectionalLightData(const Vec3& dir, const Vec4& color)
+        : m_Direction(dir), m_Color(color), _padding0(0) {}
 
     std::string RenderBatch::ToString() const
     {
@@ -52,7 +62,7 @@ namespace Rendering
         : m_isInit(false), m_engineState(&engineState), m_uniformData(), //m_staticRenderData(),
         m_renderCalls(), m_textData(), m_textureData(), m_batches(), m_flushType(BatchFlushType::StateChange), 
         m_layout(), m_bufferController(&m_layout), m_textureController(),
-        m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer(), m_uniformBuffer()
+        m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer(), m_cameraUniformBuffer(), m_lightUniformBuffer()
     {
         
     }
@@ -66,18 +76,26 @@ namespace Rendering
         m_vertexBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(VertexType), PRE_ALLOCATED_VERTICES_COUNT, VertexAttributeAdvance::Vertex);
         m_indexBuffer = Backend::CreateIndexBuffer(nullptr, PRE_ALLOCATED_INDICES_COUNT);
         m_instancedBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(InstanceData), PRE_ALLOCATED_SHAPES, VertexAttributeAdvance::Instance);
-        m_uniformBuffer = Backend::CreateUniformBuffer();
+        m_cameraUniformBuffer = Backend::CreateUniformBuffer();
+        m_lightUniformBuffer = Backend::CreateUniformBuffer();
 
         const VertexLayoutBindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
-        std::vector<VertexAttribute> vertexAttributes = { VertexAttribute(0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Pos)), 
-                                                          VertexAttribute(1, 2, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_UVPos)) };
+        std::vector<VertexAttribute> vertexAttributes = 
+        { 
+            VertexAttribute(0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Pos)), 
+            VertexAttribute(1, 2, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_UVPos)),
+            VertexAttribute(2, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Normal)),
+        };
         m_bufferController.AddVertexBufferAttributes(vertexBindIndex, vertexAttributes);
 
         const VertexLayoutBindIndex instancedBindIndex = m_bufferController.AddVertexBuffer(&m_instancedBuffer, nullptr);
-        std::vector<VertexAttribute> instancedAttributes = {
-            VertexAttribute(2, 4, VertexAttributeBaseType::Float, false, offsetof(InstanceData, m_Color)) };
+        std::vector<VertexAttribute> instancedAttributes = 
+        {
+            VertexAttribute(3, 4, VertexAttributeBaseType::Float, false, offsetof(InstanceData, m_Color)) 
+        };
         m_bufferController.AddVertexBufferAttributes(instancedBindIndex, instancedAttributes);
-        m_bufferController.AddVertexBufferMatrix4Attribute(instancedBindIndex, 3, false, sizeof(Vec4), offsetof(InstanceData, m_ModelMatrix));
+        m_bufferController.AddVertexBufferMatrixAttribute(Vec2Int(4, 4), instancedBindIndex, 4, false, sizeof(Vec4), offsetof(InstanceData, m_ModelMatrix));
+        m_bufferController.AddVertexBufferMatrixAttribute(Vec2Int(3, 3), instancedBindIndex, 8, false, sizeof(Vec4), offsetof(InstanceData, m_NormalModelMatrix));
 
         m_isInit = true;
     }
@@ -164,6 +182,20 @@ namespace Rendering
     {
         return m_engineState->m_GraphicsContext.m_GraphicsManager->GetTextureShaderMutable();
     }
+    Shader* Renderer::GetForwardRenderShader() const
+    {
+        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetForwardRenderShaderMutable();
+    }
+    Shader* Renderer::GetBaseShader() const
+    {
+        if (DO_LIGHTING) return GetForwardRenderShader();
+        return GetDefaultShader();
+    }
+    Shader* Renderer::GetBaseTextureShader() const
+    {
+        if (DO_LIGHTING) return GetForwardRenderShader();
+        return GetTextureShader();
+    }
     /*
     void Renderer::FrameRenderDataUpdateCheck()
     {
@@ -227,7 +259,15 @@ namespace Rendering
 
     void Renderer::AddInstanceDataToBatch(const Mat4& modelMatrix, const Utils::Color& color)
     {
-        m_batches.back().m_InstanceData.emplace_back(color.GetNormalized(), modelMatrix);
+        Mat3 normalMatrix = modelMatrix.GetSlice<3, 3>();
+        if (!normalMatrix.Inverse(&normalMatrix))
+        {
+            LogError(std::format("Attempted to add instance data to batch with model matrix:{} "
+                "but 3x3 normal model matrix fialed to inverse:{}", modelMatrix.ToString(), normalMatrix.ToString()));
+            return;
+        }
+        /*LogError(std::format("Adding model:{} normal model:{}", modelMatrix.ToString(), normalMatrix.Transpose().ToString()));*/
+        m_batches.back().m_InstanceData.emplace_back(color.GetNormalized(), modelMatrix, normalMatrix.Transpose());
         //Note: every time we add new instance data to the batch, we increase the index offset since we know
         //the current model has finished
         m_batches.back().m_IndexOffset = m_batches.back().m_Vertices.size();
@@ -239,28 +279,41 @@ namespace Rendering
         //We only do this the first time we flush a batch during this frame
         //FrameRenderDataUpdateCheck();
 
-        if (!m_uniformBuffer.IsAllocated())
+        if (!m_cameraUniformBuffer.IsAllocated())
         {
-            m_uniformBuffer.AllocateFromShaderUniformBlock(*GetDefaultShader(), "CameraBlock");
-            m_bufferController.AddUniformBuffer(&m_uniformBuffer);
+            m_cameraUniformBuffer.AllocateFromShaderUniformBlock(*GetForwardRenderShader(), "CameraBlock");
+            m_bufferController.AddUniformBuffer(&m_cameraUniformBuffer);
         }
-        const CameraPrecalculatedData& cameraData = m_engineState->m_CameraController->GetActiveCamera().GetLastUpdateData();
-        //TODO: this is still a problem since multiple flushes per frame means multiple updates
-        if (!m_uniformData.m_UpdatedThisFrame && Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::PlatformProjMatrix, 
-            CameraPrecalculatedDataUpdate::ViewMatrix))
+        if (!m_lightUniformBuffer.IsAllocated())
         {
-            if (!m_uniformBuffer.TryWriteData("viewMatrix", sizeof(Mat4), cameraData.m_ViewMatrix.GetMemPointer()))
+            m_lightUniformBuffer.AllocateFromShaderUniformBlock(*GetForwardRenderShader(), "LightsBlock");
+            m_bufferController.AddUniformBuffer(&m_lightUniformBuffer);
+        }
+        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
+        const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
+        //TODO: this is still a problem since multiple flushes per frame means multiple updates
+        const bool needsViewMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix);
+        const bool needsProjMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::PlatformProjMatrix);
+        if (!m_uniformData.m_CameraUpdatedThisFrame && (needsViewMatrixUpdate || needsProjMatrixUpdate))
+        {
+            if (needsViewMatrixUpdate)
             {
-                LogError(std::format("Attempted to write view matrix to uniform buffer but failed"));
-                return;
+                m_cameraUniformBuffer.TryWriteData("cameraPos", sizeof(Vec3), camera.GetTransform().GetGlobalPos().GetMemPointer());
+                if (!m_cameraUniformBuffer.TryWriteData("viewMatrix", sizeof(Mat4),
+                    cameraData.m_ViewMatrix.GetMemPointer()))
+                {
+                    LogError(std::format("Attempted to write view matrix to uniform buffer but failed"));
+                    return;
+                }
             }
-            if (!m_uniformBuffer.TryWriteData("projectionMatrix", sizeof(Mat4), cameraData.m_PlatformProjectionMatrix.GetMemPointer()))
+            if (needsProjMatrixUpdate && !m_cameraUniformBuffer.TryWriteData("projectionMatrix", sizeof(Mat4), 
+                cameraData.m_PlatformProjectionMatrix.GetMemPointer()))
             {
                 LogError(std::format("Attempted to write projection matrix to uniform buffer but failed"));
                 return;
             }
 
-            m_uniformData.m_UpdatedThisFrame = true;
+            m_uniformData.m_CameraUpdatedThisFrame = true;
             //LogError(std::format("Updated camera matrices v:{} p:{}", cameraData.m_ViewMatrix.ToString(), cameraData.m_PlatformProjectionMatrix.ToString()));
         }
 
@@ -271,7 +324,8 @@ namespace Rendering
                 LogError(std::format("Tried to flush current batch in renderer, but batch shader was null"));
                 return;
             }
-            batch.m_Shader->BindUniformBlockIfNeeded(m_uniformBuffer.GetName(), m_uniformBuffer.GetBindIndex());
+            batch.m_Shader->BindUniformBlockIfNeeded(m_cameraUniformBuffer.GetName(), m_cameraUniformBuffer.GetBindIndex());
+            batch.m_Shader->BindUniformBlockIfNeeded(m_lightUniformBuffer.GetName(), m_lightUniformBuffer.GetBindIndex());
             batch.m_Shader->BindActive();
             //LogWarning(std::format("Active program binded:{}", batch.m_Shader->GetId()));
            
@@ -303,6 +357,8 @@ namespace Rendering
             m_vertexBuffer.WriteData(0, &batch.m_Vertices[0], drawVertexCount);
             m_indexBuffer.WriteData(0, &batch.m_VertexIndices[0], drawIndexCount);
             m_instancedBuffer.WriteData(0, &batch.m_InstanceData[0], drawInstanceCount);
+
+            m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
 
             //When we upload to gpu, we can get rid of cpu side buffer data
             batch.m_VertexIndices.clear();
@@ -350,6 +406,7 @@ namespace Rendering
         {
             constexpr size_t VERTEX_COUNT = 8;
             const WorldPosition3D halfSize = size / 2;
+            //NOTE: with 8 vertex cube it is impossible to calculate normals since one vertex connects 3 sides
             Vertex vertices[VERTEX_COUNT] = { Vertex(halfSize, UV()),                       Vertex(halfSize * Vec3(1, -1, 1), UV()),
                                               Vertex(halfSize * Vec3(-1, -1, 1), UV()),     Vertex(halfSize * Vec3(-1, 1, 1), UV()),
                                               Vertex(halfSize * Vec3(1, 1, -1), UV()),      Vertex(halfSize * Vec3(1, -1, -1), UV()),
@@ -434,43 +491,53 @@ namespace Rendering
         */
 
         //FACE ORDER: Front, back, right, left, top, bottom
+        std::array<Vec3, 6> normals =
+        {
+            -ENGINE_FORWARD_DIR,
+            ENGINE_FORWARD_DIR,
+            ENGINE_RIGHT_DIR,
+            -ENGINE_RIGHT_DIR,
+            ENGINE_UP_DIR,
+            -ENGINE_UP_DIR
+        };
+
+        //FACE ORDER: Front, back, right, left, top, bottom
         //FACE EDGE ORDER: top right, bottom right, bottom left, top left
         //NOTE: all vertices are as if you are looking north with forward face in front of you
         constexpr size_t VERTEX_COUNT = 24;
         Vertex vertices[VERTEX_COUNT] = {};
         //FRONT FACE (0, 1, 2, 3)
-        vertices[0] = Vertex(edges[0], uvs[5]);
-        vertices[1] = Vertex(edges[1], uvs[4]);
-        vertices[2] = Vertex(edges[2], uvs[2]);
-        vertices[3] = Vertex(edges[3], uvs[3]);
+        vertices[0] = Vertex(edges[0], uvs[5], normals[0]);
+        vertices[1] = Vertex(edges[1], uvs[4], normals[0]);
+        vertices[2] = Vertex(edges[2], uvs[2], normals[0]);
+        vertices[3] = Vertex(edges[3], uvs[3], normals[0]);
         //BACK FACE (4, 5, 6, 7)
-        vertices[4] = Vertex(edges[4], uvs[11]);
-        vertices[5] = Vertex(edges[5], uvs[10]);
-        vertices[6] = Vertex(edges[6], uvs[12]);
-        vertices[7] = Vertex(edges[7], uvs[13]);
+        vertices[4] = Vertex(edges[4], uvs[11], normals[1]);
+        vertices[5] = Vertex(edges[5], uvs[10], normals[1]);
+        vertices[6] = Vertex(edges[6], uvs[12], normals[1]);
+        vertices[7] = Vertex(edges[7], uvs[13], normals[1]);
         //RIGHT FACE (4, 5, 1, 0)
-        vertices[8] = Vertex(edges[4], uvs[11]);
-        vertices[9] = Vertex(edges[5], uvs[10]);
-        vertices[10] = Vertex(edges[1], uvs[4]);
-        vertices[11] = Vertex(edges[0], uvs[5]);
+        vertices[8] = Vertex(edges[4], uvs[11], normals[2]);
+        vertices[9] = Vertex(edges[5], uvs[10], normals[2]);
+        vertices[10] = Vertex(edges[1], uvs[4], normals[2]);
+        vertices[11] = Vertex(edges[0], uvs[5], normals[2]);
         //LEFT FACE (7, 6, 2, 3)
-        vertices[12] = Vertex(edges[7], uvs[1]);
-        vertices[13] = Vertex(edges[6], uvs[0]);
-        vertices[14] = Vertex(edges[2], uvs[2]);
-        vertices[15] = Vertex(edges[3], uvs[3]);
+        vertices[12] = Vertex(edges[7], uvs[1], normals[3]);
+        vertices[13] = Vertex(edges[6], uvs[0], normals[3]);
+        vertices[14] = Vertex(edges[2], uvs[2], normals[3]);
+        vertices[15] = Vertex(edges[3], uvs[3], normals[3]);
         //TOP FACE (4, 0, 3, 7)
-        vertices[16] = Vertex(edges[4], uvs[7]);
-        vertices[17] = Vertex(edges[0], uvs[5]);
-        vertices[18] = Vertex(edges[3], uvs[3]);
-        vertices[19] = Vertex(edges[7], uvs[6]);
+        vertices[16] = Vertex(edges[4], uvs[7], normals[4]);
+        vertices[17] = Vertex(edges[0], uvs[5], normals[4]);
+        vertices[18] = Vertex(edges[3], uvs[3], normals[4]);
+        vertices[19] = Vertex(edges[7], uvs[6], normals[4]);
         //BOTTOM FACE (5, 1, 2, 6)
-        vertices[20] = Vertex(edges[5], uvs[9]);
-        vertices[21] = Vertex(edges[1], uvs[4]);
-        vertices[22] = Vertex(edges[2], uvs[8]);
-        vertices[23] = Vertex(edges[6], uvs[2]);
+        vertices[20] = Vertex(edges[5], uvs[9], normals[5]);
+        vertices[21] = Vertex(edges[1], uvs[4], normals[5]);
+        vertices[22] = Vertex(edges[2], uvs[8], normals[5]);
+        vertices[23] = Vertex(edges[6], uvs[2], normals[5]);
 
         constexpr size_t INDEX_COUNT = 36;
-        
         IndexType indices[INDEX_COUNT] = 
         { 
             /*FRONT FACE*/ 0,  1,  2,  0,  3,  2, 
@@ -478,7 +545,7 @@ namespace Rendering
             /*RIGHT FACE*/ 8,  9,  10, 8,  11, 10,
             /*LEFT FACE*/  12, 13, 14, 12, 15, 14,
             /*TOP FACE*/   16, 17, 18, 16, 19, 18,
-            /*BOTTOM FACE*/5,  1,  2,  5,  6,  2
+            /*BOTTOM FACE*/20, 21, 22, 20, 23, 22
         };
 
         AddVerticesToBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT);
@@ -518,10 +585,7 @@ namespace Rendering
                 theta = u * 2 * std::numbers::pi;
 
                 pos = Vec3(sinf(phi) * cosf(theta), cosf(phi), sinf(phi) * sinf(theta));
-
-                AddVertexToBatch(Vertex{ pos * radius, UV(u, v) });
-                Vec3 normal = pos.GetNormalized();
-                Vec2 uv = Vec2(u, v);
+                AddVertexToBatch(Vertex{ pos * radius, UV(u, v), pos.GetNormalized() });
 
                 if (hi == HORIZONTAL_LINE_COUNT - 1) continue;
                 // For the layout imagine this shape (where A is current point)
@@ -548,7 +612,7 @@ namespace Rendering
         }
 
         //First we build the north pole vertex and create the indices
-        AddVertexToBatch(Vertex{ Vec3(0.0f, radius, 0.0f), UV(1.0f, 1.0f) });
+        AddVertexToBatch(Vertex{ Vec3(0.0f, radius, 0.0f), UV(1.0f, 1.0f), ENGINE_UP_DIR });
         IndexType poleIndex = HORIZONTAL_LINE_COUNT * VERTICAL_LINE_COUNT;
         for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
         {
@@ -558,7 +622,7 @@ namespace Rendering
         }
 
         //Finally, we connect all the bottom latitude/row verticies to the south pole vertex
-        AddVertexToBatch(Vertex{ Vec3(0.0f, -1.5 * radius, 0.0f), UV(0.0f, 0.0f) });
+        AddVertexToBatch(Vertex{ Vec3(0.0f, -1.5 * radius, 0.0f), UV(0.0f, 0.0f), -ENGINE_UP_DIR });
         poleIndex++;
         const IndexType bottomStartIndex = poleIndex - VERTICAL_LINE_COUNT - 1;
         for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
@@ -611,27 +675,27 @@ namespace Rendering
 
     void Renderer::AddCallBox3D(const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color)
     {
-        AddCallBox3DMulti(GetDefaultShader(), nullptr, size, modelMatrix, color);
+        AddCallBox3DMulti(GetBaseShader(), nullptr, size, modelMatrix, color);
     }
     void Renderer::AddCallSphere3D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
     {
-        AddCallSphere3DMulti(GetDefaultShader(), nullptr, radius, modelMatrix, color);
+        AddCallSphere3DMulti(GetBaseShader(), nullptr, radius, modelMatrix, color);
     }
 
     void Renderer::AddCallTexture2D(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Utils::Color color)
     {
         //AddRectangleCall2DMulti(GetTextureShader(), &tex, worldSize, modelMatrix, color);
-        AddCallRectangle2DMulti(GetTextureShader(), &tex, worldSize, modelMatrix, color);
+        AddCallRectangle2DMulti(GetBaseTextureShader(), &tex, worldSize, modelMatrix, color);
         //m_textureData.emplace_back(tex, scale);
         //m_renderCalls.emplace_back(TextureCall{ static_cast<TextureID>(m_textureData.size() - 1), worldPos, color });
     }
     void Renderer::AddCallTextureSphere3D(const float radius, Texture& tex, const Mat4& modelMatrix, const Utils::Color color)
     {
-        AddCallSphere3DMulti(GetTextureShader(), &tex, radius, modelMatrix, color);
+        AddCallSphere3DMulti(GetBaseTextureShader(), &tex, radius, modelMatrix, color);
     }
     void Renderer::AddCallTextureBox3D(const Vec3& size, Texture& tex, const Mat4& modelMatrix, const Utils::Color& color)
     {
-        AddCallBox3DMulti(GetTextureShader(), &tex, size, modelMatrix, color);
+        AddCallBox3DMulti(GetBaseTextureShader(), &tex, size, modelMatrix, color);
     }
 
 
@@ -647,6 +711,22 @@ namespace Rendering
     void Renderer::AddRectangleLineCall(const WorldPosition3D& worldPos, const float thickness, const Vec2& size, const Utils::Color color)
     {
         m_renderCalls.emplace_back(RectLineCall{ worldPos, thickness, size, color });
+    }
+
+    void Renderer::AddPointLightCall(const WorldPosition3D& worldPos, const Utils::Color color, const float radius)
+    {
+        if (m_uniformData.m_LightBlock.m_PointLightsCount >= MAX_POINT_LIGHTS)
+        {
+            LogError(std::format("Attempted to add point light call at:{} colored:{} "
+                "but max points lights have been reached", worldPos.ToString(), color.ToString()));
+            return;
+        }
+        m_uniformData.m_LightBlock.m_PointLights[m_uniformData.m_LightBlock.m_PointLightsCount] = PointLightData(worldPos, color.GetNormalized(), radius);
+        m_uniformData.m_LightBlock.m_PointLightsCount++;
+    }
+    void Renderer::AddDirectionLightCall(const Vec3& dir, const Utils::Color color)
+    {
+        m_uniformData.m_LightBlock.m_DirLight = DirectionalLightData(dir, color.GetNormalized());
     }
 
     void Renderer::PushCallsToBuffer(const std::vector<RenderCall>& calls)
@@ -718,7 +798,8 @@ namespace Rendering
         Backend::EndRenderingMarker();
 
         ClearCommandBuffers();
-        m_uniformData.m_UpdatedThisFrame = false;
+        m_uniformData.m_CameraUpdatedThisFrame = false;
+        m_uniformData.m_LightBlock.m_PointLightsCount = 0;
     }
 
     void Renderer::ClearCommandBuffers()

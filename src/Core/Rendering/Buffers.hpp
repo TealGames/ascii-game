@@ -3,6 +3,7 @@
 #include <array>
 #include <unordered_map>
 #include "Core/Rendering/Shader/Shader.hpp"
+#include "Utils/Data/Vec2Type.hpp"
 
 namespace Rendering
 {
@@ -146,6 +147,7 @@ namespace Rendering
 		/// stay consistent for all shaders
 		/// </summary>
 		std::string m_blockName;
+		size_t m_allocatedByteSize;
 
 		/*std::vector<UniformBlockMemberData> m_members;
 		size_t m_memberAlignment;*/
@@ -198,6 +200,7 @@ namespace Rendering
 		UniformBufferBindIndex GetBindIndex() const;
 		RenderObjectId GetId() const;
 		std::string GetName() const;
+		size_t GetSize() const;
 
 		UniformBuffer& operator=(const UniformBuffer&) = delete;
 		UniformBuffer& operator=(UniformBuffer&&) noexcept;
@@ -343,12 +346,13 @@ namespace Rendering
 		/// Note: initial byte offset is the offset of the first float of the matrix from the vertex element.
 		/// so you would do "offsetof(VERTEX_BUFFER_ELEMENT_TYPE, m_MATRIX_MEMBER_NAME)
 		/// Note: columnTypesize is the sizeof(MATRIX_COLUMN_TYPE) -> should be a 4d vector type
+		/// NOTE: matrix size is ROW, COL
 		/// </summary>
 		/// <param name="bufferBindIndex"></param>
 		/// <param name="startLocation"></param>
 		/// <param name="normalize"></param>
 		/// <param name="initialByteOffset"></param>
-		void AddVertexBufferMatrix4Attribute(const VertexLayoutBindIndex bufferBindIndex, const ShaderLocation startLocation, 
+		void AddVertexBufferMatrixAttribute(const Vec2Int& matrixSize, const VertexLayoutBindIndex bufferBindIndex, const ShaderLocation startLocation, 
 			const bool normalize, const size_t matrixColumnTypeSize, const ByteOffset initialByteOffset);
 	};
 }

@@ -4,18 +4,16 @@ layout(std140) uniform CameraBlock
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
+    vec3 cameraPos;
 } uCameraBlock;
-
-//uniform mat4 uViewMatrix;
-//uniform mat4 uProjectionMatrix;
 
 layout(location=0) in vec3 aPosition;
 //Note: location 1 reserved for tex coords
+//Note: location 2 reserved for normal
 
-//This is instanced per object
-layout(location=2) in vec4 aColor;
-//This is also instanced
-layout(location=3) in mat4 aModelMatrix;
+//These instanced per object
+layout(location=3) in vec4 aColor;
+layout(location=4) in mat4 aModelMatrix;
 
 //Passed to fragment shader
 out vec4 vColor;
@@ -23,6 +21,5 @@ out vec4 vColor;
 void main()
 {
     gl_Position= uCameraBlock.projectionMatrix * uCameraBlock.viewMatrix * aModelMatrix * vec4(aPosition, 1.0);
-    //gl_Position= vec4(aPosition.xy, 0.5, 1);
     vColor= aColor;
 };

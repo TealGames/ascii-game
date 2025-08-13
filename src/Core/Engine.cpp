@@ -414,6 +414,8 @@ namespace Core
 		Rendering::Texture& tex= m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/test.jpg")->GetTextureMutable();
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Utils::COLOR_BLUE);
+		//m_renderer.AddDirectionLightCall(Vec3(-1, 0, 0), Utils::COLOR_RED);
+		m_renderer.AddPointLightCall(Vec3(0.2, 0, 4.6), Utils::COLOR_GREEN, 0.2);
 		m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), tex, modelMatrix, Utils::Color(Utils::COLOR_BLUE, 15));
 
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 

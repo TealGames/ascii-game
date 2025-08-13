@@ -259,7 +259,7 @@ namespace Rendering
 
 			members.reserve(uniformCount);
 
-			constexpr size_t MAX_NAME_LENGTH = 30;
+			constexpr size_t MAX_NAME_LENGTH = 50;
 			char nameBuffer[MAX_NAME_LENGTH] = {};
 			GLsizei nameLength = 0;
 			std::string nameStr = "";

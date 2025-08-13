@@ -109,6 +109,11 @@ namespace Rendering
 		}
 		static void WriteUniformBuffer(const RenderObjectId id, const size_t byteOffset, const size_t writeByteSize, const void* data)
 		{
+			if (glIsBuffer(id) == GL_FALSE)
+			{
+				LogError(std::format("Attempted to write uniform buffer but id:{} is not a valid buffer", id));
+				return;
+			}
 			GL_CALL(glNamedBufferSubData(id, byteOffset, writeByteSize, data));
 		}
 		static void DeallocateUniformBuffer(const RenderObjectId id)

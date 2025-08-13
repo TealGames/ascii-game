@@ -16,8 +16,9 @@ namespace Rendering
 {
     struct Vertex
     {
-        WorldPosition3D m_Pos;
-        UV m_UVPos;
+        WorldPosition3D m_Pos = {};
+        UV m_UVPos = {};
+        Vec3 m_Normal = {};
 
         std::string ToString() const;
     };
@@ -26,11 +27,41 @@ namespace Rendering
     {
         Vec4 m_Color;
         Mat4 m_ModelMatrix;
+        Mat3 m_NormalModelMatrix;
 
         std::string ToString() const;
     };
     using VertexType = Vertex;
     using InstanceType = InstanceData;
+
+    struct PointLightData
+    {
+        WorldPosition3D m_Pos;
+        float _padding0;
+        Vec4 m_Color;
+        float m_Radius;
+        float _padding1[3];
+
+        PointLightData();
+        PointLightData(const WorldPosition3D& pos, const Vec4& color, const float radius);
+    };
+    struct DirectionalLightData
+    {
+        Vec3 m_Direction = {};
+        float _padding0 = 0;
+        Vec4 m_Color = {};
+
+        DirectionalLightData();
+        DirectionalLightData(const Vec3& dir, const Vec4& color);
+    };
+    constexpr size_t MAX_POINT_LIGHTS = 2;
+    struct LightBlockData
+    {
+        DirectionalLightData m_DirLight;
+        int m_PointLightsCount;
+        float _padding[3];
+        PointLightData m_PointLights[MAX_POINT_LIGHTS];
+    };
 
     class Shader;
     struct RenderBatch
@@ -64,9 +95,11 @@ namespace Rendering
         const CameraPrecalculatedData* m_CameraData = {};
     };*/
 
+    
     struct UniformBufferData
     {
-        bool m_UpdatedThisFrame = false;
+        bool m_CameraUpdatedThisFrame = false;
+        LightBlockData m_LightBlock = {};
     };
 
     class Renderer
@@ -92,7 +125,8 @@ namespace Rendering
         IndexBuffer m_indexBuffer;
         VertexBuffer m_vertexBuffer;
         VertexBuffer m_instancedBuffer;
-        UniformBuffer m_uniformBuffer;
+        UniformBuffer m_cameraUniformBuffer;
+        UniformBuffer m_lightUniformBuffer;
     public:
        
     private:
@@ -108,6 +142,9 @@ namespace Rendering
 
         Shader* GetDefaultShader() const;
         Shader* GetTextureShader() const;
+        Shader* GetForwardRenderShader() const;
+        Shader* GetBaseShader() const;
+        Shader* GetBaseTextureShader() const;
 
         //void FrameRenderDataUpdateCheck();
         //StaticFrameRenderData& GetThisFrameRenderData();
@@ -148,6 +185,9 @@ namespace Rendering
 
         void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Utils::Color color);
         void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color);
+
+        void AddPointLightCall(const WorldPosition3D& worldPos, const Utils::Color color, const float radius);
+        void AddDirectionLightCall(const Vec3& dir, const Utils::Color color);
 
         void PushCallsToBuffer(const std::vector<RenderCall>& calls);
         void MoveCallsToBuffer(std::vector<RenderCall>& calls);

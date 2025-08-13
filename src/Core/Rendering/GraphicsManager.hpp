@@ -15,6 +15,7 @@ namespace Rendering
 		AssetManagement::AssetManager* m_assetManager;
 		ShaderAsset* m_defaultShader;
 		ShaderAsset* m_textureShader;
+		ShaderAsset* m_forwardRenderShader;
 
 		std::unordered_map<std::string_view, const Shader*> m_shaders;
 	public:
@@ -29,6 +30,8 @@ namespace Rendering
 		Shader* GetDefaultShaderMutable();
 		const Shader* GetTextureShader() const;
 		Shader* GetTextureShaderMutable();
+		const Shader* GetFowardRenderShader() const;
+		Shader* GetForwardRenderShaderMutable();
 
 		const Shader* TryGetShader(const std::string& name) const;
 	};

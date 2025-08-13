@@ -176,7 +176,7 @@ Mat4 CalculateScaleMatrix(const Vec3& scale)
 		{ {0, scale.m_Y, 0, 0} },
 		{ {0, 0, scale.m_Z, 0} },
 		{ {0, 0, 0, 1} }
-		}});
+	}});
 }
 Mat4 CalculateRotationMatrix(const Quat& rotation)
 {

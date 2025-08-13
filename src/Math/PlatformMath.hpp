@@ -34,6 +34,7 @@ enum class ZForwardSign : std::uint8_t
 inline constexpr ZForwardSign ENGINE_FORWARD_SIGN_Z = ZForwardSign::Negative;
 inline constexpr Vec3 ENGINE_FORWARD_DIR = ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative ? Vec3(0, 0, -1) : Vec3(0, 0, 1);
 inline constexpr Vec3 ENGINE_UP_DIR = Vec3(0, 1, 0);
+inline constexpr Vec3 ENGINE_RIGHT_DIR = Vec3(1, 0, 0);
 
 namespace PlatformMath
 {

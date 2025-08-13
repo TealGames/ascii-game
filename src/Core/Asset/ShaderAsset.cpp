@@ -23,7 +23,7 @@ void ShaderAsset::WriteToShaderFromFiles()
 	const std::string fileNameStr = path.stem().string();
 	std::string_view pathView = std::string_view(fileNameStr);
 
-	const size_t lastSeparatorIndex = fileNameStr.find(Asset::WORD_SEPARATOR);
+	const size_t lastSeparatorIndex = fileNameStr.find_last_of(Asset::WORD_SEPARATOR);
 	//If name has no separator it means it has no sahder identifier -> try to read as single file
 	if (lastSeparatorIndex == std::string::npos)
 	{
@@ -109,7 +109,7 @@ void ShaderAsset::ReadShaderFromSingleFile()
 
 	if (shaderSource[0].empty() || shaderSource[1].empty())
 	{
-		LogError(std::format("Tried to read sahder from single file at path:{} but some shader type was not found. "
+		LogError(std::format("Tried to read shader from single file at path:{} but some shader type was not found. "
 			"Vertex Found:{} Fragment found:{}", GetPath().string().c_str(), std::to_string(!shaderSource[0].empty()), std::to_string(!shaderSource[1].empty())));
 		return;
 	}
