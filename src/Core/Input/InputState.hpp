@@ -54,7 +54,7 @@ namespace Input
 		void SetDownTimeDelta(float deltaTime);
 
 		const KeyState GetState() const;
-		void SetState(const KeyState newState);
+		void SetState(const KeyState newState, const bool overrideIfCooldown=false);
 		bool IsState(const KeyState state) const;
 
 		bool IsPressed() const;

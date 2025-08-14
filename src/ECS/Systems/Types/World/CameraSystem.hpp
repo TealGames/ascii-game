@@ -48,6 +48,7 @@ namespace ECS
 
 		void UpdateCameraPosition(CameraComponent& cameraData);
 
+		void Init();
 		void SystemUpdate(Scene& scene, CameraComponent& component, const float& deltaTime) override;
 
 		/*const FragmentedTextBuffer& GetCurrentFrameBuffer() const;

@@ -45,6 +45,7 @@ namespace Input
 
 		mutable std::unordered_map<KeyCode, InputKeyState> m_keyStates;
 		ScreenPosition m_mousePos;
+		ScreenPosition m_lastFrameMousePos;
 
 		/// <summary>
 		/// Stores all the keys that have been added this frame
@@ -59,8 +60,7 @@ namespace Input
 		auto LazyAddKeyState(const KeyCode code) const;
 		void ForceAddMissingKeys() const;
 		void ThrowIfNullKeyCode(const KeyCode code) const;
-		void UpdateState(const KeyCode keyValue,
-			InputState& inputState, const float& deltaTime);
+		void UpdateState(InputState& inputState, const float& deltaTime);
 
 	public:
 		InputManager(AssetManagement::AssetManager& assetManager, Core::WindowManager& windowManager);
@@ -69,6 +69,7 @@ namespace Input
 		void SetInputCooldown(const std::map<KeyCode, float>& keyCooldownTime);
 		void SetInputCooldown(const float& allKeyCooldownTime);
 		void Update(const float& deltaTime);
+		void UpdateEnd();
 
 		//void AddProfile(const std::string& name, const std::filesystem::path& profilePath);
 		const InputProfile* TryGetProfile(const std::string& name) const;
@@ -86,12 +87,16 @@ namespace Input
 		std::string GetCharsPressedSinceLastFrame() const;
 		/// <summary>
 		/// Gets the current mouses's position. Note: pos is screen coordinate
-		/// but uses floats for more precision
+		/// but uses floats for more precision.
 		/// </summary>
 		/// <returns></returns>
 		ScreenPosition GetMousePosition() const;
+		ScreenPosition GetMousePositionDelta() const;
+
 
 		const InputKeyState* GetInputKey(const KeyCode& key) const;
+
+		std::string ToStringAllStates() const;
 	};
 }
 

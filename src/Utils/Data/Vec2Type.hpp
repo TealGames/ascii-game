@@ -122,7 +122,7 @@ public:
 		return m_Components[index];
 	}
 
-	Vec operator+(const Vec& otherVec) const
+	constexpr Vec operator+(const Vec& otherVec) const
 	{
 		return Vec{ m_X + otherVec.m_X, m_Y + otherVec.m_Y };
 	}
@@ -133,11 +133,11 @@ public:
 		return *this;
 	}
 
-	Vec operator-() const
+	constexpr Vec operator-() const
 	{
 		return Vec{ -m_X, -m_Y };
 	}
-	Vec operator-(const Vec& otherVec) const
+	constexpr Vec operator-(const Vec& otherVec) const
 	{
 		return { m_X - otherVec.m_X, m_Y - otherVec.m_Y };
 	}
@@ -148,20 +148,20 @@ public:
 		return *this;
 	}
 
-	Vec operator*(const Vec& otherVec) const
+	constexpr Vec operator*(const Vec& otherVec) const 
 	{
 		return Vec{ m_X * otherVec.m_X, m_Y * otherVec.m_Y };
 	}
 
-	Vec operator*(const float scalar) const
+	constexpr Vec operator*(const float scalar) const requires (std::same_as<T, float>)
 	{
 		return Vec(m_X * scalar, m_Y * scalar);
 	}
-	Vec operator*(const int scalar) const
+	constexpr Vec operator*(const int scalar) const requires (std::same_as<T, int>)
 	{
 		return Vec{ m_X * scalar, m_Y * scalar };
 	}
-	Vec operator/(const Vec& other) const
+	constexpr Vec operator/(const Vec& other) const
 	{
 		if (Utils::ApproximateEqualsF(other.m_X, 0) || Utils::ApproximateEqualsF(other.m_Y, 0))
 		{
@@ -170,7 +170,7 @@ public:
 		}
 		return { m_X / other.m_X, m_Y / other.m_Y };
 	}
-	Vec operator/(const float scalar) const
+	constexpr Vec operator/(const float scalar) const requires (std::same_as<T, float>)
 	{
 		if (Utils::ApproximateEqualsF(scalar,0))
 		{
@@ -180,7 +180,7 @@ public:
 
 		return Vec(m_X / scalar, m_Y / scalar);
 	}
-	Vec operator/(const int scalar) const
+	constexpr Vec operator/(const int scalar) const requires (std::same_as<T, int>)
 	{
 		if (scalar == 0)
 		{

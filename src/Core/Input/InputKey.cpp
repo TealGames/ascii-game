@@ -50,8 +50,8 @@ namespace Input
 	DeviceType GetDeviceFromKeyCode(const KeyCode keyCode)
 	{
 		if (FIRST_MOUSE_CODE <= keyCode && keyCode <= LAST_MOUSE_CODE) return DeviceType::Mouse;
-		if (FIRST_KEYBOARD_CODE <= keyCode && keyCode <= LAST_KEYBOARD_CODE) return DeviceType::Gamepad;
-		if (FIRST_GAMEPAD_CODE <= keyCode && keyCode <= LAST_GAMEPAD_CODE) return DeviceType::Keyboard;
+		if (FIRST_KEYBOARD_CODE <= keyCode && keyCode <= LAST_KEYBOARD_CODE) return DeviceType::Keyboard;
+		if (FIRST_GAMEPAD_CODE <= keyCode && keyCode <= LAST_GAMEPAD_CODE) return DeviceType::Gamepad;
 		
 		LogError(std::format("Attempted to get device from key code but found no actions"));
 		throw std::invalid_argument("Missing keycode to device action");
@@ -143,8 +143,8 @@ namespace Input
 	{
 		std::array<KeyCode, MOUSE_KEY_COUNT> keys = {};
 		size_t i = 0;
-		for (int keyCode = static_cast<int>(FIRST_MOUSE_CODE);
-			keyCode <= static_cast<int>(LAST_MOUSE_CODE); keyCode++)
+		for (KeyCodeIntegralType keyCode = static_cast<KeyCodeIntegralType>(FIRST_MOUSE_CODE);
+			keyCode <= static_cast<KeyCodeIntegralType>(LAST_MOUSE_CODE); keyCode++)
 		{
 			keys[i++] = static_cast<KeyCode>(keyCode);
 		}
@@ -154,8 +154,8 @@ namespace Input
 	{
 		std::array<KeyCode, GAMEPAD_KEY_COUNT> keys = {};
 		size_t i = 0;
-		for (int keyCode = static_cast<int>(FIRST_GAMEPAD_CODE);
-			keyCode <= static_cast<int>(LAST_GAMEPAD_CODE); keyCode++)
+		for (KeyCodeIntegralType keyCode = static_cast<KeyCodeIntegralType>(FIRST_GAMEPAD_CODE);
+			keyCode <= static_cast<KeyCodeIntegralType>(LAST_GAMEPAD_CODE); keyCode++)
 		{
 			keys[i++] = static_cast<KeyCode>(keyCode);
 		}
@@ -188,8 +188,6 @@ namespace Input
 	std::string InputKeyState::ToString(const bool showDeviceName, const bool showState) const
 	{
 		std::string resultString = "";
-		std::string deviceName = Input::ToString(m_deviceType);
-		std::string keybindName = std::to_string(static_cast<KeyCodeIntegralType>(m_keyCode));
 
 		/*if (IsDevice(DeviceType::Keyboard)) keybindName = RaylibUtils::KeyboardKeyToString(GetAsKeyboard());
 		else if (IsDevice(DeviceType::Gamepad)) keybindName = RaylibUtils::GamepadButtonToString(GetAsGamepad());
@@ -200,9 +198,9 @@ namespace Input
 				"{} failed to convert", deviceName));
 			return "";
 		}*/
-		resultString = "[" + keybindName;
+		resultString = "[" + Input::ToString(m_keyCode);
 
-		if (showDeviceName) resultString += std::format("({})", deviceName);
+		if (showDeviceName) resultString += std::format("({})", Input::ToString(m_deviceType));
 		if (showState) resultString += std::format("->{}", m_state.ToString());
 		resultString += "]";
 

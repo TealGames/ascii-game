@@ -45,6 +45,10 @@ private:
 	CameraSettings m_cameraSettings;
 public:
 	friend class ECS::CameraSystem;
+
+	static constexpr DirtyFlag VIEW_MATRIX_DIRTY_FLAG = 1;
+	static constexpr DirtyFlag PROJ_MATRIX_DIRTY_FLAG = 1 << 1;
+
 private:
 	/// <summary>
 	/// Calculates the planes that make up the view frustum in the order:
@@ -70,13 +74,6 @@ public:
 	CameraComponent();
 	CameraComponent(const Json& json);
 	CameraComponent(const CameraSettings& cameraSettings);
-
-	/// <summary>
-	/// Returns dirty if the camera had settings updated OR its transform was updated
-	/// to ensure that any get functions lazily updates their values
-	/// </summary>
-	/// <returns></returns>
-	bool IsDirty() const override;
 
 	void SetFollowNoTarget();
 	void SetFollowTarget(const EntityData& entity);

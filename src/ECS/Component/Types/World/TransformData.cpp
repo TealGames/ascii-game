@@ -8,7 +8,8 @@
 
 TransformComponent::TransformComponent(const Json& json) : TransformComponent()
 {
-	m_isDirty = true;
+	//m_isDirty = true;
+	SetAllFlagsDirty(true);
 	Deserialize(json);
 }
 
@@ -21,15 +22,17 @@ TransformComponent::TransformComponent(const Vec3 pos, const Vec3 scale, const Q
 {
 	//By default we set dirty so that global pos can be calculated 
 	//the first time we retrieve it
-	m_isDirty = true;
+	//m_isDirty = true;
+	SetAllFlagsDirty(true);
 }
 bool TransformComponent::ForceUpdateIfDirty() const
 {
-	const bool needsUpdate = m_isDirty;
-	if (needsUpdate)
+	const bool needsUpdate = IsDirty();
+	if (IsDirty())
 	{
 		UpdatePrecalculatedData();
-		m_isDirty = false;
+		SetAllFlagsDirty(false);
+		//m_isDirty = false;
 	}
 	return needsUpdate;
 }
@@ -44,7 +47,7 @@ void TransformComponent::UpdatePrecalculatedData() const
 		m_lastUpdateData.m_GlobalScale = m_localScale;
 		m_lastUpdateData.m_GlobalRotation = m_localRotation;
 	}
-	else if (!parent->m_isDirty)
+	else if (!parent->IsDirty())
 	{
 		m_lastUpdateData.m_GlobalPos = parent->m_lastUpdateData.m_GlobalPos + m_localPos;
 		m_lastUpdateData.m_GlobalScale = parent->m_lastUpdateData.m_GlobalScale * m_localScale;
@@ -64,40 +67,44 @@ const Vec3& TransformComponent::GetGlobalPos() const
 {
 	//TODO: isnt it a little hacky to use MUTABLE modifier to the last update data
 	//so you can modify internal state even in const function?
-	if (m_isDirty)
+	if (IsDirty())
 	{
 		UpdatePrecalculatedData();
-		m_isDirty = false;
+		SetAllFlagsDirty(false);
+		//m_isDirty = false;
 	}
 
 	return m_lastUpdateData.m_GlobalPos;
 }
 const Vec3& TransformComponent::GetGlobalScale() const
 {
-	if (m_isDirty)
+	if (IsDirty())
 	{
 		UpdatePrecalculatedData();
-		m_isDirty = false;
+		SetAllFlagsDirty(false);
+		//m_isDirty = false;
 	}
 
 	return m_lastUpdateData.m_GlobalScale;
 }
 const Quat& TransformComponent::GetGlobalRotation() const
 {
-	if (m_isDirty)
+	if (IsDirty())
 	{
 		UpdatePrecalculatedData();
-		m_isDirty = false;
+		SetAllFlagsDirty(false);
+		//m_isDirty = false;
 	}
 
 	return m_lastUpdateData.m_GlobalRotation;
 }
 const Mat4& TransformComponent::GetWorldModelMatrix() const
 {
-	if (m_isDirty)
+	if (IsDirty())
 	{
 		UpdatePrecalculatedData();
-		m_isDirty = false;
+		SetAllFlagsDirty(false);
+		//m_isDirty = false;
 	}
 	return m_lastUpdateData.m_GlobalModelMatrix;
 }
@@ -108,10 +115,11 @@ void TransformComponent::SetChildrenDirty()
 	{
 		//If we reach a child that is already dirty, it means the its children SHOULD ALREADY BE DIRTY
 		//(because the dirty setting only occurs on pos, scale, rot mutation)
-		if (child->m_isDirty)
+		if (child->IsDirty())
 			continue;
 		
-		child->m_isDirty = true;
+		//child->m_isDirty = true;
+		child->SetAllFlagsDirty(true);
 		child->SetChildrenDirty();
 	}
 }
@@ -131,9 +139,10 @@ const Quat& TransformComponent::GetLocalRotationMutable() const
 
 Vec3& TransformComponent::GetLocalPosMutable()
 {
-	if (!m_isDirty)
+	if (!IsDirty())
 	{
-		m_isDirty = true;
+		//m_isDirty = true
+		SetAllFlagsDirty(true);
 		SetChildrenDirty();
 	}
 	
@@ -141,18 +150,20 @@ Vec3& TransformComponent::GetLocalPosMutable()
 }
 Vec3& TransformComponent::GetLocalScaleMutable()
 {
-	if (!m_isDirty)
+	if (!IsDirty())
 	{
-		m_isDirty = true;
+		//m_isDirty = true;
+		SetAllFlagsDirty(true);
 		SetChildrenDirty();
 	}
 	return m_localScale;
 }
 Quat& TransformComponent::GetLocalRotationMutable()
 {
-	if (!m_isDirty)
+	if (!IsDirty())
 	{
-		m_isDirty = true;
+		//m_isDirty = true;
+		SetAllFlagsDirty(true);
 		SetChildrenDirty();
 	}
 	return m_localRotation;
@@ -236,7 +247,8 @@ void TransformComponent::Deserialize(const Json& json)
 	m_localPos = json.value("LocPos", DEFAULT_POS);
 	m_localScale = json.value("LocScale", DEFAULT_SCALE);
 	m_localRotation = json.value("LocRot", DEFAULT_ROTATION); 
-	m_isDirty = true;
+	//m_isDirty = true;
+	SetAllFlagsDirty(true);
 	//m_localPosLastFrame = json.at("LastFramePos").get<Vec2>();
 }
 Json TransformComponent::Serialize()

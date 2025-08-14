@@ -252,7 +252,6 @@ public:
 			- m_arr[0][1] * (m_arr[1][0] * m_arr[2][2] - m_arr[1][2] * m_arr[2][0])
 			+ m_arr[0][2] * (m_arr[1][0] * m_arr[2][1] - m_arr[1][1] * m_arr[2][0]);
 
-		LogWarning(std::format("Determinant:{}", determinant));
 		if (Utils::ApproximateEqualsF(determinant, 0.0f))
 			return false;
 

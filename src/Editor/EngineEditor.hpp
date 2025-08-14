@@ -47,7 +47,7 @@ private:
 	const Input::InputManager& m_inputManager;
 	SceneManagement::SceneManager& m_sceneManager;
 	Physics::PhysicsManager& m_physicsManager;
-	const CameraController& m_cameraController;
+	CameraController& m_cameraController;
 	UIInteractionManager& m_guiSelector;
 	ECS::CollisionBoxSystem& m_collisionBoxSystem;
 	UIHierarchy& m_guiTree;
@@ -56,6 +56,7 @@ private:
 
 	CommandConsole m_commandConsole;
 	DebugInfo m_debugInfo;
+	const Input::InputProfile* m_inputProfile;
 
 	EntityEditorUI m_entityEditor;
 	SpriteEditorUI m_spriteEditor;
@@ -69,6 +70,7 @@ private:
 	EditModeInfo m_editModeInfo;
 
 	bool m_displayingGameView;
+	bool m_inCameraFreemode;
 
 private:
 	void InitConsoleCommands(ECS::PlayerSystem& playerSystem);
@@ -76,7 +78,7 @@ private:
 
 public:
 	EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
-		SceneManagement::SceneManager& scene, const CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, 
+		SceneManagement::SceneManager& scene, CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, 
 		PopupUIManager& popupManager, ECS::CollisionBoxSystem& collisionSystem, GizmoOverlay& gizmos);
 	~EngineEditor();
 

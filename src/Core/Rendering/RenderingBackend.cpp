@@ -252,7 +252,7 @@ namespace Rendering
 			static GLint prevBound = 0;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTex);
 			if (prevBound == 0) prevBound = boundTex;
-			LogWarning(std::format("RENDERING: Texture bound at slot:{} has id:{}", 0, boundTex));
+			//LogWarning(std::format("RENDERING: Texture bound at slot:{} has id:{}", 0, boundTex));
 			if (boundTex==0 || boundTex != prevBound) LogError(std::format("tex changed and/or 0 id bound:{} prev:{}", boundTex, prevBound));
 
 			GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, drawIndexCount, GL_UNSIGNED_INT, (const void*)indicesStartByteOffset, drawInstanceCount));

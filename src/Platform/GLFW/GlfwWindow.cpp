@@ -71,6 +71,12 @@ namespace Core
 								Rendering::Backend::SetViewport(viewportRect.m_StartPos.m_X, viewportRect.m_StartPos.m_Y, viewportRect.m_Size.m_X, viewportRect.m_Size.m_Y);
 							});
 
+						glfwSetWindowFocusCallback(glfwWindow, [](GLFWwindow* glfwWindow, int focused)-> void
+							{
+								Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
+								window->HandleFocus(focused == GLFW_TRUE);
+							});
+
 						glfwSetScrollCallback(glfwWindow, [](GLFWwindow*, double xOffset, double yOffset) -> void
 							{
 								//TODO: implement
@@ -88,17 +94,32 @@ namespace Core
 								if (action == GLFW_PRESS) keyState = Input::KeyState::Pressed;
 								else if (action == GLFW_REPEAT) keyState = Input::KeyState::Down;
 								else if (action == GLFW_RELEASE) keyState = Input::KeyState::Released;
+								else
+								{
+									LogError(std::format("[GLFW] Window attempted to register key input "
+										"but action code:{} has no actions", action));
+									return;
+								}
 
 								if (keyState == Input::KeyState::Neutral)
 									return;
 
-								Input::KeyCode code = Input::KeyCode::A;
+								Input::KeyCode code = static_cast<Input::KeyCode>(key);
+								
 								//65 to 90 are the letter keys for glfw
-								if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z) key += (int)Input::KeyCode::A - GLFW_KEY_A;
+								/*if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z) key += (int)Input::KeyCode::A - GLFW_KEY_A;
 								else if (key >= GLFW_KEY_F1 && key <= GLFW_KEY_F25) key += (int)Input::KeyCode::F1 - GLFW_KEY_F1;
+								else if (key>= GLFW_KEY_RIGHT && key<= GLFW_KEY_UP) key+= (int)Input::KeyCode::ARR
+								else
+								{
+									LogError(std::format("[GLFW] Window attempted to register key input "
+										"but keyc code : {} has no actions", key));
+									return;
+								}*/
 
-								code = static_cast<Input::KeyCode>(key);
+								/*code = static_cast<Input::KeyCode>(key);*/
 
+								//LogWarning(std::format("Window has key:{} state:{}", ToString(keyState), ToString(code)));
 								Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
 								window->RegisterInput(WindowInputEventInfo(code, keyState));
 							});
@@ -124,12 +145,44 @@ namespace Core
 					if (vsyncEnabled) glfwSwapInterval(1);
 					else glfwSwapInterval(0);
 				},
+				//Set cursor mdoe func
+				[](Window& window, const WindowCursorMode mode) -> void
+				{
+					int cursorMode = 0;
+					if (mode == WindowCursorMode::Normal) cursorMode = GLFW_CURSOR_NORMAL;
+					else if (mode == WindowCursorMode::Hidden) cursorMode = GLFW_CURSOR_HIDDEN;
+					else if (mode == WindowCursorMode::Disabled) cursorMode = GLFW_CURSOR_DISABLED;
+
+					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+					glfwSetInputMode(glfwWindow, GLFW_CURSOR, cursorMode);
+				},
 				//IsActive
 				[](Window& window)-> bool
 				{
 					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
 					return !glfwWindowShouldClose(glfwWindow);
 				},
+				//Has attribute
+				[](Window& window, const WindowAttribute attribute)-> bool
+				{
+					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+					int attributeValue = 0;
+					if (attribute == WindowAttribute::Focused) attributeValue = GLFW_FOCUSED;
+					else if (attribute==WindowAttribute::Minimized) attributeValue = GLFW_ICONIFIED;
+					else if (attribute==WindowAttribute::Maximized) attributeValue = GLFW_MAXIMIZED;
+					else if (attribute==WindowAttribute::Visible) attributeValue = GLFW_VISIBLE;
+					else if (attribute==WindowAttribute::Hovered) attributeValue = GLFW_HOVERED;
+					else if (attribute==WindowAttribute::Floating) attributeValue = GLFW_FLOATING;
+					else if (attribute==WindowAttribute::Resizable) attributeValue = GLFW_RESIZABLE;
+					else
+					{
+						LogError(std::format("Attempted to check window attribute but it has no actions"));
+						return false;
+					}
+
+					return glfwGetWindowAttrib(glfwWindow, attributeValue);
+				},
+				
 				//Shutdown
 				[](Window& window, const bool isLastWindow)-> void
 				{

@@ -60,7 +60,7 @@ namespace Rendering
 	{
 		m_callbacks.m_BindFunc(m_id, slotIndex);
 		m_slotIndex = slotIndex;
-		LogWarning(std::format("texture slot now:{} for:{}", m_slotIndex, m_id));
+		//LogWarning(std::format("texture slot now:{} for:{}", m_slotIndex, m_id));
 	}
 	void Texture::UnbindFromSlot()
 	{

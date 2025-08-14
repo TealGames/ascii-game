@@ -241,7 +241,7 @@ namespace Rendering
         m_batches.back().m_VertexIndices.insert(m_batches.back().m_VertexIndices.end(),
             indexArray, indexArray + indicesSize);
 
-        LogWarning(std::format("Adding new batch vertices:{}", m_batches.back().ToString()));
+        //LogWarning(std::format("Adding new batch vertices:{}", m_batches.back().ToString()));
     }
     void Renderer::AddVertexToBatch(const Vertex& vertex)
     {
@@ -347,9 +347,9 @@ namespace Rendering
 
                 int textureSlot = 0;
                 batch.m_Shader->TryGetUniform(UniformType::Sampler2D, TEXTURE_UNIFORM_NAME, &textureSlot);
-                LogWarning(std::format("Getting uniform:{} actual:{}", textureSlot, slot));
+                //LogWarning(std::format("Getting uniform:{} actual:{}", textureSlot, slot));
             }
-            LogWarning(std::format("Flushing batch:{} vertex count:{} index:{}", batch.ToString(), batch.m_Vertices.size(), batch.m_VertexIndices.size()));
+            //LogWarning(std::format("Flushing batch:{} vertex count:{} index:{}", batch.ToString(), batch.m_Vertices.size(), batch.m_VertexIndices.size()));
 
             const size_t drawVertexCount = batch.m_Vertices.size();
             const size_t drawIndexCount = batch.m_VertexIndices.size();
@@ -365,7 +365,7 @@ namespace Rendering
             batch.m_Vertices.clear();
             batch.m_InstanceData.clear();
 
-            LogWarning(std::format("Drawing vertices:{} indices:{} isntances:{}", drawVertexCount, drawIndexCount, drawInstanceCount));
+            //LogWarning(std::format("Drawing vertices:{} indices:{} isntances:{}", drawVertexCount, drawIndexCount, drawInstanceCount));
             Backend::DrawUploadedIndexBufferInstanced(0, drawIndexCount, drawInstanceCount);
             //Backend::DrawUploadedIndexBuffer(0, drawIndexCount);
 

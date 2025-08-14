@@ -71,6 +71,11 @@ namespace Input
 		//LogError(std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
 		return dir;
 	}
+	Vec2 CompoundInput::GetCompoundInputDownNormalized() const
+	{
+		const Vec2Int inputDown = GetCompoundInputDown();
+		return Vec2(inputDown.m_X, inputDown.m_Y).GetNormalized();
+	}
 	/*std::vector<KeyState> CompoundInput::GetCompoundKeyStates()
 	{
 		std::vector<KeyState> result = {};

@@ -4,6 +4,8 @@
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Window/WindowManager.hpp"
 
+//If the mouse pos delta magnitude is greater than this value, the mouse pos delta will be ignored
+static constexpr int SINGLE_FRAME_MAX_MOUS_DELTA = 500;
 namespace Input
 {
 	const std::filesystem::path InputManager::INPUT_PROFILES_FOLDER = "input";
@@ -15,7 +17,7 @@ namespace Input
 	}
 
 	InputManager::InputManager(AssetManagement::AssetManager& assetManager, Core::WindowManager& windowManager)
-		: m_assetManager(assetManager), m_keyStates(), m_profiles{}, m_mousePos()
+		: m_assetManager(assetManager), m_keyStates(), m_profiles{}, m_mousePos(INVALID_SCREEN_POS), m_lastFrameMousePos(INVALID_SCREEN_POS)
 	{
 		windowManager.m_OnInput.AddListener([this](Core::Window*, const Core::WindowInputEventInfo event) -> void
 			{
@@ -30,11 +32,18 @@ namespace Input
 				else if (event.m_EventType == Core::WindowInputEventType::MouseMove)
 				{
 					m_mousePos = event.m_NewCursorPos;
+					const ScreenPosition thisFrameDelta = m_mousePos - m_lastFrameMousePos;
+					if (std::abs(thisFrameDelta.m_X) > SINGLE_FRAME_MAX_MOUS_DELTA || std::abs(thisFrameDelta.m_Y) > SINGLE_FRAME_MAX_MOUS_DELTA)
+					{
+						m_lastFrameMousePos = m_mousePos;
+					}
+					LogWarning(std::format("MOVED delta:{} pos:{}", m_lastFrameMousePos.ToString(), m_mousePos.ToString()));
 				}
 				else
 				{
 					LogError(std::format("Window input event occured but it has no actions defined in input manager"));
 				}
+				//LogError(std::format("key:{} state:{} all:{}", ToString(event.m_KeyUpdated), ToString(event.m_KeyState), ToStringAllStates()));
 			});
 	}
 
@@ -126,8 +135,11 @@ namespace Input
 		}
 	}
 
-	void InputManager::UpdateState(const KeyCode keyValue, InputState& inputState, const float& deltaTime)
+	void InputManager::UpdateState(InputState& inputState, const float& deltaTime)
 	{
+		if (inputState.IsState(KeyState::Neutral))
+			return;
+
 		//First we update any deltas to cooldown
 		if (inputState.InCooldown())
 		{
@@ -137,30 +149,31 @@ namespace Input
 		//We then check again (in case we might have left cooldown after delta finished cooldown)
 		if (!inputState.InCooldown())
 		{
-			if (inputState.GetState()== KeyState::Down)
+			if (inputState.GetState() == KeyState::Pressed) {}
+			else if (inputState.GetState()== KeyState::Down)
 			{
 				//Only if the state is already down do we apply the delta time since if we just set it now
 				//the held time might be off
 				inputState.SetDownTimeDelta(deltaTime);
 			}
 			//If we are not pressing anything, but last frame we released and we have cooldown
-				//we only set the state for cooldown so it gets updated next frame
+			//we only set the state for cooldown so it gets updated next frame
 			else if(inputState.IsReleased() && inputState.HasCooldown())
 			{
 				inputState.SetState(KeyState::Cooldown);
 			}
-			else inputState.SetState(KeyState::Neutral);
 		}
 	}
 
 	void InputManager::Update(const float& deltaTime)
 	{
+		//m_frameMousePosDelta = {};
+
 		for (auto& inputState : m_keyStates)
 		{
-			UpdateState(inputState.first, 
-				inputState.second.GetStateMutable(), deltaTime);
+			UpdateState(inputState.second.GetStateMutable(), deltaTime);
 		}
-
+		//LogWarning(std::format("Keys pressed:{}", Utils::ToStringIterable(GetAllKeysWithStateAsString(KeyState::Pressed))));
 		m_charKeysPressed.clear();
 		
 		char keyChar = 0;
@@ -178,6 +191,10 @@ namespace Input
 
 		/*if (IsKeyPressed(KeyboardKey::KEY_TAB)) Assert(false, std::format("PRESS TAB"));
 		LogWarning(std::format("Key state:{}", ToString(GetKeyState(KeyboardKey::KEY_TAB))));*/
+	}
+	void InputManager::UpdateEnd()
+	{
+		m_lastFrameMousePos = m_mousePos;
 	}
 
 	/*void InputManager::AddProfile(const std::string& name, const std::filesystem::path& profilePath)
@@ -284,6 +301,13 @@ namespace Input
 	{
 		return m_mousePos;
 	}
+	ScreenPosition InputManager::GetMousePositionDelta() const
+	{
+		if (m_lastFrameMousePos == INVALID_SCREEN_POS)
+			return ScreenPosition::Zero();
+
+		return m_mousePos - m_lastFrameMousePos;
+	}
 
 	const InputKeyState* InputManager::GetInputKey(const KeyCode& key) const
 	{
@@ -296,6 +320,16 @@ namespace Input
 		}
 		
 		return &(it->second);
+	}
+
+	std::string InputManager::ToStringAllStates() const
+	{
+		std::vector<std::string> statesStr = {};
+		for (const auto& state : m_keyStates)
+		{
+			statesStr.push_back(state.second.ToString());
+		}
+		return Utils::ToStringIterable(statesStr);
 	}
 
 	/*bool TryAddCompoundInput(const std::string& name, const CompoundDirectionCollection& keys)

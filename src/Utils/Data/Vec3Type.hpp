@@ -124,7 +124,7 @@ public:
 		return m_Components[index];
 	}
 
-	Vec operator+(const Vec& otherVec) const
+	constexpr Vec operator+(const Vec& otherVec) const
 	{
 		return Vec{ m_X + otherVec.m_X, m_Y + otherVec.m_Y, m_Z + otherVec.m_Z };
 	}

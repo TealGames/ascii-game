@@ -94,7 +94,7 @@ namespace Rendering
 
 			GLint boundTex = 0;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTex);
-			LogWarning(std::format("Texture bound at slot:{} has id:{}", index, boundTex));
+			//LogWarning(std::format("Texture bound at slot:{} has id:{}", index, boundTex));
 		}
 		static void UnbindFromSlot(const TextureSlotIndex index)
 		{

@@ -18,6 +18,7 @@
 #include "ECS/Component/Types/UI/UIPanel.hpp"
 #include "ECS/Component/Types/UI/UIButton.hpp"
 #include "ECS/Component/Types/UI/UILayout.hpp"
+#include "Math/PlatformMath.hpp"
 
 static constexpr float TOP_BAR_HEIGHT = 0.03;
 static constexpr float ASSET_EDITOR_BUTTON_WIDTH = 0.2;
@@ -28,11 +29,13 @@ static const NormalizedPosition MOUSE_POS_TEXT_SIZE = {0.1, 0.05};
 static constexpr Input::KeyCode PAUSE_TOGGLE_KEY = Input::KeyCode::P;
 static constexpr Input::KeyCode SELECT_KEY = Input::KeyCode::MouseLeft;
 static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
+static constexpr Vec3 CAMERA_MOVE_SPEED = {0.1, 0.1, 0.1};
+static constexpr Vec2 CAMERA_ROTATE_RADIANS_PER_POS= Vec2(1.0f/SCREEN_WIDTH, 1.0f/SCREEN_HEIGHT) * 2.0f * std::numbers::pi;
 
 EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
 
 EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, Physics::PhysicsManager& physics, AssetManagement::AssetManager& assetManager,
-	SceneManagement::SceneManager& scene, const CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, PopupUIManager& popupManager, 
+	SceneManagement::SceneManager& scene, CameraController& camera, UIInteractionManager& selector, UIHierarchy& guiTree, PopupUIManager& popupManager, 
 	ECS::CollisionBoxSystem& collisionSystem, GizmoOverlay& gizmos)
 	:
 	m_editorRoot(nullptr),
@@ -44,9 +47,9 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager, assetManager),
 	m_spriteEditor(m_guiTree, m_inputManager, assetManager),
 	m_overheadBarContainer(nullptr), m_toggleLayout(nullptr), m_pauseGameToggle(nullptr), m_editModeToggle(nullptr), m_mousePosText(nullptr),
-	m_editModeInfo(), m_assetEditorButton(nullptr)
+	m_editModeInfo(), m_assetEditorButton(nullptr), m_inCameraFreemode(true), m_inputProfile(nullptr)
 {
-
+	
 }
 
 EngineEditor::~EngineEditor()
@@ -155,6 +158,14 @@ void EngineEditor::SelectEntityEditor(EntityData& entity)
 
 void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 {
+	m_inputProfile = m_inputManager.TryGetProfile(MAIN_INPUT_PROFILE_NAME);
+	if (m_inputProfile == nullptr)
+	{
+		LogError(std::format("Tried to get input profile:'{}' in engine editor but it was not found.",
+			MAIN_INPUT_PROFILE_NAME));
+		return;
+	}
+
 	m_editorRoot = std::get<1>(m_guiTree.CreateAtRoot(DEFAULT_LAYER, "EditorRoot"));
 	EntityData& editorRootEntity = m_editorRoot->GetEntityMutable();
 	m_entityEditor.Init(editorRootEntity);
@@ -258,7 +269,7 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		"there are no active scenes right now", activeScene->GetName())))
 		return;
 
-	const CameraComponent& mainCamera = m_cameraController.GetActiveCamera();
+	CameraComponent& mainCamera = m_cameraController.GetActiveCameraMutable();
 
 	//Assert(false, std::format("Entity editor update"));
 	//m_commandConsole.Update();
@@ -274,8 +285,10 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 	//m_editModeToggle.Update();
 	//LogError(std::format("Is toggled:{} selected:{}", std::to_string(m_editModeToggle.IsToggled()), std::to_string(m_editModeInfo.m_Selected != nullptr)));
 
-	Vec2 mouseClickedPos = m_inputManager.GetMousePosition();
-	Ray3D worldClickedRay = mainCamera.ScreenToWorldPosition(ScreenPosition(mouseClickedPos.m_X, mouseClickedPos.m_Y));
+	const Vec2 mousePos = m_inputManager.GetMousePosition();
+	const Vec2 mouseDelta = m_inputManager.GetMousePositionDelta();
+	//LogWarning(std::format("MOuse dleta:{}", mouseDelta.ToString()));
+	Ray3D worldClickedRay = mainCamera.ScreenToWorldPosition(ScreenPosition(mousePos.m_X, mousePos.m_Y));
 	if (m_inputManager.GetInputKey(SELECT_KEY)->GetState().IsPressed())
 	{
 		auto entitiesWithinPos = m_collisionBoxSystem.FindBodiesContainingPos(*activeScene, worldClickedRay.m_Origin.GetXY());
@@ -286,7 +299,6 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 			//LogError(std::format("Tree is:{}", m_guiTree.ToStringTree()));
 		}
 	}
-	
 	else if (m_editModeToggle->IsToggled())
 	{
 		//If we are in edit mode holding the down button (and not selected selectable this frame-> meaning click might correspond to selectable click not edit mode click) 
@@ -300,7 +312,6 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 			m_editModeInfo.m_Selected->GetTransformMutable().GetLocalPosMutable().SetXY(worldClickedRay.m_Origin.GetXY());
 		}
 
-		const Vec2 mousePos = m_inputManager.GetMousePosition();
 		const Vec2Int rootSize = m_guiTree.GetRootSize();
 		const Vec2 mousePosNorm = Vec2(mousePos.m_X / rootSize.m_X, (rootSize.m_Y- mousePos.m_Y)/ rootSize.m_Y);
 		m_mousePosText->SetText(mousePos.ToString(2));
@@ -310,6 +321,32 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		mousePosTextTransform.SetTopLeftPos({ mousePosNorm.m_X- (textSize.m_X/2), mousePosNorm.m_Y+ textSize.m_Y});
 	}
 	m_entityEditor.Update();
+
+	if (m_inCameraFreemode)
+	{
+		const Input::CompoundInput* moveCompound = m_inputProfile->TryGetCompoundInputAction(MAIN_INPUT_PROFILE_MOVE_ACTION);
+		if (moveCompound == nullptr)
+		{
+			LogError(std::format("Tried to get move compound input:'{}' in engine editor for profile:{} but failed",
+				MAIN_INPUT_PROFILE_MOVE_ACTION, MAIN_INPUT_PROFILE_NAME));
+			return;
+		}
+		const Vec2 downDirNormalized = moveCompound->GetCompoundInputDownNormalized();
+		/*LogWarning(std::format("DONW DIR: {} non normal:{} compoound:{}", downDirNormalized.ToString(), 
+			moveCompound->GetCompoundInputDown().ToString(), moveCompound->ToString()));*/
+		if (downDirNormalized != Vec2::Zero())
+		{
+			const Vec3 move = Vec3(downDirNormalized.m_X, 0, downDirNormalized.m_Y) * ENGINE_RIGHT_UP_FORWARD_DIR;
+			mainCamera.GetTransformMutable().GetLocalPosMutable() += move * CAMERA_MOVE_SPEED * unscaledDeltaTime;
+		}
+		if (mouseDelta != Vec2::Zero())
+		{
+			const Vec3 radianEulerAngle = Vec3(Vec2(mouseDelta.m_Y, mouseDelta.m_X) * CAMERA_ROTATE_RADIANS_PER_POS, 0);
+			mainCamera.GetTransformMutable().GetLocalRotationMutable() *= radianEulerAngle;
+		}
+		LogWarning(std::format("Camera transform:{}", mainCamera.GetTransformMutable().ToString()));
+		//mainCamera.GetTransformMutable().GetLocalRotationMutable() *= Vec3(0, 0.13 * unscaledDeltaTime, 0);
+	}
 
 	//LogWarning(std::format("pause toggle:{} edit toggle:{}", m_pauseGameToggle->IsToggled(), m_editModeToggle->IsToggled()));
 }

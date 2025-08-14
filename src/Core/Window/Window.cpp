@@ -4,6 +4,7 @@
 #include "Utils/HelperFunctions.hpp"
 
 static constexpr bool DEFAULT_VSYNC_ENABLED = true;
+static Input::KeyCode RESET_CURSOR_KEY = Input::KeyCode::Escape;
 
 namespace Core
 {
@@ -23,7 +24,8 @@ namespace Core
 		const WindowPlatformCallbacks& callbacks, const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback,
 		const CloseCallback& closeCallback)
 		: m_id(id), m_platformCallbacks(callbacks), m_nativeState(nullptr), m_updateCallback(updateCallback), m_inputEventCallback(inputCallback),
-		m_size(width, height), m_windowName(windowName), m_aspectRatioConstraint(aspectRatioConstraint), m_vsyncEnabled(false), m_closeCallback(closeCallback)
+		m_size(width, height), m_windowName(windowName), m_aspectRatioConstraint(aspectRatioConstraint), m_vsyncEnabled(false), 
+		m_cursorMode(WindowCursorMode::Normal), m_closeCallback(closeCallback)
 	{
 		
 	}
@@ -38,6 +40,7 @@ namespace Core
 		m_aspectRatioConstraint = std::exchange(other.m_aspectRatioConstraint, {});
 		m_windowName= std::exchange(other.m_windowName, "");
 		m_vsyncEnabled = std::exchange(other.m_vsyncEnabled, false);
+		m_cursorMode = std::exchange(other.m_cursorMode, WindowCursorMode::Normal);
 		m_OnResize = std::move(m_OnResize);
 		
 		m_nativeState = other.m_nativeState;
@@ -55,10 +58,21 @@ namespace Core
 
 	void Window::RegisterInput(const WindowInputEventInfo& info)
 	{
+		if (m_cursorMode != WindowCursorMode::Normal && info.m_EventType == WindowInputEventType::ButtonPress
+			&& info.m_KeyState == Input::KeyState::Pressed && info.m_KeyUpdated == RESET_CURSOR_KEY)
+		{
+			SetCursorMode(WindowCursorMode::Normal);
+		}
+
 		if (m_inputEventCallback == nullptr)
 			return;
 
 		m_inputEventCallback(*this, info);
+	}
+	void Window::HandleFocus(bool isFocused)
+	{
+		//TODO: this is temporary and should later have a callback
+		SetCursorMode(WindowCursorMode::Disabled);
 	}
 
 	bool Window::HasValidPlatformCallbacks()
@@ -92,9 +106,17 @@ namespace Core
 
 		SetVSync(DEFAULT_VSYNC_ENABLED);
 	}
+	bool Window::HasAttribute(const WindowAttribute attrib)
+	{
+		return m_platformCallbacks.m_HasAttributeFunc(*this, attrib);
+	}
 	bool Window::IsActive()
 	{
 		return m_platformCallbacks.m_IsActiveFunc(*this);
+	}
+	bool Window::IsFocused()
+	{
+		return HasAttribute(WindowAttribute::Focused);
 	}
 	void Window::Shutdown(const bool isLastWindow)
 	{
@@ -152,6 +174,15 @@ namespace Core
 	bool Window::IsVsyncEnabled() const
 	{
 		return m_vsyncEnabled;
+	}
+	void Window::SetCursorMode(const WindowCursorMode mode)
+	{
+		m_cursorMode = mode;
+		m_platformCallbacks.m_SetCursorFunc(*this, mode);
+	}
+	WindowCursorMode Window::GetCursorMode() const
+	{
+		return m_cursorMode;
 	}
 
 	WindowViewportRect Window::CalculateViewportRect(const int newWidth, const int newHeight) const

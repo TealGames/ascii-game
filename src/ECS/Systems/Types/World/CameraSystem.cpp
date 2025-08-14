@@ -26,7 +26,15 @@ namespace ECS
 	CameraSystem::CameraSystem(Rendering::Renderer& renderer) :
         m_renderer(&renderer)//, m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
 	{
-        GlobalComponentInfo::AddComponentInfo(typeid(CameraComponent), ComponentInfo(DependencyType::Entity));
+        GlobalComponentInfo::AddComponentInfo(typeid(CameraComponent), ComponentInfo(DependencyType::Entity, {}, 
+            [this](EntityData& entity)-> void
+            {
+                CameraComponent* camera = entity.TryGetComponentMutable<CameraComponent>();
+                entity.GetTransformMutable().m_DirtyCallback = [camera](const DirtyFlag) -> void 
+                    {
+                        camera->SetDirtyFlag(CameraComponent::VIEW_MATRIX_DIRTY_FLAG);
+                    };
+            }));
 	}
 
     void CameraSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)

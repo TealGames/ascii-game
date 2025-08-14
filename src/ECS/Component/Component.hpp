@@ -32,6 +32,8 @@ constexpr const char* ENTITY_DEPENDENCY_FLAG = "Entity";
 class EntityData;
 class TransformComponent;
 
+using DirtyFlag = std::uint8_t;
+
 class Component
 {
 private:
@@ -45,7 +47,8 @@ protected:
 	/// Useful for optimization (lazy initialization for example and using it as a flag for updating values
 	/// only when necessary)
 	/// </summary>
-	mutable bool m_isDirty;
+	mutable DirtyFlag m_dirtyFlags;
+	//mutable bool m_isDirty;
 
 public:
 	friend class EntityData;
@@ -58,6 +61,8 @@ public:
 	bool m_IsEnabled;
 	//TODO: the fields for a component should be placed into a registry
 	std::vector<ComponentField> m_Fields;
+
+	std::function<void(DirtyFlag)> m_DirtyCallback;
 
 private:
 public:
@@ -76,8 +81,12 @@ public:
 	/// <returns></returns>
 	bool IsInActiveAndEnabledState() const;
 
-	virtual bool IsDirty() const;
-	void SetDirty(const bool isDirty);
+	bool IsDirty() const;
+	/*void SetAllDirtyFlags() const;
+	void SetAllCleanFlags() const;*/
+	void SetDirtyFlag(const DirtyFlag flag) const;
+	bool HasDirtyFlag(const DirtyFlag flag) const;
+	void SetAllFlagsDirty(const bool isDirty) const;
 
 	std::vector<ComponentField>& GetFieldsMutable();
 	/// <summary>

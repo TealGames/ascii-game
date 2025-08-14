@@ -130,6 +130,16 @@ namespace Core
 	//TODO: make camera system precalculated data update lazy and should only update when a value for it updates (view matrix-> transform updates, proj matrix-> setting updates)
 	//TODO: ideally instead of checking each frame if a shader needs uniform buffer, we would have centralzied assigner that goes through every shader, looks through
 	//every possible uniform block and ifnds the correct one it needs based on a registry
+	//TODO: by default press -> down key state change is driving by os time delay (usually 0.5 s) which can be annoying so implement custom timer for customizable times
+	//TODO: instead of querying for profile by name all the time make input system bind/unbind profiles and each profile can have many different settigns in addition to keybinds
+	//like input delays, and other stuff so data can easily be changed via profiles and not via some manager
+	//TODO: implement a proper dirty system where dirty components can then set dependent components and their flags (because if you just check a flag on the dependent component
+	//the flag may be false due to a race for who calls function that lazily updates first). Hybrid approach: use event callbacks for low frequency components like camera/transfrom
+	//where component may store some space for callbacks for flags, which then can be set via the dependent component changing its own dirty flag after the dependent component invokes
+	//the notification. for larger system pairs like physics, rendering, transform etc. then use a registry that for each entity id, the respective pointer to flag that needs to change
+	//the new value of the flag, and what flag it is targeting. and then the issuing/dependent component can issue registry check which would check its entity id and essentially
+	//set all of flags in that moment. the dependening components can simply just register its own data and then when depedent component 
+	// gets dirty -> checks registry -> updates its own entity flags
 
 	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
 	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
@@ -210,6 +220,7 @@ namespace Core
 			LogError(std::format("Failed to create valid window"));
 			return;
 		}
+		createdWindow->SetCursorMode(WindowCursorMode::Disabled);
 		EngineLog("CREATED WINDOW");
 
 		//Note: input relies on assets, and 
@@ -333,7 +344,7 @@ namespace Core
 		m_timeKeeper.UpdateTimeStart();
 		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
 		const float unscaledDeltaTime = m_timeKeeper.GetLastIndependentDeltaTime();
-		LogWarning(std::format("FPS:{}", 1 / unscaledDeltaTime));
+		//LogWarning(std::format("FPS:{}", 1 / unscaledDeltaTime));
 		/*LogWarning(std::format("Update scaled dt:{} unscaled:{} scale:{} FPS (raylib):{} FPS(engine):{}", 
 			scaledDeltaTime, unscaledDeltaTime, m_timeKeeper.GetTimeScale(), GetFPS(), 1/unscaledDeltaTime));*/
 
@@ -405,7 +416,7 @@ namespace Core
 
 		const Vec3 objectCenter = Vec3(0, 0, 4.6);
 		static Quat rot = Quat::Identity();
-		rot *= Vec3{ 0, 0.3f * unscaledDeltaTime, 0};
+		rot *= Vec3{ 0.3f* unscaledDeltaTime, 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime};
 		const Mat4 modelMatrix = CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
 		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Utils::COLOR_BLUE
 		//m_renderer.AddCircleCall2D(0.13f, modelMatrix, Utils::COLOR_RED);
@@ -435,6 +446,7 @@ namespace Core
 		//}
 		
 		m_uiHierarchy.Update();
+		m_inputManager.UpdateEnd();
 		m_timeKeeper.UpdateTimeEnd();
 		if (m_timeKeeper.ReachedFrameLimit())
 		{

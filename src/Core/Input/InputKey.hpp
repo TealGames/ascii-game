@@ -267,7 +267,7 @@ namespace Input
 
 	constexpr KeyCodeIntegralType MOUSE_KEY_COUNT = KeyCodeIntegralType(LAST_MOUSE_CODE)- KeyCodeIntegralType(FIRST_MOUSE_CODE) + 1;
 	constexpr KeyCodeIntegralType KEYBOARD_KEY_COUNT = KeyCodeIntegralType(LAST_KEYBOARD_CODE) - KeyCodeIntegralType(FIRST_KEYBOARD_CODE) + 1;
-	constexpr KeyCodeIntegralType GAMEPAD_KEY_COUNT = KeyCodeIntegralType(FIRST_GAMEPAD_CODE) - KeyCodeIntegralType(FIRST_GAMEPAD_CODE) + 1;
+	constexpr KeyCodeIntegralType GAMEPAD_KEY_COUNT = KeyCodeIntegralType(LAST_GAMEPAD_CODE) - KeyCodeIntegralType(FIRST_GAMEPAD_CODE) + 1;
 
 	std::array<KeyCode, KEYBOARD_KEY_COUNT> GetAllKeyboardKeys();
 	std::array<KeyCode, MOUSE_KEY_COUNT> GetAllMouseButtons();

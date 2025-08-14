@@ -32,12 +32,8 @@ CameraComponent::CameraComponent(const Json& json) : CameraComponent()
 CameraComponent::CameraComponent(const CameraSettings& cameraSettings) :
 	Component(), m_cameraSettings(cameraSettings), m_lastUpdateData() 
 {
-	m_isDirty = true;
-}
-
-bool CameraComponent::IsDirty() const
-{
-	return m_isDirty || GetTransform().IsDirty();
+	//m_isDirty = true;
+	SetAllFlagsDirty(true);
 }
 
 void CameraComponent::SetFollowNoTarget()
@@ -267,7 +263,7 @@ Mat4 CameraComponent::CalculateViewMatrix() const
 {
 	//Since the rotation matrix is a special kind of matrix its inverse == tranpose (this is not normally true)
 	const Mat4 invertedRotationMatrix = CalculateRotationMatrix(GetTransform().GetGlobalRotation()).Transpose();
-	const Vec4 rotatedTranslation = invertedRotationMatrix * Vec4(-GetTransform().GetGlobalPos(), 1.0f);
+	const Vec4 rotatedTranslation =  Vec4(-GetTransform().GetGlobalPos(), 1.0f);
 	return invertedRotationMatrix * CalculateTranslationMatrix(rotatedTranslation.GetXYZ());
 }
 
@@ -316,25 +312,25 @@ void CameraComponent::UpdatePrecalculatedData()
 */
 const CameraPrecalculatedData& CameraComponent::GetLastUpdateData() const 
 { 
-	const bool cameraMoved = GetTransform().IsDirty();
-	const bool cameraSettingsUpdated = m_isDirty;
-	if (cameraMoved)
+	const bool viewMatrixDirty = HasDirtyFlag(VIEW_MATRIX_DIRTY_FLAG);
+	const bool projMatrixDirty = HasDirtyFlag(PROJ_MATRIX_DIRTY_FLAG);
+	if (viewMatrixDirty)
 	{
 		m_lastUpdateData.m_ViewMatrix = CalculateViewMatrix();
 		m_lastUpdateData.m_UpdatedThisFrame |= CameraPrecalculatedDataUpdate::ViewMatrix;
 	}
-	if (cameraSettingsUpdated)
+	if (projMatrixDirty)
 	{
 		m_lastUpdateData.m_PlatformProjectionMatrix = CalculateProjectionMatrix(ProjectionMatrixType::Platform);
 		m_lastUpdateData.m_EngineProjectionMatrix = CalculateProjectionMatrix(ProjectionMatrixType::Engine);
 		m_lastUpdateData.m_UpdatedThisFrame |= CameraPrecalculatedDataUpdate::EngineProjMatrix | CameraPrecalculatedDataUpdate::PlatformProjMatrix;
-		m_isDirty = false;
 	}
-	if (cameraMoved || cameraSettingsUpdated)
+	if (viewMatrixDirty || projMatrixDirty)
 	{
 		m_lastUpdateData.m_FrustumPlanes = CalculateFrustumPlanes();
 		m_lastUpdateData.m_UpdatedThisFrame |= CameraPrecalculatedDataUpdate::FrustumPlanes;
 	}
+	SetAllFlagsDirty(false);
 	return m_lastUpdateData; 
 }
 
@@ -363,7 +359,7 @@ void CameraComponent::Deserialize(const Json& json)
 	if (maybeFollowTarget != nullptr) SetFollowTarget(*maybeFollowTarget);
 	else SetFollowNoTarget();
 
-	m_isDirty = true;
+	SetAllFlagsDirty(true);
 }
 Json CameraComponent::Serialize()
 {

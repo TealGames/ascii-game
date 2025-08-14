@@ -1,8 +1,5 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
-//#include "Math/Vec3.hpp"
-//#include "Math/Mat4.hpp"
-//#include "Math/Quaternion.hpp"
 #include "Utils/Data/Vec3Type.hpp"
 #include "Utils/Data/Quaternion.hpp"
 
@@ -29,6 +26,10 @@ private:
 
 	mutable TransformPrecalculatedData m_lastUpdateData;
 public:
+	static constexpr DirtyFlag POS_DIRTY_FLAG = 1;
+	static constexpr DirtyFlag SCALE_DIRTY_FLAG = 1 << 1;
+	static constexpr DirtyFlag ROTATIOn_DIRTY_FLAG = 1 << 2;
+
 	//friend class ECS::TransformSystem;
 private:
 	void SetChildrenDirty();

@@ -9,6 +9,45 @@
 
 namespace Core
 {
+	enum class WindowCursorMode : std::uint8_t
+	{
+		/// <summary>
+		/// The default cursor behavior -> 
+		/// cursor is tracked with absolute pos and
+		/// no longer recevies window events after leaving window bounds
+		/// </summary>
+		Normal		= 0,
+		/// <summary>
+		/// Same as normal mode, but the cursor is not rendered
+		/// </summary>
+		Hidden		= 1,
+		/// <summary>
+		/// Cursor is not tracked with absolute pos but with 
+		/// deltas instead meaning that mouse deltas can be tracked even
+		/// after they leave window bounds -> no cursor rendered
+		/// </summary>
+		Disabled	= 2,
+	};
+
+	enum class WindowAttribute : std::uint8_t
+	{
+		Focused			=0,
+		Minimized		=1,
+		Maximized		=2,
+		Visible			=3,
+		/// <summary>
+		/// The cursor is above the visible window
+		/// area
+		/// </summary>
+		Hovered			=4,
+		/// <summary>
+		/// The window is set to always be "on top"
+		/// or floating
+		/// </summary>
+		Floating		=5,
+		Resizable		=6,
+	};
+
 	class Window;
 	struct WindowPlatformCallbacks
 	{
@@ -16,7 +55,9 @@ namespace Core
 		void(*m_UpdateFunc)(Window&);
 		void(*m_ResizeFunc)(Window&, int width, int height);
 		void(*m_SetVsyncFunc)(Window&, bool vsyncEnabled);
+		void(*m_SetCursorFunc)(Window&, const WindowCursorMode cursorMode);
 		bool(*m_IsActiveFunc)(Window&);
+		bool(*m_HasAttributeFunc)(Window&, const WindowAttribute attribute);
 		void(*m_ShutdownFunc)(Window&, bool isLastWindow);
 
 		bool HasAllValidCallbacks();
@@ -79,6 +120,7 @@ namespace Core
 		Vec2Int m_aspectRatioConstraint;
 		const char* m_windowName;
 		bool m_vsyncEnabled;
+		WindowCursorMode m_cursorMode;
 	public:
 		static const Vec2Int NO_ASPECT_RATIO_CONSTRAINT;
 
@@ -98,6 +140,7 @@ namespace Core
 		WindowId GetId() const;
 
 		void RegisterInput(const WindowInputEventInfo& info);
+		void HandleFocus(bool isFocused);
 
 		bool HasValidPlatformCallbacks();
 		bool IsValid();
@@ -105,7 +148,18 @@ namespace Core
 		void SetUpdateCallback(const UpdateCallbackType& callback);
 		void Update();
 
+		bool HasAttribute(const WindowAttribute attrib);
+		/// <summary>
+		/// If true, the window is open and running, otherwise
+		/// the window needs to be shutdown
+		/// </summary>
+		/// <returns></returns>
 		bool IsActive();
+		/// <summary>
+		/// If true, the window is the one selected by the user for input
+		/// </summary>
+		/// <returns></returns>
+		bool IsFocused();
 		void Shutdown(const bool isLastWindow);
 
 		void SetNativeState(void* state);
@@ -148,6 +202,9 @@ namespace Core
 		/// <param name="enableVsync"></param>
 		void SetVSync(bool enableVsync);
 		bool IsVsyncEnabled() const;
+
+		void SetCursorMode(const WindowCursorMode mode);
+		WindowCursorMode GetCursorMode() const;
 
 		WindowViewportRect CalculateViewportRect(const int newWidth, const int newHeight) const;
 		Vec2Int CalculateRenderSize() const;

@@ -21,7 +21,6 @@ namespace Input
 	public:
 
 	private:
-		void ParseFile(std::ifstream& stream);
 		InputManager& GetInputManagerMutable();
 		
 	public:

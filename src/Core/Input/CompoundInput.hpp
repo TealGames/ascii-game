@@ -29,6 +29,7 @@ namespace Input
 
 		const InputAction* TryGetDirectionAction(const InputDirection& dir) const;
 		Vec2Int GetCompoundInputDown() const;
+		Vec2 GetCompoundInputDownNormalized() const;
 		/*std::vector<KeyState> GetCompoundKeyStates();*/
 
 		bool HasDirection(const InputDirection& dir) const;

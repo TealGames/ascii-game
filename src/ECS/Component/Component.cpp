@@ -5,7 +5,7 @@
 #include "Utils/ToStringFunctions.hpp"
 
 Component::Component() 
-	: m_isDirty(false), m_IsEnabled(true), m_entity(nullptr), m_Fields() //m_dependencyLevel(dependency)
+	: m_dirtyFlags(), m_IsEnabled(true), m_entity(nullptr), m_Fields() //m_dependencyLevel(dependency)
 {
 }
 
@@ -41,11 +41,31 @@ bool Component::IsInActiveAndEnabledState() const
 {
 	return m_IsEnabled && GetEntity().IsEntityActive();
 }
-bool Component::IsDirty() const { return m_isDirty; }
-void Component::SetDirty(const bool isDirty)
+bool Component::IsDirty() const { return m_dirtyFlags!=0; }
+bool Component::HasDirtyFlag(const DirtyFlag flag) const
 {
-	m_isDirty = isDirty;
+	return (m_dirtyFlags & flag) != 0;
 }
+void Component::SetDirtyFlag(const DirtyFlag flag) const
+{
+	m_dirtyFlags |= flag;
+	if (m_DirtyCallback != nullptr)
+		m_DirtyCallback(m_dirtyFlags);
+}
+void Component::SetAllFlagsDirty(const bool isDirty) const
+{
+	if (isDirty)
+	{
+		m_dirtyFlags = ~0;
+		if (m_DirtyCallback != nullptr)
+			m_DirtyCallback(m_dirtyFlags);
+	}
+	else m_dirtyFlags = 0;
+}
+//void Component::SetDirty(const bool isDirty)
+//{
+//	m_isDirty = isDirty;
+//}
 
 void Component::InitFields()
 {

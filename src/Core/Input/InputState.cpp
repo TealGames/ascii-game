@@ -29,8 +29,11 @@ namespace Input
 
 	const KeyState InputState::GetState() const { return m_keyState; }
 
-	void InputState::SetState(const KeyState newState)
+	void InputState::SetState(const KeyState newState, const bool overrideIfCooldown)
 	{
+		if (m_keyState == KeyState::Cooldown && !overrideIfCooldown)
+			return;
+
 		if (m_keyState == KeyState::Down && newState != KeyState::Down) 
 			m_downTime = 0;
 
