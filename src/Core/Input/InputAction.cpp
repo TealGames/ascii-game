@@ -8,37 +8,31 @@ namespace Input
 	InputAction::InputAction(const std::string& name, const std::vector<const InputKeyState*>& keys) :
 		m_Name(name), m_Keys(keys) {}
 
-	bool InputAction::IsDown() const
+	bool InputAction::IsState(const KeyState state) const
 	{
 		if (m_Keys.empty()) return false;
 
 		for (const auto& key : m_Keys)
 		{
-			if (key->GetState().IsDown()) return true;
+			if (key->GetState().GetKeyState()== state) 
+				return true;
 		}
 		return false;
+	}
+
+	bool InputAction::IsDown() const
+	{
+		return IsState(KeyState::Down);
 	}
 
 	bool InputAction::IsPressed() const
 	{
-		if (m_Keys.empty()) return false;
-
-		for (const auto& key : m_Keys)
-		{
-			if (key->GetState().IsPressed()) return true;
-		}
-		return false;
+		return IsState(KeyState::Pressed);
 	}
 
 	bool InputAction::IsReleased() const
 	{
-		if (m_Keys.empty()) return false;
-
-		for (const auto& key : m_Keys)
-		{
-			if (key->GetState().IsReleased()) return true;
-		}
-		return false;
+		return IsState(KeyState::Released);
 	}
 
 	std::string InputAction::ToString() const

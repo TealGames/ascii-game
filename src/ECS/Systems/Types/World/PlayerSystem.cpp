@@ -73,7 +73,7 @@ namespace ECS
 					return;
 				}
 
-				player.SetFrameInput(moveCompound->GetCompoundInputDown());
+				player.SetFrameInput(moveCompound->GetInputWithState(Input::KeyState::Down).GetXY());
 
 				//This is a special case where if the physics system has overriden 
 				//velocity with zero EVEN WHEN WE HAD INPUT (meaning that input was canceled)

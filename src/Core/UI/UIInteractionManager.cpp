@@ -97,7 +97,7 @@ void UIInteractionManager::InvokeInteractionEvents()
 	}
 
 	if (HasSelectableSelected() && m_selectedThisFrame) m_selectedThisFrame = false;
-	const Input::KeyState selectKeyState = m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetState();
+	const Input::KeyState selectKeyState = m_inputManager.GetInputKey(SELECT_KEY)->GetState().GetKeyState();
 
 	const ScreenPosition newMouseScreenPos = m_inputManager.GetMousePosition();
 	const Vec2 mouseDelta = newMouseScreenPos - m_lastFrameMousePos;

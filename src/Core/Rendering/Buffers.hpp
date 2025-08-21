@@ -1,12 +1,77 @@
 #pragma once
 #include <cstdint>
 #include <array>
+#include <deque>
+#include <vector>
+#include <tuple>
 #include <unordered_map>
 #include "Core/Rendering/Shader/Shader.hpp"
 #include "Utils/Data/Vec2Type.hpp"
+#include "Core/Rendering/GpuFence.hpp"
+#include "Core/Analyzation/Debug.hpp"
 
 namespace Rendering
 {
+	struct FencedBufferSegment
+	{
+		size_t m_ByteOffset;
+		size_t m_ByteSize;
+		GpuFence m_Fence;
+
+		size_t GetNextOffset() const;
+		std::string ToString() const;
+	};
+	class FencedRingBuffer
+	{
+	private:
+		std::deque<FencedBufferSegment> m_segments;
+		//int m_currSegmentIndex;
+		//size_t nextOffset;
+		//Vec2Int m_allocatedRange;
+		size_t m_fixedByteSize;
+		size_t m_usedSize;
+		size_t m_head;
+		size_t m_tail;
+	public:
+		static constexpr float STATUS_TIMEOUT_NS = 0;
+		static constexpr int INVALID_RANGE_INDEX = -1;
+		static constexpr Vec2Int INVALID_RANGE = Vec2Int(INVALID_RANGE_INDEX, 0);
+
+	private:
+		//void UpdateRangeFromSegment(const FencedBufferSegment& seg);
+		bool TryRemoveFinishedHeadSegments();
+		void ReserveSegment(const size_t offset, const size_t size, FencedBufferSegment** outSeg);
+	public:
+		FencedRingBuffer(const size_t allocatedByteSize);
+
+		/// <summary>
+		/// Finds the next available fenced segment for given size.
+		/// If stall is true, will wait by doing busywait loop until the gpu is free (bad for performance)
+		/// but the preferred option, false, will return false and not wait at all
+		/// </summary>
+		/// <param name="size"></param>
+		/// <returns></returns>
+		bool TryReserveSegment(const size_t size, const bool doStall, FencedBufferSegment** outSeg);
+		//void InsertFenceAtCurrentSegment();
+		size_t GetFixedAllocatedByteSize() const;
+		size_t GetUnusedByteSize() const;
+		size_t GetUsedByteSize() const;
+		size_t GetContiguousSizeFromTail() const;
+
+		/// <summary>
+		/// Will get all ranges in the buffer that are not used as [OFFSET, SIZE]
+		/// NOTE: based on tail and head, there should only ever be a max of 2 non-contiguous
+		/// unused ranges at any given point
+		/// </summary>
+		/// <returns></returns>
+		std::array<Vec2Int, 2> GetUnusedRanges() const;
+
+		const std::deque<FencedBufferSegment>& GetSegments() const;
+
+		std::string ToString() const;
+	};
+
+
 	//TODO: If the code for index and vertex buffers is similar in other rendering frameworks, condense down buffers into
 	//one buffer class since most code is duplicated
 
@@ -43,7 +108,7 @@ namespace Rendering
 
 	struct VertexBufferPlatformCallbacks
 	{
-		RenderObjectId(*m_AllocateFunc) (const void* buffer, const size_t totalByteSize);
+		std::tuple<RenderObjectId, std::byte*>(*m_AllocateFunc) (const void* buffer, const size_t totalByteSize, const bool allowPersistentReading);
 		void(*m_WriteFunc) (const RenderObjectId id, const size_t byteOffset, const void* buffer, const size_t bufferByteSize);
 		void(*m_DeallocateFunc)(const RenderObjectId id);
 	};
@@ -53,19 +118,23 @@ namespace Rendering
 	private:
 		VertexBufferPlatformCallbacks m_callbacks;
 		RenderObjectId m_id;
+		std::byte* m_writePtr;
 		/// <summary>
 		/// How many vertices were actually uploaded to the buffer
 		/// Size in bytes is m_dataUsed * sizeof(VertexType)
 		/// </summary>
-		size_t m_dataUsed;
+		//size_t m_dataUsed;
 		size_t m_elementSize;
 
-		size_t m_maxVertexCount;
+		//size_t m_vertexCapacity;
+		FencedRingBuffer m_fence;
 	public:
 		VertexAttributeAdvance m_AdvanceType;
 
 	private:
+		void WriteDataUnsafeBytes(const size_t offsetBytes, const void* vertexArray, const size_t& writeByteSize);
 		void Deallocate();
+		void DefaultUninitValues();
 	public:
 		VertexBuffer();
 		VertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType,
@@ -74,21 +143,81 @@ namespace Rendering
 		VertexBuffer(VertexBuffer&&) = delete;
 		~VertexBuffer();
 
-		void WriteData(const size_t& elementOffset, const void* vertexArray, const size_t& elementCount);
-		size_t GetUploadedSize() const;
-		bool HasFilledMaxSize() const;
+		/// <summary>
+		/// Writes data directly into the buffer
+		/// </summary>
+		/// <param name="elementOffset"></param>
+		/// <param name="vertexArray"></param>
+		/// <param name="elementCount"></param>
+		void WriteDataUnsafe(const size_t& elementOffset, const void* vertexArray, const size_t& elementCount);
+		/// <summary>
+		/// Writes data into the next available unfenced slot or waits until one is available
+		/// </summary>
+		/// <param name="vertexArray"></param>
+		/// <param name="elementCount"></param>
+		bool TryWriteDataFenced(const void* vertexArray, const size_t& elementCount, FencedBufferSegment** outSegment);
+
+#if !PRODUCTION_BUILD
+		template<typename T>
+		requires (std::is_default_constructible_v<T>)
+		void ReadDataAs(std::vector<T>& vec, const bool hasArraySegments)
+		{
+			if (m_writePtr == nullptr)
+			{
+				LogError(std::format("Attempted to read a vertex buffer "
+					"but it contains no write pointer to read from"));
+				return;
+			}
+
+			const auto& segments = m_fence.GetSegments();
+			vec.resize(segments.size());
+
+			size_t vecIndex = 0;
+
+			T value = {};
+			for (const auto& segment : segments)
+			{
+				if (hasArraySegments)
+				{
+					for (size_t i = segment.m_ByteOffset; i < segment.GetNextOffset(); i += sizeof(T))
+					{
+						value = {};
+						memcpy(&value, m_writePtr + size_t(segment.m_ByteOffset), sizeof(T));
+						vec[vecIndex] = value;
+						vecIndex++;
+					}
+				}
+				else
+				{
+					value = {};
+					memcpy(&value, m_writePtr + size_t(segment.m_ByteOffset), sizeof(T));
+					vec[vecIndex] = value;
+					vecIndex++;
+				}
+			}
+		}
+#endif
+
+		//size_t GetUploadedVertexCount() const;
+		size_t GetAllocatedByteSize() const;
+		size_t GetVertexCapacity() const;
+		//bool HasFilledMaxSize() const;
 
 		size_t GetElementSize() const;
 		RenderObjectId GetId() const;
 
+		bool HasPersistentReadWritePointer() const;
+
 		VertexBuffer& operator=(const VertexBuffer&) = delete;
 		VertexBuffer& operator=(VertexBuffer&&) noexcept;
+
+		std::string ToString() const;
 	};
 
 	using IndexType = std::uint32_t;
 	struct IndexBufferPlatformCallbacks
 	{
-		RenderObjectId(*m_AllocateFunc) (const IndexType* buffer, const size_t totalByteSize);
+		std::tuple<RenderObjectId, std::byte*>(*m_AllocateFunc) (const IndexType* buffer, const size_t totalByteSize, const bool allowPersistentReading);
 		void(*m_WriteFunc) (const RenderObjectId id, const size_t byteOffset, const IndexType* buffer, const size_t bufferByteSize);
 		void(*m_DeallocateFunc)(const RenderObjectId id);
 	};
@@ -98,15 +227,18 @@ namespace Rendering
 	private:
 		IndexBufferPlatformCallbacks m_callbacks;
 		RenderObjectId m_id;
+		std::byte* m_writePtr;
 		/// <summary>
 		/// How many indices were actually uploaded to the buffer
 		/// Size in bytes is m_dataUsed * sizeof(IndexType)
 		/// </summary>
-		size_t m_dataUsed;
-		size_t m_maxElementCount;
+		//size_t m_dataUsed;
+		//size_t m_elementCapacity;
+		FencedRingBuffer m_fence;
 	public:
 
 	private:
+		void WriteDataUnsafeBytes(const size_t offsetBytes, const IndexType* indexArray, const size_t& writeByteSize);
 		void Deallocate();
 	public:
 		IndexBuffer();
@@ -117,11 +249,14 @@ namespace Rendering
 
 		~IndexBuffer();
 
-		void WriteData(const size_t elementOffset, const IndexType* indexArray, const size_t elementCount);
-		size_t GetUploadedSize() const;
-		bool HasFilledMaxSize() const;
+		void WriteDataUnsafe(const size_t elementOffset, const IndexType* indexArray, const size_t elementCount);
+		bool TryWriteDataFenced(const IndexType* indexArray, const size_t elementCount, FencedBufferSegment** outSeg);
+		//size_t GetUploadedIndexCount() const;
+		//bool HasFilledMaxSize() const;
 		
 		inline constexpr size_t GetElementSize() const { return sizeof(IndexType); }
+		size_t GetAllocatedByteSize() const;
+		size_t GetIndexCapacity() const;
 		RenderObjectId GetId() const;
 
 		IndexBuffer& operator=(const IndexBuffer&) = delete;
@@ -200,7 +335,7 @@ namespace Rendering
 		UniformBufferBindIndex GetBindIndex() const;
 		RenderObjectId GetId() const;
 		std::string GetName() const;
-		size_t GetSize() const;
+		size_t GetAllocatedByteSize() const;
 
 		UniformBuffer& operator=(const UniformBuffer&) = delete;
 		UniformBuffer& operator=(UniformBuffer&&) noexcept;

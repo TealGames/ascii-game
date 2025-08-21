@@ -30,7 +30,7 @@ static constexpr Input::KeyCode PAUSE_TOGGLE_KEY = Input::KeyCode::P;
 static constexpr Input::KeyCode SELECT_KEY = Input::KeyCode::MouseLeft;
 static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
 static constexpr Vec3 CAMERA_MOVE_SPEED = {0.1, 0.1, 0.1};
-static constexpr Vec2 CAMERA_ROTATE_RADIANS_PER_POS= Vec2(1.0f/SCREEN_WIDTH, 1.0f/SCREEN_HEIGHT) * 2.0f * std::numbers::pi;
+static constexpr Vec2 CAMERA_ROTATE_RADIANS_PER_POS= Vec2(1.0f/SCREEN_WIDTH, 1.0f/SCREEN_HEIGHT) * std::numbers::pi;
 
 EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
 
@@ -324,6 +324,12 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 
 	if (m_inCameraFreemode)
 	{
+		if (mouseDelta != Vec2::Zero())
+		{
+			const Vec3 radianEulerAngle = Vec3(Vec2(mouseDelta.m_Y, mouseDelta.m_X) * CAMERA_ROTATE_RADIANS_PER_POS, 0);
+			mainCamera.GetTransformMutable().GetLocalRotationMutable() *= radianEulerAngle;
+		}
+
 		const Input::CompoundInput* moveCompound = m_inputProfile->TryGetCompoundInputAction(MAIN_INPUT_PROFILE_MOVE_ACTION);
 		if (moveCompound == nullptr)
 		{
@@ -331,20 +337,15 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 				MAIN_INPUT_PROFILE_MOVE_ACTION, MAIN_INPUT_PROFILE_NAME));
 			return;
 		}
-		const Vec2 downDirNormalized = moveCompound->GetCompoundInputDownNormalized();
+		const Vec3 downDirNormalized = moveCompound->GetInputWithStateNormalized<2>({Input::KeyState::Down, Input::KeyState::Pressed});
 		/*LogWarning(std::format("DONW DIR: {} non normal:{} compoound:{}", downDirNormalized.ToString(), 
 			moveCompound->GetCompoundInputDown().ToString(), moveCompound->ToString()));*/
-		if (downDirNormalized != Vec2::Zero())
+		if (downDirNormalized != Vec3::Zero())
 		{
-			const Vec3 move = Vec3(downDirNormalized.m_X, 0, downDirNormalized.m_Y) * ENGINE_RIGHT_UP_FORWARD_DIR;
-			mainCamera.GetTransformMutable().GetLocalPosMutable() += move * CAMERA_MOVE_SPEED * unscaledDeltaTime;
+			//const Vec3 rotatedDir= mainCamera.GetTransformMutable().GetGlobalRotation().ApplyRotationToDir(ENGINE_FORWARD_DIR);
+			mainCamera.GetTransformMutable().GetLocalPosMutable() += downDirNormalized * CAMERA_MOVE_SPEED * unscaledDeltaTime;
 		}
-		if (mouseDelta != Vec2::Zero())
-		{
-			const Vec3 radianEulerAngle = Vec3(Vec2(mouseDelta.m_Y, mouseDelta.m_X) * CAMERA_ROTATE_RADIANS_PER_POS, 0);
-			mainCamera.GetTransformMutable().GetLocalRotationMutable() *= radianEulerAngle;
-		}
-		LogWarning(std::format("Camera transform:{}", mainCamera.GetTransformMutable().ToString()));
+		//LogWarning(std::format("Camera transform:{}", mainCamera.GetTransformMutable().ToString()));
 		//mainCamera.GetTransformMutable().GetLocalRotationMutable() *= Vec3(0, 0.13 * unscaledDeltaTime, 0);
 	}
 

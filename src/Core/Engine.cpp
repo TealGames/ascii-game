@@ -140,9 +140,17 @@ namespace Core
 	//the new value of the flag, and what flag it is targeting. and then the issuing/dependent component can issue registry check which would check its entity id and essentially
 	//set all of flags in that moment. the dependening components can simply just register its own data and then when depedent component 
 	// gets dirty -> checks registry -> updates its own entity flags
+	//TODO: renderer updates: make instanced truly instanced -> if you call multiple spheres, only one sphere vertex data should be added to buffer, so next draw call
+	//would just add instance data (remember instance calls cycle through given instance count for each each instance). Also while it is fine to do vertex attributes for 
+	//instanced data, for more robustness, and to allow for increasing sizes of instances -> add instances to a uniform buffer (just store each instance property as an array in
+	//the buffer block in the shader) and then when using instnace calls you can use gl_instanceId for the index of the instance buffer in shader (so just do uInstanceBlock[gl_instanceId])
+	//and if you want use baseInstance draw call instead to then have base instance offsets if you want to store instnaced data for all calls in one buffer.
+	//Also, for future create a indrect command buffer that allows for commands to be put into a buffer, allowing for more flexibility and batching multiple draws in one
+	//api call using drawIndirectMulti. this is most usefl when things get more complicated and you want finer control over the process
+	//Also, buffers who are dynamic with many updates should probably do bufferrange and mapbuffer to get pointer to memory that is always allocated for writing
+	//instead of doing map and unmap every time which can be slow
 
-	constexpr std::uint8_t NO_FRAME_LIMIT = -1;
-	constexpr std::uint8_t FRAME_LIMIT = NO_FRAME_LIMIT;
+	constexpr std::uint8_t TERMINATE_AFTTER_FRAMES = TimeKeeper::NO_FRAME_LIMIT;
 	constexpr bool SHOW_FPS = true;
 
 	constexpr std::streamsize DOUBLE_LOG_PRECISION = 8;
@@ -195,7 +203,7 @@ namespace Core
 		m_gizmosOverlay(m_uiSystemExecutor.m_UiRenderSystem, m_physicsManager, m_cameraController),
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
-		m_timeKeeper(),
+		m_timeKeeper(TERMINATE_AFTTER_FRAMES),
 		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_assetManager,
 			m_sceneManager, m_cameraController, m_UIInteractionManager, m_uiHierarchy, m_popupManager, m_collisionBoxSystem, m_gizmosOverlay),
 		m_gameManager(m_uiHierarchy)
@@ -246,7 +254,7 @@ namespace Core
 
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
-		m_graphicsManager.LoadAllShaders();
+		m_graphicsManager.LoadAllShadersAndTextures();
 		m_sceneManager.LoadAllScenes();
 		//TODO: find a way to do this more procedurally
 		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {StartAll(); });
@@ -423,14 +431,16 @@ namespace Core
 		//m_renderer.AddSphereCall3D(0.13f, modelMatrix, Utils::COLOR_GREEN);
 		//m_renderer.AddRectangleCall2D(Vec2(0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
 		Rendering::Texture& tex= m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/test.jpg")->GetTextureMutable();
+		Rendering::Material mat = { nullptr, Utils::Color(100,100, 100, 255)};
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Utils::COLOR_BLUE);
-		//m_renderer.AddDirectionLightCall(Vec3(-1, 0, 0), Utils::COLOR_RED);
-		m_renderer.AddPointLightCall(Vec3(0.2, 0, 4.6), Utils::COLOR_GREEN, 0.2);
-		m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), tex, modelMatrix, Utils::Color(Utils::COLOR_BLUE, 15));
+		//m_renderer.AddDirectionLightCall(Vec3(0, -1, 0), Utils::COLOR_GREEN);
+		m_renderer.AddCallPointLight(Vec3(0.1, 0, 4.6), Utils::COLOR_GREEN, 0.1);
+		m_renderer.AddCallPointLight(Vec3(0, 0.1, 4.6), Utils::COLOR_RED, 0.1);
+		m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), mat, modelMatrix);
 
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 
-			CalculateRotationMatrix(rot) * CalculateTranslationMatrix(-Vec3::Zero())  * CalculateScaleMatrix(Vec3::One());*/
+			CalculateRotationMatrix(rot) * CalculateTranslationatrix(-Vec3::Zero())  * CalculateScaleMatrix(Vec3::One());*/
 
 		//LogWarning(std::format("Object rot is:{}", rot.ToDegrees().ToString()));
 		//m_renderer.AddRectangleCall2D(Vec3(0, 0, 4.8), Vec2(0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);

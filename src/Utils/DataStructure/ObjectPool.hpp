@@ -55,10 +55,14 @@ public:
 
 	T* TryAdd(const T& element)
 	{
-		if (!Assert(!IsAtCapacity(), std::format("Tried to add a new object of type:{} to pool but pool at addr:{}"
-			"max capacity:{} has been reached", Utils::ToStringTypeName<T>(), 
-			Utils::ToStringPointerAddress(this), std::to_string(GetMaxCapacity()))))
+		if (IsAtCapacity())
+		{
+			LogWarning(std::format("Tried to add a new object of type:{} to pool but pool at addr:{} "
+				"max capacity:{} has been reached", Utils::ToStringTypeName<T>(),
+				Utils::ToStringPointerAddress(this), std::to_string(GetMaxCapacity())));
 			return nullptr;
+		}
+			
 
 		T* result = nullptr;
 		if (HasUnusedAvailable())

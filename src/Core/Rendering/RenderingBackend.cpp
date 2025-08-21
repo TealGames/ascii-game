@@ -33,9 +33,9 @@ namespace Rendering
 			}
 
 			//Enable not culling back faces
-			/*glEnable(GL_CULL_FACE);
-			glCullFace(GL_BACK); 
-			glFrontFace(GL_CCW); */
+			//glEnable(GL_CULL_FACE);
+			//glCullFace(GL_BACK); 
+			//glFrontFace(GL_CCW);
 
 			//Enable depth testing -> if you draw triangles on top of one another, will resolve the one on bottom
 			//based on position and not draw order
@@ -167,8 +167,8 @@ namespace Rendering
 		void ClearBackground()
 		{
 #if defined(OPENGL)
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			GL_CALL(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
+			GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 #elif defined(RAYLIB)
 			ClearBackground(BLACK);
@@ -238,24 +238,26 @@ namespace Rendering
 #endif
 		}
 
-		void DrawUploadedIndexBufferInstanced(const size_t& indicesStartByteOffset, const size_t& drawIndexCount, const size_t& drawInstanceCount)
+		void DrawUploadedIndexBufferInstanced(const size_t& baseVertexIndex, const size_t& indicesStartByteOffset, 
+			const size_t& drawIndexCount, const size_t& baseInstanceIndex, const size_t& drawInstanceCount)
 		{
 #if defined(OPENGL)
 			//LogError("DRAWING");
-			int program = -1;
-			glGetIntegerv(GL_CURRENT_PROGRAM, &program);
+			//int program = -1;
+			//glGetIntegerv(GL_CURRENT_PROGRAM, &program);
 			//LogError(std::format("Current program: {}", program));
 
-			glActiveTexture(GL_TEXTURE0);
+			//glActiveTexture(GL_TEXTURE0);
 
-			GLint boundTex = 0;
+			/*GLint boundTex = 0;
 			static GLint prevBound = 0;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTex);
-			if (prevBound == 0) prevBound = boundTex;
+			if (prevBound == 0) prevBound = boundTex;*/
 			//LogWarning(std::format("RENDERING: Texture bound at slot:{} has id:{}", 0, boundTex));
-			if (boundTex==0 || boundTex != prevBound) LogError(std::format("tex changed and/or 0 id bound:{} prev:{}", boundTex, prevBound));
+			//if (boundTex==0 || boundTex != prevBound) LogError(std::format("tex changed and/or 0 id bound:{} prev:{}", boundTex, prevBound));
 
-			GL_CALL(glDrawElementsInstanced(GL_TRIANGLES, drawIndexCount, GL_UNSIGNED_INT, (const void*)indicesStartByteOffset, drawInstanceCount));
+			GL_CALL(glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, drawIndexCount, GL_UNSIGNED_INT, 
+				(const void*)indicesStartByteOffset, drawInstanceCount, baseVertexIndex, baseInstanceIndex));
 #endif
 		}
 	}

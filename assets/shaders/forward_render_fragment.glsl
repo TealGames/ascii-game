@@ -28,7 +28,7 @@ uniform sampler2D uAlbedo;
 in vec2 vTexCoords;
 in vec4 vColor;
 in vec3 vWorldPos;
-in vec3 vNormal;
+flat in vec3 vNormal;
 in vec3 vCameraPos;
 
 layout(location=0) out vec4 fragColor;
@@ -49,11 +49,15 @@ void main()
 {
     //TEMPORARY REPLACE WITH UNIFORM
     float uSpecularPower= 5;
-
     vec3 normal = GetNormal();
+
+    //vec3 debugColor = 0.5 * (normal + vec3(1.0));
+    //fragColor = vec4(debugColor, 1.0);
+    //return;
+
     vec3 viewDir = normalize(uCameraBlock.cameraPos - vWorldPos);
     vec4 albedo = texture(uAlbedo, vTexCoords);
-    vec3 color = mix(albedo.rgb, vColor.rgb, vColor.a);
+    vec3 color = albedo.rgb * vColor.rgb;
 
     //Here we calculate directional light impact by adding directional light color
     //based on how much light there is coming towards the surface normal
@@ -98,5 +102,5 @@ void main()
     }
 
     // gamma correction can be applied later; output linear color
-    fragColor = vec4(color, albedo.a);
+    fragColor = vec4(color, vColor.a);
 }

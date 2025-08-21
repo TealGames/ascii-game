@@ -34,7 +34,7 @@ namespace GlobalColorCodes
 		const std::uint8_t r = std::stoi(property.m_Value[0].substr(0, 2), nullptr, 16);
 		const std::uint8_t g = std::stoi(property.m_Value[0].substr(2, 2), nullptr, 16);
 		const std::uint8_t b = std::stoi(property.m_Value[0].substr(4, 2), nullptr, 16);
-		std::uint8_t a = Utils::DEFAULT_CHANNEL_VALUE;
+		std::uint8_t a = Utils::MAX_CHANNEL_VALUE;
 		if (property.m_Value[0].size() == 8)
 			a = std::stoi(property.m_Value[0].substr(6, 2), nullptr, 16);
 

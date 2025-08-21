@@ -37,7 +37,7 @@ namespace Input
 					{
 						m_lastFrameMousePos = m_mousePos;
 					}
-					LogWarning(std::format("MOVED delta:{} pos:{}", m_lastFrameMousePos.ToString(), m_mousePos.ToString()));
+					//LogWarning(std::format("MOVED delta:{} pos:{}", m_lastFrameMousePos.ToString(), m_mousePos.ToString()));
 				}
 				else
 				{
@@ -149,8 +149,8 @@ namespace Input
 		//We then check again (in case we might have left cooldown after delta finished cooldown)
 		if (!inputState.InCooldown())
 		{
-			if (inputState.GetState() == KeyState::Pressed) {}
-			else if (inputState.GetState()== KeyState::Down)
+			if (inputState.GetKeyState() == KeyState::Pressed) {}
+			else if (inputState.GetKeyState()== KeyState::Down)
 			{
 				//Only if the state is already down do we apply the delta time since if we just set it now
 				//the held time might be off
@@ -241,7 +241,7 @@ namespace Input
 			it = LazyAddKeyState(key).first;
 		}
 			
-		return it->second.GetState().GetState();
+		return it->second.GetState().GetKeyState();
 	}
 	bool InputManager::IsKeyPressed(const KeyCode& key) const
 	{

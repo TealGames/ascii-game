@@ -22,7 +22,7 @@ public:
 
 public:
 	constexpr Vec() : Vec(0, 0) {}
-
+	//constexpr Vec(const T xy) : m_X(xy), m_Y(xy) {}
 	constexpr Vec(const T xComp, const T yComp)
 		: m_X(xComp), m_Y(yComp) {}
 
@@ -31,6 +31,15 @@ public:
 
 	Vec GetX() const { return Vec(m_X, 0); }
 	Vec GetY() const { return Vec(0, m_Y); }
+
+	Vec<int, 2> AsInt() const requires (std::is_floating_point_v<T>)
+	{
+		return Vec<int, 2>(m_X, m_Y);
+	}
+	Vec<float, 2> AsFloat() const requires (std::is_integral_v<T>)
+	{
+		return Vec<float, 2>(m_X, m_Y);
+	}
 
 	static inline constexpr Vec One() { return Vec{ 1, 1 }; }
 	static inline constexpr Vec Zero() { return Vec{ 0, 0 }; }

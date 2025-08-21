@@ -28,6 +28,22 @@ namespace Input
 
 		return nullptr;
 	}
+	Vec3Int CompoundInput::GetInputWithState(KeyState state) const
+	{
+		Vec3Int dir = {};
+		bool dirKeyHasState = false;
+		for (const auto& entry : m_dirKeys)
+		{
+			/*LogError(std::format("Compound: {} key: {} STATE: {} (down: {})", name, std::to_string(entry.second),
+				ToString(GetKeyState(entry.second)), std::to_string(IsKeyDown(entry.second))));*/
+			if (!entry.second.IsState(state)) continue;
+
+			AddDirectionToVector(dir, entry.first);
+		}
+		//LogError(std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
+
+		return dir;
+	}
 	const CompoundDirectionCollection& CompoundInput::GetEntries() const
 	{
 		return m_dirKeys;
@@ -52,29 +68,6 @@ namespace Input
 		}
 		
 		m_dirKeys.emplace(dir, action);
-	}
-
-	Vec2Int CompoundInput::GetCompoundInputDown() const
-	{
-		Vec2Int dir = {};
-		for (const auto& entry : m_dirKeys)
-		{
-			/*LogError(std::format("Compound: {} key: {} STATE: {} (down: {})", name, std::to_string(entry.second),
-				ToString(GetKeyState(entry.second)), std::to_string(IsKeyDown(entry.second))));*/
-			if (!entry.second.IsDown()) continue;
-
-			if (entry.first == InputDirection::Up) dir.m_Y++;
-			else if (entry.first == InputDirection::Down) dir.m_Y--;
-			else if (entry.first == InputDirection::Right) dir.m_X++;
-			else if (entry.first == InputDirection::Left) dir.m_X--;
-		}
-		//LogError(std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
-		return dir;
-	}
-	Vec2 CompoundInput::GetCompoundInputDownNormalized() const
-	{
-		const Vec2Int inputDown = GetCompoundInputDown();
-		return Vec2(inputDown.m_X, inputDown.m_Y).GetNormalized();
 	}
 	/*std::vector<KeyState> CompoundInput::GetCompoundKeyStates()
 	{

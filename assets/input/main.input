@@ -3,7 +3,9 @@
 @Input
 Interact:	E
 Move:
-> Up:		W
-> Down:		S
+> Up:		Space
+> Down:		ShiftLeft
 > Right:	D
 > Left:		A
+> Forward:  W
+> Back:		S

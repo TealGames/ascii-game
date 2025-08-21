@@ -1,6 +1,7 @@
 #include "Core/Rendering/GraphicsManager.hpp"
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/ShaderAsset.hpp"
+#include "Core/Asset/TextureAsset.hpp"
 
 namespace Rendering
 {
@@ -9,11 +10,14 @@ namespace Rendering
 	static const const char* TEXTURE_SHADER_NAME = "texture";
 	static const const char* FORWAR_RENDER_SHADER_NAME = "forward_render";
 
+	static const const char* DEFAULT_ALBEDO_PATH = "textures/base_albedo.png";
+
 
 	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager) 
-		: m_assetManager(&assetManager), m_defaultShader(nullptr), m_textureShader(nullptr), m_shaders() {}
+		: m_assetManager(&assetManager), m_defaultShader(nullptr), m_textureShader(nullptr), 
+		m_forwardRenderShader(nullptr), m_defaultAlbedo(nullptr), m_shaders() {}
 
-	void GraphicsManager::LoadAllShaders()
+	void GraphicsManager::LoadAllShadersAndTextures()
 	{
 		m_defaultShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(DEFAULT_SHADER_NAME);
 		m_textureShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(TEXTURE_SHADER_NAME);
@@ -23,9 +27,16 @@ namespace Rendering
 			LogError(std::format("Failed to load default shader by name:{}", DEFAULT_SHADER_NAME));
 			return;
 		}
+
 		for (auto& shader : m_assetManager->GetAssetsOfTypeMutable<ShaderAsset>(SHADERS_FOLDER))
 		{
 			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShader());
+		}
+
+		m_defaultAlbedo= m_assetManager->TryGetTypeAssetFromPathMutable<TextureAsset>(DEFAULT_ALBEDO_PATH);
+		if (m_defaultAlbedo == nullptr)
+		{
+			LogError(std::format("Failed to load default albedo at path:{}", DEFAULT_ALBEDO_PATH));
 		}
 	}
 
@@ -54,6 +65,15 @@ namespace Rendering
 	Shader* GraphicsManager::GetForwardRenderShaderMutable()
 	{
 		return &m_forwardRenderShader->GetShaderMutable();
+	}
+
+	const Texture* GraphicsManager::GetDefaultAlbedo() const
+	{
+		return &m_defaultAlbedo->GetTexture();
+	}
+	Texture* GraphicsManager::GetDefaultAlbedoMutable()
+	{
+		return &m_defaultAlbedo->GetTextureMutable();
 	}
 	const Shader* GraphicsManager::TryGetShader(const std::string& name) const
 	{

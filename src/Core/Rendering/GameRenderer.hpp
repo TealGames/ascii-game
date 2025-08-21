@@ -3,6 +3,7 @@
 #include "Core/Rendering/Buffers.hpp"
 #include "Core/Rendering/TextureController.hpp"
 #include "Utils/Data/Matrix.hpp"
+#include "Core/Rendering/Material.hpp"
 #include <cstdint>
 
 class EngineState;
@@ -68,6 +69,7 @@ namespace Rendering
     {
         Shader* m_Shader = nullptr;
         Texture* m_Texture = nullptr;
+        //bool m_removeAfterFlush = true;
         std::vector<VertexType> m_Vertices = {};
 
         /// <summary>
@@ -76,17 +78,20 @@ namespace Rendering
         /// so we add offset to all indices added (offset is just size of 
         /// vertex count prior to the first model instance being added
         /// </summary>
-        IndexType m_IndexOffset = 0;
+        //IndexType m_IndexOffset = 0;
         std::vector<IndexType> m_VertexIndices = {};
         std::vector<InstanceType> m_InstanceData = {};
 
         std::string ToString() const;
     };
-  
-    enum class BatchFlushType : std::uint8_t
+    using BatchHash = std::uint64_t;
+    using BatchIndex = std::uint8_t;
+    constexpr BatchIndex INVALID_BATCH_INDEX = -1;
+    struct BatchKey
     {
-        StateChange     = 0,
-        FrameEnd        = 1,
+        std::uint16_t m_ShaderId;
+        std::uint16_t m_TextureId;
+        std::uint32_t m_VertexCount;
     };
 
    /* struct StaticFrameRenderData
@@ -99,13 +104,18 @@ namespace Rendering
     struct UniformBufferData
     {
         bool m_CameraUpdatedThisFrame = false;
+        bool m_LightingUpdatedThisFrame = false;
         LightBlockData m_LightBlock = {};
     };
 
+   
     class Renderer
     {
     private:
         bool m_isInit;
+        bool m_isRenderStalled;
+        size_t m_framesSinceStart;
+        size_t m_frameDrawCalls;
 
         const EngineState* m_engineState;
         //StaticFrameRenderData m_staticRenderData;
@@ -115,8 +125,11 @@ namespace Rendering
         std::vector<TextCallData> m_textData;
         std::vector<TextureCallData> m_textureData;
 
-        BatchFlushType m_flushType;
         std::vector<RenderBatch> m_batches;
+        std::unordered_map<BatchHash, size_t> m_hashToBatchIndex;
+
+        const Texture* m_lastBatchTexture;
+        Shader* m_lastBatchShader;
 
         VertexLayout m_layout;
         BufferController m_bufferController;
@@ -130,21 +143,26 @@ namespace Rendering
     public:
        
     private:
-        void BatchStateChangeCheck(Shader* shader, Texture* texture);
-        void AddVerticesToBatch(Shader* shader, Texture* texture,
-            const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize);
-        void AddVertexToBatch(const Vertex& vertex);
-        void AddIndexToBatch(const IndexType& index);
-        void AddIndicesToBatch(const std::array<IndexType, 3>& arr);
-        void AddInstanceDataToBatch(const Mat4& modelMatrix, const Utils::Color& color);
+        RenderBatch* TryGetBatch(const Shader* shader, const Texture* texture, std::uint32_t vertexCount);
+        size_t CalculateBatchHash(const Shader* shader, const Texture* texture, std::uint32_t totalVertices) const;
+        size_t CalculateBatchHash(const RenderBatch& batch) const;
+        RenderBatch& CreateBatch(Shader* shader, Texture* texture,
+            const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize,
+            const Mat4& modelMatrix, const Utils::Color& color);
+        void AddVertexToBatch(RenderBatch& batch, const Vertex& vertex);
+        void AddIndicesToBatch(RenderBatch& batch, const std::array<IndexType, 3>& arr);
+        void AddInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Utils::Color& color);
 
         void FlushBatches();
+        void RenderStartActions() const;
 
         Shader* GetDefaultShader() const;
         Shader* GetTextureShader() const;
         Shader* GetForwardRenderShader() const;
         Shader* GetBaseShader() const;
         Shader* GetBaseTextureShader() const;
+        Texture* GetBaseAlbedo() const;
+        Texture* GetMaterialAlbedo(Material& material) const;
 
         //void FrameRenderDataUpdateCheck();
         //StaticFrameRenderData& GetThisFrameRenderData();
@@ -180,14 +198,14 @@ namespace Rendering
 
         void AddCallTexture2D(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Utils::Color color);
         void AddCallTextureSphere3D(const float radius, Texture& tex, const Mat4& modelMatrix, const Utils::Color color);
-        void AddCallTextureBox3D(const Vec3& size, Texture& tex, const Mat4& modelMatrix, const Utils::Color& color);
-        void AddTextCall(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
+        void AddCallTextureBox3D(const Vec3& size, Material& material, const Mat4& modelMatrix);
+        void AddCallText(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
 
         void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Utils::Color color);
         void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color);
 
-        void AddPointLightCall(const WorldPosition3D& worldPos, const Utils::Color color, const float radius);
-        void AddDirectionLightCall(const Vec3& dir, const Utils::Color color);
+        void AddCallPointLight(const WorldPosition3D& worldPos, const Utils::Color color, const float radius);
+        void AddCallDirectionalLight(const Vec3& dir, const Utils::Color color);
 
         void PushCallsToBuffer(const std::vector<RenderCall>& calls);
         void MoveCallsToBuffer(std::vector<RenderCall>& calls);

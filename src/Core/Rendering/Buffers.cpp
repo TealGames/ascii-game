@@ -1,20 +1,205 @@
 #include "Core/Rendering/Buffers.hpp"
-#include "Core/Analyzation/Debug.hpp"
 #include "Utils/ToStringFunctions.hpp"
 #include "Utils/HelperFunctions.hpp"
+#include "Utils/ToStringFunctions.hpp"
 
 namespace Rendering
 {
-	VertexBuffer::VertexBuffer() : m_id(INVALID_OBJ_ID), m_callbacks(), m_dataUsed(), m_maxVertexCount(),
-		m_AdvanceType(VertexAttributeAdvance::Vertex), m_elementSize() {}
+	size_t FencedBufferSegment::GetNextOffset() const
+	{
+		return m_ByteOffset + m_ByteSize;
+	}
+	std::string FencedBufferSegment::ToString() const
+	{
+		return std::format("[FencedSeg Off:{} Size:{} Fence:{}]", 
+			m_ByteOffset, m_ByteSize, m_Fence.ToString());
+	}
+	
+
+	FencedRingBuffer::FencedRingBuffer(const size_t allocatedByteSize)
+		: m_segments(), m_fixedByteSize(allocatedByteSize), m_head(0), m_tail(0), m_usedSize(0) {}
+
+	bool FencedRingBuffer::TryRemoveFinishedHeadSegments()
+	{
+		bool removedAny = false;
+
+		//Segments at front-> oldest and should be checked first for popping
+		//NOTE: we check if either the fence has finished -> the status gets destroyed when object 
+		//has destructor invoked when the segment is popped
+		while (!m_segments.empty() && m_segments.front().m_Fence.IsSignaled())
+		{
+			m_usedSize -= m_segments.front().m_ByteSize;
+			LogWarning(std::format("Removing segment:{}", m_segments.front().ToString()));
+			//if (m_segments.front().m_Fence.GetStatus(0) == GpuFenceStatus::Inactive) LogError(std::format("Removed inactive fence"));
+
+			m_head = m_segments.front().GetNextOffset() % m_fixedByteSize;
+			m_segments.pop_front();
+			removedAny = true;
+		}
+
+		if (m_segments.empty())
+		{
+			m_head = 0;
+			m_tail = 0;
+		}
+
+		return removedAny;
+	}
+	void FencedRingBuffer::ReserveSegment(const size_t offset, const size_t size, FencedBufferSegment** outSeg)
+	{
+		FencedBufferSegment& seg = m_segments.emplace_back(offset, size, CreateGpuFence(false));
+		if (outSeg!=nullptr) *outSeg = &seg;
+
+		m_tail = seg.GetNextOffset() % m_fixedByteSize;
+		m_usedSize += size;
+	}
+
+	bool FencedRingBuffer::TryReserveSegment(const size_t size, const bool doStall, FencedBufferSegment** outSeg)
+	{
+		if (size == 0)
+		{
+			LogError(std::format("Cannot reserve fenced ring buffer size of 0"));
+			return false;
+		}
+
+		size_t allocOffset = 0;
+		size_t freeSpace = GetUnusedByteSize();
+		size_t contiguousFromTail= GetContiguousSizeFromTail();
+		if (freeSpace >= size )
+		{
+			if (contiguousFromTail >= size)
+			{
+				//LogError(std::format("reserving segment when status:{}", ToString()));
+				LogWarning("PUSHING UNTIL THE END LIKE WE JUST DONT CARE");
+				ReserveSegment(m_tail, size, outSeg);
+				return true;
+			}
+			else if (m_head >= size)
+			{
+				//LogError(std::format("reserving segment when status:{}", ToString()));
+				LogWarning("PUSHING UNTIL THE START LIKE WE JUST DONT CARE");
+				ReserveSegment(0, size, outSeg);
+				return true;
+			}
+		}
+
+		while (true)
+		{
+			TryRemoveFinishedHeadSegments();
+
+			freeSpace = GetUnusedByteSize();
+			if (freeSpace < size)
+			{
+				if (doStall && !m_segments.empty())
+				{
+					m_segments.front().m_Fence.WaitUntilSignal();
+					continue;
+				}
+				LogWarning(std::format("Gpu ring buffer has free space:{} target size:{} returning. buff:{}", freeSpace, size, ToString()));
+				return false;
+			}
+
+			// Compute contiguous space starting at m_tail
+			// Case A: tail >= head -> used = [head..tail), free is [tail..end) + [0..head)
+			// Contiguous from tail without wrap is [tail..end)
+			// Case B: tail < head -> used = [head..end)+[0..tail), free (contiguous) is [tail..head)
+			allocOffset = m_tail;
+			contiguousFromTail = GetContiguousSizeFromTail();
+
+			if (contiguousFromTail >= size)
+			{
+				ReserveSegment(allocOffset, size, outSeg);
+				return true;
+			}
+
+			// Doesn’t fit at the end -> consider wrapping to 0.
+			// After wrapping, the contiguous free region is [0 .. head)
+			// This is safe because m_head marks the start of the oldest live region,
+			// and TryRemoveFinishedHeadSegments only advances head after its fence is signaled.
+			if (m_head >= size)
+			{
+				allocOffset = 0;
+				ReserveSegment(allocOffset, size, outSeg);
+				return true;
+			}
+
+			// We have enough total free bytes, but not enough contiguous bytes
+			// at tail nor at start -> must wait for the oldest fence to move head.
+			if (doStall && !m_segments.empty())
+			{
+				m_segments.front().m_Fence.WaitUntilSignal();
+				continue;
+			}
+			LogWarning(std::format("Free space, but contiguous for:{} Buff: {}", size, ToString()));
+			return false;
+		}
+	}
+	size_t FencedRingBuffer::GetFixedAllocatedByteSize() const
+	{
+		return m_fixedByteSize;
+	}
+	size_t FencedRingBuffer::GetUnusedByteSize() const
+	{
+		return m_fixedByteSize - m_usedSize;
+		/*
+		//If the tail is past the head, it means [0..head) and [tail..end)
+		//is all the free sapce (disregarding gaps between segments)
+		//and [head, tail) is allocated
+		if (m_tail >= m_head)
+			return m_fixedByteSize - (m_tail - m_head);
+		//Otherwise if tail is wrapped then it means [head, tail] is free space
+		//since [head..end) is taken and [start, tail) is taken
+		else return m_head - m_tail;
+		*/
+	}
+	size_t FencedRingBuffer::GetUsedByteSize() const
+	{
+		return m_usedSize;
+	}
+	size_t FencedRingBuffer::GetContiguousSizeFromTail() const
+	{
+		return (m_tail >= m_head)? (m_fixedByteSize - m_tail) : (m_head - m_tail);
+	}
+	std::array<Vec2Int, 2> FencedRingBuffer::GetUnusedRanges() const
+	{
+		std::array<Vec2Int, 2> unusedRanges = {INVALID_RANGE, INVALID_RANGE};
+		if (m_head==0 && m_tail == m_head)
+			unusedRanges[0] = Vec2Int(0, m_fixedByteSize);
+		else if (m_tail >= m_head)
+		{
+			if (m_head > 0) unusedRanges[0] = Vec2Int(0, m_head);
+			if (m_tail < m_fixedByteSize) unusedRanges[1] = Vec2Int(m_tail, m_fixedByteSize - m_tail);
+		}
+		else
+		{
+			unusedRanges[0] = Vec2Int(m_tail, m_head- m_tail);
+		}
+
+		return unusedRanges;
+	}
+	const std::deque<FencedBufferSegment>& FencedRingBuffer::GetSegments() const
+	{
+		return m_segments;
+	}
+	std::string FencedRingBuffer::ToString() const
+	{
+		return std::format("[BufferFence segments({}):{} head:{} tail:{} allocatedSize:{} used:{}]", 
+			m_segments.size(), Utils::ToStringIterable<std::deque<FencedBufferSegment>, FencedBufferSegment>(m_segments),
+			m_head, m_tail, m_fixedByteSize, m_usedSize);
+	}
+
+	VertexBuffer::VertexBuffer() : VertexBuffer(nullptr, 0, 0, VertexAttributeAdvance::Vertex, {}) {}//m_vertexCapacity(), //m_dataUsed(),
 
 	VertexBuffer::VertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType,
 		const VertexBufferPlatformCallbacks callbacks)
-		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_maxVertexCount(arraySize),
-		m_AdvanceType(advanceType), m_elementSize(elementSize)
+		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_fence(arraySize * elementSize),//m_vertexCapacity(arraySize), //m_dataUsed(),
+		m_AdvanceType(advanceType), m_elementSize(elementSize), m_writePtr(nullptr)
 	{
-		m_id = m_callbacks.m_AllocateFunc(vertexArray, arraySize * m_elementSize);
-		m_dataUsed = vertexArray == nullptr ? 0 : arraySize;
+		if (arraySize == 0)
+			return;
+
+		std::tie(m_id, m_writePtr) = m_callbacks.m_AllocateFunc(vertexArray, arraySize * m_elementSize, !PRODUCTION_BUILD);
+		//m_dataUsed = vertexArray == nullptr ? 0 : arraySize;
 	}
 	VertexBuffer::~VertexBuffer()
 	{
@@ -27,71 +212,134 @@ namespace Rendering
 
 		m_callbacks.m_DeallocateFunc(m_id);
 	}
-
-	void VertexBuffer::WriteData(const size_t& elementOffset, const void* vertexArray, const size_t& elementCount)
+	void VertexBuffer::DefaultUninitValues()
 	{
-		if (elementCount + elementOffset > m_maxVertexCount)
+		std::array<Vec2Int, 2> unusedRanges = m_fence.GetUnusedRanges();
+		for (const auto& range : unusedRanges)
 		{
-			LogError(std::format("Attempted to write data to vertex buffer with element offset + count:{} "
-				"that is greater than reserved size:{}", elementOffset + elementCount, m_maxVertexCount));
+			if (range == FencedRingBuffer::INVALID_RANGE)
+				continue;
+
+			std::memset(m_writePtr + (size_t)(range.m_X), 0, range.m_Y);
+		}
+	}
+
+	void VertexBuffer::WriteDataUnsafeBytes(const size_t offsetBytes, const void* vertexArray, const size_t& writeByteSize) 
+	{
+		if (offsetBytes + writeByteSize > GetAllocatedByteSize())
+		{
+			LogError(std::format("Attempted to write data to vertex buffer with element offset:{} + count:{} "
+				"that is greater than reserved size:{}", offsetBytes, writeByteSize, GetVertexCapacity()));
 			return;
 		}
 
-		m_callbacks.m_WriteFunc(m_id, elementOffset * m_elementSize, vertexArray, elementCount * m_elementSize);
-		//If we have already uploaded max data, then it means we are overriding existing data,
-		//which would not change the total data used
-		if (m_dataUsed < m_maxVertexCount) m_dataUsed += elementCount;
+		if (m_writePtr != nullptr)
+		{
+			/*LogError(std::format("og addr:{} offset:{} newptr:{}", Utils::ToStringPointerAddress(m_writePtr), 
+				offsetBytes, Utils::ToStringPointerAddress(m_writePtr + offsetBytes)));*/
+			memcpy(m_writePtr + offsetBytes, vertexArray, writeByteSize);
+			return;
+		}
+		m_callbacks.m_WriteFunc(m_id, offsetBytes, vertexArray, writeByteSize);
 	}
-	size_t VertexBuffer::GetUploadedSize() const { return m_dataUsed; }
-	bool VertexBuffer::HasFilledMaxSize() const { return m_dataUsed >= m_maxVertexCount; }
+	void VertexBuffer::WriteDataUnsafe(const size_t& elementOffset, const void* vertexArray, const size_t& elementCount)
+	{
+		WriteDataUnsafeBytes(elementOffset * m_elementSize, vertexArray, elementCount * m_elementSize);
+	}
+	bool VertexBuffer::TryWriteDataFenced(const void* vertexArray, const size_t& elementCount, FencedBufferSegment** outSeg)
+	{
+		FencedBufferSegment* segment = nullptr;
+		if (!m_fence.TryReserveSegment(elementCount * m_elementSize, false, &segment))
+			return false;
+
+		LogWarning(std::format("Writing vertex buffer fenced at offset:{} size:{} alloc:{} fence:{}", 
+			segment->m_ByteOffset, segment->m_ByteSize, m_fence.GetFixedAllocatedByteSize(), m_fence.ToString()));
+		WriteDataUnsafeBytes(segment->m_ByteOffset, vertexArray, segment->m_ByteSize);
+		//segment->m_Fence.Insert();
+
+		//if (outOffsetUsed != nullptr) *outOffsetUsed = segment->m_ByteOffset;
+		if (outSeg != nullptr) *outSeg = segment;
+		return true;
+	}
+	//size_t VertexBuffer::GetUploadedVertexCount() const { return m_dataUsed; }
+	size_t VertexBuffer::GetAllocatedByteSize() const { return m_fence.GetFixedAllocatedByteSize(); }
+	size_t VertexBuffer::GetVertexCapacity() const { return m_fence.GetFixedAllocatedByteSize() / m_elementSize; }
+	//bool VertexBuffer::HasFilledMaxSize() const { return m_dataUsed >= m_maxVertexCount; }
 
 	size_t VertexBuffer::GetElementSize() const { return m_elementSize; }
 	RenderObjectId VertexBuffer::GetId() const { return m_id; }
+	bool VertexBuffer::HasPersistentReadWritePointer() const { return m_writePtr != nullptr; }
 
 	VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other) noexcept
 	{
 		m_callbacks = std::exchange(other.m_callbacks, {});
 		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
-		m_dataUsed = std::exchange(other.m_dataUsed, 0);
+		//m_dataUsed = std::exchange(other.m_dataUsed, 0);
 		m_elementSize = std::exchange(other.m_elementSize, 0);
-		m_maxVertexCount = std::exchange(other.m_maxVertexCount, 0);
+		//m_vertexCapacity = std::exchange(other.m_vertexCapacity, 0);
+		m_fence = std::move(other.m_fence);
 		m_AdvanceType = other.m_AdvanceType;
+		m_writePtr = std::exchange(other.m_writePtr, nullptr);
 		return *this;
 	}
 
-	IndexBuffer::IndexBuffer() : m_id(INVALID_OBJ_ID), m_callbacks(), m_dataUsed(), m_maxElementCount() {}
-	IndexBuffer::IndexBuffer(const IndexType* indexArray, const size_t arraySize, const IndexBufferPlatformCallbacks& callbacks)
-		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_dataUsed(), m_maxElementCount(arraySize)
+	std::string VertexBuffer::ToString() const
 	{
-		m_id = m_callbacks.m_AllocateFunc(indexArray, arraySize * sizeof(IndexType));
-		m_dataUsed = indexArray == nullptr ? 0 : arraySize;
+		return std::format("[VertexBuff id:{} writePtr:{} elementSize:{} fence:{}]", 
+			m_id, m_writePtr!=nullptr, m_elementSize, m_fence.ToString());
+	}
+
+	IndexBuffer::IndexBuffer() : IndexBuffer(nullptr, 0, {}) {}//,m_dataUsed(), m_elementCapacity() {}
+	IndexBuffer::IndexBuffer(const IndexType* indexArray, const size_t arraySize, const IndexBufferPlatformCallbacks& callbacks)
+		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_fence(arraySize * GetElementSize()), m_writePtr(nullptr)// m_dataUsed(), m_elementCapacity(arraySize)
+	{
+		if (arraySize == 0)
+			return;
+
+		std::tie(m_id, m_writePtr) = m_callbacks.m_AllocateFunc(indexArray, arraySize * sizeof(IndexType), !PRODUCTION_BUILD);
 	}
 	IndexBuffer::~IndexBuffer()
 	{
 		Deallocate();
 	}
-	void IndexBuffer::WriteData(const size_t elementOffset, const IndexType* indexArray, const size_t elementCount)
+	void IndexBuffer::WriteDataUnsafeBytes(const size_t offsetBytes, const IndexType* indexArray, const size_t& writeByteSize)
 	{
-		if (elementOffset + elementCount > m_maxElementCount)
+		if (offsetBytes + writeByteSize > GetAllocatedByteSize())
 		{
-			LogError(std::format("Attempted to write data to index buffer with element offset + count:{} "
-				"that is greater than reserved size:{}", elementOffset + elementCount, m_maxElementCount));
+			LogError(std::format("Attempted to write data to index buffer with element offset:{} + count:{} "
+				"that is greater than reserved size:{}", offsetBytes, writeByteSize, GetIndexCapacity()));
 			return;
 		}
 
-		m_callbacks.m_WriteFunc(m_id, elementOffset * sizeof(IndexType), indexArray, elementCount * sizeof(IndexType));
-		//If we have already uploaded max data, then it means we are overriding existing data,
-		//which would not change the total data used
-		if (m_dataUsed < m_maxElementCount) m_dataUsed += elementCount;
+		if (m_writePtr != nullptr)
+		{
+			memcpy(m_writePtr + offsetBytes, indexArray, writeByteSize);
+			return;
+		}
+
+		m_callbacks.m_WriteFunc(m_id, offsetBytes, indexArray, writeByteSize);
 	}
-	size_t IndexBuffer::GetUploadedSize() const
+	void IndexBuffer::WriteDataUnsafe(const size_t elementOffset, const IndexType* indexArray, const size_t elementCount)
 	{
-		return m_dataUsed;
+		WriteDataUnsafeBytes(elementOffset * sizeof(IndexType), indexArray, elementCount * sizeof(IndexType));
 	}
-	bool IndexBuffer::HasFilledMaxSize() const
+	bool IndexBuffer::TryWriteDataFenced(const IndexType* indexArray, const size_t elementCount, FencedBufferSegment** outSeg)
 	{
-		return m_dataUsed >= m_maxElementCount;
+		FencedBufferSegment* segment = nullptr;
+		if (!m_fence.TryReserveSegment(elementCount * GetElementSize(), false, &segment))
+			return false;
+
+		LogWarning(std::format("Writing index buffer fenced at offset:{} size:{} alloc:{} fence:{}", 
+			segment->m_ByteOffset, segment->m_ByteSize, m_fence.GetFixedAllocatedByteSize(), m_fence.ToString()));
+		WriteDataUnsafeBytes(segment->m_ByteOffset, indexArray, segment->m_ByteSize);
+		//segment->m_Fence.Insert();
+
+		//if (outOffsetUsed != nullptr) *outOffsetUsed = segment->m_ByteOffset;
+		if (outSeg != nullptr) *outSeg = segment;
+		return true;
 	}
+	size_t IndexBuffer::GetAllocatedByteSize() const { return m_fence.GetFixedAllocatedByteSize(); }
+	size_t IndexBuffer::GetIndexCapacity() const { return m_fence.GetFixedAllocatedByteSize() / GetElementSize(); }
 	void IndexBuffer::Deallocate()
 	{
 		if (m_id == INVALID_OBJ_ID)
@@ -107,8 +355,8 @@ namespace Rendering
 	{
 		m_callbacks = std::exchange(other.m_callbacks, {});
 		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
-		m_dataUsed = std::exchange(other.m_dataUsed, 0);
-		m_maxElementCount = std::exchange(other.m_maxElementCount, 0);
+		m_fence = std::move(other.m_fence);
+		m_writePtr = std::exchange(other.m_writePtr, nullptr);
 		return *this;
 	}
 
@@ -302,7 +550,7 @@ namespace Rendering
 	UniformBufferBindIndex UniformBuffer::GetBindIndex() const { return m_bindIndex; }
 	RenderObjectId UniformBuffer::GetId() const { return m_id; }
 	std::string UniformBuffer::GetName() const { return m_blockName; }
-	size_t UniformBuffer::GetSize() const { return m_allocatedByteSize; }
+	size_t UniformBuffer::GetAllocatedByteSize() const { return m_allocatedByteSize; }
 
 	UniformBuffer& UniformBuffer::operator=(UniformBuffer&& other) noexcept
 	{

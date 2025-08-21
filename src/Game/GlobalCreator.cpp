@@ -78,9 +78,11 @@ namespace GlobalEntityCreator
 			{ SpriteAnimationFrame(0, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, 'O'))}}, visualPreset)),
 			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));*/
 
+		/*
 		ColorGradient particleGradient = ColorGradient(Utils::COLOR_RED, Utils::COLOR_BLUE);
 		playerEntity.AddComponent<ParticleEmitterData>(ParticleEmitterData('W', FloatRange(1, 11), particleGradient, fontSettings,
 			RenderLayerType::Player, WorldPosition3D(), FloatRange(5, 16), float(5)));
+			*/
 
 		//m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
 

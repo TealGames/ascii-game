@@ -21,6 +21,7 @@ public:
 
 public:
 	constexpr Vec() : Vec(0, 0, 0) {}
+	constexpr Vec(const T xyz) : m_X(xyz), m_Y(xyz), m_Z(xyz) {}
 	constexpr Vec(const T x, const T y, const T z) : m_X(x), m_Y(y), m_Z(z) {}
 
 	constexpr Vec(const Vec<T, 2>& xy, const T zComp)
@@ -42,6 +43,15 @@ public:
 	Vec<T, 2> GetXY() const { return Vec<T, 2>(m_X, m_Y); }
 	Vec<T, 2> GetYZ() const { return Vec<T, 2>(m_Y, m_Z); }
 	Vec<T, 2> GetXZ() const { return Vec<T, 2>(m_X, m_Z); }
+
+	Vec<int, 3> AsInt() const requires (std::is_floating_point_v<T>)
+	{
+		return Vec<int, 3>(m_X, m_Y, m_Z);
+	}
+	Vec<float, 3> AsFloat() const requires (std::is_integral_v<T>)
+	{
+		return Vec<float, 3>(m_X, m_Y, m_Z);
+	}
 
 	void SetXY(const Vec<T, 2> vec)
 	{

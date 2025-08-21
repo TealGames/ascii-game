@@ -35,6 +35,17 @@ namespace Rendering
 		void DrawRectangleLine(const WorldPosition3D& pos, const float thickness, const Vec2& size, const Utils::Color color);
 
 		void DrawUploadedIndexBuffer(const size_t& indicesStartByteOffset, const size_t& drawIndexCount);
-		void DrawUploadedIndexBufferInstanced(const size_t& indicesStartByteOffset, const size_t& drawIndexCount, const size_t& drawInstanceCount);
+		/// <summary>
+		/// Draws vertex buffer with index buffer and instance buffer info.
+		/// NOTE: there is no offset for vertex buffer, so instead, just offset into index buffer and use basevertexindex
+		/// of the size you want to go into vertex buffer
+		/// </summary>
+		/// <param name="baseVertexIndex">: Amount added to each index in index buffer</param>
+		/// <param name="indicesStartByteOffset">: Byte offset into index buffer</param>
+		/// <param name="drawIndexCount">: Number of indices to draw</param>
+		/// <param name="baseInstanceIndex">: The starting index in the instance buffer</param>
+		/// <param name="drawInstanceCount">: The number of instances to draw for instnace buffer</param>
+		void DrawUploadedIndexBufferInstanced(const size_t& baseVertexIndex, const size_t& indicesStartByteOffset, const size_t& drawIndexCount, 
+			const size_t& baseInstanceIndex, const size_t& drawInstanceCount);
 	}
 }

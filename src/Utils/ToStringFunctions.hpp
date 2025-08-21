@@ -101,7 +101,7 @@ namespace Utils
 		std::string str = "[";
 		std::optional<std::string> elementStr = std::nullopt;
 		int index = 0;
-		for (const TElement element : collection)
+		for (const TElement& element : collection)
 		{
 			if (hasOverrideToString) str += toStringFunction(element);
 			else

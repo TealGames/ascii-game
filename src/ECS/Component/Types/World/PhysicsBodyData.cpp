@@ -44,7 +44,8 @@ void PhysicsBodyData::InitFields()
 	m_Fields = 
 	{	
 		ComponentField("Mass(KG)", &m_mass), ComponentField("Gravity", &m_gravity),
-		ComponentField("TerminalYVelocity", &m_terminalYVelocity), ComponentField("Velocity(m/s)", [this](Vec2 vec)-> void {SetVelocity(vec);}, &m_velocity),
+		ComponentField("TerminalYVelocity", &m_terminalYVelocity), 
+		ComponentField("Velocity(m/s)", [this](Vec2 vec)-> void {SetVelocity(vec);}, &m_velocity),
 		ComponentField("Accel(m/s2)", [this](Vec2 vec)-> void {SetAcceleration(vec); }, &m_acceleration),
 		ComponentField("Restitution", (std::function<void(float)>)[this](float restitution)-> void 
 						{m_profile.SetRestitution(restitution); }, &(m_profile.GetRestitutionMutable())),

@@ -20,7 +20,7 @@ layout(location=8) in mat3 aNormalModelMatrix;
 out vec2 vTexCoords;
 out vec4 vColor;
 out vec3 vWorldPos;
-out vec3 vNormal;
+flat out vec3 vNormal;
 
 void main()
 {

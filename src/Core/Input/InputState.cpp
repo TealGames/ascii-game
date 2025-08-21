@@ -27,7 +27,7 @@ namespace Input
 	{
 	}
 
-	const KeyState InputState::GetState() const { return m_keyState; }
+	const KeyState InputState::GetKeyState() const { return m_keyState; }
 
 	void InputState::SetState(const KeyState newState, const bool overrideIfCooldown)
 	{

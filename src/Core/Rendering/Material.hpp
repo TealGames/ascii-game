@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/Asset/TextureAsset.hpp"
+#include "Utils/Data/Color.hpp"
 
 namespace Rendering
 {
@@ -7,15 +7,22 @@ namespace Rendering
 	{
 		/// <summary>
 		/// The base color for the object (also known as diffuse base color)
+		/// If this is empty, default 1x1 pixel white texture is selected
 		/// </summary>
-		TextureAsset* m_Albedo = nullptr;
+		Texture* m_Albedo = nullptr;
+
+		/// <summary>
+		/// The color overlay over the albedo.
+		/// </summary>
+		Utils::Color m_BaseColor;
+
 		/// <summary>
 		/// Value between [0, 1] describing roughness/smoothness
 		/// on a microscopic level including reflection glossiness/spread where
 		/// 0-> super smooth/shiny with sharp reflections (ex. mirror)
 		/// 1-> super rough/matte with blurry reflections (chalk)
 		/// </summary>
-		float m_Roughness = 0f;
+		float m_Roughness = 0.0f;
 
 		/// <summary>
 		/// Value between [0, 1] describing how metal-like (or dielectric/non-metal)
@@ -26,12 +33,12 @@ namespace Rendering
 		/// *Specular Light: reflections of light sources on object
 		/// *Diffuse light: light hitting rough surface and scattering evenly in all directions
 		/// </summary>
-		float m_Metallic = 0f;
+		float m_Metallic = 0.0f;
 
 		/// <summary>
 		/// a texture describing the surface of the object
 		/// which is used for lighting
 		/// </summary>
-		TextureAsset* m_NormalMap = nullptr;
+		Texture* m_NormalMap = nullptr;
 	};
 }

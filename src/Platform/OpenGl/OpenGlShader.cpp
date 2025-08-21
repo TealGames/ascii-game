@@ -276,7 +276,7 @@ namespace Rendering
 				//Note: we cutoff the first part to dot since that is the block type or instance name which we dont need
 				nameStr = std::string(nameBuffer, nameLength);
 				nameStr= nameStr.substr(nameStr.find('.') + 1);
-				LogWarning(std::format("Creating name str:{} len:{} og:{}", nameStr, nameLength, std::string(nameBuffer, nameLength)));
+				//LogWarning(std::format("Creating name str:{} len:{} og:{}", nameStr, nameLength, std::string(nameBuffer, nameLength)));
 
 				if (i < members.size())
 					members[i] = UniformBlockMember(nameStr, offsets[i], sizes[i], arrayStrides[i], matrixStrides[i]);

@@ -37,6 +37,10 @@ namespace Rendering
 	{
 		return m_id;
 	}
+	TextureSlotIndex Texture::GetSlot() const
+	{
+		return m_slotIndex;
+	}
 
 	Vec2Int Texture::GetSize() const
 	{

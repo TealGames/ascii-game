@@ -1,20 +1,37 @@
 #include "Platform/OpenGl/OpenGlBuffers.hpp"
+#include <tuple>
 
 #ifdef OPENGL
 #include "Utils/OpenGlUtils.hpp"
+
+#define PERMANENT_WRITE_PTR
 
 namespace Rendering
 {
 	namespace OpenGl
 	{
-		static RenderObjectId AllocateVertexBuffer(const void* vertexArray, const size_t totalByteSize)
+		static std::tuple<RenderObjectId, std::byte*> AllocateVertexBuffer(const void* vertexArray, const size_t totalByteSize, const bool allowPersistentReading)
 		{
 			RenderObjectId id = INVALID_OBJ_ID;
 			GL_CALL(glCreateBuffers(1, &id));
+
+#ifdef PERMANENT_WRITE_PTR
+			//PERSISTENT -> ensures we get a valid cpu pointer for program lifetime, 
+			//COHERENT -> writes are instantly visisble to the gpu (otherwise we need memory barriers/flushing)
+			GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+			if (allowPersistentReading) flags |= GL_MAP_READ_BIT;
+			GL_CALL(glNamedBufferStorage(id, totalByteSize, nullptr, flags));
+
+			std::byte* dataPtr = nullptr;
+			GL_CALL(dataPtr = static_cast<std::byte*>(glMapNamedBufferRange(id, 0, totalByteSize, flags)));
+			return std::make_tuple(id, dataPtr);
+#elif
 			GL_CALL(glNamedBufferData(id, totalByteSize, vertexArray, vertexArray != nullptr ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW));
-			return id;
+			return std::make_tuple(id, nullptr);
+#endif
 		}
-		static void WriteVertexBuffer(const RenderObjectId id, const size_t byteOffset, const void* vertexArray, const size_t totalByteSize)
+		static void WriteVertexBuffer(const RenderObjectId id, const size_t byteOffset, 
+			const void* vertexArray, const size_t totalByteSize)
 		{
 			void* dataPtr = nullptr;
 			GL_CALL(dataPtr = glMapNamedBufferRange(id, byteOffset, totalByteSize,
@@ -24,13 +41,14 @@ namespace Rendering
 
 			if (dataPtr == nullptr)
 			{
-				LogError(std::format("Attempted to write to vertex buffer with id:{} "
+				LogError(std::format("[OPENGL]: Attempted to write to vertex buffer with id:{} "
 					"but the dataptr retrieved to copy is null", id));
 				return;
 			}
 
 			memcpy(dataPtr, vertexArray, totalByteSize);
 			GL_CALL(glUnmapNamedBuffer(id));
+			return;
 		}
 		static void DeallocateVertexBuffer(const RenderObjectId id)
 		{
@@ -49,7 +67,8 @@ namespace Rendering
 		}
 
 
-		static RenderObjectId AllocateIndexBuffer(const IndexType* indexArray, const size_t bufferByteSize)
+		static std::tuple<RenderObjectId,std::byte*> AllocateIndexBuffer(const IndexType* indexArray, 
+			const size_t totalByteSize, const bool allowPersistentReading)
 		{
 			RenderObjectId id = INVALID_OBJ_ID;
 
@@ -60,14 +79,27 @@ namespace Rendering
 			//because the vertex array object ends up owning the index buffer comapred to a vertex buffer which is global state
 			GL_CALL(glGenBuffers(1, &id));
 			GL_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id));
-			GL_CALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, bufferByteSize, indexArray, indexArray != nullptr ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW));
+			
 
-			return id;
+#ifdef PERMANENT_WRITE_PTR
+			//PERSISTENT -> ensures we get a valid cpu pointer for program lifetime, 
+			//COHERENT -> writes are instantly visisble to the gpu (otherwise we need memory barriers/flushing)
+			GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+			if (allowPersistentReading) flags |= GL_MAP_READ_BIT;
+			GL_CALL(glNamedBufferStorage(id, totalByteSize, nullptr, flags));
+
+			std::byte* dataPtr = nullptr;
+			GL_CALL(dataPtr = static_cast<std::byte*>(glMapNamedBufferRange(id, 0, totalByteSize, flags)));
+			return std::make_tuple(id, dataPtr);
+#elif
+			GL_CALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, totalByteSize, indexArray, indexArray != nullptr ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW));
+			return std::make_tuple(id, nullptr);
+#endif
 		}
-		static void WriteIndexBuffer(const RenderObjectId id, const size_t byteOffset, const IndexType* vertexArray, const size_t bufferByteSize)
+		static void WriteIndexBuffer(const RenderObjectId id, const size_t byteOffset, const IndexType* vertexArray, const size_t totalByteSize)
 		{
 			void* dataPtr = nullptr;
-			GL_CALL(dataPtr = glMapNamedBufferRange(id, byteOffset, bufferByteSize,
+			GL_CALL(dataPtr = glMapNamedBufferRange(id, byteOffset, totalByteSize,
 				//Note: WRITE BIT-> write operation, INVALIDATE_RAMGE -> deleting old memory, UNSYNCRHOZIED-> do not stall gpu while completing operation
 				//TODO: for SYNCRHONIZATION BIT you must be sure no other read/write is occuring to this location (ENSURE THREAD SAFTETY)
 				GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT));
@@ -77,8 +109,9 @@ namespace Rendering
 					"but the dataptr retrieved to copy is null", id));
 				return;
 			}
-			memcpy(dataPtr, vertexArray, bufferByteSize);
+			memcpy(dataPtr, vertexArray, totalByteSize);
 			GL_CALL(glUnmapNamedBuffer(id));
+			return;
 		}
 		static void DeallocateIndexBuffer(const RenderObjectId id)
 		{

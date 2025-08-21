@@ -37,7 +37,7 @@ public:
 
 private:
 public:
-	TimeKeeper();
+	TimeKeeper(const std::uint64_t frameLimit= NO_FRAME_LIMIT);
 
 	void UpdateTimeStart();
 	void UpdateTimeEnd();

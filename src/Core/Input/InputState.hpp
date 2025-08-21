@@ -53,7 +53,7 @@ namespace Input
 		float GetCurrentDownTime() const;
 		void SetDownTimeDelta(float deltaTime);
 
-		const KeyState GetState() const;
+		const KeyState GetKeyState() const;
 		void SetState(const KeyState newState, const bool overrideIfCooldown=false);
 		bool IsState(const KeyState state) const;
 

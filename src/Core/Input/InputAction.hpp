@@ -17,6 +17,7 @@ namespace Input
 	public:
 		InputAction(const std::string& name, const std::vector<const InputKeyState*>& keys);
 
+		bool IsState(const KeyState state) const;
 		bool IsDown() const;
 		bool IsPressed() const;
 		bool IsReleased() const;

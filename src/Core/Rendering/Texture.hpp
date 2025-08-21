@@ -121,6 +121,7 @@ namespace Rendering
 		~Texture();
 
 		RenderObjectId GetId() const;
+		TextureSlotIndex GetSlot() const;
 
 		Vec2Int GetSize() const;
 		int GetWidth() const;

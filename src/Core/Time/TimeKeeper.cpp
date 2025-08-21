@@ -2,11 +2,11 @@
 #include "Core/Time/TimeKeeper.hpp"
 #include "Core/Analyzation/Debug.hpp"
 
-TimeKeeper::TimeKeeper() :
+TimeKeeper::TimeKeeper(const std::uint64_t frameLimit) :
 	m_currentTime(std::chrono::high_resolution_clock().now()),
 	m_lastTime(std::chrono::high_resolution_clock().now()),
 	m_scaledDeltaTime(0), m_independentDeltaTime(0), m_timeScale(DEFAULT_TIME_SCALE), m_currentFPS(0),
-	m_frameCount(0), m_frameLimit(NO_FRAME_LIMIT)
+	m_frameCount(0), m_frameLimit(frameLimit)
 {}
 
 void TimeKeeper::UpdateTimeStart()

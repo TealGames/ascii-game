@@ -252,7 +252,7 @@ namespace Utils
 			color.m_A = json.at("B").get<std::uint8_t>();
 
 			if (json.contains("A")) color.m_A = json.at("A").get<std::uint8_t>();
-			else color.m_A = Utils::DEFAULT_CHANNEL_VALUE;
+			else color.m_A = Utils::MAX_CHANNEL_VALUE;
 		}
 		catch (const std::exception& e)
 		{

@@ -2,10 +2,11 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <array>
 #include <optional>
 #include "Core/Input/InputAction.hpp"
 #include "Core/Input/InputDirection.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+
 
 namespace Input
 {
@@ -28,8 +29,40 @@ namespace Input
 		std::size_t GetEntriesCount() const;
 
 		const InputAction* TryGetDirectionAction(const InputDirection& dir) const;
-		Vec2Int GetCompoundInputDown() const;
-		Vec2 GetCompoundInputDownNormalized() const;
+		Vec3Int GetInputWithState(KeyState state) const;
+
+		template<size_t N>
+		Vec3Int GetInputWithState(const std::array<KeyState, N>& states) const
+		{
+			Vec3Int dir = {};
+			bool dirKeyHasState = false;
+			for (const auto& entry : m_dirKeys)
+			{
+				/*LogError(std::format("Compound: {} key: {} STATE: {} (down: {})", name, std::to_string(entry.second),
+					ToString(GetKeyState(entry.second)), std::to_string(IsKeyDown(entry.second))));*/
+				dirKeyHasState = false;
+				for (const auto& state : states)
+				{
+					if (entry.second.IsState(state))
+					{
+						dirKeyHasState = true;
+						break;
+					}
+				}
+				if (!dirKeyHasState) continue;
+
+				AddDirectionToVector(dir, entry.first);
+			}
+			//LogError(std::format("When retrieving compound: {} -> {}", name, dir.ToString()));
+
+			return dir;
+		}
+		template<size_t N>
+		Vec3 GetInputWithStateNormalized(const std::array<KeyState, N>& states) const
+		{
+			Vec3Int input = GetInputWithState<N>(states);
+			return Vec3(input.m_X, input.m_Y, input.m_Z).GetNormalized();
+		}
 		/*std::vector<KeyState> GetCompoundKeyStates();*/
 
 		bool HasDirection(const InputDirection& dir) const;

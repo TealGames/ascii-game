@@ -5,10 +5,12 @@
 
 namespace AssetManagement { class AssetManager; }
 class ShaderAsset;
+class TextureAsset;
 
 namespace Rendering
 {
 	class Shader;
+	class Texture;
 	class GraphicsManager
 	{
 	private:
@@ -18,13 +20,15 @@ namespace Rendering
 		ShaderAsset* m_forwardRenderShader;
 
 		std::unordered_map<std::string_view, const Shader*> m_shaders;
+
+		TextureAsset* m_defaultAlbedo;
 	public:
 
 	private:
 	public:
 		GraphicsManager(AssetManagement::AssetManager& assetManager);
 
-		void LoadAllShaders();
+		void LoadAllShadersAndTextures();
 
 		const Shader* GetDefaultShader() const;
 		Shader* GetDefaultShaderMutable();
@@ -32,6 +36,9 @@ namespace Rendering
 		Shader* GetTextureShaderMutable();
 		const Shader* GetFowardRenderShader() const;
 		Shader* GetForwardRenderShaderMutable();
+
+		const Texture* GetDefaultAlbedo() const;
+		Texture* GetDefaultAlbedoMutable();
 
 		const Shader* TryGetShader(const std::string& name) const;
 	};
