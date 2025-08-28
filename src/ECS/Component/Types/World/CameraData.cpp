@@ -4,7 +4,6 @@
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Core/PositionConversions.hpp"
 #include "StaticGlobals.hpp"
-#include "Utils/Data/Quaternion.hpp"
 #include "Utils/Data/Vec4Type.hpp"
 #include "Math/PlatformMath.hpp"
 
@@ -259,12 +258,27 @@ bool CameraComponent::DoesViewVolumeContainPos(const WorldPosition3D& point) con
 	return true;
 }
 
-Mat4 CameraComponent::CalculateViewMatrix() const
+Mat4 CalculateViewMatrix(const WorldPosition3D& globalPos, const Quat& globalRotation)
 {
 	//Since the rotation matrix is a special kind of matrix its inverse == tranpose (this is not normally true)
-	const Mat4 invertedRotationMatrix = CalculateRotationMatrix(GetTransform().GetGlobalRotation()).Transpose();
-	const Vec4 rotatedTranslation =  Vec4(-GetTransform().GetGlobalPos(), 1.0f);
+	const Mat4 invertedRotationMatrix = CalculateRotationMatrix(globalRotation).Transpose();
+	const Vec4 rotatedTranslation = Vec4(-globalPos, 1.0f);
 	return invertedRotationMatrix * CalculateTranslationMatrix(rotatedTranslation.GetXYZ());
+}
+Mat4 CalculateViewMatrix(const WorldPosition3D& globalPos, const Vec3& forwardDir, const Vec3& upDir) 
+{
+	//Note: technically we do not need forward dir normalized (since arg should be that way) and updir created from forward and right 
+	//since we have up dir, but it is to ensure no floating point imprecission that might mess up calculations
+	const Vec3 forwardDirNormalized = forwardDir.GetNormalized();
+	const Vec3 rightDir = CrossProduct(upDir, forwardDirNormalized).GetNormalized();
+	const Vec3 upDirSafe = CrossProduct(forwardDirNormalized, rightDir);
+
+	Mat4 rot = Mat4::GetIdentity();
+	rot.Set(0, Vec4(rightDir, 0));
+	rot.Set(1, Vec4(upDirSafe, 0.0f));
+	rot.Set(2, Vec4(-forwardDirNormalized, 0.0f));
+
+	return rot * CalculateTranslationMatrix(-globalPos);
 }
 
 Mat4 CameraComponent::CalculateProjectionMatrix(const ProjectionMatrixType type) const
@@ -316,7 +330,7 @@ const CameraPrecalculatedData& CameraComponent::GetLastUpdateData() const
 	const bool projMatrixDirty = HasDirtyFlag(PROJ_MATRIX_DIRTY_FLAG);
 	if (viewMatrixDirty)
 	{
-		m_lastUpdateData.m_ViewMatrix = CalculateViewMatrix();
+		m_lastUpdateData.m_ViewMatrix = CalculateViewMatrix(GetTransform().GetGlobalPos(), GetTransform().GetGlobalRotation());
 		m_lastUpdateData.m_UpdatedThisFrame |= CameraPrecalculatedDataUpdate::ViewMatrix;
 	}
 	if (projMatrixDirty)

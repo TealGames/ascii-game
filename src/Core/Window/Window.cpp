@@ -133,11 +133,14 @@ namespace Core
 	}
 	void Window::SetSize(const int width, const int height)
 	{
-		m_size = Vec2Int(width, height);
 		m_platformCallbacks.m_ResizeFunc(*this, width, height);
-		m_OnResize.Invoke(Vec2Int(width, height));
+		m_size = Vec2Int(width, height);
+		m_OnResize.Invoke(m_size);
 	}
-
+	void Window::ForceSizeUpdate()
+	{
+		SetSize(m_size.m_X, m_size.m_Y);
+	}
 	Vec2Int Window::GetSize() const
 	{
 		return m_size;

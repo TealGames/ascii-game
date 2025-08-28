@@ -6,31 +6,22 @@
 namespace Rendering
 {
 	static const std::filesystem::path SHADERS_FOLDER = "shaders";
-	static const const char* DEFAULT_SHADER_NAME = "default";
-	static const const char* TEXTURE_SHADER_NAME = "texture";
-	static const const char* FORWAR_RENDER_SHADER_NAME = "forward_render";
 
-	static const const char* DEFAULT_ALBEDO_PATH = "textures/base_albedo.png";
+	static const char* DEFAULT_ALBEDO_PATH = "textures/base_albedo.png";
 
 
 	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager) 
-		: m_assetManager(&assetManager), m_defaultShader(nullptr), m_textureShader(nullptr), 
-		m_forwardRenderShader(nullptr), m_defaultAlbedo(nullptr), m_shaders() {}
+		: m_assetManager(&assetManager), m_defaultAlbedo(nullptr), m_shaders() {}
 
 	void GraphicsManager::LoadAllShadersAndTextures()
 	{
-		m_defaultShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(DEFAULT_SHADER_NAME);
+		/*m_defaultShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(DEFAULT_SHADER_NAME);
 		m_textureShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(TEXTURE_SHADER_NAME);
-		m_forwardRenderShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(FORWAR_RENDER_SHADER_NAME);
-		if (m_defaultShader == nullptr)
-		{
-			LogError(std::format("Failed to load default shader by name:{}", DEFAULT_SHADER_NAME));
-			return;
-		}
+		m_forwardRenderShader = m_assetManager->TryGetTypeAssetFromLiteralMutable<ShaderAsset>(FORWAR_RENDER_SHADER_NAME);*/
 
 		for (auto& shader : m_assetManager->GetAssetsOfTypeMutable<ShaderAsset>(SHADERS_FOLDER))
 		{
-			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShader());
+			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShaderMutable());
 		}
 
 		m_defaultAlbedo= m_assetManager->TryGetTypeAssetFromPathMutable<TextureAsset>(DEFAULT_ALBEDO_PATH);
@@ -40,10 +31,11 @@ namespace Rendering
 		}
 	}
 
+	/*
 	const Shader* GraphicsManager::GetDefaultShader() const
 	{
-		/*LogError(std::format("Getting default shader:{} vsource:{} fragsource:{}", m_defaultShader->ToString(), 
-			m_defaultShader->GetShader().GetVertexSource(), m_defaultShader->GetShader().GetFragmnetSource()));*/
+		//LogError(std::format("Getting default shader:{} vsource:{} fragsource:{}", m_defaultShader->ToString(), 
+		//m_defaultShader->GetShader().GetVertexSource(), m_defaultShader->GetShader().GetFragmnetSource()));
 		return &m_defaultShader->GetShader();
 	}
 	Shader* GraphicsManager::GetDefaultShaderMutable()
@@ -66,6 +58,7 @@ namespace Rendering
 	{
 		return &m_forwardRenderShader->GetShaderMutable();
 	}
+	*/
 
 	const Texture* GraphicsManager::GetDefaultAlbedo() const
 	{
@@ -76,6 +69,12 @@ namespace Rendering
 		return &m_defaultAlbedo->GetTextureMutable();
 	}
 	const Shader* GraphicsManager::TryGetShader(const std::string& name) const
+	{
+		auto it = m_shaders.find(name.c_str());
+		if (it == m_shaders.cend()) return nullptr;
+		return it->second;
+	}
+	Shader* GraphicsManager::TryGetShaderMutable(const std::string& name)
 	{
 		auto it = m_shaders.find(name.c_str());
 		if (it == m_shaders.end()) return nullptr;

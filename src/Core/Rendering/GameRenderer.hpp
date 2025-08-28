@@ -4,6 +4,8 @@
 #include "Core/Rendering/TextureController.hpp"
 #include "Utils/Data/Matrix.hpp"
 #include "Core/Rendering/Material.hpp"
+#include "ECS/Component/Types/World/PointLight3DComponent.hpp"
+#include "Utils/Data/Quaternion.hpp"
 #include <cstdint>
 
 class EngineState;
@@ -38,10 +40,13 @@ namespace Rendering
     struct PointLightData
     {
         WorldPosition3D m_Pos;
+        //This is padding for vec3 since we can only have 2 or 4 floats
         float _padding0;
         Vec4 m_Color;
         float m_Radius;
-        float _padding1[3];
+        uint32_t m_ShadowMapIndex;
+        //This is padding to round data to 16 byte alignment
+        float _padding1[2];
 
         PointLightData();
         PointLightData(const WorldPosition3D& pos, const Vec4& color, const float radius);
@@ -100,14 +105,28 @@ namespace Rendering
         const CameraPrecalculatedData* m_CameraData = {};
     };*/
 
+    struct ExtraPointLightData
+    {
+        Quat m_GlobalRot = {};
+    };
     
     struct UniformBufferData
     {
         bool m_CameraUpdatedThisFrame = false;
         bool m_LightingUpdatedThisFrame = false;
+        ExtraPointLightData m_ExtraPointLightData[MAX_POINT_LIGHTS] = { };
         LightBlockData m_LightBlock = {};
     };
-
+    
+    using CoreShaderIntegralType = std::uint8_t;
+    enum class CoreShader : CoreShaderIntegralType
+    {
+        Default          = 0,
+        ForwardRender    = 1,
+        Shadow           = 2,
+        Texture          = 3,
+    };
+    inline constexpr size_t CORE_SHADER_COUNT = 4;
    
     class Renderer
     {
@@ -118,6 +137,7 @@ namespace Rendering
         size_t m_frameDrawCalls;
 
         const EngineState* m_engineState;
+        mutable std::array<Shader*, CORE_SHADER_COUNT> m_coreShaders;
         //StaticFrameRenderData m_staticRenderData;
         UniformBufferData m_uniformData;
 
@@ -128,17 +148,17 @@ namespace Rendering
         std::vector<RenderBatch> m_batches;
         std::unordered_map<BatchHash, size_t> m_hashToBatchIndex;
 
-        const Texture* m_lastBatchTexture;
-        Shader* m_lastBatchShader;
-
         VertexLayout m_layout;
         BufferController m_bufferController;
         TextureController m_textureController;
 
+        FrameBuffer m_frameBuffer;
+        TextureCube m_shadowMaps[MAX_POINT_LIGHTS];
+
         IndexBuffer m_indexBuffer;
         VertexBuffer m_vertexBuffer;
         VertexBuffer m_instancedBuffer;
-        UniformBuffer m_cameraUniformBuffer;
+        UniformBuffer m_viewerUniformBuffer;
         UniformBuffer m_lightUniformBuffer;
     public:
        
@@ -148,17 +168,27 @@ namespace Rendering
         size_t CalculateBatchHash(const RenderBatch& batch) const;
         RenderBatch& CreateBatch(Shader* shader, Texture* texture,
             const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize,
-            const Mat4& modelMatrix, const Utils::Color& color);
+            const Mat4& modelMatrix, const Utils::Color& color, const bool isFinished);
+        void FinishBatch(RenderBatch& batch);
         void AddVertexToBatch(RenderBatch& batch, const Vertex& vertex);
         void AddIndicesToBatch(RenderBatch& batch, const std::array<IndexType, 3>& arr);
         void AddInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Utils::Color& color);
 
         void FlushBatches();
         void RenderStartActions() const;
+        void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix);
+        void DrawBatch(RenderBatch& batch);
+        void ExecuteShadowPass();
+        void ExecuteLightingAndGeometryPass(const TextureSlotIndex* indices);
+        void RenderEndActions();
 
+        /*
         Shader* GetDefaultShader() const;
         Shader* GetTextureShader() const;
         Shader* GetForwardRenderShader() const;
+        */
+
+        Shader* GetCoreShader(const CoreShader shader) const;
         Shader* GetBaseShader() const;
         Shader* GetBaseTextureShader() const;
         Texture* GetBaseAlbedo() const;
@@ -189,6 +219,8 @@ namespace Rendering
         void Init();
         bool WasInit() const;
 
+        void InitCoreShaders() const;
+
         void AddCallPolygon2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color);
         void AddCallCircle2D(const float radius, const Mat4& modelMatrix, const Utils::Color color);
         void AddCallRectangle2D(const Vec2& worldSize, const Mat4& modelMatrix, const Utils::Color& color);
@@ -204,7 +236,7 @@ namespace Rendering
         void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Utils::Color color);
         void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color);
 
-        void AddCallPointLight(const WorldPosition3D& worldPos, const Utils::Color color, const float radius);
+        void AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const Utils::Color color);
         void AddCallDirectionalLight(const Vec3& dir, const Utils::Color color);
 
         void PushCallsToBuffer(const std::vector<RenderCall>& calls);

@@ -10,6 +10,82 @@ namespace Rendering
 {
 	namespace OpenGl
 	{
+		static RenderObjectId AllocateFunc()
+		{
+			RenderObjectId id = INVALID_OBJ_ID;
+			GL_CALL(glCreateFramebuffers(1, &id));
+
+			return id;
+		}
+		static void DeallocateFunc(const RenderObjectId id)
+		{
+
+		}
+		static void BindActiveFunc(const RenderObjectId id)
+		{
+			GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, id));
+		}
+		static void UnbindActiveFunc()
+		{
+			//NOTE: the default screen framebuffer (with attachments color, depth usually)
+			//has id 0 -> rebind the default one that renders to screen
+			GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+		}
+		static GLenum GetAttachmentType(const FrameBufferAttachmentType type)
+		{
+			if (MIN_COLOR_ATTACHMENT <= type && type <= MAX_COLOR_ATTACHMENT)
+			{
+				return GL_COLOR_ATTACHMENT0 + static_cast<FrameBufferAttachmentTypeIntegralType>(type)
+					- static_cast<FrameBufferAttachmentTypeIntegralType>(MIN_COLOR_ATTACHMENT);
+			}
+			else if (type == FrameBufferAttachmentType::Depth) return GL_DEPTH_ATTACHMENT;
+			else if (type == FrameBufferAttachmentType::Stencil) return GL_STENCIL_ATTACHMENT;
+			else if (type == FrameBufferAttachmentType::DepthAndStencil) return GL_DEPTH_STENCIL_ATTACHMENT;
+			else
+			{
+				LogError(std::format("[OPENGL]: Attempted to get attachment type but type does not have actions"));
+				return 0;
+			}
+		}
+		static void SetOutputTarget(const FrameBufferOutputTarget& target, const RenderObjectId id)
+		{
+			GLenum attachmentType = GetAttachmentType(target.m_Type);
+			if (target.m_TargetType == FrameBufferOutputType::Texture)
+			{
+				const FrameBufferTextureTarget& textureTarget = std::get<FrameBufferTextureTarget>(target.m_Targets);
+				GL_CALL(glNamedFramebufferTexture(id, attachmentType, textureTarget.m_Texture->GetData().m_id, 0));
+			}
+			else if (target.m_TargetType== FrameBufferOutputType::TextureCube)
+			{
+				const FrameBufferTextureCubeTarget& textureCubeTarget = std::get<FrameBufferTextureCubeTarget>(target.m_Targets);
+				GL_CALL(glNamedFramebufferTextureLayer(id, attachmentType, textureCubeTarget.m_CubeTexture->GetData().m_id, 0, 
+					OpenGlUtils::GetTextureCubeFaceIndex(textureCubeTarget.m_Face)));
+			}
+			else
+			{
+				LogError(std::format("[OPENGL]: Attempted to set output target but output target type has no actions"));
+				return;
+			}
+
+
+			if (glCheckNamedFramebufferStatus(id, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			{
+				LogError(std::format("[OPENGL]: Attempted to set framebuffer output target but resulted in incomplete buffer"));
+			}
+		}
+
+		FrameBuffer CreateFrameBuffer()
+		{
+			return FrameBuffer(FrameBufferPlatformCallbacks
+				{
+					AllocateFunc,
+					DeallocateFunc,
+					BindActiveFunc,
+					UnbindActiveFunc,
+					SetOutputTarget
+				});
+		}
+
 		static std::tuple<RenderObjectId, std::byte*> AllocateVertexBuffer(const void* vertexArray, const size_t totalByteSize, const bool allowPersistentReading)
 		{
 			RenderObjectId id = INVALID_OBJ_ID;

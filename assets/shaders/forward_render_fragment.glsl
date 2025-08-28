@@ -5,6 +5,7 @@ struct PointLight
     vec3 position;
     vec4 color;
     float radius;
+    uint shadowMapIndex;
 };
 
 layout(std140) uniform LightsBlock
@@ -15,20 +16,21 @@ layout(std140) uniform LightsBlock
     PointLight pointLights[2];
 } uLightsBlock;
 
-layout(std140) uniform CameraBlock 
+layout(std140) uniform ViewerBlock 
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    vec3 cameraPos;
-} uCameraBlock;
+    vec3 worldPos;
+} uViewerBlock;
 
+uniform bool uDoShadows;
 uniform sampler2D uAlbedo;
-//uniform float uSpecularPower;
+uniform samplerCube uShadowMaps[2];
 
 in vec2 vTexCoords;
 in vec4 vColor;
 in vec3 vWorldPos;
-flat in vec3 vNormal;
+in vec3 vNormal;
 in vec3 vCameraPos;
 
 layout(location=0) out vec4 fragColor;
@@ -55,9 +57,11 @@ void main()
     //fragColor = vec4(debugColor, 1.0);
     //return;
 
-    vec3 viewDir = normalize(uCameraBlock.cameraPos - vWorldPos);
+    vec3 viewDir = normalize(uViewerBlock.worldPos - vWorldPos);
     vec4 albedo = texture(uAlbedo, vTexCoords);
-    vec3 color = albedo.rgb * vColor.rgb;
+    vec3 color= vec3(0, 0, 0);
+    if (uDoShadows) color= albedo.rgb * vColor.rgb * 0.1;
+    else color = albedo.rgb * vColor.rgb;
 
     //Here we calculate directional light impact by adding directional light color
     //based on how much light there is coming towards the surface normal
@@ -79,6 +83,10 @@ void main()
     vec3 thisToLightDist= vec3(0, 0, 0);
     float dist=0.0;
     float attenuation=0.0;
+
+    float closestDepth= 0.0;
+    float bias= 0;
+    float shadow= 0;
     for (int i = 0; i < uLightsBlock.pointLightsCount; i++) 
     {
         PointLight pl = uLightsBlock.pointLights[i];
@@ -88,15 +96,26 @@ void main()
         if (dist <= pl.radius) 
         {
             thisToLightDir = normalize(thisToLightDist);
-            attenuation = 1.0 / (1.0 + (dist*dist)/(pl.radius*pl.radius));
-            lightInNormalDir = max(dot(normal, thisToLightDir), 0.0);
+            //attenuation = 1.0 / (1.0 + (dist*dist)/(pl.radius*pl.radius));
+            //attenuation = clamp(1.0 / (dist * dist), 0.0, 1.0);
+            attenuation = (1.0 - smoothstep(pl.radius * 0.75, pl.radius, dist)) / (1.0 + dist*dist);
 
+            lightInNormalDir = max(dot(normal, thisToLightDir), 0.0);
             if (lightInNormalDir >= 0.0) 
             {
                 thisToViewDir = normalize(thisToLightDir  + viewDir);
                 spec = pow(max(dot(normal, thisToViewDir), 0.0), uSpecularPower);
+
+                if (uDoShadows)
+                {
+                    closestDepth = texture(uShadowMaps[pl.shadowMapIndex], -thisToLightDir).r * pl.radius;
+                    bias = 0.05 * (1.0 - dot(normal, -thisToLightDir));
+                    shadow = (dist - bias > closestDepth) ? 1.0 : 0.0;
+                }
+                else shadow= 0;
+
                  //TODO: considering light strength from color alpha
-                color += pl.color.rgb * attenuation * (albedo.rgb * lightInNormalDir + spec);
+                color += pl.color.rgb * attenuation * (albedo.rgb * vColor.rgb * lightInNormalDir + spec) * (1.0-shadow);
             }
         }
     }

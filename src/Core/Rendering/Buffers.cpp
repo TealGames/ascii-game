@@ -5,6 +5,60 @@
 
 namespace Rendering
 {
+	FrameBuffer::FrameBuffer() : FrameBuffer(FrameBufferPlatformCallbacks{}) {}
+	FrameBuffer::FrameBuffer(const FrameBufferPlatformCallbacks& callbacks)
+		: m_callbacks(callbacks), m_id(INVALID_OBJ_ID), m_outputTargets({}), m_outputTargetSize()
+	{
+		if (m_callbacks.m_AllocateFunc == nullptr)
+			return;
+
+		m_id = m_callbacks.m_AllocateFunc();
+	}
+	FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
+		: m_callbacks(std::exchange(other.m_callbacks, {})),
+		m_id(std::exchange(other.m_id, INVALID_OBJ_ID)),
+		m_outputTargets(std::exchange(other.m_outputTargets, {})),
+		m_outputTargetSize(std::exchange(other.m_outputTargetSize, {})) {}
+
+	FrameBuffer::~FrameBuffer()
+	{
+		Deallocate();
+	}
+	void FrameBuffer::Deallocate()
+	{
+		if (m_id != INVALID_OBJ_ID)
+		{
+			m_callbacks.m_DeallocateFunc(m_id);
+			m_id = INVALID_OBJ_ID;
+		}
+	}
+
+	void FrameBuffer::BindActive()
+	{
+		m_callbacks.m_BindActiveFunc(m_id);
+	}
+	void FrameBuffer::UnbindActive()
+	{
+		m_callbacks.m_UnbindActiveFunc();
+	}
+
+	void FrameBuffer::SetOutputTexture(const FrameBufferAttachmentType type, Texture* tex)
+	{
+		FrameBufferOutputTarget& target = m_outputTargets[static_cast<FrameBufferAttachmentTypeIntegralType>(type)];
+		target = FrameBufferOutputTarget{ type, FrameBufferOutputType::Texture, FrameBufferTextureTarget{tex} };
+		m_callbacks.m_SetOutputTargetFunc(target, m_id);
+	}
+	void FrameBuffer::SetOutputTextureCube(const FrameBufferAttachmentType type, TextureCube* cube, const TextureCubeFace face)
+	{
+		FrameBufferOutputTarget& target = m_outputTargets[static_cast<FrameBufferAttachmentTypeIntegralType>(type)];
+		target = FrameBufferOutputTarget{ type, FrameBufferOutputType::TextureCube, FrameBufferTextureCubeTarget{cube, face} };
+		m_callbacks.m_SetOutputTargetFunc(target, m_id);
+	}
+	//const Texture* FrameBuffer::GetOutputTarget(const FrameBufferAttachmentType type) const
+	//{
+	//	return m_outputTargets[static_cast<FrameBufferAttachmentTypeIntegralType>(type)].m_Texture;
+	//}
+
 	size_t FencedBufferSegment::GetNextOffset() const
 	{
 		return m_ByteOffset + m_ByteSize;
@@ -14,22 +68,30 @@ namespace Rendering
 		return std::format("[FencedSeg Off:{} Size:{} Fence:{}]", 
 			m_ByteOffset, m_ByteSize, m_Fence.ToString());
 	}
-	
 
-	FencedRingBuffer::FencedRingBuffer(const size_t allocatedByteSize)
+	FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) noexcept
+	{
+		m_callbacks = std::exchange(other.m_callbacks, {});
+		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
+		m_outputTargets = std::exchange(other.m_outputTargets, {});
+		m_outputTargetSize = std::exchange(other.m_outputTargetSize, {});
+		return *this;
+	}
+
+	RingBufferAllocator::RingBufferAllocator(const size_t allocatedByteSize)
 		: m_segments(), m_fixedByteSize(allocatedByteSize), m_head(0), m_tail(0), m_usedSize(0) {}
 
-	bool FencedRingBuffer::TryRemoveFinishedHeadSegments()
+	bool RingBufferAllocator::TryRemoveFinishedHeadSegments()
 	{
 		bool removedAny = false;
 
 		//Segments at front-> oldest and should be checked first for popping
 		//NOTE: we check if either the fence has finished -> the status gets destroyed when object 
 		//has destructor invoked when the segment is popped
-		while (!m_segments.empty() && m_segments.front().m_Fence.IsSignaled())
+		while (!m_segments.empty() && (!m_segments.front().m_Fence.HasInserted() || m_segments.front().m_Fence.IsSignaled()))
 		{
 			m_usedSize -= m_segments.front().m_ByteSize;
-			LogWarning(std::format("Removing segment:{}", m_segments.front().ToString()));
+			//LogWarning(std::format("Removing segment:{}", m_segments.front().ToString()));
 			//if (m_segments.front().m_Fence.GetStatus(0) == GpuFenceStatus::Inactive) LogError(std::format("Removed inactive fence"));
 
 			m_head = m_segments.front().GetNextOffset() % m_fixedByteSize;
@@ -45,7 +107,7 @@ namespace Rendering
 
 		return removedAny;
 	}
-	void FencedRingBuffer::ReserveSegment(const size_t offset, const size_t size, FencedBufferSegment** outSeg)
+	void RingBufferAllocator::ReserveSegment(const size_t offset, const size_t size, FencedBufferSegment** outSeg)
 	{
 		FencedBufferSegment& seg = m_segments.emplace_back(offset, size, CreateGpuFence(false));
 		if (outSeg!=nullptr) *outSeg = &seg;
@@ -54,7 +116,7 @@ namespace Rendering
 		m_usedSize += size;
 	}
 
-	bool FencedRingBuffer::TryReserveSegment(const size_t size, const bool doStall, FencedBufferSegment** outSeg)
+	bool RingBufferAllocator::TryReserveSegment(const size_t size, const bool doStall, FencedBufferSegment** outSeg)
 	{
 		if (size == 0)
 		{
@@ -70,14 +132,12 @@ namespace Rendering
 			if (contiguousFromTail >= size)
 			{
 				//LogError(std::format("reserving segment when status:{}", ToString()));
-				LogWarning("PUSHING UNTIL THE END LIKE WE JUST DONT CARE");
 				ReserveSegment(m_tail, size, outSeg);
 				return true;
 			}
 			else if (m_head >= size)
 			{
 				//LogError(std::format("reserving segment when status:{}", ToString()));
-				LogWarning("PUSHING UNTIL THE START LIKE WE JUST DONT CARE");
 				ReserveSegment(0, size, outSeg);
 				return true;
 			}
@@ -134,11 +194,11 @@ namespace Rendering
 			return false;
 		}
 	}
-	size_t FencedRingBuffer::GetFixedAllocatedByteSize() const
+	size_t RingBufferAllocator::GetFixedAllocatedByteSize() const
 	{
 		return m_fixedByteSize;
 	}
-	size_t FencedRingBuffer::GetUnusedByteSize() const
+	size_t RingBufferAllocator::GetUnusedByteSize() const
 	{
 		return m_fixedByteSize - m_usedSize;
 		/*
@@ -152,15 +212,15 @@ namespace Rendering
 		else return m_head - m_tail;
 		*/
 	}
-	size_t FencedRingBuffer::GetUsedByteSize() const
+	size_t RingBufferAllocator::GetUsedByteSize() const
 	{
 		return m_usedSize;
 	}
-	size_t FencedRingBuffer::GetContiguousSizeFromTail() const
+	size_t RingBufferAllocator::GetContiguousSizeFromTail() const
 	{
 		return (m_tail >= m_head)? (m_fixedByteSize - m_tail) : (m_head - m_tail);
 	}
-	std::array<Vec2Int, 2> FencedRingBuffer::GetUnusedRanges() const
+	std::array<Vec2Int, 2> RingBufferAllocator::GetUnusedRanges() const
 	{
 		std::array<Vec2Int, 2> unusedRanges = {INVALID_RANGE, INVALID_RANGE};
 		if (m_head==0 && m_tail == m_head)
@@ -177,11 +237,11 @@ namespace Rendering
 
 		return unusedRanges;
 	}
-	const std::deque<FencedBufferSegment>& FencedRingBuffer::GetSegments() const
+	const std::deque<FencedBufferSegment>& RingBufferAllocator::GetSegments() const
 	{
 		return m_segments;
 	}
-	std::string FencedRingBuffer::ToString() const
+	std::string RingBufferAllocator::ToString() const
 	{
 		return std::format("[BufferFence segments({}):{} head:{} tail:{} allocatedSize:{} used:{}]", 
 			m_segments.size(), Utils::ToStringIterable<std::deque<FencedBufferSegment>, FencedBufferSegment>(m_segments),
@@ -217,7 +277,7 @@ namespace Rendering
 		std::array<Vec2Int, 2> unusedRanges = m_fence.GetUnusedRanges();
 		for (const auto& range : unusedRanges)
 		{
-			if (range == FencedRingBuffer::INVALID_RANGE)
+			if (range == RingBufferAllocator::INVALID_RANGE)
 				continue;
 
 			std::memset(m_writePtr + (size_t)(range.m_X), 0, range.m_Y);

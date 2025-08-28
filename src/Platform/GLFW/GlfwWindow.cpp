@@ -11,6 +11,14 @@ namespace Core
 	{
 		inline static bool m_GlfwInit = false;
 
+		static void WindowSizeCallback(GLFWwindow* glfwWindow, int w, int h)
+		{
+			//glViewport(0, 0, w, h);
+			Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
+			WindowViewportRect viewportRect = window->CalculateViewportRect(w, h);
+			Rendering::Backend::SetViewport(viewportRect.m_StartPos.m_X, viewportRect.m_StartPos.m_Y, viewportRect.m_Size.m_X, viewportRect.m_Size.m_Y);
+		}
+
 		Window CreateWindow (const WindowId id, const int width, const int height, const Vec2Int aspectRatioCosntraint, const char* windowName,
 			const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback, const CloseCallback& closeCallback)
 		{
@@ -63,13 +71,7 @@ namespace Core
 						Rendering::Backend::SetViewport(0, 0, width, height);
 
 						//Note: WE CANNOT USE CAPTURE GROUPS BECAUSE OF C-STyLE FUNC POINTERS IN GLFW
-						glfwSetWindowSizeCallback(glfwWindow, [](GLFWwindow* glfwWindow , int w, int h) -> void
-							{
-								//glViewport(0, 0, w, h);
-								Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
-								WindowViewportRect viewportRect = window->CalculateViewportRect(w, h);
-								Rendering::Backend::SetViewport(viewportRect.m_StartPos.m_X, viewportRect.m_StartPos.m_Y, viewportRect.m_Size.m_X, viewportRect.m_Size.m_Y);
-							});
+						glfwSetWindowSizeCallback(glfwWindow, WindowSizeCallback);
 
 						glfwSetWindowFocusCallback(glfwWindow, [](GLFWwindow* glfwWindow, int focused)-> void
 							{
@@ -137,7 +139,8 @@ namespace Core
 				[](Window& window, const int width, const int height) -> void
 				{
 					GLFWwindow* glfwWIndow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
-					glfwSetWindowSize(glfwWIndow, width, height);
+					if (window.GetSize() == Vec2Int(width, height)) WindowSizeCallback(glfwWIndow, width, height);
+					else glfwSetWindowSize(glfwWIndow, width, height);
 				},
 				//Set vsync func
 				[](Window& window, const bool vsyncEnabled) -> void

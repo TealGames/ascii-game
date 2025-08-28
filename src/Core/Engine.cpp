@@ -18,7 +18,7 @@
 #include "Game/GlobalCreator.hpp"
 #include "Core/Asset/GlobalColorCodes.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
-#include "AnsiCodes.hpp"
+#include "ECS/Component/Types/World/PointLight3DComponent.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 
 #include "Core/Asset/TextureAsset.hpp"
@@ -149,6 +149,7 @@ namespace Core
 	//api call using drawIndirectMulti. this is most usefl when things get more complicated and you want finer control over the process
 	//Also, buffers who are dynamic with many updates should probably do bufferrange and mapbuffer to get pointer to memory that is always allocated for writing
 	//instead of doing map and unmap every time which can be slow
+	//TODO: replace all instances of comparing types with typeid with constexpr is same type trait
 
 	constexpr std::uint8_t TERMINATE_AFTTER_FRAMES = TimeKeeper::NO_FRAME_LIMIT;
 	constexpr bool SHOW_FPS = true;
@@ -435,8 +436,8 @@ namespace Core
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Utils::COLOR_BLUE);
 		//m_renderer.AddDirectionLightCall(Vec3(0, -1, 0), Utils::COLOR_GREEN);
-		m_renderer.AddCallPointLight(Vec3(0.1, 0, 4.6), Utils::COLOR_GREEN, 0.1);
-		m_renderer.AddCallPointLight(Vec3(0, 0.1, 4.6), Utils::COLOR_RED, 0.1);
+		m_renderer.AddCallPointLight(Vec3(0.2, 0, 4.6), Quat(Vec3(0, 0, 0)), 0.3f, Utils::COLOR_WHITE);
+		m_renderer.AddCallPointLight(Vec3(0, 0.2, 4.6), Quat(Vec3(0, 0, 0)), 0.2f, Utils::COLOR_WHITE);
 		m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), mat, modelMatrix);
 
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 

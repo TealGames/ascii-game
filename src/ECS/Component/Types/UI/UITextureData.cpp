@@ -24,7 +24,8 @@ UIRect UITextureData::Render(const UIRect& renderRect)
 
 	const Vec3 globalScale = GetEntity().GetTransform().GetGlobalScale();
 	const Vec2 renderAreaSize = renderRect.GetSize();
-	const float minFitToAreaScale = std::min((float)renderAreaSize.m_X / m_texture->GetTexture().GetWidth(), (float)renderAreaSize.m_Y / m_texture->GetTexture().GetHeight());
+	const float minFitToAreaScale = std::min((float)renderAreaSize.m_X / m_texture->GetTexture().GetData().m_size.m_X, 
+											 (float)renderAreaSize.m_Y / m_texture->GetTexture().GetData().m_size.m_Y);
 	const Vec2 scale = Vec2(minFitToAreaScale * globalScale.m_X, minFitToAreaScale * globalScale.m_Y);
 	
 	//LogWarning(std::format("Scale of ui texture:{} global scale:{} local scale:{}", scale.ToString(), globalScale.ToString(), GetEntity().GetTransform().GetLocalScale().ToString()));

@@ -15,27 +15,38 @@
 #include "Core/Rendering/GraphicsManager.hpp"
 #include "Core/Rendering/RenderingBackend.hpp"
 #include "Math/PlatformMath.hpp"
+#include "Core/Window/WindowManager.hpp"
 
 #include "Utils/Data/ColorConstants.hpp"
 
 namespace Rendering
 {
     constexpr bool DO_LIGHTING = true;
+    constexpr bool DO_SHADOWS = true;
     constexpr bool DRAW_LIGHT_AREAS = true;
     constexpr Utils::Color LIGHT_AREA_COLOR_FROM_LIGHT = Utils::Color(0, 0, 0, 0);
     constexpr Utils::Color LIGHT_AREA_COLOR = {255, 255, 255, 255};
+    
+    constexpr Vec2Int SHADOW_MAP_SIZE = {1024, 1024};
+    constexpr float SHADOW_NEAR_DISTANCE = 0.001;
+    constexpr float SHADOW_FAR_DISTANCE = 1000;
 
     constexpr size_t NO_RENDER_FRAME_COUNT_LIMIT = 0;
     constexpr size_t RENDER_FRAMES_COUNT = NO_RENDER_FRAME_COUNT_LIMIT;
+    constexpr LogType STALL_LOG_TYPE = LogType::Warning;
 
     constexpr size_t PRE_ALLOCATED_SHAPES = 4;
     constexpr size_t PRE_ALLOCATED_INDICES_COUNT = 1000;
     constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = 300;
     constexpr size_t CIRCLE_SIDE_COUNT = 12;
 
+    static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { "default", "forward_render", "shadow", "texture"};
+
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
     constexpr const char* TEXTURE_UNIFORM_NAME = "uAlbedo";
+    constexpr const char* SHADOW_MAP_UNIFORM_NAME = "uShadowMaps";
+    constexpr const char* SHADOW_TOGGLE_UNIFORM_NAME = "uDoShadows";
 
     std::string Vertex::ToString() const
     {
@@ -48,7 +59,7 @@ namespace Rendering
 
     PointLightData::PointLightData() : PointLightData({}, {}, 0) {}
     PointLightData::PointLightData(const WorldPosition3D& pos, const Vec4& color, const float radius)
-        : m_Pos(pos), m_Color(color), m_Radius(radius), _padding0(0), _padding1{} {}
+        : m_Pos(pos), m_Color(color), m_Radius(radius), _padding0(0), _padding1{}, m_ShadowMapIndex(-1) {}
 
     DirectionalLightData::DirectionalLightData() : DirectionalLightData({}, {}) {}
     DirectionalLightData::DirectionalLightData(const Vec3& dir, const Vec4& color)
@@ -69,8 +80,9 @@ namespace Rendering
         : m_isInit(false), m_engineState(&engineState), m_uniformData(), //m_staticRenderData(),
         m_renderCalls(), m_textData(), m_textureData(), m_batches(), m_hashToBatchIndex(), 
         m_layout(), m_bufferController(&m_layout), m_textureController(),
-        m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer(), m_cameraUniformBuffer(), m_lightUniformBuffer(),
-        m_lastBatchTexture(nullptr), m_lastBatchShader(nullptr), m_frameDrawCalls(0), m_isRenderStalled(false), m_framesSinceStart(0)
+        m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer(), m_viewerUniformBuffer(), m_lightUniformBuffer(),
+        m_frameDrawCalls(0), m_isRenderStalled(false), m_framesSinceStart(0), 
+        m_frameBuffer(), m_shadowMaps(), m_coreShaders({})
     {
         
     }
@@ -84,9 +96,13 @@ namespace Rendering
         m_vertexBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(VertexType), PRE_ALLOCATED_VERTICES_COUNT, VertexAttributeAdvance::Vertex);
         m_indexBuffer = Backend::CreateIndexBuffer(nullptr, PRE_ALLOCATED_INDICES_COUNT);
         m_instancedBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(InstanceData), PRE_ALLOCATED_SHAPES, VertexAttributeAdvance::Instance);
-        m_cameraUniformBuffer = Backend::CreateUniformBuffer();
+        m_viewerUniformBuffer = Backend::CreateUniformBuffer();
         m_lightUniformBuffer = Backend::CreateUniformBuffer();
 
+        //TODO: right now all shadows have same resolution -> this might be a light component setting
+        for (auto& map : m_shadowMaps) map = CreateTextureCube(SHADOW_MAP_SIZE, InternalStorage::Depth24);
+        m_frameBuffer = Backend::CreateFrameBuffer();
+        
         const VertexLayoutBindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
         std::vector<VertexAttribute> vertexAttributes = 
         { 
@@ -112,27 +128,46 @@ namespace Rendering
         return m_isInit;
     }
 
-    Shader* Renderer::GetDefaultShader() const
+    void Renderer::InitCoreShaders() const
     {
-        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultShaderMutable();
+        for (size_t i = 0; i < CORE_SHADER_COUNT; i++)
+        {
+            m_coreShaders[i] = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetShaderMutable(CORE_SHADER_NAMES[i]);
+            if (m_coreShaders[i] == nullptr)
+            {
+                LogError(std::format("Core shader at index:{} could not be retrieved by name:{}", i, CORE_SHADER_NAMES[i]));
+                return;
+            }
+        }
     }
-    Shader* Renderer::GetTextureShader() const
+
+    //Shader* Renderer::GetDefaultShader() const
+    //{
+    //    return m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultShaderMutable();
+    //}
+    //Shader* Renderer::GetTextureShader() const
+    //{
+    //    return m_engineState->m_GraphicsContext.m_GraphicsManager->GetTextureShaderMutable();
+    //}
+    //Shader* Renderer::GetForwardRenderShader() const
+    //{
+    //    return m_engineState->m_GraphicsContext.m_GraphicsManager->GetForwardRenderShaderMutable();
+    //}
+
+    Shader* Renderer::GetCoreShader(const CoreShader shader) const
     {
-        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetTextureShaderMutable();
-    }
-    Shader* Renderer::GetForwardRenderShader() const
-    {
-        return m_engineState->m_GraphicsContext.m_GraphicsManager->GetForwardRenderShaderMutable();
+        if (m_coreShaders[0] == nullptr) InitCoreShaders();
+        return m_coreShaders[static_cast<CoreShaderIntegralType>(shader)];
     }
     Shader* Renderer::GetBaseShader() const
     {
-        if (DO_LIGHTING) return GetForwardRenderShader();
-        return GetDefaultShader();
+        if (DO_LIGHTING) return GetCoreShader(CoreShader::ForwardRender);
+        return GetCoreShader(CoreShader::Default);
     }
     Shader* Renderer::GetBaseTextureShader() const
     {
-        if (DO_LIGHTING) return GetForwardRenderShader();
-        return GetTextureShader();
+        if (DO_LIGHTING) return GetCoreShader(CoreShader::ForwardRender);
+        return GetCoreShader(CoreShader::Default);
     }
     Texture* Renderer::GetBaseAlbedo() const
     {
@@ -157,7 +192,7 @@ namespace Rendering
     size_t Renderer::CalculateBatchHash(const Shader* shader, const Texture* texture, std::uint32_t totalVertices) const
     {
         const BatchKey batchKey = BatchKey(shader == nullptr ? INVALID_OBJ_ID : shader->GetId(),
-            texture == nullptr ? INVALID_OBJ_ID : texture->GetId(), totalVertices);
+            texture == nullptr ? INVALID_OBJ_ID : texture->GetData().m_id, totalVertices);
         return std::hash<BatchHash>{}(*reinterpret_cast<const BatchHash*>(&batchKey));
     }
     size_t Renderer::CalculateBatchHash(const RenderBatch& batch) const
@@ -166,25 +201,37 @@ namespace Rendering
     }
     RenderBatch& Renderer::CreateBatch(Shader* shader, Texture* texture,
         const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize, 
-        const Mat4& modelMatrix, const Utils::Color& color)
+        const Mat4& modelMatrix, const Utils::Color& color, const bool isFinished)
     {
         RenderBatch& batch = m_batches.emplace_back(shader, texture);
         /*if (m_batches.size() == 2)
             LogError(std::format("reached batch size"));*/
-        if (vertexArray != nullptr && vertexSize > 0)
+        if (vertexSize > 0)
         {
-            batch.m_Vertices.insert(m_batches.back().m_Vertices.begin(),
-                vertexArray, vertexArray + vertexSize);
+            if (vertexArray != nullptr)
+            {
+                batch.m_Vertices.insert(m_batches.back().m_Vertices.begin(),
+                    vertexArray, vertexArray + vertexSize);
+            }
+            else batch.m_Vertices.reserve(vertexSize);
         }
-        if (indexArray != nullptr && indicesSize > 0)
+        if (indicesSize > 0)
         {
-            batch.m_VertexIndices.insert(m_batches.back().m_VertexIndices.end(),
-                indexArray, indexArray + indicesSize);
+            if (indexArray != nullptr)
+            {
+                batch.m_VertexIndices.insert(m_batches.back().m_VertexIndices.end(),
+                    indexArray, indexArray + indicesSize);
+            }
+            else batch.m_VertexIndices.reserve(indicesSize);
         }
         
         AddInstanceDataToBatch(batch, modelMatrix, color);
-        m_hashToBatchIndex.emplace(CalculateBatchHash(batch), m_batches.size()-1);
+        if (isFinished) FinishBatch(batch);
         return batch;
+    }
+    void Renderer::FinishBatch(RenderBatch& batch)
+    {
+        m_hashToBatchIndex.emplace(CalculateBatchHash(batch), m_batches.size() - 1);
     }
     void Renderer::AddVertexToBatch(RenderBatch& batch, const Vertex& vertex)
     {
@@ -210,175 +257,12 @@ namespace Rendering
         //the current model has finished
     }
 
-    void Renderer::FlushBatches()
-    {
-        if (RENDER_FRAMES_COUNT!= NO_RENDER_FRAME_COUNT_LIMIT && 
-            m_framesSinceStart >= RENDER_FRAMES_COUNT)
-            return;
-
-        if (!m_cameraUniformBuffer.IsAllocated())
-        {
-            m_cameraUniformBuffer.AllocateFromShaderUniformBlock(*GetForwardRenderShader(), "CameraBlock");
-            m_bufferController.AddUniformBuffer(&m_cameraUniformBuffer);
-        }
-        if (!m_lightUniformBuffer.IsAllocated())
-        {
-            m_lightUniformBuffer.AllocateFromShaderUniformBlock(*GetForwardRenderShader(), "LightsBlock");
-            m_bufferController.AddUniformBuffer(&m_lightUniformBuffer);
-        }
-        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
-        const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
-        //TODO: this is still a problem since multiple flushes per frame means multiple updates
-        const bool needsViewMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix);
-        const bool needsProjMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::PlatformProjMatrix);
-        if (!m_uniformData.m_CameraUpdatedThisFrame && (needsViewMatrixUpdate || needsProjMatrixUpdate))
-        {
-            if (needsViewMatrixUpdate)
-            {
-                m_cameraUniformBuffer.TryWriteData("cameraPos", sizeof(Vec3), camera.GetTransform().GetGlobalPos().GetMemPointer());
-                if (!m_cameraUniformBuffer.TryWriteData("viewMatrix", sizeof(Mat4),
-                    cameraData.m_ViewMatrix.GetMemPointer()))
-                {
-                    LogError(std::format("Attempted to write view matrix to uniform buffer but failed"));
-                    return;
-                }
-            }
-            if (needsProjMatrixUpdate && !m_cameraUniformBuffer.TryWriteData("projectionMatrix", sizeof(Mat4), 
-                cameraData.m_PlatformProjectionMatrix.GetMemPointer()))
-            {
-                LogError(std::format("Attempted to write projection matrix to uniform buffer but failed"));
-                return;
-            }
-
-            m_uniformData.m_CameraUpdatedThisFrame = true;
-        }
-        //TODO: optimize so we check if light block data changed from last render batch and only then write buffer
-        m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
-
-        for (int i=0; i<m_batches.size(); i++)
-        {
-            LogWarning(std::format("flushing batch:{}/{}", i+1, m_batches.size()));
-            auto& batch = m_batches[i];
-
-            //If we have no instance data it means it might be a leftover batch from previous frame
-            //that was not cleared
-            if (batch.m_InstanceData.empty())
-                continue;
-
-            if (batch.m_Shader == nullptr)
-            {
-                LogError(std::format("Tried to flush current batch in renderer, but batch shader was null"));
-                return;
-            }
-
-           /* if (m_instancedBuffer.HasPersistentReadWritePointer())
-            {
-                std::vector<InstanceData> instanceRead = {};
-                m_instancedBuffer.ReadDataAs(instanceRead, true);
-                LogWarning(std::format("before batch entry start isntance:{} buffer:{}", m_instancedBuffer.ToString(),
-                    Utils::ToStringIterable<std::vector<InstanceData>, InstanceData>(instanceRead)));
-            }*/
-
-            if (m_lastBatchShader != nullptr && batch.m_Shader == nullptr)
-            {
-                m_lastBatchShader->UnbindActive();
-            }
-            else if (m_lastBatchShader == nullptr || m_lastBatchShader != batch.m_Shader)
-            {
-                batch.m_Shader->BindUniformBlockIfNeeded(m_cameraUniformBuffer.GetName(), m_cameraUniformBuffer.GetBindIndex());
-                batch.m_Shader->BindUniformBlockIfNeeded(m_lightUniformBuffer.GetName(), m_lightUniformBuffer.GetBindIndex());
-                batch.m_Shader->BindActive();
-            }
-            m_lastBatchShader = batch.m_Shader;
-
-            /*
-            if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, VIEW_MATRIX_UNIFORM_NAME, 
-                m_staticRenderData.m_CameraData->m_ViewMatrix.GetMemPointer()))
-                return;
-            if (!batch.m_Shader->TrySetUniform(UniformType::Matrix4x4, PROJ_MATRIX_UNIFORM_NAME, 
-                m_staticRenderData.m_CameraData->m_PlatformProjectionMatrix.GetMemPointer()))
-                return;
-                */
-
-            //TODO: right now the current batch gets it texture slot by removing previous slot
-            //but what if we use that texture in a future batch it would be wasteful -> so
-            //we have to make sure that no future queued batches have last batch texture before removing
-            if (m_lastBatchTexture!=nullptr && m_lastBatchTexture != batch.m_Texture)
-            {
-                m_textureController.RemoveTextureFromSlot(m_lastBatchTexture->GetSlot());
-            }
-            if (batch.m_Texture!=nullptr && m_lastBatchTexture!=batch.m_Texture)
-            {
-                TextureSlotIndex slot= m_textureController.AddTextureToAvailableSlot(batch.m_Texture);
-                
-                if (!batch.m_Shader->TrySetUniform(UniformType::Sampler2D, TEXTURE_UNIFORM_NAME, &slot))
-                    return;
-            }
-            m_lastBatchTexture = batch.m_Texture;
-            //LogWarning(std::format("Flushing batch:{} vertex count:{} index:{}", batch.ToString(), batch.m_Vertices.size(), batch.m_VertexIndices.size()));
-            //LogWarning(std::format("Drawing normal matrix:{}", batch.m_InstanceData[0].m_NormalModelMatrix.ToString()));
-           
-            FencedBufferSegment* vertexSegment = nullptr;
-            const size_t drawVertexCount = batch.m_Vertices.size();
-            m_isRenderStalled= !m_vertexBuffer.TryWriteDataFenced(&batch.m_Vertices[0], drawVertexCount, &vertexSegment);
-            if (m_isRenderStalled)
-            {
-                LogError(std::format("Stalling render due to vertex buffer. Allocate more space"));
-                return;
-            }
-
-            FencedBufferSegment* indexSegment = nullptr;
-            const size_t drawIndexCount = batch.m_VertexIndices.size();
-            m_isRenderStalled= !m_indexBuffer.TryWriteDataFenced(&batch.m_VertexIndices[0], drawIndexCount, &indexSegment);
-            if (m_isRenderStalled)
-            {
-                LogError(std::format("Stalling render due to index buffer. Allocate more space"));
-                return;
-            }
-
-            FencedBufferSegment* instanceSegment = nullptr;
-            const size_t drawInstanceCount = batch.m_InstanceData.size();
-            m_isRenderStalled= !m_instancedBuffer.TryWriteDataFenced(&batch.m_InstanceData[0], drawInstanceCount, &instanceSegment);
-            if (m_isRenderStalled)
-            {
-                LogError(std::format("Stalling render due to instance buffer. Allocate more space"));
-                return;
-            }
-
-            //When we upload to gpu, we can get rid of cpu side buffer data
-            //batch.m_VertexIndices.clear();
-            //batch.m_Vertices.clear();
-            //batch.m_InstanceData.clear();
-
-           /* LogWarning(std::format("Drawing vertices:{}(b:{}) indices:{}(b:{}) isntances:{}(b:{})", drawVertexCount, 
-                m_vertexBuffer.GetVertexCapacity(), drawIndexCount, m_indexBuffer.GetIndexCapacity(), drawInstanceCount, m_instancedBuffer.GetVertexCapacity()));*/
-            Backend::DrawUploadedIndexBufferInstanced(vertexSegment->m_ByteOffset/m_vertexBuffer.GetElementSize(),
-                indexSegment->m_ByteOffset, drawIndexCount, instanceSegment->m_ByteOffset/ m_instancedBuffer.GetElementSize(), drawInstanceCount);
-
-            vertexSegment->m_Fence.Insert();
-            indexSegment->m_Fence.Insert();
-            instanceSegment->m_Fence.Insert();
-            /*LogWarning(std::format("After fence insert vertexSeg:{} indexSeg:{} instanceSeg:{}", 
-                vertexSegment->ToString(), indexSegment->ToString(), instanceSegment->ToString()));*/
-
-            LogWarning(std::format("\nDRAWING CALL:{}/{} \nVertexByteOffset:{} basevertexIndex:{} indexByteOffset:{} drawIndices:{} "
-                "instanceByteOffset:{} baseinstanceIndex:{} drawInstances:{}",
-                (i + 1), m_batches.size(), vertexSegment->m_ByteOffset, vertexSegment->m_ByteOffset / m_vertexBuffer.GetElementSize(),
-                indexSegment->m_ByteOffset, drawIndexCount, instanceSegment->m_ByteOffset, 
-                instanceSegment->m_ByteOffset / m_instancedBuffer.GetElementSize(), drawInstanceCount));
-            
-            m_frameDrawCalls++;
-        }
-    }
-
     Vec3Int Renderer::CalculateFaceSizeForTexture(const WorldPosition3D& worldSize, const Vec2Int textureSize)
     {
         return Vec3Int(worldSize.m_X / (2*worldSize.m_X + 2*worldSize.m_Z) * textureSize.m_X, 
                        worldSize.m_Y / (worldSize.m_Y + 2 * worldSize.m_Z) * textureSize.m_Y, 
                        worldSize.m_Z/ (2*worldSize.m_Z + 2*worldSize.m_X) * textureSize.m_X);
     }
-
-
 
     void Renderer::AddCallRectangle2DMulti(Shader* shader, Texture* texture, const Vec2& worldSize,
         const Mat4& modelMatrix, const Utils::Color& color)
@@ -403,7 +287,7 @@ namespace Rendering
 
         
         IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2 };
-        CreateBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, color);
+        CreateBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, color, true);
     }
     void Renderer::AddCallBox3DMulti(Shader* shader, Texture* texture, const Vec3& size,
         const Mat4& modelMatrix, const Utils::Color& color)
@@ -437,7 +321,7 @@ namespace Rendering
                                                7, 6, 2, 7, 3, 2,
                                                4, 0, 3, 4, 7, 3,
                                                5, 1, 2, 5, 6, 2 };
-            CreateBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, color);
+            CreateBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, color, true);
             return;
         }
 
@@ -482,9 +366,9 @@ namespace Rendering
         };
 
         //The size is in x, y, z axis 
-        const Vec2 textureSize = Vec2(texture->GetWidth(), texture->GetHeight());
+        const Vec2 textureSize = texture->GetData().m_size.AsFloat();
         //The size in texture pixel coords based on its world size
-        const Vec3Int pixelSize = CalculateFaceSizeForTexture(size, texture->GetSize());
+        const Vec3Int pixelSize = CalculateFaceSizeForTexture(size, texture->GetData().m_size);
 
         const Vec2 frontBackFaceSize = Vec2(pixelSize.m_X, pixelSize.m_Y) / textureSize;
         const Vec2 leftRightFaceSize = Vec2(pixelSize.m_Z, pixelSize.m_Y) / textureSize;
@@ -577,7 +461,7 @@ namespace Rendering
             /*BOTTOM FACE*/20, 21, 22, 20, 23, 22
         };
 
-        CreateBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, color);
+        CreateBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, color, true);
     }
     void Renderer::AddCallSphere3DMulti(Shader* shader, Texture* texture, const float radius,
         const Mat4& modelMatrix, const Utils::Color color)
@@ -586,14 +470,19 @@ namespace Rendering
         constexpr size_t HORIZONTAL_LINE_COUNT = 8;
         //Best shape is formed with 1.5 factor 
         constexpr size_t VERTICAL_LINE_COUNT = HORIZONTAL_LINE_COUNT * 1.5f;
+        constexpr size_t TOTAL_VERTEX_COUNT = HORIZONTAL_LINE_COUNT * VERTICAL_LINE_COUNT + 2;
+        constexpr size_t TOTAL_INDEX_COUNT = (HORIZONTAL_LINE_COUNT - 1) * VERTICAL_LINE_COUNT * 6 + VERTICAL_LINE_COUNT * 6;
 
+        IndexType indices[TOTAL_INDEX_COUNT] = {};
+        size_t currIndex = 0;
+        
         if (color.m_A == Utils::MAX_CHANNEL_VALUE)
         {
             //Note: the total number of vertices is horizontal-1 * vertical * 6 since we create square
             //for every 2 pairs going downward, thus needing to exlude the final horizontal row
             // + vertical * 3 (north pole)+ vertical*3 (south pole) since each vertical connects with top
-            RenderBatch* sameStatebatch = TryGetBatch(shader, texture, 
-                (HORIZONTAL_LINE_COUNT - 1) * VERTICAL_LINE_COUNT * 6 + VERTICAL_LINE_COUNT * 6);
+            RenderBatch* sameStatebatch = TryGetBatch(shader, texture, TOTAL_INDEX_COUNT);
+
             if (sameStatebatch != nullptr)
             {
                 AddInstanceDataToBatch(*sameStatebatch, modelMatrix, color);
@@ -601,7 +490,7 @@ namespace Rendering
             }
         }
 
-        RenderBatch& batch = CreateBatch(shader, texture, nullptr, 0, nullptr, 0, modelMatrix, color);
+        RenderBatch& batch= CreateBatch(shader, texture, nullptr, TOTAL_VERTEX_COUNT, nullptr, TOTAL_INDEX_COUNT, modelMatrix, color, false);
         //TODO: right now we do not have very good uv mapping for spheres-> need to increase verticies at poles for increased precision
 
         //Here we build all the other vertices and indices making sure to create 2 triangles of every quad possible on the sphere
@@ -680,8 +569,9 @@ namespace Rendering
             //AddIndicesToBatch({ aIndex, poleIndex, bIndex });
             AddIndicesToBatch(batch, { aIndex, poleIndex, bIndex });
         }
-    }
 
+        FinishBatch(batch);
+    }
 
     void Renderer::AddCallPolygon2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color)
     {
@@ -696,7 +586,8 @@ namespace Rendering
             //Note: the total number of vertices is horizontal-1 * vertical * 6 since we create square
             //for every 2 pairs going downward, thus needing to exlude the final horizontal row
             // + vertical * 3 (north pole)+ vertical*3 (south pole) since each vertical connects with top
-            RenderBatch* sameStatebatch = TryGetBatch(GetDefaultShader(), nullptr, indexCount);
+            RenderBatch* sameStatebatch = TryGetBatch(GetCoreShader(CoreShader::Default), nullptr, indexCount);
+
             if (sameStatebatch != nullptr)
             {
                 AddInstanceDataToBatch(*sameStatebatch, modelMatrix, color);
@@ -720,7 +611,7 @@ namespace Rendering
             //The last vertex index needs to wrap around to start with index 1
             indices[i * 3 + 2] = i < sides - 1 ? i + 2 : 1;
         }
-        CreateBatch(GetDefaultShader(), nullptr, vertices, vertexCount, indices, indexCount, modelMatrix, color);
+        CreateBatch(GetCoreShader(CoreShader::Default), nullptr, vertices, vertexCount, indices, indexCount, modelMatrix, color, true);
     }
     void Renderer::AddCallCircle2D(const float radius, const Mat4& modelMatrix, const Utils::Color color)
     {
@@ -728,7 +619,7 @@ namespace Rendering
     }
     void Renderer::AddCallRectangle2D(const Vec2& worldSize, const Mat4& modelMatrix, const Utils::Color& color)
     {
-        AddCallRectangle2DMulti(GetDefaultShader(), nullptr, worldSize, modelMatrix, color);
+        AddCallRectangle2DMulti(GetCoreShader(CoreShader::Default), nullptr, worldSize, modelMatrix, color);
     }
 
     void Renderer::AddCallBox3D(const Vec3& size, const Mat4& modelMatrix, const Utils::Color& color)
@@ -770,7 +661,25 @@ namespace Rendering
         m_renderCalls.emplace_back(RectLineCall{ worldPos, thickness, size, color });
     }
 
-    void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Utils::Color color, const float radius)
+    //void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Utils::Color color, const float radius)
+    //{
+    //    if (m_uniformData.m_LightBlock.m_PointLightsCount >= MAX_POINT_LIGHTS)
+    //    {
+    //        LogError(std::format("Attempted to add point light call at:{} colored:{} "
+    //            "but max points lights have been reached", worldPos.ToString(), color.ToString()));
+    //        return;
+    //    }
+    //    m_uniformData.m_LightBlock.m_PointLights[m_uniformData.m_LightBlock.m_PointLightsCount] = PointLightData(worldPos, color.GetNormalized(), radius);
+    //    m_uniformData.m_LightBlock.m_PointLightsCount++;
+
+    //    if (DRAW_LIGHT_AREAS)
+    //    {
+    //        AddCallTextureSphere3D(std::min(0.1f*radius, 1.0f), *GetBaseAlbedo(), CalculateModelMatrix(nullptr, worldPos,
+    //            Vec3::One(), Quat::Identity()), LIGHT_AREA_COLOR== LIGHT_AREA_COLOR_FROM_LIGHT? color : LIGHT_AREA_COLOR);
+    //    }
+    //}
+
+    void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const Utils::Color color)
     {
         if (m_uniformData.m_LightBlock.m_PointLightsCount >= MAX_POINT_LIGHTS)
         {
@@ -778,13 +687,17 @@ namespace Rendering
                 "but max points lights have been reached", worldPos.ToString(), color.ToString()));
             return;
         }
-        m_uniformData.m_LightBlock.m_PointLights[m_uniformData.m_LightBlock.m_PointLightsCount] = PointLightData(worldPos, color.GetNormalized(), radius);
+
+        auto& pointlightData = m_uniformData.m_LightBlock.m_PointLights[m_uniformData.m_LightBlock.m_PointLightsCount];
+        pointlightData = PointLightData(worldPos, color.GetNormalized(), radius);
+        pointlightData.m_ShadowMapIndex = m_uniformData.m_LightBlock.m_PointLightsCount;
+        m_uniformData.m_ExtraPointLightData[m_uniformData.m_LightBlock.m_PointLightsCount] = ExtraPointLightData{worldRot};
         m_uniformData.m_LightBlock.m_PointLightsCount++;
 
         if (DRAW_LIGHT_AREAS)
         {
-            AddCallTextureSphere3D(std::min(0.1f*radius, 1.0f), *GetBaseAlbedo(), CalculateModelMatrix(nullptr, worldPos,
-                Vec3::One(), Quat::Identity()), LIGHT_AREA_COLOR== LIGHT_AREA_COLOR_FROM_LIGHT? color : LIGHT_AREA_COLOR);
+            AddCallSphere3DMulti(GetCoreShader(CoreShader::Texture), GetBaseAlbedo(), std::min(0.1f * radius, 1.0f), CalculateModelMatrix(nullptr, worldPos,
+                Vec3::One(), Quat::Identity()), LIGHT_AREA_COLOR == LIGHT_AREA_COLOR_FROM_LIGHT ? color : LIGHT_AREA_COLOR);
         }
     }
     void Renderer::AddCallDirectionalLight(const Vec3& dir, const Utils::Color color)
@@ -806,7 +719,254 @@ namespace Rendering
     void Renderer::RenderStartActions() const
     {
         Backend::BeginRenderingMarker();
+    }
+    void Renderer::SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix)
+    {
+        m_viewerUniformBuffer.TryWriteData("worldPos", sizeof(Vec3), worldPos.GetMemPointer());
+        if (!m_viewerUniformBuffer.TryWriteData("viewMatrix", sizeof(Mat4),
+            viewMatrix.GetMemPointer()))
+        {
+            LogError(std::format("Attempted to write view matrix to uniform buffer but failed"));
+            return;
+        }
+        if (!m_viewerUniformBuffer.TryWriteData("projectionMatrix", sizeof(Mat4),
+            projMatrix.GetMemPointer()))
+        {
+            LogError(std::format("Attempted to write projection matrix to uniform buffer but failed"));
+            return;
+        }
+    }
+    void Renderer::DrawBatch(RenderBatch& batch)
+    {
+        FencedBufferSegment* vertexSegment = nullptr;
+        const size_t drawVertexCount = batch.m_Vertices.size();
+        m_isRenderStalled = !m_vertexBuffer.TryWriteDataFenced(&batch.m_Vertices[0], drawVertexCount, &vertexSegment);
+        if (m_isRenderStalled)
+        {
+            const std::string message = std::format("Stalling render due to vertex buffer. Allocate more space");
+            if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
+            else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
+            return;
+        }
+
+        FencedBufferSegment* indexSegment = nullptr;
+        const size_t drawIndexCount = batch.m_VertexIndices.size();
+        m_isRenderStalled = !m_indexBuffer.TryWriteDataFenced(&batch.m_VertexIndices[0], drawIndexCount, &indexSegment);
+        if (m_isRenderStalled)
+        {
+            const std::string message = std::format("Stalling render due to index buffer. Allocate more space");
+            if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
+            else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
+            return;
+        }
+
+        FencedBufferSegment* instanceSegment = nullptr;
+        const size_t drawInstanceCount = batch.m_InstanceData.size();
+        m_isRenderStalled = !m_instancedBuffer.TryWriteDataFenced(&batch.m_InstanceData[0], drawInstanceCount, &instanceSegment);
+        if (m_isRenderStalled)
+        {
+            const std::string message = std::format("Stalling render due to instance buffer. Allocate more space");
+            if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
+            else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
+            return;
+        }
+
+        //When we upload to gpu, we can get rid of cpu side buffer data
+        //batch.m_VertexIndices.clear();
+        //batch.m_Vertices.clear();
+        //batch.m_InstanceData.clear();
+
+       /* LogWarning(std::format("Drawing vertices:{}(b:{}) indices:{}(b:{}) isntances:{}(b:{})", drawVertexCount,
+            m_vertexBuffer.GetVertexCapacity(), drawIndexCount, m_indexBuffer.GetIndexCapacity(), drawInstanceCount, m_instancedBuffer.GetVertexCapacity()));*/
+        Backend::DrawUploadedIndexBufferInstanced(vertexSegment->m_ByteOffset / m_vertexBuffer.GetElementSize(),
+            indexSegment->m_ByteOffset, drawIndexCount, instanceSegment->m_ByteOffset / m_instancedBuffer.GetElementSize(), drawInstanceCount);
+
+        vertexSegment->m_Fence.Insert();
+        indexSegment->m_Fence.Insert();
+        instanceSegment->m_Fence.Insert();
+        /*LogWarning(std::format("After fence insert vertexSeg:{} indexSeg:{} instanceSeg:{}",
+            vertexSegment->ToString(), indexSegment->ToString(), instanceSegment->ToString()));*/
+
+        LogWarning(std::format("\nDRAWING CALL \nVertexByteOffset:{} basevertexIndex:{} indexByteOffset:{} drawIndices:{} "
+            "instanceByteOffset:{} baseinstanceIndex:{} drawInstances:{}",
+            vertexSegment->m_ByteOffset, vertexSegment->m_ByteOffset / m_vertexBuffer.GetElementSize(),
+            indexSegment->m_ByteOffset, drawIndexCount, instanceSegment->m_ByteOffset,
+            instanceSegment->m_ByteOffset / m_instancedBuffer.GetElementSize(), drawInstanceCount));
+
+        m_frameDrawCalls++;
+    }
+
+    void Renderer::ExecuteShadowPass()
+    {
+        Shader* shadowShader = GetCoreShader(CoreShader::Shadow);
+        shadowShader->BindUniformBlockIfNeeded(m_viewerUniformBuffer.GetName(), m_viewerUniformBuffer.GetBindIndex());
+        shadowShader->BindActive();
+        m_frameBuffer.BindActive();
+
+        std::array<Mat4, 6> lightViewMatrices = {};
+        Mat4 lightProjMatrix = {};
+
+        for (size_t i = 0; i < m_uniformData.m_LightBlock.m_PointLightsCount; i++)
+        {
+            auto& light = m_uniformData.m_LightBlock.m_PointLights[i];
+            auto& otherLightData = m_uniformData.m_ExtraPointLightData[i];
+
+            lightViewMatrices =
+            {
+                CalculateViewMatrix(light.m_Pos, ENGINE_RIGHT_DIR,      -ENGINE_UP_DIR),
+                CalculateViewMatrix(light.m_Pos, -ENGINE_RIGHT_DIR,     -ENGINE_UP_DIR),
+                CalculateViewMatrix(light.m_Pos, ENGINE_UP_DIR,         ENGINE_FORWARD_DIR),
+                CalculateViewMatrix(light.m_Pos, -ENGINE_UP_DIR,        -ENGINE_FORWARD_DIR),
+                CalculateViewMatrix(light.m_Pos, ENGINE_FORWARD_DIR,    -ENGINE_UP_DIR),
+                CalculateViewMatrix(light.m_Pos, -ENGINE_FORWARD_DIR,   -ENGINE_UP_DIR)
+            };
+            lightProjMatrix= PlatformMath::CalculatePlatformPerspectiveProjMatrix(Utils::ToRadians(90), 1, SHADOW_NEAR_DISTANCE, light.m_Radius);
+            Backend::SetViewport(m_shadowMaps[i].GetData().m_size.m_X, m_shadowMaps[i].GetData().m_size.m_Y);
+
+            //For every single face on cube, we redraw scene from light perspective
+            for (size_t j = 0; j < 6; j++)
+            {
+                m_frameBuffer.SetOutputTextureCube(FrameBufferAttachmentType::Depth, &m_shadowMaps[i], static_cast<TextureCubeFace>(j));
+                Backend::ClearDepth();
+
+                SetViewerData(light.m_Pos, lightViewMatrices[j], lightProjMatrix);
+
+                for (size_t k = 0; k < m_batches.size(); k++)
+                {
+                    auto& batch = m_batches[k]; 
+                    if (batch.m_InstanceData.empty())
+                        continue;
+
+                    //const auto result = lightProjMatrix * lightViewMatrix * m_batches[i].m_InstanceData[0].m_ModelMatrix * Vec4(light.m_Pos, 0);
+                    /*LogWarning(std::format("final ndc pos: {} light proj:{} light view:{}", 
+                        result.ToString(), lightProjMatrix.ToString(), lightViewMatrix.ToString()));*/
+                    DrawBatch(batch);
+                }
+            }
+        }
+        //LogError("FIN");
+
+        shadowShader->UnbindActive();
+        m_frameBuffer.UnbindActive();
+        //This forces the viewport to be set back to rendering for the window
+        m_engineState->m_GraphicsContext.m_Window->ForceSizeUpdate();
+    }
+    void Renderer::ExecuteLightingAndGeometryPass(const TextureSlotIndex* shadowCubeMapSlots)
+    {
+        //LogError(std::format("Viewport size:{}", Backend::GetViewportSize().ToString()));
         Backend::ClearBackground();
+
+        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
+        const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
+        //TODO: this is still a problem since multiple flushes per frame means multiple updates
+        const bool needsViewMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix);
+        const bool needsProjMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::PlatformProjMatrix);
+
+        SetViewerData(camera.GetTransform().GetGlobalPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix);
+        //m_uniformData.m_CameraUpdatedThisFrame = true;
+
+        //TODO: optimize so we check if light block data changed from last render batch and only then write buffer
+        m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
+
+        const Texture* lastBatchTexture = nullptr;
+        Shader* lastBatchShader = nullptr;
+
+        for (int i = 0; i < m_batches.size(); i++)
+        {
+            LogWarning(std::format("flushing batch:{}/{}", i + 1, m_batches.size()));
+            auto& batch = m_batches[i];
+
+            //If we have no instance data it means it might be a leftover batch from previous frame
+            //that was not cleared
+            if (batch.m_InstanceData.empty())
+                continue;
+
+            if (batch.m_Shader == nullptr)
+            {
+                LogError(std::format("Tried to flush current batch in renderer, but batch shader was null"));
+                return;
+            }
+
+            if (lastBatchShader != nullptr && batch.m_Shader == nullptr)
+            {
+                lastBatchShader->UnbindActive();
+            }
+            else if (lastBatchShader == nullptr || lastBatchShader != batch.m_Shader)
+            {
+                batch.m_Shader->BindUniformBlockIfNeeded(m_viewerUniformBuffer.GetName(), m_viewerUniformBuffer.GetBindIndex());
+                batch.m_Shader->BindUniformBlockIfNeeded(m_lightUniformBuffer.GetName(), m_lightUniformBuffer.GetBindIndex());
+                batch.m_Shader->BindActive();
+            }
+            lastBatchShader = batch.m_Shader;
+
+            //TODO: right now the current batch gets it texture slot by removing previous slot
+            //but what if we use that texture in a future batch it would be wasteful -> so
+            //we have to make sure that no future queued batches have last batch texture before removing
+            if (lastBatchTexture != nullptr && lastBatchTexture != batch.m_Texture)
+            {
+                m_textureController.TryRemoveFromSlot(lastBatchTexture->GetData().m_slotIndex);
+            }
+            if (batch.m_Texture != nullptr && lastBatchTexture != batch.m_Texture)
+            {
+                TextureSlotIndex slot = m_textureController.TryAddTextureToAvailableSlot(batch.m_Texture);
+                if (!batch.m_Shader->TrySetUniform(UniformType::Sampler2D, TEXTURE_UNIFORM_NAME, &slot))
+                    return;
+            }
+            if (DO_SHADOWS && batch.m_Shader== GetCoreShader(CoreShader::ForwardRender))
+            {
+                batch.m_Shader->TrySetUniform(UniformType::Bool, SHADOW_TOGGLE_UNIFORM_NAME, &DO_SHADOWS);
+                batch.m_Shader->TrySetUniformArray(UniformType::CubeSampler, SHADOW_MAP_UNIFORM_NAME,
+                    shadowCubeMapSlots, m_uniformData.m_LightBlock.m_PointLightsCount);
+            }
+            
+            lastBatchTexture = batch.m_Texture;
+            //LogWarning(std::format("Flushing batch:{} vertex count:{} index:{}", batch.ToString(), batch.m_Vertices.size(), batch.m_VertexIndices.size()));
+            //LogWarning(std::format("Drawing normal matrix:{}", batch.m_InstanceData[0].m_NormalModelMatrix.ToString()));
+
+            DrawBatch(batch);
+        }
+
+        if (lastBatchShader != nullptr) lastBatchShader->UnbindActive();
+        if (lastBatchTexture != nullptr) m_textureController.TryRemoveFromSlot(lastBatchTexture->GetData().m_slotIndex);
+    } 
+
+    void Renderer::FlushBatches()
+    {
+        if (RENDER_FRAMES_COUNT != NO_RENDER_FRAME_COUNT_LIMIT &&
+            m_framesSinceStart >= RENDER_FRAMES_COUNT)
+            return;
+
+        //TODO: this should ideally be removed and part of the uniform initializer
+        if (!m_viewerUniformBuffer.IsAllocated())
+        {
+            m_viewerUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender), "ViewerBlock");
+            m_bufferController.AddUniformBuffer(&m_viewerUniformBuffer);
+        }
+        if (!m_lightUniformBuffer.IsAllocated())
+        {
+            m_lightUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender), "LightsBlock");
+            m_bufferController.AddUniformBuffer(&m_lightUniformBuffer);
+        }
+
+        if (DO_SHADOWS) ExecuteShadowPass();
+
+        //LogError(std::format("Draw calls shadow pass:{} lights:{} batches:{}", m_frameDrawCalls, m_uniformData.m_LightBlock.m_PointLightsCount, m_batches.size()));
+        //LogError(std::format("After shadow pass tu:{}", m_textureController.ToString()));
+
+        const size_t totalPointLights = m_uniformData.m_LightBlock.m_PointLightsCount;
+        const std::vector<TextureSlotIndex> shadowCubeMapSlots= 
+            m_textureController.TryAddTextureCubesToAvailableSlots(m_shadowMaps, totalPointLights);
+        //LogError(std::format("shadow slots: {} lihghts:{}", Utils::ToStringIterable<std::vector<//>, TextureSlotIndex>(shadowCubeMapSlots), totalPointLights));
+        if (shadowCubeMapSlots.empty() || shadowCubeMapSlots.size()!= totalPointLights)
+        {
+            LogError(std::format("Attempted to add shadow map textures to available slots but failed." 
+                "Reserved slots:{} expected size:{}", shadowCubeMapSlots.size(), totalPointLights));
+            return;
+        }
+
+        ExecuteLightingAndGeometryPass(&shadowCubeMapSlots[0]);
+
+        m_textureController.RemoveFromSlots(shadowCubeMapSlots[0], shadowCubeMapSlots.size());
     }
 
     void Renderer::RenderBuffer()
@@ -817,8 +977,8 @@ namespace Rendering
         if (!m_batches.empty())
         {
             RenderStartActions();
-            LogWarning(std::format("Flushing batches at render end: {}", ToStringAll()));
             FlushBatches();
+            //LogError(std::format("all batches:{}", ToStringBatches()));
 
             //TODO: is this the best option for perofmrance amd should all be force cleared?
             //ideally we want to remove from middle, but that forces shifts in memory which may greatloy reduce performance
@@ -826,6 +986,11 @@ namespace Rendering
             m_batches.clear();
             m_hashToBatchIndex.clear();
         }
+        RenderEndActions();
+    }
+
+    void Renderer::RenderEndActions()
+    {
         Backend::EndRenderingMarker();
 
         ClearCommandBuffers();
@@ -845,7 +1010,7 @@ namespace Rendering
 
     std::string Renderer::ToStringBatches() const
     {
-        std::string result = "";
+        std::string result = std::format("TOTAL({})\n ", m_batches.size());
         for (const auto& batch : m_batches)
         {
             result += "\nBatch:" + batch.ToString() + "\n";

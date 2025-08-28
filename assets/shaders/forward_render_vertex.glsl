@@ -1,11 +1,11 @@
 #version 330 core
 
-layout(std140) uniform CameraBlock 
+layout(std140) uniform ViewerBlock 
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
-    vec3 cameraPos;
-} uCameraBlock;
+    vec3 worldPos;
+} uViewerBlock;
 
 layout(location=0) in vec3 aPosition;
 layout(location=1) in vec2 aTexCoords;
@@ -20,12 +20,12 @@ layout(location=8) in mat3 aNormalModelMatrix;
 out vec2 vTexCoords;
 out vec4 vColor;
 out vec3 vWorldPos;
-flat out vec3 vNormal;
+out vec3 vNormal;
 
 void main()
 {
     vec4 worldPos=  aModelMatrix * vec4(aPosition, 1.0);
-    gl_Position= uCameraBlock.projectionMatrix * uCameraBlock.viewMatrix * worldPos;
+    gl_Position= uViewerBlock.projectionMatrix * uViewerBlock.viewMatrix * worldPos;
 
     vTexCoords= aTexCoords;
     vWorldPos= worldPos.xyz;

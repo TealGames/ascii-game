@@ -126,37 +126,117 @@ namespace Rendering
 				return false;
 			}
 
-			if (uniform == UniformType::Float)
+			if (uniform == UniformType::Bool)
 			{
-				GL_CALL(glUniform1f(location, *static_cast<const float*>(valuePtr)));
+				GL_CALL(glUniform1f(location, *static_cast<const GLboolean*>(valuePtr)));
 			}
-			else if (uniform == UniformType::Int || uniform == UniformType::Sampler2D)
+			else if (uniform == UniformType::Float)
 			{
-				GL_CALL(glUniform1i(location, *static_cast<const int*>(valuePtr)));
+				GL_CALL(glUniform1f(location, *static_cast<const GLfloat*>(valuePtr)));
+			}
+			else if (uniform == UniformType::Int || uniform == UniformType::Sampler2D 
+				|| uniform == UniformType::CubeSampler)
+			{
+				GL_CALL(glUniform1i(location, *static_cast<const GLint*>(valuePtr)));
 			}
 			else if (uniform == UniformType::Vector2)
 			{
-				const float* floatArr = static_cast<const float*>(valuePtr);
+				const float* floatArr = static_cast<const GLfloat*>(valuePtr);
 				GL_CALL(glUniform2f(location, floatArr[0], floatArr[1]));
 			}
 			else if (uniform == UniformType::Vector3)
 			{
-				const float* floatArr = static_cast<const float*>(valuePtr);
+				const float* floatArr = static_cast<const GLfloat*>(valuePtr);
 				GL_CALL(glUniform3f(location, floatArr[0], floatArr[1], floatArr[2]));
 			}
 			else if (uniform == UniformType::Vector4)
 			{
-				const float* floatArr = static_cast<const float*>(valuePtr);
+				const float* floatArr = static_cast<const GLfloat*>(valuePtr);
 				GL_CALL(glUniform4f(location, floatArr[0], floatArr[1], floatArr[2], floatArr[3]));
 			}
 			else if (uniform == UniformType::Matrix4x4)
 			{
-				const float* floatMat = static_cast<const float*>(valuePtr);
+				const float* floatMat = static_cast<const GLfloat*>(valuePtr);
 				GL_CALL(glUniformMatrix4fv(location, 1, GL_FALSE, floatMat));
 			}
 			else
 			{
 				LogError("OpenGL: Uniform type has no corresponding actions");
+				return false;
+			}
+
+			return true;
+		}
+		static bool TrySetShaderUniformArray(const Shader& shader, const UniformType uniform, 
+			const char* uniformName, const void* valuePtr, const size_t writeElementCount)
+		{
+			const RenderObjectId programId = shader.GetId();
+			if (glIsProgram(programId) == GL_FALSE)
+			{
+				LogError(std::format("OpenGL: Attempted to set shader:{} uniform:{} but shader program with that id does not exist",
+					shader.ToString(), uniformName));
+				return false;
+			}
+
+			int location = -1;
+			GL_CALL(location = glGetUniformLocation(programId, uniformName));
+			if (location == -1)
+			{
+				LogError(std::format("OpenGL: Invalid uniform location when setting shader:{} uniform:{}. "
+					"Possibly undefined uniform name or wrong spelling", shader.ToString(), uniformName));
+				return false;
+			}
+
+			if (GetActiveShaderProgramId() != programId)
+			{
+				LogError(std::format("OpenGL: Attempted to set shader:{} uniform:'{}' but that shader program is not currently bound."
+					"OpenGL requires uniform setting to be done on the active shader", shader.ToString(), uniformName));
+				return false;
+			}
+
+			if (uniform == UniformType::Bool)
+			{
+				GLint* values = static_cast<GLint*>(alloca(sizeof(GLint) * writeElementCount));
+				const bool* boolArr = static_cast<const bool*>(valuePtr);
+				for (size_t i = 0; i < writeElementCount; i++)
+					values[i] = boolArr[i] ? 1 : 0;
+
+				GL_CALL(glUniform1iv(location, writeElementCount, values));
+			}
+			else if (uniform == UniformType::Float)
+			{
+				GL_CALL(glUniform1fv(location, writeElementCount, 
+					static_cast<const GLfloat*>(valuePtr)));
+			}
+			else if (uniform == UniformType::Int || uniform == UniformType::Sampler2D
+				|| uniform == UniformType::CubeSampler)
+			{
+				GL_CALL(glUniform1iv(location, writeElementCount,
+					static_cast<const GLint*>(valuePtr)));
+			}
+			else if (uniform == UniformType::Vector2)
+			{
+				GL_CALL(glUniform2fv(location, writeElementCount, 
+					static_cast<const GLfloat*>(valuePtr)));
+			}
+			else if (uniform == UniformType::Vector3)
+			{
+				GL_CALL(glUniform3fv(location, writeElementCount, 
+					static_cast<const GLfloat*>(valuePtr)));
+			}
+			else if (uniform == UniformType::Vector4)
+			{
+				GL_CALL(glUniform4fv(location, writeElementCount, 
+					static_cast<const GLfloat*>(valuePtr)));
+			}
+			else if (uniform == UniformType::Matrix4x4)
+			{
+				GL_CALL(glUniformMatrix4fv(location, writeElementCount,
+					GL_FALSE, static_cast<const GLfloat*>(valuePtr)));
+			}
+			else
+			{
+				LogError("OpenGL: Array uniform type has no corresponding actions");
 				return false;
 			}
 
@@ -299,6 +379,7 @@ namespace Rendering
 					BindActive,
 					UnbindActive,
 					TrySetShaderUniform,
+					TrySetShaderUniformArray,
 					TryGetShaderUniform,
 					TryBindShaderUniformBlock,
 					TryGetUniformBlockMembers

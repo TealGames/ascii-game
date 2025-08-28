@@ -185,6 +185,10 @@ namespace Core
 		}*/
 
 		void SetSize(const int width, const int height);
+		/// <summary>
+		/// Will cause the window to get updated with the current set window dimensions
+		/// </summary>
+		void ForceSizeUpdate();
 
 		Vec2Int GetSize() const;
 		const char* GetWindowName() const;

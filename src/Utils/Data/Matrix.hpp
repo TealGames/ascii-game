@@ -205,10 +205,34 @@ public:
 	{
 		if (r >= ROW_SIZE || c >= COL_SIZE)
 		{
-			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] set access:({}, {})", ROW_SIZE, r, c));
+			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] set access:({}, {})", ROW_SIZE, COL_SIZE, r, c));
 			return;
 		}
 		m_arr[c][r] = newVal;
+	}
+	void Set(const std::uint8_t c, const std::array<float, ROW_SIZE>& vals)
+	{
+		if (c >= COL_SIZE)
+		{
+			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] col set access:{}", ROW_SIZE, COL_SIZE, c));
+			return;
+		}
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			m_arr[c][r] = vals[r];
+		}
+	}
+	void Set(const std::uint8_t c, const Vec<float, ROW_SIZE>& vals)
+	{
+		if (c >= COL_SIZE)
+		{
+			throw std::invalid_argument(std::format("Invalid matrix[{}][{}] col set access:{}", ROW_SIZE, COL_SIZE, c));
+			return;
+		}
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			m_arr[c][r] = vals[r];
+		}
 	}
 
 	/// <summary>

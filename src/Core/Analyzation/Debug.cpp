@@ -198,7 +198,8 @@ void LogWarning(const std::string& message, const bool logTime,
 /// <param name="logTime"></param>
 void LogError(const std::string& message, const bool logTime, const bool showStackTrace, const std::source_location& loc)
 {
-	LogMessage(LogType::Error, DebugProperties::CallerDetails, message, showStackTrace, logTime, nullptr, (DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::EventFlag)!=0, loc);
+	LogMessage(LogType::Error, DebugProperties::CallerDetails, message, showStackTrace, logTime, nullptr, 
+		(DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::EventFlag)!=0, loc);
 	if ((DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::Throw)!=0) throw std::invalid_argument(message);
 	else if ((DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::Break)!=0) Break();
 }
@@ -218,7 +219,8 @@ bool Assert(const bool condition, const std::string& errMessage, const bool show
 {
 	if (!condition)
 	{
-		LogMessage(LogType::Error, DebugProperties::CallerDetails, errMessage, showStackTrace, true, nullptr, (DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::EventFlag) != 0, loc);
+		LogMessage(LogType::Error, DebugProperties::CallerDetails, errMessage, showStackTrace, 
+			true, nullptr, (DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::EventFlag) != 0, loc);
 		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Break)!=0) Break();
 		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Throw)!=0) throw std::invalid_argument(errMessage);
 	}

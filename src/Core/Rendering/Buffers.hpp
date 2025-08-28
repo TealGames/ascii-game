@@ -4,7 +4,9 @@
 #include <deque>
 #include <vector>
 #include <tuple>
+#include <variant>
 #include <unordered_map>
+#include "Core/Rendering/Texture.hpp"
 #include "Core/Rendering/Shader/Shader.hpp"
 #include "Utils/Data/Vec2Type.hpp"
 #include "Core/Rendering/GpuFence.hpp"
@@ -12,6 +14,107 @@
 
 namespace Rendering
 {
+	/// <summary>
+	/// The type of attachment to add to a framebuffer to determine what kind of data
+	/// it needs to write to the render target. NOTE: render target format must coincide with the 
+	/// attachment type
+	/// </summary>
+	using FrameBufferAttachmentTypeIntegralType = std::uint8_t;
+	enum class FrameBufferAttachmentType : FrameBufferAttachmentTypeIntegralType
+	{
+		/// <summary>
+		/// Color0- ColorMAX are the different color outputs from the fragment shader
+		/// (in fragment shader specify different layout(location= i) for the
+		/// location of the color, where i is number used in enum
+		/// Color0 -> layout(location =0) *DEFAULT USED IN MAIN RENDER TARGET*
+		/// Color1 -> layout(locaton = 1) ... etc
+		/// Can also be used to output non-color data since this is just a vec4 data slot
+		/// </summary>
+		Color0			= 0,
+		Color1			= 1,
+		Color2			= 2,
+		Color3			= 3,
+		/// <summary>
+		/// Per pixel/fragment, stores the distance from the camera/viewer
+		/// </summary>
+		Depth			= 4,
+		/// <summary>
+		/// Per pixel/fragment, stores a stencil value (usually 0-255)
+		/// which can then be used for drawing later. 
+		/// Is most often used for things like masking/culling to discard
+		/// unwanted pixels based on a baseline stencil value
+		/// </summary>
+		Stencil			= 5,
+		DepthAndStencil = 6,
+	};
+	inline constexpr FrameBufferAttachmentType MIN_COLOR_ATTACHMENT = FrameBufferAttachmentType::Color0;
+	inline constexpr FrameBufferAttachmentType MAX_COLOR_ATTACHMENT = FrameBufferAttachmentType::Color3;
+	inline constexpr FrameBufferAttachmentTypeIntegralType ATTACHMENT_TYPES_COUNT = 
+		static_cast<FrameBufferAttachmentTypeIntegralType>(FrameBufferAttachmentType::DepthAndStencil) + 1;
+
+	enum class FrameBufferOutputType : std::uint8_t
+	{
+		Texture		= 0,
+		TextureCube	= 1,
+	};
+	struct FrameBufferTextureTarget
+	{
+		Texture* m_Texture = nullptr;
+	};
+	struct FrameBufferTextureCubeTarget
+	{
+		TextureCube* m_CubeTexture = nullptr;
+		TextureCubeFace m_Face = TextureCubeFace::Front;
+	};
+	struct FrameBufferOutputTarget
+	{
+		FrameBufferAttachmentType m_Type = FrameBufferAttachmentType::Color0;
+		FrameBufferOutputType m_TargetType = FrameBufferOutputType::Texture;
+		std::variant<FrameBufferTextureTarget, FrameBufferTextureCubeTarget> m_Targets;
+	};
+	struct FrameBufferPlatformCallbacks
+	{
+		RenderObjectId(*m_AllocateFunc)();
+		void(*m_DeallocateFunc)(const RenderObjectId id);
+		void(*m_BindActiveFunc)(const RenderObjectId id);
+		void(*m_UnbindActiveFunc)();
+		void(*m_SetOutputTargetFunc)(const FrameBufferOutputTarget& target, const RenderObjectId id);
+	};
+	class FrameBuffer
+	{
+	private:
+		FrameBufferPlatformCallbacks m_callbacks;
+		RenderObjectId m_id;
+		std::array<FrameBufferOutputTarget, ATTACHMENT_TYPES_COUNT> m_outputTargets;
+		/// <summary>
+		/// The size of the output targets. Note: 
+		/// all targets must have the same texture size, and the first output target set,
+		/// initializes the required size
+		/// </summary>
+		Vec2Int m_outputTargetSize;
+	public:
+
+	private:
+		void Deallocate();
+	public:
+		FrameBuffer();
+		FrameBuffer(const FrameBufferPlatformCallbacks& callbacks);
+		FrameBuffer(const FrameBuffer&) = delete;
+		FrameBuffer(FrameBuffer&&) noexcept;
+		~FrameBuffer();
+
+		void BindActive();
+		void UnbindActive();
+
+		void SetOutputTexture(const FrameBufferAttachmentType tpye, Texture* tex);
+		void SetOutputTextureCube(const FrameBufferAttachmentType tpye, TextureCube* cube, const TextureCubeFace face);
+		//const Texture* GetOutputTarget(const FrameBufferAttachmentType tpye) const;
+
+		FrameBuffer& operator=(const FrameBuffer&) = delete;
+		FrameBuffer& operator=(FrameBuffer&&) noexcept;
+	};
+
+
 	struct FencedBufferSegment
 	{
 		size_t m_ByteOffset;
@@ -21,7 +124,7 @@ namespace Rendering
 		size_t GetNextOffset() const;
 		std::string ToString() const;
 	};
-	class FencedRingBuffer
+	class RingBufferAllocator
 	{
 	private:
 		std::deque<FencedBufferSegment> m_segments;
@@ -42,7 +145,7 @@ namespace Rendering
 		bool TryRemoveFinishedHeadSegments();
 		void ReserveSegment(const size_t offset, const size_t size, FencedBufferSegment** outSeg);
 	public:
-		FencedRingBuffer(const size_t allocatedByteSize);
+		RingBufferAllocator(const size_t allocatedByteSize);
 
 		/// <summary>
 		/// Finds the next available fenced segment for given size.
@@ -127,7 +230,7 @@ namespace Rendering
 		size_t m_elementSize;
 
 		//size_t m_vertexCapacity;
-		FencedRingBuffer m_fence;
+		RingBufferAllocator m_fence;
 	public:
 		VertexAttributeAdvance m_AdvanceType;
 
@@ -234,7 +337,7 @@ namespace Rendering
 		/// </summary>
 		//size_t m_dataUsed;
 		//size_t m_elementCapacity;
-		FencedRingBuffer m_fence;
+		RingBufferAllocator m_fence;
 	public:
 
 	private:

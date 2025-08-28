@@ -5,6 +5,7 @@
 #include "Math/Ray.hpp"
 #include "Math/Plane.hpp"
 #include "Utils/Data/Matrix.hpp"
+#include "Utils/Data/Quaternion.hpp"
 #include "Utils/HelperMacros.hpp"
 
 enum class ProjectionMatrixType : std::uint8_t
@@ -58,18 +59,13 @@ private:
 	std::array<InfinitePlane3D, 6> CalculateFrustumPlanes() const;
 
 	/// <summary>
-	/// Calculates the view matrix that converts world space into camera's view.
-	/// It essentially moves the world into the camera's view
-	/// </summary>
-	/// <returns></returns>
-	Mat4 CalculateViewMatrix() const;
-	/// <summary>
 	/// Calculates the camera's view space into 2d plane screen space
 	/// based on the projection type that is used FOR THE CURRENTLY
 	/// USED RENDERING PLATFORM (Platform) OR for this engine (ENGINE)
 	/// </summary>
 	/// <returns></returns>
 	Mat4 CalculateProjectionMatrix(const ProjectionMatrixType type) const;
+
 public:
 	CameraComponent();
 	CameraComponent(const Json& json);
@@ -126,3 +122,11 @@ public:
 	void Deserialize(const Json& json) override;
 	Json Serialize() override;
 };
+
+/// <summary>
+/// Calculates the view matrix that converts world space into camera's view.
+/// It essentially moves the world into the camera's view
+/// </summary>
+/// <returns></returns>
+Mat4 CalculateViewMatrix(const WorldPosition3D& globalPos, const Quat& globalRotation);
+Mat4 CalculateViewMatrix(const WorldPosition3D& globalPos, const Vec3& forwardDir, const Vec3& upDir);

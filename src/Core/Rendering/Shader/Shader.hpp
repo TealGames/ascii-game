@@ -17,18 +17,24 @@ namespace Rendering
 
 	enum class UniformType : std::uint8_t
 	{
-		Float = 0,
-		Int = 1,
-		Vector2 = 2,
-		Vector3 = 3,
-		Vector4 = 4,
-		Matrix4x4 = 5,
+		Bool  = 0,
+		Float = 1,
+		Int = 2,
+		Vector2 = 3,
+		Vector3 = 4,
+		Vector4 = 5,
+		Matrix4x4 = 6,
 		/// <summary>
 		/// Represents a special value that holds the 
 		/// texture slot index that the sampler uses for the
 		/// texture. NOTE: sampler uniform must be get/set with int*
 		/// </summary>
-		Sampler2D	  = 6,
+		Sampler2D	  = 7,
+		/// <summary>
+		/// Similar to sampler2D, but instead represents a cube map,
+		/// 6 textures managed by one object
+		/// </summary>
+		CubeSampler	  = 8
 	};
 
 	struct UniformBlockMember
@@ -77,6 +83,7 @@ namespace Rendering
 		void(*m_BindActiveFunc) (const Shader& shader);
 		void(*m_UnbindActiveFunc) (const Shader& shader);
 		bool(*m_TrySetUniformFunc) (const Shader& shader, const UniformType uniform, const char* uniformName, const void* valuePtr);
+		bool(*m_TrySetArrayUniformFunc) (const Shader& shader, const UniformType uniform, const char* uniformName, const void* valuePtr, const size_t size);
 		bool(*m_TryGetUniformFunc) (const Shader& shader, const UniformType uniform, const char* uniformName, void* outputPtr);
 		bool(*m_TryBindUniformBlockFunc) (const Shader& shader, const char* uniformBlockName, const UniformBufferBindIndex index);
 		bool(*TryGetUniformBlockMembers) (const Shader& shader, const char* uniformBlockName, std::vector<UniformBlockMember>& members, size_t* fullSize);
@@ -118,6 +125,7 @@ namespace Rendering
 		void UnbindActive();
 
 		bool TrySetUniform(const UniformType type, const char* uniformName, const void* valuePtr);
+		bool TrySetUniformArray(const UniformType arrayType, const char* uniformName, const void* arrPtr, const size_t elementCount);
 		bool TryGetUniform(const UniformType type, const char* uniformName, void* outputValue) const;
 
 		bool TryBindUniformBlock(const char* blockName, const UniformBufferBindIndex index);

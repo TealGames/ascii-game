@@ -8,15 +8,34 @@
 namespace Rendering
 {
 	/// <summary>
-	/// The number/type of channels used for a texture.
+	/// The format of the uploaded pixel data for a texture
 	/// By default red is used for single channel.
+	/// Used when updating a texture to determine how the cpu data is set up
 	/// </summary>
-	enum class ChannelFormat : std::uint8_t
+	using ChannelFormatIntegralType = std::uint8_t;
+	enum class ChannelFormat : ChannelFormatIntegralType
 	{
-		Single	= 0,
-		RGB		= 1,
-		RGBA	= 2,
+		Single				= 0,
+		RGB					= 1,
+		RGBA				= 2,
+		Depth				= 3,
+		Depth_Stencil		= 4,
 	};
+
+	/// <summary>
+	/// The storage types and space used for storage
+	/// upon creating the texture
+	/// </summary>
+	using InternalStorageIntegralType = std::uint8_t;
+	enum class InternalStorage : InternalStorageIntegralType
+	{
+		R8					= 0,
+		RGB8				= 1,
+		RGBA8				= 2,
+		Depth24				= 3,
+		Depth24_Stencil8	= 4,
+	};
+	ChannelFormat GetChannelFormatFromStorage(const InternalStorage storage);
 
 	/// <summary>
 	/// The type texture behavior when a texture is scaled down (minification)
@@ -87,45 +106,61 @@ namespace Rendering
 	using TextureSlotIndex = int;
 	inline constexpr TextureSlotIndex INVALID_TEXTURE_SLOT_INDEX = -1;
 
+	struct TextureData
+	{
+		RenderObjectId m_id;
+		TextureSlotIndex m_slotIndex;
+
+		Vec2Int m_size;
+		InternalStorage m_internalStorage;
+		AxesWrapBehavior m_wrapBehavior;
+		MinFilter m_minFilter;
+		MagFilter m_magFilter;
+
+		std::string ToString() const;
+		TextureData& operator=(TextureData&&) noexcept;
+	};
+
 	struct TextureCallbacks
 	{
-		RenderObjectId(*m_AllocateFunc)(const unsigned char*, const Vec2Int&, ChannelFormat, 
-			AxesWrapBehavior, MinFilter, MagFilter);
-		void(*m_BindFunc)(const RenderObjectId, const TextureSlotIndex);
-		void(*m_UnbindFunc)(const TextureSlotIndex);
+		RenderObjectId(*m_AllocateFunc)(const TextureData& data);
+		void(*m_SetData)(const RenderObjectId, const Vec2Int size, const InternalStorage storage, const std::byte*);
+		void(*m_SetBindStatusFunc)(const RenderObjectId, const TextureSlotIndex, const bool status);
 		void(*m_DeallocateFunc)(const RenderObjectId);
+	};
+
+	constexpr InternalStorage DEFAULT_INTERNAL_STORAGE = InternalStorage::RGBA8;
+	constexpr AxesWrapBehavior DEFAULT_AXES_WRAP = { WrapBehavior::Repeat, WrapBehavior::Repeat, WrapBehavior::Repeat };
+	constexpr MinFilter DEFAULT_MIN_FILTER = MinFilter::Linear;
+	constexpr MagFilter DEFAULT_MAG_FILTER = MagFilter::Linear;
+
+	enum class TextureType : std::uint8_t
+	{
+		Texture		= 0,
+		TextureCube	= 1,
 	};
 
 	class Texture
 	{
 	private:
 		TextureCallbacks m_callbacks;
-		TextureSlotIndex m_slotIndex;
-		RenderObjectId m_id;
-
-		ChannelFormat m_format;
-		AxesWrapBehavior m_wrapBehavior;
-		MinFilter m_minFilter;
-		MagFilter m_magFilter;
-		Vec2Int m_size;
+		TextureData m_data;
 	public:
 
 	private:
-		void Allocate(const unsigned char* data);
+		void Allocate();
 		void Deallocate();
 	public:
-		Texture(const unsigned char* data, const Vec2Int& size, const ChannelFormat channelFormat, 
-			const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag, const TextureCallbacks& callbacks);
+		Texture();
+		Texture(const std::byte* data, const Vec2Int& size, const InternalStorage storage= DEFAULT_INTERNAL_STORAGE,
+			const AxesWrapBehavior wrap= DEFAULT_AXES_WRAP, const MinFilter min= DEFAULT_MIN_FILTER,  
+			const MagFilter mag = DEFAULT_MAG_FILTER, const TextureCallbacks& callbacks = {});
 		Texture(const Texture&) = delete;
 		Texture(Texture&&) noexcept = delete;
 		~Texture();
 
-		RenderObjectId GetId() const;
-		TextureSlotIndex GetSlot() const;
-
-		Vec2Int GetSize() const;
-		int GetWidth() const;
-		int GetHeight() const;
+		const TextureData& GetData() const;
+		void SetData(const std::byte* data);
 		bool IsValid() const;
 
 		void BindToSlot(const TextureSlotIndex slotIndex);
@@ -138,13 +173,61 @@ namespace Rendering
 		std::string ToString() const;
 	};
 
-	constexpr ChannelFormat DEFAULT_CHANNEL_FORMAT = ChannelFormat::RGBA;
-	constexpr AxesWrapBehavior DEFAULT_AXES_WRAP = { WrapBehavior::Repeat, WrapBehavior::Repeat, WrapBehavior::Repeat };
-	constexpr MinFilter DEFAULT_MIN_FILTER = MinFilter::Linear;
-	constexpr MagFilter DEFAULT_MAG_FILTER = MagFilter::Linear;
-
-	Texture CreateTexture(const unsigned char* data, const Vec2Int& size, 
-		const ChannelFormat channelFormat= DEFAULT_CHANNEL_FORMAT, const AxesWrapBehavior wrap= DEFAULT_AXES_WRAP, 
+	Texture CreateTexture(const std::byte* data, const Vec2Int& size,
+		const InternalStorage storage= DEFAULT_INTERNAL_STORAGE, const AxesWrapBehavior wrap= DEFAULT_AXES_WRAP,
 		const MinFilter min= DEFAULT_MIN_FILTER, const MagFilter mag= DEFAULT_MAG_FILTER);
-	Texture CreateTexture();
+
+	using TextureCubeFaceIntegralType = std::uint8_t;
+	enum class TextureCubeFace : TextureCubeFaceIntegralType
+	{
+		Right		=0,
+		Left		=1,
+		Top			=2,
+		Bottom		=3,
+		Front		=4,
+		Back		=5
+	};
+	struct TextureCubeCallbacks
+	{
+		RenderObjectId(*m_AllocateFunc)(const TextureData& data);
+		void(*m_SetData)(const TextureCubeFace face, const RenderObjectId, const Vec2Int size, const InternalStorage storage, const std::byte*);
+		void(*m_SetBindStatusFunc)(const RenderObjectId, const TextureSlotIndex, const bool status);
+		void(*m_DeallocateFunc)(const RenderObjectId);
+	};
+
+	class TextureCube
+	{
+	private:
+		TextureCubeCallbacks m_callbacks;
+		TextureData m_data;
+	public:
+
+	private:
+		void Allocate();
+		void Deallocate();
+	public:
+		TextureCube();
+		TextureCube(const Vec2Int& size, const InternalStorage storage = DEFAULT_INTERNAL_STORAGE,
+			const AxesWrapBehavior wrap = DEFAULT_AXES_WRAP, const MinFilter min = DEFAULT_MIN_FILTER,
+			const MagFilter mag = DEFAULT_MAG_FILTER, const TextureCubeCallbacks& callbacks = {});
+		TextureCube(const TextureCube&) = delete;
+		TextureCube(TextureCube&&) noexcept = delete;
+		~TextureCube();
+
+		const TextureData& GetData() const;
+		void SetData(const TextureCubeFace face, const std::byte* data);
+
+		void BindToSlot(const TextureSlotIndex slotIndex);
+		void UnbindFromSlot();
+		bool IsBoundToSlot() const;
+
+		TextureCube& operator=(const TextureCube&) = delete;
+		TextureCube& operator=(TextureCube&&) noexcept;
+
+		std::string ToString() const;
+	};
+
+	TextureCube CreateTextureCube(const Vec2Int& size,
+		const InternalStorage storage = DEFAULT_INTERNAL_STORAGE, const AxesWrapBehavior wrap = DEFAULT_AXES_WRAP,
+		const MinFilter min = DEFAULT_MIN_FILTER, const MagFilter mag = DEFAULT_MAG_FILTER);
 }

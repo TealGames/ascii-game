@@ -124,6 +124,15 @@ namespace Rendering
 		}
 		return true;
 	}
+	bool Shader::TrySetUniformArray(const UniformType arrayType, const char* uniformName, const void* arrPtr, const size_t elementCount)
+	{
+		if (!m_platformCallbacks.m_TrySetArrayUniformFunc(*this, arrayType, uniformName, arrPtr, elementCount))
+		{
+			LogError(std::format("Attempted to set uniform array of name:{} in shader but resulted in error", uniformName));
+			return false;
+		}
+		return true;
+	}
 	bool Shader::TryGetUniform(const UniformType type, const char* uniformName, void* outputValue) const
 	{
 		if (!m_platformCallbacks.m_TryGetUniformFunc(*this, type, uniformName, outputValue))
@@ -133,7 +142,7 @@ namespace Rendering
 		}
 		return true;
 	}
-
+	
 	bool Shader::TryBindUniformBlock(const char* blockName, const UniformBufferBindIndex index)
 	{
 		if (m_uniformBlockData.empty())

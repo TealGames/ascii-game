@@ -15,12 +15,8 @@ namespace Rendering
 	{
 	private:
 		AssetManagement::AssetManager* m_assetManager;
-		ShaderAsset* m_defaultShader;
-		ShaderAsset* m_textureShader;
-		ShaderAsset* m_forwardRenderShader;
 
-		std::unordered_map<std::string_view, const Shader*> m_shaders;
-
+		std::unordered_map<std::string_view, Shader*> m_shaders;
 		TextureAsset* m_defaultAlbedo;
 	public:
 
@@ -30,16 +26,10 @@ namespace Rendering
 
 		void LoadAllShadersAndTextures();
 
-		const Shader* GetDefaultShader() const;
-		Shader* GetDefaultShaderMutable();
-		const Shader* GetTextureShader() const;
-		Shader* GetTextureShaderMutable();
-		const Shader* GetFowardRenderShader() const;
-		Shader* GetForwardRenderShaderMutable();
-
 		const Texture* GetDefaultAlbedo() const;
 		Texture* GetDefaultAlbedoMutable();
 
 		const Shader* TryGetShader(const std::string& name) const;
+		Shader* TryGetShaderMutable(const std::string& name);
 	};
 }

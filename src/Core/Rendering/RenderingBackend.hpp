@@ -15,7 +15,10 @@ namespace Rendering
 		const std::string GetBackendVersion();
 
 		void SetViewport(const int x, const int y, const int width, const int height);
+		void SetViewport(const int width, const int height);
+		Vec2Int GetViewportSize();
 		
+		FrameBuffer CreateFrameBuffer();
 		VertexBuffer CreateVertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType);
 		IndexBuffer CreateIndexBuffer(const IndexType* indexArray, const size_t elementCount);
 		UniformBuffer CreateUniformBuffer();
@@ -23,6 +26,7 @@ namespace Rendering
 
 		void BeginRenderingMarker();
 		void ClearBackground();
+		void ClearDepth();
 		void EndRenderingMarker();
 
 		void DrawCircle(const WorldPosition3D& pos, const float radius, const Utils::Color color);

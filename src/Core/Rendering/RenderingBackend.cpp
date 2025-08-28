@@ -130,6 +130,26 @@ namespace Rendering
 			glViewport(x, y, width, height);
 #endif
 		}
+		void SetViewport(const int width, const int height)
+		{
+			SetViewport(0, 0, width, height);
+		}
+		Vec2Int GetViewportSize()
+		{
+#if defined(OPENGL)
+			GLint viewport[4];
+			glGetIntegerv(GL_VIEWPORT, viewport);
+
+			return Vec2Int(viewport[2], viewport[3]);
+#endif
+		}
+
+		FrameBuffer CreateFrameBuffer()
+		{
+#if defined(OPENGL)
+			return OpenGl::CreateFrameBuffer();
+#endif
+		}
 
 		VertexBuffer CreateVertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType)
 		{
@@ -169,6 +189,17 @@ namespace Rendering
 #if defined(OPENGL)
 			GL_CALL(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
 			GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+#elif defined(RAYLIB)
+			ClearBackground(BLACK);
+#else
+			LogError("Attempted to clear canvas but either no rendering library is active or it has no defined actions");
+#endif
+		}
+		void ClearDepth()
+		{
+#if defined(OPENGL)
+			GL_CALL(glClear(GL_DEPTH_BUFFER_BIT));
 
 #elif defined(RAYLIB)
 			ClearBackground(BLACK);

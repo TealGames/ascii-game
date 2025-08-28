@@ -6,14 +6,14 @@
 //static constexpr size_t DEFAULT_CHANNELS = 3;
 
 TextureAsset::TextureAsset(const std::filesystem::path& path)
-	: Asset(path, false), m_texture(Rendering::CreateTexture()) 
+	: Asset(path, false), m_texture() 
 {
 	/*if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a texture asset from path:{} (extension:{})"
 		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
 		return;*/
 
 	int width = 0, height = 0, channels = 0;
-	unsigned char* data = stbi_load(path.string().c_str(), &width, &height, &channels, 0);
+	std::byte* data = reinterpret_cast<std::byte*>(stbi_load(path.string().c_str(), &width, &height, &channels, 0));
 	if (data == nullptr)
 	{
 		LogError(std::format("Attempted to load texture from path:{} "
@@ -28,10 +28,10 @@ TextureAsset::TextureAsset(const std::filesystem::path& path)
 	//LogError(std::format("SHIT channels:{}", channels));
 	//LogError(std::format("path:{} Image chnnaels:{} wid:{} heigh:{}", path.string(), channels, width, height));
 	
-	Rendering::ChannelFormat channelFormat = Rendering::ChannelFormat::RGBA;
-	if (channels == 1) channelFormat = Rendering::ChannelFormat::Single;
-	else if (channels == 3) channelFormat = Rendering::ChannelFormat::RGB;
-	else if (channels == 4) channelFormat = Rendering::ChannelFormat::RGBA;
+	Rendering::InternalStorage internalStorage = Rendering::InternalStorage::RGBA8;
+	if (channels == 1) internalStorage = Rendering::InternalStorage::R8;
+	else if (channels == 3) internalStorage = Rendering::InternalStorage::RGB8;
+	else if (channels == 4) internalStorage = Rendering::InternalStorage::RGBA8;
 	else
 	{
 		LogError(std::format("Attempted to load texture asset but "
@@ -39,7 +39,7 @@ TextureAsset::TextureAsset(const std::filesystem::path& path)
 		return;
 	}
 
-	m_texture = Rendering::CreateTexture(data, Vec2Int(width, height), channelFormat);
+	m_texture = Rendering::CreateTexture(data, Vec2Int(width, height), internalStorage);
 	stbi_image_free(data);
 }
 

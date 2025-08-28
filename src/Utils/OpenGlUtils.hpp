@@ -4,6 +4,7 @@
 #ifdef OPENGL
 #include "glad/glad.h"
 #include "Core/Analyzation/Debug.hpp"
+#include "Core/Rendering/Texture.hpp"
 
 namespace OpenGlUtils
 {
@@ -15,15 +16,36 @@ namespace OpenGlUtils
 			dummy++;
 		}
 	}
+	inline const char* GetErrorString(const GLenum err) 
+	{
+		switch (err) 
+		{
+			case GL_NO_ERROR: return "GL_NO_ERROR";
+			case GL_INVALID_ENUM: return "GL_INVALID_ENUM";
+			case GL_INVALID_VALUE: return "GL_INVALID_VALUE";
+			case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION";
+			case GL_STACK_OVERFLOW: return "GL_STACK_OVERFLOW";
+			case GL_STACK_UNDERFLOW: return "GL_STACK_UNDERFLOW";
+			case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY";
+			case GL_INVALID_FRAMEBUFFER_OPERATION: return "GL_INVALID_FRAMEBUFFER_OPERATION";
+			case GL_CONTEXT_LOST: return "GL_CONTEXT_LOST";
+			default: return "UnknownError";
+		}
+	}
 
 	inline bool GLLogCall(const char* function, const char* file, int line)
 	{
 		while (GLenum error = glGetError())
 		{
-			LogError(std::format("[OpenGL Error]: ({}): {} File:{} Line:{}", error, function, file, line));
+			LogError(std::format("[OpenGL Error]:{} ({}): {} File:{} Line:{}", GetErrorString(error), error, function, file, line));
 			return false;
 		}
 		return true;
+	}
+
+	inline int GetTextureCubeFaceIndex(const Rendering::TextureCubeFace face)
+	{
+		return static_cast<int>(face);
 	}
 }
 

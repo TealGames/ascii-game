@@ -51,65 +51,134 @@ namespace Rendering
 			return 0;
 		}
 
-		static RenderObjectId AllocateTexture(const unsigned char* data, const Vec2Int& size, 
-			const ChannelFormat channelFormat, const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
+		static GLenum GetInputFormat(const ChannelFormat channelFormat)
+		{
+			if (channelFormat == ChannelFormat::Single) return GL_RED;
+			else if (channelFormat == ChannelFormat::RGB) return GL_RGB;
+			else if (channelFormat == ChannelFormat::RGBA) return GL_RGBA;
+
+			LogError(std::format("[OPENGL]: Attempted to convert channel format but texture channel format has no actions"));
+			return 0;
+		}
+		static GLenum GetStorage(const InternalStorage storage)
+		{
+			if (storage == InternalStorage::R8) return GL_R8;
+			else if (storage == InternalStorage::RGB8) return GL_RGB8;
+			else if (storage == InternalStorage::RGBA8) return GL_RGBA8;
+			else if (storage == InternalStorage::Depth24) return GL_DEPTH_COMPONENT24;
+			else if (storage == InternalStorage::Depth24_Stencil8) return GL_DEPTH24_STENCIL8;
+
+			LogError(std::format("[OPENGL]: Attempted to convert channel format but texture channel format has no actions"));
+			return 0;
+		}
+
+		static GLenum GetTexelStorageType(const InternalStorage storage)
+		{
+			if (storage == InternalStorage::R8 || storage == InternalStorage::RGB8 ||
+				storage == InternalStorage::RGBA8)
+				return GL_UNSIGNED_BYTE;
+			else if (storage == InternalStorage::Depth24)
+				return GL_UNSIGNED_INT;
+			else if (storage == InternalStorage::Depth24_Stencil8)
+				return GL_UNSIGNED_INT_24_8;
+
+			LogError(std::format("[OPENGL]: Attempted to convert internal storage to texel storage type"));
+			return 0;
+		}
+
+		static void SetTextureSettings(const RenderObjectId id, const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
+		{
+			//TODO: do something with it
+			GL_CALL(glGenerateTextureMipmap(id));
+
+			//Note: S-> x axis/U in texcoords, T-> y axis/V in tex, R-> z axis/w in tex
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_WRAP_S, GetWrapBehavior(wrap[0])));
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_WRAP_T, GetWrapBehavior(wrap[1])));
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_WRAP_R, GetWrapBehavior(wrap[2])));
+
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_MIN_FILTER, GetMinFilter(min)));
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GetMagFilter(mag)));
+		}
+
+		static RenderObjectId AllocateTexture(const TextureData& data)
 		{
 			RenderObjectId textureId;
-			GL_CALL(glGenTextures(1, &textureId));
-			GL_CALL(glBindTexture(GL_TEXTURE_2D, textureId));
+			GL_CALL(glCreateTextures(GL_TEXTURE_2D, 1, &textureId));
+			//GL_CALL(glTextureStorage2D(GL_TEXTURE_2, 0, format, size.m_X, size.m_Y, 0, format, GL_UNSIGNED_BYTE, data));
+			GL_CALL(glTextureStorage2D(textureId, 1, GetStorage(data.m_internalStorage), data.m_size.m_X, data.m_size.m_Y));
 
-			GLenum format = GL_RGBA;
-			if (channelFormat == ChannelFormat::Single) format = GL_RED;
-			else if (channelFormat == ChannelFormat::RGB) format = GL_RGB;
-			else if (channelFormat == ChannelFormat::RGBA) format = GL_RGBA;
-			else
-			{
-				LogError(std::format("[OPENGL]: Attempted to allocate texture but texture channel format has no actions"));
-				return INVALID_OBJ_ID;
-			}
-			GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, format, size.m_X, size.m_Y, 0, format, GL_UNSIGNED_BYTE, data));
-
-			//TODO: do something with it
-			GL_CALL(glGenerateMipmap(GL_TEXTURE_2D));
-			
-			//Note: S-> x axis/U in texcoords, T-> y axis/V in tex, R-> z axis/w in tex
-			GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GetWrapBehavior(wrap[0])));
-			GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GetWrapBehavior(wrap[1])));
-			GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GetWrapBehavior(wrap[2])));
-
-			GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GetMinFilter(min)));
-			GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetMagFilter(mag)));
-
+			SetTextureSettings(textureId, data.m_wrapBehavior, data.m_minFilter, data.m_magFilter);
 			return textureId;
 		}
+
 		static void DeallocateTexture(const RenderObjectId id)
 		{
 			GL_CALL(glDeleteTextures(1, &id));
 		}
 
-		static void BindToSlot(const RenderObjectId id, const TextureSlotIndex index)
+		static void SetData(const RenderObjectId id, const Vec2Int size, const InternalStorage storage, const std::byte* data)
 		{
-			GL_CALL(glActiveTexture(GL_TEXTURE0 + index));
-			GL_CALL(glBindTexture(GL_TEXTURE_2D, id));
-
-			GLint boundTex = 0;
-			glGetIntegerv(GL_TEXTURE_BINDING_2D, &boundTex);
-			//LogWarning(std::format("Texture bound at slot:{} has id:{}", index, boundTex));
-		}
-		static void UnbindFromSlot(const TextureSlotIndex index)
-		{
-			GL_CALL(glActiveTexture(GL_TEXTURE0 + index));
-			GL_CALL(glBindTexture(GL_TEXTURE_2D, 0));
+			GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
+			GLenum texelStorage = GetTexelStorageType(storage);
+			GL_CALL(glTextureSubImage2D(id, 0, 0, 0, size.m_X, size.m_Y, format, texelStorage, data));
 		}
 
-		Texture CreateTexture(const unsigned char* data, const Vec2Int& size, const ChannelFormat format, 
+		static void SetBindStatus(const RenderObjectId id, const TextureSlotIndex index, const bool status)
+		{
+			if (index < 0 || index >= GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
+			{
+				LogError(std::format("[OPENGL]: Attempted to set bind status for texture "
+					"to index:{} status:{} but index is out of bounds", index, status));
+				return;
+			}
+
+			if (status)
+			{
+				GL_CALL(glBindTextureUnit(index, id));
+			}
+			else
+			{
+				GL_CALL(glBindTextureUnit(index, 0));
+			}
+		}
+
+		Texture CreateTexture(const std::byte* data, const Vec2Int& size, const InternalStorage storage,
 			const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 		{
-			return Texture(data, size, format, wrap, min, mag, TextureCallbacks
+			return Texture(data, size, storage, wrap, min, mag, TextureCallbacks
 				{
 					AllocateTexture,
-					BindToSlot,
-					UnbindFromSlot,
+					SetData,
+					SetBindStatus,
+					DeallocateTexture,
+				});
+		}
+
+		static RenderObjectId AllocateTextureCube(const TextureData& data)
+		{
+			RenderObjectId cubeId;
+			GL_CALL(glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cubeId));
+			//GL_CALL(glTextureStorage2D(GL_TEXTURE_2, 0, format, size.m_X, size.m_Y, 0, format, GL_UNSIGNED_BYTE, data));
+			GL_CALL(glTextureStorage2D(cubeId, 1, GetStorage(data.m_internalStorage), data.m_size.m_X, data.m_size.m_Y));
+
+			SetTextureSettings(cubeId, data.m_wrapBehavior, data.m_minFilter, data.m_magFilter);
+			return cubeId;
+		}
+		static void SetDataCube(const TextureCubeFace face, const RenderObjectId id, const Vec2Int size, const InternalStorage storage, const std::byte* data)
+		{
+			GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
+			GLenum texelStorage = GetTexelStorageType(storage);
+			GL_CALL(glTextureSubImage3D(id, 0, 0, 0, OpenGlUtils::GetTextureCubeFaceIndex(face), size.m_X, size.m_Y, 1, format, texelStorage, data));
+		}
+
+		TextureCube CreateTextureCube(const Vec2Int& size, const InternalStorage storage, 
+			const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
+		{
+			return TextureCube(size, storage, wrap, min, mag, TextureCubeCallbacks
+				{
+					AllocateTextureCube,
+					SetDataCube,
+					SetBindStatus,
 					DeallocateTexture,
 				});
 		}
