@@ -1,5 +1,5 @@
 #include "Core/Rendering/GpuFence.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 #ifdef OPENGL
 #include "Platform/OpenGl/OpenGlGpuFence.hpp"

@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UISliderComponent.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UIPanel.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"

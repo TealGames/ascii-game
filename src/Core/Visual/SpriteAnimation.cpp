@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/Visual/SpriteAnimation.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/HelperFunctions.hpp"
 
 SpriteAnimationFrame::SpriteAnimationFrame() : SpriteAnimationFrame(0, {}) {}

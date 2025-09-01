@@ -1,5 +1,5 @@
 #include "Core/Rendering/Texture.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 #if defined(OPENGL)
 #include "Platform/OpenGl/OpenGlTexture.hpp"
@@ -159,7 +159,6 @@ namespace Rendering
 
 	void TextureCube::BindToSlot(const TextureSlotIndex slotIndex)
 	{
-		LogWarning("DIRECT"+ std::to_string(slotIndex));
 		m_callbacks.m_SetBindStatusFunc(m_data.m_id,slotIndex, true);
 		m_data.m_slotIndex = slotIndex;
 		//LogWarning(std::format("texture slot now:{} for:{}", m_slotIndex, m_id));

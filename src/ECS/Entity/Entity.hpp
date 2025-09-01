@@ -10,7 +10,7 @@
 #include <tuple>
 #include "Utils/HelperFunctions.hpp"
 #include "ECS/Component/ComponentType.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/IValidateable.hpp"
 
 class TransformComponent;

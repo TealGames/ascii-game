@@ -229,9 +229,9 @@ namespace Rendering
 		{
 			GL_CALL(glDeleteBuffers(1, &id));
 		}
-		UniformBuffer CreateUniformBuffer()
+		UniformBuffer CreateUniformBuffer(const char* blockName)
 		{
-			return UniformBuffer(
+			return UniformBuffer(blockName,
 				UniformBufferPlatformCallbacks
 				{
 					AllocateUniformBuffer,

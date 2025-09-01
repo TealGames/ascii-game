@@ -5,7 +5,7 @@
 #include <limits>
 #include <optional>
 #include "Core/Serialization/JsonSerializers.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 MoveContraints::MoveContraints(const bool constrainX, const bool constrainY)
 	: m_ConstrainX(constrainX), m_ConstrainY(constrainY) {}

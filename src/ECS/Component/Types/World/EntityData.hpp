@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "ECS/Entity/EntityRegistry.hpp"
 #include "ECS/Component/Types/World/TransformData.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"

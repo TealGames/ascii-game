@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Utils/Data/NormalizedPosition.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 const Vec2 NormalizedPosition::TOP_LEFT = { MIN, MAX };
 const Vec2 NormalizedPosition::TOP_RIGHT = { MAX, MAX };

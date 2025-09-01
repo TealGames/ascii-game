@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Core/Input/InputProfile.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include <fstream>
 #include "Utils/StringUtil.hpp"
 #include "Core/Input/InputManager.hpp"

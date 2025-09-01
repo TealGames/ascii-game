@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UIButton.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"

@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/StringUtil.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "AnsiCodes.hpp"

@@ -11,7 +11,7 @@
 #include "ECS/Component/Types/World/LightSourceData.hpp"
 #include "ECS/Component/Types/World/EntityRendererData.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 //This means that the max number of components supported is 64 
 // (the amount of bits for the type)

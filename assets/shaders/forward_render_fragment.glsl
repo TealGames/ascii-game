@@ -23,7 +23,6 @@ layout(std140) uniform ViewerBlock
     vec3 worldPos;
 } uViewerBlock;
 
-uniform bool uDoShadows;
 uniform sampler2D uAlbedo;
 uniform samplerCube uShadowMaps[2];
 
@@ -60,8 +59,12 @@ void main()
     vec3 viewDir = normalize(uViewerBlock.worldPos - vWorldPos);
     vec4 albedo = texture(uAlbedo, vTexCoords);
     vec3 color= vec3(0, 0, 0);
-    if (uDoShadows) color= albedo.rgb * vColor.rgb * 0.1;
-    else color = albedo.rgb * vColor.rgb;
+
+#ifdef DO_SHADOWS
+    color= albedo.rgb * vColor.rgb * 0.1;
+#else
+    color = albedo.rgb * vColor.rgb;
+#endif
 
     //Here we calculate directional light impact by adding directional light color
     //based on how much light there is coming towards the surface normal
@@ -106,13 +109,13 @@ void main()
                 thisToViewDir = normalize(thisToLightDir  + viewDir);
                 spec = pow(max(dot(normal, thisToViewDir), 0.0), uSpecularPower);
 
-                if (uDoShadows)
-                {
-                    closestDepth = texture(uShadowMaps[pl.shadowMapIndex], -thisToLightDir).r * pl.radius;
-                    bias = 0.05 * (1.0 - dot(normal, -thisToLightDir));
-                    shadow = (dist - bias > closestDepth) ? 1.0 : 0.0;
-                }
-                else shadow= 0;
+#ifdef DO_SHADOWS
+                closestDepth = texture(uShadowMaps[pl.shadowMapIndex], -thisToLightDir).r * pl.radius;
+                bias = 0.05 * (1.0 - dot(normal, -thisToLightDir));
+                shadow = (dist - bias > closestDepth) ? 1.0 : 0.0;
+#else
+                shadow= 0;
+#endif
 
                  //TODO: considering light strength from color alpha
                 color += pl.color.rgb * attenuation * (albedo.rgb * vColor.rgb * lightInNormalDir + spec) * (1.0-shadow);

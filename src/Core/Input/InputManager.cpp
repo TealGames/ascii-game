@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/Input/InputManager.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Window/WindowManager.hpp"
 

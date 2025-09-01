@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/Asset/Asset.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include <fstream>
 
 Asset::Asset(const std::filesystem::path& path, const bool hasDependencies) 

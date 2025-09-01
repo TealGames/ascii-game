@@ -1,6 +1,6 @@
 #include "Core/Window/WindowManager.hpp"
 #include "StaticGlobals.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include <format>
 
 #if defined(GLFW)

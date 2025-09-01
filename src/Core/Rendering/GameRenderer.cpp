@@ -8,7 +8,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/RaylibUtils.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/EngineState.hpp"
 #include "Core/Camera/CameraController.hpp"
 #include "ECS/Component/Types/World/TransformData.hpp"
@@ -27,7 +27,7 @@ namespace Rendering
     constexpr Utils::Color LIGHT_AREA_COLOR_FROM_LIGHT = Utils::Color(0, 0, 0, 0);
     constexpr Utils::Color LIGHT_AREA_COLOR = {255, 255, 255, 255};
     
-    constexpr Vec2Int SHADOW_MAP_SIZE = {1024, 1024};
+    constexpr Vec2Int SHADOW_MAP_SIZE = {256, 256};
     constexpr float SHADOW_NEAR_DISTANCE = 0.001;
     constexpr float SHADOW_FAR_DISTANCE = 1000;
 
@@ -47,6 +47,9 @@ namespace Rendering
     constexpr const char* TEXTURE_UNIFORM_NAME = "uAlbedo";
     constexpr const char* SHADOW_MAP_UNIFORM_NAME = "uShadowMaps";
     constexpr const char* SHADOW_TOGGLE_UNIFORM_NAME = "uDoShadows";
+
+    constexpr const char* VIEWER_UNIFORM_BLOCK_NAME = "ViewerBlock";
+    constexpr const char* LIGHT_UNIFORM_BLOCK_NAME = "LightsBlock";
 
     std::string Vertex::ToString() const
     {
@@ -96,8 +99,14 @@ namespace Rendering
         m_vertexBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(VertexType), PRE_ALLOCATED_VERTICES_COUNT, VertexAttributeAdvance::Vertex);
         m_indexBuffer = Backend::CreateIndexBuffer(nullptr, PRE_ALLOCATED_INDICES_COUNT);
         m_instancedBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(InstanceData), PRE_ALLOCATED_SHAPES, VertexAttributeAdvance::Instance);
-        m_viewerUniformBuffer = Backend::CreateUniformBuffer();
-        m_lightUniformBuffer = Backend::CreateUniformBuffer();
+        m_viewerUniformBuffer = Backend::CreateUniformBuffer(VIEWER_UNIFORM_BLOCK_NAME);
+        m_lightUniformBuffer = Backend::CreateUniformBuffer(LIGHT_UNIFORM_BLOCK_NAME);
+
+        m_engineState->m_GraphicsContext.m_GraphicsManager->AddUniformBuffer(m_lightUniformBuffer);
+        m_engineState->m_GraphicsContext.m_GraphicsManager->AddUniformBuffer(m_viewerUniformBuffer);
+
+        m_bufferController.AddUniformBuffer(&m_lightUniformBuffer);
+        m_bufferController.AddUniformBuffer(&m_viewerUniformBuffer);
 
         //TODO: right now all shadows have same resolution -> this might be a light component setting
         for (auto& map : m_shadowMaps) map = CreateTextureCube(SHADOW_MAP_SIZE, InternalStorage::Depth24);
@@ -128,7 +137,7 @@ namespace Rendering
         return m_isInit;
     }
 
-    void Renderer::InitCoreShaders() const
+    void Renderer::InitCoreShaders()
     {
         for (size_t i = 0; i < CORE_SHADER_COUNT; i++)
         {
@@ -139,6 +148,14 @@ namespace Rendering
                 return;
             }
         }
+
+       /* m_viewerUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender));
+        m_lightUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender));*/
+
+        //m_engineState->m_GraphicsContext.m_GraphicsManager->SetUniform(UniformDataType::Bool, SHADOW_TOGGLE_UNIFORM_NAME, &DO_SHADOWS);
+        LogWarning(std::format("FR shader:{}", GetCoreShader(CoreShader::ForwardRender)->ToString()));
+        const std::string_view defines[] = {"DO_SHADOWS"};
+        GetCoreShader(CoreShader::ForwardRender)->CreateProgram({ defines, 1 });
     }
 
     //Shader* Renderer::GetDefaultShader() const
@@ -154,26 +171,26 @@ namespace Rendering
     //    return m_engineState->m_GraphicsContext.m_GraphicsManager->GetForwardRenderShaderMutable();
     //}
 
-    Shader* Renderer::GetCoreShader(const CoreShader shader) const
+    Shader* Renderer::GetCoreShader(const CoreShader shader)
     {
         if (m_coreShaders[0] == nullptr) InitCoreShaders();
         return m_coreShaders[static_cast<CoreShaderIntegralType>(shader)];
     }
-    Shader* Renderer::GetBaseShader() const
+    Shader* Renderer::GetBaseShader()
     {
         if (DO_LIGHTING) return GetCoreShader(CoreShader::ForwardRender);
         return GetCoreShader(CoreShader::Default);
     }
-    Shader* Renderer::GetBaseTextureShader() const
+    Shader* Renderer::GetBaseTextureShader()
     {
         if (DO_LIGHTING) return GetCoreShader(CoreShader::ForwardRender);
         return GetCoreShader(CoreShader::Default);
     }
-    Texture* Renderer::GetBaseAlbedo() const
+    Texture* Renderer::GetBaseAlbedo()
     {
         return m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultAlbedoMutable();
     }
-    Texture* Renderer::GetMaterialAlbedo(Material& material) const
+    Texture* Renderer::GetMaterialAlbedo(Material& material)
     {
         if (material.m_Albedo == nullptr)
             return GetBaseAlbedo();
@@ -799,7 +816,7 @@ namespace Rendering
     void Renderer::ExecuteShadowPass()
     {
         Shader* shadowShader = GetCoreShader(CoreShader::Shadow);
-        shadowShader->BindUniformBlockIfNeeded(m_viewerUniformBuffer.GetName(), m_viewerUniformBuffer.GetBindIndex());
+        //shadowShader->BindUniformBlockIfNeeded(m_viewerUniformBuffer.GetName(), m_viewerUniformBuffer.GetBindIndex());
         shadowShader->BindActive();
         m_frameBuffer.BindActive();
 
@@ -893,8 +910,8 @@ namespace Rendering
             }
             else if (lastBatchShader == nullptr || lastBatchShader != batch.m_Shader)
             {
-                batch.m_Shader->BindUniformBlockIfNeeded(m_viewerUniformBuffer.GetName(), m_viewerUniformBuffer.GetBindIndex());
-                batch.m_Shader->BindUniformBlockIfNeeded(m_lightUniformBuffer.GetName(), m_lightUniformBuffer.GetBindIndex());
+               /* batch.m_Shader->BindUniformBlockIfNeeded(m_viewerUniformBuffer.GetName(), m_viewerUniformBuffer.GetBindIndex());
+                batch.m_Shader->BindUniformBlockIfNeeded(m_lightUniformBuffer.GetName(), m_lightUniformBuffer.GetBindIndex());*/
                 batch.m_Shader->BindActive();
             }
             lastBatchShader = batch.m_Shader;
@@ -909,13 +926,13 @@ namespace Rendering
             if (batch.m_Texture != nullptr && lastBatchTexture != batch.m_Texture)
             {
                 TextureSlotIndex slot = m_textureController.TryAddTextureToAvailableSlot(batch.m_Texture);
-                if (!batch.m_Shader->TrySetUniform(UniformType::Sampler2D, TEXTURE_UNIFORM_NAME, &slot))
+                if (!batch.m_Shader->TrySetUniform(UniformDataType::Sampler2D, TEXTURE_UNIFORM_NAME, &slot))
                     return;
             }
             if (DO_SHADOWS && batch.m_Shader== GetCoreShader(CoreShader::ForwardRender))
             {
-                batch.m_Shader->TrySetUniform(UniformType::Bool, SHADOW_TOGGLE_UNIFORM_NAME, &DO_SHADOWS);
-                batch.m_Shader->TrySetUniformArray(UniformType::CubeSampler, SHADOW_MAP_UNIFORM_NAME,
+                //batch.m_Shader->TrySetUniform(UniformDataType::Bool, SHADOW_TOGGLE_UNIFORM_NAME, &DO_SHADOWS);
+                batch.m_Shader->TrySetUniformArray(UniformDataType::CubeSampler, SHADOW_MAP_UNIFORM_NAME,
                     shadowCubeMapSlots, m_uniformData.m_LightBlock.m_PointLightsCount);
             }
             
@@ -935,18 +952,6 @@ namespace Rendering
         if (RENDER_FRAMES_COUNT != NO_RENDER_FRAME_COUNT_LIMIT &&
             m_framesSinceStart >= RENDER_FRAMES_COUNT)
             return;
-
-        //TODO: this should ideally be removed and part of the uniform initializer
-        if (!m_viewerUniformBuffer.IsAllocated())
-        {
-            m_viewerUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender), "ViewerBlock");
-            m_bufferController.AddUniformBuffer(&m_viewerUniformBuffer);
-        }
-        if (!m_lightUniformBuffer.IsAllocated())
-        {
-            m_lightUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender), "LightsBlock");
-            m_bufferController.AddUniformBuffer(&m_lightUniformBuffer);
-        }
 
         if (DO_SHADOWS) ExecuteShadowPass();
 

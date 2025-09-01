@@ -3,7 +3,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include <fstream>
 #include "Utils/StringUtil.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 const std::string Fig::COMMENT_START = "/*";
 const std::string Fig::COMMENT_CLOSE= "*\\";

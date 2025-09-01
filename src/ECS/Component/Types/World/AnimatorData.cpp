@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/World/AnimatorData.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/Serialization/JsonSerializers.hpp"
 
 AnimatorData::AnimatorData() : AnimatorData({}, 0, 1, false) {}

@@ -1,5 +1,5 @@
 #include "Window.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include <format>
 #include "Utils/HelperFunctions.hpp"
 

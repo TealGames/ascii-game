@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "Core/Serialization/JsonConstants.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/FontAsset.hpp"

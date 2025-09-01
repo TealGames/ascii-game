@@ -10,7 +10,7 @@
 #include "Core/Rendering/Shader/Shader.hpp"
 #include "Utils/Data/Vec2Type.hpp"
 #include "Core/Rendering/GpuFence.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 namespace Rendering
 {
@@ -384,18 +384,18 @@ namespace Rendering
 		/// The name for this uniform buffer block. It must
 		/// stay consistent for all shaders
 		/// </summary>
-		std::string m_blockName;
+		std::string_view m_blockName;
 		size_t m_allocatedByteSize;
 
 		/*std::vector<UniformBlockMemberData> m_members;
 		size_t m_memberAlignment;*/
-		std::unordered_map<std::string, UniformBlockMember> m_members;
+		std::unordered_map<std::string, UniformBlockMemberMemoryInfo> m_members;
 	public:
 
 	private:
 	public:
 		UniformBuffer();
-		UniformBuffer(const UniformBufferPlatformCallbacks callbacks);
+		UniformBuffer(const char* blockName, const UniformBufferPlatformCallbacks callbacks);
 		UniformBuffer(const UniformBuffer& other) = delete;
 		UniformBuffer(UniformBuffer&& other) = delete;
 		~UniformBuffer();
@@ -404,8 +404,11 @@ namespace Rendering
 
 		/*void AddMember(const char* name, const size_t size, const size_t alignment);
 		void FinishLayout();*/
-		void AllocateFromShaderUniformBlock(const Shader& shader, const char* blockName);
-		void LinkToUniformBindingPoint(const UniformBufferBindIndex bindIndex);
+		void AllocateFromShaderUniformBlock(const Shader& shader);
+		void SetBindingPoint(const UniformBufferBindIndex bindIndex);
+		void LinkBufferToBindingPoint(const UniformBufferBindIndex bindIndex);
+		void LinkBufferToCurrentBindingPoint();
+		bool HasValidBindingPoint() const;
 
 		void WriteData(const size_t byteOffset, const size_t writeByteSize, const void* data);
 		bool TryWriteData(const char* memberName, const size_t writeSize, const void* data);
@@ -437,7 +440,7 @@ namespace Rendering
 
 		UniformBufferBindIndex GetBindIndex() const;
 		RenderObjectId GetId() const;
-		std::string GetName() const;
+		std::string_view GetName() const;
 		size_t GetAllocatedByteSize() const;
 
 		UniformBuffer& operator=(const UniformBuffer&) = delete;

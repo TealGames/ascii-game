@@ -215,8 +215,8 @@ namespace Core
 
 		m_windowManager.m_OnWindowCreated.AddListener([this](Window* window)-> void 
 			{
-				if (!m_renderer.WasInit()) m_renderer.Init();
 				m_engineState.m_GraphicsContext= Rendering::GraphicsContext{ window, &m_graphicsManager }; 
+				if (!m_renderer.WasInit()) m_renderer.Init();
 			});
 		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void 
 			{

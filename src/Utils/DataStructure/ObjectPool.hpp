@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <functional>
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/ToStringFunctions.hpp"
 
 template<typename T>

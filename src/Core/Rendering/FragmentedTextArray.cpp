@@ -2,7 +2,7 @@
 #include "Core/Rendering/FragmentedTextArray.hpp"
 #include "Utils/RaylibUtils.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 std::string ToString(const TextArrayPositionType& positionType)
 {

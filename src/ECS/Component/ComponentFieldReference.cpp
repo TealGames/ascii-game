@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Component/ComponentFieldReference.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/HelperFunctions.hpp"
 
 ComponentFieldReference::ComponentFieldReference()

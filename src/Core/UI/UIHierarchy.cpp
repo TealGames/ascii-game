@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/UI/UIHierarchy.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include <queue>
 #include <vector>
 #include "Core/Scene/GlobalEntityManager.hpp"

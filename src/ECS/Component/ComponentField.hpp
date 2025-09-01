@@ -8,7 +8,7 @@
 #include <optional>
 #include <cstdint>
 #include "Utils/Data/Color.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 //enum class ComponentFieldType
 //{

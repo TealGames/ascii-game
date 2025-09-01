@@ -3,7 +3,7 @@
 #ifdef GLFW
 #include "GLFW/glfw3.h"
 #include "Core/Rendering/RenderingBackend.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 namespace Core
 {

@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/Asset/TextureAsset.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "stb/stb_image.h"
 
 //static constexpr size_t DEFAULT_CHANNELS = 3;

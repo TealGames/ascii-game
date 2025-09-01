@@ -1,8 +1,8 @@
 #pragma once
-#include <string>
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include "Utils/Data/FixedString.hpp"
 #include "Core/Rendering/RenderObjectId.hpp"
 
 namespace Rendering
@@ -16,6 +16,14 @@ namespace Rendering
 	std::string ToString(const ShaderType type);
 
 	enum class UniformType : std::uint8_t
+	{
+		Single	=0,
+		Array	=1,
+		Buffer	=2,
+	};
+	std::string ToString(const UniformType type);
+
+	enum class UniformDataType : std::uint8_t
 	{
 		Bool  = 0,
 		Float = 1,
@@ -36,8 +44,14 @@ namespace Rendering
 		/// </summary>
 		CubeSampler	  = 8
 	};
+	struct UniformDataTypeInfo
+	{
+		bool m_IsArray;
+		UniformDataType m_Type;
+		//const void* m_ValuePtr;
+	};
 
-	struct UniformBlockMember
+	struct UniformBlockMemberMemoryInfo
 	{
 		std::string m_Name;
 		/// <summary>
@@ -71,22 +85,40 @@ namespace Rendering
 		std::string ToString() const;
 	};
 
-	struct UniformBlockData
+	struct UniformReflectionInfo
 	{
+		//UniformDataType m_DataType = UniformDataType::Float;
+		UniformType m_Type = UniformType::Single;
 		UniformBufferBindIndex m_BufferBindIndex = INVALID_BUFFER_BIND_INDEX;
+
+		std::string ToString() const;
+	};
+
+	struct ShaderSourceDefines
+	{
+		const std::string_view* m_DefinesArr = nullptr;
+		size_t m_DefinesSize = 0;
+	};
+
+	struct ShaderSource
+	{
+		ShaderSourceDefines m_Defines = {};
+		std::string m_Source = "";
 	};
 
 	class Shader;
+	using UniformReflectionCollectionType = std::unordered_map<String16, UniformReflectionInfo>;
 	struct ShaderPlatformCallbacks
 	{
-		RenderObjectId(*m_InitFunc) (const char* vertexSource, const char* fragmentSource, std::unordered_map<std::string, UniformBlockData>& blockData);
+		RenderObjectId(*m_CreateProgramFunc) (const ShaderSource& vertexSource, const ShaderSource& fragmentSource, UniformReflectionCollectionType* blockData);
 		void(*m_BindActiveFunc) (const Shader& shader);
 		void(*m_UnbindActiveFunc) (const Shader& shader);
-		bool(*m_TrySetUniformFunc) (const Shader& shader, const UniformType uniform, const char* uniformName, const void* valuePtr);
-		bool(*m_TrySetArrayUniformFunc) (const Shader& shader, const UniformType uniform, const char* uniformName, const void* valuePtr, const size_t size);
-		bool(*m_TryGetUniformFunc) (const Shader& shader, const UniformType uniform, const char* uniformName, void* outputPtr);
+		std::string(*m_TrySetUniformFunc) (const Shader& shader, const UniformDataType uniform, const char* uniformName, const void* valuePtr);
+		std::string(*m_TrySetArrayUniformFunc) (const Shader& shader, const UniformDataType uniform, const char* uniformName, const void* valuePtr, const size_t size);
+		bool(*m_TryGetUniformFunc) (const Shader& shader, const UniformDataType uniform, const char* uniformName, void* outputPtr);
 		bool(*m_TryBindUniformBlockFunc) (const Shader& shader, const char* uniformBlockName, const UniformBufferBindIndex index);
-		bool(*TryGetUniformBlockMembers) (const Shader& shader, const char* uniformBlockName, std::vector<UniformBlockMember>& members, size_t* fullSize);
+		bool(*TryGetUniformBlockMembers) (const Shader& shader, const char* uniformBlockName, std::vector<UniformBlockMemberMemoryInfo>& members, size_t* fullSize);
+		void(*m_DeleteProgramFunc) (const Shader& shader);
 	};
 
 	class Shader
@@ -98,41 +130,53 @@ namespace Rendering
 		std::string m_vertexSourceCode;
 		std::string m_fragmentSourceCode;
 
-		std::unordered_map<std::string, UniformBlockData> m_uniformBlockData;
-		size_t m_boundUniformBlocksCount;
+		UniformReflectionCollectionType m_uniformData;
+		size_t m_unboundUniformBuffers;
 	public:
 
 	private:
-		void Init();
+		void DeleteProgram(const bool clearExistingData);
+		bool PassesValidCheck() const;
 	public:
-		Shader(const std::string& vertexSource, const std::string& fragmentSource, const ShaderPlatformCallbacks& callbacks);
+		Shader(const std::string& verexSource, const std::string& fragmentSource, const ShaderPlatformCallbacks& callbacks);
+		~Shader();
+		Shader(const Shader&) = delete;
+		Shader(Shader&&) noexcept;
 
 		void SetSources(const std::string& vertexSource, const std::string& fragmentSource);
+		void CreateProgram(const ShaderSourceDefines& vertexDefines = {}, const ShaderSourceDefines& fragmentDefines = {});
 
 		RenderObjectId GetId() const;
 		bool IsValid() const;
-		bool HasUniformBlocks() const;
-		bool HasAllUniformBlocksBounds() const;
-		bool NeedsUniformBlockBound(const std::string& name) const;
+		//bool HasUniformBlocks() const;
+		//bool HasAllUniformBlocksBounds() const;
+		//bool NeedsUniformBlockBound(const std::string& name) const;
 
 		const std::string& GetVertexSource() const;
 		const char* GetVertexSourceCStyle() const;
 
-		const std::string& GetFragmnetSource() const;
+		const std::string& GetFragmentSource() const;
 		const char* GetFragmentSourceCStyle() const;
 
 		void BindActive();
 		void UnbindActive();
 
-		bool TrySetUniform(const UniformType type, const char* uniformName, const void* valuePtr);
-		bool TrySetUniformArray(const UniformType arrayType, const char* uniformName, const void* arrPtr, const size_t elementCount);
-		bool TryGetUniform(const UniformType type, const char* uniformName, void* outputValue) const;
+		bool HasUniform(const std::string_view& view) const;
+		void SetUniform(const UniformDataType type, const char* uniformName, const void* valuePtr);
+		bool TrySetUniform(const UniformDataType type, const char* uniformName, const void* valuePtr);
+		void SetUniformArray(const UniformDataType arrayType, const char* uniformName, const void* arrPtr, const size_t elementCount);
+		bool TrySetUniformArray(const UniformDataType arrayType, const char* uniformName, const void* arrPtr, const size_t elementCount);
+		bool TryGetUniform(const UniformDataType type, const char* uniformName, void* outputValue) const;
 
 		bool TryBindUniformBlock(const char* blockName, const UniformBufferBindIndex index);
-		bool BindUniformBlockIfNeeded(const std::string& name, const UniformBufferBindIndex index);
-		bool TryGetUniformBlockMembers(const char* blockName, std::vector<UniformBlockMember>& members, size_t* fullSize) const;
+		//bool BindUniformBlockIfNeeded(const std::string& name, const UniformBufferBindIndex index);
+		bool TryGetUniformBlockMembers(const char* blockName, std::vector<UniformBlockMemberMemoryInfo>& members, size_t* fullSize) const;
+		const UniformReflectionCollectionType& GetAllUniformInfo() const;
 
 		std::string ToString() const;
+
+		Shader& operator=(const Shader&) = delete;
+		Shader& operator=(Shader&&) noexcept;
 		//ShaderType GetType() const;
 	};
 

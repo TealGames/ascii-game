@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 namespace Core
 {

@@ -2,7 +2,7 @@
 #include "Core/Rendering/RenderLayer.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 std::string ToString(const RenderLayerType& layers)
 {

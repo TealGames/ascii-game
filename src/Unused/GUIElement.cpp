@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Unused/GUIElement.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 

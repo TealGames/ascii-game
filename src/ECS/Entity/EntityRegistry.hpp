@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS/Entity/EntityID.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "ECS/Component/Component.hpp"
 #include <format>

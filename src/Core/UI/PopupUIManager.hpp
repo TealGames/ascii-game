@@ -3,7 +3,7 @@
 #include <type_traits>
 #include <limits>
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/UI/PopupUI.hpp"
 #include "Utils/Data/Event.hpp"
 #include "Core/UI/UIRect.hpp"

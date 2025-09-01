@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Core/Visual/VisualDataParser.hpp"
 #include "Core/Asset/GlobalColorCodes.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/RaylibUtils.hpp"
 #include "StaticReferenceGlobals.hpp"
 #include "Utils/Data/ColorConstants.hpp"

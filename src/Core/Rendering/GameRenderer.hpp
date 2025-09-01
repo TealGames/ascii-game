@@ -137,7 +137,7 @@ namespace Rendering
         size_t m_frameDrawCalls;
 
         const EngineState* m_engineState;
-        mutable std::array<Shader*, CORE_SHADER_COUNT> m_coreShaders;
+        std::array<Shader*, CORE_SHADER_COUNT> m_coreShaders;
         //StaticFrameRenderData m_staticRenderData;
         UniformBufferData m_uniformData;
 
@@ -151,7 +151,7 @@ namespace Rendering
         VertexLayout m_layout;
         BufferController m_bufferController;
         TextureController m_textureController;
-
+         
         FrameBuffer m_frameBuffer;
         TextureCube m_shadowMaps[MAX_POINT_LIGHTS];
 
@@ -188,11 +188,11 @@ namespace Rendering
         Shader* GetForwardRenderShader() const;
         */
 
-        Shader* GetCoreShader(const CoreShader shader) const;
-        Shader* GetBaseShader() const;
-        Shader* GetBaseTextureShader() const;
-        Texture* GetBaseAlbedo() const;
-        Texture* GetMaterialAlbedo(Material& material) const;
+        Shader* GetCoreShader(const CoreShader shader);
+        Shader* GetBaseShader();
+        Shader* GetBaseTextureShader();
+        Texture* GetBaseAlbedo();
+        Texture* GetMaterialAlbedo(Material& material);
 
         //void FrameRenderDataUpdateCheck();
         //StaticFrameRenderData& GetThisFrameRenderData();
@@ -219,7 +219,7 @@ namespace Rendering
         void Init();
         bool WasInit() const;
 
-        void InitCoreShaders() const;
+        void InitCoreShaders();
 
         void AddCallPolygon2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Utils::Color color);
         void AddCallCircle2D(const float radius, const Mat4& modelMatrix, const Utils::Color color);

@@ -7,7 +7,7 @@
 #include <fstream>
 //#include "plplot/plstream.h"
 //#include "plplot/plplot.h"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "AnsiCodes.hpp"
 
 static constexpr bool WRITE_TO_FILE = true;

@@ -163,10 +163,10 @@ namespace Rendering
 			return OpenGl::CreateIndexBuffer(indexArray, elementCount);
 #endif
 		}
-		UniformBuffer CreateUniformBuffer()
+		UniformBuffer CreateUniformBuffer(const char* blockName)
 		{
 #if defined(OPENGL)
-			return OpenGl::CreateUniformBuffer();
+			return OpenGl::CreateUniformBuffer(blockName);
 #endif
 		}
 

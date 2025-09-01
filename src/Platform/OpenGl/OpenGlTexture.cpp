@@ -1,7 +1,7 @@
 #include "Platform/OpenGl/OpenGlTexture.hpp"
 
 #ifdef OPENGL
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/OpenGlUtils.hpp"
 
 namespace Rendering

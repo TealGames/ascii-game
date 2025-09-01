@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/Asset/AssetManager.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/Asset/SceneAsset.hpp"
 #include "Core/Asset/InputProfileAsset.hpp"
 #include "Core/Asset/SpriteAnimationAsset.hpp"

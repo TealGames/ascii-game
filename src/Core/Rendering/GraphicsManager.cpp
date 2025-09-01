@@ -1,7 +1,7 @@
 #include "Core/Rendering/GraphicsManager.hpp"
 #include "Core/Asset/AssetManager.hpp"
-#include "Core/Asset/ShaderAsset.hpp"
 #include "Core/Asset/TextureAsset.hpp"
+#include "Core/Rendering/Buffers.hpp"
 
 namespace Rendering
 {
@@ -21,7 +21,11 @@ namespace Rendering
 
 		for (auto& shader : m_assetManager->GetAssetsOfTypeMutable<ShaderAsset>(SHADERS_FOLDER))
 		{
+			//NOTE: we must compile program before we init buffers to ensure that when the buffer
+			//has data filled from shader, shader is valid
+			shader->GetShaderMutable().CreateProgram();
 			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShaderMutable());
+			InitShaderBuffers(shader->GetShaderMutable());
 		}
 
 		m_defaultAlbedo= m_assetManager->TryGetTypeAssetFromPathMutable<TextureAsset>(DEFAULT_ALBEDO_PATH);
@@ -79,5 +83,68 @@ namespace Rendering
 		auto it = m_shaders.find(name.c_str());
 		if (it == m_shaders.end()) return nullptr;
 		return it->second;
+	}
+
+	void GraphicsManager::AddUniformBuffer(UniformBuffer& buffer)
+	{
+		m_uniformBuffers.emplace(buffer.GetName(), &buffer);
+		//LogWarning(std::format("Added:{}", buffer.GetName()));
+	}
+	bool GraphicsManager::HasUniformBuffer(const std::string_view& view) const
+	{
+		return m_uniformBuffers.find(view) != m_uniformBuffers.end();
+	}
+	void GraphicsManager::InitShaderBuffers(Shader& shader)
+	{
+		auto bufferIt = m_uniformBuffers.end();
+		for (const auto& uniformInfo : shader.GetAllUniformInfo())
+		{
+			if (uniformInfo.second.m_Type != UniformType::Buffer)
+				continue;
+
+			/*for (const auto& t : m_uniformBuffers)
+				LogWarning(std::format("Hash for:{} is:{}", t.first, std::hash<String16>{}(t.first)));
+			LogWarning(std::format("Info hash:{}", std::hash<String16>{}(uniformInfo.first)));*/
+
+			bufferIt = m_uniformBuffers.find(uniformInfo.first);
+			if (bufferIt == m_uniformBuffers.end())
+			{
+				LogError(std::format("Attempted to init shader buffers for shader:{} "
+					"but uniform buffer:{} was not found", shader.ToString(), uniformInfo.first));
+				return;
+			}
+
+			//If the buffer has not been allocated yet IT IS CRITICAL WE DO THIS BEFORE BINDING
+			//to ensure the id is valid and is properly linked to shader
+			if (!bufferIt->second->IsAllocated()) bufferIt->second->AllocateFromShaderUniformBlock(shader);
+			if (!shader.TryBindUniformBlock(bufferIt->first.GetMemPointer(), bufferIt->second->GetBindIndex()))
+			{
+				LogError(std::format("Attempted to init shader buffers for shader:{}" 
+					"but failed to bind uniform block:{}", shader.ToString(), uniformInfo.first));
+				return;
+			}
+		}
+	}
+
+	void GraphicsManager::SetUniform(const UniformDataType type, const std::string_view& name, const void* dataPtr)
+	{
+		//TODO: ideally when we set a uniform, we store what shaders have what uniform
+		for (auto& shader : m_shaders)
+		{
+			if (!shader.second->HasUniform(name))
+				continue;
+
+			shader.second->TrySetUniform(type, name.data(), dataPtr);
+		}
+	}
+	void GraphicsManager::SetUniformArray(const UniformDataType type, const std::string_view& name, const void* dataPtr, const size_t elements)
+	{
+		for (auto& shader : m_shaders)
+		{
+			if (!shader.second->HasUniform(name))
+				continue;
+
+			shader.second->TrySetUniformArray(type, name.data(), dataPtr, elements);
+		}
 	}
 }

@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "Core/UI/UIInteractionManager.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"

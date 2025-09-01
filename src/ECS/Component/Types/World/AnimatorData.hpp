@@ -11,7 +11,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "ECS/Component/Component.hpp"
 #include "ECS/Component/ComponentFieldReference.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 template<typename T>
 class AnimationPropertyKeyframe

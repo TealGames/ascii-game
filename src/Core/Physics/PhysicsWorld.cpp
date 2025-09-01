@@ -3,7 +3,7 @@
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/CollisionBoxData.hpp"
 #include "Core/Collision/CollisionRegistry.hpp"
 

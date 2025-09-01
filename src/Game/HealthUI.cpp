@@ -5,7 +5,7 @@
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UILayout.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "StaticReferenceGlobals.hpp"
 #include "StaticGlobals.hpp"

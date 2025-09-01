@@ -3,8 +3,7 @@
 #include "Utils/Data/ColorGradient.hpp"
 #include "Utils/ToStringFunctions.hpp"
 #include "Utils/Math.hpp"	
-//#include "Utils/RaylibUtils.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 ColorGradientKeyFrame::ColorGradientKeyFrame() : ColorGradientKeyFrame({}, 0) {}
 ColorGradientKeyFrame::ColorGradientKeyFrame(const Utils::Color& color, const float& location) 

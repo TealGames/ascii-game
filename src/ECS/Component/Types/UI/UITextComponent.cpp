@@ -2,7 +2,7 @@
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "Utils/Data/ScreenPosition.hpp"
 //#include "Utils/RaylibUtils.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "Core/Rendering/GameRenderer.hpp"

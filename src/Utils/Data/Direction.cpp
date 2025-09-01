@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Utils/Data/Direction.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/StringUtil.hpp"
 
 bool IsAngledDirection(const MoveDirection& dir)

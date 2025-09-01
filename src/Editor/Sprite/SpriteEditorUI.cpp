@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Editor/Sprite/SpriteEditorUI.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "Editor/Entity/EntityEditorUI.hpp"
 #include "Core/Asset/AssetManager.hpp"

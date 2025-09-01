@@ -4,7 +4,7 @@
 #include "Utils/Data/Point2D.hpp"
 #include <cmath>
 #include "Utils/Math.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 namespace Utils
 {

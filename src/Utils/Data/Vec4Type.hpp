@@ -5,7 +5,7 @@
 #include "Vec2Type.hpp"
 #include "Vec3Type.hpp"
 #include "Utils/ToStringFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 template<typename T>
 requires std::is_arithmetic_v<T>

@@ -2,7 +2,7 @@
 #include <array>
 #include <type_traits>
 #include "Core/Rendering/Texture.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 namespace Rendering
 {

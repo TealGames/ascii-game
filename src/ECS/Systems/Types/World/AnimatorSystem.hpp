@@ -3,7 +3,7 @@
 #include <type_traits>
 #include "ECS/Systems/MultiBodySystem.hpp"
 #include "ECS/Component/Types/World/AnimatorData.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 namespace ECS
 {

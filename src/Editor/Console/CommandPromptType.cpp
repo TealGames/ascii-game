@@ -2,7 +2,7 @@
 #include "Editor/Console/CommandPromptType.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/StringUtil.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 const std::type_info& GetCommandPromptTypeFromEnum(const CommandPromptType& prompt)
 {

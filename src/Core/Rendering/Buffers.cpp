@@ -421,10 +421,10 @@ namespace Rendering
 	}
 
 
-	UniformBuffer::UniformBuffer() : UniformBuffer(UniformBufferPlatformCallbacks{}) {}
-	UniformBuffer::UniformBuffer(const UniformBufferPlatformCallbacks callbacks)
+	UniformBuffer::UniformBuffer() : UniformBuffer("", UniformBufferPlatformCallbacks{}) {}
+	UniformBuffer::UniformBuffer(const char* blockName, const UniformBufferPlatformCallbacks callbacks)
 		: m_platformCallbacks(callbacks), m_bindIndex(INVALID_BUFFER_BIND_INDEX), 
-		m_id(INVALID_OBJ_ID), m_members(), m_blockName(),m_allocatedByteSize(0)
+		m_id(INVALID_OBJ_ID), m_members(), m_blockName(blockName),m_allocatedByteSize(0)
 	{
 		
 	}
@@ -440,11 +440,11 @@ namespace Rendering
 	{
 		return m_id != INVALID_OBJ_ID;
 	}
-	void UniformBuffer::AllocateFromShaderUniformBlock(const Shader& shader, const char* blockName)
+	void UniformBuffer::AllocateFromShaderUniformBlock(const Shader& shader)
 	{
-		std::vector<UniformBlockMember> members = {};
+		std::vector<UniformBlockMemberMemoryInfo> members = {};
 		size_t fullSize = 0;
-		shader.TryGetUniformBlockMembers(blockName, members, &fullSize);
+		shader.TryGetUniformBlockMembers(m_blockName.data(), members, &fullSize);
 
 		m_members.reserve(members.size());
 		for (const auto& member : members)
@@ -453,13 +453,30 @@ namespace Rendering
 		}
 		m_id= m_platformCallbacks.m_AllocateFunc(fullSize);
 		m_allocatedByteSize = fullSize;
-		m_blockName = std::string(blockName);
+
+		if (m_bindIndex != INVALID_BUFFER_BIND_INDEX)
+			LinkBufferToCurrentBindingPoint();
 	}
-	void UniformBuffer::LinkToUniformBindingPoint(const UniformBufferBindIndex bindIndex)
+	void UniformBuffer::SetBindingPoint(const UniformBufferBindIndex bindIndex)
 	{
-		m_platformCallbacks.m_BindFunc(m_id, bindIndex);
 		m_bindIndex = bindIndex;
 	}
+	void UniformBuffer::LinkBufferToBindingPoint(const UniformBufferBindIndex bindIndex)
+	{
+		if (m_id == INVALID_OBJ_ID)
+		{
+			LogError(std::format("Attempted to link uniform buffer to binding point:{} "
+				"when its id is invalid (probably not allocated/initialized yet)", bindIndex));
+			return;
+		}
+		SetBindingPoint(bindIndex);
+		m_platformCallbacks.m_BindFunc(m_id, m_bindIndex);
+	}
+	void UniformBuffer::LinkBufferToCurrentBindingPoint()
+	{
+		LinkBufferToBindingPoint(m_bindIndex);
+	}
+	bool UniformBuffer::HasValidBindingPoint() const { return m_bindIndex != INVALID_BUFFER_BIND_INDEX; }
 	void UniformBuffer::WriteData(const size_t byteOffset, const size_t writeByteSize, const void* data)
 	{
 		if (byteOffset + writeByteSize > m_allocatedByteSize)
@@ -609,7 +626,7 @@ namespace Rendering
 	
 	UniformBufferBindIndex UniformBuffer::GetBindIndex() const { return m_bindIndex; }
 	RenderObjectId UniformBuffer::GetId() const { return m_id; }
-	std::string UniformBuffer::GetName() const { return m_blockName; }
+	std::string_view UniformBuffer::GetName() const { return std::string_view(m_blockName); }
 	size_t UniformBuffer::GetAllocatedByteSize() const { return m_allocatedByteSize; }
 
 	UniformBuffer& UniformBuffer::operator=(UniformBuffer&& other) noexcept
@@ -624,8 +641,8 @@ namespace Rendering
 	}
 	std::string UniformBuffer::ToString() const
 	{
-		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable<std::vector<UniformBlockMember>, UniformBlockMember>
-			(Utils::GetValuesFromMap<std::string, UniformBlockMember>(m_members.cbegin(), m_members.cend())));
+		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable<std::vector<UniformBlockMemberMemoryInfo>, UniformBlockMemberMemoryInfo>
+			(Utils::GetValuesFromMap<std::string, UniformBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
 	}
 
 
@@ -713,7 +730,8 @@ namespace Rendering
 			return 0;
 		}
 		const UniformBufferBindIndex bindIndex = m_uniformBufferData.empty() ? 0 : m_uniformBufferData.back().m_BindIndex + 1;
-		buffer->LinkToUniformBindingPoint(bindIndex);
+		//buffer->LinkBufferToBindingPoint(bindIndex);
+		buffer->SetBindingPoint(bindIndex);
 		m_uniformBufferData.emplace_back(bindIndex, buffer);
 
 		return bindIndex;

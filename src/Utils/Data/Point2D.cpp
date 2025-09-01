@@ -2,7 +2,7 @@
 #include <cmath>
 #include "Utils/Data/Point2D.hpp"
 #include "Utils/Math.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 namespace Utils
 {

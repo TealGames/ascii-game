@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <type_traits>
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 enum class ReferenceType
 {

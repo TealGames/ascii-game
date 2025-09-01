@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/Time/TimeKeeper.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 TimeKeeper::TimeKeeper(const std::uint64_t frameLimit) :
 	m_currentTime(std::chrono::high_resolution_clock().now()),

@@ -4,7 +4,7 @@
 #include "Core/Engine.hpp"
 //#include "raylib.h"
 #include "Utils/DataStructure/PreservedMap.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
 #define _CRTDBG_MAP_ALLOC

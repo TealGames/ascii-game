@@ -2,7 +2,7 @@
 #include "Editor/Console/CommandConsole.hpp"
 #include "Utils/StringUtil.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/UI/UIInteractionManager.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "Editor/EditorStyles.hpp"

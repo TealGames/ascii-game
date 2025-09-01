@@ -8,7 +8,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Asset/IDependableAsset.hpp"
 #include "Core/IValidateable.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/IOHandler.hpp"
 #include "Utils/ToStringFunctions.hpp"
 

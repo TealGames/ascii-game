@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Editor/Entity/ComponentFieldUI.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Editor/Entity/ComponentUI.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"

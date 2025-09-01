@@ -2,7 +2,7 @@
 #include "Core/Asset/SpriteAnimationAsset.hpp"
 #include "Fig/Fig.hpp"
 #include "Fig/FigDeserializers.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/IOHandler.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Visual/VisualDataParser.hpp"

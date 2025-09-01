@@ -3,7 +3,7 @@
 #include <vector>
 #include <optional>
 #include "Utils/ToStringFunctions.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 /// <summary>
 /// A map that retains the insertion order. It is implemented by having a hashtable that stores key values normally so

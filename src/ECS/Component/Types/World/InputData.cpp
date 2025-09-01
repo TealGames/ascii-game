@@ -1,7 +1,7 @@
 //NOT USED
 #include "pch.hpp"
 #include "ECS/Component/Types/World/InputData.hpp"	
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 
 InputData::InputData() : Component(),

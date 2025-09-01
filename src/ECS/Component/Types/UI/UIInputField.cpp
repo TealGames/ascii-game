@@ -2,7 +2,7 @@
 #include <cstdint>
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UIInputField.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/StringUtil.hpp"
 #include "StaticGlobals.hpp"
 #include "Utils/Data/Vec2Type.hpp"

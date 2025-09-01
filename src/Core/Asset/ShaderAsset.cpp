@@ -8,7 +8,7 @@ static constexpr char const* FRAGMENT_SHADER_IDENTIFIER = "fragment";
 static constexpr char const* VERTEX_SHADER_IDENTIFIER = "vertex";
 
 ShaderAsset::ShaderAsset(const std::filesystem::path& path)
-	: Asset(path, false), m_shader(Rendering::CreateShader("", "")) 
+	: Asset(path, false), m_shader(Rendering::CreateShader("", ""))
 {
 	WriteToShaderFromFiles();
 }

@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Core/UI/UIInteractionManager.hpp"
 #include "Core/UI/UIRect.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 

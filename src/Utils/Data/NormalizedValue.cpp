@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "Utils/Data/NormalizedValue.hpp"
 #include "Utils/Math.hpp"
+#include "Utils/Debug.hpp"
 
 NormalizedValue::NormalizedValue() : NormalizedValue(0) {}
 NormalizedValue::NormalizedValue(const float value) 

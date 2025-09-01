@@ -3,7 +3,7 @@
 
 #ifdef OPENGL
 #include "glad/glad.h"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Core/Rendering/Texture.hpp"
 
 namespace OpenGlUtils

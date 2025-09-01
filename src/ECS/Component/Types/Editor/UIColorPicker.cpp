@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/Editor/UIColorPicker.hpp"
 //#include "Utils/RaylibUtils.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 #include "Editor/Entity/ColorPopupUI.hpp"
 #include "Core/UI/PopupUIManager.hpp"
 #include "Utils/HelperFunctions.hpp"

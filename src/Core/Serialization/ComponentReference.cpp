@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/Serialization/ComponentReference.hpp"
-#include "Core/Analyzation/Debug.hpp"
+#include "Utils/Debug.hpp"
 
 ComponentReference::ComponentReference() 
 	: m_Entity(nullptr), m_ComponentIndex(-1) {}
