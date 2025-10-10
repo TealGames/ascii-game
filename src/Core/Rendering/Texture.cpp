@@ -7,9 +7,33 @@
 
 namespace Rendering
 {
-	ChannelFormat GetChannelFormatFromStorage(const InternalStorage storage)
+	ChannelFormat GetChannelFormatFromStorage(const AttachmentStorage storage)
 	{
-		return static_cast<ChannelFormat>(static_cast<InternalStorageIntegralType>(storage));
+		return static_cast<ChannelFormat>(static_cast<InternalStorageIntegralType>(
+			static_cast<InternalStorageIntegralType>(storage)/ INTERNAL_STORAGE_PER_FORMAT));
+	}
+	std::uint16_t GetStorageByteSize(const AttachmentStorage storage)
+	{
+		if (storage == AttachmentStorage::R8)
+			return 1;
+		else if (storage == AttachmentStorage::RGB8)
+			return 3;
+		else if (storage == AttachmentStorage::RGBA8)
+			return 4;
+		//NOTE: since c++ has no half floats, we use 4 channels * 4 bytes = 16 bytes
+		else if (storage == AttachmentStorage::RGBA16F)
+			return 16;
+		else if (storage == AttachmentStorage::Depth24)
+			return 4;
+		else if (storage == AttachmentStorage::Depth24_Stencil8)
+			return 4;
+
+		LogError(std::format("[OPENGL]: Attempted to convert internal storage to texel storage type"));
+		return 0;
+	}
+	AxesWrapBehavior CreateXYZWrapBehavior(const WrapBehavior xyzBehavior)
+	{
+		return AxesWrapBehavior({ xyzBehavior, xyzBehavior, xyzBehavior });
 	}
 
 	std::string TextureData::ToString() const
@@ -32,7 +56,7 @@ namespace Rendering
 	}
 
 	Texture::Texture() : Texture(nullptr, {}) {}
-	Texture::Texture(const std::byte* data, const Vec2Int& size, const InternalStorage internalStorage,
+	Texture::Texture(const std::byte* data, const Vec2Int& size, const AttachmentStorage internalStorage,
 		const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag, const TextureCallbacks& callbacks)
 		: m_callbacks(callbacks), m_data{ INVALID_OBJ_ID, INVALID_TEXTURE_SLOT_INDEX,size, internalStorage, wrap, min, mag}
 	{
@@ -80,6 +104,12 @@ namespace Rendering
 		m_callbacks.m_SetData(m_data.m_id, m_data.m_size, m_data.m_internalStorage, data);
 	}
 	bool Texture::IsValid() const { return m_data.m_id != INVALID_OBJ_ID; }
+	std::uint32_t Texture::GetTotalTexels() const { return m_data.m_size.m_X * m_data.m_size.m_Y; }
+	size_t Texture::GetByteSize(const std::uint32_t texels) const 
+	{ 
+		return texels * GetStorageByteSize(m_data.m_internalStorage); 
+	}
+	size_t Texture::GetByteSize() const { return GetByteSize(GetTotalTexels()); }
 
 	void Texture::BindToSlot(const TextureSlotIndex slotIndex)
 	{
@@ -100,6 +130,24 @@ namespace Rendering
 		m_data.m_slotIndex = INVALID_TEXTURE_SLOT_INDEX;
 	}
 	const TextureData& Texture::GetData() const { return m_data; }
+	void Texture::GetByteData(const Vec2Int textureOffset, const Vec2Int size, std::byte* writeLocationPointer) const
+	{
+		const Vec2Int maxOffset = textureOffset + size;
+		if (maxOffset.m_X > m_data.m_size.m_X || maxOffset.m_Y > m_data.m_size.m_Y)
+		{
+			LogError(std::format("Attempted to get byte data of texture: {} but offset and size: {} > texture size:{}", 
+				ToString(), maxOffset.ToString(), m_data.m_size.ToString()));
+			return;
+		}
+
+		m_callbacks.m_GetData(m_data.m_id, textureOffset, size, m_data.m_internalStorage, 
+			writeLocationPointer, GetByteSize(size.m_X * size.m_Y));
+	}
+	void Texture::GetByteData(std::byte* writeLocationPointer) const
+	{
+		m_callbacks.m_GetData(m_data.m_id, Vec2Int::Zero(), m_data.m_size, 
+			m_data.m_internalStorage, writeLocationPointer, GetByteSize());
+	}
 	bool Texture::IsBoundToSlot() const
 	{
 		return m_data.m_slotIndex != INVALID_TEXTURE_SLOT_INDEX;
@@ -116,7 +164,7 @@ namespace Rendering
 	}
 
 	Texture CreateTexture(const std::byte* data, const Vec2Int& size,
-		const InternalStorage storage, const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
+		const AttachmentStorage storage, const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 	{
 #if defined(OPENGL)
 		return OpenGl::CreateTexture(data, size, storage, wrap, min, mag);
@@ -124,7 +172,7 @@ namespace Rendering
 	}
 
 	TextureCube::TextureCube() : TextureCube(Vec2Int{}) {}
-	TextureCube::TextureCube(const Vec2Int& size, const InternalStorage internalStorage,
+	TextureCube::TextureCube(const Vec2Int& size, const AttachmentStorage internalStorage,
 		const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag, const TextureCubeCallbacks& callbacks)
 		: m_callbacks(callbacks), m_data{ INVALID_OBJ_ID, INVALID_TEXTURE_SLOT_INDEX,size, internalStorage, wrap, min, mag }
 	{
@@ -190,7 +238,7 @@ namespace Rendering
 		return *this;
 	}
 
-	TextureCube CreateTextureCube(const Vec2Int& size, const InternalStorage storage, 
+	TextureCube CreateTextureCube(const Vec2Int& size, const AttachmentStorage storage, 
 		const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 	{
 #if defined(OPENGL)

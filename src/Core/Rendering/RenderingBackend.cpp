@@ -37,10 +37,10 @@ namespace Rendering
 			//glCullFace(GL_BACK); 
 			//glFrontFace(GL_CCW);
 
-			//Enable depth testing -> if you draw triangles on top of one another, will resolve the one on bottom
-			//based on position and not draw order
-			glEnable(GL_DEPTH_TEST);
+			//The depth function for depth testing (gpu uses depth to determine what should be culled in framebuffer)
+			//by comparing fragment z values (less means if it is less than existing fragment, it is culled)
 			glDepthFunc(GL_LESS);
+			SetDepthStatus(true);
 
 			//Enables alpha transparency
 			glEnable(GL_BLEND);
@@ -144,6 +144,12 @@ namespace Rendering
 #endif
 		}
 
+		RenderBuffer CreateRenderBuffer(const AttachmentStorage storage, const Vec2Int size)
+		{
+#if defined(OPENGL)
+			return OpenGl::CreateRenderBuffer(storage, size);
+#endif
+		}
 		FrameBuffer CreateFrameBuffer()
 		{
 #if defined(OPENGL)
@@ -177,6 +183,22 @@ namespace Rendering
 #endif
 		}
 
+		RenderObjectId GetRenderObjectId(const RenderObjectQueryType type)
+		{
+			GLint currentFBO = INVALID_OBJ_ID;
+#if defined(OPENGL)
+			if (type == RenderObjectQueryType::BoundFrameBuffer) 
+			{
+				GL_CALL(glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &currentFBO));
+			}
+#else
+#error "No rendering library is active"
+#endif
+			/*if (currentFBO == INVALID_OBJ_ID)
+				LogError(std::format("Failed to get render object id of render object"));*/
+			return currentFBO;
+		}
+
 		void BeginRenderingMarker()
 		{
 #if defined(RAYLIB)
@@ -200,17 +222,52 @@ namespace Rendering
 		{
 #if defined(OPENGL)
 			GL_CALL(glClear(GL_DEPTH_BUFFER_BIT));
-
-#elif defined(RAYLIB)
-			ClearBackground(BLACK);
 #else
 			LogError("Attempted to clear canvas but either no rendering library is active or it has no defined actions");
+#endif
+		}
+		void SetDepthStatus(const bool enable)
+		{
+#if defined(OPENGL)
+			if (enable)
+			{
+				//Enable depth testing -> if you draw triangles on top of one another, will resolve the one on bottom
+				//based on position and not draw order
+				GL_CALL(glEnable(GL_DEPTH_TEST));
+			}
+			else
+			{
+				GL_CALL(glDisable(GL_DEPTH_TEST));
+			}
+#endif
+		}
+
+		void ClearColor()
+		{
+#if defined(OPENGL)
+			GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
+#endif
+		}
+		void SetSrgbConversionStatus(const bool enable)
+		{
+#if defined(OPENGL)
+			if (enable)
+			{
+				GL_CALL(glEnable(GL_FRAMEBUFFER_SRGB));
+			}
+			else
+			{
+				GL_CALL(glDisable(GL_FRAMEBUFFER_SRGB));
+			}
 #endif
 		}
 
 		void EndRenderingMarker()
 		{
-#if defined(RAYLIB)
+#if defined(OPENGL)
+			//glClearColor(1, 0, 0, 1); 
+			//glClear(GL_COLOR_BUFFER_BIT);
+#elif defined(RAYLIB)
 			EndDrawing();
 #endif
 		}
@@ -289,6 +346,13 @@ namespace Rendering
 
 			GL_CALL(glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, drawIndexCount, GL_UNSIGNED_INT, 
 				(const void*)indicesStartByteOffset, drawInstanceCount, baseVertexIndex, baseInstanceIndex));
+#endif
+		}
+
+		void DrawVertices(const size_t vertexCount)
+		{
+#if defined(OPENGL)
+			GL_CALL(glDrawArrays(GL_TRIANGLES, 0, vertexCount));
 #endif
 		}
 	}

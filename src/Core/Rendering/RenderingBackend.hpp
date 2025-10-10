@@ -6,6 +6,11 @@
 
 namespace Rendering
 {
+	enum class RenderObjectQueryType : std::uint8_t
+	{
+		BoundFrameBuffer = 0
+	};
+
 	class Texture;
 	class Font;
 	namespace Backend
@@ -18,15 +23,27 @@ namespace Rendering
 		void SetViewport(const int width, const int height);
 		Vec2Int GetViewportSize();
 		
+		RenderBuffer CreateRenderBuffer(const AttachmentStorage storage, const Vec2Int size);
 		FrameBuffer CreateFrameBuffer();
 		VertexBuffer CreateVertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType);
 		IndexBuffer CreateIndexBuffer(const IndexType* indexArray, const size_t elementCount);
 		UniformBuffer CreateUniformBuffer(const char* blockName);
 		VertexLayout CreateVertexLayout();
 
+		RenderObjectId GetRenderObjectId(const RenderObjectQueryType type);
+
 		void BeginRenderingMarker();
 		void ClearBackground();
 		void ClearDepth();
+		void SetDepthStatus(const bool enable);
+		void ClearColor();
+		/// <summary>
+		/// If true, will enable linear HDR -> sRGB conversion 
+		/// (gamma curve applied to HDR colors so they look right since
+		/// humans have non-linear brightness perception which is mimicked by monitor)
+		/// </summary>
+		/// <param name="enable"></param>
+		void SetSrgbConversionStatus(const bool enable);
 		void EndRenderingMarker();
 
 		void DrawCircle(const WorldPosition3D& pos, const float radius, const Utils::Color color);
@@ -51,5 +68,7 @@ namespace Rendering
 		/// <param name="drawInstanceCount">: The number of instances to draw for instnace buffer</param>
 		void DrawUploadedIndexBufferInstanced(const size_t& baseVertexIndex, const size_t& indicesStartByteOffset, const size_t& drawIndexCount, 
 			const size_t& baseInstanceIndex, const size_t& drawInstanceCount);
+
+		void DrawVertices(const size_t vertexCount);
 	}
 }

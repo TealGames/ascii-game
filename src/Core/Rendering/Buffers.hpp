@@ -14,6 +14,35 @@
 
 namespace Rendering
 {
+	struct RenderBufferPlatformCallbacks
+	{
+		RenderObjectId(*m_AllocateFunc)(const AttachmentStorage storage, const Vec2Int size);
+		void(*m_DeallocateFunc)(const RenderObjectId id);
+	};
+	inline constexpr AttachmentStorage DEFAULT_RENDER_BUFFER_STORAGE = AttachmentStorage::RGBA8;
+	class RenderBuffer
+	{
+	private:
+		RenderBufferPlatformCallbacks m_callbacks;
+		RenderObjectId m_id;
+		AttachmentStorage m_attachmentStorage;
+		Vec2Int m_size;
+	public:
+
+	private:
+	public:  
+		RenderBuffer();
+		RenderBuffer(const AttachmentStorage storage, const Vec2Int size, const RenderBufferPlatformCallbacks& callbacks);
+		RenderBuffer(const RenderBuffer&) = delete;
+		RenderBuffer(RenderBuffer&&) noexcept;
+		~RenderBuffer();
+
+		const RenderObjectId GetId() const;
+		
+		RenderBuffer& operator=(const RenderBuffer&) = delete;
+		RenderBuffer& operator=(RenderBuffer&&) noexcept;
+	};
+
 	/// <summary>
 	/// The type of attachment to add to a framebuffer to determine what kind of data
 	/// it needs to write to the render target. NOTE: render target format must coincide with the 
@@ -56,6 +85,7 @@ namespace Rendering
 	{
 		Texture		= 0,
 		TextureCube	= 1,
+		RenderBuffer =2
 	};
 	struct FrameBufferTextureTarget
 	{
@@ -66,19 +96,31 @@ namespace Rendering
 		TextureCube* m_CubeTexture = nullptr;
 		TextureCubeFace m_Face = TextureCubeFace::Front;
 	};
+	struct FrameBufferRenderBufferTarget
+	{
+		RenderBuffer* m_RenderBuffer = nullptr;
+	};
+	using PossibleTargetTypes = std::variant<FrameBufferTextureTarget, FrameBufferTextureCubeTarget, FrameBufferRenderBufferTarget>;
 	struct FrameBufferOutputTarget
 	{
 		FrameBufferAttachmentType m_Type = FrameBufferAttachmentType::Color0;
 		FrameBufferOutputType m_TargetType = FrameBufferOutputType::Texture;
-		std::variant<FrameBufferTextureTarget, FrameBufferTextureCubeTarget> m_Targets;
+		PossibleTargetTypes m_Targets = {};
+		bool m_HasOutput = false;
+
+		void SetTextureTarget(const FrameBufferTextureTarget& target);
+		void SetTextureCubeTarget(const FrameBufferTextureCubeTarget& target);
+		void SetRenderBufferTarget(const FrameBufferRenderBufferTarget& target);
+		void RemoveTarget();
 	};
 	struct FrameBufferPlatformCallbacks
 	{
 		RenderObjectId(*m_AllocateFunc)();
 		void(*m_DeallocateFunc)(const RenderObjectId id);
-		void(*m_BindActiveFunc)(const RenderObjectId id);
+		void(*m_BindActiveFunc)(const RenderObjectId id, const size_t* colorAttachmentsArr, const size_t colorAttachmentsSize);
 		void(*m_UnbindActiveFunc)();
 		void(*m_SetOutputTargetFunc)(const FrameBufferOutputTarget& target, const RenderObjectId id);
+		void(*m_RemoveOutputTargetFunc)(const FrameBufferOutputTarget& target, const RenderObjectId id);
 	};
 	class FrameBuffer
 	{
@@ -92,10 +134,13 @@ namespace Rendering
 		/// initializes the required size
 		/// </summary>
 		Vec2Int m_outputTargetSize;
+		bool m_isBoundActive;
 	public:
 
 	private:
 		void Deallocate();
+		void RemoveOutputAt(const size_t i);
+		FrameBufferOutputTarget& GetTargetFromType(const FrameBufferAttachmentType type);
 	public:
 		FrameBuffer();
 		FrameBuffer(const FrameBufferPlatformCallbacks& callbacks);
@@ -105,9 +150,13 @@ namespace Rendering
 
 		void BindActive();
 		void UnbindActive();
+		bool IsBoundActive() const;
 
-		void SetOutputTexture(const FrameBufferAttachmentType tpye, Texture* tex);
-		void SetOutputTextureCube(const FrameBufferAttachmentType tpye, TextureCube* cube, const TextureCubeFace face);
+		void SetOutputTexture(const FrameBufferAttachmentType type, Texture* tex);
+		void SetOutputTextureCube(const FrameBufferAttachmentType type, TextureCube* cube, const TextureCubeFace face);
+		void SetOutputRenderBuffer(const FrameBufferAttachmentType type, RenderBuffer* buffer);
+		void RemoveOutput(const FrameBufferAttachmentType type);
+		void RemoveAllOutputs();
 		//const Texture* GetOutputTarget(const FrameBufferAttachmentType tpye) const;
 
 		FrameBuffer& operator=(const FrameBuffer&) = delete;

@@ -1,24 +1,86 @@
 #include "Core/Rendering/Buffers.hpp"
+#include "StaticGlobals.hpp"
 #include "Utils/ToStringFunctions.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/ToStringFunctions.hpp"
 
 namespace Rendering
 {
+	RenderBuffer::RenderBuffer() : RenderBuffer(DEFAULT_RENDER_BUFFER_STORAGE, {}, {}) {}
+	RenderBuffer::RenderBuffer(const AttachmentStorage storage, const Vec2Int size, const RenderBufferPlatformCallbacks& callbacks)
+		: m_callbacks(callbacks), m_id(INVALID_OBJ_ID), m_size(size), m_attachmentStorage(storage)
+	{
+		if (m_callbacks.m_AllocateFunc == nullptr)
+			return;
+
+		m_id = m_callbacks.m_AllocateFunc(storage, size);
+	}
+	RenderBuffer::RenderBuffer(RenderBuffer&& other) noexcept
+		: m_callbacks(std::exchange(other.m_callbacks, {})), m_id(std::exchange(other.m_id, INVALID_OBJ_ID)),
+		m_size(std::exchange(other.m_size, {})), m_attachmentStorage(other.m_attachmentStorage) {}
+
+	RenderBuffer::~RenderBuffer()
+	{
+		if (m_id != INVALID_OBJ_ID)
+		{
+			m_callbacks.m_DeallocateFunc(m_id);
+			m_id = INVALID_OBJ_ID;
+		}
+	}
+
+	const RenderObjectId RenderBuffer::GetId() const { return m_id; }
+	RenderBuffer& RenderBuffer::operator=(RenderBuffer&& other) noexcept
+	{
+		m_callbacks = std::exchange(other.m_callbacks, {});
+		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
+		m_size = std::exchange(other.m_size, {});
+		m_attachmentStorage = other.m_attachmentStorage;
+		return *this;
+	}
+
+	void FrameBufferOutputTarget::SetTextureTarget(const FrameBufferTextureTarget& target)
+	{
+		m_TargetType = FrameBufferOutputType::Texture;
+		m_Targets = target;
+		m_HasOutput = true;
+	}
+	void FrameBufferOutputTarget::SetTextureCubeTarget(const FrameBufferTextureCubeTarget& target)
+	{
+		m_TargetType = FrameBufferOutputType::TextureCube;
+		m_Targets = target;
+		m_HasOutput = true;
+	}
+	void FrameBufferOutputTarget::SetRenderBufferTarget(const FrameBufferRenderBufferTarget& target)
+	{
+		m_TargetType = FrameBufferOutputType::RenderBuffer;
+		m_Targets = target;
+		m_HasOutput = true;
+	}
+	void FrameBufferOutputTarget::RemoveTarget()
+	{
+		m_HasOutput = false;
+	}
+
 	FrameBuffer::FrameBuffer() : FrameBuffer(FrameBufferPlatformCallbacks{}) {}
 	FrameBuffer::FrameBuffer(const FrameBufferPlatformCallbacks& callbacks)
-		: m_callbacks(callbacks), m_id(INVALID_OBJ_ID), m_outputTargets({}), m_outputTargetSize()
+		: m_callbacks(callbacks), m_id(INVALID_OBJ_ID), m_outputTargets({}), m_outputTargetSize(), m_isBoundActive(false)
 	{
 		if (m_callbacks.m_AllocateFunc == nullptr)
 			return;
 
 		m_id = m_callbacks.m_AllocateFunc();
+
+		for (size_t i = 0; i < m_outputTargets.size(); i++)
+		{
+			m_outputTargets[i].m_Type = static_cast<FrameBufferAttachmentType>(i);
+		}
 	}
 	FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
 		: m_callbacks(std::exchange(other.m_callbacks, {})),
 		m_id(std::exchange(other.m_id, INVALID_OBJ_ID)),
 		m_outputTargets(std::exchange(other.m_outputTargets, {})),
-		m_outputTargetSize(std::exchange(other.m_outputTargetSize, {})) {}
+		m_outputTargetSize(std::exchange(other.m_outputTargetSize, {})),
+		m_isBoundActive(std::exchange(other.m_isBoundActive, false)) {}
 
 	FrameBuffer::~FrameBuffer()
 	{
@@ -35,29 +97,81 @@ namespace Rendering
 
 	void FrameBuffer::BindActive()
 	{
-		m_callbacks.m_BindActiveFunc(m_id);
+		if (m_isBoundActive)
+			return;
+
+		const FrameBufferAttachmentTypeIntegralType startColorAttachmentValue = 
+			(FrameBufferAttachmentTypeIntegralType)MIN_COLOR_ATTACHMENT;
+		const FrameBufferAttachmentTypeIntegralType totalColorAttachments =
+			(FrameBufferAttachmentTypeIntegralType)MAX_COLOR_ATTACHMENT - (FrameBufferAttachmentTypeIntegralType)MIN_COLOR_ATTACHMENT + 1;
+
+		size_t* usedColorAttachmentsArr = static_cast<size_t*>(alloca(sizeof(size_t) * totalColorAttachments));
+		size_t usedColorIndex = 0;
+		for (FrameBufferAttachmentTypeIntegralType i = 0; i < totalColorAttachments; i++)
+		{
+			if (!m_outputTargets[i + startColorAttachmentValue].m_HasOutput)
+				continue;
+
+			usedColorAttachmentsArr[usedColorIndex] = i;
+			usedColorIndex++;
+		}
+
+		m_callbacks.m_BindActiveFunc(m_id, usedColorAttachmentsArr, usedColorIndex);
+		m_isBoundActive = true;
 	}
 	void FrameBuffer::UnbindActive()
 	{
-		m_callbacks.m_UnbindActiveFunc();
-	}
+		if (!m_isBoundActive)
+			return;
 
+		m_callbacks.m_UnbindActiveFunc();
+		m_isBoundActive = false;
+	}
+	bool FrameBuffer::IsBoundActive() const
+	{
+		return m_isBoundActive;
+	}
+	FrameBufferOutputTarget& FrameBuffer::GetTargetFromType(const FrameBufferAttachmentType type)
+	{
+		return m_outputTargets[static_cast<FrameBufferAttachmentTypeIntegralType>(type)];
+	}
 	void FrameBuffer::SetOutputTexture(const FrameBufferAttachmentType type, Texture* tex)
 	{
-		FrameBufferOutputTarget& target = m_outputTargets[static_cast<FrameBufferAttachmentTypeIntegralType>(type)];
-		target = FrameBufferOutputTarget{ type, FrameBufferOutputType::Texture, FrameBufferTextureTarget{tex} };
+		FrameBufferOutputTarget& target = GetTargetFromType(type);
+		target.SetTextureTarget(FrameBufferTextureTarget{ tex });
 		m_callbacks.m_SetOutputTargetFunc(target, m_id);
 	}
 	void FrameBuffer::SetOutputTextureCube(const FrameBufferAttachmentType type, TextureCube* cube, const TextureCubeFace face)
 	{
-		FrameBufferOutputTarget& target = m_outputTargets[static_cast<FrameBufferAttachmentTypeIntegralType>(type)];
-		target = FrameBufferOutputTarget{ type, FrameBufferOutputType::TextureCube, FrameBufferTextureCubeTarget{cube, face} };
+		FrameBufferOutputTarget& target = GetTargetFromType(type);
+		target.SetTextureCubeTarget(FrameBufferTextureCubeTarget{ cube, face });
 		m_callbacks.m_SetOutputTargetFunc(target, m_id);
 	}
-	//const Texture* FrameBuffer::GetOutputTarget(const FrameBufferAttachmentType type) const
-	//{
-	//	return m_outputTargets[static_cast<FrameBufferAttachmentTypeIntegralType>(type)].m_Texture;
-	//}
+	void FrameBuffer::SetOutputRenderBuffer(const FrameBufferAttachmentType type, RenderBuffer* buffer)
+	{
+		FrameBufferOutputTarget& target = GetTargetFromType(type);
+		target.SetRenderBufferTarget(FrameBufferRenderBufferTarget{ buffer });
+		m_callbacks.m_SetOutputTargetFunc(target, m_id);
+	}
+	void FrameBuffer::RemoveOutputAt(const size_t i)
+	{
+		FrameBufferOutputTarget& target = m_outputTargets[i];
+		m_callbacks.m_RemoveOutputTargetFunc(target, m_id);
+		target.RemoveTarget();
+	}
+	void FrameBuffer::RemoveOutput(const FrameBufferAttachmentType type)
+	{
+		RemoveOutputAt(static_cast<FrameBufferAttachmentTypeIntegralType>(type));
+	}
+	
+	void FrameBuffer::RemoveAllOutputs()
+	{
+		for (size_t i = 0; i < m_outputTargets.size(); i++)
+		{
+			if (m_outputTargets[i].m_HasOutput)
+				RemoveOutputAt(i);
+		}
+	}
 
 	size_t FencedBufferSegment::GetNextOffset() const
 	{
@@ -75,6 +189,7 @@ namespace Rendering
 		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
 		m_outputTargets = std::exchange(other.m_outputTargets, {});
 		m_outputTargetSize = std::exchange(other.m_outputTargetSize, {});
+		m_isBoundActive = std::exchange(other.m_isBoundActive, false);
 		return *this;
 	}
 
@@ -155,7 +270,6 @@ namespace Rendering
 					m_segments.front().m_Fence.WaitUntilSignal();
 					continue;
 				}
-				LogWarning(std::format("Gpu ring buffer has free space:{} target size:{} returning. buff:{}", freeSpace, size, ToString()));
 				return false;
 			}
 
@@ -201,16 +315,6 @@ namespace Rendering
 	size_t RingBufferAllocator::GetUnusedByteSize() const
 	{
 		return m_fixedByteSize - m_usedSize;
-		/*
-		//If the tail is past the head, it means [0..head) and [tail..end)
-		//is all the free sapce (disregarding gaps between segments)
-		//and [head, tail) is allocated
-		if (m_tail >= m_head)
-			return m_fixedByteSize - (m_tail - m_head);
-		//Otherwise if tail is wrapped then it means [head, tail] is free space
-		//since [head..end) is taken and [start, tail) is taken
-		else return m_head - m_tail;
-		*/
 	}
 	size_t RingBufferAllocator::GetUsedByteSize() const
 	{
@@ -248,18 +352,17 @@ namespace Rendering
 			m_head, m_tail, m_fixedByteSize, m_usedSize);
 	}
 
-	VertexBuffer::VertexBuffer() : VertexBuffer(nullptr, 0, 0, VertexAttributeAdvance::Vertex, {}) {}//m_vertexCapacity(), //m_dataUsed(),
+	VertexBuffer::VertexBuffer() : VertexBuffer(nullptr, 0, 0, VertexAttributeAdvance::Vertex, {}) {}
 
 	VertexBuffer::VertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType,
 		const VertexBufferPlatformCallbacks callbacks)
-		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_fence(arraySize * elementSize),//m_vertexCapacity(arraySize), //m_dataUsed(),
+		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_fence(arraySize * elementSize),
 		m_AdvanceType(advanceType), m_elementSize(elementSize), m_writePtr(nullptr)
 	{
 		if (arraySize == 0)
 			return;
 
 		std::tie(m_id, m_writePtr) = m_callbacks.m_AllocateFunc(vertexArray, arraySize * m_elementSize, !PRODUCTION_BUILD);
-		//m_dataUsed = vertexArray == nullptr ? 0 : arraySize;
 	}
 	VertexBuffer::~VertexBuffer()
 	{
@@ -312,19 +415,17 @@ namespace Rendering
 		if (!m_fence.TryReserveSegment(elementCount * m_elementSize, false, &segment))
 			return false;
 
+#ifdef GRAPHICS_VERBOSE_LOG
 		LogWarning(std::format("Writing vertex buffer fenced at offset:{} size:{} alloc:{} fence:{}", 
 			segment->m_ByteOffset, segment->m_ByteSize, m_fence.GetFixedAllocatedByteSize(), m_fence.ToString()));
+#endif
 		WriteDataUnsafeBytes(segment->m_ByteOffset, vertexArray, segment->m_ByteSize);
-		//segment->m_Fence.Insert();
-
-		//if (outOffsetUsed != nullptr) *outOffsetUsed = segment->m_ByteOffset;
+		
 		if (outSeg != nullptr) *outSeg = segment;
 		return true;
 	}
-	//size_t VertexBuffer::GetUploadedVertexCount() const { return m_dataUsed; }
 	size_t VertexBuffer::GetAllocatedByteSize() const { return m_fence.GetFixedAllocatedByteSize(); }
 	size_t VertexBuffer::GetVertexCapacity() const { return m_fence.GetFixedAllocatedByteSize() / m_elementSize; }
-	//bool VertexBuffer::HasFilledMaxSize() const { return m_dataUsed >= m_maxVertexCount; }
 
 	size_t VertexBuffer::GetElementSize() const { return m_elementSize; }
 	RenderObjectId VertexBuffer::GetId() const { return m_id; }
@@ -334,9 +435,7 @@ namespace Rendering
 	{
 		m_callbacks = std::exchange(other.m_callbacks, {});
 		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
-		//m_dataUsed = std::exchange(other.m_dataUsed, 0);
 		m_elementSize = std::exchange(other.m_elementSize, 0);
-		//m_vertexCapacity = std::exchange(other.m_vertexCapacity, 0);
 		m_fence = std::move(other.m_fence);
 		m_AdvanceType = other.m_AdvanceType;
 		m_writePtr = std::exchange(other.m_writePtr, nullptr);
@@ -349,9 +448,9 @@ namespace Rendering
 			m_id, m_writePtr!=nullptr, m_elementSize, m_fence.ToString());
 	}
 
-	IndexBuffer::IndexBuffer() : IndexBuffer(nullptr, 0, {}) {}//,m_dataUsed(), m_elementCapacity() {}
+	IndexBuffer::IndexBuffer() : IndexBuffer(nullptr, 0, {}) {}
 	IndexBuffer::IndexBuffer(const IndexType* indexArray, const size_t arraySize, const IndexBufferPlatformCallbacks& callbacks)
-		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_fence(arraySize * GetElementSize()), m_writePtr(nullptr)// m_dataUsed(), m_elementCapacity(arraySize)
+		: m_id(INVALID_OBJ_ID), m_callbacks(callbacks), m_fence(arraySize * GetElementSize()), m_writePtr(nullptr)
 	{
 		if (arraySize == 0)
 			return;
@@ -389,12 +488,12 @@ namespace Rendering
 		if (!m_fence.TryReserveSegment(elementCount * GetElementSize(), false, &segment))
 			return false;
 
+#ifdef GRAPHICS_VERBOSE_LOG
 		LogWarning(std::format("Writing index buffer fenced at offset:{} size:{} alloc:{} fence:{}", 
 			segment->m_ByteOffset, segment->m_ByteSize, m_fence.GetFixedAllocatedByteSize(), m_fence.ToString()));
+#endif
 		WriteDataUnsafeBytes(segment->m_ByteOffset, indexArray, segment->m_ByteSize);
-		//segment->m_Fence.Insert();
 
-		//if (outOffsetUsed != nullptr) *outOffsetUsed = segment->m_ByteOffset;
 		if (outSeg != nullptr) *outSeg = segment;
 		return true;
 	}
@@ -730,7 +829,6 @@ namespace Rendering
 			return 0;
 		}
 		const UniformBufferBindIndex bindIndex = m_uniformBufferData.empty() ? 0 : m_uniformBufferData.back().m_BindIndex + 1;
-		//buffer->LinkBufferToBindingPoint(bindIndex);
 		buffer->SetBindingPoint(bindIndex);
 		m_uniformBufferData.emplace_back(bindIndex, buffer);
 

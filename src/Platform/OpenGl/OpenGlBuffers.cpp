@@ -10,20 +10,51 @@ namespace Rendering
 {
 	namespace OpenGl
 	{
-		static RenderObjectId AllocateFunc()
+		static RenderObjectId AllocateRenderBufferFunc(const AttachmentStorage storage, const Vec2Int size)
+		{
+			RenderObjectId id = INVALID_OBJ_ID;
+			GL_CALL(glCreateRenderbuffers(1, &id));
+			GL_CALL(glNamedRenderbufferStorage(id, OpenGlUtils::GetStorage(storage), size.m_X, size.m_Y));
+
+			return id;
+		}
+		static void DeallocateRenderBufferFunc(const RenderObjectId id)
+		{
+			GL_CALL(glDeleteRenderbuffers(1, &id));
+		}
+
+		RenderBuffer CreateRenderBuffer(const AttachmentStorage storage, const Vec2Int size)
+		{
+			return RenderBuffer(storage, size, RenderBufferPlatformCallbacks
+				{
+					AllocateRenderBufferFunc,
+					DeallocateRenderBufferFunc
+				});
+		}
+
+		static RenderObjectId AllocateFrameBufferFunc()
 		{
 			RenderObjectId id = INVALID_OBJ_ID;
 			GL_CALL(glCreateFramebuffers(1, &id));
 
 			return id;
 		}
-		static void DeallocateFunc(const RenderObjectId id)
+		static void DeallocateFrameBufferFunc(const RenderObjectId id)
 		{
-
+			GL_CALL(glDeleteFramebuffers(1, &id));
 		}
-		static void BindActiveFunc(const RenderObjectId id)
+		static void BindActiveFunc(const RenderObjectId id, const size_t* colorAttachmentsArr, const size_t colorAttachmentsSize)
 		{
 			GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, id));
+			if (colorAttachmentsSize != 0)
+			{
+				GLenum* drawColorAttachments = (GLenum*)alloca(sizeof(GLenum) * colorAttachmentsSize);
+				for (size_t i = 0; i < colorAttachmentsSize; i++)
+				{
+					drawColorAttachments[i] = GL_COLOR_ATTACHMENT0 + colorAttachmentsArr[i];
+				}
+				GL_CALL(glNamedFramebufferDrawBuffers(id, colorAttachmentsSize, drawColorAttachments));
+			}
 		}
 		static void UnbindActiveFunc()
 		{
@@ -49,7 +80,7 @@ namespace Rendering
 		}
 		static void SetOutputTarget(const FrameBufferOutputTarget& target, const RenderObjectId id)
 		{
-			GLenum attachmentType = GetAttachmentType(target.m_Type);
+			const GLenum attachmentType = GetAttachmentType(target.m_Type);
 			if (target.m_TargetType == FrameBufferOutputType::Texture)
 			{
 				const FrameBufferTextureTarget& textureTarget = std::get<FrameBufferTextureTarget>(target.m_Targets);
@@ -60,6 +91,12 @@ namespace Rendering
 				const FrameBufferTextureCubeTarget& textureCubeTarget = std::get<FrameBufferTextureCubeTarget>(target.m_Targets);
 				GL_CALL(glNamedFramebufferTextureLayer(id, attachmentType, textureCubeTarget.m_CubeTexture->GetData().m_id, 0, 
 					OpenGlUtils::GetTextureCubeFaceIndex(textureCubeTarget.m_Face)));
+			}
+			else if (target.m_TargetType == FrameBufferOutputType::RenderBuffer)
+			{
+				const FrameBufferRenderBufferTarget& renderBufferTarget = std::get<FrameBufferRenderBufferTarget>(target.m_Targets);
+				GL_CALL(glNamedFramebufferRenderbuffer(id, attachmentType,
+					GL_RENDERBUFFER, renderBufferTarget.m_RenderBuffer->GetId()));
 			}
 			else
 			{
@@ -73,16 +110,40 @@ namespace Rendering
 				LogError(std::format("[OPENGL]: Attempted to set framebuffer output target but resulted in incomplete buffer"));
 			}
 		}
+		static void RemoveOutputTarget(const FrameBufferOutputTarget& target, const RenderObjectId id)
+		{
+			const GLenum attachmentType = GetAttachmentType(target.m_Type);
+			if (target.m_TargetType == FrameBufferOutputType::Texture)
+			{
+				GL_CALL(glNamedFramebufferTexture(id, attachmentType, 0, 0));
+			}
+			else if (target.m_TargetType == FrameBufferOutputType::TextureCube)
+			{
+				const FrameBufferTextureCubeTarget& textureCubeTarget = std::get<FrameBufferTextureCubeTarget>(target.m_Targets);
+				GL_CALL(glNamedFramebufferTextureLayer(id, attachmentType, 0, 0,
+					OpenGlUtils::GetTextureCubeFaceIndex(textureCubeTarget.m_Face)));
+			}
+			else if (target.m_TargetType == FrameBufferOutputType::RenderBuffer)
+			{
+				GL_CALL(glNamedFramebufferRenderbuffer(id, attachmentType, GL_RENDERBUFFER, 0));
+			}
+			else
+			{
+				LogError(std::format("[OPENGL]: Attempted to remove output target but output target type has no actions"));
+				return;
+			}
+		}
 
 		FrameBuffer CreateFrameBuffer()
 		{
 			return FrameBuffer(FrameBufferPlatformCallbacks
 				{
-					AllocateFunc,
-					DeallocateFunc,
+					AllocateFrameBufferFunc,
+					DeallocateFrameBufferFunc,
 					BindActiveFunc,
 					UnbindActiveFunc,
-					SetOutputTarget
+					SetOutputTarget,
+					RemoveOutputTarget
 				});
 		}
 

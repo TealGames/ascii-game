@@ -25,6 +25,8 @@ namespace Utils
 		return oss.str();
 	}
 
+	std::string ToStringMemory(const std::byte* bytePtr, const std::size_t byteSize);
+
 	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits);
 
 	template <typename T>

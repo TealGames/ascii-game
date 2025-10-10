@@ -60,12 +60,6 @@ void main()
     vec4 albedo = texture(uAlbedo, vTexCoords);
     vec3 color= vec3(0, 0, 0);
 
-#ifdef DO_SHADOWS
-    color= albedo.rgb * vColor.rgb * 0.1;
-#else
-    color = albedo.rgb * vColor.rgb;
-#endif
-
     //Here we calculate directional light impact by adding directional light color
     //based on how much light there is coming towards the surface normal
     vec3 thisToLightDir = normalize(-uLightsBlock.directionalDir); 
@@ -123,6 +117,5 @@ void main()
         }
     }
 
-    // gamma correction can be applied later; output linear color
     fragColor = vec4(color, vColor.a);
 }

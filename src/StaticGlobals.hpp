@@ -24,6 +24,7 @@ inline const char* MAIN_INPUT_PROFILE_NAME = "main";
 inline const char* MAIN_INPUT_PROFILE_MOVE_ACTION = "Move";
 
 #define ENGINE_LOG
+//#define GRAPHICS_VERBOSE_LOG
 
 //#define DIRECTX
 //#define VULKAN

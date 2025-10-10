@@ -43,10 +43,8 @@ namespace OpenGlUtils
 		return true;
 	}
 
-	inline int GetTextureCubeFaceIndex(const Rendering::TextureCubeFace face)
-	{
-		return static_cast<int>(face);
-	}
+	int GetTextureCubeFaceIndex(const Rendering::TextureCubeFace face);
+	GLenum GetStorage(const Rendering::AttachmentStorage storage);
 }
 
 #define ASSERT(x) if (!(x)) __debugbreak();

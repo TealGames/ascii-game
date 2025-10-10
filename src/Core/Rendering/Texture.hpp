@@ -27,15 +27,24 @@ namespace Rendering
 	/// upon creating the texture
 	/// </summary>
 	using InternalStorageIntegralType = std::uint8_t;
-	enum class InternalStorage : InternalStorageIntegralType
+	inline constexpr std::uint8_t INTERNAL_STORAGE_PER_FORMAT = 5;
+	enum class AttachmentStorage : InternalStorageIntegralType
 	{
 		R8					= 0,
-		RGB8				= 1,
-		RGBA8				= 2,
-		Depth24				= 3,
-		Depth24_Stencil8	= 4,
+		RGB8				= INTERNAL_STORAGE_PER_FORMAT,
+		/// <summary>
+		/// RGBA each channel with 1 byte integer precision
+		/// </summary>
+		RGBA8				= INTERNAL_STORAGE_PER_FORMAT*2,
+		/// <summary>
+		/// RGBA each channel 2 byte/16 bit float precision 
+		/// </summary>
+		RGBA16F				= INTERNAL_STORAGE_PER_FORMAT*2 + 1,
+		Depth24				= INTERNAL_STORAGE_PER_FORMAT*3,
+		Depth24_Stencil8	= INTERNAL_STORAGE_PER_FORMAT*4
 	};
-	ChannelFormat GetChannelFormatFromStorage(const InternalStorage storage);
+	ChannelFormat GetChannelFormatFromStorage(const AttachmentStorage storage);
+	std::uint16_t GetStorageByteSize(const AttachmentStorage storage);
 
 	/// <summary>
 	/// The type texture behavior when a texture is scaled down (minification)
@@ -101,8 +110,9 @@ namespace Rendering
 		/// </summary>
 		ClampBorder		= 3
 	};
-
 	using AxesWrapBehavior = std::array<WrapBehavior, 3>;
+	AxesWrapBehavior CreateXYZWrapBehavior(const WrapBehavior xyzBehavior);
+
 	using TextureSlotIndex = int;
 	inline constexpr TextureSlotIndex INVALID_TEXTURE_SLOT_INDEX = -1;
 
@@ -112,7 +122,7 @@ namespace Rendering
 		TextureSlotIndex m_slotIndex;
 
 		Vec2Int m_size;
-		InternalStorage m_internalStorage;
+		AttachmentStorage m_internalStorage;
 		AxesWrapBehavior m_wrapBehavior;
 		MinFilter m_minFilter;
 		MagFilter m_magFilter;
@@ -124,12 +134,14 @@ namespace Rendering
 	struct TextureCallbacks
 	{
 		RenderObjectId(*m_AllocateFunc)(const TextureData& data);
-		void(*m_SetData)(const RenderObjectId, const Vec2Int size, const InternalStorage storage, const std::byte*);
+		void(*m_SetData)(const RenderObjectId, const Vec2Int size, const AttachmentStorage storage, const std::byte*);
+		void(*m_GetData)(const RenderObjectId, const Vec2Int offset, const Vec2Int size, const AttachmentStorage storage, 
+			std::byte* writePtr, const size_t bufferSize);
 		void(*m_SetBindStatusFunc)(const RenderObjectId, const TextureSlotIndex, const bool status);
 		void(*m_DeallocateFunc)(const RenderObjectId);
 	};
 
-	constexpr InternalStorage DEFAULT_INTERNAL_STORAGE = InternalStorage::RGBA8;
+	constexpr AttachmentStorage DEFAULT_INTERNAL_STORAGE = AttachmentStorage::RGBA8;
 	constexpr AxesWrapBehavior DEFAULT_AXES_WRAP = { WrapBehavior::Repeat, WrapBehavior::Repeat, WrapBehavior::Repeat };
 	constexpr MinFilter DEFAULT_MIN_FILTER = MinFilter::Linear;
 	constexpr MagFilter DEFAULT_MAG_FILTER = MagFilter::Linear;
@@ -150,9 +162,11 @@ namespace Rendering
 	private:
 		void Allocate();
 		void Deallocate();
+
+		size_t GetByteSize(const std::uint32_t texels) const;
 	public:
 		Texture();
-		Texture(const std::byte* data, const Vec2Int& size, const InternalStorage storage= DEFAULT_INTERNAL_STORAGE,
+		Texture(const std::byte* data, const Vec2Int& size, const AttachmentStorage storage= DEFAULT_INTERNAL_STORAGE,
 			const AxesWrapBehavior wrap= DEFAULT_AXES_WRAP, const MinFilter min= DEFAULT_MIN_FILTER,  
 			const MagFilter mag = DEFAULT_MAG_FILTER, const TextureCallbacks& callbacks = {});
 		Texture(const Texture&) = delete;
@@ -160,8 +174,27 @@ namespace Rendering
 		~Texture();
 
 		const TextureData& GetData() const;
+		/// <summary>
+		/// Will get the byte data of the texture using the TOP LEFT CORNER as the origin (0, 0)
+		/// </summary>
+		/// <param name="textureOffset"></param>
+		/// <param name="size"></param>
+		/// <param name="writeLocationPointer"></param>
+		void GetByteData(const Vec2Int textureOffset, const Vec2Int size, std::byte* writeLocationPointer) const;
+		/// <summary>
+		/// Will get byte data using (0,0) offset and full size
+		/// </summary>
+		/// <param name="writeLocationPointer"></param>
+		void GetByteData(std::byte* writeLocationPointer) const;
 		void SetData(const std::byte* data);
 		bool IsValid() const;
+
+		/// <summary>
+		/// Will return the texture pixel width * height
+		/// </summary>
+		/// <returns></returns>
+		std::uint32_t GetTotalTexels() const;
+		size_t GetByteSize() const;
 
 		void BindToSlot(const TextureSlotIndex slotIndex);
 		void UnbindFromSlot();
@@ -174,7 +207,7 @@ namespace Rendering
 	};
 
 	Texture CreateTexture(const std::byte* data, const Vec2Int& size,
-		const InternalStorage storage= DEFAULT_INTERNAL_STORAGE, const AxesWrapBehavior wrap= DEFAULT_AXES_WRAP,
+		const AttachmentStorage storage= DEFAULT_INTERNAL_STORAGE, const AxesWrapBehavior wrap= DEFAULT_AXES_WRAP,
 		const MinFilter min= DEFAULT_MIN_FILTER, const MagFilter mag= DEFAULT_MAG_FILTER);
 
 	using TextureCubeFaceIntegralType = std::uint8_t;
@@ -190,7 +223,7 @@ namespace Rendering
 	struct TextureCubeCallbacks
 	{
 		RenderObjectId(*m_AllocateFunc)(const TextureData& data);
-		void(*m_SetData)(const TextureCubeFace face, const RenderObjectId, const Vec2Int size, const InternalStorage storage, const std::byte*);
+		void(*m_SetData)(const TextureCubeFace face, const RenderObjectId, const Vec2Int size, const AttachmentStorage storage, const std::byte*);
 		void(*m_SetBindStatusFunc)(const RenderObjectId, const TextureSlotIndex, const bool status);
 		void(*m_DeallocateFunc)(const RenderObjectId);
 	};
@@ -207,7 +240,7 @@ namespace Rendering
 		void Deallocate();
 	public:
 		TextureCube();
-		TextureCube(const Vec2Int& size, const InternalStorage storage = DEFAULT_INTERNAL_STORAGE,
+		TextureCube(const Vec2Int& size, const AttachmentStorage storage = DEFAULT_INTERNAL_STORAGE,
 			const AxesWrapBehavior wrap = DEFAULT_AXES_WRAP, const MinFilter min = DEFAULT_MIN_FILTER,
 			const MagFilter mag = DEFAULT_MAG_FILTER, const TextureCubeCallbacks& callbacks = {});
 		TextureCube(const TextureCube&) = delete;
@@ -228,6 +261,6 @@ namespace Rendering
 	};
 
 	TextureCube CreateTextureCube(const Vec2Int& size,
-		const InternalStorage storage = DEFAULT_INTERNAL_STORAGE, const AxesWrapBehavior wrap = DEFAULT_AXES_WRAP,
+		const AttachmentStorage storage = DEFAULT_INTERNAL_STORAGE, const AxesWrapBehavior wrap = DEFAULT_AXES_WRAP,
 		const MinFilter min = DEFAULT_MIN_FILTER, const MagFilter mag = DEFAULT_MAG_FILTER);
 }

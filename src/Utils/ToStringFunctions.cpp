@@ -5,6 +5,8 @@
 
 namespace Utils
 {
+	static const char* HEX_VALUES = "0123456789ABCDEF";
+
 	std::string ToString(const double& d, const std::uint8_t decimalPlaces)
 	{
 		std::ostringstream oss;
@@ -22,6 +24,21 @@ namespace Utils
 	std::string ToString(const std::uint8_t u8)
 	{
 		return std::to_string(static_cast<int>(u8));
+	}
+
+	std::string ToStringMemory(const std::byte* bytePtr, const std::size_t byteSize)
+	{
+		std::string result = "";
+		result.reserve(byteSize * 2);
+
+		unsigned char number = 0;
+		for (size_t i = 0; i < byteSize; i++)
+		{
+			number = std::to_integer<unsigned char>(bytePtr[i]);
+			result.push_back(HEX_VALUES[number >> 4]);
+			result.push_back(HEX_VALUES[number & 0xF]);
+		}
+		return result;
 	}
 
 

@@ -125,8 +125,27 @@ namespace Rendering
         ForwardRender    = 1,
         Shadow           = 2,
         Texture          = 3,
+        PostProcess      = 4
     };
-    inline constexpr size_t CORE_SHADER_COUNT = 4;
+    inline constexpr CoreShaderIntegralType CORE_SHADER_COUNT = 5;
+
+    using IntegralRenderPassType = std::uint8_t;
+    enum class RenderPassType : IntegralRenderPassType
+    {
+        None        = 0,
+        Shadow      = 1,
+        Geometry    = 2,
+        PostProcess = 3
+    };
+    inline constexpr IntegralRenderPassType TOTAL_PASS_TYPES = 3;
+
+    struct RenderPassData
+    {
+        RenderPassType m_PassType = RenderPassType::None;
+        FrameBuffer* m_FrameBuffer = nullptr;
+
+        bool UsesDefaultFrameBuffer() const;
+    };
    
     class Renderer
     {
@@ -135,6 +154,9 @@ namespace Rendering
         bool m_isRenderStalled;
         size_t m_framesSinceStart;
         size_t m_frameDrawCalls;
+
+        std::array<RenderPassData, TOTAL_PASS_TYPES> m_renderPassData;
+        RenderPassType m_currentPass;
 
         const EngineState* m_engineState;
         std::array<Shader*, CORE_SHADER_COUNT> m_coreShaders;
@@ -153,7 +175,10 @@ namespace Rendering
         TextureController m_textureController;
          
         FrameBuffer m_frameBuffer;
+        FrameBuffer* m_boundFrameBuffer;
         TextureCube m_shadowMaps[MAX_POINT_LIGHTS];
+        Texture m_hdrColorOutput;
+        RenderBuffer m_hdrDepthRenderBuffer;
 
         IndexBuffer m_indexBuffer;
         VertexBuffer m_vertexBuffer;
@@ -179,6 +204,7 @@ namespace Rendering
         void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix);
         void DrawBatch(RenderBatch& batch);
         void ExecuteShadowPass();
+        void ExecutePostProcessPass();
         void ExecuteLightingAndGeometryPass(const TextureSlotIndex* indices);
         void RenderEndActions();
 
@@ -193,6 +219,11 @@ namespace Rendering
         Shader* GetBaseTextureShader();
         Texture* GetBaseAlbedo();
         Texture* GetMaterialAlbedo(Material& material);
+
+        RenderPassType GetCurrentPass() const;
+        RenderPassData& GetCurrentPassData();
+        RenderPassData& GetPassDataMutable(const RenderPassType type);
+        void UpdatePassRenderState(const RenderPassType pass);
 
         //void FrameRenderDataUpdateCheck();
         //StaticFrameRenderData& GetThisFrameRenderData();
