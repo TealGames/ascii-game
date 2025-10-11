@@ -3,6 +3,7 @@
 #ifdef OPENGL
 #include "Utils/Debug.hpp"
 #include "Utils/OpenGlUtils.hpp"
+#include "Core/PositionConversions.hpp"
 
 namespace Rendering
 {
@@ -121,10 +122,14 @@ namespace Rendering
 		static void GetData(const RenderObjectId id, const Vec2Int offset, const Vec2Int size,
 			const AttachmentStorage storage, std::byte* writePtr, const size_t bufferSize)
 		{
-			
 			const GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
 			const GLenum texelStorage = GetTexelStorageType(storage);
-			GL_CALL(glGetTextureSubImage(id, 0, offset.m_X, offset.m_Y, 0, size.m_X, size.m_Y, 1, format, texelStorage, bufferSize, writePtr));
+			const Vec2Int bottomLeftCenteredOffset = Conversions::TryToNewFixedAreaPos<int>(size, 
+				CoordinateOriginType::TopLeft, offset + Vec2Int(0, size.m_Y), CoordinateOriginType::BottomLeft).value();
+
+			//LogError(std::format("Get data offset:{} converted:{}", offset.ToString(), bottomLeftCenteredOffset.ToString()));
+			GL_CALL(glGetTextureSubImage(id, 0, bottomLeftCenteredOffset.m_X, bottomLeftCenteredOffset.m_Y, 0, 
+				size.m_X, size.m_Y, 1, format, texelStorage, bufferSize, writePtr));
 		}
 
 		static void SetBindStatus(const RenderObjectId id, const TextureSlotIndex index, const bool status)

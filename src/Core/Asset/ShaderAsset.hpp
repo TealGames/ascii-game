@@ -12,7 +12,7 @@ public:
 	static constexpr char const* EXTENSION = ".glsl";
 
 private:
-	void ReadShaderFromSingleFile();
+	void ReadShaderFromSingleFile(const Rendering::ShaderProgramType programType);
 	void WriteToShaderFromFiles();
 public:
 	ShaderAsset(const std::filesystem::path& path);

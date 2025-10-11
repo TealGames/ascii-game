@@ -23,7 +23,12 @@ namespace Rendering
 		{
 			//NOTE: we must compile program before we init buffers to ensure that when the buffer
 			//has data filled from shader, shader is valid
-			shader->GetShaderMutable().CreateProgram();
+			if (!shader->GetShaderMutable().TryCreateProgram())
+			{
+				LogError(std::format("Attempted to load all shaders and textures, but shader: {} "
+					"failed to create program", shader->ToString()));
+			}
+
 			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShaderMutable());
 			InitShaderBuffers(shader->GetShaderMutable());
 		}

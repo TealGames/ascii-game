@@ -190,7 +190,7 @@ namespace Rendering
 
         //m_engineState->m_GraphicsContext.m_GraphicsManager->SetUniform(UniformDataType::Bool, SHADOW_TOGGLE_UNIFORM_NAME, &DO_SHADOWS);
         const std::string_view defines[] = {"DO_SHADOWS"};
-        GetCoreShader(CoreShader::ForwardRender)->CreateProgram({ defines, 1 });
+        GetCoreShader(CoreShader::ForwardRender)->TryCreateProgram({ defines, 1 });
     }
 
     Shader* Renderer::GetCoreShader(const CoreShader shader)

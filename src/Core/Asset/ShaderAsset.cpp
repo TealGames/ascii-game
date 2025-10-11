@@ -4,8 +4,10 @@
 #include <string_view>
 #include <optional>
 
-static constexpr char const* FRAGMENT_SHADER_IDENTIFIER = "fragment";
-static constexpr char const* VERTEX_SHADER_IDENTIFIER = "vertex";
+static constexpr char const* FRAGMENT_SHADER_IDENTIFIER = "fs";
+static constexpr char const* VERTEX_SHADER_IDENTIFIER = "vs";
+static constexpr char const* COMPUTE_SHADER_IDENTIFIER = "cs";
+static constexpr char SINGLE_FILE_SHADER_IDENTIFIER = '#';
 
 ShaderAsset::ShaderAsset(const std::filesystem::path& path)
 	: Asset(path, false), m_shader(Rendering::CreateShader("", ""))
@@ -27,7 +29,7 @@ void ShaderAsset::WriteToShaderFromFiles()
 	//If name has no separator it means it has no sahder identifier -> try to read as single file
 	if (lastSeparatorIndex == std::string::npos)
 	{
-		ReadShaderFromSingleFile();
+		ReadShaderFromSingleFile(Rendering::ShaderProgramType::VertexFragment);
 		return;
 	}
 
@@ -49,7 +51,10 @@ void ShaderAsset::WriteToShaderFromFiles()
 	// valid shader name -> it could be just a multi-word single file shader
 	else
 	{
-		ReadShaderFromSingleFile();
+		if (shaderTypeName == COMPUTE_SHADER_IDENTIFIER)
+			ReadShaderFromSingleFile(Rendering::ShaderProgramType::Compute);
+		else ReadShaderFromSingleFile(Rendering::ShaderProgramType::VertexFragment);
+		
 		return;
 	}
 
@@ -72,8 +77,10 @@ void ShaderAsset::WriteToShaderFromFiles()
 		return;
 	}
 
-	if (type == Rendering::ShaderType::Vertex) m_shader.SetSources(thisShaderSource, otherShaderSource);
-	else if (type == Rendering::ShaderType::Fragment) m_shader.SetSources(otherShaderSource, thisShaderSource);
+	if (type == Rendering::ShaderType::Vertex) m_shader.SetSources(
+		Rendering::ShaderProgramType::VertexFragment, thisShaderSource, otherShaderSource);
+	else if (type == Rendering::ShaderType::Fragment) m_shader.SetSources(
+		Rendering::ShaderProgramType::VertexFragment, otherShaderSource, thisShaderSource);
 	else
 	{
 		LogError(std::format("Attempted to set shader asset at path:{} source code from multiple files, "
@@ -81,30 +88,34 @@ void ShaderAsset::WriteToShaderFromFiles()
 	}
 }
 
-void ShaderAsset::ReadShaderFromSingleFile() 
+void ShaderAsset::ReadShaderFromSingleFile(const Rendering::ShaderProgramType programType)
 {
-	std::optional<Rendering::ShaderType> maybeShaderMode = std::nullopt;
-	//Index 0-> vertex, index 1-> fragment
-	std::string shaderSource[2] = {};
+	//We start at index 0 in case we have NO multi-shader identifers 
+	// to include everything in source 1 by default
+	int shaderSourceIndex = 0;
+	//Index 0-> vertex OR compute, index 1-> fragment
+	std::string shaderSource[2] = {"", ""};
 
 	IO::TryExecuteOnFileByLine(GetPath(), 
-		[this, &maybeShaderMode, &shaderSource](const std::string* line)-> void
+		[this, &shaderSourceIndex, &shaderSource](const std::string* line)-> void
 		{
 			if (line->empty()) return;
 
-			if (*line == '#' + FRAGMENT_SHADER_IDENTIFIER)
+			//Technically we DONT do the line below, but it is included for clarity 
+			if (*line == SINGLE_FILE_SHADER_IDENTIFIER + VERTEX_SHADER_IDENTIFIER ||
+				*line == SINGLE_FILE_SHADER_IDENTIFIER + COMPUTE_SHADER_IDENTIFIER)
 			{
-				maybeShaderMode = Rendering::ShaderType::Fragment;
+				shaderSourceIndex = 0;
 				return;
 			}
-			else if (*line == '#' + VERTEX_SHADER_IDENTIFIER)
+			else if (*line == SINGLE_FILE_SHADER_IDENTIFIER + FRAGMENT_SHADER_IDENTIFIER)
 			{
-				maybeShaderMode = Rendering::ShaderType::Vertex;
+				shaderSourceIndex = 1;
 				return;
 			}
 
-			if (!maybeShaderMode.has_value()) return;
-			shaderSource[(Rendering::ShaderTypeIntegralType)maybeShaderMode.value()] += *line + "\n";
+			if (shaderSourceIndex == -1) return;
+			shaderSource[shaderSourceIndex] += *line + "\n";
 		});
 
 	if (shaderSource[0].empty() || shaderSource[1].empty())
@@ -113,7 +124,7 @@ void ShaderAsset::ReadShaderFromSingleFile()
 			"Vertex Found:{} Fragment found:{}", GetPath().string().c_str(), std::to_string(!shaderSource[0].empty()), std::to_string(!shaderSource[1].empty())));
 		return;
 	}
-	m_shader.SetSources(std::move(shaderSource[0]), std::move(shaderSource[1]));
+	m_shader.SetSources(programType, std::move(shaderSource[0]), std::move(shaderSource[1]));
 }
 
 const Rendering::Shader& ShaderAsset::GetShader() const 

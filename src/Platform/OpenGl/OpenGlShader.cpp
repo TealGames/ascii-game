@@ -19,23 +19,36 @@ namespace Rendering
 		//	return -1;
 		//}
 
-		static std::uint32_t CompileShader(const RenderObjectId shaderType, const ShaderSource& shaderSource)
+		static GLenum GetShaderType(const ShaderType type)
+		{
+			if (type == ShaderType::Vertex)
+				return GL_VERTEX_SHADER;
+			else if (type == ShaderType::Fragment)
+				return GL_FRAGMENT_SHADER;
+			else if (type == ShaderType::Compute)
+				return GL_COMPUTE_SHADER;
+			
+			LogError(std::format("[OpenGL]: Attempted to get shader type to Opengl type"));
+			return 0;
+		}
+
+		static std::uint32_t CompileShader(const TypedShaderInitData& shaderSource)
 		{
 			RenderObjectId shaderId= INVALID_OBJ_ID;
-			GL_CALL(shaderId = glCreateShader(shaderType));
+			GL_CALL(shaderId = glCreateShader(GetShaderType(shaderSource.m_Type)));
 
 			std::string fullDefine = "";
-			if (shaderSource.m_Defines.m_DefinesArr != nullptr)
+			if (shaderSource.m_Data.m_Defines.m_DefinesArr != nullptr)
 			{
-				for (size_t i = 0; i < shaderSource.m_Defines.m_DefinesSize; i++)
+				for (size_t i = 0; i < shaderSource.m_Data.m_Defines.m_DefinesSize; i++)
 				{
 					fullDefine.append("#define ");
-					fullDefine.append(shaderSource.m_Defines.m_DefinesArr[i]);
+					fullDefine.append(shaderSource.m_Data.m_Defines.m_DefinesArr[i]);
 					fullDefine.append("\n");
 				}
 			}
 
-			std::string_view mainShaderSource = shaderSource.m_Source;
+			std::string_view mainShaderSource = shaderSource.m_Data.m_Source;
 			if (mainShaderSource.substr(0, std::min(mainShaderSource.size(), VERSION_HEADER.size())) == VERSION_HEADER)
 				mainShaderSource = mainShaderSource.substr(VERSION_HEADER.size());
 			
@@ -67,25 +80,29 @@ namespace Rendering
 			return shaderId;
 		}
 
-		static RenderObjectId CreateShaderProgram(const ShaderSource& vertexShader, const ShaderSource& fragmentShader, 
+		static RenderObjectId CreateShaderProgram(const TypedShaderInitData& firstInitData, const TypedShaderInitData* secondInitData,
 			UniformReflectionCollectionType* blockData)
 		{
 			RenderObjectId programId = INVALID_OBJ_ID;
 			GL_CALL(programId = glCreateProgram());
 
-			RenderObjectId vsId = INVALID_OBJ_ID;
-			RenderObjectId fsId = INVALID_OBJ_ID;
-			GL_CALL(vsId = CompileShader(GL_VERTEX_SHADER, vertexShader));
-			GL_CALL(fsId = CompileShader(GL_FRAGMENT_SHADER, fragmentShader));
+			RenderObjectId idSource1 = INVALID_OBJ_ID;
+			RenderObjectId idSource2 = INVALID_OBJ_ID;
+			GL_CALL(idSource1 = CompileShader(firstInitData));
+			GL_CALL(glAttachShader(programId, idSource1));
 
-			GL_CALL(glAttachShader(programId, vsId));
-			GL_CALL(glAttachShader(programId, fsId));
+			if (secondInitData != nullptr)
+			{
+				GL_CALL(idSource2 = CompileShader(*secondInitData));
+				GL_CALL(glAttachShader(programId, idSource2));
+			}			
+			
 			GL_CALL(glLinkProgram(programId));
 			GL_CALL(glValidateProgram(programId));
 
 			//We only need the shaders to create the single shader program, then they can be deleted
-			GL_CALL(glDeleteShader(vsId));
-			GL_CALL(glDeleteShader(fsId));
+			GL_CALL(glDeleteShader(idSource1));
+			if (idSource2 != INVALID_OBJ_ID) GL_CALL(glDeleteShader(idSource2));
 
 			GLint blockCount = 0;
 			GLint uniformCount = 0;

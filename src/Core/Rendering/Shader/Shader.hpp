@@ -12,8 +12,15 @@ namespace Rendering
 	{
 		Vertex =	0,
 		Fragment =	1,
+		Compute	 =  2,
 	};
 	std::string ToString(const ShaderType type);
+
+	enum class ShaderProgramType : ShaderTypeIntegralType
+	{
+		VertexFragment = 0,
+		Compute		   = 1,
+	};
 
 	enum class UniformType : std::uint8_t
 	{
@@ -100,35 +107,49 @@ namespace Rendering
 		size_t m_DefinesSize = 0;
 	};
 
-	struct ShaderSource
+	struct ShaderInitData
 	{
 		ShaderSourceDefines m_Defines = {};
 		std::string m_Source = "";
+	};
+	struct TypedShaderInitData
+	{
+		ShaderType m_Type = ShaderType::Compute;
+		ShaderInitData m_Data = {};
 	};
 
 	class Shader;
 	using UniformReflectionCollectionType = std::unordered_map<String16, UniformReflectionInfo>;
 	struct ShaderPlatformCallbacks
 	{
-		RenderObjectId(*m_CreateProgramFunc) (const ShaderSource& vertexSource, const ShaderSource& fragmentSource, UniformReflectionCollectionType* blockData);
+		RenderObjectId(*m_CreateProgramFunc) (const TypedShaderInitData& initData1, const TypedShaderInitData* initData2, 
+			UniformReflectionCollectionType* blockData);
 		void(*m_BindActiveFunc) (const Shader& shader);
 		void(*m_UnbindActiveFunc) (const Shader& shader);
 		std::string(*m_TrySetUniformFunc) (const Shader& shader, const UniformDataType uniform, const char* uniformName, const void* valuePtr);
-		std::string(*m_TrySetArrayUniformFunc) (const Shader& shader, const UniformDataType uniform, const char* uniformName, const void* valuePtr, const size_t size);
+		std::string(*m_TrySetArrayUniformFunc) (const Shader& shader, const UniformDataType uniform, 
+			const char* uniformName, const void* valuePtr, const size_t size);
 		bool(*m_TryGetUniformFunc) (const Shader& shader, const UniformDataType uniform, const char* uniformName, void* outputPtr);
 		bool(*m_TryBindUniformBlockFunc) (const Shader& shader, const char* uniformBlockName, const UniformBufferBindIndex index);
-		bool(*TryGetUniformBlockMembers) (const Shader& shader, const char* uniformBlockName, std::vector<UniformBlockMemberMemoryInfo>& members, size_t* fullSize);
+		bool(*TryGetUniformBlockMembers) (const Shader& shader, const char* uniformBlockName, 
+			std::vector<UniformBlockMemberMemoryInfo>& members, size_t* fullSize);
 		void(*m_DeleteProgramFunc) (const Shader& shader);
 	};
 
+	constexpr std::uint8_t SHADER_SOURCES = 2;
 	class Shader
 	{
 	private:
 		ShaderPlatformCallbacks m_platformCallbacks;
 
 		RenderObjectId m_id;
-		std::string m_vertexSourceCode;
-		std::string m_fragmentSourceCode;
+		/// <summary>
+		/// The source code where:
+		/// Normal shader 0 -> vertex, 1 -> fragment
+		/// Compute shader 0 -> full shader
+		/// </summary>
+		std::array<std::string, SHADER_SOURCES> m_sourceCode;
+		std::optional<ShaderProgramType> m_maybeProgramType;
 
 		UniformReflectionCollectionType m_uniformData;
 		size_t m_unboundUniformBuffers;
@@ -137,14 +158,23 @@ namespace Rendering
 	private:
 		void DeleteProgram(const bool clearExistingData);
 		bool PassesValidCheck() const;
+
+		void CreateProgram(const TypedShaderInitData& initData1, const TypedShaderInitData* initData2 = nullptr);
+		void CreateVertexFragmentProgram(const ShaderSourceDefines& vertexDefines = {}, const ShaderSourceDefines& fragmentDefines = {});
+		void CreateComputeProgram(const ShaderSourceDefines& computeDefines = {});
 	public:
 		Shader(const std::string& verexSource, const std::string& fragmentSource, const ShaderPlatformCallbacks& callbacks);
 		~Shader();
 		Shader(const Shader&) = delete;
 		Shader(Shader&&) noexcept;
 
-		void SetSources(const std::string& vertexSource, const std::string& fragmentSource);
-		void CreateProgram(const ShaderSourceDefines& vertexDefines = {}, const ShaderSourceDefines& fragmentDefines = {});
+		void SetSources(const std::optional<ShaderProgramType>& programType,  
+			const std::string& source1, const std::string& source2= "");
+		/// <summary>
+		/// Will attempt to create the program if the program type has already been set with the sources
+		/// </summary>
+		/// <returns></returns>
+		bool TryCreateProgram(const std::array<ShaderSourceDefines, SHADER_SOURCES>& defines = {});
 
 		RenderObjectId GetId() const;
 		bool IsValid() const;
@@ -152,11 +182,9 @@ namespace Rendering
 		//bool HasAllUniformBlocksBounds() const;
 		//bool NeedsUniformBlockBound(const std::string& name) const;
 
-		const std::string& GetVertexSource() const;
-		const char* GetVertexSourceCStyle() const;
-
-		const std::string& GetFragmentSource() const;
-		const char* GetFragmentSourceCStyle() const;
+		const std::string& GetSource1() const;
+		const std::string& GetSource2() const;
+		std::optional<ShaderProgramType> GetProgramType() const;
 
 		void BindActive();
 		void UnbindActive();
