@@ -20,7 +20,7 @@
 
 namespace Rendering
 {
-    constexpr bool DO_LIGHTING = false;
+    constexpr bool DO_LIGHTING = true;
     
     constexpr bool DRAW_LIGHT_AREAS = true;
     constexpr Utils::Color LIGHT_AREA_COLOR_FROM_LIGHT = Utils::Color(0, 0, 0, 0);
@@ -39,8 +39,8 @@ namespace Rendering
     constexpr LogType STALL_LOG_TYPE = LogType::Warning;
 
     constexpr size_t PRE_ALLOCATED_SHAPES = 16;
-    constexpr size_t PRE_ALLOCATED_INDICES_COUNT = 2000;
-    constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = 600;
+    constexpr size_t PRE_ALLOCATED_INDICES_COUNT = 8000;
+    constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = 4000;
     constexpr size_t CIRCLE_SIDE_COUNT = 12;
 
     static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { "default", "forward_render", "shadow", "texture", "post_process", "gaussian_blur" };
