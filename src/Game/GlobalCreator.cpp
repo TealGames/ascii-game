@@ -14,7 +14,6 @@
 #include "Core/Scene/SceneManager.hpp"
 #include "Core/Camera/CameraController.hpp"
 #include "ECS/Component/Types/World/ParticleEmitterData.hpp"
-#include "Utils/RaylibUtils.hpp"
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/SpriteAnimationAsset.hpp"
 #include "Utils/Data/ColorConstants.hpp"
@@ -31,7 +30,8 @@ namespace GlobalEntityCreator
 		//Font* fontptr = &(GetGlobalFont());
 		/*VisualDataPreset visualPreset = {, VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING,
 				CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };*/
-		WorldFontProperties fontSettings = WorldFontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_FONT_CHAR_SPACING.m_X, StaticReferenceGlobals::GetDefaultRaylibFont());
+		WorldFontProperties fontSettings = WorldFontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_FONT_CHAR_SPACING.m_X, 
+			StaticReferenceGlobals::GetDefaultRaylibFont());
 		//LogError(std::format("Is valid preset font:{}", std::to_string(RaylibUtils::IsValidFont(visualPreset.m_Font))));
 
 
@@ -56,7 +56,8 @@ namespace GlobalEntityCreator
 		//Assert(false, std::format("Light source fields: {}", lightSource.ToStringFields()));
 
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData(std::vector<std::vector<TextChar>>{ {TextChar(Utils::COLOR_GRAY, 'H') }}, {0, 0}, fontSettings, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
+			VisualData(std::vector<std::vector<TextChar>>{ {TextChar(Utils::COLOR_GRAY, 'H') }}, {0, 0}, 
+				fontSettings, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
 		ComponentFieldReference lightRadiusref = ComponentFieldReference(&lightSource, "Radius");
 		//Assert(false, std::format("Entity light radius: {}", lightRadiusref.m_Entity->ToString()));

@@ -6,6 +6,7 @@
 #include "Core/Rendering/Material.hpp"
 #include "ECS/Component/Types/World/PointLight3DComponent.hpp"
 #include "Utils/Data/Quaternion.hpp"
+#include "Core/Rendering/Model3d.hpp"
 #include <cstdint>
 
 class EngineState;
@@ -17,23 +18,6 @@ class CameraPrecalculatedData;
 
 namespace Rendering
 {
-    struct Vertex
-    {
-        WorldPosition3D m_Pos = {};
-        UV m_UVPos = {};
-        Vec3 m_Normal = {};
-
-        std::string ToString() const;
-    };
-    
-    struct InstanceData
-    {
-        Vec4 m_Color;
-        Mat4 m_ModelMatrix;
-        Mat3 m_NormalModelMatrix;
-
-        std::string ToString() const;
-    };
     using VertexType = Vertex;
     using InstanceType = InstanceData;
 
@@ -125,9 +109,10 @@ namespace Rendering
         ForwardRender    = 1,
         Shadow           = 2,
         Texture          = 3,
-        PostProcess      = 4
+        PostProcess      = 4,
+        GaussianBlur     = 5
     };
-    inline constexpr CoreShaderIntegralType CORE_SHADER_COUNT = 5;
+    inline constexpr CoreShaderIntegralType CORE_SHADER_COUNT = 6;
 
     using IntegralRenderPassType = std::uint8_t;
     enum class RenderPassType : IntegralRenderPassType
@@ -172,7 +157,8 @@ namespace Rendering
 
         VertexLayout m_layout;
         BufferController m_bufferController;
-        TextureController m_textureController;
+        TextureSlotController m_textureController;
+        ImageSlotController m_imageController;
          
         FrameBuffer m_frameBuffer;
         FrameBuffer* m_boundFrameBuffer;
@@ -192,7 +178,7 @@ namespace Rendering
         size_t CalculateBatchHash(const Shader* shader, const Texture* texture, std::uint32_t totalVertices) const;
         size_t CalculateBatchHash(const RenderBatch& batch) const;
         RenderBatch& CreateBatch(Shader* shader, Texture* texture,
-            const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize,
+            const Vertex* vertexArray, const size_t vertexSize, const IndexType* indexArray, const size_t indicesSize,
             const Mat4& modelMatrix, const Utils::Color& color, const bool isFinished);
         void FinishBatch(RenderBatch& batch);
         void AddVertexToBatch(RenderBatch& batch, const Vertex& vertex);
@@ -205,7 +191,9 @@ namespace Rendering
         void DrawBatch(RenderBatch& batch);
         void ExecuteShadowPass();
         void ExecutePostProcessPass();
-        void ExecuteLightingAndGeometryPass(const TextureSlotIndex* indices);
+        void ExecuteLightingAndGeometryPass(const SlotIndex* indices);
+
+        void ApplyBlurInPlace(Texture& inputTexture, Texture& outputTexture);
         void RenderEndActions();
 
         /*
@@ -263,6 +251,8 @@ namespace Rendering
         void AddCallTextureSphere3D(const float radius, Texture& tex, const Mat4& modelMatrix, const Utils::Color color);
         void AddCallTextureBox3D(const Vec3& size, Material& material, const Mat4& modelMatrix);
         void AddCallText(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color);
+
+        void AddCallModel(Model3d& model, const Mat4& modelMatrix);
 
         void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Utils::Color color);
         void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Utils::Color color);

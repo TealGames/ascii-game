@@ -93,29 +93,16 @@ namespace AssetManagement
 		requires IsAssetType<T>
 		T* CreateAssetFromFile(const std::filesystem::path& assetRelPath)
 		{
-			//TODO: make sure we create an asset based on the type so we can use polymorphism
-			//TODO: check for duplicates 
-			/*auto existingIt = m_assets.find(assetPath); 
-			if (existingIt != m_assets.end())
-				return TryConvertAssetToTypeMutable<T>(existingIt->second);*/
-
-			/*if (!Assert(sameNameAssetIt == m_assets.end(), std::format("Tried to add asset at path:{} "
-				"to asset manager but an asset at that path already exists", assetPath.string())))
-				return nullptr;*/
-
 			T* existingAsset = TryGetExistingAsset<T>(assetRelPath);
 			if (existingAsset != nullptr) return existingAsset;
 
 			//Note: since we need to do io operations on assets, we must use global path (or relative to directory)
 			//but global path is easier
 			T* assetAsT = new T(GetAbsoluteAssetPath(assetRelPath));
+			LogWarning(std::format("Created asset of type: {} stringed:{}", typeid(T).name(), assetAsT->ToString()));
 			auto emplaceResult = m_assets.emplace(assetRelPath.string(), assetAsT);
-			/*if (!Assert(emplaceResult!= m_assets.end(), std::format("Tried to create asset from file at path:{} "
-				"for type:{} but failed to add asset", assetPath.string(), Utils::GetTypeName<T>())))
-				return nullptr;*/
 
 			RegisterAssetToAllFiles(assetRelPath);
-
 			return assetAsT;
 		}
 
@@ -304,47 +291,11 @@ namespace AssetManagement
 		static std::filesystem::path GetRelativeAssetPath(const std::filesystem::path& longerPath);
 		static std::filesystem::path GetAbsoluteAssetPath(const std::filesystem::path& assetRelativePath);
 		static bool IsValidAssetPath(const std::filesystem::path& relativeAssetPath);
-		/// <summary>
-		/// This is most used for assets that do not have an asset type associated with them
-		/// </summary>
-		/// <param name="name"></param>
-		/// <param name="extension"></param>
-		/// <returns></returns>
-		//std::filesystem::path TryCreateAssetPath(const std::filesystem::path& fullFileName) const;
 		std::filesystem::path TryCreateAssetPath(const std::string& fileName, const std::string& extension) const;
 
-		/// <summary>
-		/// Will retrieve the file contents (if found) of the file located at the file and extension names
-		/// </summary>
-		/// <param name="fileName"></param>
-		/// <param name="extension"></param>
-		/// <returns></returns>
-		//std::vector<std::string> TryReadAssetFile(const std::string& fileName, const std::string& extension) const;
-		//bool TryWriteToAssetFile(const std::string& fileName, const std::string& extension, const std::string& newContents) const;
-		//bool TryExecuteOnAssetFile(const std::string& fileName, const std::string& extension, const IO::FileLineAction& action) const;
 		bool TryExecuteOnAssetFile(const std::filesystem::path& fullPath, const IO::FileLineAction& action) const;
 
-		/// <summary>
-		/// Note: this function is slow since it requires iteration through all assets to find one that matches name.
-		/// Use the path argument version instead.
-		/// </summary>
-		/// <param name="name"></param>
-		/// <returns></returns>
-		//Asset* TryGetAssetMutable(const std::string& name);
-		//Asset* TryGetAssetFromLiteralMutable(const char* name);
-
 		Asset* TryGetAssetFromPathMutable(const std::filesystem::path& path);
-		//Asset* TryGetRuntimeAssetMutable(const std::string& name);
-
-		/*template<typename T>
-		requires IsAssetType<T>
-		T* TryGetTypeAssetMutable(const std::string& name)
-		{
-			Asset* maybeAsset = TryGetAssetMutable(name);
-			if (maybeAsset == nullptr) return nullptr;
-
-			return TryConvertAssetToTypeMutable<T>(maybeAsset);
-		}*/
 
 		/// <summary>
 		/// Note: this function is slow since it requires iteration through all assets to find one that matches name.
@@ -357,11 +308,6 @@ namespace AssetManagement
 		requires IsAssetType<T>
 		T* TryGetTypeAssetFromLiteralMutable(const char* name)
 		{
-			/*Asset* maybeAsset = TryGetAssetFromLiteralMutable(name);
-			if (maybeAsset == nullptr) return nullptr;
-
-			return TryConvertAssetToTypeMutable<T>(maybeAsset);*/
-
 			for (const auto& asset : m_assets)
 			{
 				/*LogWarning(std::format("checking asset:'{}' for target:'{}' comp:{}", asset.second->GetName(), name,

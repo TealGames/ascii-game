@@ -1,7 +1,7 @@
 #include "Platform/OpenGl/OpenGlGpuFence.hpp"
 
 #ifdef OPENGL
-#include "Utils/OpenGlUtils.hpp"
+#include "Utils/Platform/OpenGlUtils.hpp"
 
 namespace Rendering
 {

@@ -1,6 +1,9 @@
 #pragma once
 #include <type_traits>
 
+#define STRINGIFY(x) #x
+#define TO_STRING(x) STRINGIFY(x)
+
 #define FLAG_ENUM_OPERATORS(Enum)\
 constexpr Enum operator|(Enum lhs, Enum rhs) { \
     using T = std::underlying_type_t<Enum>; \
@@ -70,3 +73,21 @@ Type& Type::operator/=(const Type& other)               \
     *this = *this / other;                              \
     return *this;                                       \
 }                                                       \
+
+#define DEFINE_TEMPLATE_HAS_FUNCTION(FUNCTION, RETURN_TYPE)                             \
+template<typename T>                                                                    \
+concept HasFunction##FUNCTION = requires(T t) {                                         \
+    { t.FUNCTION() } -> std::convertible_to<RETURN_TYPE>;                               \
+};
+
+#define DEFINE_TEMPLATE_HAS_PROPERTY(MEMBER, RETURN_TYPE)                               \
+template<typename T>                                                                    \
+concept HasProperty##MEMBER = requires(T t) {                                           \
+    { t.MEMBER } -> std::convertible_to<RETURN_TYPE>;                                   \
+};
+
+#define DEFINE_TEMPLATE_INVOCABLE(NAME, RETURN_TYPE, ...)                                               \
+template<typename T>                                                                                    \
+concept NAME = requires(T t) {                                                                          \
+    { std::invoke(t __VA_OPT__(, std::declval<__VA_ARGS__>())) } -> std::convertible_to<RETURN_TYPE>;   \
+};

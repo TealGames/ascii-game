@@ -21,9 +21,15 @@ public:
 	static constexpr size_t MATRIX_SIZE = ROW_SIZE * COL_SIZE;
 
 private:
-public:
+public: 
 	constexpr MatrixType() : m_arr() {}
-	constexpr MatrixType(const float rowMajorElements[ROW_SIZE][COL_SIZE]) : m_arr() 
+	/// <summary>
+	/// Constructs a matrix using a 2D array in ROW MAJOR order
+	/// NOTE: this is the same as arr[ROW_SIZE][COL_SIZE] since arr
+	/// pointer decays to float* [COL_SIZE] pointer -> pointer to one row
+	/// </summary>
+	/// <param name="rowMajorElements"></param>
+	constexpr MatrixType(const float (*rowMajorElements)[COL_SIZE]) : m_arr() 
 	{
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
@@ -33,6 +39,10 @@ public:
 			}
 		}
 	}
+	/// <summary>
+	/// Constructs a matrix using C++ built in array type in ROW MAJOR order
+	/// </summary>
+	/// <param name="rowMajorElements"></param>
 	constexpr MatrixType(const std::array<std::array<float, COL_SIZE>, ROW_SIZE>& rowMajorElements) : m_arr()
 	{
 		for (size_t r = 0; r < ROW_SIZE; r++)
@@ -40,6 +50,22 @@ public:
 			for (size_t c = 0; c < COL_SIZE; c++)
 			{
 				m_arr[c][r] = rowMajorElements[r][c];
+			}
+		}
+	}
+	/// <summary>
+	/// Constructs a matrix using an initial first element pointer.
+	/// NOTE: memory must be laid out in ROW MAJOR order and total floats must be equal to ROW_SIZE * COL_SIZE
+	/// 
+	/// </summary>
+	/// <param name="firstElementPtr"></param>
+	constexpr MatrixType(const float* firstElementPtr)
+	{
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			for (size_t c = 0; c < COL_SIZE; c++)
+			{
+				m_arr[c][r] = *(firstElementPtr + (COL_SIZE * r) + c);
 			}
 		}
 	}

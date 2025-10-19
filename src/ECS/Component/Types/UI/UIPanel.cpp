@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UIPanel.hpp"
 #include "Utils/Debug.hpp"
-#include "Utils/RaylibUtils.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Core/Rendering/GameRenderer.hpp"

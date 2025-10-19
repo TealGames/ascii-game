@@ -2,12 +2,11 @@
 #include "StaticGlobals.hpp"
 #include "Utils/ToStringFunctions.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/ToStringFunctions.hpp"
 
 namespace Rendering
 {
 	RenderBuffer::RenderBuffer() : RenderBuffer(DEFAULT_RENDER_BUFFER_STORAGE, {}, {}) {}
-	RenderBuffer::RenderBuffer(const AttachmentStorage storage, const Vec2Int size, const RenderBufferPlatformCallbacks& callbacks)
+	RenderBuffer::RenderBuffer(const TexelStorageType storage, const Vec2Int size, const RenderBufferPlatformCallbacks& callbacks)
 		: m_callbacks(callbacks), m_id(INVALID_OBJ_ID), m_size(size), m_attachmentStorage(storage)
 	{
 		if (m_callbacks.m_AllocateFunc == nullptr)

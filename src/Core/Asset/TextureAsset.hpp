@@ -18,7 +18,7 @@ public:
 	const Rendering::Texture& GetTexture() const;
 	Rendering::Texture& GetTextureMutable();
 	//VisualData& GetTextureMutable();
-
+	
 	void UpdateAssetFromFile() override;
 };
 

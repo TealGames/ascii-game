@@ -1,6 +1,5 @@
 #include "pch.hpp"
 #include "Core/Rendering/FragmentedTextArray.hpp"
-#include "Utils/RaylibUtils.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/Debug.hpp"
 

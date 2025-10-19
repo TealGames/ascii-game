@@ -7,25 +7,25 @@
 
 namespace Rendering
 {
-	ChannelFormat GetChannelFormatFromStorage(const AttachmentStorage storage)
+	ChannelFormat GetChannelFormatFromStorage(const TexelStorageType storage)
 	{
 		return static_cast<ChannelFormat>(static_cast<InternalStorageIntegralType>(
 			static_cast<InternalStorageIntegralType>(storage)/ INTERNAL_STORAGE_PER_FORMAT));
 	}
-	std::uint16_t GetStorageByteSize(const AttachmentStorage storage)
+	std::uint16_t GetStorageByteSize(const TexelStorageType storage)
 	{
-		if (storage == AttachmentStorage::R8)
+		if (storage == TexelStorageType::R8)
 			return 1;
-		else if (storage == AttachmentStorage::RGB8)
+		else if (storage == TexelStorageType::RGB8)
 			return 3;
-		else if (storage == AttachmentStorage::RGBA8)
+		else if (storage == TexelStorageType::RGBA8)
 			return 4;
 		//NOTE: since c++ has no half floats, we use 4 channels * 4 bytes = 16 bytes
-		else if (storage == AttachmentStorage::RGBA16F)
+		else if (storage == TexelStorageType::RGBA16F)
 			return 16;
-		else if (storage == AttachmentStorage::Depth24)
+		else if (storage == TexelStorageType::Depth24)
 			return 4;
-		else if (storage == AttachmentStorage::Depth24_Stencil8)
+		else if (storage == TexelStorageType::Depth24_Stencil8)
 			return 4;
 
 		LogError(std::format("[OPENGL]: Attempted to convert internal storage to texel storage type"));
@@ -42,7 +42,7 @@ namespace Rendering
 	}
 	TextureData& TextureData::operator=(TextureData&& other) noexcept
 	{
-		m_slotIndex = std::exchange(other.m_slotIndex, INVALID_TEXTURE_SLOT_INDEX);
+		//m_slotIndex = std::exchange(other.m_slotIndex, INVALID_TEXTURE_SLOT_INDEX);
 		//NOTE: this is the most important part because if we do default move cosntructor
 		//the id does not become invalid -> deallocation called on destructor
 		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
@@ -56,9 +56,9 @@ namespace Rendering
 	}
 
 	Texture::Texture() : Texture(nullptr, {}) {}
-	Texture::Texture(const std::byte* data, const Vec2Int& size, const AttachmentStorage internalStorage,
+	Texture::Texture(const std::byte* data, const Vec2Int& size, const TexelStorageType internalStorage,
 		const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag, const TextureCallbacks& callbacks)
-		: m_callbacks(callbacks), m_data{ INVALID_OBJ_ID, INVALID_TEXTURE_SLOT_INDEX,size, internalStorage, wrap, min, mag}
+		: m_callbacks(callbacks), m_data{ INVALID_OBJ_ID,size, internalStorage, wrap, min, mag}
 	{
 		if (size.m_X == 0 || size.m_Y == 0)
 			return;
@@ -111,25 +111,28 @@ namespace Rendering
 	}
 	size_t Texture::GetByteSize() const { return GetByteSize(GetTotalTexels()); }
 
-	void Texture::BindToSlot(const TextureSlotIndex slotIndex)
-	{
-		m_callbacks.m_SetBindStatusFunc(m_data.m_id,slotIndex, true);
-		m_data.m_slotIndex = slotIndex;
-		//LogWarning(std::format("texture slot now:{} for:{}", m_slotIndex, m_id));
-	}
-	void Texture::UnbindFromSlot()
-	{
-		if (m_data.m_slotIndex == INVALID_TEXTURE_SLOT_INDEX)
-		{
-			LogError(std::format("Attempted to unbind texture:{} from current texture "
-				"slot but it is not in any slot", ToString()));
-			return;
-		}
+	//void Texture::BindToSlot(const TextureSlotIndex slotIndex)
+	//{
+	//	m_callbacks.m_SetBindStatusFunc(m_data.m_id,slotIndex, true);
+	//	m_data.m_slotIndex = slotIndex;
+	//	//LogWarning(std::format("texture slot now:{} for:{}", m_slotIndex, m_id));
+	//}
+	//void Texture::UnbindFromSlot()
+	//{
+	//	if (m_data.m_slotIndex == INVALID_TEXTURE_SLOT_INDEX)
+	//	{
+	//		LogError(std::format("Attempted to unbind texture:{} from current texture "
+	//			"slot but it is not in any slot", ToString()));
+	//		return;
+	//	}
 
-		m_callbacks.m_SetBindStatusFunc(m_data.m_id, m_data.m_slotIndex, false);
-		m_data.m_slotIndex = INVALID_TEXTURE_SLOT_INDEX;
-	}
+	//	m_callbacks.m_SetBindStatusFunc(m_data.m_id, m_data.m_slotIndex, false);
+	//	m_data.m_slotIndex = INVALID_TEXTURE_SLOT_INDEX;
+	//}
+
 	const TextureData& Texture::GetData() const { return m_data; }
+	RenderObjectId Texture::GetId() const { return m_data.m_id; }
+	TexelStorageType Texture::GetStorageType() const { return m_data.m_internalStorage; }
 	void Texture::GetByteData(const Vec2Int textureOffset, const Vec2Int size, std::byte* writeLocationPointer) const
 	{
 		const Vec2Int maxOffset = textureOffset + size;
@@ -148,10 +151,10 @@ namespace Rendering
 		m_callbacks.m_GetData(m_data.m_id, Vec2Int::Zero(), m_data.m_size, 
 			m_data.m_internalStorage, writeLocationPointer, GetByteSize());
 	}
-	bool Texture::IsBoundToSlot() const
-	{
-		return m_data.m_slotIndex != INVALID_TEXTURE_SLOT_INDEX;
-	}
+	//bool Texture::IsBoundToSlot() const
+	//{
+	//	return m_data.m_slotIndex != INVALID_TEXTURE_SLOT_INDEX;
+	//}
 	std::string Texture::ToString() const
 	{
 		return std::format("[Texture Data:{}]", m_data.ToString());
@@ -164,7 +167,7 @@ namespace Rendering
 	}
 
 	Texture CreateTexture(const std::byte* data, const Vec2Int& size,
-		const AttachmentStorage storage, const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
+		const TexelStorageType storage, const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 	{
 #if defined(OPENGL)
 		return OpenGl::CreateTexture(data, size, storage, wrap, min, mag);
@@ -172,9 +175,9 @@ namespace Rendering
 	}
 
 	TextureCube::TextureCube() : TextureCube(Vec2Int{}) {}
-	TextureCube::TextureCube(const Vec2Int& size, const AttachmentStorage internalStorage,
+	TextureCube::TextureCube(const Vec2Int& size, const TexelStorageType internalStorage,
 		const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag, const TextureCubeCallbacks& callbacks)
-		: m_callbacks(callbacks), m_data{ INVALID_OBJ_ID, INVALID_TEXTURE_SLOT_INDEX,size, internalStorage, wrap, min, mag }
+		: m_callbacks(callbacks), m_data{ INVALID_OBJ_ID,size, internalStorage, wrap, min, mag }
 	{
 		if (size.m_X == 0 || size.m_Y == 0)
 			return;
@@ -200,33 +203,35 @@ namespace Rendering
 		}
 	}
 	const TextureData& TextureCube::GetData() const { return m_data; }
+	RenderObjectId TextureCube::GetId() const { return m_data.m_id; }
+	TexelStorageType TextureCube::GetStorageType() const { return m_data.m_internalStorage; }
 	void TextureCube::SetData(const TextureCubeFace face, const std::byte* data)
 	{
 		m_callbacks.m_SetData(face, m_data.m_id, m_data.m_size, m_data.m_internalStorage, data);
 	}
 
-	void TextureCube::BindToSlot(const TextureSlotIndex slotIndex)
-	{
-		m_callbacks.m_SetBindStatusFunc(m_data.m_id,slotIndex, true);
-		m_data.m_slotIndex = slotIndex;
-		//LogWarning(std::format("texture slot now:{} for:{}", m_slotIndex, m_id));
-	}
-	void TextureCube::UnbindFromSlot()
-	{
-		if (m_data.m_slotIndex == INVALID_TEXTURE_SLOT_INDEX)
-		{
-			LogError(std::format("Attempted to unbind texture:{} from current texture "
-				"slot but it is not in any slot", ToString()));
-			return;
-		}
+	//void TextureCube::BindToSlot(const TextureSlotIndex slotIndex)
+	//{
+	//	m_callbacks.m_SetBindStatusFunc(m_data.m_id,slotIndex, true);
+	//	m_data.m_slotIndex = slotIndex;
+	//	//LogWarning(std::format("texture slot now:{} for:{}", m_slotIndex, m_id));
+	//}
+	//void TextureCube::UnbindFromSlot()
+	//{
+	//	if (m_data.m_slotIndex == INVALID_TEXTURE_SLOT_INDEX)
+	//	{
+	//		LogError(std::format("Attempted to unbind texture:{} from current texture "
+	//			"slot but it is not in any slot", ToString()));
+	//		return;
+	//	}
 
-		m_callbacks.m_SetBindStatusFunc(m_data.m_id, m_data.m_slotIndex, false);
-		m_data.m_slotIndex = INVALID_TEXTURE_SLOT_INDEX;
-	}
-	bool TextureCube::IsBoundToSlot() const
-	{
-		return m_data.m_slotIndex != INVALID_TEXTURE_SLOT_INDEX;
-	}
+	//	m_callbacks.m_SetBindStatusFunc(m_data.m_id, m_data.m_slotIndex, false);
+	//	m_data.m_slotIndex = INVALID_TEXTURE_SLOT_INDEX;
+	//}
+	//bool TextureCube::IsBoundToSlot() const
+	//{
+	//	return m_data.m_slotIndex != INVALID_TEXTURE_SLOT_INDEX;
+	//}
 	std::string TextureCube::ToString() const
 	{
 		return std::format("[TextureCube Data:{}]", m_data.ToString());
@@ -238,7 +243,7 @@ namespace Rendering
 		return *this;
 	}
 
-	TextureCube CreateTextureCube(const Vec2Int& size, const AttachmentStorage storage, 
+	TextureCube CreateTextureCube(const Vec2Int& size, const TexelStorageType storage, 
 		const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 	{
 #if defined(OPENGL)

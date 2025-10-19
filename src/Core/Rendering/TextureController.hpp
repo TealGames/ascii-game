@@ -1,107 +1,366 @@
 #pragma once
 #include <array>
+#include <unordered_map>
 #include <type_traits>
+#include <functional>
 #include "Core/Rendering/Texture.hpp"
 #include "Utils/Debug.hpp"
+#include "Utils/DataStructure/ResourceSlotController.hpp"
+#include "Utils/TemplateConcepts.hpp"
 
 namespace Rendering
 {
-	struct TextureSlotData
-	{
-		TextureType m_Type = TextureType::Texture;
-		void* m_ResourcePtr = nullptr;
+	DEFINE_TEMPLATE_HAS_FUNCTION(GetId, RenderObjectId);
+	DEFINE_TEMPLATE_HAS_FUNCTION(GetStorageType, TexelStorageType);
 
-		bool HasResource() const;
-		void RemoveResource();
-	};
+	template<typename T>
+	concept IsValidResource = HasFunctionGetStorageType<T> && HasFunctionGetId<T>;
 
-	constexpr TextureSlotIndex MAX_TEXTURE_SLOTS = 16;
-	class TextureController
+	DEFINE_TEMPLATE_HAS_PROPERTY(m_ResourcePtr, void*);
+	DEFINE_TEMPLATE_HAS_PROPERTY(m_ResourceId, RenderObjectId);
+	DEFINE_TEMPLATE_HAS_FUNCTION(RemoveResource, void);
+	DEFINE_TEMPLATE_HAS_FUNCTION(HasResource, bool);
+
+	template<typename TSlotData, std::size_t MAX_SLOTS>
+	requires (HasPropertym_ResourcePtr<TSlotData> && 
+			  HasFunctionHasResource<TSlotData> && 
+		      HasFunctionRemoveResource<TSlotData> && 
+		      HasFunctionToString<TSlotData>)
+	class GpuResourceSlotController
 	{
 	private:
-		TextureSlotIndex m_nextAvailableIndex;
-		std::array<TextureSlotData, MAX_TEXTURE_SLOTS> m_textureSlots;
+		ResourceSlotController<TSlotData, MAX_SLOTS> m_slotController;
+		std::unordered_map<RenderObjectId, USlotIndex> m_resourceSlot;
 	public:
 
 	private:
-		bool ValidAvailableIndexCheck() const;
+	public:
+		GpuResourceSlotController() : m_slotController(), m_resourceSlot() {}
 
-		template<typename T>
-		void BindResourceToSlot(const TextureSlotIndex slot, T* resourcePtr)
+		SlotIndex TryGetResourceSlot(const RenderObjectId id) const
 		{
-			resourcePtr->BindToSlot(slot);
-			TextureType type = TextureType::Texture;
-			if constexpr (std::is_same_v<T, Texture>) type = TextureType::Texture;
-			else if constexpr (std::is_same_v<T, TextureCube>) type = TextureType::TextureCube;
-			else
-			{
-				LogError(std::format("Attempted to bind resource of type:{} "
-					"to slot but it has no type defined in enum", typeid(T).name()));
-			}
-			m_textureSlots[slot] = TextureSlotData{ type, resourcePtr };
+			if (m_resourceSlot.empty())
+				return INVALID_SLOT_INDEX;
+
+			auto it = m_resourceSlot.find(id);
+			if (it != m_resourceSlot.end())
+				return it->second;
+
+			return INVALID_SLOT_INDEX;
 		}
 
-		void UnbindAnyResourceFromSlot(const TextureSlotIndex slot);
-
-		template<typename T>
-		T* UnbindResourceFromSlot(const TextureSlotIndex slot)
+		template<typename TResource>
+		requires HasFunctionGetId<TResource> && std::constructible_from<TSlotData, TResource&>
+		SlotIndex BindResourceToFreeSlot(TResource& resource)
 		{
-			T* tPtr = static_cast<T*>(m_textureSlots[slot].m_ResourcePtr);
-			tPtr->UnbindFromSlot();
-			m_textureSlots[slot].RemoveResource();
-
-			return tPtr;
-		}
-		/*Texture* UnbindTextureFromSlot(const TextureSlotIndex slot);
-		TextureCube* UnbindTextureCubeFromSlot(const TextureSlotIndex slot);*/
-		void FindNextAvailableIndex(const TextureSlotIndex initialIndex);
-
-		template<typename T>
-		std::vector<TextureSlotIndex> TryAddResourceToAvailableSlots(T textures[], const size_t size)
-		{
-			if (!ValidAvailableIndexCheck())
-				return {};
-
-			if (size == 0)
+			const SlotIndex slotAdded = m_slotController.TryAdd(TSlotData(resource));
+			const RenderObjectId objectId = resource.GetId();
+			if (slotAdded == INVALID_SLOT_INDEX)
 			{
-				LogError(std::format("Attempted to add textures to available slots with size 0"));
-				return {};
+				LogError(std::format("Attempted to bind resource to GPU resource slot "
+					"but failed to add to controller: {}", ToString()));
+				return INVALID_SLOT_INDEX;
+			}
+			m_resourceSlot.emplace(objectId, slotAdded);
+			return slotAdded;
+		}
+
+		template<typename TResource>
+		requires HasFunctionGetId<TResource> && std::constructible_from<TSlotData, TResource&>
+		TSlotData RebindResourceInSlot(const USlotIndex slot, TResource& resource)
+		{
+			if (slot >= MAX_SLOTS)
+			{
+				LogWarning(std::format("Attempted to replace resource from out of bounds "
+					"[0,{}) slot: {}", MAX_SLOTS, slot));
 			}
 
-			std::vector<TextureSlotIndex> slots = {};
-			if (m_nextAvailableIndex + size >= MAX_TEXTURE_SLOTS || m_nextAvailableIndex == INVALID_TEXTURE_SLOT_INDEX
-				|| m_nextAvailableIndex < 0)
+			if (!m_slotController[slot].HasResource())
 			{
-				LogError(std::format("Attempted to add textures({}) to next available slot indices "
+				LogError(std::format("Attempted to replace resource at slot: {} but there is no resource there. "
+					"Use BindResourceToFreeSlot instead", slot));
+				throw std::invalid_argument("Invalid slot arg");
+			}
+			const TSlotData oldData= m_slotController.ReplaceAt(slot, TSlotData(resource));
+			const RenderObjectId objectId = resource.GetId();
+			m_resourceSlot[objectId] = slot;
+			return oldData;
+		}
+
+		void UnbindResourceFromSlot(const USlotIndex slot, const RenderObjectId resourceId)
+		{
+			if (slot >= MAX_SLOTS)
+			{
+				LogWarning(std::format("Attempted to unbind resource using id from out of bounds "
+					"[0,{}) slot: {}", MAX_SLOTS, slot));
+				return;
+			}
+
+			m_slotController[slot].RemoveResource();
+			m_slotController.RemoveAtUnsafe(slot);
+			m_resourceSlot.erase(resourceId);
+		}
+		void UnbindAnyResourceFromSlot(const USlotIndex slot)
+			requires HasPropertym_ResourceId<TSlotData>
+		{
+			const RenderObjectId id = m_slotController[slot].m_ResourceId;
+			if (id == INVALID_OBJ_ID)
+			{
+				LogError(std::format("Attempted to unbind any resource from slot: {} "
+					"but that slot has no resource id", slot));
+				return;
+			}
+			UnbindResourceFromSlot(slot, id);
+		}
+
+		template<typename TResource>
+		requires HasFunctionGetId<TResource>
+		TResource* UnbindResourceFromSlot(const USlotIndex slot)
+		{
+			if (slot >= MAX_SLOTS)
+			{
+				LogWarning(std::format("Attempted to unbind typed resource from out of bounds "
+					"[0,{}) slot: {}", MAX_SLOTS, slot));
+				return nullptr;
+			}
+
+			TResource* resourcePtr = static_cast<TResource*>(m_slotController[slot].m_ResourcePtr);
+			UnbindResourceFromSlot(slot, resourcePtr->GetId());
+			return resourcePtr;
+		}
+
+		bool HasResourceInSlot(const USlotIndex slot) const
+		{
+			if (slot >= MAX_SLOTS)
+			{
+				LogWarning(std::format("Attempted to check resource from out of bounds "
+					"[0,{}) slot: {}", MAX_SLOTS, slot));
+				return false;
+			}
+				
+			return m_slotController[slot].HasResource();
+		}
+
+		void ClearAllSlots()
+			requires HasPropertym_ResourceId<TSlotData>
+		{
+			for (size_t i = 0; i < MAX_SLOTS; i++)
+			{
+				if (m_slotController[i].HasResource())
+					UnbindAnyResourceFromSlot(i);
+			}
+		}
+		std::size_t GetEmptySlotCount() const { return m_slotController.GetEmptySlotCount(); }
+
+		TSlotData& operator[](const USlotIndex& index) { return m_slotController[index]; }
+		const TSlotData& operator[](const USlotIndex& index) const { return m_slotController[index]; }
+
+		std::string ToString() const
+		{
+			std::string slotsStr = "";
+			for (const auto& slot : m_slotController)
+			{
+				slotsStr += slot.ToString();
+			}
+			return "[TextureController Slots:" + slotsStr + "]";
+		}
+	};
+
+	struct TextureSlotData
+	{
+		RenderObjectId m_ResourceId;
+		TextureType m_Type;
+		void* m_ResourcePtr;
+
+		TextureSlotData();
+		TextureSlotData(Texture& texture);
+		TextureSlotData(TextureCube& texture);
+
+		bool HasResource() const;
+		void RemoveResource();
+
+		std::string ToString() const;
+	};
+	struct TextureControllerCallbacks
+	{
+		void(*m_SetBindStatusFunc)(const RenderObjectId, const USlotIndex index, const bool status);
+	};
+
+	constexpr USlotIndex MAX_TEXTURE_SLOTS = 16;
+	class TextureSlotController
+	{
+	private:
+		GpuResourceSlotController<TextureSlotData, MAX_TEXTURE_SLOTS> m_slotController;
+		TextureControllerCallbacks m_callbacks;
+	public:
+
+	private:
+	public:
+		TextureSlotController(const TextureControllerCallbacks& callbacks);
+
+		template<typename T>
+		requires IsValidResource<T>
+		SlotIndex TryBindToFreeSlot(T& resource)
+		{
+			const SlotIndex index = m_slotController.BindResourceToFreeSlot<T>(resource);
+			if (index != INVALID_SLOT_INDEX) m_callbacks.m_SetBindStatusFunc(resource.GetId(), index, true);
+			return index;
+		}
+		template<typename T>
+		requires IsValidResource<T>
+		std::vector<SlotIndex> TryBindToFreeSlots(T resources[], const size_t size)
+		{
+			std::vector<SlotIndex> slots = {};
+			if (m_slotController.GetEmptySlotCount() < size)
+			{
+				LogError(std::format("Attempted to add resources({}) to next available slot indices "
 					"but there are not enough free spaces left. Total size:{}", size, MAX_TEXTURE_SLOTS));
 				return slots;
 			}
 			for (size_t i = 0; i < size; i++)
 			{
-				BindResourceToSlot<T>(m_nextAvailableIndex, &textures[i]);
-				slots.push_back(m_nextAvailableIndex);
-				if (i < size - 1) m_nextAvailableIndex++;
+				slots.push_back(TryBindToFreeSlot<T>(resources[i]));
 			}
-			if (m_nextAvailableIndex != MAX_TEXTURE_SLOTS - 1)
-				FindNextAvailableIndex(m_nextAvailableIndex);
-
 			return slots;
 		}
+
+		template<typename T>
+		requires IsValidResource<T>
+		TextureSlotData RebindAtSlot(const USlotIndex slot, T& resource)
+		{
+			TextureSlotData oldData = m_slotController.RebindResourceInSlot<T>(slot, resource);
+			//NOTE: by doing this direct call rather than doing remove and bind again we same some operations
+			m_callbacks.m_SetBindStatusFunc(resource.GetId(), slot, true);
+			return oldData;
+		}
+
+		template<typename T>
+		requires IsValidResource<T>
+		SlotIndex TryGetSlot(const T& resource) const
+		{
+			return m_slotController.TryGetResourceSlot(resource.GetId());
+		}
+		bool TryRemoveFromSlot(const USlotIndex index);
+
+		template<typename T>
+		requires IsValidResource<T>
+		bool TryRemoveFromSlot(const T& resource)
+		{
+			const RenderObjectId id = resource.GetId();
+			const SlotIndex slot = m_slotController.TryGetResourceSlot(id);
+			if (slot == INVALID_SLOT_INDEX)
+			{
+				LogError(std::format("Attempted to remove resource:{} from texture slot "
+					"but it was not found in any slots: {}", id, ToString()));
+				return false;
+			}
+
+			return TryRemoveFromSlot(slot);
+		}
+		void RemoveFromSlots(const std::vector<SlotIndex>& indices);
+
+		std::string ToString() const;
+	};
+
+	struct ImageSlotData
+	{
+		void* m_ResourcePtr = nullptr;
+
+		ImageSlotData();
+		ImageSlotData(Texture& texture);
+
+		bool HasResource() const;
+		void RemoveResource();
+
+		std::string ToString() const;
+	};
+	struct ImageControllerCallbacks
+	{
+		void(*m_SetBindStatusFunc)(const RenderObjectId, const TexelStorageType storage, 
+			const USlotIndex index, const bool status, const AccessPermissions permissions);
+	};
+
+	template<typename TFunc, typename TResource>
+	concept IsImageBindFunc = IsInvocableType<void, TFunc, RenderObjectId, USlotIndex, bool>;
+	
+	constexpr USlotIndex MAX_IMAGE_SLOTS = 8;
+	class ImageSlotController
+	{
+	private:
+		GpuResourceSlotController<ImageSlotData, MAX_IMAGE_SLOTS> m_slotController;
+		ImageControllerCallbacks m_callbacks;
 	public:
-		TextureController();
 
-		TextureSlotIndex TryAddTextureToAvailableSlot(Texture* texture);
-		std::vector<TextureSlotIndex> TryAddTexturesToAvailableSlots(Texture textures[], const size_t size);
-		std::vector<TextureSlotIndex> TryAddTextureCubesToAvailableSlots(TextureCube cubes[], const size_t size);
+	private:
+	public:
+		ImageSlotController(const ImageControllerCallbacks& callbacks);
 
-		//TextureSlotIndex TryRemoveTextureFromSlot(Texture* texture);
-		//Texture* TryRemoveTextureFromSlot(TextureSlotIndex slot);
-		void TryRemoveFromSlot(TextureSlotIndex index);
-		void RemoveFromSlots(const TextureSlotIndex startIndex, const size_t size);
+		template<typename T>
+		requires IsValidResource<T>
+		SlotIndex TryBindToFreeSlot(T& resource, const AccessPermissions permissions)
+		{
+			const SlotIndex index = m_slotController.BindResourceToFreeSlot<T>(resource);
+			if (index != INVALID_SLOT_INDEX)
+			{
+				m_callbacks.m_SetBindStatusFunc(resource.GetId(),
+					resource.GetStorageType(), index, true, permissions);
+			}
+			return index;
+		}
+		template<typename T>
+		requires IsValidResource<T>
+		std::vector<SlotIndex> TryBindToFreeSlots(T resources[], const size_t size, const AccessPermissions permissions)
+		{
+			std::vector<SlotIndex> slots = {};
+			if (m_slotController.GetEmptySlotCount() < size)
+			{
+				LogError(std::format("Attempted to add resources({}) to next available slot indices "
+					"but there are not enough free spaces left. Total size:{}", size, MAX_IMAGE_SLOTS));
+				return slots;
+			}
+			for (size_t i = 0; i < size; i++)
+			{
+				slots.push_back(TryBindToFreeSlot<T>(resources[i], permissions));
+			}
+			return slots;
+		}
 
-		bool HasTextureInSlot(const TextureSlotIndex slot) const;
+		template<typename T>
+		requires IsValidResource<T>
+		ImageSlotData RebindAtSlot(const USlotIndex slot, T& resource, const AccessPermissions permissions)
+		{
+			ImageSlotData oldData= m_slotController.RebindResourceInSlot<T>(slot, resource);
+			//NOTE: by doing this direct call rather than doing remove and bind again we same some operations
+			m_callbacks.m_SetBindStatusFunc(resource.GetId(),
+				resource.GetStorageType(), slot, true, permissions);
+			return oldData;
+		}
 
-		void ClearAllSlots();
+		template<typename T>
+		requires IsValidResource<T>
+		SlotIndex TryGetSlot(const T& resource) const
+		{
+			return m_slotController.TryGetResourceSlot(resource.GetId());
+		}
+		bool TryRemoveFromSlot(const USlotIndex index);
+
+		template<typename T>
+		requires IsValidResource<T>
+		bool TryRemoveFromSlot(const T& resource)
+		{
+			const RenderObjectId id = resource.GetId();
+			const SlotIndex slot = m_slotController.TryGetResourceSlot(id);
+			if (slot == INVALID_SLOT_INDEX)
+			{
+				LogError(std::format("Attempted to remove resource:{} from texture slot "
+					"but it was not found in any slots: {}", id, ToString()));
+				return false;
+			}
+
+			return TryRemoveFromSlot(slot);
+		}
+		void RemoveFromSlots(const std::vector<SlotIndex>& indices);
+
 		std::string ToString() const;
 	};
 }

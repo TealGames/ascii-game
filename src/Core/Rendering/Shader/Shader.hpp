@@ -3,7 +3,8 @@
 #include <vector>
 #include <unordered_map>
 #include "Utils/Data/FixedString.hpp"
-#include "Core/Rendering/RenderObjectId.hpp"
+#include "Core/Rendering/RenderObject.hpp"
+#include "Utils/Data/Vec3Type.hpp"
 
 namespace Rendering
 {
@@ -42,14 +43,22 @@ namespace Rendering
 		/// <summary>
 		/// Represents a special value that holds the 
 		/// texture slot index that the sampler uses for the
-		/// texture. NOTE: sampler uniform must be get/set with int*
+		/// texture. Allows for READ ONLY ACESSS
+		/// NOTE: sampler uniform must be get/set with int*
 		/// </summary>
 		Sampler2D	  = 7,
 		/// <summary>
 		/// Similar to sampler2D, but instead represents a cube map,
 		/// 6 textures managed by one object
 		/// </summary>
-		CubeSampler	  = 8
+		CubeSampler	  = 8,
+		/// <summary>
+		/// Similar to sampler2D and holds integer slot value BUT
+		/// FOR AN IMAGE SLOT INDEX (differnet from texture slot index)
+		/// that allows for READ + WRITE ACCESS (but comes at cost of 
+		/// only getting raw pixel data unlike sampling)
+		/// </summary>
+		Image2D		  = 9
 	};
 	struct UniformDataTypeInfo
 	{
@@ -107,32 +116,39 @@ namespace Rendering
 		size_t m_DefinesSize = 0;
 	};
 
-	struct ShaderInitData
+	struct RawShaderInitData
 	{
 		ShaderSourceDefines m_Defines = {};
-		std::string m_Source = "";
+		std::string_view m_Source = "";
 	};
-	struct TypedShaderInitData
+	struct FinalShaderInitData
 	{
 		ShaderType m_Type = ShaderType::Compute;
-		ShaderInitData m_Data = {};
+		std::string_view m_fullSource;
+	};
+
+	enum class ShaderProgramQuery : std::uint8_t
+	{
+		ComputeShaderWorkGroupSize	= 0
 	};
 
 	class Shader;
 	using UniformReflectionCollectionType = std::unordered_map<String16, UniformReflectionInfo>;
 	struct ShaderPlatformCallbacks
 	{
-		RenderObjectId(*m_CreateProgramFunc) (const TypedShaderInitData& initData1, const TypedShaderInitData* initData2, 
+		RenderObjectId(*m_CreateProgramFunc) (const FinalShaderInitData& initData1, const FinalShaderInitData* initData2, 
 			UniformReflectionCollectionType* blockData);
 		void(*m_BindActiveFunc) (const Shader& shader);
+		void(*m_DispatchComputeShaderGroupsFunc)(const std::uint32_t x, const std::uint32_t y, const std::uint32_t z);
 		void(*m_UnbindActiveFunc) (const Shader& shader);
 		std::string(*m_TrySetUniformFunc) (const Shader& shader, const UniformDataType uniform, const char* uniformName, const void* valuePtr);
 		std::string(*m_TrySetArrayUniformFunc) (const Shader& shader, const UniformDataType uniform, 
 			const char* uniformName, const void* valuePtr, const size_t size);
 		bool(*m_TryGetUniformFunc) (const Shader& shader, const UniformDataType uniform, const char* uniformName, void* outputPtr);
 		bool(*m_TryBindUniformBlockFunc) (const Shader& shader, const char* uniformBlockName, const UniformBufferBindIndex index);
-		bool(*TryGetUniformBlockMembers) (const Shader& shader, const char* uniformBlockName, 
+		bool(*TryGetUniformBlockMembersFunc) (const Shader& shader, const char* uniformBlockName, 
 			std::vector<UniformBlockMemberMemoryInfo>& members, size_t* fullSize);
+		void(*m_QueryProgramFunc)(const Shader& shader, ShaderProgramQuery query, int* queryResult);
 		void(*m_DeleteProgramFunc) (const Shader& shader);
 	};
 
@@ -156,12 +172,13 @@ namespace Rendering
 	public:
 
 	private:
-		void DeleteProgram(const bool clearExistingData);
+		void DeleteProgram();
 		bool PassesValidCheck() const;
 
-		void CreateProgram(const TypedShaderInitData& initData1, const TypedShaderInitData* initData2 = nullptr);
-		void CreateVertexFragmentProgram(const ShaderSourceDefines& vertexDefines = {}, const ShaderSourceDefines& fragmentDefines = {});
-		void CreateComputeProgram(const ShaderSourceDefines& computeDefines = {});
+		void ApplyDefinesToSource(const size_t sourceIndex, const ShaderSourceDefines& defines);
+		void CreateProgram(const FinalShaderInitData& initData1, const FinalShaderInitData* initData2 = nullptr);
+		bool TryCreateVertexFragmentProgram(const ShaderSourceDefines& vertexDefines = {}, const ShaderSourceDefines& fragmentDefines = {});
+		bool TryCreateComputeProgram(const ShaderSourceDefines& computeDefines = {});
 	public:
 		Shader(const std::string& verexSource, const std::string& fragmentSource, const ShaderPlatformCallbacks& callbacks);
 		~Shader();
@@ -172,9 +189,17 @@ namespace Rendering
 			const std::string& source1, const std::string& source2= "");
 		/// <summary>
 		/// Will attempt to create the program if the program type has already been set with the sources
+		/// NOTE: this option lets you setup defines for each source separately
 		/// </summary>
 		/// <returns></returns>
-		bool TryCreateProgram(const std::array<ShaderSourceDefines, SHADER_SOURCES>& defines = {});
+		bool TryCreateProgram(const std::array<ShaderSourceDefines, SHADER_SOURCES>& sourceDefines);
+		/// <summary>
+		/// Will attempt to create the program if the program type has already been set with the sources
+		/// NOTE: this option sets the same defines for each source
+		/// </summary>
+		/// <param name="globalDefines"></param>
+		/// <returns></returns>
+		bool TryCreateProgram(const ShaderSourceDefines& globalDefines = {});
 
 		RenderObjectId GetId() const;
 		bool IsValid() const;
@@ -186,7 +211,10 @@ namespace Rendering
 		const std::string& GetSource2() const;
 		std::optional<ShaderProgramType> GetProgramType() const;
 
+		Vec3Int GetComputeShaderWorkGroupSize() const;
+
 		void BindActive();
+		void DispatchComputeShaderGroups(const std::uint32_t groupsX, const std::uint32_t groupsY, const std::uint32_t groupsZ);
 		void UnbindActive();
 
 		bool HasUniform(const std::string_view& view) const;

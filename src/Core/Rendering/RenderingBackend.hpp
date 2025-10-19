@@ -3,12 +3,36 @@
 #include "Utils/Data/WorldPosition.hpp"
 #include "Utils/Data/Color.hpp"
 #include "Core/Rendering/Buffers.hpp"
+#include "Core/Rendering/TextureController.hpp"
 
 namespace Rendering
 {
 	enum class RenderObjectQueryType : std::uint8_t
 	{
 		BoundFrameBuffer = 0
+	};
+
+	/// <summary>
+	/// The type of barrier between an image operation and another graphics operation
+	/// </summary>
+	enum class ImageOperationBarrierType : std::uint8_t
+	{
+		/// <summary>
+		/// Needed between compute passes that read/write from same image2d
+		/// </summary>
+		ImageAccess		= 0,
+		/// <summary>
+		/// Needed between an image operation and a texture sample
+		/// </summary>
+		TextureFetch	= 1,
+		/// <summary>
+		/// Needed between image operation and framebuffer use (draw call)
+		/// </summary>
+		FrameBuffer		= 2,
+		/// <summary>
+		/// Checks all barriers to ensure they are handled (safer, but slower)
+		/// </summary>
+		All				= 3
 	};
 
 	class Texture;
@@ -23,12 +47,15 @@ namespace Rendering
 		void SetViewport(const int width, const int height);
 		Vec2Int GetViewportSize();
 		
-		RenderBuffer CreateRenderBuffer(const AttachmentStorage storage, const Vec2Int size);
+		RenderBuffer CreateRenderBuffer(const TexelStorageType storage, const Vec2Int size);
 		FrameBuffer CreateFrameBuffer();
 		VertexBuffer CreateVertexBuffer(const void* vertexArray, const size_t& elementSize, const size_t& arraySize, const VertexAttributeAdvance advanceType);
 		IndexBuffer CreateIndexBuffer(const IndexType* indexArray, const size_t elementCount);
 		UniformBuffer CreateUniformBuffer(const char* blockName);
 		VertexLayout CreateVertexLayout();
+
+		TextureSlotController CreateTextureController();
+		ImageSlotController CreateImageController();
 
 		RenderObjectId GetRenderObjectId(const RenderObjectQueryType type);
 
@@ -37,6 +64,14 @@ namespace Rendering
 		void ClearDepth();
 		void SetDepthStatus(const bool enable);
 		void ClearColor();
+
+		/// <summary>
+		/// Since an Image data type can be invoked with parallel calls, those operations may not have 
+		/// been flushed before another operation that uses that data is issued. Therefore, when transitioning
+		/// between different image operations that use the same texture pixel data, this function must be called
+		/// to ensure proper sync 
+		/// </summary>
+		void InvokeImageMemorySync(const ImageOperationBarrierType barrier);
 		/// <summary>
 		/// If true, will enable linear HDR -> sRGB conversion 
 		/// (gamma curve applied to HDR colors so they look right since

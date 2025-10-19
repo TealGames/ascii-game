@@ -35,7 +35,7 @@ public:
 	float m_LensSize;
 
 	constexpr static inline float DEFAULT_NEAR_DISTANCE = 0.1f;
-	constexpr static inline float DEFAULT_FAR_DISTANCE = 100;
+	constexpr static inline float DEFAULT_FAR_DISTANCE = 1000;
 	/// <summary>
 	/// The farthest distance from the camera position that is rendered. 
 	/// This value MUST BE POSITIVE REGARDLESS OF FORWARD DIR (AND GREATER THAN NEAR DISTANCE)

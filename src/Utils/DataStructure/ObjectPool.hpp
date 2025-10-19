@@ -7,6 +7,29 @@
 template<typename T>
 using PoolCollection = std::vector<T>;
 
+/// <summary>
+/// Implements an object pool model where a contiguous pool of space is initialized and can not change after creation
+/// and can only update the active/used objects within that reserved space, maintaining compactness from index 0 to last used index
+/// where an object's place in the pool MAY change thus indices are not stable and can not be used consistently
+/// 
+/// INTERFACE:
+/// -> RESERVE: reserve the total capacity on initialization: capacity can NOT change after creation, all initial space is marked as UNUSED
+/// -> ADD O(1): add element to USED area at end as long as USED area < reserved space
+/// -> *REMOVE O(1): removes index from USED area and marks it as UNUSED where if index == m_usedEndIndex, then decrements used area
+///				     but if the index < m_usedEndIndex THEN SWAPPING OCCURS BETWEEN LAST USED INDEX OBJECT AND REMOVED OBJECT INDEX
+///					 to ensure compactness and O(1) add/remove operations
+///					 NOTE: objects are not destroyed and only counter is used to denote USED contiugous space
+/// -> ACCESS O(1): any element by index within area marked as "USED"
+/// 
+/// PRO:
+/// -> no extra allocations/no objects destroyed/objects reused
+/// -> contiguouity/compactness from index 0/easy linear iteration
+/// -> O(1) add, remove, access time complexity
+/// CON:
+/// -> no dynamic re-sizing
+/// -> object's index/position within pool may change to ensure compactness
+/// </summary>
+/// <typeparam name="T"></typeparam>
 template<typename T>
 class ObjectPool
 {
@@ -45,10 +68,14 @@ public:
 
 	bool TryReserveNewSize(const size_t& newSize)
 	{
-		if (!Assert(m_pool.empty(), std::format("Tried to reserve a new size for object pool:{} after initial construction "
-			"of size:{} but elements are already added so no new size can be set", std::to_string(newSize), std::to_string(GetMaxCapacity()))))
+		if (!m_pool.empty())
+		{
+			LogError(std::format("Tried to reserve a new size for object pool:{} after initial construction "
+				"of size:{} but elements are already added so no new size can be set", std::to_string(newSize), 
+				std::to_string(GetMaxCapacity())));
 			return false;
-
+		}
+			
 		m_pool.reserve(newSize);
 		return true;
 	}
@@ -57,7 +84,7 @@ public:
 	{
 		if (IsAtCapacity())
 		{
-			LogWarning(std::format("Tried to add a new object of type:{} to pool but pool at addr:{} "
+			LogError(std::format("Tried to add a new object of type:{} to pool but pool at addr:{} "
 				"max capacity:{} has been reached", Utils::ToStringTypeName<T>(),
 				Utils::ToStringPointerAddress(this), std::to_string(GetMaxCapacity())));
 			return nullptr;
@@ -82,21 +109,25 @@ public:
 
 	T& GetAt(const size_t& index)
 	{
-		if (!Assert(m_usedEndIndex != -1 && 0 <= index && index <= m_usedEndIndex, 
-			std::format("Tried to get object at index:{} of pool but it is out of bounds of used space:[0,{}]", 
-				std::to_string(index), std::to_string(m_usedEndIndex))))
+		if (index > m_usedEndIndex)
+		{
+			LogError(std::format("Tried to get object at index:{} of pool but it is out of bounds of used space:[0,{}]",
+				std::to_string(index), std::to_string(m_usedEndIndex)));
 			throw std::invalid_argument("Invalid pool index");
-
+		}
+			
 		return GetAtUnsafe(index);
 	}
 
 	void SetUnused(const size_t& index)
 	{
-		if (!Assert(m_usedEndIndex !=-1 && 0 <= index && index <= m_usedEndIndex, 
-			std::format("Tried to set object at index:{} of pool to unused "
-			"but it is out of bounds of used space:[0,{}]", std::to_string(index), std::to_string(m_usedEndIndex))))
+		if (m_usedEndIndex == -1 || 0 > index || index > m_usedEndIndex)
+		{
+			LogError(std::format("Tried to set object at index:{} of pool to unused "
+				"but it is out of bounds of used space:[0,{}]", std::to_string(index), std::to_string(m_usedEndIndex)));
 			throw std::invalid_argument("Invalid pool index");
-
+		}
+			
 		//If we want to set the last usavble index to unusable we do not need to swap
 		if (index != m_usedEndIndex)
 		{

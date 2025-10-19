@@ -2,166 +2,116 @@
 
 namespace Rendering
 {
-	bool TextureSlotData::HasResource() const { return m_ResourcePtr != nullptr; }
-	void TextureSlotData::RemoveResource() { m_ResourcePtr = nullptr; }
+	TextureSlotData::TextureSlotData() 
+		: m_Type(TextureType::Texture), m_ResourcePtr(nullptr), m_ResourceId(INVALID_OBJ_ID) {}
+	TextureSlotData::TextureSlotData(Texture& texture) 
+		: m_Type(TextureType::Texture), m_ResourcePtr(&texture), m_ResourceId(texture.GetId()) {}
+	TextureSlotData::TextureSlotData(TextureCube& texture) 
+		: m_Type(TextureType::TextureCube), m_ResourcePtr(&texture), m_ResourceId(texture.GetId()) {}
 
-	TextureController::TextureController() : m_textureSlots(), m_nextAvailableIndex(0) {}
-
-	/*Texture* TextureController::UnbindTextureFromSlot(const TextureSlotIndex slot)
-	{
-		return UnbindResourceFromSlot<Texture*>()
+	bool TextureSlotData::HasResource() const { return m_ResourcePtr != nullptr && m_ResourceId != INVALID_OBJ_ID; }
+	void TextureSlotData::RemoveResource() 
+	{ 
+		m_ResourcePtr = nullptr; 
+		m_ResourceId = INVALID_OBJ_ID;
 	}
-	TextureCube* TextureController::UnbindTextureCubeFromSlot(const TextureSlotIndex slot)
+	std::string TextureSlotData::ToString() const
 	{
-		m_textureSlots[slot]->UnbindFromSlot();
-		Texture* texture = m_textureSlots[slot];
-		m_textureSlots[slot].RemoveResource();
-
-		return texture;
-	}*/
-	bool TextureController::ValidAvailableIndexCheck() const
-	{
-		if (m_nextAvailableIndex >= MAX_TEXTURE_SLOTS || m_nextAvailableIndex == INVALID_TEXTURE_SLOT_INDEX
-			|| m_nextAvailableIndex < 0)
+		std::string slotsStr = " [";
+		if (HasResource())
 		{
-			LogError(std::format("Current available index:{} is invalid. Max slots:{}", 
-				m_nextAvailableIndex, MAX_TEXTURE_SLOTS));
-			return false;
+			if (m_Type == TextureType::Texture)
+				slotsStr += "Texture (ID: " + std::to_string(((Texture*)m_ResourcePtr)->GetId()) + ")";
+			else if (m_Type == TextureType::TextureCube)
+				slotsStr += "TextureCube (ID: " + std::to_string(((TextureCube*)m_ResourcePtr)->GetId()) + ")";
+			else slotsStr += "UnknownType";
 		}
+		else slotsStr += "FREE";
+
+		slotsStr += "]";
+		return slotsStr;
+	}
+
+	TextureSlotController::TextureSlotController(const TextureControllerCallbacks& callbacks) 
+		: m_slotController(), m_callbacks(callbacks) {}
+
+	bool TextureSlotController::TryRemoveFromSlot(const USlotIndex slot)
+	{
+		if (slot >= MAX_TEXTURE_SLOTS)
+			return false;
+
+		if (!m_slotController[slot].HasResource())
+			return false;
+
+		const RenderObjectId id = m_slotController[slot].m_ResourceId;
+		m_slotController.UnbindAnyResourceFromSlot(slot);
+		m_callbacks.m_SetBindStatusFunc(id, slot, false);
+		return true;
+	}
+	void TextureSlotController::RemoveFromSlots(const std::vector<SlotIndex>& indices)
+	{
+		for (size_t i = 0; i < indices.size(); i++)
+		{
+			if (indices[i] < 0 || indices[i] >= MAX_TEXTURE_SLOTS)
+				continue;
+
+			TryRemoveFromSlot(indices[i]);
+		}
+	}
+	
+	std::string TextureSlotController::ToString() const
+	{
+		return m_slotController.ToString();
+	}
+
+	ImageSlotData::ImageSlotData() : m_ResourcePtr(nullptr) {}
+	ImageSlotData::ImageSlotData(Texture& texture) : m_ResourcePtr(&texture) {}
+	bool ImageSlotData::HasResource() const { return m_ResourcePtr != nullptr; }
+	void ImageSlotData::RemoveResource() { m_ResourcePtr = nullptr; }
+	std::string ImageSlotData::ToString() const
+	{
+		std::string slotsStr = " [";
+		if (HasResource())
+		{
+			slotsStr += "Texture (ID: " + std::to_string(((Texture*)m_ResourcePtr)->GetId()) + ")";
+		}
+		else slotsStr += "FREE";
+
+		slotsStr += "]";
+		return slotsStr;
+	}
+
+	ImageSlotController::ImageSlotController(const ImageControllerCallbacks& callbacks)
+		: m_slotController(), m_callbacks(callbacks) {}
+
+	bool ImageSlotController::TryRemoveFromSlot(const USlotIndex slot)
+	{
+		if (slot >= MAX_TEXTURE_SLOTS)
+			return false;
+
+		if (!m_slotController[slot].HasResource())
+			return false;
+
+		//NOTE: this only works if only textures are stored in slots
+		Texture* texture = m_slotController.UnbindResourceFromSlot<Texture>(slot);
+		//NOTE: only id and slot matters as args
+		m_callbacks.m_SetBindStatusFunc(texture->GetId(), TexelStorageType::R8, slot, false, Rendering::AccessPermissions::Read);
 		return true;
 	}
 
-	void TextureController::UnbindAnyResourceFromSlot(const TextureSlotIndex slot)
+	void ImageSlotController::RemoveFromSlots(const std::vector<SlotIndex>& indices)
 	{
-		const TextureType type = m_textureSlots[slot].m_Type;
-		if (type == TextureType::Texture) UnbindResourceFromSlot<Texture>(slot);
-		else if (type== TextureType::TextureCube) UnbindResourceFromSlot<TextureCube>(slot);
-		else
+		for (size_t i = 0; i < indices.size(); i++)
 		{
-			LogError(std::format("Attempted to unbind resource in slot:{} "
-				"to slot but it has no type defined in enum", slot));
+			if (indices[i] < 0 || indices[i] >= MAX_TEXTURE_SLOTS)
+				continue;
+
+			TryRemoveFromSlot(indices[i]);
 		}
 	}
 
-	void TextureController::FindNextAvailableIndex(const TextureSlotIndex initialIndex)
+	std::string ImageSlotController::ToString() const
 	{
-		m_nextAvailableIndex = INVALID_TEXTURE_SLOT_INDEX;
-	
-		for (TextureSlotIndex i = initialIndex + 1; i < MAX_TEXTURE_SLOTS; i++)
-		{
-			if (!m_textureSlots[i].HasResource())
-			{
-				m_nextAvailableIndex = i;
-				break;
-			}
-		}
-	}
-
-	TextureSlotIndex TextureController::TryAddTextureToAvailableSlot(Texture* texture)
-	{
-		if (!ValidAvailableIndexCheck())
-			return INVALID_TEXTURE_SLOT_INDEX;
-
-		TextureSlotIndex selectedSlot = m_nextAvailableIndex;
-		BindResourceToSlot<Texture>(selectedSlot, texture);
-		//Since we always seek to get lowest available index, if we have have used the last slot
-		//we know there are none left earlier
-		if (m_nextAvailableIndex != MAX_TEXTURE_SLOTS - 1)
-			FindNextAvailableIndex(selectedSlot);
-		
-		return selectedSlot;
-	}
-	std::vector<TextureSlotIndex> TextureController::TryAddTexturesToAvailableSlots(Texture textures[], const size_t size)
-	{
-		return TryAddResourceToAvailableSlots<Texture>(textures, size);
-	}
-	std::vector<TextureSlotIndex> TextureController::TryAddTextureCubesToAvailableSlots(TextureCube cubes[], const size_t size)
-	{
-		return TryAddResourceToAvailableSlots<TextureCube>(cubes, size);
-	}
-	/*
-	TextureSlotIndex TextureController::TryRemoveTextureFromSlot(Texture* texture)
-	{
-		for (TextureSlotIndex i = 0; i < MAX_TEXTURE_SLOTS; i++)
-		{
-			if (m_textureSlots[i].m_ResourcePtr == texture)
-			{
-				UnbindTextureFromSlot(i);
-				if (i < m_nextAvailableIndex)
-					m_nextAvailableIndex = i;
-
-				return i;
-			}
-		}
-		return INVALID_TEXTURE_SLOT_INDEX;
-	}
-	Texture* TextureController::TryRemoveTextureFromSlot(const TextureSlotIndex slot)
-	{
-		if (slot >= MAX_TEXTURE_SLOTS)
-			return nullptr;
-
-		Texture* unboundTex= UnbindTextureFromSlot(slot);
-		if (slot < m_nextAvailableIndex)
-			m_nextAvailableIndex = slot;
-
-		return unboundTex;
-	}
-	*/
-	void TextureController::RemoveFromSlots(const TextureSlotIndex startIndex, const size_t size)
-	{
-		if (startIndex >= MAX_TEXTURE_SLOTS)
-			return;
-
-		for (TextureSlotIndex i = startIndex; i < startIndex + size; i++)
-		{
-			UnbindAnyResourceFromSlot(i);
-		}
-		if (startIndex < m_nextAvailableIndex)
-			m_nextAvailableIndex = startIndex;
-	}
-	void TextureController::TryRemoveFromSlot(TextureSlotIndex slot)
-	{
-		if (slot >= MAX_TEXTURE_SLOTS)
-			return;
-
-		UnbindAnyResourceFromSlot(slot);
-		if (slot < m_nextAvailableIndex)
-			m_nextAvailableIndex = slot;
-	}
-
-	bool TextureController::HasTextureInSlot(const TextureSlotIndex slot) const
-	{
-		if (slot >= MAX_TEXTURE_SLOTS)
-			return false;
-
-		return m_textureSlots[slot].HasResource();
-	}
-
-	void TextureController::ClearAllSlots()
-	{
-		for (TextureSlotIndex i = 0; i < MAX_TEXTURE_SLOTS; i++)
-		{
-			if (m_textureSlots[i].HasResource())
-				UnbindAnyResourceFromSlot(i);
-		}
-		m_nextAvailableIndex = 0;
-	}
-	std::string TextureController::ToString() const
-	{
-		std::string slotsStr = "";
-		for (const auto& slot : m_textureSlots)
-		{
-			slotsStr += " [";
-			if (slot.HasResource())
-			{
-				slotsStr += "USED: " + (slot.m_Type == TextureType::Texture) ? "Texture" : "TextureCube";
-			}
-			else
-			{
-				slotsStr += "FREE";
-			}
-			slotsStr += "]";
-		}
-		return std::format("[TextureController nextIndex:{} Slots:{}]", m_nextAvailableIndex, slotsStr);
+		return m_slotController.ToString();
 	}
 }

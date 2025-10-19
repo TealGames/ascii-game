@@ -2,7 +2,6 @@
 #include "Core/Visual/VisualData.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/RaylibUtils.hpp"
 #include "Utils/Debug.hpp"
 #include "StaticGlobals.hpp"
 

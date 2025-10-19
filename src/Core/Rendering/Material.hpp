@@ -3,6 +3,7 @@
 
 namespace Rendering
 {
+	class Texture;
 	struct Material
 	{
 		/// <summary>

@@ -36,6 +36,9 @@ void ShaderAsset::WriteToShaderFromFiles()
 	const std::string_view shaderTypeName = pathView.substr(lastSeparatorIndex + 1);
 	const std::string_view shaderName = pathView.substr(0, lastSeparatorIndex);
 
+	//We only want the non-shader type part of the name to be set as real asset name
+	OverrideAssetName(shaderName);
+
 	Rendering::ShaderType type = Rendering::ShaderType::Vertex;
 	std::string otherShaderName = std::string(shaderName) + Asset::WORD_SEPARATOR;
 	if (shaderTypeName == VERTEX_SHADER_IDENTIFIER)
@@ -52,7 +55,9 @@ void ShaderAsset::WriteToShaderFromFiles()
 	else
 	{
 		if (shaderTypeName == COMPUTE_SHADER_IDENTIFIER)
+		{
 			ReadShaderFromSingleFile(Rendering::ShaderProgramType::Compute);
+		}
 		else ReadShaderFromSingleFile(Rendering::ShaderProgramType::VertexFragment);
 		
 		return;
@@ -63,8 +68,6 @@ void ShaderAsset::WriteToShaderFromFiles()
 	//If we have split up shaders, we make the other asset path invalid for the assetmanager to set as asset so we do not
 	//have two assets with the same shader data as initialized with the opposing shader type
 	AssetManagement::AssetManager::SetAssetHiddenStatus(otherShaderPath, true);
-	//We only want the non-shader type part of the name to be set as real asset name
-	OverrideAssetName(shaderName);
 
 	const std::string thisShaderSource = IO::TryReadFileFull(GetPath());
 	const std::string otherShaderSource = IO::TryReadFileFull(otherShaderPath);
@@ -118,12 +121,12 @@ void ShaderAsset::ReadShaderFromSingleFile(const Rendering::ShaderProgramType pr
 			shaderSource[shaderSourceIndex] += *line + "\n";
 		});
 
-	if (shaderSource[0].empty() || shaderSource[1].empty())
-	{
-		LogError(std::format("Tried to read shader from single file at path:{} but some shader type was not found. "
-			"Vertex Found:{} Fragment found:{}", GetPath().string().c_str(), std::to_string(!shaderSource[0].empty()), std::to_string(!shaderSource[1].empty())));
-		return;
-	}
+	//if (shaderSource[0].empty() || shaderSource[1].empty())
+	//{
+	//	LogError(std::format("Tried to read shader from single file at path:{} but some shader type was not found. "
+	//		"Vertex Found:{} Fragment found:{}", GetPath().string().c_str(), std::to_string(!shaderSource[0].empty()), std::to_string(!shaderSource[1].empty())));
+	//	return;
+	//}
 	m_shader.SetSources(programType, std::move(shaderSource[0]), std::move(shaderSource[1]));
 }
 

@@ -3,7 +3,6 @@
 #include "Utils/Data/Vec2Type.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include <limits>
-#include "Utils/RaylibUtils.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
@@ -74,7 +73,7 @@ void ColorPopupUI::AddPopupElements()
 			const std::string hexInput = Utils::TryExtractHexadecimal(input);
 			if (hexInput.size()!= 6 && hexInput.size()!=8) return;
 
-			SetColor(Utils::GetColorFromHex(std::stoi(hexInput, nullptr, 16)));
+			SetColor(Utils::ConstructColorFromHex(std::stoi(hexInput, nullptr, 16)));
 		});
 	//m_rSlider.TryCenter(true, false);
 	

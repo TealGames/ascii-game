@@ -2,7 +2,6 @@
 //#include "raylib.h"
 #include "Core/Visual/TextArray.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/RaylibUtils.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
 #include "Utils/Data/Vec2Type.hpp"
 #include "Utils/Debug.hpp"

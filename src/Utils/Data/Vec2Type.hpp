@@ -44,6 +44,9 @@ public:
 	static inline constexpr Vec One() { return Vec{ 1, 1 }; }
 	static inline constexpr Vec Zero() { return Vec{ 0, 0 }; }
 
+	const T* GetMemPointer() const { return &m_X; }
+	T* GetMemPointerMutable() { return &m_X; }
+
 	float GetAngle(const AngleMode& angleMode) const
 	{
 		//Just in case to prevent implementations returning undefined

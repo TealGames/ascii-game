@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include "Core/Rendering/Texture.hpp"
 #include "Core/Rendering/Shader/Shader.hpp"
+#include "Core/Rendering/Vertex.hpp"
 #include "Utils/Data/Vec2Type.hpp"
 #include "Core/Rendering/GpuFence.hpp"
 #include "Utils/Debug.hpp"
@@ -16,23 +17,23 @@ namespace Rendering
 {
 	struct RenderBufferPlatformCallbacks
 	{
-		RenderObjectId(*m_AllocateFunc)(const AttachmentStorage storage, const Vec2Int size);
+		RenderObjectId(*m_AllocateFunc)(const TexelStorageType storage, const Vec2Int size);
 		void(*m_DeallocateFunc)(const RenderObjectId id);
 	};
-	inline constexpr AttachmentStorage DEFAULT_RENDER_BUFFER_STORAGE = AttachmentStorage::RGBA8;
+	inline constexpr TexelStorageType DEFAULT_RENDER_BUFFER_STORAGE = TexelStorageType::RGBA8;
 	class RenderBuffer
 	{
 	private:
 		RenderBufferPlatformCallbacks m_callbacks;
 		RenderObjectId m_id;
-		AttachmentStorage m_attachmentStorage;
+		TexelStorageType m_attachmentStorage;
 		Vec2Int m_size;
 	public:
 
 	private:
 	public:  
 		RenderBuffer();
-		RenderBuffer(const AttachmentStorage storage, const Vec2Int size, const RenderBufferPlatformCallbacks& callbacks);
+		RenderBuffer(const TexelStorageType storage, const Vec2Int size, const RenderBufferPlatformCallbacks& callbacks);
 		RenderBuffer(const RenderBuffer&) = delete;
 		RenderBuffer(RenderBuffer&&) noexcept;
 		~RenderBuffer();
@@ -366,7 +367,6 @@ namespace Rendering
 		std::string ToString() const;
 	};
 
-	using IndexType = std::uint32_t;
 	struct IndexBufferPlatformCallbacks
 	{
 		std::tuple<RenderObjectId, std::byte*>(*m_AllocateFunc) (const IndexType* buffer, const size_t totalByteSize, const bool allowPersistentReading);

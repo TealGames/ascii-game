@@ -5,7 +5,6 @@
 #include "Core/Scene/Scene.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/RaylibUtils.hpp"
 #include "StaticGlobals.hpp"
 #include "Utils/Data/Event.hpp"
 #include "Utils/Data/Array2DPosition.hpp"

@@ -2,7 +2,6 @@
 #include "StaticReferenceGlobals.hpp"
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/FontAsset.hpp"
-#include "Utils/RaylibUtils.hpp"
 
 static const char* DEFAULT_FONT_PATH = "fonts/default.ttf";
 static AssetManagement::AssetManager* AssetManager;

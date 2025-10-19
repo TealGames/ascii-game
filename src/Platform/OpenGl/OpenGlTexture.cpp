@@ -2,7 +2,7 @@
 
 #ifdef OPENGL
 #include "Utils/Debug.hpp"
-#include "Utils/OpenGlUtils.hpp"
+#include "Utils/Platform/OpenGlUtils.hpp"
 #include "Core/PositionConversions.hpp"
 
 namespace Rendering
@@ -64,18 +64,18 @@ namespace Rendering
 			return 0;
 		}
 
-		static GLenum GetTexelStorageType(const AttachmentStorage storage)
+		static GLenum GetTexelStorageType(const TexelStorageType storage)
 		{
-			if (storage == AttachmentStorage::R8 || storage == AttachmentStorage::RGB8 ||
-				storage == AttachmentStorage::RGBA8)
+			if (storage == TexelStorageType::R8 || storage == TexelStorageType::RGB8 ||
+				storage == TexelStorageType::RGBA8)
 				return GL_UNSIGNED_BYTE;
 			//NOTE: technically, this needs to be GL_HALF_FLOAT
 			//but since c++ does not have native 16 bit float we use 32
-			else if (storage == AttachmentStorage::RGBA16F)
+			else if (storage == TexelStorageType::RGBA16F)
 				return GL_FLOAT;
-			else if (storage == AttachmentStorage::Depth24)
+			else if (storage == TexelStorageType::Depth24)
 				return GL_UNSIGNED_INT;
-			else if (storage == AttachmentStorage::Depth24_Stencil8)
+			else if (storage == TexelStorageType::Depth24_Stencil8)
 				return GL_UNSIGNED_INT_24_8;
 
 			LogError(std::format("[OPENGL]: Attempted to convert internal storage to texel storage type"));
@@ -112,7 +112,7 @@ namespace Rendering
 			GL_CALL(glDeleteTextures(1, &id));
 		}
 
-		static void SetData(const RenderObjectId id, const Vec2Int size, const AttachmentStorage storage, const std::byte* data) 
+		static void SetData(const RenderObjectId id, const Vec2Int size, const TexelStorageType storage, const std::byte* data) 
 		{
 			const GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
 			const GLenum texelStorage = GetTexelStorageType(storage);
@@ -120,7 +120,7 @@ namespace Rendering
 		}
 
 		static void GetData(const RenderObjectId id, const Vec2Int offset, const Vec2Int size,
-			const AttachmentStorage storage, std::byte* writePtr, const size_t bufferSize)
+			const TexelStorageType storage, std::byte* writePtr, const size_t bufferSize)
 		{
 			const GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
 			const GLenum texelStorage = GetTexelStorageType(storage);
@@ -132,26 +132,7 @@ namespace Rendering
 				size.m_X, size.m_Y, 1, format, texelStorage, bufferSize, writePtr));
 		}
 
-		static void SetBindStatus(const RenderObjectId id, const TextureSlotIndex index, const bool status)
-		{
-			if (index < 0 || index >= GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS)
-			{
-				LogError(std::format("[OPENGL]: Attempted to set bind status for texture "
-					"to index:{} status:{} but index is out of bounds", index, status));
-				return;
-			}
-
-			if (status)
-			{
-				GL_CALL(glBindTextureUnit(index, id));
-			}
-			else
-			{
-				GL_CALL(glBindTextureUnit(index, 0));
-			}
-		}
-
-		Texture CreateTexture(const std::byte* data, const Vec2Int& size, const AttachmentStorage storage,
+		Texture CreateTexture(const std::byte* data, const Vec2Int& size, const TexelStorageType storage,
 			const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 		{
 			return Texture(data, size, storage, wrap, min, mag, TextureCallbacks
@@ -159,7 +140,6 @@ namespace Rendering
 					AllocateTexture,
 					SetData,
 					GetData,
-					SetBindStatus,
 					DeallocateTexture,
 				});
 		}
@@ -174,21 +154,20 @@ namespace Rendering
 			SetTextureSettings(cubeId, data.m_wrapBehavior, data.m_minFilter, data.m_magFilter);
 			return cubeId;
 		}
-		static void SetDataCube(const TextureCubeFace face, const RenderObjectId id, const Vec2Int size, const AttachmentStorage storage, const std::byte* data)
+		static void SetDataCube(const TextureCubeFace face, const RenderObjectId id, const Vec2Int size, const TexelStorageType storage, const std::byte* data)
 		{
 			GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
 			GLenum texelStorage = GetTexelStorageType(storage);
 			GL_CALL(glTextureSubImage3D(id, 0, 0, 0, OpenGlUtils::GetTextureCubeFaceIndex(face), size.m_X, size.m_Y, 1, format, texelStorage, data));
 		}
 
-		TextureCube CreateTextureCube(const Vec2Int& size, const AttachmentStorage storage, 
+		TextureCube CreateTextureCube(const Vec2Int& size, const TexelStorageType storage, 
 			const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 		{
 			return TextureCube(size, storage, wrap, min, mag, TextureCubeCallbacks
 				{
 					AllocateTextureCube,
 					SetDataCube,
-					SetBindStatus,
 					DeallocateTexture,
 				});
 		}

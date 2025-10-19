@@ -6,10 +6,10 @@ namespace Rendering
 {
 	namespace OpenGl
 	{
-		Texture CreateTexture(const std::byte* data, const Vec2Int& size, const AttachmentStorage storage,
+		Texture CreateTexture(const std::byte* data, const Vec2Int& size, const TexelStorageType storage,
 			const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag);
 
-		TextureCube CreateTextureCube(const Vec2Int& size, const AttachmentStorage storage,
+		TextureCube CreateTextureCube(const Vec2Int& size, const TexelStorageType storage,
 			const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag);
 	}
 }

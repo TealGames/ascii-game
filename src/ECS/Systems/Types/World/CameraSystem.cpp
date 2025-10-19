@@ -5,13 +5,11 @@
 #include "Core/Scene/SceneManager.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/RaylibUtils.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 #include "Core/Rendering/GameRenderer.hpp"
 #include "Core/Asset/FontAsset.hpp"
-#include "Utils/RaylibUtils.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"

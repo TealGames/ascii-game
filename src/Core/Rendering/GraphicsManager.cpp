@@ -11,7 +11,7 @@ namespace Rendering
 
 
 	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager) 
-		: m_assetManager(&assetManager), m_defaultAlbedo(nullptr), m_shaders() {}
+		: m_assetManager(&assetManager), m_defaultAlbedo(nullptr), m_shaders(), m_shaderGlobalDefines({}) {}
 
 	void GraphicsManager::LoadAllShadersAndTextures()
 	{
@@ -21,15 +21,23 @@ namespace Rendering
 
 		for (auto& shader : m_assetManager->GetAssetsOfTypeMutable<ShaderAsset>(SHADERS_FOLDER))
 		{
+			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShaderMutable());
+			if (shader->GetShaderMutable().GetProgramType() == ShaderProgramType::Compute)
+			{
+				//TODO: fix error in glLinkProgram part of compute shader creation
+				LogWarning("Compute shader asset creation is not supported");
+				continue;
+			}
 			//NOTE: we must compile program before we init buffers to ensure that when the buffer
 			//has data filled from shader, shader is valid
-			if (!shader->GetShaderMutable().TryCreateProgram())
+			if (!shader->GetShaderMutable().TryCreateProgram(
+				ShaderSourceDefines{ m_shaderGlobalDefines.empty() ? 
+				nullptr : &m_shaderGlobalDefines[0], m_shaderGlobalDefines.size()}))
 			{
 				LogError(std::format("Attempted to load all shaders and textures, but shader: {} "
 					"failed to create program", shader->ToString()));
 			}
 
-			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShaderMutable());
 			InitShaderBuffers(shader->GetShaderMutable());
 		}
 
@@ -39,35 +47,6 @@ namespace Rendering
 			LogError(std::format("Failed to load default albedo at path:{}", DEFAULT_ALBEDO_PATH));
 		}
 	}
-
-	/*
-	const Shader* GraphicsManager::GetDefaultShader() const
-	{
-		//LogError(std::format("Getting default shader:{} vsource:{} fragsource:{}", m_defaultShader->ToString(), 
-		//m_defaultShader->GetShader().GetVertexSource(), m_defaultShader->GetShader().GetFragmnetSource()));
-		return &m_defaultShader->GetShader();
-	}
-	Shader* GraphicsManager::GetDefaultShaderMutable()
-	{
-		return &m_defaultShader->GetShaderMutable();
-	}
-	const Shader* GraphicsManager::GetTextureShader() const
-	{
-		return &m_textureShader->GetShader();
-	}
-	Shader* GraphicsManager::GetTextureShaderMutable()
-	{
-		return &m_textureShader->GetShaderMutable();
-	}
-	const Shader* GraphicsManager::GetFowardRenderShader() const
-	{
-		return &m_forwardRenderShader->GetShader();
-	}
-	Shader* GraphicsManager::GetForwardRenderShaderMutable()
-	{
-		return &m_forwardRenderShader->GetShaderMutable();
-	}
-	*/
 
 	const Texture* GraphicsManager::GetDefaultAlbedo() const
 	{
@@ -88,6 +67,11 @@ namespace Rendering
 		auto it = m_shaders.find(name.c_str());
 		if (it == m_shaders.end()) return nullptr;
 		return it->second;
+	}
+
+	void GraphicsManager::AddShaderGlobalDefine(const std::string_view& view)
+	{
+		m_shaderGlobalDefines.push_back(view);
 	}
 
 	void GraphicsManager::AddUniformBuffer(UniformBuffer& buffer)
@@ -151,5 +135,15 @@ namespace Rendering
 
 			shader.second->TrySetUniformArray(type, name.data(), dataPtr, elements);
 		}
+	}
+
+	std::string GraphicsManager::ToStringLoadedResources() const
+	{
+		std::string result = "GRAPHIC MANAGER CACHED RESOURCES: \n";
+		result += std::format("SHADERS (COUNT:{}):\n", m_shaders.size());
+		for (auto& shader : m_shaders)
+			result += shader.second->ToString() + "\n";
+
+		return result;
 	}
 }

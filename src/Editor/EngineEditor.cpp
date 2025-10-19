@@ -6,7 +6,7 @@
 #include "Core/PositionConversions.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "Core/Physics/PhysicsManager.hpp"
-#include "Utils/RaylibUtils.hpp"
+#include "StaticGlobals.hpp"
 #include "Core/UI/UIInteractionManager.hpp"
 #include "ECS/Systems/Types/World/CollisionBoxSystem.hpp"
 #include "Editor/Entity/ColorPopupUI.hpp"

@@ -65,10 +65,8 @@ public:
 	/// them being packed right after one another in memory.
 	/// </summary>
 	/// <returns></returns>
-	const T* GetMemPointer() const
-	{
-		return &m_X;
-	}
+	const T* GetMemPointer() const { return &m_X; }
+	T* GetMemPointerMutable() { return &m_X; }
 
 	float GetMagnitude() const { return std::sqrt(GetMagnitudeSquared()); }
 	/// <summary>

@@ -8,6 +8,9 @@
 
 namespace Rendering
 {
+	static constexpr const std::string_view VERSION_PREFIX = "#version";
+	static constexpr const std::string_view VERSION_HEADER = "#version 430 core\n";
+
 	std::string ToString(const ShaderType type)
 	{
 		if (type == ShaderType::Fragment) return "Fragment";
@@ -41,13 +44,13 @@ namespace Rendering
 
 	Shader::Shader(const std::string& vertexSource, const std::string& fragmentSource, const ShaderPlatformCallbacks& callbacks)
 		: m_platformCallbacks(callbacks), m_sourceCode{ vertexSource, fragmentSource },
-		m_id(INVALID_OBJ_ID), m_uniformData(), m_unboundUniformBuffers(0), m_maybeProgramType(std::nullopt)
+		m_id(INVALID_OBJ_ID), m_uniformData({}), m_unboundUniformBuffers(0), m_maybeProgramType(std::nullopt)
 	{
 		//CreateProgram();
 	}
 	Shader::~Shader()
 	{
-		DeleteProgram(true);
+		if (IsValid()) DeleteProgram();
 	}
 	Shader::Shader(Shader&& other) noexcept
 		: m_platformCallbacks(std::exchange(other.m_platformCallbacks, {})), m_sourceCode{ std::exchange(other.m_sourceCode[0], ""),
@@ -58,22 +61,16 @@ namespace Rendering
 
 	}
 
-	void Shader::DeleteProgram(const bool clearExistingData)
+	void Shader::DeleteProgram()
 	{
-		if (m_id != INVALID_OBJ_ID)
-		{
-			m_platformCallbacks.m_DeleteProgramFunc(*this);
-			m_id = INVALID_OBJ_ID;
+		m_platformCallbacks.m_DeleteProgramFunc(*this);
+		m_id = INVALID_OBJ_ID;
 
-			if (clearExistingData)
-			{
-				m_unboundUniformBuffers = 0;
-				m_sourceCode[0] = "";
-				m_sourceCode[1] = "";
-				m_maybeProgramType = std::nullopt;
-				m_uniformData.clear();
-			}
-		}
+		m_unboundUniformBuffers = 0;
+		m_sourceCode[0] = "";
+		m_sourceCode[1] = "";
+		m_maybeProgramType = std::nullopt;
+		m_uniformData.clear();
 	}
 
 	RenderObjectId Shader::GetId() const
@@ -119,6 +116,14 @@ namespace Rendering
 	const std::string& Shader::GetSource2() const { return m_sourceCode[1]; }
 	std::optional<ShaderProgramType> Shader::GetProgramType() const { return m_maybeProgramType; }
 
+	Vec3Int Shader::GetComputeShaderWorkGroupSize() const
+	{
+		Vec3Int groups = {};
+		m_platformCallbacks.m_QueryProgramFunc(*this, 
+			ShaderProgramQuery::ComputeShaderWorkGroupSize, groups.GetMemPointerMutable());
+		return groups;
+	}
+
 	void Shader::SetSources(const std::optional<ShaderProgramType>& programType, 
 		const std::string& source1, const std::string& source2)
 	{
@@ -126,17 +131,34 @@ namespace Rendering
 		m_sourceCode[1] = source2;
 		m_maybeProgramType = programType;
 	}
-	void Shader::CreateProgram(const TypedShaderInitData& initData1, const TypedShaderInitData* initData2)
+	void Shader::ApplyDefinesToSource(const size_t sourceIndex, const ShaderSourceDefines& defines)
 	{
-		//NOTE: if we already have exisiting data, we delete old data
-		//EXCEPT the uniform data since the buffer binds should NOT change
-		//only the compiled program
-		const bool hasExistingData = IsValid();
-		if (hasExistingData) DeleteProgram(false);
+		std::string shaderMacroDefines = "";
+		for (size_t i = 0; i < defines.m_DefinesSize; i++)
+		{
+			//NOTE: we use append since the defines arr uses string view which CAN NOT be concatenated with string
+			shaderMacroDefines.append("#define ");
+			shaderMacroDefines.append(defines.m_DefinesArr[i]);
+			shaderMacroDefines.append("\n");
+		}
 
-		//NOTE: once again, if existing data, is it not cleared thus we provide not data reference
-		m_id = m_platformCallbacks.m_CreateProgramFunc(initData1, initData2, hasExistingData ? nullptr : &m_uniformData);
+		std::string_view mainShaderSource = m_sourceCode[sourceIndex];
+		const std::size_t firstLineEndIndex = mainShaderSource.find('\n');
+		const std::string_view firstLine = mainShaderSource.substr(0, firstLineEndIndex);
+		//If we have a version header we strip that no matter
+		if (firstLineEndIndex != std::string::npos && firstLine.substr(0,
+			std::min(firstLine.size(), VERSION_PREFIX.size())) == VERSION_PREFIX)
+		{
+			m_sourceCode[sourceIndex] = m_sourceCode[sourceIndex].substr(firstLineEndIndex + 1);
+		}
 
+		m_sourceCode[sourceIndex] = std::string(VERSION_HEADER) + shaderMacroDefines + m_sourceCode[sourceIndex];
+	}
+	void Shader::CreateProgram(const FinalShaderInitData& initData1, const FinalShaderInitData* initData2)
+	{
+		if (IsValid()) DeleteProgram();
+
+		m_id = m_platformCallbacks.m_CreateProgramFunc(initData1, initData2, &m_uniformData);
 		for (const auto& uniformData : m_uniformData)
 		{
 			if (uniformData.second.m_Type != UniformType::Buffer)
@@ -150,15 +172,12 @@ namespace Rendering
 			//NOTE: if we had existing data -> buffers existed but shader was recompiled with new id
 			//so we must rebind each uniform block with the newly compiled shader id (but uniform bind index stays the same
 			//assumuing nothing changed with the buffers)
-			if (hasExistingData)
-			{
-				if (!TryBindUniformBlock(uniformData.first.GetMemPointer(), uniformData.second.m_BufferBindIndex))
-				{
-					LogError(std::format("Attempted to create shader program:{} but failed to rebind uniform block:{}"
-						"after creating new program using old program's bindind indices", ToString(), uniformData.second.m_BufferBindIndex));
-					return;
-				}
-			}
+			//if (!TryBindUniformBlock(uniformData.first.GetMemPointer(), uniformData.second.m_BufferBindIndex))
+			//{
+			//	LogError(std::format("Attempted to create shader program:{} but failed to rebind uniform block:{}"
+			//		"after creating new program using old program's bindind indices", ToString(), uniformData.second.m_BufferBindIndex));
+			//	return;
+			//}
 		}
 
 		if (m_id == INVALID_OBJ_ID)
@@ -172,34 +191,51 @@ namespace Rendering
 			return false;
 
 		if (m_maybeProgramType == ShaderProgramType::VertexFragment) 
-			CreateVertexFragmentProgram(defines[0], defines[1]);
+			return TryCreateVertexFragmentProgram(defines[0], defines[1]);
 		else if (m_maybeProgramType == ShaderProgramType::Compute)
-			CreateVertexFragmentProgram(defines[0]);
+			return TryCreateComputeProgram(defines[0]);
+
+		return true;
+	}
+	bool Shader::TryCreateProgram(const ShaderSourceDefines& globalDefines)
+	{
+		if (m_maybeProgramType == std::nullopt)
+			return false;
+
+		if (m_maybeProgramType == ShaderProgramType::VertexFragment)
+			return TryCreateVertexFragmentProgram(globalDefines, globalDefines);
+		else if (m_maybeProgramType == ShaderProgramType::Compute)
+			return TryCreateComputeProgram(globalDefines);
 
 		return true;
 	}
 
-	void Shader::CreateVertexFragmentProgram(const ShaderSourceDefines& vertexDefines, const ShaderSourceDefines& fragmentDefines)
+	bool Shader::TryCreateVertexFragmentProgram(const ShaderSourceDefines& vertexDefines, const ShaderSourceDefines& fragmentDefines)
 	{
 		if (m_sourceCode[0].empty() || m_sourceCode[1].empty())
 		{
 			LogWarning(std::format("Exiting from shader initialization due to empty vertex "
 				"and/or fragment source code. Vertex:{} \nFragment:{}", m_sourceCode[0], m_sourceCode[1]));
-			return;
+			return false;
 		}
+		if (vertexDefines.m_DefinesSize != 0) ApplyDefinesToSource(0, vertexDefines);
+		if (fragmentDefines.m_DefinesSize != 0) ApplyDefinesToSource(1, fragmentDefines);
 
-		TypedShaderInitData fragmentInitData{ ShaderType::Fragment, ShaderInitData{fragmentDefines, m_sourceCode[1]} };
-		CreateProgram(TypedShaderInitData{ ShaderType::Vertex, ShaderInitData{vertexDefines, m_sourceCode[0]}}, &fragmentInitData);
+		FinalShaderInitData fragmentInitData{ ShaderType::Fragment, m_sourceCode[1] };
+		CreateProgram(FinalShaderInitData{ ShaderType::Vertex, m_sourceCode[0]}, &fragmentInitData);
+		return true;
 	}
-	void Shader::CreateComputeProgram(const ShaderSourceDefines& computeDefines)
+	bool Shader::TryCreateComputeProgram(const ShaderSourceDefines& computeDefines)
 	{
 		if (m_sourceCode[0].empty())
 		{
 			LogWarning(std::format("Exiting from shader initialization due to empty compute source code "
 				"Compute Shader: ", m_sourceCode[0]));
-			return;
+			return false;
 		}
-		CreateProgram(TypedShaderInitData{ ShaderType::Compute, ShaderInitData{computeDefines, m_sourceCode[0]} }, nullptr);
+		if (computeDefines.m_DefinesSize != 0) ApplyDefinesToSource(0, computeDefines);
+		CreateProgram(FinalShaderInitData{ ShaderType::Compute, m_sourceCode[0] }, nullptr);
+		return true;
 	}
 
 	void Shader::BindActive()
@@ -218,6 +254,10 @@ namespace Rendering
 	void Shader::UnbindActive()
 	{
 		m_platformCallbacks.m_UnbindActiveFunc(*this);
+	}
+	void Shader::DispatchComputeShaderGroups(const std::uint32_t groupsX, const std::uint32_t groupsY, const std::uint32_t groupsZ)
+	{
+		m_platformCallbacks.m_DispatchComputeShaderGroupsFunc(groupsX, groupsY, groupsZ);
 	}
 	bool Shader::HasUniform(const std::string_view& view) const
 	{
@@ -292,30 +332,16 @@ namespace Rendering
 		}
 		if (m_unboundUniformBuffers>0) m_unboundUniformBuffers--;
 		m_uniformData[String16(blockName)].m_BufferBindIndex = index;
-		////If the previous index was invalid it means this is a new block that is bound
-		//if (blockData.m_BufferBindIndex == INVALID_BUFFER_BIND_INDEX)
-		//	m_boundUniformBlocksCount++;
-		//else blockData.m_BufferBindIndex = index;
-
+		
 		return true;
 	}
-	/*bool Shader::HasUniformBlock(const std::string& blockName) const
-	{
-		return m_uniformData.find(blockName) != m_uniformData.end();
-	}
-	bool Shader::BindUniformBlockIfNeeded(const std::string& name, const UniformBufferBindIndex index)
-	{
-		if (HasAllUniformBlocksBounds())
-			return false;
 
-		return TryBindUniformBlock(name.c_str(), index);
-	}*/
 	bool Shader::TryGetUniformBlockMembers(const char* blockName, std::vector<UniformBlockMemberMemoryInfo>& members, size_t* fullSize) const
 	{
 		if (!PassesValidCheck())
 			return false;
 
-		if (!m_platformCallbacks.TryGetUniformBlockMembers(*this, blockName, members, fullSize))
+		if (!m_platformCallbacks.TryGetUniformBlockMembersFunc(*this, blockName, members, fullSize))
 		{
 			LogError(std::format("Attempted to get uniform block members of name:{} in shader but resulted in error", blockName));
 			return false;

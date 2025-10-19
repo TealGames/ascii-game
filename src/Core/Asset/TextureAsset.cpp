@@ -28,10 +28,10 @@ TextureAsset::TextureAsset(const std::filesystem::path& path)
 	//LogError(std::format("SHIT channels:{}", channels));
 	//LogError(std::format("path:{} Image chnnaels:{} wid:{} heigh:{}", path.string(), channels, width, height));
 	
-	Rendering::AttachmentStorage internalStorage = Rendering::AttachmentStorage::RGBA8;
-	if (channels == 1) internalStorage = Rendering::AttachmentStorage::R8;
-	else if (channels == 3) internalStorage = Rendering::AttachmentStorage::RGB8;
-	else if (channels == 4) internalStorage = Rendering::AttachmentStorage::RGBA8;
+	Rendering::TexelStorageType internalStorage = Rendering::TexelStorageType::RGBA8;
+	if (channels == 1) internalStorage = Rendering::TexelStorageType::R8;
+	else if (channels == 3) internalStorage = Rendering::TexelStorageType::RGB8;
+	else if (channels == 4) internalStorage = Rendering::TexelStorageType::RGBA8;
 	else
 	{
 		LogError(std::format("Attempted to load texture asset but "

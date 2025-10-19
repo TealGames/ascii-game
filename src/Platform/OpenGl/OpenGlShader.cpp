@@ -1,15 +1,16 @@
 #include "Platform/OpenGl/OpenGlShader.hpp"
+#include <iostream>
 
 #ifdef OPENGL
 #include "Utils/Debug.hpp"
 #include <format>
-#include "Utils/OpenGlUtils.hpp"
+#include "Utils/Platform/OpenGlUtils.hpp"
 
 namespace Rendering
 {
 	namespace OpenGl
 	{
-		static const std::string_view VERSION_HEADER = "#version 330 core\n";
+		
 		//std::uint32_t OpenGlShader::ConvertShaderTypeToGlType(const ShaderType type) const
 		//{
 		//	if (type == ShaderType::Fragment) return GL_FRAGMENT_SHADER;
@@ -32,35 +33,20 @@ namespace Rendering
 			return 0;
 		}
 
-		static std::uint32_t CompileShader(const TypedShaderInitData& shaderSource)
+		static RenderObjectId CompileShader(const FinalShaderInitData& shaderSource)
 		{
 			RenderObjectId shaderId= INVALID_OBJ_ID;
 			GL_CALL(shaderId = glCreateShader(GetShaderType(shaderSource.m_Type)));
-
-			std::string fullDefine = "";
-			if (shaderSource.m_Data.m_Defines.m_DefinesArr != nullptr)
-			{
-				for (size_t i = 0; i < shaderSource.m_Data.m_Defines.m_DefinesSize; i++)
-				{
-					fullDefine.append("#define ");
-					fullDefine.append(shaderSource.m_Data.m_Defines.m_DefinesArr[i]);
-					fullDefine.append("\n");
-				}
-			}
-
-			std::string_view mainShaderSource = shaderSource.m_Data.m_Source;
-			if (mainShaderSource.substr(0, std::min(mainShaderSource.size(), VERSION_HEADER.size())) == VERSION_HEADER)
-				mainShaderSource = mainShaderSource.substr(VERSION_HEADER.size());
 			
 			//TODO: consider making multiple sources with one with ifdef statements to support one shader creating multiple others based on some
 			//compile time flags, especially if there is a lot of repetitive stuff in multiple shader
 			const char* shaderSources[] = 
 			{
-				VERSION_HEADER.data(),
-				fullDefine.c_str(),
-				mainShaderSource.data()
+				//NOTE: yes we could check if source has header and then not add it 
+				//but since header must come first ALWAYS it is easier to do it this way
+				shaderSource.m_fullSource.data()
 			};
-			GL_CALL(glShaderSource(shaderId, 3, shaderSources, nullptr));
+			GL_CALL(glShaderSource(shaderId, 1, shaderSources, nullptr));
 			GL_CALL(glCompileShader(shaderId));
 
 			int result = 0;
@@ -73,18 +59,21 @@ namespace Rendering
 				GL_CALL(glGetShaderInfoLog(shaderId, length, &length, message));
 
 				LogError(std::format("[OpenGL]: Failed to compile shader:{} Message:{}", 
-					std::string(VERSION_HEADER) + "\n"+ fullDefine+ "\n"+ std::string(mainShaderSource), message));
+					shaderSource.m_fullSource, message));
 				GL_CALL(glDeleteShader(shaderId));
-				return 0;
+				return INVALID_OBJ_ID;
 			}
+
+			//LogWarning(std::format("Compiled source: {}", shaderSource.m_fullSource));
 			return shaderId;
 		}
 
-		static RenderObjectId CreateShaderProgram(const TypedShaderInitData& firstInitData, const TypedShaderInitData* secondInitData,
+		static RenderObjectId CreateShaderProgram(const FinalShaderInitData& firstInitData, const FinalShaderInitData* secondInitData,
 			UniformReflectionCollectionType* blockData)
 		{
 			RenderObjectId programId = INVALID_OBJ_ID;
 			GL_CALL(programId = glCreateProgram());
+			//LogWarning("Created program: {}"+programId);
 
 			RenderObjectId idSource1 = INVALID_OBJ_ID;
 			RenderObjectId idSource2 = INVALID_OBJ_ID;
@@ -97,46 +86,76 @@ namespace Rendering
 				GL_CALL(glAttachShader(programId, idSource2));
 			}			
 			
+			//std::cout << "GL_VERSION: " << glGetString(GL_VERSION) << "\n";
+			//std::cout << "GL_SHADING_LANGUAGE_VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
+
+			/*
+			GLint count = 0;
+			glGetProgramiv(programId, GL_ATTACHED_SHADERS, &count);
+			std::vector<GLuint> attached(count);
+			glGetAttachedShaders(programId, count, nullptr, attached.data());
+			for (auto id : attached) {
+				GLint type;
+				glGetShaderiv(id, GL_SHADER_TYPE, &type);
+				std::cout << "Attached type: 0x" << std::hex << type << "\n";
+			}
+			*/
+			//LogWarning("Is program: "+ glIsProgram(programId)!=GL_FALSE? "TRUE" : "FALSE");
+
+			//TODO: this right now causes problems for compute shader creation
 			GL_CALL(glLinkProgram(programId));
-			GL_CALL(glValidateProgram(programId));
+			GLint linkStatus = 0;
+			GL_CALL(glGetProgramiv(programId, GL_LINK_STATUS, &linkStatus));
+			if (!linkStatus) 
+			{
+				char log[1024];
+				glGetProgramInfoLog(programId, 1024, nullptr, log);
+				LogError(std::format("[OPENGL]: Failed to link due to error: {}", log));
+				return INVALID_OBJ_ID;
+			}
+
+			//NOTE: on some drivers validate program on compute shaders may be bugger so we avoid it
+			if (firstInitData.m_Type != ShaderType::Compute)
+			{
+				GL_CALL(glValidateProgram(programId));
+			}
 
 			//We only need the shaders to create the single shader program, then they can be deleted
 			GL_CALL(glDeleteShader(idSource1));
 			if (idSource2 != INVALID_OBJ_ID) GL_CALL(glDeleteShader(idSource2));
+
+			if (blockData == nullptr)
+				return programId;
 
 			GLint blockCount = 0;
 			GLint uniformCount = 0;
 			GL_CALL(glGetProgramiv(programId, GL_ACTIVE_UNIFORM_BLOCKS, &blockCount));
 			GL_CALL(glGetProgramiv(programId, GL_ACTIVE_UNIFORMS, &uniformCount));
 
-			if (blockData != nullptr)
-			{
-				blockData->reserve(blockCount + uniformCount);
-				constexpr size_t MAX_NAME_CHAR_COUNT = 16;
-				char nameBuffer[MAX_NAME_CHAR_COUNT];
-				GLsizei nameLength = 0;
+			blockData->reserve(blockCount + uniformCount);
+			constexpr size_t MAX_NAME_CHAR_COUNT = 16;
+			char nameBuffer[MAX_NAME_CHAR_COUNT];
+			GLsizei nameLength = 0;
 
-				if (blockCount > 0)
+			if (blockCount > 0)
+			{
+				for (GLint i = 0; i < blockCount; i++)
 				{
-					for (GLint i = 0; i < blockCount; i++)
-					{
-						GL_CALL(glGetActiveUniformBlockName(programId, i, sizeof(nameBuffer), &nameLength, nameBuffer));
-						blockData->emplace(FixedString<MAX_NAME_CHAR_COUNT>(nameBuffer, nameLength), UniformReflectionInfo{ UniformType::Buffer });
-					}
-				}
-				if (uniformCount > 0)
-				{
-					GLint elementSize = 0;
-					GLenum dataType = 0;
-					for (GLint i = 0; i < uniformCount; i++)
-					{
-						GL_CALL(glGetActiveUniform(programId, i, sizeof(nameBuffer), &nameLength, &elementSize, &dataType, nameBuffer));
-						blockData->emplace(FixedString<MAX_NAME_CHAR_COUNT>(nameBuffer, nameLength),
-							UniformReflectionInfo{ elementSize > 1 ? UniformType::Array : UniformType::Single });
-					}
+					GL_CALL(glGetActiveUniformBlockName(programId, i, sizeof(nameBuffer), &nameLength, nameBuffer));
+					blockData->emplace(FixedString<MAX_NAME_CHAR_COUNT>(nameBuffer, nameLength), UniformReflectionInfo{ UniformType::Buffer });
 				}
 			}
-			
+			if (uniformCount > 0)
+			{
+				GLint elementSize = 0;
+				GLenum dataType = 0;
+				for (GLint i = 0; i < uniformCount; i++)
+				{
+					GL_CALL(glGetActiveUniform(programId, i, sizeof(nameBuffer), &nameLength, &elementSize, &dataType, nameBuffer));
+					blockData->emplace(FixedString<MAX_NAME_CHAR_COUNT>(nameBuffer, nameLength),
+						UniformReflectionInfo{ elementSize > 1 ? UniformType::Array : UniformType::Single });
+				}
+			}
 
 			return programId;
 		}
@@ -152,6 +171,19 @@ namespace Rendering
 		{
 			GL_CALL(glUseProgram(0));
 		}
+		static void DispatchComputeShaderGroups(std::uint32_t x, std::uint32_t y, std::uint32_t z)
+		{
+			GLint activeProgram = INVALID_OBJ_ID;
+			GL_CALL(glGetIntegerv(GL_CURRENT_PROGRAM, &activeProgram));
+			if (activeProgram == INVALID_OBJ_ID)
+			{
+				LogError(std::format("Attempted to dispatch compute shader groups "
+					"but no program is active right now"));
+				return;
+			}
+
+			GL_CALL(glDispatchCompute(x, y, z));
+		}
 
 		static RenderObjectId GetActiveShaderProgramId()
 		{
@@ -160,13 +192,14 @@ namespace Rendering
 			return currentProgramId;
 		}
 
-		static std::string TrySetShaderUniform(const Shader& shader, const UniformDataType uniform, const char* uniformName, const void* valuePtr)
+		static std::string TrySetShaderUniform(const Shader& shader, const UniformDataType uniform, 
+			const char* uniformName, const void* valuePtr)
 		{
 			const RenderObjectId programId = shader.GetId();
 			if (glIsProgram(programId) == GL_FALSE)
 			{
-				return std::format("OpenGL: Attempted to set shader:{} uniform:{} but shader program with that id does not exist",
-					shader.ToString(), uniformName);
+				return std::format("OpenGL: Attempted to set shader:{} uniform:{} "
+					"but shader program with that id does not exist", shader.ToString(), uniformName);
 			}
 
 			int location = -1;
@@ -192,7 +225,7 @@ namespace Rendering
 				GL_CALL(glProgramUniform1f(programId, location, *static_cast<const GLfloat*>(valuePtr)));
 			}
 			else if (uniform == UniformDataType::Int || uniform == UniformDataType::Sampler2D 
-				|| uniform == UniformDataType::CubeSampler)
+				|| uniform == UniformDataType::CubeSampler || uniform == UniformDataType::Image2D)
 			{
 				GL_CALL(glProgramUniform1i(programId, location, *static_cast<const GLint*>(valuePtr)));
 			}
@@ -262,7 +295,7 @@ namespace Rendering
 					static_cast<const GLfloat*>(valuePtr)));
 			}
 			else if (uniform == UniformDataType::Int || uniform == UniformDataType::Sampler2D
-				|| uniform == UniformDataType::CubeSampler)
+				|| uniform == UniformDataType::CubeSampler || uniform == UniformDataType::Image2D)
 			{
 				GL_CALL(glProgramUniform1iv(programId, location, writeElementCount,
 					static_cast<const GLint*>(valuePtr)));
@@ -324,7 +357,8 @@ namespace Rendering
 			{
 				GL_CALL(glGetUniformfv(programId, location, static_cast<float*>(outputPtr)));
 			}
-			else if (uniform == UniformDataType::Int || uniform == UniformDataType::Sampler2D || uniform == UniformDataType::CubeSampler)
+			else if (uniform == UniformDataType::Int || uniform == UniformDataType::Sampler2D || uniform == UniformDataType::CubeSampler
+				|| uniform == UniformDataType::Image2D)
 			{
 				GL_CALL(glGetUniformiv(programId, location, static_cast<int*>(outputPtr)));
 			}
@@ -429,18 +463,30 @@ namespace Rendering
 			return true;
 		}
 
+		static void QueryProgram(const Shader& shader, ShaderProgramQuery query, int* queryResult)
+		{
+			GLenum openglQueryType = 0;
+			if (query == ShaderProgramQuery::ComputeShaderWorkGroupSize)
+			{
+				openglQueryType = GL_COMPUTE_WORK_GROUP_SIZE;
+			}
+			glGetProgramiv(shader.GetId(), openglQueryType, queryResult);
+		}
+
 		Shader CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
 		{
 			return Shader(vertexShader, fragmentShader, ShaderPlatformCallbacks
 				{
 					CreateShaderProgram,
 					BindActive,
+					DispatchComputeShaderGroups,
 					UnbindActive,
 					TrySetShaderUniform,
 					TrySetShaderUniformArray,
 					TryGetShaderUniform,
 					TryBindShaderUniformBlock,
 					TryGetUniformBlockMembers,
+					QueryProgram,
 					DeleteProgram
 				});
 		}

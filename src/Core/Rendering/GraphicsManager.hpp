@@ -20,7 +20,8 @@ namespace Rendering
 	{
 	private:
 		AssetManagement::AssetManager* m_assetManager;
-
+		
+		std::vector<std::string_view> m_shaderGlobalDefines;
 		std::unordered_map<std::string_view, Shader*> m_shaders;
 		std::unordered_map<String16, UniformBuffer*> m_uniformBuffers;
 
@@ -40,10 +41,14 @@ namespace Rendering
 		const Shader* TryGetShader(const std::string& name) const;
 		Shader* TryGetShaderMutable(const std::string& name);
 
+		void AddShaderGlobalDefine(const std::string_view& view);
+
 		void AddUniformBuffer(UniformBuffer& buffer);
 		bool HasUniformBuffer(const std::string_view& name) const;
 
 		void SetUniform(const UniformDataType type, const std::string_view& name, const void* dataPtr);
 		void SetUniformArray(const UniformDataType type, const std::string_view& name, const void* dataPtr, const size_t elements);
+
+		std::string ToStringLoadedResources() const;
 	};
 }

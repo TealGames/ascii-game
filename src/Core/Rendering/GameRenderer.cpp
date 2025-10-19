@@ -6,7 +6,6 @@
 
 #include "Core/Rendering/GameRenderer.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/RaylibUtils.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #include "Utils/Debug.hpp"
 #include "Core/EngineState.hpp"
@@ -21,7 +20,7 @@
 
 namespace Rendering
 {
-    constexpr bool DO_LIGHTING = true;
+    constexpr bool DO_LIGHTING = false;
     
     constexpr bool DRAW_LIGHT_AREAS = true;
     constexpr Utils::Color LIGHT_AREA_COLOR_FROM_LIGHT = Utils::Color(0, 0, 0, 0);
@@ -33,6 +32,7 @@ namespace Rendering
     constexpr float SHADOW_FAR_DISTANCE = 1000;
 
     constexpr bool DO_HDR = true;
+    constexpr bool DO_BLOOM = false;
 
     constexpr size_t NO_RENDER_FRAME_COUNT_LIMIT = 0;
     constexpr size_t RENDER_FRAMES_COUNT = NO_RENDER_FRAME_COUNT_LIMIT;
@@ -43,7 +43,7 @@ namespace Rendering
     constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = 600;
     constexpr size_t CIRCLE_SIDE_COUNT = 12;
 
-    static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { "default", "forward_render", "shadow", "texture", "post_process"};
+    static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { "default", "forward_render", "shadow", "texture", "post_process", "gaussian_blur" };
 
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
@@ -55,14 +55,11 @@ namespace Rendering
     constexpr const char* VIEWER_UNIFORM_BLOCK_NAME = "ViewerBlock";
     constexpr const char* LIGHT_UNIFORM_BLOCK_NAME = "LightsBlock";
 
-    std::string Vertex::ToString() const
-    {
-        return std::format("[{}]", m_Pos.ToString());
-    }
-    std::string InstanceData::ToString() const
-    {
-        return std::format("[Color:{} ModelMatrix:{}]", m_Color.ToString(), m_ModelMatrix.ToString());
-    }
+    //For compute shaders
+    constexpr const char* HORIZONTAL_FLAG_UNIFORM_NAME = "uIsHorizontal";
+    constexpr const char* INPUT_TEXTURE_UNIFORM_NAME = "uTextureInput";
+    constexpr const char* OUTPUT_TEXTURE_UNIFORM_NAME = "uTextureOutput";
+    constexpr const char* BLUR_WEIGHTS_UNIFORM_NAME = "uWeights";
 
     PointLightData::PointLightData() : PointLightData({}, {}, 0) {}
     PointLightData::PointLightData(const WorldPosition3D& pos, const Vec4& color, const float radius)
@@ -90,7 +87,9 @@ namespace Rendering
     Renderer::Renderer(const EngineState& engineState)
         : m_isInit(false), m_engineState(&engineState), m_uniformData(), //m_staticRenderData(),
         m_renderCalls(), m_textData(), m_textureData(), m_batches(), m_hashToBatchIndex(), 
-        m_layout(), m_bufferController(&m_layout), m_textureController(),
+        m_layout(), m_bufferController(&m_layout), 
+        m_textureController(Backend::CreateTextureController()),
+        m_imageController(Backend::CreateImageController()),
         m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer(), m_viewerUniformBuffer(), m_lightUniformBuffer(),
         m_frameDrawCalls(0), m_isRenderStalled(false), m_framesSinceStart(0), 
         m_frameBuffer(), m_shadowMaps(), m_hdrColorOutput(), m_hdrDepthRenderBuffer(), m_coreShaders({}),
@@ -138,20 +137,22 @@ namespace Rendering
         //TODO: right now all shadows have same resolution -> this might be a light component setting
         if (DO_SHADOWS)
         {
+            m_engineState->m_GraphicsContext.m_GraphicsManager->AddShaderGlobalDefine("DO_SHADOWS");
+
             for (auto& map : m_shadowMaps) 
-                map = CreateTextureCube(SHADOW_MAP_SIZE, AttachmentStorage::Depth24);
+                map = CreateTextureCube(SHADOW_MAP_SIZE, TexelStorageType::Depth24);
         }
         if (DO_HDR)
         {
             const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
-            m_hdrColorOutput = CreateTexture(nullptr, windowSize, AttachmentStorage::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
-            m_hdrDepthRenderBuffer = Backend::CreateRenderBuffer(AttachmentStorage::Depth24, windowSize);
+            m_hdrColorOutput = CreateTexture(nullptr, windowSize, TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+            m_hdrDepthRenderBuffer = Backend::CreateRenderBuffer(TexelStorageType::Depth24, windowSize);
         }
         
         const VertexLayoutBindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
         std::vector<VertexAttribute> vertexAttributes = 
         { 
-            VertexAttribute(0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Pos)), 
+            VertexAttribute(0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_LocalPos)), 
             VertexAttribute(1, 2, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_UVPos)),
             VertexAttribute(2, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_Normal)),
         };
@@ -180,7 +181,8 @@ namespace Rendering
             m_coreShaders[i] = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetShaderMutable(CORE_SHADER_NAMES[i]);
             if (m_coreShaders[i] == nullptr)
             {
-                LogError(std::format("Core shader at index:{} could not be retrieved by name:{}", i, CORE_SHADER_NAMES[i]));
+                LogError(std::format("Core shader at index:{} could not be retrieved by name:{} All Resources: {}", 
+                    i, CORE_SHADER_NAMES[i], m_engineState->m_GraphicsContext.m_GraphicsManager->ToStringLoadedResources()));
                 return;
             }
         }
@@ -189,8 +191,8 @@ namespace Rendering
         m_lightUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender));*/
 
         //m_engineState->m_GraphicsContext.m_GraphicsManager->SetUniform(UniformDataType::Bool, SHADOW_TOGGLE_UNIFORM_NAME, &DO_SHADOWS);
-        const std::string_view defines[] = {"DO_SHADOWS"};
-        GetCoreShader(CoreShader::ForwardRender)->TryCreateProgram({ defines, 1 });
+        //const std::string_view defines[] = {"DO_SHADOWS"};
+        //GetCoreShader(CoreShader::ForwardRender)->TryCreateProgram({ defines, 1 });
     }
 
     Shader* Renderer::GetCoreShader(const CoreShader shader)
@@ -282,7 +284,7 @@ namespace Rendering
         return CalculateBatchHash(batch.m_Shader, batch.m_Texture, batch.m_VertexIndices.size());
     }
     RenderBatch& Renderer::CreateBatch(Shader* shader, Texture* texture,
-        const Vertex* vertexArray, const size_t vertexSize, IndexType* indexArray, const size_t indicesSize, 
+        const Vertex* vertexArray, const size_t vertexSize, const IndexType* indexArray, const size_t indicesSize, 
         const Mat4& modelMatrix, const Utils::Color& color, const bool isFinished)
     {
         RenderBatch& batch = m_batches.emplace_back(shader, texture);
@@ -674,7 +676,7 @@ namespace Rendering
         for (size_t i = 1; i < vertexCount; i++)
         {
             vertices[i] = {};
-            vertices[i].m_Pos = WorldPosition3D(std::cosf(i * angleStep) * radius, std::sinf(i * angleStep) * radius, 0);
+            vertices[i].m_LocalPos = WorldPosition3D(std::cosf(i * angleStep) * radius, std::sinf(i * angleStep) * radius, 0);
         }
 
         IndexType* indices = (IndexType*)alloca(sizeof(IndexType) * indexCount);
@@ -756,6 +758,24 @@ namespace Rendering
     void Renderer::AddCallDirectionalLight(const Vec3& dir, const Utils::Color color)
     {
         m_uniformData.m_LightBlock.m_DirLight = DirectionalLightData(dir, color.GetNormalized());
+    }
+
+
+    void Renderer::AddCallModel(Model3d& model, const Mat4& modelMatrix)
+    {
+        Mesh* mesh = nullptr;
+        for (auto& meshGroup : model.m_MeshGroups)
+        {
+            for (auto& meshIndex : meshGroup.m_MeshIndices)
+            {
+                mesh = &(model.m_Meshes[meshIndex]);
+
+                //TODO: right now we only care about color from material but we should be able 
+                // add all args to batch (maybe accept material?)
+                CreateBatch(GetBaseTextureShader(), GetMaterialAlbedo(mesh->m_Material), &(mesh->m_Vertices[0]), mesh->m_Vertices.size(),
+                    &(mesh->m_Indices[0]), mesh->m_Indices.size(), modelMatrix * meshGroup.m_GlobalTransform, mesh->m_Material.m_BaseColor, true);
+            }
+        }
     }
 
     void Renderer::PushCallsToBuffer(const std::vector<RenderCall>& calls)
@@ -893,7 +913,7 @@ namespace Rendering
         //This forces the viewport to be set back to rendering for the window
         m_engineState->m_GraphicsContext.m_Window->ForceSizeUpdate();
     }
-    void Renderer::ExecuteLightingAndGeometryPass(const TextureSlotIndex* shadowCubeMapSlots)
+    void Renderer::ExecuteLightingAndGeometryPass(const SlotIndex* shadowCubeMapSlots)
     {
         UpdatePassRenderState(RenderPassType::Geometry);
         if (DO_HDR)
@@ -914,7 +934,18 @@ namespace Rendering
         m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
 
         const Texture* lastBatchTexture = nullptr;
+        const auto removeLastBatchTexture = [this, &lastBatchTexture]() -> void
+            {
+                m_textureController.TryRemoveFromSlot(*lastBatchTexture);
+                lastBatchTexture = nullptr;
+            };
+        
         Shader* lastBatchShader = nullptr;
+        const auto unbindLastBatchShader = [&lastBatchShader]() -> void
+            {
+                lastBatchShader->UnbindActive();
+                lastBatchShader = nullptr;
+            };
 
         for (int i = 0; i < m_batches.size(); i++)
         {
@@ -934,10 +965,7 @@ namespace Rendering
                 return;
             }
 
-            if (lastBatchShader != nullptr && batch.m_Shader == nullptr)
-            {
-                lastBatchShader->UnbindActive();
-            }
+            if (lastBatchShader != nullptr && batch.m_Shader == nullptr) unbindLastBatchShader();
             else if (lastBatchShader == nullptr || lastBatchShader != batch.m_Shader)
             {
                 batch.m_Shader->BindActive();
@@ -947,13 +975,12 @@ namespace Rendering
             //TODO: right now the current batch gets it texture slot by removing previous slot
             //but what if we use that texture in a future batch it would be wasteful -> so
             //we have to make sure that no future queued batches have last batch texture before removing
-            if (lastBatchTexture != nullptr && lastBatchTexture != batch.m_Texture)
-            {
-                m_textureController.TryRemoveFromSlot(lastBatchTexture->GetData().m_slotIndex);
-            }
+            if (lastBatchTexture != nullptr && lastBatchTexture != batch.m_Texture) removeLastBatchTexture();
             if (batch.m_Texture != nullptr && lastBatchTexture != batch.m_Texture)
             {
-                TextureSlotIndex slot = m_textureController.TryAddTextureToAvailableSlot(batch.m_Texture);
+                SlotIndex slot = m_textureController.TryBindToFreeSlot<Texture>(*batch.m_Texture);
+                if (slot == INVALID_SLOT_INDEX)
+
                 if (!batch.m_Shader->TrySetUniform(UniformDataType::Sampler2D, TEXTURE_UNIFORM_NAME, &slot))
                     return;
             }
@@ -964,16 +991,15 @@ namespace Rendering
             }
             
             lastBatchTexture = batch.m_Texture;
+            //LogWarning(std::format("LIGHT PASS Texture controler before draw: {}", m_textureController.ToString()));
+
             DrawBatch(batch);
         }
 
-        if (lastBatchShader != nullptr) lastBatchShader->UnbindActive();
-        if (lastBatchTexture != nullptr) m_textureController.TryRemoveFromSlot(lastBatchTexture->GetData().m_slotIndex);
+        if (lastBatchShader != nullptr) unbindLastBatchShader();
+        if (lastBatchTexture != nullptr) removeLastBatchTexture();
 
-        size_t byteSize = m_hdrColorOutput.GetByteSize();
-        std::vector<std::byte> heapBytes = std::vector<std::byte>(byteSize);
-        std::byte* writePtr = &heapBytes[0];
-        m_hdrColorOutput.GetByteData(writePtr);
+        //LogWarning(std::format("LIGHT PASS Texture controler after pass: {}", m_textureController.ToString()));
         //LogError(std::format("HDR color texture: {}", Utils::ToStringMemory(writePtr, byteSize)));
     } 
 
@@ -987,7 +1013,7 @@ namespace Rendering
         Shader* ppShader = GetCoreShader(CoreShader::PostProcess);
         ppShader->BindActive();
 
-        const TextureSlotIndex hdrOutputIndex= m_textureController.TryAddTextureToAvailableSlot(&m_hdrColorOutput);
+        const SlotIndex hdrOutputIndex= m_textureController.TryBindToFreeSlot<Texture>(m_hdrColorOutput);
         ppShader->TrySetUniform(UniformDataType::Sampler2D, HDR_TEXTURE_UNIFORM_NAME, &hdrOutputIndex);
         const Vec2 windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize().AsFloat();
         ppShader->TrySetUniform(UniformDataType::Vector2, HDR_SCREEN_SIZE_UNIFORM_NAME, &windowSize);
@@ -998,13 +1024,97 @@ namespace Rendering
         Backend::SetDepthStatus(false);
         Backend::SetSrgbConversionStatus(true);
 
+        if (DO_BLOOM)
+        {
+            Texture tempTexture = CreateTexture(nullptr, m_hdrColorOutput.GetData().m_size,
+                TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+            ApplyBlurInPlace(m_hdrColorOutput, tempTexture);
+        }
+        
         //We just draw 3 vertices -> note we do not need vertex buffer since we use vertices defined in vertex shader
         Backend::DrawVertices(3);
 
         Backend::SetDepthStatus(true);
         Backend::SetSrgbConversionStatus(false);
         ppShader->UnbindActive();
-        m_textureController.TryRemoveFromSlot(hdrOutputIndex);
+        if (!m_textureController.TryRemoveFromSlot(hdrOutputIndex))
+        {
+            LogError(std::format("Attempted to remove texture from binded slot: {} but failed", hdrOutputIndex));
+        }
+    }
+
+    void Renderer::ApplyBlurInPlace(Texture& inputTexture, Texture& tempTexture)
+    {
+        if (inputTexture.GetData().m_size != tempTexture.GetData().m_size)
+        {
+            LogError(std::format("Attempted to apply blur for texture:{} to output:{} "
+                "but they have different texel sizes", inputTexture.ToString(), tempTexture.ToString()));
+            return;
+        }
+        if (tempTexture.GetData().m_internalStorage != TexelStorageType::RGBA16F)
+        {
+            LogError(std::format("Attempted to apply blur for texture:{} to output:{} "
+                "but output texture does not have required rgba16 storage format", 
+                inputTexture.ToString(), tempTexture.ToString()));
+            return;
+        }
+
+        Shader* blurShader = GetCoreShader(CoreShader::GaussianBlur);
+        blurShader->BindActive();
+
+        constexpr float weights[5] = { 0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216 };
+        blurShader->TrySetUniformArray(UniformDataType::Float, BLUR_WEIGHTS_UNIFORM_NAME, &weights[0], 5);
+
+        //-------------------------------------------------
+        // HORIZONTAL PASS
+        //-------------------------------------------------
+        bool isHorizontalPass = true;
+        blurShader->TrySetUniform(UniformDataType::Bool, HORIZONTAL_FLAG_UNIFORM_NAME, &isHorizontalPass);
+
+        SlotIndex inputTextureSlot = m_textureController.TryBindToFreeSlot<Texture>(inputTexture);
+        blurShader->TrySetUniform(UniformDataType::Sampler2D, INPUT_TEXTURE_UNIFORM_NAME, &inputTextureSlot);
+        SlotIndex outputTextureSlot = m_imageController.TryBindToFreeSlot<Texture>(tempTexture, AccessPermissions::Write);
+        blurShader->TrySetUniform(UniformDataType::Image2D, OUTPUT_TEXTURE_UNIFORM_NAME, &outputTextureSlot);
+
+        const Vec3Int workGroupSize = blurShader->GetComputeShaderWorkGroupSize();
+        const Vec2Int textureSize = inputTexture.GetData().m_size;
+        //Dispatch one thread per pixel where each group size is defined in shader 
+        //NOTE: since we do division, we may lose some texels, so we increase it to ensure we account for remainder
+        const std::uint32_t groupsX = (textureSize.m_X + workGroupSize.m_X - 1) / workGroupSize.m_X;
+        const std::uint32_t groupsY = (textureSize.m_Y + workGroupSize.m_Y - 1) / workGroupSize.m_Y;
+        const std::uint32_t groupsZ = 1;
+        blurShader->DispatchComputeShaderGroups(groupsX, groupsY, groupsZ);
+        //We must invoke memory sync to ensure image operation applied to OUTPUT texture go through before
+        //using it for sampling as INPUT texture for vertical pass
+        Backend::InvokeImageMemorySync(ImageOperationBarrierType::TextureFetch);
+
+        //-------------------------------------------------
+        // VERTICAL PASS
+        //-------------------------------------------------
+        isHorizontalPass = false;
+        blurShader->TrySetUniform(UniformDataType::Bool, HORIZONTAL_FLAG_UNIFORM_NAME, &isHorizontalPass);
+
+        //NOTE: for vertical pass we ONLY swap the input output textures so horizontal pass output is now input
+        //in order to save space (we CANT use one texture since we then get incorrect results)
+        // AND we DONT need to update uniforms since the slot bindings stay the same, only textures in slots swap
+        m_textureController.RebindAtSlot<Texture>(inputTextureSlot, tempTexture);
+        m_imageController.RebindAtSlot<Texture>(outputTextureSlot, inputTexture, AccessPermissions::Write);
+
+        blurShader->DispatchComputeShaderGroups(groupsX, groupsY, groupsZ);
+
+        blurShader->UnbindActive();
+        if (!m_textureController.TryRemoveFromSlot(inputTextureSlot))
+        {
+            LogError(std::format("Attempted to remove texture from binded slot: {} but failed", inputTextureSlot));
+        }
+        if (!m_imageController.TryRemoveFromSlot(outputTextureSlot))
+        {
+            LogError(std::format("Attempted to remove texture from binded slot: {} but failed", inputTextureSlot));
+        }
+
+        //The next operation to use the input texture (remember INPUT is now the OUTPUT texture after vertical pass)
+        //will most liekly be the post process draw call
+        Backend::InvokeImageMemorySync(ImageOperationBarrierType::FrameBuffer);
     }
 
     void Renderer::FlushBatches()
@@ -1013,13 +1123,13 @@ namespace Rendering
             m_framesSinceStart >= RENDER_FRAMES_COUNT)
             return;
 
-        std::vector<TextureSlotIndex> shadowCubeMapSlots = {};
+        std::vector<SlotIndex> shadowCubeMapSlots = {};
         if (DO_SHADOWS)
         {
             ExecuteShadowPass();
 
             const size_t totalPointLights = m_uniformData.m_LightBlock.m_PointLightsCount;
-            shadowCubeMapSlots = m_textureController.TryAddTextureCubesToAvailableSlots(m_shadowMaps, totalPointLights);
+            shadowCubeMapSlots = m_textureController.TryBindToFreeSlots<TextureCube>(m_shadowMaps, totalPointLights);
 
             if (shadowCubeMapSlots.empty() || shadowCubeMapSlots.size() != totalPointLights)
             {
@@ -1030,8 +1140,9 @@ namespace Rendering
         }
 
         ExecuteLightingAndGeometryPass(DO_SHADOWS? &shadowCubeMapSlots[0] : nullptr);
-        if (DO_SHADOWS) m_textureController.RemoveFromSlots(shadowCubeMapSlots[0], shadowCubeMapSlots.size());
+        if (DO_SHADOWS) m_textureController.RemoveFromSlots(shadowCubeMapSlots);
 
+        //TODO: you should be able to do pp without hdr too
         if (DO_HDR) ExecutePostProcessPass();
     }
 

@@ -2,7 +2,7 @@
 #include <tuple>
 
 #ifdef OPENGL
-#include "Utils/OpenGlUtils.hpp"
+#include "Utils/Platform/OpenGlUtils.hpp"
 
 #define PERMANENT_WRITE_PTR
 
@@ -10,7 +10,7 @@ namespace Rendering
 {
 	namespace OpenGl
 	{
-		static RenderObjectId AllocateRenderBufferFunc(const AttachmentStorage storage, const Vec2Int size)
+		static RenderObjectId AllocateRenderBufferFunc(const TexelStorageType storage, const Vec2Int size)
 		{
 			RenderObjectId id = INVALID_OBJ_ID;
 			GL_CALL(glCreateRenderbuffers(1, &id));
@@ -23,7 +23,7 @@ namespace Rendering
 			GL_CALL(glDeleteRenderbuffers(1, &id));
 		}
 
-		RenderBuffer CreateRenderBuffer(const AttachmentStorage storage, const Vec2Int size)
+		RenderBuffer CreateRenderBuffer(const TexelStorageType storage, const Vec2Int size)
 		{
 			return RenderBuffer(storage, size, RenderBufferPlatformCallbacks
 				{

@@ -8,6 +8,7 @@
 #include "Core/Asset/FontAsset.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Asset/ShaderAsset.hpp"
+#include "Core/Asset/Model3dAsset.hpp"
 #include "Utils/Print.hpp"
 
 static constexpr bool THROW_ON_UNKNWON_ASSET = false;
@@ -123,6 +124,10 @@ namespace AssetManagement
 		{
 			createdAsset = CreateAssetFromFile<ShaderAsset>(assetPath);
 		}
+		else if (HasModel3dExtension(fileExtension))
+		{
+			createdAsset = CreateAssetFromFile<Model3dAsset>(assetPath);
+		}
 		else
 		{
 			//Even if the asset type could not be deduced, we still register to all files
@@ -157,11 +162,6 @@ namespace AssetManagement
 		return IO::DoesPathExist(GetAbsoluteAssetPath(relativeAssetPath));
 	}
 
-	/*std::filesystem::path AssetManager::TryCreateAssetPath(const std::filesystem::path& fullFileName) const
-	{
-		return TryCreateAssetPath(Asset::ExtractNameFromFile(fullFileName), fullFileName.extension().string());
-	}*/
-
 	std::filesystem::path AssetManager::TryCreateAssetPath(const std::string& fileName, const std::string& extension) const
 	{
 		if (!Assert(extension.substr(0, 1) == ".", std::format("Tried to get assed path from file name:{} "
@@ -184,23 +184,6 @@ namespace AssetManagement
 		return {};
 	}
 
-	/*std::vector<std::string> AssetManager::TryReadAssetFile(const std::string& fileName, const std::string& extension) const
-	{
-		const std::filesystem::path path = TryCreateAssetPath(fileName, extension);
-		if (path.empty()) return {};
-
-		return IO::TryReadFileByLine(path);
-	}*/
-
-	/*bool AssetManager::TryExecuteOnAssetFile(const std::string& fileName, const std::string& extension, const IO::FileLineAction& action) const
-	{
-		const std::filesystem::path path = TryCreateAssetPath(fileName, extension);
-		if (!Assert(!path.empty(), std::format("Tried to execute action on asset file lines from fileanme:'{}' "
-			"and extension:'{}' but resulting asset path is empty", fileName, extension)))
-			return false;
-
-		return IO::TryExecuteOnFileByLine(path, action);
-	}*/
 	bool AssetManager::TryExecuteOnAssetFile(const std::filesystem::path& path, const IO::FileLineAction& action) const
 	{
 		if (!Assert(IsValidAssetPath(path), std::format("Attempted to execute fil line action on path:{} "
@@ -220,50 +203,6 @@ namespace AssetManagement
 
 		return IO::TryExecuteOnFileByLine(GetAbsoluteAssetPath(path), action);
 	}
-
-	/*bool AssetManager::TryWriteToAssetFile(const std::string& fileName, 
-		const std::string& extension, const std::string& newContents) const
-	{
-		const std::filesystem::path path = TryCreateAssetPath(fileName, extension);
-		if (path.empty()) return false;
-
-		return IO::TryWriteFile(path, newContents);
-	}*/
-
-	/*Asset* AssetManager::TryGetAssetMutable(const std::string& name)
-	{
-		for (const auto& asset : m_assets)
-		{
-			if (asset.second->GetName() == name)
-				return asset.second;
-		}
-		return nullptr;
-	}*/
-	/*Asset* AssetManager::TryGetAssetFromLiteralMutable(const char* name)
-	{
-		for (const auto& asset : m_assets)
-		{
-			LogWarning(std::format("checking asset:'{}' for target:'{}' comp:{}", asset.second->GetName(), name, 
-				strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size())));
-
-			if (strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size()) == 0)
-			{
-				if (PREVENT_HIDDEN_ASSET_LOOKUP)
-				{
-					const std::filesystem::path relPath = GetRelativeAssetPath(asset.second->GetPath());
-					if (IsAssetHiddenFromPath(relPath, false))
-					{
-						LogWarning(std::format("Attempted to get asset by path:{} but this asset was marked as hidden", relPath.string()));
-						return nullptr;
-					}
-				}
-
-				LogWarning(std::format("Returning shader:{}", asset.second->ToString()));
-				return asset.second;
-			}
-		}
-		return nullptr;
-	}*/
 
 	Asset* AssetManager::TryGetAssetFromPathMutable(const std::filesystem::path& relPath)
 	{
@@ -292,10 +231,4 @@ namespace AssetManagement
 
 		return assetIt->second;
 	}
-	/*Asset* AssetManager::TryGetRuntimeAssetMutable(const std::string& name)
-	{
-		auto assetIt = m_runtimeAssets.find(name);
-		if (assetIt == m_runtimeAssets.end()) return nullptr;
-		return assetIt->second;
-	}*/
 }

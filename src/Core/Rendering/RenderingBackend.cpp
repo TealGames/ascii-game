@@ -4,8 +4,9 @@
 #include <ostream>
 
 #ifdef OPENGL
-#include "Utils/OpenGlUtils.hpp"
+#include "Utils/Platform/OpenGlUtils.hpp"
 #include "Platform/OpenGl/OpenGlBuffers.hpp"
+#include "Platform/OpenGl/OpenGlTextureController.hpp"
 #endif
 
 #ifdef GLFW
@@ -144,7 +145,7 @@ namespace Rendering
 #endif
 		}
 
-		RenderBuffer CreateRenderBuffer(const AttachmentStorage storage, const Vec2Int size)
+		RenderBuffer CreateRenderBuffer(const TexelStorageType storage, const Vec2Int size)
 		{
 #if defined(OPENGL)
 			return OpenGl::CreateRenderBuffer(storage, size);
@@ -180,6 +181,19 @@ namespace Rendering
 		{
 #if defined(OPENGL)
 			return OpenGl::CreateVertexLayout();
+#endif
+		}
+
+		TextureSlotController CreateTextureController()
+		{
+#if defined(OPENGL)
+			return OpenGl::CreateTextureController();
+#endif
+		}
+		ImageSlotController CreateImageController()
+		{
+#if defined(OPENGL)
+			return OpenGl::CreateImageController();
 #endif
 		}
 
@@ -246,6 +260,28 @@ namespace Rendering
 		{
 #if defined(OPENGL)
 			GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
+#endif
+		}
+		void InvokeImageMemorySync(const ImageOperationBarrierType barrier)
+		{
+#if defined(OPENGL)
+			GLbitfield barrierBit = 0;
+
+			if (barrier == ImageOperationBarrierType::ImageAccess)
+				barrierBit = GL_SHADER_IMAGE_ACCESS_BARRIER_BIT;
+			else if (barrier == ImageOperationBarrierType::TextureFetch)
+				barrierBit = GL_TEXTURE_FETCH_BARRIER_BIT;
+			else if (barrier == ImageOperationBarrierType::FrameBuffer)
+				barrierBit = GL_FRAMEBUFFER_BARRIER_BIT;
+			else if (barrier == ImageOperationBarrierType::All)
+				barrierBit = GL_ALL_BARRIER_BITS;
+			else
+			{
+				LogError("Attempted to invoke image memory sync but barrier type has no actions defined");
+				return;
+			}
+
+			GL_CALL(glMemoryBarrier(barrierBit));
 #endif
 		}
 		void SetSrgbConversionStatus(const bool enable)
