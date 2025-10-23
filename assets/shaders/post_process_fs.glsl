@@ -2,6 +2,9 @@
 
 layout(location=0) out vec4 fragColor;
 
+uniform bool uDoBloom;
+uniform sampler2D uBrightnessTexture;
+
 uniform sampler2D uHdrTexture;
 uniform vec2 uScreenSize;
 
@@ -27,9 +30,10 @@ void main()
 {
     vec2 uv= gl_FragCoord.xy / uScreenSize;
     vec3 hdrColor = texture(uHdrTexture, uv).rgb;
+    vec3 bloomColor = uDoBloom? texture(uBrightnessTexture, uv).rgb : vec3(0, 0, 0);
     //fragColor= vec4(hdrColor, 1);
 
-    fragColor = vec4(AcesFilmicToneMapping(hdrColor), 1);
+    fragColor = vec4(AcesFilmicToneMapping(hdrColor) + bloomColor, 1);
     
     //fragColor= vec4(0.5, 1, 1, 1);
 

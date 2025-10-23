@@ -56,7 +56,7 @@ namespace Rendering
 			else
 			{
 				//Since we are unbinding the texture, the arguments except index and first 0 do NOT matter
-				GL_CALL(glBindImageTexture(index, 0, 0, 0, 0, 0, 0));
+				GL_CALL(glBindImageTexture(index, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8));
 			}
 		}
 		ImageSlotController CreateImageController()

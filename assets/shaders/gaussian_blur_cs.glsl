@@ -6,7 +6,7 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 // Bindings: input and output images
 uniform sampler2D uTextureInput;
-layout (rgba16f, binding = 1) uniform writeonly image2D uTextureOutput;
+layout(rgba16f) uniform writeonly image2D uTextureOutput;
 
 uniform bool uIsHorizontal;
 uniform float uWeights[5];
@@ -15,6 +15,8 @@ void main()
 {
     //Since we force input and output texture to be the same size
     ivec2 texSize = imageSize(uTextureOutput);
+    //ivec2 texSize= ivec2(0, 0);
+
     //Invocation is the thread (x, y, z group) and since we dispatch 
     // one thread per pixel -> thread id is the same as pixel coord
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
@@ -23,7 +25,9 @@ void main()
     if (pixel.x >= texSize.x || pixel.y >= texSize.y)
         return;
 
-    vec4 color = texelFetch(uTextureInput, pixel, 0);
+    //vec4 color = SampleInputTexturePixel(pixel) * uWeights[0];
+    vec4 color = texelFetch(uTextureInput, pixel, 0) * uWeights[0];
+    //vec4 color= vec4(0, 0, 0, 0);
 
     if (uIsHorizontal) 
     {
@@ -32,8 +36,9 @@ void main()
             //We clamp to ensure when we invoke on edge pixels it does not cause problems
             ivec2 right = clamp(pixel + ivec2(i, 0), ivec2(0), texSize - 1);
             ivec2 left  = clamp(pixel - ivec2(i, 0), ivec2(0), texSize - 1);
-            color += texelFetch(uTextureInput, right, 0).rgb * uWeights[i];
-            color += texelFetch(uTextureInput, left, 0).rgb * uWeights[i];
+
+            color += texelFetch(uTextureInput, right, 0) * uWeights[i];
+            color += texelFetch(uTextureInput, left, 0) * uWeights[i];
         }
     } 
     else 
@@ -42,8 +47,9 @@ void main()
         {
             ivec2 down = clamp(pixel + ivec2(0, i), ivec2(0), texSize - 1);
             ivec2 up   = clamp(pixel - ivec2(0, i), ivec2(0), texSize - 1);
-            color += texelFetch(uTextureInput, down, 0).rgb * uWeights[i];
-            color += texelFetch(uTextureInput, up, 0).rgb * uWeights[i];
+            
+            color += texelFetch(uTextureInput, up, 0) * uWeights[i];
+            color += texelFetch(uTextureInput, down, 0) * uWeights[i];
         }
     }
 

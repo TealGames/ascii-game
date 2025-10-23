@@ -2,11 +2,28 @@
 #include <chrono>
 #include <cstdint>
 
+enum class TimeUnit : std::uint8_t
+{
+	Hours = 0,
+	Minutes = 1,
+	Seconds = 2,
+	Milliseconds = 3,
+};
+
+using DoubleNanoseconds = std::chrono::duration<double, std::nano>;
+using DoubleMicroseconds = std::chrono::duration<double, std::micro>;
+using DoubleMilliseconds = std::chrono::duration<double, std::milli>;
+using DoubleSeconds = std::chrono::duration<double>;
+using DoubleMinutes = std::chrono::duration<double, std::ratio<60>>;
+using DoubleHours = std::chrono::duration<double, std::ratio<3600>>;
+
+using HighPrecisionTimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 class TimeKeeper
 {
 private:
-	std::chrono::time_point<std::chrono::high_resolution_clock> m_lastTime;
-	std::chrono::time_point<std::chrono::high_resolution_clock> m_currentTime;
+	HighPrecisionTimePoint m_startTime;
+	HighPrecisionTimePoint m_lastTime;
+	HighPrecisionTimePoint m_currentTime;
 	/// <summary>
 	/// Delta time that is scaled to the time scale.
 	/// Most useful for in-game time dependent on pauses/slow downs
@@ -42,6 +59,10 @@ public:
 	void UpdateTimeStart();
 	void UpdateTimeEnd();
 
+	HighPrecisionTimePoint GetNowHighPrecision() const;
+	double GetNow(const TimeUnit unit) const;
+	double GetTimeSinceInit(const TimeUnit unit) const;
+
 	double GetLastScaledDeltaTime() const;
 	double GetLastIndependentDeltaTime() const;
 	double GetTimeScale() const;
@@ -56,4 +77,26 @@ public:
 
 	bool ReachedFrameLimit() const;
 };
+
+template<typename T>
+double ConvertTime(const HighPrecisionTimePoint& timePoint)
+{
+	return T(timePoint.time_since_epoch()).count();
+}
+
+template<typename T>
+double GetTimeDifference(const HighPrecisionTimePoint& largetTimePoint,
+	const HighPrecisionTimePoint& smallerTimePoint)
+{
+	return T(largetTimePoint - smallerTimePoint).count();
+}
+
+double ConvertTime(const HighPrecisionTimePoint& timePoint, const TimeUnit unit);
+double GetTimeDifference(const HighPrecisionTimePoint& largetTimePoint, 
+	const HighPrecisionTimePoint& smallerTimePoint, const TimeUnit unit);
+
+double GetTimeDifferenceMilliseconds(const HighPrecisionTimePoint& largetTimePoint,
+	const HighPrecisionTimePoint& smallerTimePoint);
+double GetTimeDifferenceSeconds(const HighPrecisionTimePoint& largetTimePoint,
+	const HighPrecisionTimePoint& smallerTimePoint);
 

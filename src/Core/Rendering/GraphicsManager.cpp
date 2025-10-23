@@ -3,6 +3,8 @@
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Rendering/Buffers.hpp"
 
+//#define SKIP_COMPUTE_SHADER_INIT
+
 namespace Rendering
 {
 	static const std::filesystem::path SHADERS_FOLDER = "shaders";
@@ -22,12 +24,17 @@ namespace Rendering
 		for (auto& shader : m_assetManager->GetAssetsOfTypeMutable<ShaderAsset>(SHADERS_FOLDER))
 		{
 			m_shaders.emplace(std::string_view(shader->GetName()), &shader->GetShaderMutable());
+
+#ifdef SKIP_COMPUTE_SHADER_INIT
+			//TODO: fix error in glLinkProgram part of compute shader creation
 			if (shader->GetShaderMutable().GetProgramType() == ShaderProgramType::Compute)
 			{
-				//TODO: fix error in glLinkProgram part of compute shader creation
+				
 				LogWarning("Compute shader asset creation is not supported");
 				continue;
 			}
+#endif
+
 			//NOTE: we must compile program before we init buffers to ensure that when the buffer
 			//has data filled from shader, shader is valid
 			if (!shader->GetShaderMutable().TryCreateProgram(

@@ -15,6 +15,7 @@
 #include "Core/Rendering/RenderingBackend.hpp"
 #include "Math/PlatformMath.hpp"
 #include "Core/Window/WindowManager.hpp"
+#include "Core/Time/TimeKeeper.hpp"
 
 #include "Utils/Data/ColorConstants.hpp"
 
@@ -23,7 +24,7 @@ namespace Rendering
     constexpr bool DO_LIGHTING = true;
     
     constexpr bool DRAW_LIGHT_AREAS = true;
-    constexpr Utils::Color LIGHT_AREA_COLOR_FROM_LIGHT = Utils::Color(0, 0, 0, 0);
+    constexpr bool USE_LIGHT_COLOR_FOR_RANGE = true;
     constexpr Utils::Color LIGHT_AREA_COLOR = {255, 255, 255, 255};
     
     constexpr bool DO_SHADOWS = false;
@@ -32,7 +33,12 @@ namespace Rendering
     constexpr float SHADOW_FAR_DISTANCE = 1000;
 
     constexpr bool DO_HDR = true;
-    constexpr bool DO_BLOOM = false;
+    constexpr bool DO_BLOOM = true;
+    /// <summary>
+    /// The luminance threshold needed for object to have bloom,
+    /// lower the value, the more objects have bloom
+    /// </summary>
+    constexpr float BLOOM_THRESHOLD = 0.5;
 
     constexpr size_t NO_RENDER_FRAME_COUNT_LIMIT = 0;
     constexpr size_t RENDER_FRAMES_COUNT = NO_RENDER_FRAME_COUNT_LIMIT;
@@ -51,6 +57,10 @@ namespace Rendering
     constexpr const char* SHADOW_MAP_UNIFORM_NAME = "uShadowMaps";
     constexpr const char* HDR_TEXTURE_UNIFORM_NAME = "uHdrTexture";
     constexpr const char* HDR_SCREEN_SIZE_UNIFORM_NAME = "uScreenSize";
+
+    constexpr const char* DO_BLOOM_UNIFORM_NAME = "uDoBloom";
+    constexpr const char* BLOOM_TEXTURE_UNIFORM_NAME = "uBrightnessTexture";
+    constexpr const char* BLOOM_THRESHOLD_UNIFORM_NAME = "uBloomThreshold";
 
     constexpr const char* VIEWER_UNIFORM_BLOCK_NAME = "ViewerBlock";
     constexpr const char* LIGHT_UNIFORM_BLOCK_NAME = "LightsBlock";
@@ -93,7 +103,7 @@ namespace Rendering
         m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer(), m_viewerUniformBuffer(), m_lightUniformBuffer(),
         m_frameDrawCalls(0), m_isRenderStalled(false), m_framesSinceStart(0), 
         m_frameBuffer(), m_shadowMaps(), m_hdrColorOutput(), m_hdrDepthRenderBuffer(), m_coreShaders({}),
-        m_currentPass(RenderPassType::None), m_renderPassData({}), m_boundFrameBuffer(nullptr)
+        m_currentPass(RenderPassType::None), m_renderPassData({}), m_boundFrameBuffer(nullptr), m_boundShader(nullptr)
     {
         RenderPassType passType = RenderPassType::None;
         for (size_t i = 0; i < TOTAL_PASS_TYPES; i++)
@@ -146,6 +156,7 @@ namespace Rendering
         {
             const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
             m_hdrColorOutput = CreateTexture(nullptr, windowSize, TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+            m_brightnessOutput = CreateTexture(nullptr, windowSize, TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
             m_hdrDepthRenderBuffer = Backend::CreateRenderBuffer(TexelStorageType::Depth24, windowSize);
         }
         
@@ -210,6 +221,18 @@ namespace Rendering
         if (DO_LIGHTING) return GetCoreShader(CoreShader::ForwardRender);
         return GetCoreShader(CoreShader::Default);
     }
+    void Renderer::BindShader(Shader* shader)
+    {
+        shader->BindActive();
+        m_boundShader = shader;
+    }
+    void Renderer::UnbindActiveShader()
+    {
+        if (m_boundShader == nullptr)
+            return;
+        m_boundShader->UnbindActive();
+        m_boundShader = nullptr;
+    }
     Texture* Renderer::GetBaseAlbedo()
     {
         return m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultAlbedoMutable();
@@ -257,13 +280,13 @@ namespace Rendering
             return;
 
         auto& currPassData = GetPassDataMutable(pass);
-        const bool hasFrameBufferBound = m_boundFrameBuffer != nullptr;
-        const bool hasNewStateFrameBuffer = currPassData.m_FrameBuffer != nullptr;
+        //const bool hasFrameBufferBound = m_boundFrameBuffer != nullptr;
+        //const bool hasNewStateFrameBuffer = currPassData.m_FrameBuffer != nullptr;
         if (m_boundFrameBuffer != currPassData.m_FrameBuffer)
         {
-            if (hasFrameBufferBound)
+            if (m_boundFrameBuffer != nullptr)
                 m_boundFrameBuffer->UnbindActive();
-            if (hasNewStateFrameBuffer)
+            if (currPassData.m_FrameBuffer != nullptr)
                 currPassData.m_FrameBuffer->BindActive();
 
             m_boundFrameBuffer = currPassData.m_FrameBuffer;
@@ -271,6 +294,14 @@ namespace Rendering
         //If they are the same and not nullptr, we reset outputs
         if (m_boundFrameBuffer != nullptr)
             m_boundFrameBuffer->RemoveAllOutputs();
+
+        //if (m_boundShader != currPassData.m_Shader)
+        //{
+        //    if (m_boundShader != nullptr)
+        //        UnbindActiveShader();
+        //    if (currPassData.m_Shader != nullptr)
+        //        BindShader(currPassData.m_Shader);
+        //}
     }
 
     size_t Renderer::CalculateBatchHash(const Shader* shader, const Texture* texture, std::uint32_t totalVertices) const
@@ -752,7 +783,7 @@ namespace Rendering
         if (DRAW_LIGHT_AREAS)
         {
             AddCallSphere3DMulti(GetCoreShader(CoreShader::Texture), GetBaseAlbedo(), std::min(0.1f * radius, 1.0f), CalculateModelMatrix(nullptr, worldPos,
-                Vec3::One(), Quat::Identity()), LIGHT_AREA_COLOR == LIGHT_AREA_COLOR_FROM_LIGHT ? color : LIGHT_AREA_COLOR);
+                Vec3::One(), Quat::Identity()), USE_LIGHT_COLOR_FOR_RANGE? color : LIGHT_AREA_COLOR);
         }
     }
     void Renderer::AddCallDirectionalLight(const Vec3& dir, const Utils::Color color)
@@ -868,7 +899,7 @@ namespace Rendering
 
         Shader* shadowShader = GetCoreShader(CoreShader::Shadow);
         //shadowShader->BindUniformBlockIfNeeded(m_viewerUniformBuffer.GetName(), m_viewerUniformBuffer.GetBindIndex());
-        shadowShader->BindActive();
+        BindShader(shadowShader);
         
         std::array<Mat4, 6> lightViewMatrices = {};
         Mat4 lightProjMatrix = {};
@@ -909,7 +940,7 @@ namespace Rendering
             }
         }
    
-        shadowShader->UnbindActive();
+        UnbindActiveShader();
         //This forces the viewport to be set back to rendering for the window
         m_engineState->m_GraphicsContext.m_Window->ForceSizeUpdate();
     }
@@ -920,6 +951,7 @@ namespace Rendering
         {
             m_boundFrameBuffer->SetOutputRenderBuffer(FrameBufferAttachmentType::Depth, &m_hdrDepthRenderBuffer);
             m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &m_hdrColorOutput);
+            m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color1, &m_brightnessOutput);
         }
         Backend::ClearBackground();
 
@@ -941,9 +973,9 @@ namespace Rendering
             };
         
         Shader* lastBatchShader = nullptr;
-        const auto unbindLastBatchShader = [&lastBatchShader]() -> void
+        const auto unbindLastBatchShader = [this, &lastBatchShader]() -> void
             {
-                lastBatchShader->UnbindActive();
+                UnbindActiveShader();
                 lastBatchShader = nullptr;
             };
 
@@ -968,7 +1000,7 @@ namespace Rendering
             if (lastBatchShader != nullptr && batch.m_Shader == nullptr) unbindLastBatchShader();
             else if (lastBatchShader == nullptr || lastBatchShader != batch.m_Shader)
             {
-                batch.m_Shader->BindActive();
+                BindShader(batch.m_Shader);
             }
             lastBatchShader = batch.m_Shader;
 
@@ -984,10 +1016,15 @@ namespace Rendering
                 if (!batch.m_Shader->TrySetUniform(UniformDataType::Sampler2D, TEXTURE_UNIFORM_NAME, &slot))
                     return;
             }
-            if (DO_SHADOWS && batch.m_Shader== GetCoreShader(CoreShader::ForwardRender))
+            if (batch.m_Shader== GetCoreShader(CoreShader::ForwardRender))
             {
-                batch.m_Shader->TrySetUniformArray(UniformDataType::CubeSampler, SHADOW_MAP_UNIFORM_NAME,
-                    shadowCubeMapSlots, m_uniformData.m_LightBlock.m_PointLightsCount);
+                batch.m_Shader->TrySetUniform(UniformDataType::Float,
+                    BLOOM_THRESHOLD_UNIFORM_NAME, &BLOOM_THRESHOLD);
+                if (DO_SHADOWS)
+                {
+                    batch.m_Shader->TrySetUniformArray(UniformDataType::CubeSampler, SHADOW_MAP_UNIFORM_NAME,
+                        shadowCubeMapSlots, m_uniformData.m_LightBlock.m_PointLightsCount);
+                }
             }
             
             lastBatchTexture = batch.m_Texture;
@@ -1007,44 +1044,71 @@ namespace Rendering
     {
         UpdatePassRenderState(RenderPassType::PostProcess);
 
-        /*LogError(std::format("Bound fraembuffer: {} size: {}", Backend::GetRenderObjectId(RenderObjectQueryType::BoundFrameBuffer), 
+        if (DO_BLOOM)
+        {
+            Texture tempTexture = CreateTexture(nullptr, m_brightnessOutput.GetData().m_size,
+                TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+            ApplyBlurInPlace(m_brightnessOutput, tempTexture, 2);
+        }
+
+        /*LogError(std::format("Bound fraembuffer: {} size: {}", Backend::GetRenderObjectId(RenderObjectQueryType::BoundFrameBuffer),
             Backend::GetViewportSize().ToString()));*/
 
         Shader* ppShader = GetCoreShader(CoreShader::PostProcess);
-        ppShader->BindActive();
+        BindShader(ppShader);
 
-        const SlotIndex hdrOutputIndex= m_textureController.TryBindToFreeSlot<Texture>(m_hdrColorOutput);
+        ppShader->TrySetUniform(UniformDataType::Bool, DO_BLOOM_UNIFORM_NAME, &DO_BLOOM);
+        SlotIndex bloomSlotIndex = INVALID_SLOT_INDEX;
+        if (DO_BLOOM)
+        {
+            bloomSlotIndex = m_textureController.TryBindToFreeSlot<Texture>(m_brightnessOutput);
+            ppShader->TrySetUniform(UniformDataType::Sampler2D, BLOOM_TEXTURE_UNIFORM_NAME, &bloomSlotIndex);
+        }
+
+        //TODO: this is inneficient to bind the output texture to slot when we had to bind it during blur in place
+        //so we should either FORCE bind before blur in place, or return texture slot after blur in place
+        const SlotIndex hdrOutputIndex = m_textureController.TryBindToFreeSlot<Texture>(m_hdrColorOutput);
         ppShader->TrySetUniform(UniformDataType::Sampler2D, HDR_TEXTURE_UNIFORM_NAME, &hdrOutputIndex);
         const Vec2 windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize().AsFloat();
         ppShader->TrySetUniform(UniformDataType::Vector2, HDR_SCREEN_SIZE_UNIFORM_NAME, &windowSize);
-         
+
         //NOTE: we disable depth testing since we only draw one full screen triangle ( + its faster) and
         //since hdr draws geometry to custom frame buffer, the depth in DEFAULT fbo would be 0, thus all 
         //fragments would fail test -> result in full screen black even if backbuffer color is right
         Backend::SetDepthStatus(false);
         Backend::SetSrgbConversionStatus(true);
-
-        if (DO_BLOOM)
-        {
-            Texture tempTexture = CreateTexture(nullptr, m_hdrColorOutput.GetData().m_size,
-                TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
-            ApplyBlurInPlace(m_hdrColorOutput, tempTexture);
-        }
         
         //We just draw 3 vertices -> note we do not need vertex buffer since we use vertices defined in vertex shader
         Backend::DrawVertices(3);
 
         Backend::SetDepthStatus(true);
         Backend::SetSrgbConversionStatus(false);
-        ppShader->UnbindActive();
-        if (!m_textureController.TryRemoveFromSlot(hdrOutputIndex))
-        {
-            LogError(std::format("Attempted to remove texture from binded slot: {} but failed", hdrOutputIndex));
-        }
+        UnbindActiveShader();
+
+        m_textureController.TryRemoveFromSlot(hdrOutputIndex);
+        if (bloomSlotIndex != INVALID_SLOT_INDEX) m_textureController.TryRemoveFromSlot(bloomSlotIndex);
     }
 
-    void Renderer::ApplyBlurInPlace(Texture& inputTexture, Texture& tempTexture)
+    void Renderer::ApplyBlurInPlace(Texture& inputTexture, Texture& tempTexture, const float blurStrength)
     {
+        //Gaussian blur function: G(x)=e ^ -(x^2 / 2o^2)
+        //where x = distance (in pixels) from starting pixel
+        //o (sigma) controls the spread (larger = blurrier)
+        //You normalize all weights so they sum to 1
+        constexpr int WEIGHT_SIZE = 5;
+        constexpr int RADIUS = WEIGHT_SIZE - 1;
+        float weights[WEIGHT_SIZE] = {};
+
+        float sum = 0.0f;
+
+        for (int i = 0; i <= RADIUS; i++)
+        {
+            weights[i] = std::exp(-float(i * i) / (2.0f * blurStrength * blurStrength));
+            sum += (i == 0) ? weights[i] : 2.0f * weights[i];
+        }
+        for (int i = 0; i <= RADIUS; i++)
+            weights[i] /= sum;
+
         if (inputTexture.GetData().m_size != tempTexture.GetData().m_size)
         {
             LogError(std::format("Attempted to apply blur for texture:{} to output:{} "
@@ -1060,9 +1124,8 @@ namespace Rendering
         }
 
         Shader* blurShader = GetCoreShader(CoreShader::GaussianBlur);
-        blurShader->BindActive();
+        BindShader(blurShader);
 
-        constexpr float weights[5] = { 0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216 };
         blurShader->TrySetUniformArray(UniformDataType::Float, BLUR_WEIGHTS_UNIFORM_NAME, &weights[0], 5);
 
         //-------------------------------------------------
@@ -1102,7 +1165,7 @@ namespace Rendering
 
         blurShader->DispatchComputeShaderGroups(groupsX, groupsY, groupsZ);
 
-        blurShader->UnbindActive();
+        UnbindActiveShader();
         if (!m_textureController.TryRemoveFromSlot(inputTextureSlot))
         {
             LogError(std::format("Attempted to remove texture from binded slot: {} but failed", inputTextureSlot));
@@ -1151,6 +1214,9 @@ namespace Rendering
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("GameRenderer::RenderBuffer");
 #endif 
+        //BLOOM_THRESHOLD = 2 * std::abs(std::sin(m_engineState->m_TimeKeeper->GetTimeSinceInit(TimeUnit::Seconds)));
+        //LogWarning(std::format("BLoom is: {} now: {}", BLOOM_THRESHOLD, m_engineState->m_TimeKeeper->GetTimeSinceInit(TimeUnit::Milliseconds)));
+
         if (!m_batches.empty())
         {
             RenderStartActions();

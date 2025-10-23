@@ -24,6 +24,7 @@ layout(std140) uniform ViewerBlock
 } uViewerBlock;
 
 uniform sampler2D uAlbedo;
+uniform float uBloomThreshold;
 uniform samplerCube uShadowMaps[2];
 
 in vec2 vTexCoords;
@@ -33,6 +34,9 @@ in vec3 vNormal;
 in vec3 vCameraPos;
 
 layout(location=0) out vec4 fragColor;
+//The color for determining bloom 
+// (basically just color if past threshold, otherwise rgb 0)
+layout(location=1) out vec4 fragBright;
 
 vec3 GetNormal() 
 {
@@ -118,4 +122,9 @@ void main()
     }
 
     fragColor = vec4(color, vColor.a);
+
+    //Computes the luminance (perceived brightness) of the hdr color output -> it is weighted sum
+    //since we perceive some colors, like green more than others
+    float luminance = dot(fragColor, vec4(0.2126, 0.7152, 0.0722, 1.0));
+    fragBright = (luminance >= uBloomThreshold) ? fragColor : vec4(0.0, 0.0, 0.0, 1.0);
 }

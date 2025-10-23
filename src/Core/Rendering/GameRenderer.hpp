@@ -128,6 +128,7 @@ namespace Rendering
     {
         RenderPassType m_PassType = RenderPassType::None;
         FrameBuffer* m_FrameBuffer = nullptr;
+        //Shader* m_Shader = nullptr;
 
         bool UsesDefaultFrameBuffer() const;
     };
@@ -160,10 +161,13 @@ namespace Rendering
         TextureSlotController m_textureController;
         ImageSlotController m_imageController;
          
-        FrameBuffer m_frameBuffer;
         FrameBuffer* m_boundFrameBuffer;
+        Shader* m_boundShader;
+
+        FrameBuffer m_frameBuffer;
         TextureCube m_shadowMaps[MAX_POINT_LIGHTS];
         Texture m_hdrColorOutput;
+        Texture m_brightnessOutput;
         RenderBuffer m_hdrDepthRenderBuffer;
 
         IndexBuffer m_indexBuffer;
@@ -193,7 +197,21 @@ namespace Rendering
         void ExecutePostProcessPass();
         void ExecuteLightingAndGeometryPass(const SlotIndex* indices);
 
-        void ApplyBlurInPlace(Texture& inputTexture, Texture& outputTexture);
+        /// <summary>
+        /// Applies blur to the input texture DIRECTLY where output texture is only an intermediary
+        /// between doing horizontal and vertical blur pass
+        /// 
+        /// Gaussian blur process:
+        /// -> Applies blur in radial area around pixel by taking less weight of pixels as you move farther away from center pixel
+        /// -> This implementation has radius of 5 (so 4 pixels from starting pixel is distance traveled)
+        /// 
+        /// Strength settings:
+        /// -> 1.33 is the max blur strength, >1.3 makes no change to blur strength
+        /// </summary>
+        /// <param name="inputTexture"></param>
+        /// <param name="outputTexture"></param>
+        /// <param name="strength"></param>
+        void ApplyBlurInPlace(Texture& inputTexture, Texture& outputTexture, const float strength);
         void RenderEndActions();
 
         /*
@@ -205,6 +223,9 @@ namespace Rendering
         Shader* GetCoreShader(const CoreShader shader);
         Shader* GetBaseShader();
         Shader* GetBaseTextureShader();
+        void BindShader(Shader* shader);
+        void UnbindActiveShader();
+
         Texture* GetBaseAlbedo();
         Texture* GetMaterialAlbedo(Material& material);
 

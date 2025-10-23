@@ -10,8 +10,8 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 	//NOTE: we do NOT need any conversion because Assimp converts models into +x -> right, +y ->up, -z -> forward, which match this engine coordinate system
 	//BUT assimp also applies a scale factor of 100
 	const aiMatrix4x4 globalTransform = parentTransform != nullptr ? *parentTransform * node->mTransformation : node->mTransformation;
-	LogWarning(std::format("Found {} global transform:{} parent:{} local:{}", node->mName.C_Str(), AssimpUtils::ToString(globalTransform),
-		parentTransform == nullptr ? "NULL" : AssimpUtils::ToString(*parentTransform), AssimpUtils::ToString(node->mTransformation)));
+	/*LogWarning(std::format("Found {} global transform:{} parent:{} local:{}", node->mName.C_Str(), AssimpUtils::ToString(globalTransform),
+		parentTransform == nullptr ? "NULL" : AssimpUtils::ToString(*parentTransform), AssimpUtils::ToString(node->mTransformation)));*/
 	if (node->mNumMeshes > 0)
 	{
 		Rendering::MeshGroup* meshGroup = &(model.m_MeshGroups.emplace_back(Rendering::MeshGroup{ Mat4(&globalTransform.a1) }));

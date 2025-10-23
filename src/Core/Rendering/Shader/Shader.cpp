@@ -156,7 +156,11 @@ namespace Rendering
 	}
 	void Shader::CreateProgram(const FinalShaderInitData& initData1, const FinalShaderInitData* initData2)
 	{
-		if (IsValid()) DeleteProgram();
+		if (IsValid())
+		{
+			LogError("Needed to delete old program");
+			DeleteProgram();
+		}
 
 		m_id = m_platformCallbacks.m_CreateProgramFunc(initData1, initData2, &m_uniformData);
 		for (const auto& uniformData : m_uniformData)

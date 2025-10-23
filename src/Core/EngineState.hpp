@@ -27,15 +27,16 @@ namespace Rendering
 }
 
 class CameraController;
+class TimeKeeper;
 class EngineState
 {
 private:
 	ExecutionState m_executionState;
-
 public:
 	UpdateStatusCode m_LastUpdateStatus;
 	Rendering::GraphicsContext m_GraphicsContext;
 	CameraController* m_CameraController;
+	const TimeKeeper* m_TimeKeeper;
 
 private:
 public:

@@ -212,6 +212,7 @@ namespace Core
 
 	{
 		m_engineState.m_CameraController = &m_cameraController;
+		m_engineState.m_TimeKeeper = &m_timeKeeper;
 		EngineLog("FINISHED SYSTEM CONSTRUCTORS");
 
 		m_windowManager.m_OnWindowCreated.AddListener([this](Window* window)-> void 
@@ -437,12 +438,15 @@ namespace Core
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Utils::COLOR_BLUE);
 		//m_renderer.AddDirectionLightCall(Vec3(0, -1, 0), Utils::COLOR_GREEN);
-		m_renderer.AddCallPointLight(Vec3(0.2, 0, 4.6), Quat(Vec3(0, 0, 0)), 1.0f, Utils::COLOR_WHITE);
-		m_renderer.AddCallPointLight(Vec3(0, 0.2, 4.6), Quat(Vec3(0, 0, 0)), 1.0f, Utils::COLOR_WHITE);
+		m_renderer.AddCallPointLight(Vec3(0.2, 0, 4.6), Quat(Vec3(0, 0, 0)), 1.0f, Utils::COLOR_YELLOW);
+		m_renderer.AddCallPointLight(Vec3(0, 0.2, 4.6), Quat(Vec3(0, 0, 0)), 1.0f, Utils::COLOR_BLUE);
+
+		const Mat4 modelMatrix3 = CalculateModelMatrix(nullptr, Vec3(0, -0.3, 4.6), Vec3::One(), Quat::Identity());
+		m_renderer.AddCallSphere3D(0.2, modelMatrix3, Utils::COLOR_WHITE);
 		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
 
 		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
-		const Mat4 modelMatrix2 = CalculateModelMatrix(nullptr, Vec3(0, 0, 4.6), Vec3(0.001, 0.001, 0.001), rot);
+		const Mat4 modelMatrix2 = CalculateModelMatrix(nullptr, Vec3(0, 0, 4.6), Vec3(0.001, 0.001, 0.001), Quat::Identity());
 		m_renderer.AddCallModel(model->GetModelMutable(), modelMatrix2);
 
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 

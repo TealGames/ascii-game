@@ -49,7 +49,7 @@ namespace Rendering
 			GL_CALL(glShaderSource(shaderId, 1, shaderSources, nullptr));
 			GL_CALL(glCompileShader(shaderId));
 
-			int result = 0;
+			GLint result = GL_FALSE;
 			GL_CALL(glGetShaderiv(shaderId, GL_COMPILE_STATUS, &result));
 			if (result == GL_FALSE)
 			{
@@ -73,7 +73,7 @@ namespace Rendering
 		{
 			RenderObjectId programId = INVALID_OBJ_ID;
 			GL_CALL(programId = glCreateProgram());
-			//LogWarning("Created program: {}"+programId);
+			LogWarning(std::format("Created program: {}", programId));
 
 			RenderObjectId idSource1 = INVALID_OBJ_ID;
 			RenderObjectId idSource2 = INVALID_OBJ_ID;
@@ -102,19 +102,39 @@ namespace Rendering
 			*/
 			//LogWarning("Is program: "+ glIsProgram(programId)!=GL_FALSE? "TRUE" : "FALSE");
 
+			/*
+			if (firstInitData.m_Type == ShaderType::Compute)
+			{
+				GLuint dummyTex;
+				glGenTextures(1, &dummyTex);
+				glBindTexture(GL_TEXTURE_2D, dummyTex);
+				glBindImageTexture(0, dummyTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+				GLint loc = glGetUniformLocation(programId, "uTextureOutput");
+				glUniform1i(loc, 0);
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, dummyTex);
+				loc = glGetUniformLocation(programId, "uTextureInput");
+				glUniform1i(loc, 0);
+				LogWarning("BOUND DUMMY");
+			}
+			*/
+			
 			//TODO: this right now causes problems for compute shader creation
 			GL_CALL(glLinkProgram(programId));
-			GLint linkStatus = 0;
+
+			GLint linkStatus = GL_FALSE;
 			GL_CALL(glGetProgramiv(programId, GL_LINK_STATUS, &linkStatus));
-			if (!linkStatus) 
+			if (linkStatus == GL_FALSE) 
 			{
 				char log[1024];
 				glGetProgramInfoLog(programId, 1024, nullptr, log);
-				LogError(std::format("[OPENGL]: Failed to link due to error: {}", log));
+				LogError(std::format("[OPENGL]: Failed to link due to error: {}", std::string(log)));
 				return INVALID_OBJ_ID;
 			}
 
-			//NOTE: on some drivers validate program on compute shaders may be bugger so we avoid it
+
+			//NOTE: on some drivers validate program on compute shaders may be buggy so we avoid it
 			if (firstInitData.m_Type != ShaderType::Compute)
 			{
 				GL_CALL(glValidateProgram(programId));
