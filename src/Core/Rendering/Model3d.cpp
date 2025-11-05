@@ -3,7 +3,7 @@
 
 namespace Rendering 
 {
-	std::string Mesh::ToString() const
+	std::string ModelMesh::ToString() const
 	{
 		return std::format("[MESH Vertices:{} Indices:{}]", 
 			Utils::ToStringIterable<std::vector<Vertex>, Vertex>(m_Vertices),

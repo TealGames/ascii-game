@@ -32,7 +32,7 @@ SceneAsset::SceneAsset(const std::filesystem::path& path) :
 		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
 		return;
 
-	std::filesystem::path maybePath = GetPath().parent_path() / (GetName() + LEVEL_EXTENSION);
+	std::filesystem::path maybePath = GetAbsolutePath().parent_path() / (GetName() + LEVEL_EXTENSION);
 	if (IO::DoesPathExist(maybePath))
 	{
 		m_levelFilePath = maybePath;
@@ -85,7 +85,7 @@ void SceneAsset::SetDependencies(GlobalEntityManager& globalManager, AssetManage
 
 void SceneAsset::UpdateAssetFromFile()
 {
-	std::string fullFile = IO::TryReadFileFull(GetPathCopy());
+	std::string fullFile = IO::TryReadFileFull(GetAbsolutePathCopy());
 	if (fullFile.empty())
 	{
 		TryLoadLevelBackground();
@@ -124,7 +124,7 @@ void SceneAsset::UpdateAssetFromFile()
 			componentName = currentComponentJson.at("Type").get<std::string>();
 			isTransformComponent = componentName == Utils::ToStringTypeName<TransformComponent>();
 			if (i == 0 && !Assert(isTransformComponent, std::format("Tried to parse scene file at path: '{}' "
-				"but found entity component that does not begin with Transform!", GetPathCopy().string())))
+				"but found entity component that does not begin with Transform!", GetAbsolutePathCopy().string())))
 				return;
 
 			if (isTransformComponent)
@@ -141,7 +141,7 @@ void SceneAsset::UpdateAssetFromFile()
 			}
 
 			if (!Assert(currentEntity != nullptr, std::format("Tried to parse scene file at path: '{}' "
-				"for component: {} but current entity: {} is null", GetPathCopy().string(), componentName, entityName)))
+				"for component: {} but current entity: {} is null", GetAbsolutePathCopy().string(), componentName, entityName)))
 				return;
 
 			if (componentName == Utils::ToStringTypeName<AnimatorData>())
@@ -185,7 +185,7 @@ void SceneAsset::UpdateAssetFromFile()
 			else
 			{
 				Assert(false, std::format("Tried to DESERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
-					"but no component by that name exists!", componentName, entityName, GetPathCopy().string()));
+					"but no component by that name exists!", componentName, entityName, GetAbsolutePathCopy().string()));
 				return;
 			}
 
@@ -334,7 +334,7 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 				else
 				{
 					Assert(false, std::format("Tried to SERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
-						"but no component by that name exists!", componentName, entity->m_Name, GetPathCopy().string()));
+						"but no component by that name exists!", componentName, entity->m_Name, GetAbsolutePathCopy().string()));
 					return;
 				}
 			}

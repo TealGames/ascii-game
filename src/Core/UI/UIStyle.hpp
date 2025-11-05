@@ -5,12 +5,12 @@
 
 struct UIStyle
 {
-	Utils::Color m_BackgroundColor;
-	Utils::Color m_SecondaryColor;
+	Color m_BackgroundColor;
+	Color m_SecondaryColor;
 	TextUIStyle m_TextSettings;
 
 	UIStyle();
-	UIStyle(const Utils::Color& backgroundColor, const TextUIStyle& textSettings);
-	UIStyle(const Utils::Color& backgroundColor, const Utils::Color& secondaryColor, const TextUIStyle& textSettings);
+	UIStyle(const Color& backgroundColor, const TextUIStyle& textSettings);
+	UIStyle(const Color& backgroundColor, const Color& secondaryColor, const TextUIStyle& textSettings);
 };
 

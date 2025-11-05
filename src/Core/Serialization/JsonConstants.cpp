@@ -7,11 +7,12 @@
 
 namespace JsonConstants
 {
-	static const std::unordered_map<std::string, Utils::Color> COLOR_CONSTANTS = { {"White", Utils::COLOR_WHITE} };
-	static const std::unordered_map<std::string, Vec2> PIVOT_CONSTANTS = { {"BottomCenter",VisualData::PIVOT_BOTTOM_CENTER}, {"BottomLeft",VisualData::PIVOT_BOTTOM_LEFT}, 
-																	 {"BottomRight",VisualData::PIVOT_BOTTOM_RIGHT},
-																	 {"Center",VisualData::PIVOT_CENTER}, {"TopCenter",VisualData::PIVOT_TOP_CENTER}, 
-																	 {"TopLeft",VisualData::PIVOT_TOP_LEFT}, {"TopRight",VisualData::PIVOT_TOP_RIGHT}};
+	static const std::unordered_map<std::string, Color> COLOR_CONSTANTS = { {"White", COLOR_WHITE} };
+	static const std::unordered_map<std::string, Vec2> PIVOT_CONSTANTS = 
+		{ {"BottomCenter",VisualData::PIVOT_BOTTOM_CENTER}, {"BottomLeft",VisualData::PIVOT_BOTTOM_LEFT}, 
+		  {"BottomRight",VisualData::PIVOT_BOTTOM_RIGHT},
+		  {"Center",VisualData::PIVOT_CENTER}, {"TopCenter",VisualData::PIVOT_TOP_CENTER}, 
+		  {"TopLeft",VisualData::PIVOT_TOP_LEFT}, {"TopRight",VisualData::PIVOT_TOP_RIGHT} };
 
 	/*static const std::unordered_map<std::string, Vec2> DIR_CONSTANTS = { {"N", Vec2::NORTH}, { "NE", Vec2::NORTHEAST}, { "E", Vec2::EAST}, { "SE", Vec2::SOUTHEAST}, 
 																   { "S", Vec2::SOUTH}, {"SW", Vec2::SOUTHWEST}, {"W", Vec2::WEST}, {"NW", Vec2::NORTHWEST}};*/
@@ -66,15 +67,15 @@ namespace JsonConstants
 			[](const Vec2& vec1, const Vec2& vec2)-> bool { return vec1 == vec2; });
 	}*/
 
-	std::optional<Utils::Color> TryGetConstantColor(const std::string& constant)
+	std::optional<Color> TryGetConstantColor(const std::string& constant)
 	{
-		return TryGetConstantValue<Utils::Color>(COLOR_CONSTANTS, constant);
+		return TryGetConstantValue<Color>(COLOR_CONSTANTS, constant);
 	}
 
-	std::optional<std::string> TryGetColorConstant(const Utils::Color& targetColor)
+	std::optional<std::string> TryGetColorConstant(const Color& targetColor)
 	{
-		return TryGetValueConstant<Utils::Color>(COLOR_CONSTANTS, targetColor, 
-			[](const Utils::Color& color1, const Utils::Color& color2)-> bool { return color1==color2; });
+		return TryGetValueConstant<Color>(COLOR_CONSTANTS, targetColor, 
+			[](const Color& color1, const Color& color2)-> bool { return color1==color2; });
 	}
 
 	std::optional<Rendering::Font> TryGetConstantFont(const std::string& constant)

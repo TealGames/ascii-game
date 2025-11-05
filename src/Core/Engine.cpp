@@ -3,7 +3,7 @@
 #include "Core/Scene/SceneManager.hpp"
 #include "StaticGlobals.hpp"
 #include "EngineLog.hpp"
-#include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Rendering/Renderer3D.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
 #include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
 #include "ECS/Systems/Types/World/CameraSystem.hpp"
@@ -257,7 +257,7 @@ namespace Core
 
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
-		m_graphicsManager.LoadAllShadersAndTextures();
+		m_graphicsManager.InitGraphicResources();
 		m_sceneManager.LoadAllScenes();
 		//TODO: find a way to do this more procedurally
 		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {StartAll(); });
@@ -425,37 +425,38 @@ namespace Core
 
 		m_gizmosOverlay.MoveCallsToRenderBuffer(m_renderer);
 
-		const Vec3 objectCenter = Vec3(0, 0, 4.6);
+		const Vec3 objectCenter = Vec3(0, 0, -4.6);
 		static Quat rot = Quat::Identity();
 		rot *= Vec3{ 0.3f* unscaledDeltaTime, 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime};
 		const Mat4 modelMatrix = CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
-		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Utils::COLOR_BLUE
-		//m_renderer.AddCircleCall2D(0.13f, modelMatrix, Utils::COLOR_RED);
-		//m_renderer.AddSphereCall3D(0.13f, modelMatrix, Utils::COLOR_GREEN);
-		//m_renderer.AddRectangleCall2D(Vec2(0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
+		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Color_BLUE
+		//m_renderer.AddCircleCall2D(0.13f, modelMatrix, Color_RED);
+		//m_renderer.AddSphereCall3D(0.13f, modelMatrix, Color_GREEN);
+		//m_renderer.AddRectangleCall2D(Vec2(0.13, 0.13), modelMatrix, Color_BLUE);
 		Rendering::Texture& tex= m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/test.jpg")->GetTextureMutable();
-		Rendering::Material material = { nullptr, Utils::Color(100,100, 100, 255)};
-		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Utils::COLOR_BLUE);
-		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Utils::COLOR_BLUE);
-		//m_renderer.AddDirectionLightCall(Vec3(0, -1, 0), Utils::COLOR_GREEN);
-		m_renderer.AddCallPointLight(Vec3(0.2, 0, 4.6), Quat(Vec3(0, 0, 0)), 1.0f, Utils::COLOR_YELLOW);
-		m_renderer.AddCallPointLight(Vec3(0, 0.2, 4.6), Quat(Vec3(0, 0, 0)), 1.0f, Utils::COLOR_BLUE);
+		Rendering::Material material = { "Test", nullptr, Color(100, 100, 100, 255)};
+		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Color_BLUE);
+		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Color_BLUE);
+		//m_renderer.AddDirectionLightCall(Vec3(0, -1, 0), Color_GREEN);
+		m_renderer.AddCallPointLight(Vec3(0.2, 0, -4.6), Quat(Vec3(0, 0, 0)), 1.0f, COLOR_YELLOW);
+		m_renderer.AddCallPointLight(Vec3(0, 0.2, -4.6), Quat(Vec3(0, 0, 0)), 1.0f, COLOR_BLUE);
 
-		const Mat4 modelMatrix3 = CalculateModelMatrix(nullptr, Vec3(0, -0.3, 4.6), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallSphere3D(0.2, modelMatrix3, Utils::COLOR_WHITE);
+		const Mat4 modelMatrix3 = CalculateModelMatrix(nullptr, Vec3(0, -0.3, -4.6), Vec3::One(), Quat::Identity());
+		Rendering::Material* defaultMaterial = m_engineState.m_GraphicsContext.m_GraphicsManager->GetDefaultMaterialMutable();
+		//m_renderer.AddCallSphere3D(defaultMaterial, 0.2, modelMatrix3);
 		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
 
 		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
-		const Mat4 modelMatrix2 = CalculateModelMatrix(nullptr, Vec3(0, 0, 4.6), Vec3(0.001, 0.001, 0.001), Quat::Identity());
+		const Mat4 modelMatrix2 = CalculateModelMatrix(nullptr, Vec3(0, 0, -4.6), Vec3(0.001, 0.001, -0.001), Quat::Identity());
 		m_renderer.AddCallModel(model->GetModelMutable(), modelMatrix2);
 
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 
 			CalculateRotationMatrix(rot) * CalculateTranslationatrix(-Vec3::Zero())  * CalculateScaleMatrix(Vec3::One());*/
 
 		//LogWarning(std::format("Object rot is:{}", rot.ToDegrees().ToString()));
-		//m_renderer.AddRectangleCall2D(Vec3(0, 0, 4.8), Vec2(0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
+		//m_renderer.AddRectangleCall2D(Vec3(0, 0, 4.8), Vec2(0.13, 0.13), modelMatrix, Color_BLUE);
 		
-		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Utils::COLOR_BLUE);
+		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Color_BLUE);
 		//bool inView = m_cameraController.GetActiveCamera().DoesViewVolumeContainPos(Vec3(-10, 0, 0));
 		//LogError(std::format("rectange oirign screen pos:{}", m_cameraController.GetActiveCamera().WorldToScreenPosition(Vec3(0, 0, 4.9)).ToString()));
 		m_renderer.RenderBuffer();

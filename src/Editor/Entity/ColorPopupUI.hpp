@@ -20,8 +20,8 @@ struct ColorChannelUI
 	ColorChannelUI();
 	void CreateChannel(UITransformData& parent, const Input::InputManager& input);
 
-	void SetValue(const std::uint8_t value);
-	std::uint8_t GetValue() const;
+	void SetValue(const float value);
+	float GetValue() const;
 };
 
 class ColorPopupUI : public PopupUI
@@ -39,7 +39,7 @@ public:
 	ColorPopupUI(const Input::InputManager& input);
 	void AddPopupElements() override;
 
-	void SetColor(const Utils::Color color);
-	Utils::Color GetColor() const;
+	void SetColor(const Color color);
+	Color GetColor() const;
 };
 

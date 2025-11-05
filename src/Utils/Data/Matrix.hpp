@@ -5,10 +5,14 @@
 #include <string>
 #include "Utils/Data/Vec4Type.hpp"
 
+constexpr float DETERMINANT_EPSILON = 1e-12;
 //TODO: add other matrix operations like inversion, row swapping, gausian elimination, determinant
 
 template<size_t ROW_SIZE, size_t COL_SIZE>
-requires (ROW_SIZE >0 && COL_SIZE >0)
+concept IsPositiveSize = (ROW_SIZE > 0 && COL_SIZE > 0);
+
+template<size_t ROW_SIZE, size_t COL_SIZE>
+requires IsPositiveSize<ROW_SIZE, COL_SIZE>
 class MatrixType
 {
 private:
@@ -53,13 +57,33 @@ public:
 			}
 		}
 	}
+
+	/// <summary>
+	/// Constructs a matrix from a smaller matrix and fills the gaps with 0
+	/// </summary>
+	/// <typeparam name="OTHER_ROW_SIZE"></typeparam>
+	/// <typeparam name="OTHER_COL_SIZE"></typeparam>
+	template<size_t OTHER_ROW_SIZE, size_t OTHER_COL_SIZE>
+	requires (IsPositiveSize<OTHER_ROW_SIZE, OTHER_COL_SIZE> && OTHER_ROW_SIZE <= ROW_SIZE && OTHER_COL_SIZE <= COL_SIZE)
+	constexpr MatrixType(const MatrixType<OTHER_ROW_SIZE, OTHER_COL_SIZE>& other) : m_arr()
+	{
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			for (size_t c = 0; c < COL_SIZE; c++)
+			{
+				if (r < OTHER_ROW_SIZE && c < OTHER_COL_SIZE)
+					m_arr[c][r] = other.Get(r, c);
+				else m_arr[c][r] = 0;
+			}
+		}
+	}
 	/// <summary>
 	/// Constructs a matrix using an initial first element pointer.
 	/// NOTE: memory must be laid out in ROW MAJOR order and total floats must be equal to ROW_SIZE * COL_SIZE
 	/// 
 	/// </summary>
 	/// <param name="firstElementPtr"></param>
-	constexpr MatrixType(const float* firstElementPtr)
+	constexpr MatrixType(const float* firstElementPtr) : m_arr()
 	{
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
@@ -212,7 +236,8 @@ public:
 	/// <typeparam name="SLICE_COL_SIZE"></typeparam>
 	/// <returns></returns>
 	template<size_t SLICE_ROW_SIZE, size_t SLICE_COL_SIZE>
-	requires (SLICE_ROW_SIZE <= ROW_SIZE && SLICE_COL_SIZE <= COL_SIZE)
+	requires (IsPositiveSize<SLICE_ROW_SIZE, SLICE_COL_SIZE> 
+			  && SLICE_ROW_SIZE <= ROW_SIZE && SLICE_COL_SIZE <= COL_SIZE)
 	MatrixType<SLICE_ROW_SIZE, SLICE_COL_SIZE> GetSlice() const
 	{
 		std::array<std::array<float, SLICE_COL_SIZE>, SLICE_ROW_SIZE> slicedArr = {};
@@ -260,6 +285,16 @@ public:
 			m_arr[c][r] = vals[r];
 		}
 	}
+	void Set(const std::array<std::array<float, COL_SIZE>, ROW_SIZE>& rowMajorElements)
+	{
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			for (size_t c = 0; c < COL_SIZE; c++)
+			{
+				m_arr[c][r] = rowMajorElements[r][c];
+			}
+		}
+	}
 
 	/// <summary>
 	/// Transpose moves the elements so an element at pos [R, C] -> [C, R]
@@ -278,60 +313,58 @@ public:
 		return result;
 	}
 
-	bool Inverse(MatrixType<ROW_SIZE, COL_SIZE>* outMatrix) const requires (ROW_SIZE == 2 && COL_SIZE == 2)
+	bool Inverse() requires (ROW_SIZE == 2 && COL_SIZE == 2)
 	{
 		const float determinant = m_arr[0][0] * m_arr[1][1] - m_arr[0][1] * m_arr[1][0];
-		if (Utils::ApproximateEqualsF(determinant, 0.0f))
+		if (fabs(determinant) < DETERMINANT_EPSILON)
 			return false;
 
-		if (outMatrix != nullptr)
-		{
-			const float inverseDeterminant = 1 / determinant;
-			*outMatrix = MatrixType<ROW_SIZE, COL_SIZE>(std::array<std::array<float, COL_SIZE>, ROW_SIZE>
-			{{
-				{{m_arr[1][1] * inverseDeterminant, -m_arr[1][0] * inverseDeterminant }},
-				{{-m_arr[0][1] * inverseDeterminant, m_arr[0][0] * inverseDeterminant }}
-			}});
-		}
+		const float inverseDeterminant = 1 / determinant;
+		std::array<std::array<float, COL_SIZE>, ROW_SIZE> newArr = 
+		{{
+			{m_arr[1][1] * inverseDeterminant, -m_arr[1][0] * inverseDeterminant},
+			{-m_arr[0][1] * inverseDeterminant, m_arr[0][0] * inverseDeterminant}
+		}};
+		Set(newArr);
 		return true;
 	}
-	bool Inverse(MatrixType<ROW_SIZE, COL_SIZE>* outMatrix) const requires (ROW_SIZE == 3 && COL_SIZE == 3)
+	bool Inverse() requires (ROW_SIZE == 3 && COL_SIZE == 3)
 	{
 		const float determinant =
 			m_arr[0][0] * (m_arr[1][1] * m_arr[2][2] - m_arr[1][2] * m_arr[2][1])
 			- m_arr[0][1] * (m_arr[1][0] * m_arr[2][2] - m_arr[1][2] * m_arr[2][0])
 			+ m_arr[0][2] * (m_arr[1][0] * m_arr[2][1] - m_arr[1][1] * m_arr[2][0]);
 
-		if (Utils::ApproximateEqualsF(determinant, 0.0f))
+		if (fabs(determinant) < DETERMINANT_EPSILON)
 			return false;
 
-		if (outMatrix != nullptr)
-		{
-			const float inverseDeterminant = 1 / determinant;
-			//While we could use create matrix out of cofactors and transpose, we get adjugate (transpose of cofactors)
-			//directy so we skip creating an intermediate matrix
-			*outMatrix = MatrixType<ROW_SIZE, COL_SIZE>(std::array<std::array<float, COL_SIZE>, ROW_SIZE>
-			{{
-				{{ 
-					(m_arr[1][1] * m_arr[2][2] - m_arr[1][2] * m_arr[2][1]) * inverseDeterminant,
-					-(m_arr[1][0] * m_arr[2][2] - m_arr[1][2] * m_arr[2][0]) * inverseDeterminant,
-					(m_arr[1][0] * m_arr[2][1] - m_arr[1][1] * m_arr[2][0]) * inverseDeterminant
-				}},
-				{{
-					-(m_arr[0][1] * m_arr[2][2] - m_arr[0][2] * m_arr[2][1]) * inverseDeterminant,
-					(m_arr[0][0] * m_arr[2][2] - m_arr[0][2] * m_arr[2][0]) * inverseDeterminant,
-					-(m_arr[0][0] * m_arr[2][1] - m_arr[0][1] * m_arr[2][0]) * inverseDeterminant
-				}},
-				{{
-					(m_arr[0][1] * m_arr[1][2] - m_arr[0][2] * m_arr[1][1]) * inverseDeterminant,
-					-(m_arr[0][0] * m_arr[1][2] - m_arr[0][2] * m_arr[1][0]) * inverseDeterminant,
-					(m_arr[0][0] * m_arr[1][1] - m_arr[0][1] * m_arr[1][0]) * inverseDeterminant
-				}}
-			}});
-		}
+		const float inverseDeterminant = 1 / determinant;
+		//While we could use create matrix out of cofactors and transpose, we get adjugate (transpose of cofactors)
+		//directy so we skip creating an intermediate matrix
+		std::array<std::array<float, COL_SIZE>, ROW_SIZE> newArr =
+		{{
+			{
+				(m_arr[1][1] * m_arr[2][2] - m_arr[1][2] * m_arr[2][1])* inverseDeterminant,
+				-(m_arr[1][0] * m_arr[2][2] - m_arr[1][2] * m_arr[2][0]) * inverseDeterminant,
+				(m_arr[1][0] * m_arr[2][1] - m_arr[1][1] * m_arr[2][0])* inverseDeterminant
+			},
+			{
+				-(m_arr[0][1] * m_arr[2][2] - m_arr[0][2] * m_arr[2][1]) * inverseDeterminant,
+				(m_arr[0][0] * m_arr[2][2] - m_arr[0][2] * m_arr[2][0]) * inverseDeterminant,
+				-(m_arr[0][0] * m_arr[2][1] - m_arr[0][1] * m_arr[2][0]) * inverseDeterminant
+			},
+			{
+				(m_arr[0][1] * m_arr[1][2] - m_arr[0][2] * m_arr[1][1]) * inverseDeterminant,
+				-(m_arr[0][0] * m_arr[1][2] - m_arr[0][2] * m_arr[1][0]) * inverseDeterminant,
+				(m_arr[0][0] * m_arr[1][1] - m_arr[0][1] * m_arr[1][0]) * inverseDeterminant
+			}
+		}};
+		Set(newArr);
+
 		return true;
 	}
-	bool Inverse(MatrixType<ROW_SIZE, COL_SIZE>* outMatrix) const requires (ROW_SIZE == 4 && COL_SIZE == 4)
+
+	bool Inverse() requires (ROW_SIZE == 4 && COL_SIZE == 4)
 	{
 		//Top left (0..1, rows 0..1) minors
 		const float s0 = m_arr[0][0] * m_arr[1][1] - m_arr[0][1] * m_arr[1][0];
@@ -350,47 +383,41 @@ public:
 		const float c5 = m_arr[2][2] * m_arr[3][3] - m_arr[2][3] * m_arr[3][2];
 
 		const float determinant = s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0;
-		if (Utils::ApproximateEqualsF(determinant, 0.0f))
+		if (fabs(determinant) < DETERMINANT_EPSILON)
 			return false;
 
-		if (outMatrix != nullptr)
-		{
-			const float inverseDeterminant = 1 / determinant;
+		const float inverseDeterminant = 1 / determinant;
 
-			//NOTE: the output here is in row major order since we create matrices via row major (but internally store as col major)
-			//so the transpose automatically happens in constructor
-			*outMatrix = MatrixType<ROW_SIZE, COL_SIZE>(std::array<std::array<float, COL_SIZE>, ROW_SIZE>
-			{{
-				{{
-					(m_arr[1][1] * c5 - m_arr[2][1] * c4 + m_arr[3][1] * c3)* inverseDeterminant,
-					-(m_arr[1][0] * c5 - m_arr[2][0] * c4 + m_arr[3][0] * c3) * inverseDeterminant,
-					(m_arr[0][0] * c5 - m_arr[2][0] * c2 + m_arr[3][0] * c1)* inverseDeterminant,
-					-(m_arr[0][0] * c4 - m_arr[1][0] * c2 + m_arr[3][0] * c0) * inverseDeterminant
-				}},
-
-				{{
-					-(m_arr[1][1] * c4 - m_arr[2][1] * c3 + m_arr[3][1] * c2) * inverseDeterminant,
-					(m_arr[1][0] * c4 - m_arr[2][0] * c3 + m_arr[3][0] * c2)* inverseDeterminant,
-					-(m_arr[0][0] * c4 - m_arr[2][0] * c1 + m_arr[3][0] * c0) * inverseDeterminant,
-					(m_arr[0][0] * c3 - m_arr[1][0] * c1 + m_arr[3][0] * c0)* inverseDeterminant
-				}},
-
-				{{
-					(m_arr[1][1] * s5 - m_arr[2][1] * s4 + m_arr[3][1] * s3)* inverseDeterminant,
-					-(m_arr[1][0] * s5 - m_arr[2][0] * s4 + m_arr[3][0] * s3) * inverseDeterminant,
-					(m_arr[0][0] * s5 - m_arr[2][0] * s2 + m_arr[3][0] * s1)* inverseDeterminant,
-					-(m_arr[0][0] * s4 - m_arr[1][0] * s2 + m_arr[3][0] * s0) * inverseDeterminant
-				}},
-
-				{{
-					-(m_arr[1][1] * s4 - m_arr[2][1] * s3 + m_arr[3][1] * s2) * inverseDeterminant,
-					(m_arr[1][0] * s4 - m_arr[2][0] * s3 + m_arr[3][0] * s2)* inverseDeterminant,
-					-(m_arr[0][0] * s4 - m_arr[2][0] * s1 + m_arr[3][0] * s0) * inverseDeterminant,
-					(m_arr[0][0] * s3 - m_arr[1][0] * s1 + m_arr[2][0] * s0)* inverseDeterminant
-				}}
-				 
-			}});
-		}
+		//NOTE: the output here is in row major order since we create matrices via row major (but internally store as col major)
+		//so the transpose automatically happens in constructor
+		std::array<std::array<float, COL_SIZE>, ROW_SIZE> newArr = 
+		{{
+			{
+				(m_arr[1][1] * c5 - m_arr[2][1] * c4 + m_arr[3][1] * c3)* inverseDeterminant,
+				-(m_arr[1][0] * c5 - m_arr[2][0] * c4 + m_arr[3][0] * c3) * inverseDeterminant,
+				(m_arr[0][0] * c5 - m_arr[2][0] * c2 + m_arr[3][0] * c1)* inverseDeterminant,
+				-(m_arr[0][0] * c4 - m_arr[1][0] * c2 + m_arr[3][0] * c0) * inverseDeterminant
+			},
+			{
+				-(m_arr[1][1] * c4 - m_arr[2][1] * c3 + m_arr[3][1] * c2) * inverseDeterminant,
+				(m_arr[1][0] * c4 - m_arr[2][0] * c3 + m_arr[3][0] * c2) * inverseDeterminant,
+				-(m_arr[0][0] * c4 - m_arr[2][0] * c1 + m_arr[3][0] * c0) * inverseDeterminant,
+				(m_arr[0][0] * c3 - m_arr[1][0] * c1 + m_arr[3][0] * c0) * inverseDeterminant
+			},
+			{
+				(m_arr[1][1] * s5 - m_arr[2][1] * s4 + m_arr[3][1] * s3) * inverseDeterminant,
+				-(m_arr[1][0] * s5 - m_arr[2][0] * s4 + m_arr[3][0] * s3) * inverseDeterminant,
+				(m_arr[0][0] * s5 - m_arr[2][0] * s2 + m_arr[3][0] * s1) * inverseDeterminant,
+				-(m_arr[0][0] * s4 - m_arr[1][0] * s2 + m_arr[3][0] * s0) * inverseDeterminant
+			},
+			{
+				-(m_arr[1][1] * s4 - m_arr[2][1] * s3 + m_arr[3][1] * s2) * inverseDeterminant,
+				(m_arr[1][0] * s4 - m_arr[2][0] * s3 + m_arr[3][0] * s2) * inverseDeterminant,
+				-(m_arr[0][0] * s4 - m_arr[2][0] * s1 + m_arr[3][0] * s0) * inverseDeterminant,
+				(m_arr[0][0] * s3 - m_arr[1][0] * s1 + m_arr[2][0] * s0) * inverseDeterminant
+			}
+		}};
+		Set(newArr);
 		return true;
 	}
 
@@ -467,7 +494,7 @@ public:
 	}
 
 	template<size_t OTHER_ROW_SIZE, size_t OTHER_COL_SIZE>
-	requires (COL_SIZE == OTHER_ROW_SIZE)
+	requires (IsPositiveSize<OTHER_ROW_SIZE, OTHER_COL_SIZE> && COL_SIZE == OTHER_ROW_SIZE)
 	MatrixType<ROW_SIZE, OTHER_COL_SIZE> operator*(const MatrixType<OTHER_ROW_SIZE, OTHER_COL_SIZE>& other) const
 	{
 		MatrixType<ROW_SIZE, OTHER_COL_SIZE> result = {};
@@ -485,7 +512,7 @@ public:
 	}
 
 	template<size_t VEC_SIZE>
-	requires (VEC_SIZE == COL_SIZE && std::is_default_constructible_v<Vec<float, ROW_SIZE>>)
+	requires (VEC_SIZE >0 && VEC_SIZE == COL_SIZE && std::is_default_constructible_v<Vec<float, ROW_SIZE>>)
 	Vec<float, ROW_SIZE> operator*(const Vec<float, VEC_SIZE>& vec) const
 	{
 		Vec<float, ROW_SIZE> result = {};
@@ -518,4 +545,5 @@ public:
 };
 
 using Mat4 = MatrixType<4, 4>;
+using Mat3x4 = MatrixType<3, 4>;
 using Mat3 = MatrixType<3, 3>;

@@ -319,7 +319,7 @@ namespace AssetManagement
 
 				if (PREVENT_HIDDEN_ASSET_LOOKUP)
 				{
-					const std::filesystem::path relPath = GetRelativeAssetPath(asset.second->GetPath());
+					const std::filesystem::path relPath = GetRelativeAssetPath(asset.second->GetAbsolutePath());
 					if (IsAssetHiddenFromPath(relPath, false))
 					{
 						LogWarning(std::format("Attempted to get asset by path:{} but this asset was marked as hidden", relPath.string()));
@@ -395,7 +395,7 @@ namespace AssetManagement
 					catch (const std::exception& e)
 					{
 						LogError(std::format("Tried to get assets of type:{} but asset at path:{} "
-							"could not be converted to this type", tTypeName, asset.second->GetPathCopy().string()));
+							"could not be converted to this type", tTypeName, asset.second->GetAbsolutePathCopy().string()));
 						return {};
 					}
 				}
@@ -414,7 +414,7 @@ namespace AssetManagement
 			const std::string targetAssetPath = GetAbsoluteAssetPath(assetDirectory).string();
 			return GetAssetsOfTypeMutable<T>([&targetAssetPath](const Asset& asset)->bool
 				{
-					std::string assetpath = asset.GetPath().string();
+					std::string assetpath = asset.GetAbsolutePath().string();
 					//LogError(std::format("Checking path of asset: {} to {}", asset.ToString(), targetAssetPath));
 					if (assetpath.size() < targetAssetPath.size()) return false;
 					return assetpath.substr(0, targetAssetPath.size()) == targetAssetPath;

@@ -28,6 +28,8 @@ CameraComponent::CameraComponent(const Json& json) : CameraComponent()
 	Deserialize(json);
 }
 
+const CameraSettings& CameraComponent::GetSettings() const { return m_cameraSettings; }
+
 CameraComponent::CameraComponent(const CameraSettings& cameraSettings) :
 	Component(), m_cameraSettings(cameraSettings), m_lastUpdateData() 
 {
@@ -213,7 +215,28 @@ Vec3 CameraComponent::CalculateWorldUp() const
 }
 Vec3 CameraComponent::CalculateWorldRight() const
 {
-	return CrossProduct(CalculateWorldUp(), CalculateWorldForward()).GetNormalized();
+	if constexpr (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative)
+		return CrossProduct(CalculateWorldForward(), CalculateWorldUp()).GetNormalized();
+	else return CrossProduct(CalculateWorldUp(), CalculateWorldForward()).GetNormalized();
+}
+void CameraComponent::CalculateWorldDirections(Vec3* outForward, Vec3* outUp, Vec3* outRight) const
+{
+	if (outForward != nullptr) *outForward = CalculateWorldForward();
+	if (outUp != nullptr) *outUp = CalculateWorldUp();
+	if (outRight != nullptr)
+	{
+		Vec3 up;
+		if (outUp != nullptr) up = *outUp;
+		else up = CalculateWorldUp();
+
+		Vec3 forward;
+		if (outForward != nullptr) forward = *outForward;
+		else forward = CalculateWorldForward();
+
+		if constexpr (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative)
+			*outRight = CrossProduct(forward, up).GetNormalized();
+		else *outRight = CrossProduct(up, forward).GetNormalized();
+	}
 }
 
 WorldPosition3D CameraComponent::CalculateNearPlaneWorldCenter() const

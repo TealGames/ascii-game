@@ -49,14 +49,14 @@ namespace ECS
 		/// <param name="filterColor"></param>
 		/// <param name="multiplier"></param>
 		/// <returns></returns>
-		Utils::Color GetColorFromMultiplier(const Utils::Color& originalColor, const Utils::Color& filterColor, const float& multiplier) const;
+		Color GetColorFromMultiplier(const Color& originalColor, const Color& filterColor, const float& multiplier) const;
 
 		void CreateLightingForPoint(LightSourceData& data, const WorldPosition3D& centerPos,
 			FragmentedTextBuffer2D& buffer, bool displayLightLevels);
 
 		void RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer2D*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
-		Utils::Color CalculateNewColor(LightSourceData& data, const TextBufferCharPosition2D& bufferPos, const float& distance, 
+		Color CalculateNewColor(LightSourceData& data, const TextBufferCharPosition2D& bufferPos, const float& distance, 
 			std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:

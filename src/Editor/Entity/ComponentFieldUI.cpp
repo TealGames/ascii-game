@@ -139,14 +139,14 @@ void ComponentFieldUI::SetField(ComponentField& field)
 			});
 		m_fields.emplace_back(toggle);
 	}
-	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
+	else if (GetFieldInfo().IsCurrentType<Color>())
 	{
 		auto [colorPickerEntity, colorPickerTransform, colorPicker] = layoutEntity.CreateChildUI("ColorField", UIColorPickerData(UIStyle()));
 
 		const float fieldTopLeftX = fieldsStartNewLine ? FIELD_IDENT : fieldNameTextTransform.GetRect().GetBottomRighttPos().GetX();
 		colorPickerTransform->SetSize(NormalizedPosition(NormalizedPosition::MAX - fieldTopLeftX, fieldsStartNewLine ? 0.5 : 1));
 		colorPickerTransform->SetTopLeftPos({ fieldTopLeftX, fieldsStartNewLine ? 1 - fieldNameTextTransform.GetSize().GetY() : 1 });
-		colorPicker->SetValueSetAction([this](Utils::Color color)-> void
+		colorPicker->SetValueSetAction([this](Color color)-> void
 			{
 				SetInternalWithInput();
 			});
@@ -240,9 +240,9 @@ void ComponentFieldUI::SetFieldToInternal()
 	{
 		static_cast<UIToggleComponent*>(m_fields[0])->SetValue(*(GetFieldInfo().TryGetValue<bool>()));
 	}
-	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
+	else if (GetFieldInfo().IsCurrentType<Color>())
 	{
-		static_cast<UIColorPickerData*>(m_fields[0])->SetColor(*(GetFieldInfo().TryGetValue<Utils::Color>()));
+		static_cast<UIColorPickerData*>(m_fields[0])->SetColor(*(GetFieldInfo().TryGetValue<Color>()));
 	}
 	else
 	{
@@ -305,9 +305,9 @@ void ComponentFieldUI::SetInternalWithInput()
 	{
 		GetFieldInfo().TrySetValue<bool>(static_cast<UIToggleComponent*>(m_fields[0])->IsToggled());
 	}
-	else if (GetFieldInfo().IsCurrentType<Utils::Color>())
+	else if (GetFieldInfo().IsCurrentType<Color>())
 	{
-		GetFieldInfo().TrySetValue<Utils::Color>(static_cast<UIColorPickerData*>(m_fields[0])->GetColor());
+		GetFieldInfo().TrySetValue<Color>(static_cast<UIColorPickerData*>(m_fields[0])->GetColor());
 	}
 	else
 	{

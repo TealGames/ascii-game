@@ -221,8 +221,8 @@ bool Assert(const bool condition, const std::string& errMessage, const bool show
 	{
 		LogMessage(LogType::Error, DebugProperties::CallerDetails, errMessage, showStackTrace, 
 			true, nullptr, (DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::EventFlag) != 0, loc);
-		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Break)!=0) Break();
-		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Throw)!=0) throw std::invalid_argument(errMessage);
+		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Break) != 0) Break();
+		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Throw) != 0) throw std::invalid_argument(errMessage);
 	}
 	return condition;
 }

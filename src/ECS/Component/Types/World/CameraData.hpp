@@ -71,6 +71,7 @@ public:
 	CameraComponent(const Json& json);
 	CameraComponent(const CameraSettings& cameraSettings);
 
+	const CameraSettings& GetSettings() const;
 	void SetFollowNoTarget();
 	void SetFollowTarget(const EntityData& entity);
 	bool HasFollowTarget() const;
@@ -107,6 +108,7 @@ public:
 	Vec3 CalculateWorldForward() const;
 	Vec3 CalculateWorldUp() const;
 	Vec3 CalculateWorldRight() const;
+	void CalculateWorldDirections(Vec3* outForward, Vec3* outUp, Vec3* outRight) const;
 	WorldPosition3D CalculateNearPlaneWorldCenter() const;
 	WorldPosition3D CalculateFarPlaneWorldCenter() const;
 	bool DoesViewVolumeContainPos(const WorldPosition3D& point) const;

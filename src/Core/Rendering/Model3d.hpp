@@ -5,7 +5,7 @@
 
 namespace Rendering
 {
-	struct Mesh
+	struct ModelMesh
 	{
 		std::vector<Vertex> m_Vertices = {};
 		std::vector<IndexType> m_Indices = {};
@@ -13,7 +13,7 @@ namespace Rendering
 
 		std::string ToString() const;
 	};
-	struct MeshGroup
+	struct ModelMeshGroup
 	{
 		Mat4 m_GlobalTransform = Mat4::GetIdentity();
 		/// <summary>
@@ -24,8 +24,14 @@ namespace Rendering
 
 	struct Model3d
 	{
-		std::vector<Mesh> m_Meshes = {};
-		std::vector<MeshGroup> m_MeshGroups = {};
+		/// <summary>
+		/// A mesh is any type of separate geometric data that has its own vertex and material data
+		/// </summary>
+		std::vector<ModelMesh> m_Meshes = {};
+		/// <summary>
+		/// A mesh group is a singular full object within a model
+		/// </summary>
+		std::vector<ModelMeshGroup> m_MeshGroups = {};
 
 		std::string ToString() const;
 	};

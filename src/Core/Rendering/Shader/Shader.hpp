@@ -31,6 +31,23 @@ namespace Rendering
 	};
 	std::string ToString(const UniformType type);
 
+	enum class ShaderBufferType : std::uint8_t
+	{
+		Uniform = 0,
+		Storage	= 1
+	};
+
+	enum class ShaderGlobalVarType : std::uint8_t
+	{
+		UniformSingle	= 0,
+		UniformArray	= 1,
+		UniformBuffer	= 2,
+		StorageBuffer	= 3
+	};
+	bool IsShaderGlobalVarBoundableBuffer(const ShaderGlobalVarType type);
+	bool IsShaderGlobalVarUniform(const ShaderGlobalVarType type);
+	std::string ToString(const ShaderGlobalVarType type);
+
 	enum class UniformDataType : std::uint8_t
 	{
 		Bool  = 0,
@@ -39,35 +56,35 @@ namespace Rendering
 		Vector2 = 3,
 		Vector3 = 4,
 		Vector4 = 5,
-		Matrix4x4 = 6,
+
+		Uint	 = 6,
+		IVector2 = 7,
+		IVector3 = 8,
+		IVector4 = 9,
+
+		Matrix4x4 = 10,
 		/// <summary>
 		/// Represents a special value that holds the 
 		/// texture slot index that the sampler uses for the
 		/// texture. Allows for READ ONLY ACESSS
 		/// NOTE: sampler uniform must be get/set with int*
 		/// </summary>
-		Sampler2D	  = 7,
+		Sampler2D	  = 11,
 		/// <summary>
 		/// Similar to sampler2D, but instead represents a cube map,
 		/// 6 textures managed by one object
 		/// </summary>
-		CubeSampler	  = 8,
+		CubeSampler	  = 12,
 		/// <summary>
 		/// Similar to sampler2D and holds integer slot value BUT
 		/// FOR AN IMAGE SLOT INDEX (differnet from texture slot index)
 		/// that allows for READ + WRITE ACCESS (but comes at cost of 
 		/// only getting raw pixel data unlike sampling)
 		/// </summary>
-		Image2D		  = 9
-	};
-	struct UniformDataTypeInfo
-	{
-		bool m_IsArray;
-		UniformDataType m_Type;
-		//const void* m_ValuePtr;
+		Image2D		  = 13
 	};
 
-	struct UniformBlockMemberMemoryInfo
+	struct ShaderBlockMemberMemoryInfo
 	{
 		std::string m_Name;
 		/// <summary>
@@ -85,6 +102,7 @@ namespace Rendering
 		/// NOTE: struct arrays are flattened and no longer considered as array types so for struct[2] 
 		/// with struct[0].member1, struct[0].member2, struct[1].member1, etc...
 		/// would all have array size 1 -> only basic type arrays like int[2] would have array size
+		/// NOTE: dynamic arrays (only allowed in shader storage buffers) will have size of 0
 		/// </summary>
 		size_t m_ArraySize;
 		/// <summary>
@@ -99,13 +117,18 @@ namespace Rendering
 		size_t m_MatrixBytStride;
 
 		std::string ToString() const;
+
+		bool IsDynamicArray() const;
+		bool IsFixedSizeArray() const;
+		bool IsArray() const;
+		bool IsMatrix() const;
 	};
 
-	struct UniformReflectionInfo
+	struct ShaderGlobalVarReflectionInfo
 	{
 		//UniformDataType m_DataType = UniformDataType::Float;
-		UniformType m_Type = UniformType::Single;
-		UniformBufferBindIndex m_BufferBindIndex = INVALID_BUFFER_BIND_INDEX;
+		ShaderGlobalVarType m_Type = ShaderGlobalVarType::UniformSingle;
+		BufferBindIndex m_BufferBindIndex = INVALID_BUFFER_BIND_INDEX;
 
 		std::string ToString() const;
 	};
@@ -133,11 +156,14 @@ namespace Rendering
 	};
 
 	class Shader;
-	using UniformReflectionCollectionType = std::unordered_map<String16, UniformReflectionInfo>;
+	constexpr size_t MAX_GLOBAL_VAR_NAME_SIZE = 20;
+	using ShaderVarNameType = FixedString<MAX_GLOBAL_VAR_NAME_SIZE>;
+
+	using ShaderGlobalVarReflectionCollectionType = std::unordered_map<ShaderVarNameType, ShaderGlobalVarReflectionInfo>;
 	struct ShaderPlatformCallbacks
 	{
 		RenderObjectId(*m_CreateProgramFunc) (const FinalShaderInitData& initData1, const FinalShaderInitData* initData2, 
-			UniformReflectionCollectionType* blockData);
+			ShaderGlobalVarReflectionCollectionType* blockData);
 		void(*m_BindActiveFunc) (const Shader& shader);
 		void(*m_DispatchComputeShaderGroupsFunc)(const std::uint32_t x, const std::uint32_t y, const std::uint32_t z);
 		void(*m_UnbindActiveFunc) (const Shader& shader);
@@ -145,9 +171,11 @@ namespace Rendering
 		std::string(*m_TrySetArrayUniformFunc) (const Shader& shader, const UniformDataType uniform, 
 			const char* uniformName, const void* valuePtr, const size_t size);
 		bool(*m_TryGetUniformFunc) (const Shader& shader, const UniformDataType uniform, const char* uniformName, void* outputPtr);
-		bool(*m_TryBindUniformBlockFunc) (const Shader& shader, const char* uniformBlockName, const UniformBufferBindIndex index);
+		bool(*m_TryBindBufferBlockFunc) (const Shader& shader, const ShaderBufferType bufferType, const char* blockName, const BufferBindIndex index);
 		bool(*TryGetUniformBlockMembersFunc) (const Shader& shader, const char* uniformBlockName, 
-			std::vector<UniformBlockMemberMemoryInfo>& members, size_t* fullSize);
+			std::vector<ShaderBlockMemberMemoryInfo>& members, size_t* outFullSize);
+		bool(*TryGetStorageBufferMembersFunc) (const Shader& shader, const char* uniformBlockName,
+			std::vector<ShaderBlockMemberMemoryInfo>& members, size_t* outFullSize);
 		void(*m_QueryProgramFunc)(const Shader& shader, ShaderProgramQuery query, int* queryResult);
 		void(*m_DeleteProgramFunc) (const Shader& shader);
 	};
@@ -167,8 +195,8 @@ namespace Rendering
 		std::array<std::string, SHADER_SOURCES> m_sourceCode;
 		std::optional<ShaderProgramType> m_maybeProgramType;
 
-		UniformReflectionCollectionType m_uniformData;
-		size_t m_unboundUniformBuffers;
+		ShaderGlobalVarReflectionCollectionType m_globalVarData;
+		size_t m_unboundBuffers;
 	public:
 
 	private:
@@ -212,22 +240,24 @@ namespace Rendering
 		std::optional<ShaderProgramType> GetProgramType() const;
 
 		Vec3Int GetComputeShaderWorkGroupSize() const;
+		Vec3Int GetBestComputeShaderWorkGroups(const Vec3Int& targetWork) const;
 
 		void BindActive();
 		void DispatchComputeShaderGroups(const std::uint32_t groupsX, const std::uint32_t groupsY, const std::uint32_t groupsZ);
+		void DispatchComputeShaderGroups(const Vec3Int& targetWork);
 		void UnbindActive();
 
 		bool HasUniform(const std::string_view& view) const;
 		void SetUniform(const UniformDataType type, const char* uniformName, const void* valuePtr);
 		bool TrySetUniform(const UniformDataType type, const char* uniformName, const void* valuePtr);
-		void SetUniformArray(const UniformDataType arrayType, const char* uniformName, const void* arrPtr, const size_t elementCount);
 		bool TrySetUniformArray(const UniformDataType arrayType, const char* uniformName, const void* arrPtr, const size_t elementCount);
 		bool TryGetUniform(const UniformDataType type, const char* uniformName, void* outputValue) const;
 
-		bool TryBindUniformBlock(const char* blockName, const UniformBufferBindIndex index);
+		bool TryBindBufferBlock(const ShaderBufferType type, const char* blockName, const BufferBindIndex index);
 		//bool BindUniformBlockIfNeeded(const std::string& name, const UniformBufferBindIndex index);
-		bool TryGetUniformBlockMembers(const char* blockName, std::vector<UniformBlockMemberMemoryInfo>& members, size_t* fullSize) const;
-		const UniformReflectionCollectionType& GetAllUniformInfo() const;
+		bool TryGetUniformBlockMembers(const char* blockName, std::vector<ShaderBlockMemberMemoryInfo>& members, size_t* outFullByteSize) const;
+		bool TryGetStorageBufferMembers(const char* blockName, std::vector<ShaderBlockMemberMemoryInfo>& members, size_t* outFullByteSize) const;
+		const ShaderGlobalVarReflectionCollectionType& GetAllGlobalVarInfo() const;
 
 		std::string ToString() const;
 

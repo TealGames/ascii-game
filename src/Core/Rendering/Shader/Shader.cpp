@@ -29,14 +29,50 @@ namespace Rendering
 		LogError("Failed to convert uniform type with no defined actions to string");
 		return "";
 	}
+	bool IsShaderGlobalVarBoundableBuffer(const ShaderGlobalVarType type)
+	{
+		return type == ShaderGlobalVarType::StorageBuffer || type == ShaderGlobalVarType::UniformBuffer;
+	}
+	bool IsShaderGlobalVarUniform(const ShaderGlobalVarType type)
+	{
+		return type == ShaderGlobalVarType::UniformSingle ||
+			type == ShaderGlobalVarType::UniformArray || type == ShaderGlobalVarType::UniformBuffer;
+	}
+	std::string ToString(const ShaderGlobalVarType type)
+	{
+		if (type == ShaderGlobalVarType::UniformSingle) return "UniformSingle";
+		else if (type == ShaderGlobalVarType::UniformArray) return "UniformArray";
+		else if (type == ShaderGlobalVarType::UniformBuffer) return "UniformBuffer";
+		else if (type == ShaderGlobalVarType::StorageBuffer) return "StorageBuffer";
 
-	std::string UniformBlockMemberMemoryInfo::ToString() const
+		LogError("Failed to convert shader global var type with no defined actions to string");
+		return "";
+	}
+
+	bool ShaderBlockMemberMemoryInfo::IsDynamicArray() const
+	{
+		return IsArray() && m_ArraySize == 0;
+	}
+	bool ShaderBlockMemberMemoryInfo::IsFixedSizeArray() const
+	{
+		return IsArray() && m_ArraySize > 0;
+	}
+	bool ShaderBlockMemberMemoryInfo::IsArray() const
+	{
+		return m_ArrayByteStride > 0;
+	}
+	bool ShaderBlockMemberMemoryInfo::IsMatrix() const
+	{
+		return m_MatrixBytStride > 0;
+	}
+
+	std::string ShaderBlockMemberMemoryInfo::ToString() const
 	{
 		return std::format("[Name:{} Offset:{} ArrSize:{} ArrStride:{} MatStride:{}]", 
 			m_Name, m_ByteOffset, m_ArraySize, m_ArrayByteStride, m_MatrixBytStride);
 	}
 
-	std::string UniformReflectionInfo::ToString() const
+	std::string ShaderGlobalVarReflectionInfo::ToString() const
 	{
 		return std::format("[UniformInfo Type:{} BindIndex:{}]", 
 			Rendering::ToString(m_Type), m_BufferBindIndex);
@@ -44,7 +80,7 @@ namespace Rendering
 
 	Shader::Shader(const std::string& vertexSource, const std::string& fragmentSource, const ShaderPlatformCallbacks& callbacks)
 		: m_platformCallbacks(callbacks), m_sourceCode{ vertexSource, fragmentSource },
-		m_id(INVALID_OBJ_ID), m_uniformData({}), m_unboundUniformBuffers(0), m_maybeProgramType(std::nullopt)
+		m_id(INVALID_OBJ_ID), m_globalVarData({}), m_unboundBuffers(0), m_maybeProgramType(std::nullopt)
 	{
 		//CreateProgram();
 	}
@@ -55,7 +91,7 @@ namespace Rendering
 	Shader::Shader(Shader&& other) noexcept
 		: m_platformCallbacks(std::exchange(other.m_platformCallbacks, {})), m_sourceCode{ std::exchange(other.m_sourceCode[0], ""),
 		std::exchange(other.m_sourceCode[1], "") }, m_id(std::exchange(other.m_id, INVALID_OBJ_ID)),
-		m_uniformData(std::exchange(other.m_uniformData, {})), m_unboundUniformBuffers(std::exchange(other.m_unboundUniformBuffers, 0)),
+		m_globalVarData(std::exchange(other.m_globalVarData, {})), m_unboundBuffers(std::exchange(other.m_unboundBuffers, 0)),
 		m_maybeProgramType(std::exchange(other.m_maybeProgramType, std::nullopt))
 	{
 
@@ -66,11 +102,11 @@ namespace Rendering
 		m_platformCallbacks.m_DeleteProgramFunc(*this);
 		m_id = INVALID_OBJ_ID;
 
-		m_unboundUniformBuffers = 0;
+		m_unboundBuffers = 0;
 		m_sourceCode[0] = "";
 		m_sourceCode[1] = "";
 		m_maybeProgramType = std::nullopt;
-		m_uniformData.clear();
+		m_globalVarData.clear();
 	}
 
 	RenderObjectId Shader::GetId() const
@@ -123,6 +159,29 @@ namespace Rendering
 			ShaderProgramQuery::ComputeShaderWorkGroupSize, groups.GetMemPointerMutable());
 		return groups;
 	}
+	Vec3Int Shader::GetBestComputeShaderWorkGroups(const Vec3Int& targetWork) const
+	{
+		if (targetWork.m_X == 0 || targetWork.m_Y == 0 || targetWork.m_Z == 0)
+		{
+			LogError(std::format("Attempted to compute best compute shader group count for shader:{} "
+				"but target work for at least one axis is 0: {}. Use 1 for no work in that axis instead of 0", 
+				ToString(), targetWork.ToString()));
+			return Vec3Int::Zero();
+		}
+
+		const Vec3Int workGroupSize = GetComputeShaderWorkGroupSize();
+		if (workGroupSize.m_X == 0 || workGroupSize.m_Y == 0 || workGroupSize.m_Z == 0)
+		{
+			LogError(std::format("Attempted to compute best compute shader group count for shader:{} "
+				"but work group size for at least one axis is 0: {}", ToString(), workGroupSize.ToString()));
+			return Vec3Int::Zero();
+		}
+		//Dispatch one thread per pixel where each group size is defined in shader 
+		//NOTE: since we do division, we may lose some texels, so we increase it to ensure we account for remainder
+		return Vec3Int((targetWork.m_X + workGroupSize.m_X - 1) / workGroupSize.m_X, 
+					   (targetWork.m_Y + workGroupSize.m_Y - 1) / workGroupSize.m_Y,
+					   (targetWork.m_Z + workGroupSize.m_Z - 1) / workGroupSize.m_Z);
+	}
 
 	void Shader::SetSources(const std::optional<ShaderProgramType>& programType, 
 		const std::string& source1, const std::string& source2)
@@ -162,16 +221,16 @@ namespace Rendering
 			DeleteProgram();
 		}
 
-		m_id = m_platformCallbacks.m_CreateProgramFunc(initData1, initData2, &m_uniformData);
-		for (const auto& uniformData : m_uniformData)
+		m_id = m_platformCallbacks.m_CreateProgramFunc(initData1, initData2, &m_globalVarData);
+		for (const auto& uniformData : m_globalVarData)
 		{
-			if (uniformData.second.m_Type != UniformType::Buffer)
+			if (!IsShaderGlobalVarBoundableBuffer(uniformData.second.m_Type))
 				continue;
 
 			//NOTE: we make sure to increase unbound buffers if there is NONE existing data (since we have no previous bind indices so we need them)
 			//AND if we do to ensure that if there were any previous unbound blocks in previous data, that remains (since by increasing one here
 			//and then decreasing in bind we cancel out)
-			m_unboundUniformBuffers++;
+			m_unboundBuffers++;
 
 			//NOTE: if we had existing data -> buffers existed but shader was recompiled with new id
 			//so we must rebind each uniform block with the newly compiled shader id (but uniform bind index stays the same
@@ -247,7 +306,7 @@ namespace Rendering
 		if (!PassesValidCheck())
 			return;
 
-		if (m_unboundUniformBuffers != 0)
+		if (m_unboundBuffers != 0)
 		{
 			LogError(std::format("Attempted to bind shader:{} active, but that is not allowed "
 				"until all uniform blocks have a buffer bound", ToString()));
@@ -263,9 +322,14 @@ namespace Rendering
 	{
 		m_platformCallbacks.m_DispatchComputeShaderGroupsFunc(groupsX, groupsY, groupsZ);
 	}
+	void Shader::DispatchComputeShaderGroups(const Vec3Int& targetWork)
+	{
+		const Vec3Int evenlyDividedWork = GetBestComputeShaderWorkGroups(targetWork);
+		return DispatchComputeShaderGroups(evenlyDividedWork.m_X, evenlyDividedWork.m_Y, evenlyDividedWork.m_Z);
+	}
 	bool Shader::HasUniform(const std::string_view& view) const
 	{
-		return m_uniformData.find(String16(view)) != m_uniformData.end();
+		return m_globalVarData.find(ShaderVarNameType(view)) != m_globalVarData.end();
 	}
 	void Shader::SetUniform(const UniformDataType type, const char* uniformName, const void* valuePtr)
 	{
@@ -280,22 +344,18 @@ namespace Rendering
 		if (!PassesValidCheck())
 			return false;
 
-		return m_platformCallbacks.m_TrySetUniformFunc(*this, type, uniformName, valuePtr).empty();
-	}
-	void Shader::SetUniformArray(const UniformDataType arrayType, const char* uniformName, const void* arrPtr, const size_t elementCount)
-	{
-		if (!PassesValidCheck())
-			return;
-
-		const std::string error = m_platformCallbacks.m_TrySetArrayUniformFunc(*this, arrayType, uniformName, arrPtr, elementCount);
+		const std::string error = m_platformCallbacks.m_TrySetUniformFunc(*this, type, uniformName, valuePtr);
 		if (!error.empty()) LogError(error);
+		return error.empty();
 	}
 	bool Shader::TrySetUniformArray(const UniformDataType arrayType, const char* uniformName, const void* arrPtr, const size_t elementCount)
 	{
 		if (!PassesValidCheck())
 			return false;
 
-		return m_platformCallbacks.m_TrySetArrayUniformFunc(*this, arrayType, uniformName, arrPtr, elementCount).empty();
+		const std::string error = m_platformCallbacks.m_TrySetArrayUniformFunc(*this, arrayType, uniformName, arrPtr, elementCount);
+		if (!error.empty()) LogError(error);
+		return error.empty();
 	}
 	bool Shader::TryGetUniform(const UniformDataType type, const char* uniformName, void* outputValue) const
 	{
@@ -310,12 +370,12 @@ namespace Rendering
 		return true;
 	}
 	
-	bool Shader::TryBindUniformBlock(const char* blockName, const UniformBufferBindIndex index)
+	bool Shader::TryBindBufferBlock(const ShaderBufferType type, const char* blockName, const BufferBindIndex index)
 	{
 		if (!PassesValidCheck())
 			return false;
 
-		if (m_uniformData.empty())
+		if (m_globalVarData.empty())
 		{
 			LogError(std::format("Attempted to bind uniform block of named:{} but shader:{} has no uniform blocks", 
 				blockName, ToString()));
@@ -329,39 +389,53 @@ namespace Rendering
 		}
 
 		//Note: we do not check if valid name because that is essnetially done in bind callback
-		if (!m_platformCallbacks.m_TryBindUniformBlockFunc(*this, blockName, index))
+		if (!m_platformCallbacks.m_TryBindBufferBlockFunc(*this, type, blockName, index))
 		{
 			LogError(std::format("Attempted to bind uniform block of name:{} in shader but resulted in error", blockName));
 			return false;
 		}
-		if (m_unboundUniformBuffers>0) m_unboundUniformBuffers--;
-		m_uniformData[String16(blockName)].m_BufferBindIndex = index;
+		if (m_unboundBuffers>0) m_unboundBuffers--;
+		m_globalVarData[ShaderVarNameType(blockName)].m_BufferBindIndex = index;
 		
 		return true;
 	}
 
-	bool Shader::TryGetUniformBlockMembers(const char* blockName, std::vector<UniformBlockMemberMemoryInfo>& members, size_t* fullSize) const
+	bool Shader::TryGetUniformBlockMembers(const char* blockName, 
+		std::vector<ShaderBlockMemberMemoryInfo>& members, size_t* outFullByteSize) const
 	{
 		if (!PassesValidCheck())
 			return false;
 
-		if (!m_platformCallbacks.TryGetUniformBlockMembersFunc(*this, blockName, members, fullSize))
+		if (!m_platformCallbacks.TryGetUniformBlockMembersFunc(*this, blockName, members, outFullByteSize))
 		{
 			LogError(std::format("Attempted to get uniform block members of name:{} in shader but resulted in error", blockName));
 			return false;
 		}
 		return true;
 	}
-	const UniformReflectionCollectionType& Shader::GetAllUniformInfo() const
+	bool Shader::TryGetStorageBufferMembers(const char* blockName, 
+		std::vector<ShaderBlockMemberMemoryInfo>& members, size_t* outFullByteSize) const
 	{
-		return m_uniformData;
+		if (!PassesValidCheck())
+			return false;
+
+		if (!m_platformCallbacks.TryGetStorageBufferMembersFunc(*this, blockName, members, outFullByteSize))
+		{
+			LogError(std::format("Attempted to get uniform block members of name:{} in shader but resulted in error", blockName));
+			return false;
+		}
+		return true;
+	}
+	const ShaderGlobalVarReflectionCollectionType& Shader::GetAllGlobalVarInfo() const
+	{
+		return m_globalVarData;
 	}
 
 	std::string Shader::ToString() const
 	{
 		return std::format("[Shader Id:{} Source1:\n{}\nSource2:{}\nUnboundUniforms:{}\nUniformData:{}]", 
-			m_id, m_sourceCode[0], m_sourceCode[1], m_unboundUniformBuffers,
-			Utils::ToStringIterable<String16, UniformReflectionInfo>(m_uniformData));
+			m_id, m_sourceCode[0], m_sourceCode[1], m_unboundBuffers,
+			Utils::ToStringIterable<ShaderVarNameType, ShaderGlobalVarReflectionInfo>(m_globalVarData));
 	}
 
 	Shader& Shader::operator=(Shader&& other) noexcept
@@ -369,8 +443,8 @@ namespace Rendering
 		m_platformCallbacks = std::exchange(other.m_platformCallbacks, {});
 		m_sourceCode = { std::exchange(other.m_sourceCode[0], ""), std::exchange(other.m_sourceCode[1], "")};
 		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
-		m_uniformData = std::exchange(other.m_uniformData, {}); 
-		m_unboundUniformBuffers = std::exchange(other.m_unboundUniformBuffers, 0);
+		m_globalVarData = std::exchange(other.m_globalVarData, {}); 
+		m_unboundBuffers = std::exchange(other.m_unboundBuffers, 0);
 		m_maybeProgramType = std::exchange(other.m_maybeProgramType, std::nullopt);
 		return *this;
 	}

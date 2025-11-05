@@ -45,7 +45,7 @@ namespace GlobalEntityCreator
 
 		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
 		LightSourceData& lightSource = playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
-			ColorGradient(Utils::Color(243, 208, 67, 255), Utils::Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
+			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
 		//Assert(false, std::format("player light source:{}", playerEntity.TryGetComponentWithName("LightSourceData")->ToString()));
 
@@ -56,7 +56,7 @@ namespace GlobalEntityCreator
 		//Assert(false, std::format("Light source fields: {}", lightSource.ToStringFields()));
 
 		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData(std::vector<std::vector<TextChar>>{ {TextChar(Utils::COLOR_GRAY, 'H') }}, {0, 0}, 
+			VisualData(std::vector<std::vector<TextChar>>{ {TextChar(COLOR_GRAY, 'H') }}, {0, 0}, 
 				fontSettings, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 
 		ComponentFieldReference lightRadiusref = ComponentFieldReference(&lightSource, "Radius");
@@ -80,7 +80,7 @@ namespace GlobalEntityCreator
 			  SpriteAnimationFrame(2, VisualData(RawTextBufferBlock{{TextCharPosition({}, TextChar(WHITE, '4'))}}, visualPreset)) }, 1, 4, true));*/
 
 		/*
-		ColorGradient particleGradient = ColorGradient(Utils::COLOR_RED, Utils::COLOR_BLUE);
+		ColorGradient particleGradient = ColorGradient(Color_RED, Color_BLUE);
 		playerEntity.AddComponent<ParticleEmitterData>(ParticleEmitterData('W', FloatRange(1, 11), particleGradient, fontSettings,
 			RenderLayerType::Player, WorldPosition3D(), FloatRange(5, 16), float(5)));
 			*/
@@ -88,7 +88,7 @@ namespace GlobalEntityCreator
 		//m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
 
 		//Note: the camera has to be moved back a little so objects at origin are still seen due to min near plane value= 0.1
-		EntityData& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformComponent(Vec3(0, 0, 5)));
+		EntityData& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformComponent(Vec3(0, 0, -5)));
 		CameraComponent& cameraData = mainCameraEntity.AddComponent<CameraComponent>(CameraComponent{ CameraSettings{SCREEN_ASPECT_RATIO, 60, nullptr} });
 		cameraController.TryRegisterCamera(cameraData);
 

@@ -415,47 +415,44 @@ namespace Rendering
 		IndexBuffer& operator=(IndexBuffer&&) noexcept;
 	};
 
-	struct UniformBufferPlatformCallbacks
+
+	struct ShaderBufferPlatformCallbacks
 	{
 		RenderObjectId(*m_AllocateFunc)(const size_t byteSize);
-		void(*m_BindFunc)(const RenderObjectId id, const UniformBufferBindIndex index);
+		void(*m_BindFunc)(const RenderObjectId id, const BufferBindIndex index);
 		void(*m_WriteFunc)(const RenderObjectId id, const size_t byteOffset, const size_t writeByteSize, const void* data);
 		void(*m_DeallocateFunc)(const RenderObjectId);
 	};
 
-	class UniformBuffer
+	class ShaderBuffer
 	{
 	private:
-		UniformBufferPlatformCallbacks m_platformCallbacks;
-		UniformBufferBindIndex m_bindIndex;
+	protected:
+		ShaderBufferPlatformCallbacks m_platformCallbacks;
+		BufferBindIndex m_bindIndex;
 		RenderObjectId m_id;
-		/// <summary>
-		/// The name for this uniform buffer block. It must
-		/// stay consistent for all shaders
-		/// </summary>
+
 		std::string_view m_blockName;
 		size_t m_allocatedByteSize;
 
-		/*std::vector<UniformBlockMemberData> m_members;
-		size_t m_memberAlignment;*/
-		std::unordered_map<std::string, UniformBlockMemberMemoryInfo> m_members;
+		std::unordered_map<std::string, ShaderBlockMemberMemoryInfo> m_members;
 	public:
 
 	private:
 	public:
-		UniformBuffer();
-		UniformBuffer(const char* blockName, const UniformBufferPlatformCallbacks callbacks);
-		UniformBuffer(const UniformBuffer& other) = delete;
-		UniformBuffer(UniformBuffer&& other) = delete;
-		~UniformBuffer();
+		ShaderBuffer();
+		ShaderBuffer(const char* blockName, const ShaderBufferPlatformCallbacks callbacks);
+		ShaderBuffer(const ShaderBuffer& other) = delete;
+		ShaderBuffer(ShaderBuffer&& other) noexcept;
+		~ShaderBuffer();
 
 		bool IsAllocated() const;
+		virtual void AllocateFromShaderBlock(const Shader& shader) = 0;
 
 		/*void AddMember(const char* name, const size_t size, const size_t alignment);
 		void FinishLayout();*/
-		void AllocateFromShaderUniformBlock(const Shader& shader);
-		void SetBindingPoint(const UniformBufferBindIndex bindIndex);
-		void LinkBufferToBindingPoint(const UniformBufferBindIndex bindIndex);
+		void SetBindingPoint(const BufferBindIndex bindIndex);
+		void LinkBufferToBindingPoint(const BufferBindIndex bindIndex);
 		void LinkBufferToCurrentBindingPoint();
 		bool HasValidBindingPoint() const;
 
@@ -467,11 +464,20 @@ namespace Rendering
 		/// <summary>
 		/// Will write data as FULL ARRAY for the primitive-type array member 
 		/// (primitive types are all basic types that are NOT custom structs)
+		/// and can write to fixed or dyanmic array
 		/// </summary>
 		/// <param name="arrayName"></param>
 		/// <param name="data"></param>
 		/// <returns></returns>
 		bool TryWritePrimitiveArray(const char* arrayName, const void* data);
+		/// <summary>
+		/// Similar to TryWritePrimitiveArray, but can only write to dynamic and requires total size
+		/// </summary>
+		/// <param name="arrayName"></param>
+		/// <param name="data"></param>
+		/// <param name="size"></param>
+		/// <returns></returns>
+		bool TryWriteDynamicArray(const char* arrayName, const void* data, const size_t elementCount);
 		/// <summary>
 		/// Will write a SINGULAR element within a primitive-type array
 		/// (primitive types are all basic types that are NOT custom structs)
@@ -483,19 +489,63 @@ namespace Rendering
 		bool TryWritePrimitiveArrayElement(const char* arrayName, const size_t index, const void* data);
 
 		bool TryWriteStructArray(const std::string& arrayName, const void* data);
+		bool TryWriteStructDynamicArray(const std::string& arrayName, const void* data, const size_t elementCount);
 		bool TryWriteStructArrayElement(const std::string& arrayName, const size_t index, const void* data);
-		bool TryWriteStructArrayElementMember(const std::string& arrayName, const size_t index, 
+		bool TryWriteStructArrayElementMember(const std::string& arrayName, const size_t index,
 			const std::string& memberName, const size_t size, const void* data);
 
-		UniformBufferBindIndex GetBindIndex() const;
+		BufferBindIndex GetBindIndex() const;
 		RenderObjectId GetId() const;
 		std::string_view GetName() const;
 		size_t GetAllocatedByteSize() const;
 
-		UniformBuffer& operator=(const UniformBuffer&) = delete;
-		UniformBuffer& operator=(UniformBuffer&&) noexcept;
+		ShaderBuffer& operator=(const ShaderBuffer&) = delete;
+		ShaderBuffer& operator=(ShaderBuffer&&) noexcept;
 
-		std::string ToString() const;
+		virtual std::string ToString() const;
+	};
+
+	class UniformBuffer : public ShaderBuffer
+	{
+	private:
+	public:
+
+	private:
+	public:
+		UniformBuffer();
+		UniformBuffer(const char* blockName, const ShaderBufferPlatformCallbacks callbacks);
+		UniformBuffer(const UniformBuffer&) = delete;
+		UniformBuffer(UniformBuffer&&) noexcept = default;
+		~UniformBuffer() = default;
+
+		void AllocateFromShaderBlock(const Shader& shader) override;
+
+		UniformBuffer& operator=(const UniformBuffer&) = delete;
+		UniformBuffer& operator=(UniformBuffer&&) noexcept = default;
+
+		std::string ToString() const override;
+	};
+
+	class ShaderStorageBuffer : public ShaderBuffer
+	{
+	private:
+	public:
+
+	private:
+	public:
+		ShaderStorageBuffer();
+		ShaderStorageBuffer(const char* bufferName, const ShaderBufferPlatformCallbacks& callbacks);
+		ShaderStorageBuffer(const ShaderStorageBuffer&) = delete;
+		ShaderStorageBuffer(ShaderStorageBuffer&&) = default;
+		~ShaderStorageBuffer() = default;
+
+		void AllocateFromShaderBlock(const Shader& shader) override;
+		void DeferAllocatonFromShaderUntilWrite(Shader& shader);
+
+		ShaderStorageBuffer& operator=(const ShaderStorageBuffer&) = delete;
+		ShaderStorageBuffer& operator=(ShaderStorageBuffer&&) noexcept = default;
+
+		std::string ToString() const override;
 	};
 
 	/// <summary>
@@ -505,7 +555,9 @@ namespace Rendering
 	/// </summary>
 	enum class VertexAttributeBaseType : std::uint8_t
 	{
-		Float	= 0,
+		Float				= 0,
+		Integer				= 1,
+		UnsignedInteger		= 2,
 	};
 
 	using VertexLayoutBindIndex = std::uint8_t;
@@ -520,7 +572,8 @@ namespace Rendering
 		/// </summary>
 		ShaderLocation m_ShaderLocation = 0;
 		/// <summary>
-		/// The index corresponding to the buffer this attribute is bound to
+		/// Thee number of components for this attribute.
+		/// Example: vec4 -> 4 vec2 -> 2 float -> 1
 		/// </summary>
 		ComponentCount m_ComponentCount = 0;
 		VertexAttributeBaseType m_Type = VertexAttributeBaseType::Float;
@@ -571,6 +624,29 @@ namespace Rendering
 		~VertexLayout();
 
 		void AddAttribute(const VertexAttribute& attribute);
+		/// <summary>
+		/// Will add all the attributes to the buffer.
+		/// Note: the advance type is automatically set to match the same type as the buffer
+		/// to prevent inconsistencies as well as the bindIndex
+		/// </summary>
+		/// <param name="bufferBindIndex"></param>
+		/// <param name="attributes"></param>
+		void AddAttributes(const VertexLayoutBindIndex bufferBindIndex, std::vector<VertexAttribute>& attributes);
+		/// <summary>
+		/// Rather than creating the 4 separate attributes for every column, you can plug in some basic data and the 
+		/// rest will be generated.
+		/// Note: initial byte offset is the offset of the first float of the matrix from the vertex element.
+		/// so you would do "offsetof(VERTEX_BUFFER_ELEMENT_TYPE, m_MATRIX_MEMBER_NAME)
+		/// Note: columnTypesize is the sizeof(MATRIX_COLUMN_TYPE) -> should be a 4d vector type
+		/// NOTE: matrix size is ROW, COL
+		/// </summary>
+		/// <param name="bufferBindIndex"></param>
+		/// <param name="startLocation"></param>
+		/// <param name="normalize"></param>
+		/// <param name="initialByteOffset"></param>
+		void AddMatrixAttribute(const Vec2Int& matrixSize, const VertexLayoutBindIndex bufferBindIndex,
+			const ShaderLocation startLocation, const bool normalize, const size_t matrixColumnTypeSize, const ByteOffset initialByteOffset);
+
 		//Note: index buffers are NOT linked to vertex layout explicitly
 		void LinkToBuffer(const VertexBuffer& buffer, const VertexLayoutBindIndex bindIndex);
 
@@ -593,10 +669,10 @@ namespace Rendering
 		IndexBuffer* m_IndexBuffer = nullptr;
 	};
 
-	struct UniformBufferProperties
+	struct ShaderBufferProperties
 	{
-		UniformBufferBindIndex m_BindIndex = INVALID_BUFFER_BIND_INDEX;
-		UniformBuffer* m_UniformBuffer = nullptr;
+		BufferBindIndex m_BindIndex = INVALID_BUFFER_BIND_INDEX;
+		ShaderBuffer* m_ShaderBuffer = nullptr;
 	};
 
 	class BufferController
@@ -604,7 +680,7 @@ namespace Rendering
 	private:
 		VertexLayout* m_layout;
 		std::vector<BufferProperties> m_bufferData;
-		std::vector<UniformBufferProperties> m_uniformBufferData;
+		std::vector<ShaderBufferProperties> m_shaderBufferData;
 	public:
 
 	private:
@@ -617,32 +693,8 @@ namespace Rendering
 		/// </summary>
 		/// <param name="buffer"></param>
 		/// <returns></returns>
-		UniformBufferBindIndex AddUniformBuffer(UniformBuffer* buffer);
+		BufferBindIndex AddShaderBuffer(ShaderBuffer* buffer);
 
 		BufferProperties* GetBufferDataMutable(const VertexLayoutBindIndex bindIndex);
-
-		/// <summary>
-		/// Will add all the attributes to the buffer.
-		/// Note: the advance type is automatically set to match the same type as the buffer
-		/// to prevent inconsistencies as well as the bindIndex
-		/// </summary>
-		/// <param name="bufferBindIndex"></param>
-		/// <param name="attributes"></param>
-		void AddVertexBufferAttributes(const VertexLayoutBindIndex bufferBindIndex, std::vector<VertexAttribute>& attributes);
-
-		/// <summary>
-		/// Rather than creating the 4 separate attributes for every column, you can plug in some basic data and the 
-		/// rest will be generated.
-		/// Note: initial byte offset is the offset of the first float of the matrix from the vertex element.
-		/// so you would do "offsetof(VERTEX_BUFFER_ELEMENT_TYPE, m_MATRIX_MEMBER_NAME)
-		/// Note: columnTypesize is the sizeof(MATRIX_COLUMN_TYPE) -> should be a 4d vector type
-		/// NOTE: matrix size is ROW, COL
-		/// </summary>
-		/// <param name="bufferBindIndex"></param>
-		/// <param name="startLocation"></param>
-		/// <param name="normalize"></param>
-		/// <param name="initialByteOffset"></param>
-		void AddVertexBufferMatrixAttribute(const Vec2Int& matrixSize, const VertexLayoutBindIndex bufferBindIndex, const ShaderLocation startLocation, 
-			const bool normalize, const size_t matrixColumnTypeSize, const ByteOffset initialByteOffset);
 	};
 }

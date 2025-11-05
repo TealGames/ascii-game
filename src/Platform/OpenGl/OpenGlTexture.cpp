@@ -96,12 +96,12 @@ namespace Rendering
 			GL_CALL(glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GetMagFilter(mag)));
 		}
 
-		static RenderObjectId AllocateTexture(const TextureData& data)
+		static RenderObjectId AllocateTexture(const TextureInfo& data)
 		{
 			RenderObjectId textureId;
 			GL_CALL(glCreateTextures(GL_TEXTURE_2D, 1, &textureId));
 			//GL_CALL(glTextureStorage2D(GL_TEXTURE_2, 0, format, size.m_X, size.m_Y, 0, format, GL_UNSIGNED_BYTE, data));
-			GL_CALL(glTextureStorage2D(textureId, 1, OpenGlUtils::GetStorage(data.m_internalStorage), data.m_size.m_X, data.m_size.m_Y));
+			GL_CALL(glTextureStorage2D(textureId, 1, OpenGlUtils::GetStorage(data.m_internalStorage), data.m_texelSize.m_X, data.m_texelSize.m_Y));
 
 			SetTextureSettings(textureId, data.m_wrapBehavior, data.m_minFilter, data.m_magFilter);
 			return textureId;
@@ -117,6 +117,13 @@ namespace Rendering
 			const GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
 			const GLenum texelStorage = GetTexelStorageType(storage);
 			GL_CALL(glTextureSubImage2D(id, 0, 0, 0, size.m_X, size.m_Y, format, texelStorage, data));
+		}
+		static void CopyData(const RenderObjectId id, const Vec2Int size, const Texture& otherTexture)
+		{
+			//Params: source id, source type, source mip map level, 
+			// and last 3 are xyz start coords on texture to start copy from
+			GL_CALL(glCopyImageSubData(otherTexture.GetId(), GL_TEXTURE_2D, 0, 0, 0, 0,
+				id, GL_TEXTURE_2D, 0, 0, 0, 0, size.m_X, size.m_Y, 1));
 		}
 
 		static void GetData(const RenderObjectId id, const Vec2Int offset, const Vec2Int size,
@@ -139,17 +146,18 @@ namespace Rendering
 				{
 					AllocateTexture,
 					SetData,
+					CopyData,
 					GetData,
 					DeallocateTexture,
 				});
 		}
 
-		static RenderObjectId AllocateTextureCube(const TextureData& data)
+		static RenderObjectId AllocateTextureCube(const TextureInfo& data)
 		{
 			RenderObjectId cubeId;
 			GL_CALL(glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cubeId));
 			//GL_CALL(glTextureStorage2D(GL_TEXTURE_2, 0, format, size.m_X, size.m_Y, 0, format, GL_UNSIGNED_BYTE, data));
-			GL_CALL(glTextureStorage2D(cubeId, 1, OpenGlUtils::GetStorage(data.m_internalStorage), data.m_size.m_X, data.m_size.m_Y));
+			GL_CALL(glTextureStorage2D(cubeId, 1, OpenGlUtils::GetStorage(data.m_internalStorage), data.m_texelSize.m_X, data.m_texelSize.m_Y));
 
 			SetTextureSettings(cubeId, data.m_wrapBehavior, data.m_minFilter, data.m_magFilter);
 			return cubeId;

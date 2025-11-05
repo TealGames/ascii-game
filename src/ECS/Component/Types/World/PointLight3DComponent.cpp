@@ -1,7 +1,7 @@
 #include "ECS/Component/Types/World/PointLight3DComponent.hpp"
 
 PointLight3DComponent::PointLight3DComponent() : PointLight3DComponent(0, {}) {}
-PointLight3DComponent::PointLight3DComponent(const float radius, const Utils::Color color) :
+PointLight3DComponent::PointLight3DComponent(const float radius, const Color color) :
 	m_Radius(radius), m_Color(color) {}
 
 

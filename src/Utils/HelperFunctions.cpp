@@ -150,17 +150,17 @@ namespace Utils
 		return tokens;
 	}
 
-	inline bool IsNumber(char c)
+	bool IsNumber(char c)
 	{
 		return std::isdigit(c);
 	}
 
-	inline bool IsLetter(char c)
+	bool IsLetter(char c)
 	{
 		return std::isalpha(c);
 	}
 
-	inline bool IsLetterOrNumber(char c)
+	bool IsLetterOrNumber(char c)
 	{
 		return std::isalnum(c);
 	}

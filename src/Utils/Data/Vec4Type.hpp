@@ -164,12 +164,24 @@ public:
 
 	Vec operator/(const Vec& other) const
 	{
-		if (Utils::ApproximateEqualsF(m_X,0) || Utils::ApproximateEqualsF(other.m_Y,0) 
-			|| Utils::ApproximateEqualsF(other.m_Z,0), Utils::ApproximateEqualsF(other.m_W, 0))
+		if constexpr (std::is_floating_point_v<T>)
 		{
-			LogError(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
-			throw std::invalid_argument("Divide vec4 by 0");
+			if (Utils::ApproximateEqualsF(m_X, 0) || Utils::ApproximateEqualsF(other.m_Y, 0)
+				|| Utils::ApproximateEqualsF(other.m_Z, 0), Utils::ApproximateEqualsF(other.m_W, 0))
+			{
+				LogError(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
+				throw std::invalid_argument("Divide vec4 by 0");
+			}
 		}
+		else
+		{
+			if (other.m_X == 0 || other.m_Y == 0 || other.m_Z == 0 || other.m_W == 0)
+			{
+				LogError(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
+				throw std::invalid_argument("Divide vec4 by 0");
+			}
+		}
+		
 
 		return Vec{ m_X / other.m_X, m_Y / other.m_Y, m_Z / other.m_Z, m_W / other.m_W };
 	}

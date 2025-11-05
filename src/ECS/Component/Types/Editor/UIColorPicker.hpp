@@ -12,7 +12,7 @@ class UIPanel;
 class UISelectableData;
 class UIRendererData;
 
-using ColorPickerAction = std::function<void(Utils::Color)>;
+using ColorPickerAction = std::function<void(Color)>;
 class UIColorPickerData : public Component
 {
 private:
@@ -21,7 +21,7 @@ private:
 	UIPanel* m_fieldPanel;
 	UISelectableData* m_selectable;
 	//GUIStyle m_settings;
-	Utils::Color m_color;
+	Color m_color;
 
 	ColorPickerAction m_valueSetCallback;
 public:
@@ -34,11 +34,11 @@ public:
 
 	void Init();
 
-	void SetColor(const Utils::Color color);
+	void SetColor(const Color color);
 	//void SetSettings(const GUIStyle& settings);
 	void SetValueSetAction(const ColorPickerAction& action);
 
-	Utils::Color GetColor() const;
+	Color GetColor() const;
 	const UIPanel* GetFieldPanel() const;
 
 	void InitFields() override;

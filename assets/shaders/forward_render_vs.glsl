@@ -1,10 +1,14 @@
-#version 330 core
+#version 430 core
 
-layout(std140) uniform ViewerBlock 
+layout(std140) uniform ViewerBlock
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
     vec3 worldPos;
+    vec3 forwardDir;
+    vec3 rightDir;
+    vec3 upDir;
+    float yFov;
 } uViewerBlock;
 
 layout(location=0) in vec3 aPosition;
@@ -12,13 +16,13 @@ layout(location=1) in vec2 aTexCoords;
 layout(location=2) in vec3 aNormal;
 
 //These are instanced per object
-layout(location=3) in vec4 aColor;
+layout(location=3) in uint aMaterialIndex;
 layout(location=4) in mat4 aModelMatrix;
 layout(location=8) in mat3 aNormalModelMatrix;
 
 //Passed to fragment shader
 out vec2 vTexCoords;
-out vec4 vColor;
+flat out uint vMaterialIndex;
 out vec3 vWorldPos;
 out vec3 vNormal;
 
@@ -29,7 +33,7 @@ void main()
 
     vTexCoords= aTexCoords;
     vWorldPos= worldPos.xyz;
-    vColor= aColor;
+    vMaterialIndex= aMaterialIndex;
     //Just like we use model matrix by pos -> world pos,
     //we do normals by normal model matrix -> world normals
     vNormal= normalize(aNormalModelMatrix * aNormal);

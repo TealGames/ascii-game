@@ -8,7 +8,7 @@
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
-#include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Rendering/Renderer3d.hpp"
 #include "Core/Asset/FontAsset.hpp"
 
 #ifdef ENABLE_PROFILER

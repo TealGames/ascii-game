@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/GizmoOverlay.hpp"
-#include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Rendering/Renderer3d.hpp"
 #include "ECS/Systems/Types/UI/UIRendererSystem.hpp"
 #include "Core/Physics/PhysicsManager.hpp"
 #include "ECS/Component/Types/World/TransformData.hpp"
@@ -10,8 +10,8 @@
 #include "Utils/Data/ColorConstants.hpp"
 
 static constexpr float LINE_THICKNESS = 1;
-static constexpr Utils::Color COLLIDER_OUTLINE_COLOR = Utils::COLOR_GREEN;
-static constexpr Utils::Color UI_RECT_OUTLINE_COLOR = Utils::COLOR_YELLOW;
+static constexpr Color COLLIDER_OUTLINE_COLOR = COLOR_GREEN;
+static constexpr Color UI_RECT_OUTLINE_COLOR = COLOR_YELLOW;
 
 GizmoOverlay::GizmoOverlay(ECS::UIRenderSystem& renderSystem, Physics::PhysicsManager& physicsManager, const CameraController& cameraController) 
 	: m_queuedCalls(), m_activeGizmos(GizmoType::None)
@@ -54,7 +54,7 @@ void GizmoOverlay::MoveCallsToRenderBuffer(Rendering::Renderer& renderer)
 {
 	if (m_queuedCalls.empty()) return;
 
-	renderer.MoveCallsToBuffer(m_queuedCalls);
+	//renderer.MoveCallsToBuffer(m_queuedCalls);
 	m_queuedCalls.clear();
 }
 

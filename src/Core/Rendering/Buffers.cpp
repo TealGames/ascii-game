@@ -519,14 +519,19 @@ namespace Rendering
 	}
 
 
-	UniformBuffer::UniformBuffer() : UniformBuffer("", UniformBufferPlatformCallbacks{}) {}
-	UniformBuffer::UniformBuffer(const char* blockName, const UniformBufferPlatformCallbacks callbacks)
-		: m_platformCallbacks(callbacks), m_bindIndex(INVALID_BUFFER_BIND_INDEX), 
-		m_id(INVALID_OBJ_ID), m_members(), m_blockName(blockName),m_allocatedByteSize(0)
+	ShaderBuffer::ShaderBuffer() : ShaderBuffer("", ShaderBufferPlatformCallbacks{}) {}
+	ShaderBuffer::ShaderBuffer(const char* blockName, const ShaderBufferPlatformCallbacks callbacks)
+		: m_platformCallbacks(callbacks), m_bindIndex(INVALID_BUFFER_BIND_INDEX),
+		m_id(INVALID_OBJ_ID), m_members(), m_blockName(blockName), m_allocatedByteSize(0)
 	{
-		
+
 	}
-	UniformBuffer::~UniformBuffer()
+	ShaderBuffer::ShaderBuffer(ShaderBuffer&& other) noexcept : m_platformCallbacks(std::exchange(other.m_platformCallbacks, {})),
+		m_bindIndex(std::exchange(other.m_bindIndex, INVALID_BUFFER_BIND_INDEX)), m_id(std::exchange(other.m_id, INVALID_OBJ_ID)),
+		m_members(std::exchange(other.m_members, {})), m_blockName(std::exchange(other.m_blockName, {})),
+		m_allocatedByteSize(std::exchange(other.m_allocatedByteSize, {})) {}
+
+	ShaderBuffer::~ShaderBuffer()
 	{
 		if (m_id == INVALID_OBJ_ID)
 			return;
@@ -534,64 +539,47 @@ namespace Rendering
 		m_allocatedByteSize = 0;
 		m_platformCallbacks.m_DeallocateFunc(m_id);
 	}
-	bool UniformBuffer::IsAllocated() const
+	bool ShaderBuffer::IsAllocated() const
 	{
 		return m_id != INVALID_OBJ_ID;
 	}
-	void UniformBuffer::AllocateFromShaderUniformBlock(const Shader& shader)
-	{
-		std::vector<UniformBlockMemberMemoryInfo> members = {};
-		size_t fullSize = 0;
-		shader.TryGetUniformBlockMembers(m_blockName.data(), members, &fullSize);
-
-		m_members.reserve(members.size());
-		for (const auto& member : members)
-		{
-			m_members.emplace(member.m_Name, member);
-		}
-		m_id= m_platformCallbacks.m_AllocateFunc(fullSize);
-		m_allocatedByteSize = fullSize;
-
-		if (m_bindIndex != INVALID_BUFFER_BIND_INDEX)
-			LinkBufferToCurrentBindingPoint();
-	}
-	void UniformBuffer::SetBindingPoint(const UniformBufferBindIndex bindIndex)
+	void ShaderBuffer::SetBindingPoint(const BufferBindIndex bindIndex)
 	{
 		m_bindIndex = bindIndex;
 	}
-	void UniformBuffer::LinkBufferToBindingPoint(const UniformBufferBindIndex bindIndex)
+	void ShaderBuffer::LinkBufferToBindingPoint(const BufferBindIndex bindIndex)
 	{
 		if (m_id == INVALID_OBJ_ID)
 		{
-			LogError(std::format("Attempted to link uniform buffer to binding point:{} "
+			LogError(std::format("Attempted to link shader buffer to binding point:{} "
 				"when its id is invalid (probably not allocated/initialized yet)", bindIndex));
 			return;
 		}
 		SetBindingPoint(bindIndex);
 		m_platformCallbacks.m_BindFunc(m_id, m_bindIndex);
 	}
-	void UniformBuffer::LinkBufferToCurrentBindingPoint()
+	void ShaderBuffer::LinkBufferToCurrentBindingPoint()
 	{
 		LinkBufferToBindingPoint(m_bindIndex);
 	}
-	bool UniformBuffer::HasValidBindingPoint() const { return m_bindIndex != INVALID_BUFFER_BIND_INDEX; }
-	void UniformBuffer::WriteData(const size_t byteOffset, const size_t writeByteSize, const void* data)
+	bool ShaderBuffer::HasValidBindingPoint() const { return m_bindIndex != INVALID_BUFFER_BIND_INDEX; }
+	void ShaderBuffer::WriteData(const size_t byteOffset, const size_t writeByteSize, const void* data)
 	{
 		if (byteOffset + writeByteSize > m_allocatedByteSize)
 		{
-			LogError(std::format("Attempted to write data to uniform buffer named:{} with offset:{} size:{} "
+			LogError(std::format("Attempted to write data to shader buffer named:{} with offset:{} size:{} "
 				"which is past allocated size:{}", m_blockName, byteOffset, writeByteSize, m_allocatedByteSize));
 			return;
 		}
 
 		m_platformCallbacks.m_WriteFunc(m_id, byteOffset, writeByteSize, data);
 	}
-	bool UniformBuffer::TryWriteData(const char* name, const size_t writeSize, const void* data)
+	bool ShaderBuffer::TryWriteData(const char* name, const size_t writeSize, const void* data)
 	{
 		auto it = m_members.find(name);
 		if (it == m_members.end())
 		{
-			LogError(std::format("Attempted to write to uniform buffer for member:'{}' "
+			LogError(std::format("Attempted to write to shader buffer for member:'{}' "
 				"but it could not be found out of {} members. Members:{}", name, m_members.size(), ToString()));
 			return false;
 		}
@@ -600,7 +588,7 @@ namespace Rendering
 		return true;
 	}
 
-	bool UniformBuffer::TryWriteStruct(const std::string& structName, const size_t structSize, const void* data)
+	bool ShaderBuffer::TryWriteStruct(const std::string& structName, const size_t structSize, const void* data)
 	{
 		std::string tempStr = "";
 		size_t firstMemberOffset = -1;
@@ -620,7 +608,7 @@ namespace Rendering
 		WriteData(firstMemberOffset, structSize, data);
 		return true;
 	}
-	bool UniformBuffer::TryWriteStructMember(const std::string& structName, const std::string& memberName, const size_t memberSize, const void* data)
+	bool ShaderBuffer::TryWriteStructMember(const std::string& structName, const std::string& memberName, const size_t memberSize, const void* data)
 	{
 		const std::string fullMemberName = std::string(structName) + '.' + std::string(memberName);
 		auto it = m_members.find(fullMemberName);
@@ -630,26 +618,47 @@ namespace Rendering
 		WriteData(it->second.m_ByteOffset, memberSize, data);
 		return true;
 	}
-	bool UniformBuffer::TryWritePrimitiveArray(const char* arrayName, const void* data)
+	bool ShaderBuffer::TryWritePrimitiveArray(const char* arrayName, const void* data)
 	{
 		auto it = m_members.find(arrayName);
 		if (it == m_members.end())
+			return false;
+
+		if (!it->second.IsFixedSizeArray())
 			return false;
 
 		WriteData(it->second.m_ByteOffset, it->second.m_ArraySize * it->second.m_ArrayByteStride, data);
 		return true;
 	}
-	bool UniformBuffer::TryWritePrimitiveArrayElement(const char* arrayName, const size_t index, const void* data)
+	bool ShaderBuffer::TryWriteDynamicArray(const char* arrayName, const void* data, const size_t elementCount)
 	{
 		auto it = m_members.find(arrayName);
 		if (it == m_members.end())
 			return false;
 
-		WriteData(it->second.m_ByteOffset + it->second.m_ArrayByteStride*index, 
+		if (!it->second.IsDynamicArray())
+			return false;
+		
+		//NOTE: we could write to array size value here, but we use it as a flag for dynamic array
+		WriteData(it->second.m_ByteOffset, elementCount * it->second.m_ArrayByteStride, data);
+		return true;
+	}
+	
+	bool ShaderBuffer::TryWritePrimitiveArrayElement(const char* arrayName, const size_t index, const void* data)
+	{
+		auto it = m_members.find(arrayName);
+		if (it == m_members.end())
+			return false;
+
+		//NOTE: we can only do bounds checking on fixed size arrays since we do not know the size set for dynamic
+		if (it->second.IsFixedSizeArray() && index >= it->second.m_ArraySize)
+			return false;
+
+		WriteData(it->second.m_ByteOffset + it->second.m_ArrayByteStride * index,
 			it->second.m_ArrayByteStride, data);
 		return true;
 	}
-	bool UniformBuffer::TryWriteStructArray(const std::string& arrayName, const void* data)
+	bool ShaderBuffer::TryWriteStructArray(const std::string& arrayName, const void* data)
 	{
 		size_t arraySize = 0;
 		size_t firstElementOffset = -1;
@@ -669,10 +678,10 @@ namespace Rendering
 
 			tempStr = member.first.substr(tempStr.size() + 1, closingIndexingIndex - (tempStr.size() + 1));
 			convertedIndex = std::atoi(tempStr.c_str());
-			arraySize = std::max(arraySize, (convertedIndex+1)*member.second.m_ArrayByteStride);
+			arraySize = std::max(arraySize, (convertedIndex + 1) * member.second.m_ArrayByteStride);
 			//We do not need first index to get struct size, we just use its offset and remove how many bytes it is in of the array
-			if (firstElementOffset==size_t(-1)) 
-				firstElementOffset = member.second.m_ByteOffset - (convertedIndex *member.second.m_ArrayByteStride);
+			if (firstElementOffset == size_t(-1))
+				firstElementOffset = member.second.m_ByteOffset - (convertedIndex * member.second.m_ArrayByteStride);
 		}
 		if (arraySize == 0)
 			return false;
@@ -680,7 +689,36 @@ namespace Rendering
 		WriteData(firstElementOffset, arraySize, data);
 		return true;
 	}
-	bool UniformBuffer::TryWriteStructArrayElement(const std::string& arrayName, const size_t index, const void* data)
+	bool ShaderBuffer::TryWriteStructDynamicArray(const std::string& arrayName, const void* data, const size_t elementCount)
+	{
+		size_t firstElementOffset = -1;
+		std::string tempStr = "";
+		int convertedIndex = -1;
+		for (const auto& member : m_members)
+		{
+			tempStr = member.first.substr(0, std::min(member.first.size(), arrayName.size()));
+			if (tempStr != arrayName)
+				continue;
+
+			//Even thoguh str might match, it may have similar start, so we ensure
+			//by finding the closing indexing segment of the member
+			size_t closingIndexingIndex = member.first.find(']');
+			if (closingIndexingIndex == std::string::npos)
+				continue;
+
+			tempStr = member.first.substr(tempStr.size() + 1, closingIndexingIndex - (tempStr.size() + 1));
+			convertedIndex = std::atoi(tempStr.c_str());
+			//We do not need first index to get struct size, we just use its offset and remove how many bytes it is in of the array
+			if (firstElementOffset == size_t(-1))
+			{
+				firstElementOffset = member.second.m_ByteOffset - (convertedIndex * member.second.m_ArrayByteStride);
+				WriteData(firstElementOffset, elementCount * member.second.m_ArrayByteStride, data);
+				return true;
+			}
+		}
+		return false;
+	}
+	bool ShaderBuffer::TryWriteStructArrayElement(const std::string& arrayName, const size_t index, const void* data)
 	{
 		size_t structSize = 0;
 		size_t firstElementOffset = 0;
@@ -698,7 +736,7 @@ namespace Rendering
 				continue;
 
 			structSize = member.second.m_ArrayByteStride;
-			tempStr = member.first.substr(tempStr.size() + 1, closingIndexingIndex- (tempStr.size()+1));
+			tempStr = member.first.substr(tempStr.size() + 1, closingIndexingIndex - (tempStr.size() + 1));
 			//We do not need first index to get struct size, we just use its offset and remove how many bytes it is in of the array
 			firstElementOffset = member.second.m_ByteOffset - (std::atoi(tempStr.c_str()) * member.second.m_ArrayByteStride);
 			break;
@@ -709,7 +747,7 @@ namespace Rendering
 		WriteData(firstElementOffset, structSize, data);
 		return true;
 	}
-	bool UniformBuffer::TryWriteStructArrayElementMember(const std::string& arrayName, const size_t index,
+	bool ShaderBuffer::TryWriteStructArrayElementMember(const std::string& arrayName, const size_t index,
 		const std::string& memberName, const size_t size, const void* data)
 	{
 		//Note: struct elements are flattened into separate uniforms in the block but are accessed via index and member name
@@ -721,26 +759,84 @@ namespace Rendering
 		WriteData(it->second.m_ByteOffset, size, data);
 		return true;
 	}
-	
-	UniformBufferBindIndex UniformBuffer::GetBindIndex() const { return m_bindIndex; }
-	RenderObjectId UniformBuffer::GetId() const { return m_id; }
-	std::string_view UniformBuffer::GetName() const { return std::string_view(m_blockName); }
-	size_t UniformBuffer::GetAllocatedByteSize() const { return m_allocatedByteSize; }
 
-	UniformBuffer& UniformBuffer::operator=(UniformBuffer&& other) noexcept
+	BufferBindIndex ShaderBuffer::GetBindIndex() const { return m_bindIndex; }
+	RenderObjectId ShaderBuffer::GetId() const { return m_id; }
+	std::string_view ShaderBuffer::GetName() const { return std::string_view(m_blockName); }
+	size_t ShaderBuffer::GetAllocatedByteSize() const { return m_allocatedByteSize; }
+
+	ShaderBuffer& ShaderBuffer::operator=(ShaderBuffer&& other) noexcept
 	{
 		m_platformCallbacks = std::exchange(other.m_platformCallbacks, {});
-		m_bindIndex= std::exchange(other.m_bindIndex, INVALID_BUFFER_BIND_INDEX);
-		m_id= std::exchange(other.m_id, INVALID_OBJ_ID);
+		m_bindIndex = std::exchange(other.m_bindIndex, INVALID_BUFFER_BIND_INDEX);
+		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
 		m_members = std::exchange(other.m_members, {});
 		m_blockName = std::exchange(other.m_blockName, {});
 		m_allocatedByteSize = std::exchange(other.m_allocatedByteSize, {});
 		return *this;
 	}
+	std::string ShaderBuffer::ToString() const
+	{
+		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable<std::vector<ShaderBlockMemberMemoryInfo>, ShaderBlockMemberMemoryInfo>
+			(Utils::GetValuesFromMap<std::string, ShaderBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
+	}
+
+
+	UniformBuffer::UniformBuffer() : ShaderBuffer() {}
+	UniformBuffer::UniformBuffer(const char* blockName, const ShaderBufferPlatformCallbacks callbacks)
+		: ShaderBuffer(blockName, callbacks) {}
+	void UniformBuffer::AllocateFromShaderBlock(const Shader& shader)
+	{
+		std::vector<ShaderBlockMemberMemoryInfo> members = {};
+		size_t fullSize = 0;
+		shader.TryGetUniformBlockMembers(m_blockName.data(), members, &fullSize);
+
+		m_members.reserve(members.size());
+		for (const auto& member : members)
+		{
+			m_members.emplace(member.m_Name, member);
+		}
+		m_id = m_platformCallbacks.m_AllocateFunc(fullSize);
+		m_allocatedByteSize = fullSize;
+
+		if (m_bindIndex != INVALID_BUFFER_BIND_INDEX)
+			LinkBufferToCurrentBindingPoint();
+	}
 	std::string UniformBuffer::ToString() const
 	{
-		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable<std::vector<UniformBlockMemberMemoryInfo>, UniformBlockMemberMemoryInfo>
-			(Utils::GetValuesFromMap<std::string, UniformBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
+		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable<std::vector<ShaderBlockMemberMemoryInfo>, ShaderBlockMemberMemoryInfo>
+			(Utils::GetValuesFromMap<std::string, ShaderBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
+	}
+
+
+	ShaderStorageBuffer::ShaderStorageBuffer() : ShaderBuffer() {}
+	ShaderStorageBuffer::ShaderStorageBuffer(const char* bufferName, const ShaderBufferPlatformCallbacks& callbacks)
+		: ShaderBuffer(bufferName, callbacks) {}
+
+	void ShaderStorageBuffer::AllocateFromShaderBlock(const Shader& shader)
+	{
+		std::vector<ShaderBlockMemberMemoryInfo> members = {};
+		size_t fullSize = 0;
+		shader.TryGetStorageBufferMembers(m_blockName.data(), members, &fullSize);
+
+		m_members.reserve(members.size());
+		for (const auto& member : members)
+		{
+			m_members.emplace(member.m_Name, member);
+		}
+		m_id = m_platformCallbacks.m_AllocateFunc(fullSize);
+		m_allocatedByteSize = fullSize;
+
+		if (m_bindIndex != INVALID_BUFFER_BIND_INDEX)
+			LinkBufferToCurrentBindingPoint();
+	}
+	void ShaderStorageBuffer::DeferAllocatonFromShaderUntilWrite(Shader& shader)
+	{
+
+	}
+	std::string ShaderStorageBuffer::ToString() const
+	{
+		return std::format("[ShaderStorageBuffer]");
 	}
 
 
@@ -766,6 +862,25 @@ namespace Rendering
 	{
 		m_layout.push_back(attribute);
 		m_callbacks.m_AddAttributeFunc(m_implState, m_layout.back());
+	}
+
+	void VertexLayout::AddAttributes(const VertexLayoutBindIndex bufferBindIndex, std::vector<VertexAttribute>& attributes)
+	{
+		for (auto& attribute : attributes)
+		{
+			attribute.m_BufferBindIndex = bufferBindIndex;
+			AddAttribute(attribute);
+		}
+	}
+	void VertexLayout::AddMatrixAttribute(const Vec2Int& matrixSize, const VertexLayoutBindIndex bufferBindIndex,
+		const ShaderLocation startLocation, const bool normalize, const size_t matrixColumnTypeSize, const ByteOffset initialByteOffset)
+	{
+		for (std::uint8_t i = 0; i < matrixSize.m_X; i++)
+		{
+			AddAttribute(VertexAttribute(startLocation + i, matrixSize.m_Y, VertexAttributeBaseType::Float, normalize,
+				//For the offset, we assume it is tightly packed with no alignment
+				initialByteOffset + matrixColumnTypeSize * i, bufferBindIndex));
+		}
 	}
 	void VertexLayout::LinkToBuffer(const RenderObjectId id, const size_t elementSize, 
 		const VertexAttributeAdvance advance, const VertexLayoutBindIndex bindIndex)
@@ -805,7 +920,7 @@ namespace Rendering
 
 
 	BufferController::BufferController(VertexLayout* vertexLayout) 
-		: m_layout(vertexLayout), m_bufferData(), m_uniformBufferData() {}
+		: m_layout(vertexLayout), m_bufferData(), m_shaderBufferData() {}
 
 	VertexLayoutBindIndex BufferController::AddVertexBuffer(VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer)
 	{
@@ -820,16 +935,16 @@ namespace Rendering
 
 		return bindIndex;
 	}
-	UniformBufferBindIndex BufferController::AddUniformBuffer(UniformBuffer* buffer)
+	BufferBindIndex BufferController::AddShaderBuffer(ShaderBuffer* buffer)
 	{
-		if (!m_uniformBufferData.empty() && m_uniformBufferData.back().m_BindIndex == std::numeric_limits<UniformBufferBindIndex>::max())
+		if (!m_shaderBufferData.empty() && m_shaderBufferData.back().m_BindIndex == std::numeric_limits<BufferBindIndex>::max())
 		{
-			LogError(std::format("Failed to add uniform buffer: reached the max limit of binding indices in buffer controller"));
+			LogError(std::format("Failed to add shader buffer: reached the max limit of binding indices in buffer controller"));
 			return 0;
 		}
-		const UniformBufferBindIndex bindIndex = m_uniformBufferData.empty() ? 0 : m_uniformBufferData.back().m_BindIndex + 1;
+		const BufferBindIndex bindIndex = m_shaderBufferData.empty() ? 0 : m_shaderBufferData.back().m_BindIndex + 1;
 		buffer->SetBindingPoint(bindIndex);
-		m_uniformBufferData.emplace_back(bindIndex, buffer);
+		m_shaderBufferData.emplace_back(bindIndex, buffer);
 
 		return bindIndex;
 	}
@@ -844,25 +959,5 @@ namespace Rendering
 				return &data;
 		}
 		return nullptr;
-	}
-
-	void BufferController::AddVertexBufferAttributes(const VertexLayoutBindIndex bufferBindIndex, std::vector<VertexAttribute>& attributes)
-	{
-		BufferProperties* bufferData = GetBufferDataMutable(bufferBindIndex);
-		for (auto& attribute : attributes)
-		{
-			attribute.m_BufferBindIndex = bufferBindIndex;
-			m_layout->AddAttribute(attribute);
-		}
-	}
-	void BufferController::AddVertexBufferMatrixAttribute(const Vec2Int& matrixSize, const VertexLayoutBindIndex bufferBindIndex, const ShaderLocation startLocation,
-		const bool normalize, const size_t matrixColumnTypeSize, const ByteOffset initialByteOffset)
-	{
-		for (std::uint8_t i = 0; i < matrixSize.m_X; i++)
-		{
-			m_layout->AddAttribute(VertexAttribute(startLocation + i, matrixSize.m_Y, VertexAttributeBaseType::Float, normalize,
-				//For the offset, we assume it is tightly packed with no alignment
-				initialByteOffset + matrixColumnTypeSize * i, bufferBindIndex));
-		}
 	}
 }

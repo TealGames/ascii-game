@@ -58,14 +58,14 @@ void UIColorPickerData::SetValueSetAction(const ColorPickerAction& action)
 	m_valueSetCallback = action;
 }
 
-void UIColorPickerData::SetColor(const Utils::Color color) 
+void UIColorPickerData::SetColor(const Color color) 
 { 
 	m_color = color; 
 	if (m_fieldPanel != nullptr) m_fieldPanel->SetColor(m_color);
 	if (m_valueSetCallback) m_valueSetCallback(m_color);
 }
 //void ColorPickerGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }
-Utils::Color UIColorPickerData::GetColor() const { return m_color; }
+Color UIColorPickerData::GetColor() const { return m_color; }
 const UIPanel* UIColorPickerData::GetFieldPanel() const { return m_fieldPanel; }
 
 void UIColorPickerData::InitFields()

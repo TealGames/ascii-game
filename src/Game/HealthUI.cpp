@@ -12,7 +12,7 @@
 
 static const NormalizedPosition HEALTH_START_POS_RELATIVE = { 0.05, 0.95 };
 static const NormalizedPosition HEALTH_SIZE = { 0.03, 0.03 };
-static constexpr Utils::Color RED_ORANGE_COLOR = { 215, 71, 9, 255 };
+static constexpr Color RED_ORANGE_COLOR = { 215, 71, 9, 255 };
 static constexpr float HEALTH_FONT_SIZE = 24;
 
 namespace Game

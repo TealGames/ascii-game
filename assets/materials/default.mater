@@ -1,0 +1,8 @@
+@Properties
+Albedo:				null
+BaseColor:			255 255 255 255
+Alpha:				255
+EmissiveColor:		0 0 0 255
+Roughness:			0
+Metallic:			0 
+NormalMap:			null

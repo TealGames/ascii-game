@@ -9,7 +9,7 @@ namespace ECS { class UIPanelSystem; }
 class UIPanel : public Component
 {
 private:
-	Utils::Color m_color;
+	Color m_color;
 	UIRendererData* m_renderer;
 public:
 	friend class ECS::UIPanelSystem;
@@ -17,9 +17,9 @@ public:
 private:
 public:
 	UIPanel();
-	UIPanel(const Utils::Color color);
+	UIPanel(const Color color);
 
-	void SetColor(const Utils::Color color);
+	void SetColor(const Color color);
 
 	UIRect Render(const UIRect& rect);
 

@@ -6,7 +6,7 @@ uniform bool uDoBloom;
 uniform sampler2D uBrightnessTexture;
 
 uniform sampler2D uHdrTexture;
-uniform vec2 uScreenSize;
+uniform ivec2 uScreenSize;
 
 //More cinematic tone mapping that preserves mid-tones better than reinhard
 vec3 AcesFilmicToneMapping(vec3 color)

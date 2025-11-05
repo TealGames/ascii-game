@@ -38,7 +38,7 @@ const std::type_info& ComponentField::GetCurrentType() const
 	else if (IsCurrentType<std::string>()) return typeid(std::string);
 	else if (IsCurrentType<Vec2>()) return typeid(Vec2);
 	else if (IsCurrentType<Vec2Int>()) return typeid(Vec2Int);
-	else if (IsCurrentType<Utils::Color>()) return typeid(Utils::Color);
+	else if (IsCurrentType<Color>()) return typeid(Color);
 
 	LogError(std::format("Tried to retrieve current type for component field but no type was defined for it"));
 	throw std::invalid_argument("Invalid type actions");
@@ -69,8 +69,8 @@ std::string ComponentField::ToString() const
 	else if (IsCurrentType<Vec2Int>())
 		valueText = (TryGetValue<Vec2Int>())->ToString();
 
-	else if (IsCurrentType<Utils::Color>())
-		valueText = (TryGetValue<Utils::Color>())->ToString();
+	else if (IsCurrentType<Color>())
+		valueText = (TryGetValue<Color>())->ToString();
 
 	return std::format("[Field:{}, Value:{}]", m_FieldName, valueText);
 }

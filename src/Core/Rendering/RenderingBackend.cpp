@@ -176,6 +176,12 @@ namespace Rendering
 			return OpenGl::CreateUniformBuffer(blockName);
 #endif
 		}
+		ShaderStorageBuffer CreateShaderStorageBuffer(const char* blockName)
+		{
+#if defined(OPENGL)
+			return OpenGl::CreateShaderStorageBuffer(blockName);
+#endif
+		}
 
 		VertexLayout CreateVertexLayout()
 		{
@@ -308,14 +314,14 @@ namespace Rendering
 #endif
 		}
 
-		void DrawCircle(const WorldPosition3D& pos, const float radius, const Utils::Color color)
+		void DrawCircle(const WorldPosition3D& pos, const float radius, const Color color)
 		{
 #if defined(RAYLIB)
 			DrawCircle(pos.m_X, pos.m_Y, radius, RaylibUtils::ToRaylibColor(color));
 #endif
 		}
 
-		void DrawRectangle(const WorldPosition3D& pos, const Vec2& size, const Utils::Color color)
+		void DrawRectangle(const WorldPosition3D& pos, const Vec2& size, const Color color)
 		{
 #if defined(RAYLIB)
 			DrawRectangle(pos.m_X, pos.m_Y, size.m_X, size.m_Y, RaylibUtils::ToRaylibColor(color));
@@ -323,7 +329,7 @@ namespace Rendering
 		}
 
 		void DrawTexture(const WorldPosition3D& destinationPos, const Vec2& destinationSize, const Vec2& sourcePos, const Vec2& sourceSize,
-			const Texture& tex, const float rotation, const Utils::Color color)
+			const Texture& tex, const float rotation, const Color color)
 		{
 #if defined(RAYLIB)
 			//TODO: there needs to be a way to get raylib texture from Texture
@@ -332,7 +338,7 @@ namespace Rendering
 #endif
 		}
 
-		void DrawText(const WorldPosition3D& pos, const Font& font, const char* text, const float size, const float spacing, const Utils::Color color)
+		void DrawText(const WorldPosition3D& pos, const Font& font, const char* text, const float size, const float spacing, const Color color)
 		{
 #if defined(RAYLIB)
 			//Note: the text seems to flicker less when we put text on integer boundaries 
@@ -341,14 +347,14 @@ namespace Rendering
 #endif
 		}
 
-		void DrawLine(const WorldPosition3D& startPos, const WorldPosition3D& endPos, const float thickness, const Utils::Color color)
+		void DrawLine(const WorldPosition3D& startPos, const WorldPosition3D& endPos, const float thickness, const Color color)
 		{
 #if defined(RAYLIB)
 			//DrawLineEx(RaylibUtils::ToRaylibVector(startPos), RaylibUtils::ToRaylibVector(endPos), thickness, RaylibUtils::ToRaylibColor(color));
 #endif
 		}
 
-		void DrawRectangleLine(const WorldPosition3D& pos, const float thickness, const Vec2& size, const Utils::Color color)
+		void DrawRectangleLine(const WorldPosition3D& pos, const float thickness, const Vec2& size, const Color color)
 		{
 #if defined(RAYLIB)
 			DrawRectangleLinesEx(Rectangle{pos.m_X, pos.m_Y, size.m_X, size.m_Y }, thickness, RaylibUtils::ToRaylibColor(color));

@@ -38,13 +38,33 @@ void Asset::OverrideAssetName(const std::string_view& name)
 	m_name = std::string(name);
 }
 
-std::filesystem::path Asset::GetPathCopy() const
+std::filesystem::path Asset::GetAbsolutePathCopy() const
 {
 	return m_absolutePath;
 }
-const std::filesystem::path& Asset::GetPath() const
+const std::filesystem::path& Asset::GetAbsolutePath() const
 {
 	return m_absolutePath;
+}
+bool Asset::AbsolutePathEndsWith(const std::filesystem::path& subPath)
+{
+	auto fullPathBegin = GetAbsolutePath().begin();
+	auto fullIt = GetAbsolutePath().end();
+	auto subIt = subPath.end();
+
+	while (subIt != subPath.begin())
+	{
+		if (fullIt == fullPathBegin)
+			return false;
+
+		--fullIt;
+		--subIt;
+
+		if (*fullIt != *subIt)
+			return false;
+	}
+
+	return true;
 }
 
 bool Asset::AreDependenciesSet() const
@@ -58,7 +78,7 @@ void Asset::MarkDependenciesSet()
 
 void Asset::SaveToSelf()
 {
-	SaveToPath(GetPathCopy());
+	SaveToPath(GetAbsolutePathCopy());
 }
 void Asset::SaveToPath(const std::filesystem::path& path)
 {
@@ -67,5 +87,5 @@ void Asset::SaveToPath(const std::filesystem::path& path)
 
 std::string Asset::ToString() const
 {
-	return std::format("[Asset:'{}' @path:{}]", GetName(), GetPathCopy().string());
+	return std::format("[Asset:'{}' @path:{}]", GetName(), GetAbsolutePathCopy().string());
 }

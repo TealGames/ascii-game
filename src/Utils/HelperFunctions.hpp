@@ -378,9 +378,9 @@ namespace Utils
 		return ConstructArrayImpl<T>(std::make_index_sequence<N>{}, std::forward<Args>(args)...);
 	}
 
-	inline bool IsNumber(char);
-	inline bool IsLetter(char);
-	inline bool IsLetterOrNumber(char);
+	bool IsNumber(char);
+	bool IsLetter(char);
+	bool IsLetterOrNumber(char);
 
 	int GenerateRandomInt(int minInclusive, int maxInclusive);
 	double GenerateRandomDouble(double minInclusive, double maxExclusive);

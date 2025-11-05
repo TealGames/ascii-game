@@ -36,11 +36,11 @@ namespace Rendering
 		return AxesWrapBehavior({ xyzBehavior, xyzBehavior, xyzBehavior });
 	}
 
-	std::string TextureData::ToString() const
+	std::string TextureInfo::ToString() const
 	{
 		return std::format("[TextureData]");
 	}
-	TextureData& TextureData::operator=(TextureData&& other) noexcept
+	TextureInfo& TextureInfo::operator=(TextureInfo&& other) noexcept
 	{
 		//m_slotIndex = std::exchange(other.m_slotIndex, INVALID_TEXTURE_SLOT_INDEX);
 		//NOTE: this is the most important part because if we do default move cosntructor
@@ -51,21 +51,21 @@ namespace Rendering
 		m_wrapBehavior = other.m_wrapBehavior;
 		m_minFilter = other.m_minFilter;
 		m_magFilter = other.m_magFilter;
-		m_size = std::exchange(other.m_size, {});
+		m_texelSize = std::exchange(other.m_texelSize, {});
 		return *this;
 	}
 
 	Texture::Texture() : Texture(nullptr, {}) {}
 	Texture::Texture(const std::byte* data, const Vec2Int& size, const TexelStorageType internalStorage,
 		const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag, const TextureCallbacks& callbacks)
-		: m_callbacks(callbacks), m_data{ INVALID_OBJ_ID,size, internalStorage, wrap, min, mag}
+		: m_callbacks(callbacks), m_info{ INVALID_OBJ_ID,size, internalStorage, wrap, min, mag}
 	{
 		if (size.m_X == 0 || size.m_Y == 0)
 			return;
 
 		Allocate();
 		if (data != nullptr)
-			SetData(data);
+			SetByteData(data);
 	}
 
 	Texture::~Texture()
@@ -75,14 +75,14 @@ namespace Rendering
 	void Texture::Allocate()
 	{
 		Deallocate();
-		m_data.m_id = m_callbacks.m_AllocateFunc(m_data);
+		m_info.m_id = m_callbacks.m_AllocateFunc(m_info);
 	}
 	void Texture::Deallocate()
 	{
-		if (m_data.m_id != INVALID_OBJ_ID)
+		if (m_info.m_id != INVALID_OBJ_ID)
 		{
-			m_callbacks.m_DeallocateFunc(m_data.m_id);
-			m_data.m_id = INVALID_OBJ_ID;
+			m_callbacks.m_DeallocateFunc(m_info.m_id);
+			m_info.m_id = INVALID_OBJ_ID;
 		}
 	}
 
@@ -99,17 +99,34 @@ namespace Rendering
 	//MinFilter Texture::GetMinFilter() const { return m_minFilter; }
 	//MagFilter Texture::GetMagFilter() const { return m_magFilter; }
 
-	void Texture::SetData(const std::byte* data)
+	void Texture::SetByteData(const std::byte* data)
 	{
-		m_callbacks.m_SetData(m_data.m_id, m_data.m_size, m_data.m_internalStorage, data);
+		m_callbacks.m_SetData(m_info.m_id, m_info.m_texelSize, m_info.m_internalStorage, data);
 	}
-	bool Texture::IsValid() const { return m_data.m_id != INVALID_OBJ_ID; }
-	std::uint32_t Texture::GetTotalTexels() const { return m_data.m_size.m_X * m_data.m_size.m_Y; }
-	size_t Texture::GetByteSize(const std::uint32_t texels) const 
-	{ 
-		return texels * GetStorageByteSize(m_data.m_internalStorage); 
+	void Texture::SetByteData(const Texture& texture)
+	{
+		if (GetTotalByteSize() != texture.GetTotalByteSize() || GetStorageType() != texture.GetStorageType())
+		{
+			LogError(std::format("Attempted to set texture:{} data from texture:{} "
+				"but textures do not have matching size and/or internal storage types", ToString(), texture.ToString()));
+			return;
+		}
+
+		m_callbacks.m_CopyData(m_info.m_id, m_info.m_texelSize, texture);
+		/*LogWarning(std::format("Total size:{} per channel:{} size:{} calc:{}", texture.GetTotalByteSize(), 
+			GetStorageByteSize(m_info.m_internalStorage), texture.GetInfo().m_texelSize.ToString(), 
+			(texture.GetInfo().m_texelSize * GetStorageByteSize(m_info.m_internalStorage)).ToString()));
+		std::byte* byteData = (std::byte*)alloca(texture.GetTotalByteSize());
+		texture.GetByteData(byteData);
+		SetByteData(byteData);*/
 	}
-	size_t Texture::GetByteSize() const { return GetByteSize(GetTotalTexels()); }
+	bool Texture::IsValid() const { return m_info.m_id != INVALID_OBJ_ID; }
+	std::uint32_t Texture::GetTotalTexels() const { return m_info.m_texelSize.m_X * m_info.m_texelSize.m_Y; }
+	size_t Texture::GetTotalByteSize(const Vec2Int texels) const
+	{
+		return texels.m_X * texels.m_Y * GetStorageByteSize(GetStorageType());
+	}
+	size_t Texture::GetTotalByteSize() const { return GetTotalByteSize(m_info.m_texelSize); }
 
 	//void Texture::BindToSlot(const TextureSlotIndex slotIndex)
 	//{
@@ -130,26 +147,26 @@ namespace Rendering
 	//	m_data.m_slotIndex = INVALID_TEXTURE_SLOT_INDEX;
 	//}
 
-	const TextureData& Texture::GetData() const { return m_data; }
-	RenderObjectId Texture::GetId() const { return m_data.m_id; }
-	TexelStorageType Texture::GetStorageType() const { return m_data.m_internalStorage; }
+	const TextureInfo& Texture::GetInfo() const { return m_info; }
+	RenderObjectId Texture::GetId() const { return m_info.m_id; }
+	TexelStorageType Texture::GetStorageType() const { return m_info.m_internalStorage; }
 	void Texture::GetByteData(const Vec2Int textureOffset, const Vec2Int size, std::byte* writeLocationPointer) const
 	{
 		const Vec2Int maxOffset = textureOffset + size;
-		if (maxOffset.m_X > m_data.m_size.m_X || maxOffset.m_Y > m_data.m_size.m_Y)
+		if (maxOffset.m_X > m_info.m_texelSize.m_X || maxOffset.m_Y > m_info.m_texelSize.m_Y)
 		{
 			LogError(std::format("Attempted to get byte data of texture: {} but offset and size: {} > texture size:{}", 
-				ToString(), maxOffset.ToString(), m_data.m_size.ToString()));
+				ToString(), maxOffset.ToString(), m_info.m_texelSize.ToString()));
 			return;
 		}
 
-		m_callbacks.m_GetData(m_data.m_id, textureOffset, size, m_data.m_internalStorage, 
-			writeLocationPointer, GetByteSize(size.m_X * size.m_Y));
+		m_callbacks.m_GetData(m_info.m_id, textureOffset, size, m_info.m_internalStorage, 
+			writeLocationPointer, GetTotalByteSize(size));
 	}
 	void Texture::GetByteData(std::byte* writeLocationPointer) const
 	{
-		m_callbacks.m_GetData(m_data.m_id, Vec2Int::Zero(), m_data.m_size, 
-			m_data.m_internalStorage, writeLocationPointer, GetByteSize());
+		m_callbacks.m_GetData(m_info.m_id, Vec2Int::Zero(), m_info.m_texelSize, 
+			m_info.m_internalStorage, writeLocationPointer, GetTotalByteSize());
 	}
 	//bool Texture::IsBoundToSlot() const
 	//{
@@ -157,12 +174,12 @@ namespace Rendering
 	//}
 	std::string Texture::ToString() const
 	{
-		return std::format("[Texture Data:{}]", m_data.ToString());
+		return std::format("[Texture Data:{}]", m_info.ToString());
 	}
 	Texture& Texture::operator=(Texture&& other) noexcept
 	{
 		m_callbacks = std::exchange(other.m_callbacks, {});
-		m_data = std::move(other.m_data);
+		m_info = std::move(other.m_info);
 		return *this;
 	}
 
@@ -202,12 +219,12 @@ namespace Rendering
 			m_data.m_id = INVALID_OBJ_ID;
 		}
 	}
-	const TextureData& TextureCube::GetData() const { return m_data; }
+	const TextureInfo& TextureCube::GetData() const { return m_data; }
 	RenderObjectId TextureCube::GetId() const { return m_data.m_id; }
 	TexelStorageType TextureCube::GetStorageType() const { return m_data.m_internalStorage; }
 	void TextureCube::SetData(const TextureCubeFace face, const std::byte* data)
 	{
-		m_callbacks.m_SetData(face, m_data.m_id, m_data.m_size, m_data.m_internalStorage, data);
+		m_callbacks.m_SetData(face, m_data.m_id, m_data.m_texelSize, m_data.m_internalStorage, data);
 	}
 
 	//void TextureCube::BindToSlot(const TextureSlotIndex slotIndex)

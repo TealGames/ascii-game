@@ -65,7 +65,7 @@ inline constexpr UIPadding DEFAULT_PADDING = UIPadding();
 class TextUIStyle
 {
 public:
-	Utils::Color m_TextColor;
+	Color m_TextColor;
 	TextAlignment m_TextAlignment;
 	ScreenFontProperties m_FontData;
 	UIPadding m_Padding;
@@ -74,7 +74,7 @@ public:
 
 public:
 	TextUIStyle();
-	TextUIStyle(const Utils::Color& textColor, const ScreenFontProperties& fontData, const TextAlignment& alignment= DEFAULT_ALIGNMENT, 
+	TextUIStyle(const Color& textColor, const ScreenFontProperties& fontData, const TextAlignment& alignment= DEFAULT_ALIGNMENT, 
 		const UIPadding& padding= DEFAULT_PADDING, const float& factor= NULL_FONT_FACTOR,
 		const bool& fitToArea= DEFAULT_FIT_TO_AREA);
 };

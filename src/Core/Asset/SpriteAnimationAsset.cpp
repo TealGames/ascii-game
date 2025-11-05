@@ -38,7 +38,7 @@ SpriteAnimation& SpriteAnimationAsset::GetAnimationMutable()
 
 void SpriteAnimationAsset::UpdateAssetFromFile()
 {
-	Fig fig = Fig(GetPathCopy(), FigFlag::IncludeOverflowLineStartSpaces);
+	Fig fig = Fig(GetAbsolutePathCopy(), FigFlag::IncludeOverflowLineStartSpaces);
 	//Assert(false, std::format("Found fig:{}", fig.ToString()));
 
 	std::vector<FigPropertyRef> figProperties = {};
@@ -111,5 +111,5 @@ void SpriteAnimationAsset::SaveToPath(const std::filesystem::path& path)
 
 std::string SpriteAnimationAsset::ToString() const
 {
-	return std::format("[SpriteAnimationAsset Path:{} SpriteAnimation:{}]", GetPathCopy().string(), m_animation.ToString());
+	return std::format("[SpriteAnimationAsset Path:{} SpriteAnimation:{}]", GetAbsolutePathCopy().string(), m_animation.ToString());
 }

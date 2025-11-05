@@ -39,10 +39,10 @@ namespace SceneManagement
 
 		if (!SCENE_DIFFERENT_SAVE_PATH.empty())
 			m_activeScene->SaveToPath(SCENE_DIFFERENT_SAVE_PATH);
-		else if (IO::IsFileEmpty(m_activeScene->GetPath()))
+		else if (IO::IsFileEmpty(m_activeScene->GetAbsolutePath()))
 			m_activeScene->SaveToSelf();
 		else
-			m_activeScene->SaveToPath(m_activeScene->GetPathCopy()+=" COPY");
+			m_activeScene->SaveToPath(m_activeScene->GetAbsolutePathCopy()+=" COPY");
 	}
 
 	void SceneManager::LoadAllScenes()

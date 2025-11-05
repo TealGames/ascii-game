@@ -27,8 +27,8 @@ namespace RaylibUtils
 	Color GetColorFromPoint(const Utils::Point3D& rgb);
 
 	Color GetColorFromHex(const std::uint32_t& hexNumber);
-	Color ToRaylibColor(const Utils::Color color);
-	Utils::Color FromRaylibColor(const Color color);
+	Color ToRaylibColor(const Color color);
+	Color FromRaylibColor(const Color color);
 
 	bool ColorEqual(const Color& color1, const Color& color2);
 

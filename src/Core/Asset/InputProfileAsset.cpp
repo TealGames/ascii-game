@@ -44,7 +44,7 @@ void InputProfileAsset::SetDependencies(Input::InputManager& input)
 
 void InputProfileAsset::UpdateAssetFromFile()
 {
-	std::ifstream stream(GetPathCopy());
+	std::ifstream stream(GetAbsolutePathCopy());
 
 	std::string line = "";
 	bool isReadingMainHeader = false;

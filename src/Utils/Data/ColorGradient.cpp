@@ -6,7 +6,7 @@
 #include "Utils/Debug.hpp"
 
 ColorGradientKeyFrame::ColorGradientKeyFrame() : ColorGradientKeyFrame({}, 0) {}
-ColorGradientKeyFrame::ColorGradientKeyFrame(const Utils::Color& color, const float& location) 
+ColorGradientKeyFrame::ColorGradientKeyFrame(const Color& color, const float& location) 
 	: m_Color(color), m_Location(location) {}
 
 bool ColorGradientKeyFrame::operator<(const ColorGradientKeyFrame& other) const
@@ -27,10 +27,10 @@ std::string ColorGradientKeyFrame::ToString() const
 
 ColorGradient::ColorGradient() : ColorGradient({}, {}) {}
 
-ColorGradient::ColorGradient(const Utils::Color& singleColor) : 
+ColorGradient::ColorGradient(const Color& singleColor) : 
 	ColorGradient(singleColor, singleColor) {}
 
-ColorGradient::ColorGradient(const Utils::Color& leftColor, const Utils::Color& rightColor) :
+ColorGradient::ColorGradient(const Color& leftColor, const Color& rightColor) :
 	m_colorFrames{ ColorGradientKeyFrame{leftColor, MIN_LOCATION}, 
 	ColorGradientKeyFrame{rightColor, MAX_LOCATION} } {}
 
@@ -56,7 +56,7 @@ ColorGradient::ColorGradient(const std::vector<ColorGradientKeyFrame>& frames)
 	std::sort(m_colorFrames.begin(), m_colorFrames.end());
 }
 
-Utils::Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
+Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 {
 	location = std::clamp(location, MIN_LOCATION, MAX_LOCATION);
 	if (m_colorFrames.size() == 1) return m_colorFrames.front().m_Color;
@@ -98,8 +98,8 @@ Utils::Color ColorGradient::GetColorAt(float location, const bool& includeAlpha)
 
 	const ColorGradientKeyFrame leftKey = m_colorFrames[left];
 	const ColorGradientKeyFrame rightKey = m_colorFrames[right];
-	const Utils::Color& leftColor = leftKey.m_Color;
-	const Utils::Color& rightColor = rightKey.m_Color;
+	const Color& leftColor = leftKey.m_Color;
+	const Color& rightColor = rightKey.m_Color;
 
 	float keysNormalizedVal = (location - leftKey.m_Location) / (rightKey.m_Location - leftKey.m_Location);
 	unsigned char newR = std::lerp(leftColor.m_R, rightColor.m_R, keysNormalizedVal);
@@ -114,11 +114,11 @@ Utils::Color ColorGradient::GetColorAt(float location, const bool& includeAlpha)
 	return {newR, newG, newB, newA};
 }
 
-Utils::Color ColorGradient::GetFirstColor(const bool& includeAlpha) const
+Color ColorGradient::GetFirstColor(const bool& includeAlpha) const
 {
 	return GetColorAt(MIN_LOCATION, includeAlpha);
 }
-Utils::Color ColorGradient::GetLastColor(const bool& includeAlpha) const
+Color ColorGradient::GetLastColor(const bool& includeAlpha) const
 {
 	return GetColorAt(MAX_LOCATION, includeAlpha);
 }

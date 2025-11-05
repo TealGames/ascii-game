@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 
 struct PointLight 
 {
@@ -8,30 +8,45 @@ struct PointLight
     uint shadowMapIndex;
 };
 
+struct Material
+{
+    vec4 baseColor;
+    float alpha;
+    vec4 emission;
+};
+
 layout(std140) uniform LightsBlock
 {
     vec3 directionalDir;
     vec4 directionalColor;
     int pointLightsCount;
-    PointLight pointLights[2];
+    PointLight pointLights[MAX_POINT_LIGHTS];
 } uLightsBlock;
 
-layout(std140) uniform ViewerBlock 
+layout(std140) uniform ViewerBlock
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
     vec3 worldPos;
+    vec3 forwardDir;
+    vec3 rightDir;
+    vec3 upDir;
+    float yFov;
 } uViewerBlock;
+
+layout(std430) buffer Materials 
+{ 
+    Material materials[MATERIAL_MAX_COUNT]; 
+};
 
 uniform sampler2D uAlbedo;
 uniform float uBloomThreshold;
 uniform samplerCube uShadowMaps[2];
 
 in vec2 vTexCoords;
-in vec4 vColor;
+flat in uint vMaterialIndex;
 in vec3 vWorldPos;
 in vec3 vNormal;
-in vec3 vCameraPos;
 
 layout(location=0) out vec4 fragColor;
 //The color for determining bloom 
@@ -55,6 +70,8 @@ void main()
     //TEMPORARY REPLACE WITH UNIFORM
     float uSpecularPower= 5;
     vec3 normal = GetNormal();
+    Material material = materials[vMaterialIndex];
+    //Material material = Material(vec4(0.0f), 0.0f, vec4(0.0f));
 
     //vec3 debugColor = 0.5 * (normal + vec3(1.0));
     //fragColor = vec4(debugColor, 1.0);
@@ -63,6 +80,7 @@ void main()
     vec3 viewDir = normalize(uViewerBlock.worldPos - vWorldPos);
     vec4 albedo = texture(uAlbedo, vTexCoords);
     vec3 color= vec3(0, 0, 0);
+    vec3 baseColor = albedo.rgb + (material.baseColor.rgb * material.baseColor.a);
 
     //Here we calculate directional light impact by adding directional light color
     //based on how much light there is coming towards the surface normal
@@ -75,7 +93,7 @@ void main()
         thisToViewDir = normalize(thisToLightDir + viewDir);
         spec = pow(max(dot(normal, thisToViewDir), 0.0), uSpecularPower);
         //TODO: considering light strength from color alpha
-        color += uLightsBlock.directionalColor.rgb * (albedo.rgb * lightInNormalDir + spec);
+        color += uLightsBlock.directionalColor.rgb * (baseColor * lightInNormalDir + spec);
     }
 
     //Similar to dir light, we calculate how much is the normal
@@ -88,6 +106,7 @@ void main()
     float closestDepth= 0.0;
     float bias= 0;
     float shadow= 0;
+
     for (int i = 0; i < uLightsBlock.pointLightsCount; i++) 
     {
         PointLight pl = uLightsBlock.pointLights[i];
@@ -115,13 +134,18 @@ void main()
                 shadow= 0;
 #endif
 
-                 //TODO: considering light strength from color alpha
-                color += pl.color.rgb * attenuation * (albedo.rgb * vColor.rgb * lightInNormalDir + spec) * (1.0-shadow);
+                //TODO: considering light strength from color alpha
+                color += pl.color.rgb * attenuation * (baseColor * lightInNormalDir + spec) * (1.0-shadow);
             }
         }
     }
+    
 
-    fragColor = vec4(color, vColor.a);
+    //fragColor = vec4(color.rgb, albedo.a * material.alpha);
+    fragColor = vec4(color.rgb, albedo.a * material.alpha);
+    //fragColor = vec4(value, value, value, value);
+    //fragColor = vec4(material.alpha);
+    //fragColor=  vec4(color.rgb, 1);
 
     //Computes the luminance (perceived brightness) of the hdr color output -> it is weighted sum
     //since we perceive some colors, like green more than others

@@ -29,7 +29,7 @@ static const NormalizedPosition MOUSE_POS_TEXT_SIZE = {0.1, 0.05};
 static constexpr Input::KeyCode PAUSE_TOGGLE_KEY = Input::KeyCode::P;
 static constexpr Input::KeyCode SELECT_KEY = Input::KeyCode::MouseLeft;
 static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
-static constexpr Vec3 CAMERA_MOVE_SPEED = {0.1, 0.1, 0.1};
+static constexpr Vec3 CAMERA_MOVE_SPEED = {0.2, 0.2, 0.2};
 static constexpr float MOUSE_SENSITIVITY = 0.2;
 static constexpr Vec2 CAMERA_ROTATE_RADIANS_PER_POS = Vec2(1.0f / SCREEN_WIDTH, 1.0f / SCREEN_HEIGHT) * std::numbers::pi;
 
@@ -341,14 +341,18 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		const Vec3Int pressedDir = moveCompound->GetInputWithState<2>({Input::KeyState::Down, Input::KeyState::Pressed});
 		/*LogWarning(std::format("DONW DIR: {} non normal:{} compoound:{}", downDirNormalized.ToString(), 
 			moveCompound->GetCompoundInputDown().ToString(), moveCompound->ToString()));*/
-		LogWarning(std::format("pressed dir: {}", pressedDir.ToString()));
+		//LogWarning(std::format("pressed dir: {}", pressedDir.ToString()));
 		if (pressedDir != Vec3Int::Zero())
 		{
 			//LogWarning(std::format("World forward of camera: {}s", mainCamera.CalculateWorldForward().ToString()));
 			//const Vec3 rotatedDir= mainCamera.GetTransformMutable().GetGlobalRotation().ApplyRotationToDir(ENGINE_FORWARD_DIR);
-			mainCamera.GetTransformMutable().GetLocalPosMutable() += pressedDir.AsFloat()
+			Vec3 facingDir = mainCamera.CalculateWorldForward();
+			mainCamera.GetTransformMutable().GetLocalPosMutable() += mainCamera.GetTransform().GetLocalRotation().ApplyRotationToDir(pressedDir.AsFloat())
 				//* mainCamera.CalculateWorldForward() 
 				* CAMERA_MOVE_SPEED * unscaledDeltaTime;
+
+			LogWarning(std::format("Camera pressed dir:{} facedir:{} newRotnewPos:{}", pressedDir.ToString(), facingDir.ToString(), 
+				(pressedDir.AsFloat() * facingDir * CAMERA_MOVE_SPEED * unscaledDeltaTime).ToString()));
 		}
 		//LogWarning(std::format("Camera transform:{}", mainCamera.GetTransformMutable().ToString()));
 		//mainCamera.GetTransformMutable().GetLocalRotationMutable() *= Vec3(0, 0.13 * unscaledDeltaTime, 0);

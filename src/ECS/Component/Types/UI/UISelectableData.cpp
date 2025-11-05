@@ -3,12 +3,12 @@
 #include "Core/UI/UIInteractionManager.hpp"
 #include "Utils/Debug.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
-#include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Rendering/Renderer3d.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 
-static constexpr Utils::Color HOVER_COLOR = Utils::Color(Utils::COLOR_WHITE, 90);
-static constexpr Utils::Color DISABLED_COLOR = Utils::Color(Utils::COLOR_BLACK, 155);
+static constexpr Color HOVER_COLOR = Color(COLOR_WHITE, 90/255.0f);
+static constexpr Color DISABLED_COLOR = Color(COLOR_BLACK, 155/255.0f);
 
 UISelectableData::UISelectableData(const float clickCooldown, const TriggerInteractionEventFlags eventFlags, const InteractionRenderFlags renderFlags) :
 	m_triggerEventFlags(eventFlags), m_renderFlags(renderFlags), m_renderer(nullptr),

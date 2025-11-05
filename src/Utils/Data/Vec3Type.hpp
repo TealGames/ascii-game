@@ -178,10 +178,21 @@ public:
 	}
 	Vec operator/(const Vec& other) const
 	{
-		if (Utils::ApproximateEqualsF(other.m_X, 0) || Utils::ApproximateEqualsF(other.m_Y, 0) || Utils::ApproximateEqualsF(other.m_Z, 0))
+		if constexpr (std::is_floating_point_v<T>)
 		{
-			LogError(std::format("Tried to divide a vector: {} by a 0 value vector:{}", ToString(), other.ToString()));
-			throw std::invalid_argument("Division by zero");
+			if (Utils::ApproximateEqualsF(other.m_X, 0) || Utils::ApproximateEqualsF(other.m_Y, 0) || Utils::ApproximateEqualsF(other.m_Z, 0))
+			{
+				LogError(std::format("Tried to divide a vector: {} by a 0 value vector:{}", ToString(), other.ToString()));
+				throw std::invalid_argument("Division by zero");
+			}
+		}
+		else
+		{
+			if (other.m_X == 0 || other.m_Y == 0 || other.m_Z == 0)
+			{
+				LogError(std::format("Tried to divide a vector: {} by a 0 value vector:{}", ToString(), other.ToString()));
+				throw std::invalid_argument("Division by zero");
+			}
 		}
 
 		return Vec{ m_X / other.m_X, m_Y / other.m_Y, m_Z / other.m_Z };
@@ -474,6 +485,7 @@ public:
 */
 using Vec3 = Vec<float, 3>;
 using Vec3Int = Vec<int, 3>;
+using Vec3Uint = Vec<std::uint32_t, 3>;
 
 extern template class Vec<float, 3>;
 extern template class Vec<int, 3>;

@@ -51,7 +51,7 @@ void TimeKeeper::SetFrameLimit(const std::uint64_t& frameLimit)
 {
 	m_frameLimit = frameLimit;
 }
-std::uint64_t TimeKeeper::GetFrameCount() const
+std::uint64_t TimeKeeper::GetFramesSinceInit() const
 {
 	return m_frameCount;
 }

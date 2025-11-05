@@ -151,11 +151,11 @@ namespace RaylibUtils
 		};
 	}
 
-	Color ToRaylibColor(const Utils::Color color)
+	Color ToRaylibColor(const Color color)
 	{
 		return {color.m_R, color.m_G, color.m_B, color.m_A};
 	}
-	Utils::Color FromRaylibColor(const Color color)
+	Color FromRaylibColor(const Color color)
 	{
 		return {color.r, color.g, color.b, color.a};
 	}

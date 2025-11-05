@@ -3,12 +3,12 @@
 #include "Utils/Debug.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
-#include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Rendering/Renderer3d.hpp"
 
-UIPanel::UIPanel() : UIPanel(Utils::Color()) {}
-UIPanel::UIPanel(const Utils::Color color) : m_color(color), m_renderer(nullptr) {}
+UIPanel::UIPanel() : UIPanel(Color()) {}
+UIPanel::UIPanel(const Color color) : m_color(color), m_renderer(nullptr) {}
 
-void UIPanel::SetColor(const Utils::Color color)
+void UIPanel::SetColor(const Color color)
 {
 	m_color = color;
 }

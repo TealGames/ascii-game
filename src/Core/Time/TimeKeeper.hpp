@@ -73,7 +73,7 @@ public:
 	void ResetTimeScale();
 
 	void SetFrameLimit(const std::uint64_t& frameLimit);
-	std::uint64_t GetFrameCount() const;
+	std::uint64_t GetFramesSinceInit() const;
 
 	bool ReachedFrameLimit() const;
 };

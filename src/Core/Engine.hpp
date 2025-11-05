@@ -28,7 +28,7 @@
 #include "Core/UI/UIHierarchy.hpp"
 #include "Core/UI/UIInteractionManager.hpp"
 #include "Editor/EngineEditor.hpp"
-#include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Rendering/Renderer3d.hpp"
 #include "GlobalInitializer.hpp"
 #include "Core/EngineState.hpp"
 #include "Core/GizmoOverlay.hpp"

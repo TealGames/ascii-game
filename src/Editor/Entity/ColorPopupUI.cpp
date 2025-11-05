@@ -11,8 +11,6 @@
 #include "ECS/Component/Types/UI/UIInputField.hpp"
 #include "ECS/Component/Types/UI/UILayout.hpp"
 
-static constexpr float MAX_CHANNEL_VAL = std::numeric_limits<std::uint8_t>::max();
-
 static constexpr float PICKER_SPACE_AREA_FACTOR = 0.7;
 static constexpr float CHANNEL_SLIDER_WIDTH = 0.8;
 static constexpr float CHANNEL_TEXT_WIDTH= 0.2;
@@ -38,16 +36,16 @@ void ColorChannelUI::CreateChannel(UITransformData& parent, const Input::InputMa
 
 	m_Slider->m_OnValueSet.AddListener([this](float value)-> void
 		{
-			m_Text->SetText(std::to_string(static_cast<std::uint8_t>(value * MAX_CHANNEL_VAL)));
+			m_Text->SetText(std::to_string(value));
 		});
 }
-void ColorChannelUI::SetValue(const std::uint8_t value)
+void ColorChannelUI::SetValue(const float value)
 {
-	m_Slider->SetValue(value / MAX_CHANNEL_VAL);
+	m_Slider->SetValue(std::max(value, 0.0f));
 }
-std::uint8_t ColorChannelUI::GetValue() const
+float ColorChannelUI::GetValue() const
 {
-	return static_cast<std::uint8_t>(m_Slider->GetValue() * MAX_CHANNEL_VAL);
+	return m_Slider->GetValue();
 }
 
 ColorPopupUI::ColorPopupUI(const Input::InputManager& input)
@@ -73,7 +71,7 @@ void ColorPopupUI::AddPopupElements()
 			const std::string hexInput = Utils::TryExtractHexadecimal(input);
 			if (hexInput.size()!= 6 && hexInput.size()!=8) return;
 
-			SetColor(Utils::ConstructColorFromHex(std::stoi(hexInput, nullptr, 16)));
+			SetColor(ConstructColorFromHex(std::stoi(hexInput, nullptr, 16)));
 		});
 	//m_rSlider.TryCenter(true, false);
 	
@@ -81,14 +79,14 @@ void ColorPopupUI::AddPopupElements()
 	//Assert(false, std::format("Popup color:{}", ToStringRecursive("")));
 }
 
-void ColorPopupUI::SetColor(const Utils::Color color)
+void ColorPopupUI::SetColor(const Color color)
 {
 	m_rgbChannels[0].SetValue(color.m_R);
 	m_rgbChannels[1].SetValue(color.m_G);
 	m_rgbChannels[2].SetValue(color.m_B);
 }
-Utils::Color ColorPopupUI::GetColor() const
+Color ColorPopupUI::GetColor() const
 {
-	return Utils::Color(m_rgbChannels[0].GetValue(), m_rgbChannels[1].GetValue(),
-		m_rgbChannels[2].GetValue(), MAX_CHANNEL_VAL);
+	return Color(m_rgbChannels[0].GetValue(), m_rgbChannels[1].GetValue(),
+		m_rgbChannels[2].GetValue(), MAX_FLOAT_COLOR_CHANNEL);
 }

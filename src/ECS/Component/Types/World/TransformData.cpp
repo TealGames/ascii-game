@@ -128,11 +128,11 @@ const Vec3& TransformComponent::GetLocalPos() const
 {
 	return m_localPos;
 }
-const Vec3& TransformComponent::GetLocalScaleMutable() const
+const Vec3& TransformComponent::GetLocalScale() const
 {
 	return m_localScale;
 }
-const Quat& TransformComponent::GetLocalRotationMutable() const
+const Quat& TransformComponent::GetLocalRotation() const
 {
 	return m_localRotation;
 }

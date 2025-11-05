@@ -84,7 +84,7 @@ namespace Rendering
 			if (target.m_TargetType == FrameBufferOutputType::Texture)
 			{
 				const FrameBufferTextureTarget& textureTarget = std::get<FrameBufferTextureTarget>(target.m_Targets);
-				GL_CALL(glNamedFramebufferTexture(id, attachmentType, textureTarget.m_Texture->GetData().m_id, 0));
+				GL_CALL(glNamedFramebufferTexture(id, attachmentType, textureTarget.m_Texture->GetInfo().m_id, 0));
 			}
 			else if (target.m_TargetType== FrameBufferOutputType::TextureCube)
 			{
@@ -273,7 +273,7 @@ namespace Rendering
 			GL_CALL(glNamedBufferData(id, byteSize, nullptr, GL_DYNAMIC_DRAW));
 			return id;
 		}
-		static void BindUniformBuffer(const RenderObjectId id, const UniformBufferBindIndex bindIndex)
+		static void BindUniformBuffer(const RenderObjectId id, const BufferBindIndex bindIndex)
 		{
 			GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, bindIndex, id));
 		}
@@ -293,12 +293,48 @@ namespace Rendering
 		UniformBuffer CreateUniformBuffer(const char* blockName)
 		{
 			return UniformBuffer(blockName,
-				UniformBufferPlatformCallbacks
+				ShaderBufferPlatformCallbacks
 				{
 					AllocateUniformBuffer,
 					BindUniformBuffer,
 					WriteUniformBuffer,
 					DeallocateUniformBuffer
+				});
+		}
+
+		static RenderObjectId AllocateShaderStorageBuffer(const size_t byteSize)
+		{
+			RenderObjectId id = INVALID_OBJ_ID;
+			GL_CALL(glCreateBuffers(1, &id));
+			GL_CALL(glNamedBufferData(id, byteSize, nullptr, GL_DYNAMIC_DRAW));
+			return id;
+		}
+		static void BindShaderStorageBuffer(const RenderObjectId id, const BufferBindIndex bindIndex)
+		{
+			GL_CALL(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindIndex, id));
+		}
+		static void WriteShaderStorageBuffer(const RenderObjectId id, const size_t byteOffset, const size_t writeByteSize, const void* data)
+		{
+			if (glIsBuffer(id) == GL_FALSE)
+			{
+				LogError(std::format("Attempted to write uniform buffer but id:{} is not a valid buffer", id));
+				return;
+			}
+			GL_CALL(glNamedBufferSubData(id, byteOffset, writeByteSize, data));
+		}
+		static void DeallocateShaderStorageBuffer(const RenderObjectId id)
+		{
+			GL_CALL(glDeleteBuffers(1, &id));
+		}
+		ShaderStorageBuffer CreateShaderStorageBuffer(const char* blockName)
+		{
+			return ShaderStorageBuffer(blockName,
+				ShaderBufferPlatformCallbacks
+				{
+					AllocateShaderStorageBuffer,
+					BindShaderStorageBuffer,
+					WriteShaderStorageBuffer,
+					DeallocateShaderStorageBuffer
 				});
 		}
 
@@ -315,16 +351,31 @@ namespace Rendering
 			const RenderObjectId id = std::bit_cast<RenderObjectId>(implState);
 			GL_CALL(glEnableVertexArrayAttrib(id, attribute.m_ShaderLocation));
 
-			GLuint componentType = GL_FLOAT;
+			GLint componentType = 0;
 			if (attribute.m_Type == VertexAttributeBaseType::Float)
 				componentType = GL_FLOAT;
+			else if (attribute.m_Type == VertexAttributeBaseType::Integer)
+				componentType = GL_INT;
+			else if (attribute.m_Type == VertexAttributeBaseType::UnsignedInteger)
+				componentType = GL_UNSIGNED_INT;
 			else
 			{
 				LogError(std::format("Attempted to add vertex layout attribute "
 					"but the component type has no corresponding opengl type"));
 				return;
 			}
-			GL_CALL(glVertexArrayAttribFormat(id, attribute.m_ShaderLocation, attribute.m_ComponentCount, componentType, attribute.m_Normalize, attribute.m_ByteOffset));
+
+			if (attribute.m_Type == VertexAttributeBaseType::Float)
+			{
+				GL_CALL(glVertexArrayAttribFormat(id, attribute.m_ShaderLocation,
+					attribute.m_ComponentCount, componentType, attribute.m_Normalize, attribute.m_ByteOffset));
+			}
+			else
+			{
+				GL_CALL(glVertexArrayAttribIFormat(id, attribute.m_ShaderLocation,
+					attribute.m_ComponentCount, componentType, attribute.m_ByteOffset));
+			}
+			
 			GL_CALL(glVertexArrayAttribBinding(id, attribute.m_ShaderLocation, attribute.m_BufferBindIndex));
 
 			/*if (attribute.m_AdvanceType == VertexAttributeAdvance::Instance)
@@ -341,7 +392,8 @@ namespace Rendering
 					"but the buffer and/or vertex array object has invalid id", bufferId, vertexArrayObjId));
 				return;
 			}
-			//LogError(std::format("buffer id:{} ({}) id:{}({}) element size:{} bindIndex:{}", bufferId, glIsBuffer(bufferId), vertexArrayObjId, glIsBuffer(vertexArrayObjId), elementSize, bindIndex));
+			//LogError(std::format("buffer id:{} ({}) id:{}({}) element size:{} bindIndex:{}", bufferId, 
+			// glIsBuffer(bufferId), vertexArrayObjId, glIsBuffer(vertexArrayObjId), elementSize, bindIndex));
 			GL_CALL(glVertexArrayVertexBuffer(vertexArrayObjId, bindIndex, bufferId, 0, elementSize));
 
 			if (advanceType == VertexAttributeAdvance::Instance)

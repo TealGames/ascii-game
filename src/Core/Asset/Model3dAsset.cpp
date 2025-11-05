@@ -3,6 +3,7 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 #include "Utils/Platform/AssimpUtils.hpp"
+#include "Math/PlatformMath.hpp"
 #include "Utils/Debug.hpp"
 
 static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScene, aiNode* node, const aiMatrix4x4* parentTransform)
@@ -14,17 +15,18 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 		parentTransform == nullptr ? "NULL" : AssimpUtils::ToString(*parentTransform), AssimpUtils::ToString(node->mTransformation)));*/
 	if (node->mNumMeshes > 0)
 	{
-		Rendering::MeshGroup* meshGroup = &(model.m_MeshGroups.emplace_back(Rendering::MeshGroup{ Mat4(&globalTransform.a1) }));
+		Rendering::ModelMeshGroup* meshGroup = &(model.m_MeshGroups.emplace_back(Rendering::ModelMeshGroup{ Mat4(&globalTransform.a1) }));
+		//LogError(std::format("og global trans:{} stored:{}", AssimpUtils::ToString(globalTransform), meshGroup->m_GlobalTransform.ToString()));
 
 		const aiMesh* currentImportMesh = nullptr;
-		Rendering::Mesh* currentEngineMesh = nullptr;
+		Rendering::ModelMesh* currentEngineMesh = nullptr;
 
 		for (size_t i = 0; i < node->mNumMeshes; i++)
 		{
 			currentImportMesh = modelScene->mMeshes[node->mMeshes[i]];
 			const size_t meshVertexCount = currentImportMesh->mNumVertices;
 
-			currentEngineMesh = &(model.m_Meshes.emplace_back(Rendering::Mesh{}));
+			currentEngineMesh = &(model.m_Meshes.emplace_back(Rendering::ModelMesh{}));
 			meshGroup->m_MeshIndices.emplace_back(model.m_Meshes.size() - 1);
 			currentEngineMesh->m_Vertices.reserve(meshVertexCount);
 
@@ -53,7 +55,7 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 			if (modelMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS)
 			{
 				currentEngineMesh->m_Material.m_BaseColor =
-					Utils::ConstructColorFromFloat(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
+					Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
 			}
 		}
 	}
@@ -67,8 +69,9 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, false), m_model()
 {
 	Assimp::Importer importer;
-	const aiScene* modelScene = importer.ReadFile(path.string(),
-		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+	std::uint32_t importFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs;
+	if (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative) importFlags |= aiProcess_ConvertToLeftHanded;
+	const aiScene* modelScene = importer.ReadFile(path.string(), importFlags);
 
 	if (modelScene == nullptr || !modelScene->HasMeshes()) 
 	{
@@ -82,11 +85,6 @@ Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, fals
 	ProcessSceneNode(m_model, modelScene, modelScene->mRootNode, nullptr);
 
 	//LogError("FINSIHED MODEL: "+ m_model.ToString());
-}
-
-Model3dAsset::~Model3dAsset()
-{
-
 }
 
 const Rendering::Model3d& Model3dAsset::GetModel() const { return m_model; }

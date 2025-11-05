@@ -3,7 +3,7 @@
 #include "Core/Asset/TextureAsset.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
-#include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Rendering/Renderer3d.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 
 UITextureData::UITextureData() : m_texture(nullptr), m_renderer(nullptr) {}
@@ -24,14 +24,14 @@ UIRect UITextureData::Render(const UIRect& renderRect)
 
 	const Vec3 globalScale = GetEntity().GetTransform().GetGlobalScale();
 	const Vec2 renderAreaSize = renderRect.GetSize();
-	const float minFitToAreaScale = std::min((float)renderAreaSize.m_X / m_texture->GetTexture().GetData().m_size.m_X, 
-											 (float)renderAreaSize.m_Y / m_texture->GetTexture().GetData().m_size.m_Y);
+	const float minFitToAreaScale = std::min((float)renderAreaSize.m_X / m_texture->GetTexture().GetInfo().m_texelSize.m_X, 
+											 (float)renderAreaSize.m_Y / m_texture->GetTexture().GetInfo().m_texelSize.m_Y);
 	const Vec2 scale = Vec2(minFitToAreaScale * globalScale.m_X, minFitToAreaScale * globalScale.m_Y);
 	
 	//LogWarning(std::format("Scale of ui texture:{} global scale:{} local scale:{}", scale.ToString(), globalScale.ToString(), GetEntity().GetTransform().GetLocalScale().ToString()));
 	
 	//TODO: add ui render call
-	//m_renderer->GetRendererMutable().AddTextureCall(renderRect.m_TopLeftPos, m_texture->GetTexture(), 0, scale, Utils::COLOR_WHITE);
+	//m_renderer->GetRendererMutable().AddTextureCall(renderRect.m_TopLeftPos, m_texture->GetTexture(), 0, scale, Color_WHITE);
 	return renderRect;
 }
 

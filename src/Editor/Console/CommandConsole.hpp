@@ -58,8 +58,8 @@ private:
 	std::string GetDocumentationForPrompt(PromptCollection::iterator& promptIt, const size_t& index) const;
 
 	bool TryInvokePrompt();
-	Utils::Color GetColorFromMessageType(const ConsoleOutputMessageType& message);
-	void SetNextMessage(const std::string& message, const Utils::Color color);
+	Color GetColorFromMessageType(const ConsoleOutputMessageType& message);
+	void SetNextMessage(const std::string& message, const Color color);
 	void RemoveBackMessage();
 public:
 	CommandConsole(const Input::InputManager& input, UIInteractionManager& selector);

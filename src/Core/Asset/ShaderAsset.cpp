@@ -17,7 +17,7 @@ ShaderAsset::ShaderAsset(const std::filesystem::path& path)
 
 void ShaderAsset::WriteToShaderFromFiles()
 {
-	const std::filesystem::path path = GetPath();
+	const std::filesystem::path path = GetAbsolutePath();
 	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a shader asset from path:{} (extension:{})"
 		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
 		return;
@@ -64,12 +64,12 @@ void ShaderAsset::WriteToShaderFromFiles()
 	}
 
 	//THIS POINT MEANS THERE ARE MULTIPLE FILES FOR THIS SHADER
-	const std::filesystem::path otherShaderPath = GetPath().parent_path() / (otherShaderName + path.extension().string());
+	const std::filesystem::path otherShaderPath = GetAbsolutePath().parent_path() / (otherShaderName + path.extension().string());
 	//If we have split up shaders, we make the other asset path invalid for the assetmanager to set as asset so we do not
 	//have two assets with the same shader data as initialized with the opposing shader type
 	AssetManagement::AssetManager::SetAssetHiddenStatus(otherShaderPath, true);
 
-	const std::string thisShaderSource = IO::TryReadFileFull(GetPath());
+	const std::string thisShaderSource = IO::TryReadFileFull(GetAbsolutePath());
 	const std::string otherShaderSource = IO::TryReadFileFull(otherShaderPath);
 	if (thisShaderSource.empty() || otherShaderSource.empty())
 	{
@@ -99,7 +99,7 @@ void ShaderAsset::ReadShaderFromSingleFile(const Rendering::ShaderProgramType pr
 	//Index 0-> vertex OR compute, index 1-> fragment
 	std::string shaderSource[2] = {"", ""};
 
-	IO::TryExecuteOnFileByLine(GetPath(), 
+	IO::TryExecuteOnFileByLine(GetAbsolutePath(), 
 		[this, &shaderSourceIndex, &shaderSource](const std::string* line)-> void
 		{
 			if (line->empty()) return;

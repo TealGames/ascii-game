@@ -33,8 +33,9 @@ public:
 
 	const std::string& GetName() const;
 
-	std::filesystem::path GetPathCopy() const;
-	const std::filesystem::path& GetPath() const;
+	std::filesystem::path GetAbsolutePathCopy() const;
+	const std::filesystem::path& GetAbsolutePath() const;
+	bool AbsolutePathEndsWith(const std::filesystem::path& subPath);
 	bool AreDependenciesSet() const;
 
 	/// <summary>

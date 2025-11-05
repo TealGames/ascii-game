@@ -18,7 +18,7 @@ private:
 
 	std::string m_text;
 	ScreenFontProperties m_fontData;
-	Utils::Color m_color;
+	Color m_color;
 
 	/// <summary>
 	/// When is not -1, sets the font of this text 
@@ -84,11 +84,11 @@ private:
 
 private:
 	UITextComponent(const std::string text, const ScreenFontProperties& font, const UIPadding& padding,
-		const TextAlignment& alignment, const Utils::Color& color, const float& factor, const bool& fitToArea);
+		const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea);
 
 public:
 	UITextComponent();
-	UITextComponent(const std::string text, const ScreenFontProperties& font, const Utils::Color& color);
+	UITextComponent(const std::string text, const ScreenFontProperties& font, const Color& color);
 	UITextComponent(const std::string& text, const TextUIStyle& settings);
 
 	void SetSettings(const TextUIStyle& settings);
@@ -97,7 +97,7 @@ public:
 	const std::string& GetText() const;
 
 	void SetFontSize(const float& size);
-	void SetTextColor(const Utils::Color color);
+	void SetTextColor(const Color color);
 	/// <summary>
 	/// Sets the factor of the text relative to the parent area. 
 	/// Note: value is clamped to be positive
@@ -118,7 +118,7 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	float GetFontSize() const;
-	Utils::Color GetFontColor() const;
+	Color GetFontColor() const;
 
 	bool DoFitToArea() const;
 	void SetFitToArea(const bool& fit);

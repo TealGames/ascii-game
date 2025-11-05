@@ -15,7 +15,7 @@
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 static constexpr Input::KeyCode LAST_COMMAND_KEY = Input::KeyCode::Num1;
 
-static const Utils::Color CONSOLE_COLOR = { Utils::COLOR_GRAY, 100 };
+static const Color CONSOLE_COLOR = { COLOR_GRAY, 100/255.0f };
 static constexpr float CONSOLE_HEIGHT = 0.05;
 static const NormalizedPosition OUTPUT_MESSAGE_AREA = {0.6, 0.2};
 
@@ -215,11 +215,11 @@ std::vector<std::string> CommandConsole::GetPromptDocumentationAll()
 	return docs;
 }
 
-Utils::Color CommandConsole::GetColorFromMessageType(const ConsoleOutputMessageType& message)
+Color CommandConsole::GetColorFromMessageType(const ConsoleOutputMessageType& message)
 {
-	if (message == ConsoleOutputMessageType::Error) return Utils::COLOR_RED;
-	else if (message == ConsoleOutputMessageType::Success) return Utils::COLOR_YELLOW;
-	else return Utils::COLOR_WHITE;
+	if (message == ConsoleOutputMessageType::Error) return COLOR_RED;
+	else if (message == ConsoleOutputMessageType::Success) return COLOR_YELLOW;
+	else return COLOR_WHITE;
 }
 void CommandConsole::LogOutputMessage(const std::string& message, const ConsoleOutputMessageType& messageType)
 {
@@ -233,7 +233,7 @@ void CommandConsole::LogOutputMessage(const std::string& message, const ConsoleO
 
 void CommandConsole::LogOutputMessages(const std::vector<std::string>& messages, const ConsoleOutputMessageType& messageType)
 {
-	const Utils::Color color = GetColorFromMessageType(messageType);
+	const Color color = GetColorFromMessageType(messageType);
 
 	m_nextTextGuiIndex = 0;
 	for (size_t i=0; i<messages.size() && i< MAX_OUTPUT_MESSAGES; i++)
@@ -241,7 +241,7 @@ void CommandConsole::LogOutputMessages(const std::vector<std::string>& messages,
 		SetNextMessage(messages[i], color);
 	}
 }
-void CommandConsole::SetNextMessage(const std::string& message, const Utils::Color color)
+void CommandConsole::SetNextMessage(const std::string& message, const Color color)
 {
 	m_messageCloseTimes.emplace(m_messageCloseTimes.begin(), m_timeSinceOpen + MESSAGE_DISPLAY_TIME_SECONDS);
 	m_outputMessagesTextGuis[m_nextTextGuiIndex]->SetText(message);

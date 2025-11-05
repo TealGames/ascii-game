@@ -175,11 +175,23 @@ public:
 	}
 	constexpr Vec operator/(const Vec& other) const
 	{
-		if (Utils::ApproximateEqualsF(other.m_X, 0) || Utils::ApproximateEqualsF(other.m_Y, 0))
+		if constexpr (std::is_floating_point_v<T>)
 		{
-			throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
-			return *this;
+			if (Utils::ApproximateEqualsF(other.m_X, 0) || Utils::ApproximateEqualsF(other.m_Y, 0))
+			{
+				throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
+				return *this;
+			}
 		}
+		else
+		{
+			if (other.m_X == 0 || other.m_Y == 0)
+			{
+				throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
+				return *this;
+			}
+		}
+
 		return { m_X / other.m_X, m_Y / other.m_Y };
 	}
 	constexpr Vec operator/(const float scalar) const requires (std::same_as<T, float>)

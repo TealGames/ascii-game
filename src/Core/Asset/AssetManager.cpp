@@ -9,6 +9,7 @@
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Asset/ShaderAsset.hpp"
 #include "Core/Asset/Model3dAsset.hpp"
+#include "Core/Asset/MaterialAsset.hpp"
 #include "Utils/Print.hpp"
 
 static constexpr bool THROW_ON_UNKNWON_ASSET = false;
@@ -127,6 +128,10 @@ namespace AssetManagement
 		else if (HasModel3dExtension(fileExtension))
 		{
 			createdAsset = CreateAssetFromFile<Model3dAsset>(assetPath);
+		}
+		else if (HasMaterialExtension(fileExtension))
+		{
+			createdAsset = CreateAssetFromFile<MaterialAsset>(assetPath);
 		}
 		else
 		{

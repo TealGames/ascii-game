@@ -100,6 +100,7 @@ public:
 	static constexpr char MARKER_CHAR = '@';
 	static constexpr char VALUE_SEPARATOR_CHAR = ',';
 	static constexpr char KEY_VALUE_SEPARATOR = ':';
+	static constexpr const char* NULL_VALUE = "null";
 	static const std::string COMMENT_START;
 	static const std::string COMMENT_CLOSE;
 

@@ -64,8 +64,8 @@ public:
 	const Mat4& GetWorldModelMatrix() const;
 
 	const Vec3& GetLocalPos() const;
-	const Vec3& GetLocalScaleMutable() const;
-	const Quat& GetLocalRotationMutable() const;
+	const Vec3& GetLocalScale() const;
+	const Quat& GetLocalRotation() const;
 
 	Vec3& GetLocalPosMutable();
 	Vec3& GetLocalScaleMutable();

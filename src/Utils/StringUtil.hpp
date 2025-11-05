@@ -1,8 +1,10 @@
 #pragma once
 #include <string>
 
-namespace Utils {
-	class StringUtil {
+namespace Utils 
+{
+	class StringUtil 
+	{
 	private:
 		std::string str;
 	public:

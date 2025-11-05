@@ -32,10 +32,10 @@ bool IsRightAlignment(const TextAlignment& alignment)
 	return integralValue == 2 || integralValue == 5 || integralValue == 8;
 }
 
-TextUIStyle::TextUIStyle(const Utils::Color& color, const ScreenFontProperties& fontData, 
+TextUIStyle::TextUIStyle(const Color& color, const ScreenFontProperties& fontData, 
 	const TextAlignment& alignment, const UIPadding& padding, const float& factor, const bool& fitToArea) :
 	m_TextColor(color), m_FontData(fontData), m_TextAlignment(alignment), 
 	m_FontSizeFactor(factor), m_FitToArea(fitToArea), m_Padding(padding)
 {}
 
-TextUIStyle::TextUIStyle() : TextUIStyle(Utils::Color(), ScreenFontProperties()) {}
+TextUIStyle::TextUIStyle() : TextUIStyle(Color(), ScreenFontProperties()) {}

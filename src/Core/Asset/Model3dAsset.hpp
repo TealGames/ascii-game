@@ -11,7 +11,7 @@ public:
 private:
 public:
 	Model3dAsset(const std::filesystem::path& path);
-	~Model3dAsset();
+	~Model3dAsset() = default;
 
 	const Rendering::Model3d& GetModel() const;
 	Rendering::Model3d& GetModelMutable();

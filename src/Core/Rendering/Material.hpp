@@ -1,11 +1,14 @@
 #pragma once
 #include "Utils/Data/Color.hpp"
+#include "Utils/Data/FixedString.hpp"
 
 namespace Rendering
 {
 	class Texture;
 	struct Material
 	{
+		String16 m_Name = "";
+
 		/// <summary>
 		/// The base color for the object (also known as diffuse base color)
 		/// If this is empty, default 1x1 pixel white texture is selected
@@ -14,8 +17,20 @@ namespace Rendering
 
 		/// <summary>
 		/// The color overlay over the albedo.
+		/// NOTE: base color alpha only determines the intensity/blend
+		/// of this color over the albedo
 		/// </summary>
-		Utils::Color m_BaseColor;
+		Color m_BaseColor = COLOR_WHITE;
+		/// <summary>
+		/// The alpha applied to the whole object
+		/// </summary>
+		float m_Alpha = 1;
+
+		/// <summary>
+		/// The intensity and color of light that the surface emits.
+		/// This makes any object able to emit lights rather than defining them separately
+		/// </summary>
+		Color m_EmissiveColor = COLOR_BLACK;
 
 		/// <summary>
 		/// Value between [0, 1] describing roughness/smoothness
@@ -41,5 +56,7 @@ namespace Rendering
 		/// which is used for lighting
 		/// </summary>
 		Texture* m_NormalMap = nullptr;
+
+		std::string ToString() const;
 	};
 }

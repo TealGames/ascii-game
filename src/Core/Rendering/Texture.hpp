@@ -113,24 +113,26 @@ namespace Rendering
 	using AxesWrapBehavior = std::array<WrapBehavior, 3>;
 	AxesWrapBehavior CreateXYZWrapBehavior(const WrapBehavior xyzBehavior);
 
-	struct TextureData
+	struct TextureInfo
 	{
 		RenderObjectId m_id;
 
-		Vec2Int m_size;
+		Vec2Int m_texelSize;
 		TexelStorageType m_internalStorage;
 		AxesWrapBehavior m_wrapBehavior;
 		MinFilter m_minFilter;
 		MagFilter m_magFilter;
 
 		std::string ToString() const;
-		TextureData& operator=(TextureData&&) noexcept;
+		TextureInfo& operator=(TextureInfo&&) noexcept;
 	};
 
+	class Texture;
 	struct TextureCallbacks
 	{
-		RenderObjectId(*m_AllocateFunc)(const TextureData& data);
+		RenderObjectId(*m_AllocateFunc)(const TextureInfo& data);
 		void(*m_SetData)(const RenderObjectId, const Vec2Int size, const TexelStorageType storage, const std::byte*);
+		void(*m_CopyData)(const RenderObjectId, const Vec2Int size, const Texture& otherTexture);
 		void(*m_GetData)(const RenderObjectId, const Vec2Int offset, const Vec2Int size, const TexelStorageType storage, 
 			std::byte* writePtr, const size_t bufferSize);
 		void(*m_DeallocateFunc)(const RenderObjectId);
@@ -151,14 +153,14 @@ namespace Rendering
 	{
 	private:
 		TextureCallbacks m_callbacks;
-		TextureData m_data;
+		TextureInfo m_info;
 	public:
 
 	private:
 		void Allocate();
 		void Deallocate();
 
-		size_t GetByteSize(const std::uint32_t texels) const;
+		size_t GetTotalByteSize(const Vec2Int texels) const;
 	public:
 		Texture();
 		Texture(const std::byte* data, const Vec2Int& size, const TexelStorageType storage= DEFAULT_INTERNAL_STORAGE,
@@ -168,7 +170,7 @@ namespace Rendering
 		Texture(Texture&&) noexcept = delete;
 		~Texture();
 
-		const TextureData& GetData() const;
+		const TextureInfo& GetInfo() const;
 		RenderObjectId GetId() const;
 		TexelStorageType GetStorageType() const;
 		/// <summary>
@@ -183,7 +185,8 @@ namespace Rendering
 		/// </summary>
 		/// <param name="writeLocationPointer"></param>
 		void GetByteData(std::byte* writeLocationPointer) const;
-		void SetData(const std::byte* data);
+		void SetByteData(const std::byte* data);
+		void SetByteData(const Texture& texture);
 		bool IsValid() const;
 
 		/// <summary>
@@ -191,7 +194,7 @@ namespace Rendering
 		/// </summary>
 		/// <returns></returns>
 		std::uint32_t GetTotalTexels() const;
-		size_t GetByteSize() const;
+		size_t GetTotalByteSize() const;
 
 		//void BindToSlot(const TextureSlotIndex slotIndex);
 		//void UnbindFromSlot();
@@ -219,7 +222,7 @@ namespace Rendering
 	};
 	struct TextureCubeCallbacks
 	{
-		RenderObjectId(*m_AllocateFunc)(const TextureData& data);
+		RenderObjectId(*m_AllocateFunc)(const TextureInfo& data);
 		void(*m_SetData)(const TextureCubeFace face, const RenderObjectId, const Vec2Int size, 
 			const TexelStorageType storage, const std::byte*);
 		void(*m_DeallocateFunc)(const RenderObjectId);
@@ -229,7 +232,7 @@ namespace Rendering
 	{
 	private:
 		TextureCubeCallbacks m_callbacks;
-		TextureData m_data;
+		TextureInfo m_data;
 	public:
 
 	private:
@@ -244,7 +247,7 @@ namespace Rendering
 		TextureCube(TextureCube&&) noexcept = delete;
 		~TextureCube();
 
-		const TextureData& GetData() const;
+		const TextureInfo& GetData() const;
 		RenderObjectId GetId() const;
 		TexelStorageType GetStorageType() const;
 		void SetData(const TextureCubeFace face, const std::byte* data);

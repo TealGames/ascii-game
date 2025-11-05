@@ -1,10 +1,14 @@
 #version 330 core
 
-layout(std140) uniform ViewerBlock 
+layout(std140) uniform ViewerBlock
 {
     mat4 viewMatrix;
     mat4 projectionMatrix;
     vec3 worldPos;
+    vec3 forwardDir;
+    vec3 rightDir;
+    vec3 upDir;
+    float yFov;
 } uViewerBlock;
 
 layout(location=0) in vec3 aPosition;

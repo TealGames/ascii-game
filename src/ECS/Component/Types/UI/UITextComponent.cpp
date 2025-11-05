@@ -5,20 +5,20 @@
 #include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
-#include "Core/Rendering/GameRenderer.hpp"
+#include "Core/Rendering/Renderer3d.hpp"
 #include "Core/Asset/FontAsset.hpp"
 
 static constexpr float FONT_SIZE_CALC_DELTA = 0.5;
 static constexpr bool DRAW_RENDER_BOUNDS = false;
 
-UITextComponent::UITextComponent() : UITextComponent("", {}, Utils::Color()) {}
+UITextComponent::UITextComponent() : UITextComponent("", {}, Color()) {}
 
 UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const UIPadding& padding, 
-	const TextAlignment& alignment, const Utils::Color& color, const float& factor, const bool& fitToArea) :
+	const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea) :
 	m_text(text), m_fontData(font), m_padding(padding), 
 	m_alignment(alignment), m_color(color), m_fontSizeFactor(factor), m_fitToArea(fitToArea), m_renderer(nullptr) {}
 
-UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const Utils::Color& color) :
+UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const Color& color) :
 	UITextComponent(text, font, DEFAULT_PADDING, DEFAULT_ALIGNMENT, color, NULL_FONT_FACTOR, DEFAULT_FIT_TO_AREA) {}
 	
 UITextComponent::UITextComponent(const std::string& text, const TextUIStyle& settings) :
@@ -53,7 +53,7 @@ void UITextComponent::SetFontSize(const float& size)
 	m_fontData.m_Size = std::abs(size);
 }
 
-void UITextComponent::SetTextColor(const Utils::Color color)
+void UITextComponent::SetTextColor(const Color color)
 {
 	m_color = color;
 }
@@ -165,7 +165,7 @@ Vec2 UITextComponent::CalculateUsableSpace(const UIRect& renderInfo) const
 			renderInfo.GetSize().m_Y - m_padding.m_Top - m_padding.m_Bottom};
 }
 
-Utils::Color UITextComponent::GetFontColor() const
+Color UITextComponent::GetFontColor() const
 {
 	return m_color;
 }
