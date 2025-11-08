@@ -258,9 +258,10 @@ namespace Rendering
             const Vec3& forwardDir, const Vec3& rightDir, const Vec3& upDir, const float yFov);
         void DrawBatch(RenderBatch& batch);
         void ExecuteShadowPass();
-        void ExecutePostProcessPass();
         void ExecuteLightingAndGeometryPass(const SlotIndex* indices);
         void ExecuteRayTracing();
+        void ExecuteForwardRendering();
+        void ExecutePostProcessPass();
 
         /// <summary>
         /// Applies blur to the input texture DIRECTLY where output texture is only an intermediary

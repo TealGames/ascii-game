@@ -21,16 +21,16 @@
 
 namespace Rendering
 {
-    constexpr bool DO_RAYTRACING = true;
+    constexpr bool DO_RAYTRACING = false;
     constexpr std::uint32_t MAX_RAYTRACE_BOUNCES = 5;
 
     constexpr bool DO_LIGHTING = true;
     
-    constexpr bool DRAW_LIGHT_AREAS = false;
+    constexpr bool DRAW_LIGHT_AREAS = true;
     constexpr bool USE_LIGHT_COLOR_FOR_RANGE = true;
     constexpr Color LIGHT_AREA_COLOR = {255, 255, 255, 255};
     
-    constexpr bool DO_SHADOWS = false;
+    constexpr bool DO_SHADOWS = true;
     constexpr Vec2Int SHADOW_MAP_SIZE = {256, 256};
     constexpr float SHADOW_NEAR_DISTANCE = 0.001;
     constexpr float SHADOW_FAR_DISTANCE = 1000;
@@ -42,20 +42,26 @@ namespace Rendering
     /// lower the value, the more objects have bloom
     /// </summary>
     constexpr float BLOOM_THRESHOLD = 0.5;
+    
+    constexpr bool DO_EXPOSURE = true;
+    /// <summary>
+    /// Multiplier applied to final color
+    /// </summary>
+    constexpr float EXPOSURE = 1;
 
     constexpr size_t NO_RENDER_FRAME_COUNT_LIMIT = 0;
     constexpr size_t RENDER_FRAMES_COUNT = NO_RENDER_FRAME_COUNT_LIMIT;
     constexpr LogType STALL_LOG_TYPE = LogType::Warning;
 
     constexpr size_t PRE_ALLOCATED_INSTANCES_COUNT = 16;
-    constexpr size_t PRE_ALLOCATED_INDICES_COUNT = 8000;
-    constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = 4000;
+    constexpr size_t PRE_ALLOCATED_INDICES_COUNT = 20000;
+    constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = 10000;
     constexpr size_t MATERIAL_MAX_COUNT = 5;
     constexpr size_t CIRCLE_SIDE_COUNT = 12;
 
     static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { 
         "default", "forward_render", "shadow", "texture", 
-        "post_process", "gaussian_blur", "ray_tracer"};
+        "post_process", "gaussian_blur", "ray_tracer" };
 
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
@@ -65,8 +71,10 @@ namespace Rendering
     constexpr const char* SCREEN_SIZE_UNIFORM_NAME = "uScreenSize";
 
     constexpr const char* DO_BLOOM_UNIFORM_NAME = "uDoBloom";
-    constexpr const char* BLOOM_TEXTURE_UNIFORM_NAME = "uBrightnessTexture";
+    constexpr const char* BRIGHTNESS_TEXTURE_UNIFORM_NAME = "uBrightnessTexture";
+    constexpr const char* BRIGHTNESS_IMAGE_UNIFORM_NAME = BRIGHTNESS_TEXTURE_UNIFORM_NAME;
     constexpr const char* BLOOM_THRESHOLD_UNIFORM_NAME = "uBloomThreshold";
+    constexpr const char* EXPOSURE_UNIFORM_NAME = "uExposure";
 
     constexpr const char* VIEWER_UNIFORM_BLOCK_NAME = "ViewerBlock";
     constexpr const char* LIGHT_UNIFORM_BLOCK_NAME = "LightsBlock";
@@ -108,14 +116,10 @@ namespace Rendering
 
     std::string RenderBatch::ToString() const
     {
-        return "[Batch]";
-        /*
-        return std::format("[Batch Shader:{} Texture:{} Vertices:{} Indices:{} Instances:{}]", 
-            m_Shader!=nullptr, m_Texture!=nullptr,
-            Utils::ToStringIterable<std::vector<VertexType>, VertexType>(m_Vertices), //m_IndexOffset,
-            Utils::ToStringIterable<std::vector<IndexType>, IndexType>(m_VertexIndices),
-            Utils::ToStringIterable<std::vector<InstanceType>, InstanceType>(m_InstanceData));
-            */
+        return std::format("[Batch Shader:{} Texture:{} VertexStart:{} VertexCount:{} "
+            "IndexStart:{} IndexCount:{} InstancesStart:{} InstancesCount:{}]", 
+            m_Shader!=nullptr, m_Texture!=nullptr, m_VertexStartIndex, m_VertexCount, 
+            m_IndicesStartIndex, m_IndicesCount, m_InstanceStartIndex, m_InstanceCount);
     }
 
     bool RenderPassData::UsesDefaultFrameBuffer() const
@@ -267,6 +271,9 @@ namespace Rendering
 
         m_graphicsManager->SetUniform(UniformDataType::Float, BLOOM_THRESHOLD_UNIFORM_NAME, &BLOOM_THRESHOLD);
         m_graphicsManager->SetUniform(UniformDataType::Bool, DO_BLOOM_UNIFORM_NAME, &DO_BLOOM);
+
+        constexpr float exposure = DO_EXPOSURE ? EXPOSURE : 1;
+        m_graphicsManager->SetUniform(UniformDataType::Float, EXPOSURE_UNIFORM_NAME, &exposure);
 
         const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
         m_graphicsManager->SetUniform(UniformDataType::IVector2, SCREEN_SIZE_UNIFORM_NAME, &windowSize);
@@ -487,7 +494,12 @@ namespace Rendering
         if (batch.m_IndicesCount == 0)
             batch.m_IndicesStartIndex = m_vertexIndices.size();
 
-        m_vertexIndices.insert(m_vertexIndices.end(), arr.begin(), arr.end());
+        //m_vertexIndices.insert(m_vertexIndices.end(), arr.begin(), arr.end());
+        for (int i = 0; i < arr.size(); i++)
+        {
+            m_vertexIndices.push_back(batch.m_VertexStartIndex + arr[i]);
+        }
+        
         
         batch.m_IndicesCount += arr.size();
         m_frameGeometryMetrics.m_TotalIndices += arr.size();
@@ -497,7 +509,11 @@ namespace Rendering
         if (batch.m_IndicesCount == 0)
             batch.m_IndicesStartIndex = m_vertexIndices.size();
 
-        m_vertexIndices.insert(m_vertexIndices.end(), indexArray, indexArray + indicesSize);
+        //m_vertexIndices.insert(m_vertexIndices.end(), indexArray, indexArray + indicesSize);
+        for (int i = 0; i < indicesSize; i++)
+        {
+            m_vertexIndices.push_back(batch.m_VertexStartIndex + indexArray[i]);
+        }
         
         batch.m_IndicesCount += indicesSize;
         m_frameGeometryMetrics.m_TotalIndices += indicesSize;
@@ -835,6 +851,7 @@ namespace Rendering
         }
 
         FinishBatch(batch);
+        //LogError(ToStringAll());
     }
 
     void Renderer::AddCallBox3D(Material* material, const Vec3& size, const Mat4& modelMatrix)
@@ -950,52 +967,9 @@ namespace Rendering
     }
     void Renderer::DrawBatch(RenderBatch& batch)
     {
-        FencedBufferSegment* vertexSegment = nullptr;
-        m_isRenderStalled = !m_vertexBuffer.TryWriteDataFenced(&m_vertices[batch.m_VertexStartIndex], batch.m_VertexCount, &vertexSegment);
-        if (m_isRenderStalled)
-        {
-            const std::string message = std::format("Stalling render due to vertex buffer. Allocate more space");
-            if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
-            else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
-            return;
-        }
-
-        FencedBufferSegment* indexSegment = nullptr;
-        const size_t drawIndexCount = batch.m_IndicesCount;
-        m_isRenderStalled = !m_indexBuffer.TryWriteDataFenced(&m_vertexIndices[batch.m_IndicesStartIndex], drawIndexCount, &indexSegment);
-        if (m_isRenderStalled)
-        {
-            const std::string message = std::format("Stalling render due to index buffer. Allocate more space");
-            if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
-            else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
-            return;
-        }
-
-        FencedBufferSegment* instanceSegment = nullptr;
-        const size_t drawInstanceCount = batch.m_InstanceCount;
-        m_isRenderStalled = !m_instancedBuffer.TryWriteDataFenced(&m_instances[batch.m_InstanceStartIndex], drawInstanceCount, &instanceSegment);
-        if (m_isRenderStalled)
-        {
-            const std::string message = std::format("Stalling render due to instance buffer. Allocate more space");
-            if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
-            else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
-            return;
-        }
-
-        Backend::DrawUploadedIndexBufferInstanced(vertexSegment->m_ByteOffset / m_vertexBuffer.GetElementSize(),
-            indexSegment->m_ByteOffset, drawIndexCount, instanceSegment->m_ByteOffset / m_instancedBuffer.GetElementSize(), drawInstanceCount);
-
-        vertexSegment->m_Fence.Insert();
-        indexSegment->m_Fence.Insert();
-        instanceSegment->m_Fence.Insert();
-
-#ifdef GRAPHICS_VERBOSE_LOG
-        LogWarning(std::format("\nDRAWING CALL \nVertexByteOffset:{} basevertexIndex:{} indexByteOffset:{} drawIndices:{} "
-            "instanceByteOffset:{} baseinstanceIndex:{} drawInstances:{}",
-            vertexSegment->m_ByteOffset, vertexSegment->m_ByteOffset / m_vertexBuffer.GetElementSize(),
-            indexSegment->m_ByteOffset, drawIndexCount, instanceSegment->m_ByteOffset,
-            instanceSegment->m_ByteOffset / m_instancedBuffer.GetElementSize(), drawInstanceCount));
-#endif
+        Backend::DrawUploadedIndexBufferInstanced(0,
+            batch.m_IndicesStartIndex * m_indexBuffer.GetElementSize(),
+            batch.m_IndicesCount, batch.m_InstanceStartIndex, batch.m_InstanceCount);
     }
 
     void Renderer::ExecuteShadowPass()
@@ -1084,6 +1058,7 @@ namespace Rendering
                 lastBatchShader = nullptr;
             };
 
+
         for (int i = 0; i < m_batches.size(); i++)
         {
 #ifdef GRAPHICS_VERBOSE_LOG
@@ -1130,6 +1105,7 @@ namespace Rendering
             lastBatchTexture = batch.m_Texture;
             //LogWarning(std::format("LIGHT PASS Texture controler before draw: {}", m_textureController.ToString()));
 
+            //DrawBatch(batch);
             DrawBatch(batch);
         }
 
@@ -1139,6 +1115,55 @@ namespace Rendering
         //LogWarning(std::format("LIGHT PASS Texture controler after pass: {}", m_textureController.ToString()));
         //LogError(std::format("HDR color texture: {}", Utils::ToStringMemory(writePtr, byteSize)));
     } 
+    void Renderer::ExecuteForwardRendering()
+    {
+        //NOTE: we do this to ensure that we only add any data as long as all 3 buffers have enough space
+        const auto& freeVertexSeg = m_vertexBuffer.TryGetFreeSegment(m_frameGeometryMetrics.m_TotalVertices);
+        const auto& freeIndexSeg = m_indexBuffer.TryGetFreeSegment(m_frameGeometryMetrics.m_TotalIndices);
+        const auto& freeInstanceSeg = m_instancedBuffer.TryGetFreeSegment(m_frameGeometryMetrics.m_TotalInstances);
+        if (freeVertexSeg == std::nullopt || freeIndexSeg == std::nullopt || freeInstanceSeg == std::nullopt)
+        {
+            m_isRenderStalled = true;
+            const std::string message = std::format("Stalling vertex:{} index:{} instance:{}",
+                freeVertexSeg == std::nullopt, freeIndexSeg == std::nullopt, freeIndexSeg == std::nullopt);
+            if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
+            else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
+            return;
+        }
+
+        FencedBufferSegment& vertexFenceSeg = m_vertexBuffer.WriteDataFenced(&m_vertices[0], freeVertexSeg.value());
+        FencedBufferSegment& indexFenceSeg = m_indexBuffer.WriteDataFenced(&m_vertexIndices[0], freeIndexSeg.value());
+        FencedBufferSegment& instanceFenceSeg = m_instancedBuffer.WriteDataFenced(&m_instances[0], freeInstanceSeg.value());
+
+        std::vector<SlotIndex> shadowCubeMapSlots = {};
+        if (DO_SHADOWS)
+        {
+            ExecuteShadowPass();
+
+            vertexFenceSeg.m_Fence.Insert();
+            indexFenceSeg.m_Fence.Insert();
+            instanceFenceSeg.m_Fence.Insert();
+
+            const size_t totalPointLights = m_uniformData.m_LightBlock.m_PointLightsCount;
+            shadowCubeMapSlots = m_textureController.TryBindToFreeSlots<TextureCube>(m_shadowMaps, totalPointLights);
+
+            if (shadowCubeMapSlots.empty() || shadowCubeMapSlots.size() != totalPointLights)
+            {
+                LogError(std::format("Attempted to add shadow map textures to available slots but failed."
+                    "Reserved slots:{} expected size:{}", shadowCubeMapSlots.size(), totalPointLights));
+                return;
+            }
+        }
+
+        ExecuteLightingAndGeometryPass(DO_SHADOWS ? &shadowCubeMapSlots[0] : nullptr);
+        if (DO_SHADOWS) m_textureController.RemoveFromSlots(shadowCubeMapSlots);
+        else
+        {
+            vertexFenceSeg.m_Fence.Insert();
+            indexFenceSeg.m_Fence.Insert();
+            instanceFenceSeg.m_Fence.Insert();
+        }
+    }
 
     void Renderer::ExecutePostProcessPass()
     {
@@ -1146,10 +1171,7 @@ namespace Rendering
 
         if (DO_BLOOM)
         {
-            //TODO: this is really bad to create a new temp texture every frame
-            Texture tempTexture = CreateTexture(nullptr, m_brightnessOutput.GetInfo().m_texelSize,
-                TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
-            ApplyBlurInPlace(m_brightnessOutput, tempTexture, 2);
+            ApplyBlurInPlace(m_brightnessOutput, m_ioTexture, 2);
         }
 
         /*LogError(std::format("Bound fraembuffer: {} size: {}", Backend::GetRenderObjectId(RenderObjectQueryType::BoundFrameBuffer),
@@ -1162,7 +1184,7 @@ namespace Rendering
         if (DO_BLOOM)
         {
             bloomSlotIndex = m_textureController.TryBindToFreeSlot<Texture>(m_brightnessOutput);
-            ppShader.TrySetUniform(UniformDataType::Sampler2D, BLOOM_TEXTURE_UNIFORM_NAME, &bloomSlotIndex);
+            ppShader.TrySetUniform(UniformDataType::Sampler2D, BRIGHTNESS_TEXTURE_UNIFORM_NAME, &bloomSlotIndex);
         }
 
         //TODO: this is inneficient to bind the output texture to slot when we had to bind it during blur in place
@@ -1325,6 +1347,14 @@ namespace Rendering
             m_unmovingFrames = 0;
         rayTraceShader.TrySetUniform(UniformDataType::Uint, UNMOVING_FRAME_NUMBER_UNIFORM_NAME, &m_unmovingFrames);
 
+        SlotIndex bloomSlot = INVALID_SLOT_INDEX;
+        if (DO_BLOOM)
+        {
+            bloomSlot = m_imageController.TryBindToFreeSlot<Texture>(m_brightnessOutput, AccessPermissions::Write);
+            rayTraceShader.TrySetUniform(UniformDataType::Image2D, BRIGHTNESS_IMAGE_UNIFORM_NAME, &bloomSlot);
+        }
+
+        /*
         static int times = 0;
         times++;
         if (times == 1)
@@ -1342,17 +1372,18 @@ namespace Rendering
                 camera.GetSettings().m_FieldOfViewYRadians
             ));
         }
+        */
         
         rayTraceShader.DispatchComputeShaderGroups(Vec3Int(windowSize, 1));
 
         //We must invoke memory sync to ensure image operation applied to OUTPUT texture go through before
         //using it for applying it to the hdr color output
         Backend::InvokeImageMemorySync(ImageOperationBarrierType::TextureFetch);
-        //m_hdrColorOutput.SetByteData(m_ioTexture);
+        rayTraceShader.UnbindActive();
 
         m_imageController.TryRemoveFromSlot(inputTextureSlot);
         m_imageController.TryRemoveFromSlot(outputTextureSlot);
-        rayTraceShader.UnbindActive();
+        if (bloomSlot != INVALID_SLOT_INDEX) m_imageController.TryRemoveFromSlot(bloomSlot);
     }
 
     void Renderer::FlushBatches()
@@ -1371,34 +1402,11 @@ namespace Rendering
             for (const auto& data : batch.m_InstanceData) LogWarning(data.ToString());
         }*/
 
-        if (DO_RAYTRACING)
-        {
-            ExecuteRayTracing();
-        }
-        else
-        {
-            std::vector<SlotIndex> shadowCubeMapSlots = {};
-            if (DO_SHADOWS)
-            {
-                ExecuteShadowPass();
-
-                const size_t totalPointLights = m_uniformData.m_LightBlock.m_PointLightsCount;
-                shadowCubeMapSlots = m_textureController.TryBindToFreeSlots<TextureCube>(m_shadowMaps, totalPointLights);
-
-                if (shadowCubeMapSlots.empty() || shadowCubeMapSlots.size() != totalPointLights)
-                {
-                    LogError(std::format("Attempted to add shadow map textures to available slots but failed."
-                        "Reserved slots:{} expected size:{}", shadowCubeMapSlots.size(), totalPointLights));
-                    return;
-                }
-            }
-
-            ExecuteLightingAndGeometryPass(DO_SHADOWS ? &shadowCubeMapSlots[0] : nullptr);
-            if (DO_SHADOWS) m_textureController.RemoveFromSlots(shadowCubeMapSlots);
-        }
+        if (DO_RAYTRACING) ExecuteRayTracing();
+        else ExecuteForwardRendering();
 
         //TODO: you should be able to do pp without hdr too
-        if (DO_HDR) ExecutePostProcessPass();
+        ExecutePostProcessPass();
     }
 
     void Renderer::RenderBuffer()
@@ -1456,7 +1464,11 @@ namespace Rendering
     }
     std::string Renderer::ToStringAll()
     {
-        return std::format("DUMPING RENDERER DATA:\nCameraState:{}\nBatches:{}", 
-            m_engineState->m_CameraController->GetActiveCamera().ToString(), ToStringBatches());
+        return std::format("DUMPING RENDERER DATA:\nCameraState:{}\nVertex({}):{}\nIndex({}):{}\nInstances({}):{}\nBatches:{}", 
+            m_engineState->m_CameraController->GetActiveCamera().ToString(),
+            m_vertices.size(), Utils::ToStringIterable<std::vector<VertexType>, VertexType>(m_vertices),
+            m_vertexIndices.size(), Utils::ToStringIterable<std::vector<IndexType>, IndexType>(m_vertexIndices),
+            m_instances.size(), Utils::ToStringIterable<std::vector<InstanceType>, InstanceType>(m_instances),
+            ToStringBatches());
     }
 }

@@ -142,7 +142,9 @@ void main()
     
 
     //fragColor = vec4(color.rgb, albedo.a * material.alpha);
-    fragColor = vec4(color.rgb, albedo.a * material.alpha);
+    //fragColor = vec4(color.rgb, albedo.a * material.alpha);
+    fragColor = vec4(color.rgb, 1);
+    //fragColor = vec4(1);
     //fragColor = vec4(value, value, value, value);
     //fragColor = vec4(material.alpha);
     //fragColor=  vec4(color.rgb, 1);

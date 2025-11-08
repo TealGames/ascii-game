@@ -7,6 +7,7 @@ uniform sampler2D uBrightnessTexture;
 
 uniform sampler2D uHdrTexture;
 uniform ivec2 uScreenSize;
+uniform float uExposure;
 
 //More cinematic tone mapping that preserves mid-tones better than reinhard
 vec3 AcesFilmicToneMapping(vec3 color)
@@ -29,7 +30,7 @@ vec3 ReinhardToneMapping(vec3 color)
 void main()
 {
     vec2 uv= gl_FragCoord.xy / uScreenSize;
-    vec3 hdrColor = texture(uHdrTexture, uv).rgb;
+    vec3 hdrColor = texture(uHdrTexture, uv).rgb * uExposure;
     vec3 bloomColor = uDoBloom? texture(uBrightnessTexture, uv).rgb : vec3(0, 0, 0);
     //fragColor= vec4(hdrColor, 1);
 

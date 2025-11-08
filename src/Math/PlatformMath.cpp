@@ -88,30 +88,35 @@ namespace PlatformMath
 
 	Mat4 CalculatePlatformPerspectiveProjMatrix(const float fovY, const float aspectRatio, const float zNear, const float zFar)
 	{
+		//NOTE: when constructing matrix for this platform, we must convert to the RENDER API's NDC RANGE
+		//but to do so we MUST PROVIDE THE ENGINE's Z DIRECTION
 #if defined(OPENGL)
-		return CalculatePerspectiveProjMatrix(NdcRange::NegOneToOne, ZForwardSign::Negative, fovY, aspectRatio, zNear, zFar);
+		return CalculatePerspectiveProjMatrix(NdcRange::NegOneToOne, ENGINE_FORWARD_SIGN_Z, fovY, aspectRatio, zNear, zFar);
 #elif defined(DIRECTX)
-		return CalculatePerspectiveViewMatrix(NdcZRange::ZeroToOne, ZForwardSign::Positive, fovY, aspectRatio, zNear, zFar);
+		return CalculatePerspectiveViewMatrix(NdcZRange::ZeroToOne, ENGINE_FORWARD_SIGN_Z, fovY, aspectRatio, zNear, zFar);
 #elif defined(VULKAN)
-		return CalculatePerspectiveViewMatrix(NdcZRange::ZeroToOne, ZForwardSign::Negative, fovY, aspectRatio, zNear, zFar);
+		return CalculatePerspectiveViewMatrix(NdcZRange::ZeroToOne, ENGINE_FORWARD_SIGN_Z, fovY, aspectRatio, zNear, zFar);
 #elif defined(METAL)
-		return CalculatePerspectiveViewMatrix(NdcZRange::ZeroToOne, ZForwardSign::Negative, fovY, aspectRatio, zNear, zFar);
+		return CalculatePerspectiveViewMatrix(NdcZRange::ZeroToOne, ENGINE_FORWARD_SIGN_Z, fovY, aspectRatio, zNear, zFar);
 #else
 #error "Graphics API does not have perspective view matrix defined"
 		return {};
 #endif
 	}
 
-	Mat4 CalculatePlatformOrthographicProjMatrix(const float maxWorldX, const float minWorldX, const float maxWorldY, const float minWorldY, const float zNear, const float zFar)
+	Mat4 CalculatePlatformOrthographicProjMatrix(const float maxWorldX, const float minWorldX, const float maxWorldY, 
+		const float minWorldY, const float zNear, const float zFar)
 	{
+		//NOTE: when constructing matrix for this platform, we must convert to the RENDER API's NDC RANGE
+		//but to do so we MUST PROVIDE THE ENGINE's Z DIRECTION
 #if defined(OPENGL)
-		return CalculateOrthographicProjMatrix(NdcRange::NegOneToOne, ZForwardSign::Negative, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
+		return CalculateOrthographicProjMatrix(NdcRange::NegOneToOne, ENGINE_FORWARD_SIGN_Z, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #elif defined(DIRECTX)
-		return CalculateOrthographicViewMatrix(NdcZRange::ZeroToOne, ZForwardSign::Positive, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
+		return CalculateOrthographicViewMatrix(NdcZRange::ZeroToOne, ENGINE_FORWARD_SIGN_Z, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #elif defined(VULKAN)
-		return CalculateOrthographicViewMatrix(NdcZRange::ZeroToOne, ZForwardSign::Negative, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
+		return CalculateOrthographicViewMatrix(NdcZRange::ZeroToOne, ENGINE_FORWARD_SIGN_Z, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #elif defined(METAL)
-		return CalculateOrthographicViewMatrix(NdcZRange::ZeroToOne, ZForwardSign::Negative, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
+		return CalculateOrthographicViewMatrix(NdcZRange::ZeroToOne, ENGINE_FORWARD_SIGN_Z, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #else
 #error "Graphics API does not have perspective view matrix defined"
 		return {};

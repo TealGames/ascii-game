@@ -164,6 +164,11 @@ namespace Rendering
 		FrameBuffer& operator=(FrameBuffer&&) noexcept;
 	};
 
+	struct BufferSegment
+	{
+		size_t m_ByteOffset;
+		size_t m_ByteSize;
+	};
 
 	struct FencedBufferSegment
 	{
@@ -193,18 +198,27 @@ namespace Rendering
 	private:
 		//void UpdateRangeFromSegment(const FencedBufferSegment& seg);
 		bool TryRemoveFinishedHeadSegments();
-		void ReserveSegment(const size_t offset, const size_t size, FencedBufferSegment** outSeg);
+		FencedBufferSegment& ReserveSegment(const size_t offset, const size_t size);
 	public:
 		RingBufferAllocator(const size_t allocatedByteSize);
 
 		/// <summary>
+		/// Will attempt to find next free segment (NOTE: DOES NOT RESERVE IT)
+		/// </summary>
+		/// <param name="size"></param>
+		/// <param name="doStall"></param>
+		/// <returns></returns>
+		std::optional<BufferSegment> TryGetFreeSegment(const size_t size, const bool doStall);
+		/// <summary>
 		/// Finds the next available fenced segment for given size.
 		/// If stall is true, will wait by doing busywait loop until the gpu is free (bad for performance)
 		/// but the preferred option, false, will return false and not wait at all
+		/// If reserve is true, will add to used segments
 		/// </summary>
 		/// <param name="size"></param>
 		/// <returns></returns>
 		bool TryReserveSegment(const size_t size, const bool doStall, FencedBufferSegment** outSeg);
+		FencedBufferSegment& ReserveSegment(const BufferSegment& segment);
 		//void InsertFenceAtCurrentSegment();
 		size_t GetFixedAllocatedByteSize() const;
 		size_t GetUnusedByteSize() const;
@@ -266,26 +280,113 @@ namespace Rendering
 		void(*m_DeallocateFunc)(const RenderObjectId id);
 	};
 
-	class VertexBuffer
+	template<typename T>
+	class FencedBufferBase
+	{
+	private:
+	protected:
+		RenderObjectId m_id;
+		std::byte* m_writePtr;
+		/// <summary>
+		/// How many indices were actually uploaded to the buffer
+		/// Size in bytes is m_dataUsed * sizeof(IndexType)
+		/// </summary>
+		//size_t m_dataUsed;
+		//size_t m_elementCapacity;
+		RingBufferAllocator m_fence;
+	public:
+
+	private:
+	protected:
+		virtual void WriteDataUnsafeBytes(const size_t offsetBytes, const T* arr, const size_t& writeByteSize) = 0;
+
+	public:
+		FencedBufferBase() : FencedBufferBase(nullptr, 0) {}
+		FencedBufferBase(const T* array, const size_t elementSize, const size_t elementCount)
+			: m_id(INVALID_OBJ_ID), m_writePtr(nullptr), m_fence(elementCount* elementSize) {}
+
+		/// <summary>
+		/// Writes data directly into the buffer
+		/// </summary>
+		/// <param name="elementOffset"></param>
+		/// <param name="vertexArray"></param>
+		/// <param name="elementCount"></param>
+		void WriteDataUnsafe(const size_t& elementOffset, const T* array, const size_t& elementCount)
+		{
+			WriteDataUnsafeBytes(elementOffset * GetElementSize(), array, elementCount * GetElementSize());
+		}
+
+		FencedBufferSegment* TryReserveFence(const size_t& elementCount)
+		{
+			FencedBufferSegment* segment = nullptr;
+			m_fence.TryReserveSegment(elementCount * GetElementSize(), false, &segment);
+			return segment;
+		}
+		/// <summary>
+		/// Will get the next free segment WITHOUT reserving the space
+		/// </summary>
+		/// <param name="elementCount"></param>
+		/// <returns></returns>
+		std::optional<BufferSegment> TryGetFreeSegment(const size_t& elementCount)
+		{
+			return m_fence.TryGetFreeSegment(elementCount * GetElementSize(), false);
+		}
+		FencedBufferSegment& ReserveFence(const BufferSegment& segment)
+		{
+			return m_fence.ReserveSegment(segment);
+		}
+		
+		/// <summary>
+		/// Writes data into the next available unfenced slot or waits until one is available
+		/// </summary>
+		/// <param name="vertexArray"></param>
+		/// <param name="elementCount"></param>
+		bool TryWriteDataFenced(const T* arr, const size_t& elementCount, FencedBufferSegment** outSeg)
+		{
+			FencedBufferSegment* segment = TryReserveFence(elementCount * GetElementSize());
+			if (segment == nullptr)
+				return false;
+
+#ifdef GRAPHICS_VERBOSE_LOG
+			LogWarning(std::format("Writing fenced buffer base  at offset:{} size:{} alloc:{} fence:{}",
+				segment->m_ByteOffset, segment->m_ByteSize, m_fence.GetFixedAllocatedByteSize(), m_fence.ToString()));
+#endif
+			WriteDataUnsafeBytes(segment->m_ByteOffset, arr, segment->m_ByteSize);
+
+			if (outSeg != nullptr) *outSeg = segment;
+			return true;
+		}
+		FencedBufferSegment& WriteDataFenced(const T* arr, const BufferSegment& segment)
+		{
+			FencedBufferSegment& fencedSegment = ReserveFence(segment);
+			WriteDataUnsafeBytes(fencedSegment.m_ByteOffset, arr, fencedSegment.m_ByteSize);
+
+			return fencedSegment;
+		}
+
+		virtual size_t GetElementSize() const = 0;
+
+		size_t GetAllocatedByteSize() const { return m_fence.GetFixedAllocatedByteSize(); }
+		size_t GetCapacity() const { return m_fence.GetFixedAllocatedByteSize() / GetElementSize(); }
+		RenderObjectId GetId() const { return m_id; }
+		bool HasPersistentReadWritePointer() const { return m_writePtr != nullptr; }
+	};
+
+	class VertexBuffer : public FencedBufferBase<void>
 	{
 	private:
 		VertexBufferPlatformCallbacks m_callbacks;
-		RenderObjectId m_id;
-		std::byte* m_writePtr;
 		/// <summary>
 		/// How many vertices were actually uploaded to the buffer
 		/// Size in bytes is m_dataUsed * sizeof(VertexType)
 		/// </summary>
 		//size_t m_dataUsed;
 		size_t m_elementSize;
-
-		//size_t m_vertexCapacity;
-		RingBufferAllocator m_fence;
 	public:
 		VertexAttributeAdvance m_AdvanceType;
 
 	private:
-		void WriteDataUnsafeBytes(const size_t offsetBytes, const void* vertexArray, const size_t& writeByteSize);
+		void WriteDataUnsafeBytes(const size_t offsetBytes, const void* vertexArray, const size_t& writeByteSize) override;
 		void Deallocate();
 		void DefaultUninitValues();
 	public:
@@ -295,21 +396,6 @@ namespace Rendering
 		VertexBuffer(const VertexBuffer&) = delete;
 		VertexBuffer(VertexBuffer&&) = delete;
 		~VertexBuffer();
-
-		/// <summary>
-		/// Writes data directly into the buffer
-		/// </summary>
-		/// <param name="elementOffset"></param>
-		/// <param name="vertexArray"></param>
-		/// <param name="elementCount"></param>
-		void WriteDataUnsafe(const size_t& elementOffset, const void* vertexArray, const size_t& elementCount);
-		/// <summary>
-		/// Writes data into the next available unfenced slot or waits until one is available
-		/// </summary>
-		/// <param name="vertexArray"></param>
-		/// <param name="elementCount"></param>
-		bool TryWriteDataFenced(const void* vertexArray, const size_t& elementCount, FencedBufferSegment** outSegment);
-
 #if !PRODUCTION_BUILD
 		template<typename T>
 		requires (std::is_default_constructible_v<T>)
@@ -351,15 +437,7 @@ namespace Rendering
 		}
 #endif
 
-		//size_t GetUploadedVertexCount() const;
-		size_t GetAllocatedByteSize() const;
-		size_t GetVertexCapacity() const;
-		//bool HasFilledMaxSize() const;
-
-		size_t GetElementSize() const;
-		RenderObjectId GetId() const;
-
-		bool HasPersistentReadWritePointer() const;
+		size_t GetElementSize() const override;
 
 		VertexBuffer& operator=(const VertexBuffer&) = delete;
 		VertexBuffer& operator=(VertexBuffer&&) noexcept;
@@ -374,23 +452,14 @@ namespace Rendering
 		void(*m_DeallocateFunc)(const RenderObjectId id);
 	};
 
-	class IndexBuffer
+	class IndexBuffer : public FencedBufferBase<IndexType>
 	{
 	private:
 		IndexBufferPlatformCallbacks m_callbacks;
-		RenderObjectId m_id;
-		std::byte* m_writePtr;
-		/// <summary>
-		/// How many indices were actually uploaded to the buffer
-		/// Size in bytes is m_dataUsed * sizeof(IndexType)
-		/// </summary>
-		//size_t m_dataUsed;
-		//size_t m_elementCapacity;
-		RingBufferAllocator m_fence;
 	public:
 
 	private:
-		void WriteDataUnsafeBytes(const size_t offsetBytes, const IndexType* indexArray, const size_t& writeByteSize);
+		void WriteDataUnsafeBytes(const size_t offsetBytes, const IndexType* indexArray, const size_t& writeByteSize) override;
 		void Deallocate();
 	public:
 		IndexBuffer();
@@ -398,18 +467,9 @@ namespace Rendering
 			const IndexBufferPlatformCallbacks& callbacks);
 		IndexBuffer(const IndexBuffer& other) = delete;
 		IndexBuffer(IndexBuffer&& other) = delete;
-
 		~IndexBuffer();
 
-		void WriteDataUnsafe(const size_t elementOffset, const IndexType* indexArray, const size_t elementCount);
-		bool TryWriteDataFenced(const IndexType* indexArray, const size_t elementCount, FencedBufferSegment** outSeg);
-		//size_t GetUploadedIndexCount() const;
-		//bool HasFilledMaxSize() const;
-		
-		inline constexpr size_t GetElementSize() const { return sizeof(IndexType); }
-		size_t GetAllocatedByteSize() const;
-		size_t GetIndexCapacity() const;
-		RenderObjectId GetId() const;
+		size_t GetElementSize() const override;
 
 		IndexBuffer& operator=(const IndexBuffer&) = delete;
 		IndexBuffer& operator=(IndexBuffer&&) noexcept;

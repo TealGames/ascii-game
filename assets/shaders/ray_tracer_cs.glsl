@@ -34,6 +34,7 @@ uniform uint uMaxBounces;
 uniform uint uUnmovingFrameCount;
 uniform uint uEmissiveMaterialCount;
 uniform uint uInstanceCount;
+uniform float uBloomThreshold;
 
 layout(std140) uniform ViewerBlock
 {
@@ -59,6 +60,9 @@ layout(std430) buffer InstanceMeshes { InstanceMesh meshes[INSTANCE_MAX_COUNT]; 
 //The texure that was previosuly used for output and can be blended with current one to provide more detail
 layout(rgba16f) uniform image2D uTextureInput;
 layout(rgba16f) uniform writeonly image2D uTextureOutput;
+uniform writeonly image2D uBrightnessTexture;
+
+const float EPSILON = 1e-6;
 
 //Computes whether a ray at origin and dir hits a triangle defined by 3 vertices
 //where hitDistance is the scalar distance from ray origin along ray dir to the intersection point of the triangle
@@ -72,7 +76,7 @@ bool DoesIntersectTriangle(vec3 rayWorldOrigin, vec3 rayWorldDir, vec3 v0, vec3 
 
     vec3 pvec = cross(rayWorldDir, e2);
     float det = dot(e1, pvec);
-    if (abs(det) < 1e-6) 
+    if (abs(det) < EPSILON) 
         return false;
 
     float invDet = 1.0 / det;
@@ -87,7 +91,7 @@ bool DoesIntersectTriangle(vec3 rayWorldOrigin, vec3 rayWorldDir, vec3 v0, vec3 
         return false;
 
     hitDistance = dot(e2, qvec) * invDet;
-    if (hitDistance < 1e-6) 
+    if (hitDistance < EPSILON) 
         return false;
 
     return true;
@@ -107,7 +111,7 @@ bool DoesIntersectTriangleInterpolated(
 
     vec3 pvec = cross(rayWorldDir, e2);
     float det = dot(e1, pvec);
-    if (abs(det) < 1e-6) 
+    if (abs(det) < EPSILON) 
         return false;
 
     float invDet = 1.0 / det;
@@ -123,7 +127,7 @@ bool DoesIntersectTriangleInterpolated(
         return false;
 
     hitDistance = dot(e2, qvec) * invDet;
-    if (hitDistance < 1e-6) 
+    if (hitDistance < EPSILON) 
         return false;
 
     // Compute barycentric coordinates
@@ -181,10 +185,9 @@ bool DoesIntersectSceneWorld(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hit
                 vec3 candidateHitPos = rayOriginWorld + rayDirWorld * hitDistance;
 
                 // use a small positive epsilon along the normal to avoid self-intersection for the next ray
-                const float eps = 1e-4; // try 1e-4 or 1e-3 depending on scene scale
-                vec3 offsetOrigin = candidateHitPos + triangleNormal * eps;
+                vec3 offsetOrigin = candidateHitPos + triangleNormal * EPSILON;
 
-                if (hitDistance > 1e-6 && hitDistance < hitDistanceMin)
+                if (hitDistance > EPSILON && hitDistance < hitDistanceMin)
                 {
                     hitDistanceMin = hitDistance;
                     hitPos = candidateHitPos;
@@ -371,11 +374,69 @@ void main()
         uint lightIndexV1 = indices[baseIndex + 1];
         uint lightIndexV2 = indices[baseIndex + 2];
         //Here we find the sample of the light using random 
-        vec3 lightSample = SamplePointOnTriangle(vertices[lightIndexV0].localPos, vertices[lightIndexV1].localPos, 
+        vec3 lightSampleLocal = SamplePointOnTriangle(vertices[lightIndexV0].localPos, vertices[lightIndexV1].localPos, 
                            vertices[lightIndexV2].localPos, seed);
+
+        // transform triangle vertices and sample to world
+        uint triCount = lightMeshInstance.numIndices / 3u;
+        vec3 v0w = vec3(lightInstance.modelMatrix * vec4(vertices[lightIndexV0].localPos, 1.0));
+        vec3 v1w = vec3(lightInstance.modelMatrix * vec4(vertices[lightIndexV1].localPos, 1.0));
+        vec3 v2w = vec3(lightInstance.modelMatrix * vec4(vertices[lightIndexV2].localPos, 1.0));
+        vec3 lightSampleWorld = vec3(lightInstance.modelMatrix * vec4(lightSampleLocal, 1.0));
+
+        // compute triangle normal & area in world space
+        vec3 e1 = v1w - v0w;
+        vec3 e2 = v2w - v0w;
+        vec3 lightNormalWorld = normalize(cross(e1, e2));
+        float triArea = 0.5 * length(cross(e1, e2)) + EPSILON;
+
+        // direction from hit point toward light (correct sign)
+        vec3 lightDir = normalize(lightSampleWorld - hitPos);
+        float hitDistanceToLight = length(lightSampleWorld - hitPos);
+
+        float NdotL = max(0.0, dot(hitNormalWorld, lightDir));
+        float NlDot = max(0.0, dot(lightNormalWorld, -lightDir));
+
+        if (NdotL > 0.0 && NlDot > 0.0)
+        {
+            // pdf for: uniform emissive instance * uniform triangle index * uniform point on triangle
+            float pdf_point = (1.0 / max(1.0, float(uEmissiveMaterialCount))) *
+                                (1.0 / max(1.0, float(triCount))) *
+                                (1.0 / triArea);
+
+            // geometry term (including 1/r^2)
+            float G = (NdotL * NlDot) / max(EPSILON, hitDistanceToLight * hitDistanceToLight);
+
+            // light emission (material emission) scaled by multiplier uniform
+            vec3 Le = materials[lightInstance.materialIndex].emission.rgb;
+
+            // Monte Carlo estimator: Le * G * (area / pdf_point)
+            float weight = triArea / max(EPSILON, pdf_point);
+            vec3 direct = Le * G * weight;
+
+            // shadow test from surface toward light
+            vec3 shadowOrigin = hitPos + hitNormalWorld * EPSILON;
+            vec3 shadowHitPos;
+            vec3 shadowHitNormal;
+            Material shadowHitMaterial;
+            vec3 ambientLight = vec3(0.1, 0.1, 0.1); // tiny constant light
+            bool blocked = DoesIntersectSceneWorld(shadowOrigin, lightDir, shadowHitPos, shadowHitNormal, shadowHitMaterial, seed);
+
+            if (!blocked || length(shadowHitPos - hitPos) > hitDistanceToLight - 0.001)
+                radiance += throughput * direct;
+            else
+                radiance += throughput * ambientLight;
+        }
         
-        vec3 lightDir = normalize(hitPos - lightSample);
-        float hitDistanceToLight = length(hitPos - lightSample);
+        /*
+        //---------------------
+        // ORIGINAL
+        //--------------------
+        vec3 lightSampleWorld = vec3(lightInstance.modelMatrix * vec4(lightSampleLocal, 1.0));
+        //vec3 lightDir = normalize(hitPos - lightSampleWorld);
+        //float hitDistanceToLight = length(hitPos - lightSampleWorld);
+        vec3 lightDir = normalize(lightSampleWorld - hitPos);
+        float hitDistanceToLight = length(lightSampleWorld - hitPos);
         float lightInNormalDir = max(0.0, dot(hitNormalWorld, lightDir));
 
         //If the object we hit is affected by a light (meaning there are no objects blocking the path from a random 
@@ -393,6 +454,7 @@ void main()
         {
             radiance += throughput * lightInNormalDir; 
         }
+        */
 
         // ----- Sample new diffuse direction -----
         // Cosine-weighted hemisphere sampling: 
@@ -433,9 +495,13 @@ void main()
     // Progressive accumulation using texture input
     vec4 prev = (uUnmovingFrameCount == 0u) ? vec4(0.0) : imageLoad(uTextureInput, pixel);
     vec3 blended = (prev.rgb * float(uUnmovingFrameCount) + radiance) / float(uUnmovingFrameCount + 1u);
+    vec4 fragColor= vec4(blended, 1.0);
 
     //imageStore(uTextureOutput, pixel, vec4(1.0, 0, 0, 1.0));
     //TODO: transparency is not supported yet
-    imageStore(uTextureOutput, pixel, vec4(blended, 1.0));
-    imageStore(uTextureInput, pixel, vec4(blended, 1.0));
+    imageStore(uTextureOutput, pixel, fragColor);
+    imageStore(uTextureInput, pixel, fragColor);
+
+    float luminance = dot(fragColor, vec4(0.2126, 0.7152, 0.0722, 1.0));
+    imageStore(uBrightnessTexture, pixel, luminance >= uBloomThreshold ? fragColor : vec4(0.0, 0.0, 0.0, 1.0));
 }

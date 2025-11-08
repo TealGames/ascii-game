@@ -80,11 +80,14 @@ namespace Core
 		if (m_windows.empty()) return;
 
 		int inactiveCount = 0;
-		for (auto it = m_windows.rbegin(); it != m_windows.rend(); ++it)
+		for (auto it = m_windows.begin(); it != m_windows.end(); )
 		{
 			if (!it->second->IsActive())
 			{
-				it->second->Shutdown(m_windows.size() == 1);
+				auto shutdownIt = it;
+				it++;
+				const bool isLastWindow = m_windows.size() == 1;
+				shutdownIt->second->Shutdown(isLastWindow);
 				continue;
 			}
 
@@ -93,6 +96,7 @@ namespace Core
 
 			//LogWarning("Updating window");
 			it->second->Update();
+			it++;
 		}
 	}
 	size_t WindowManager::GetActiveWindowCount() const
