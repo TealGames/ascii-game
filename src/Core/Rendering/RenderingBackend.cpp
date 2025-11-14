@@ -230,7 +230,8 @@ namespace Rendering
 		{
 #if defined(OPENGL)
 			GL_CALL(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
-			GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+			GL_CALL(glClearDepth(1));
+			ClearBufferBit(BufferBitType::Color | BufferBitType::Depth);
 
 #elif defined(RAYLIB)
 			ClearBackground(BLACK);
@@ -238,12 +239,16 @@ namespace Rendering
 			LogError("Attempted to clear canvas but either no rendering library is active or it has no defined actions");
 #endif
 		}
-		void ClearDepth()
+		void ClearBufferBit(const BufferBitType bitType)
 		{
 #if defined(OPENGL)
-			GL_CALL(glClear(GL_DEPTH_BUFFER_BIT));
+			GLbitfield bitField = 0;
+			if (bitType == BufferBitType::Color) bitField |= GL_COLOR_BUFFER_BIT;
+			if (bitType == BufferBitType::Depth) bitField |= GL_DEPTH_BUFFER_BIT;
+
+			GL_CALL(glClear(bitField));
 #else
-			LogError("Attempted to clear canvas but either no rendering library is active or it has no defined actions");
+			LogError("Attempted to clear buffer bit but either no rendering library is active or it has no defined actions");
 #endif
 		}
 		void SetDepthStatus(const bool enable)
@@ -262,12 +267,6 @@ namespace Rendering
 #endif
 		}
 
-		void ClearColor()
-		{
-#if defined(OPENGL)
-			GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
-#endif
-		}
 		void InvokeImageMemorySync(const ImageOperationBarrierType barrier)
 		{
 #if defined(OPENGL)

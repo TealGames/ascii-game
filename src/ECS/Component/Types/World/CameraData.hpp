@@ -100,15 +100,6 @@ public:
 	Ray3D ScreenToWorldPosition(const ScreenPosition& pos) const;
 	Vec2 WorldToScreenSize(const float cameraDepthDistance, const Vec3& worldSize) const;
 
-	/// <summary>
-	/// Gets the FORWARD direction of this camera using its rotation and 
-	/// local forward direction
-	/// </summary>
-	/// <returns></returns>
-	Vec3 CalculateWorldForward() const;
-	Vec3 CalculateWorldUp() const;
-	Vec3 CalculateWorldRight() const;
-	void CalculateWorldDirections(Vec3* outForward, Vec3* outUp, Vec3* outRight) const;
 	WorldPosition3D CalculateNearPlaneWorldCenter() const;
 	WorldPosition3D CalculateFarPlaneWorldCenter() const;
 	bool DoesViewVolumeContainPos(const WorldPosition3D& point) const;

@@ -4,6 +4,7 @@
 #include "Utils/Data/Color.hpp"
 #include "Core/Rendering/Buffers.hpp"
 #include "Core/Rendering/TextureController.hpp"
+#include "Utils/HelperMacros.hpp"
 
 namespace Rendering
 {
@@ -35,6 +36,13 @@ namespace Rendering
 		All				= 3
 	};
 
+	enum class BufferBitType : std::uint8_t
+	{
+		Color = 0,
+		Depth = 1,
+	};
+	FLAG_ENUM_OPERATORS(BufferBitType)
+
 	class Texture;
 	class Font;
 	namespace Backend
@@ -62,9 +70,8 @@ namespace Rendering
 
 		void BeginRenderingMarker();
 		void ClearBackground();
-		void ClearDepth();
 		void SetDepthStatus(const bool enable);
-		void ClearColor();
+		void ClearBufferBit(const BufferBitType bitType);
 
 		/// <summary>
 		/// Since an Image data type can be invoked with parallel calls, those operations may not have 

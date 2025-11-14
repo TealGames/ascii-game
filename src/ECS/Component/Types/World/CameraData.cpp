@@ -173,15 +173,15 @@ Ray3D CameraComponent::ScreenToWorldPosition(const ScreenPosition& pos) const
 	const float camX = (screenPercent.m_X - 0.5f) * nearSize.m_X;
 	const float camY = (0.5f- screenPercent.m_Y) * nearSize.m_Y;
 
-	const Vec3 nearPoint = cameraPos + CalculateWorldForward() * m_cameraSettings.m_NearDistance + 
-		CalculateWorldRight() * camX + CalculateWorldUp() * camY;
+	const Vec3 nearPoint = cameraPos + GetTransform().CalculateWorldForward() * m_cameraSettings.m_NearDistance + 
+		GetTransform().CalculateWorldRight() * camX + GetTransform().CalculateWorldUp() * camY;
 
 	Vec3 dir = {};
 	WorldPosition3D origin = {};
 	if (m_cameraSettings.m_ProjectionType == ProjectionType::Orthographic)
 	{
 		origin = nearPoint;
-		dir = CalculateWorldForward();
+		dir = GetTransform().CalculateWorldForward();
 	}
 	else
 	{
@@ -205,47 +205,13 @@ Vec2 CameraComponent::WorldToScreenSize(const float cameraDepthDistance, const V
 	}
 }
 
-Vec3 CameraComponent::CalculateWorldForward() const
-{
-	return GetTransform().GetGlobalRotation().ApplyRotationToDir(ENGINE_FORWARD_DIR);
-}
-Vec3 CameraComponent::CalculateWorldUp() const
-{
-	return GetTransform().GetGlobalRotation().ApplyRotationToDir(ENGINE_UP_DIR);
-}
-Vec3 CameraComponent::CalculateWorldRight() const
-{
-	if constexpr (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative)
-		return CrossProduct(CalculateWorldForward(), CalculateWorldUp()).GetNormalized();
-	else return CrossProduct(CalculateWorldUp(), CalculateWorldForward()).GetNormalized();
-}
-void CameraComponent::CalculateWorldDirections(Vec3* outForward, Vec3* outUp, Vec3* outRight) const
-{
-	if (outForward != nullptr) *outForward = CalculateWorldForward();
-	if (outUp != nullptr) *outUp = CalculateWorldUp();
-	if (outRight != nullptr)
-	{
-		Vec3 up;
-		if (outUp != nullptr) up = *outUp;
-		else up = CalculateWorldUp();
-
-		Vec3 forward;
-		if (outForward != nullptr) forward = *outForward;
-		else forward = CalculateWorldForward();
-
-		if constexpr (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative)
-			*outRight = CrossProduct(forward, up).GetNormalized();
-		else *outRight = CrossProduct(up, forward).GetNormalized();
-	}
-}
-
 WorldPosition3D CameraComponent::CalculateNearPlaneWorldCenter() const
 {
-	return GetTransform().GetGlobalPos() + (CalculateWorldForward() * m_cameraSettings.m_NearDistance);
+	return GetTransform().GetGlobalPos() + (GetTransform().CalculateWorldForward() * m_cameraSettings.m_NearDistance);
 }
 WorldPosition3D CameraComponent::CalculateFarPlaneWorldCenter() const
 {
-	return GetTransform().GetGlobalPos() + (CalculateWorldForward() * m_cameraSettings.m_FarDistance);
+	return GetTransform().GetGlobalPos() + (GetTransform().CalculateWorldForward() * m_cameraSettings.m_FarDistance);
 }
 
 std::array<InfinitePlane3D, 6> CameraComponent::CalculateFrustumPlanes() const

@@ -32,6 +32,7 @@ namespace Rendering
 	{
 		R8					= 0,
 		RGB8				= INTERNAL_STORAGE_PER_FORMAT,
+		RGB16F				= INTERNAL_STORAGE_PER_FORMAT +1,
 		/// <summary>
 		/// RGBA each channel with 1 byte integer precision
 		/// </summary>

@@ -21,7 +21,7 @@
 
 namespace Rendering
 {
-    constexpr bool DO_RAYTRACING = false;
+    constexpr bool DO_RAYTRACING = true;
     constexpr std::uint32_t MAX_RAYTRACE_BOUNCES = 5;
 
     constexpr bool DO_LIGHTING = true;
@@ -32,6 +32,7 @@ namespace Rendering
     
     constexpr bool DO_SHADOWS = true;
     constexpr Vec2Int SHADOW_MAP_SIZE = {256, 256};
+    constexpr Vec2Int SKYBOX_MAP_SIZE = {512, 512};
     constexpr float SHADOW_NEAR_DISTANCE = 0.001;
     constexpr float SHADOW_FAR_DISTANCE = 1000;
 
@@ -47,21 +48,22 @@ namespace Rendering
     /// <summary>
     /// Multiplier applied to final color
     /// </summary>
-    constexpr float EXPOSURE = 1;
+    constexpr float EXPOSURE = 0.6;
 
     constexpr size_t NO_RENDER_FRAME_COUNT_LIMIT = 0;
     constexpr size_t RENDER_FRAMES_COUNT = NO_RENDER_FRAME_COUNT_LIMIT;
     constexpr LogType STALL_LOG_TYPE = LogType::Warning;
 
-    constexpr size_t PRE_ALLOCATED_INSTANCES_COUNT = 16;
-    constexpr size_t PRE_ALLOCATED_INDICES_COUNT = 20000;
-    constexpr size_t PRE_ALLOCATED_VERTICES_COUNT = 10000;
+    constexpr size_t INSTANCE_MAX_COUNT = 16;
+    constexpr size_t INDEX_MAX_COUNT = 20000;
+    constexpr size_t VERTEX_MAX_COUNT = 10000;
     constexpr size_t MATERIAL_MAX_COUNT = 5;
+    constexpr size_t TEXTURE_MAX_COUNT = 5;
     constexpr size_t CIRCLE_SIDE_COUNT = 12;
 
     static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { 
         "default", "forward_render", "shadow", "texture", 
-        "post_process", "gaussian_blur", "ray_tracer" };
+        "post_process", "gaussian_blur", "ray_tracer", "skybox_converter"};
 
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
@@ -86,6 +88,8 @@ namespace Rendering
     constexpr const char* LIGHT_INDICES_SSBO_BLOCK_NAME = "LightIndices";
 
     //For compute shaders
+    constexpr const char* TEXTURES_UNIFORM_NAME = "uTextures";
+    constexpr const char* SKYBOX_UNIFORM_NAME = "uSkybox";
     constexpr const char* HORIZONTAL_FLAG_UNIFORM_NAME = "uIsHorizontal";
     constexpr const char* INPUT_TEXTURE_UNIFORM_NAME = "uTextureInput";
     constexpr const char* OUTPUT_TEXTURE_UNIFORM_NAME = "uTextureOutput";
@@ -104,9 +108,10 @@ namespace Rendering
     DirectionalLightData::DirectionalLightData(const Vec3& dir, const Color& color)
         : m_Direction(dir), m_Color(color), _padding0(0) {}
 
-    MaterialData::MaterialData() : m_BaseColor(), m_Alpha(0), _padding{}, m_EmissiveColor() {}
-    MaterialData::MaterialData(const Material& material)
-        : m_BaseColor(material.m_BaseColor), m_Alpha(material.m_Alpha), _padding{}, m_EmissiveColor(material.m_EmissiveColor) {}
+    MaterialData::MaterialData() : MaterialData(Material{}, INVALID_TEXTURE_INDEX) {}
+    MaterialData::MaterialData(const Material& material, const int albedoIndx)
+        : m_BaseColor(material.GetBaseColor()), m_Alpha(material.GetAlpha()), m_Metallic(material.GetMatallic()), 
+        m_Roughness(material.GetRoughness()), m_EmissiveColor(material.GetEmissiveColor()), m_AlbedoIndex(albedoIndx) {}
 
     std::string MaterialData::ToString() const
     {
@@ -174,14 +179,14 @@ namespace Rendering
         //We reserve one for current batch, but also keep it as vector for future in case we do rendering in one go
         //m_batches.reserve(1);
         m_vertexLayout = Backend::CreateVertexLayout();
-        m_vertexBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(VertexType), PRE_ALLOCATED_VERTICES_COUNT, VertexAttributeAdvance::Vertex);
-        m_indexBuffer = Backend::CreateIndexBuffer(nullptr, PRE_ALLOCATED_INDICES_COUNT);
-        m_instancedBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(Instance), PRE_ALLOCATED_INSTANCES_COUNT, VertexAttributeAdvance::Instance);
+        m_vertexBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(VertexType), VERTEX_MAX_COUNT, VertexAttributeAdvance::Vertex);
+        m_indexBuffer = Backend::CreateIndexBuffer(nullptr, INDEX_MAX_COUNT);
+        m_instancedBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(Instance), INSTANCE_MAX_COUNT, VertexAttributeAdvance::Instance);
 
-        m_vertices.reserve(PRE_ALLOCATED_VERTICES_COUNT);
-        m_vertexIndices.reserve(PRE_ALLOCATED_INDICES_COUNT);
-        m_instances.reserve(PRE_ALLOCATED_INSTANCES_COUNT);
-        if (DO_RAYTRACING) m_instanceMeshes.reserve(PRE_ALLOCATED_INSTANCES_COUNT);
+        m_vertices.reserve(VERTEX_MAX_COUNT);
+        m_vertexIndices.reserve(INDEX_MAX_COUNT);
+        m_instances.reserve(INSTANCE_MAX_COUNT);
+        if (DO_RAYTRACING) m_instanceMeshes.reserve(INSTANCE_MAX_COUNT);
 
         //TODO: it is a little redudant to add buffer to graphics manager and buffer controller what if they were merged into one?
         m_graphicsManager->AddShaderBuffer(&m_lightUniformBuffer);
@@ -214,8 +219,9 @@ namespace Rendering
             for (auto& map : m_shadowMaps) 
                 map = CreateTextureCube(SHADOW_MAP_SIZE, TexelStorageType::Depth24);
         }
+        /*m_skybox = CreateTextureCube(SKYBOX_MAP_SIZE, TexelStorageType::RGBA16F,
+            { WrapBehavior::ClampEdge, WrapBehavior::ClampEdge, WrapBehavior::ClampEdge });*/
 
-        
         if (DO_HDR)
         {
             const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
@@ -226,10 +232,11 @@ namespace Rendering
         }
 
         m_graphicsManager->AddShaderGlobalDefine("MAX_POINT_LIGHTS " + std::to_string(MAX_POINT_LIGHTS));
-        m_graphicsManager->AddShaderGlobalDefine("VERTEX_MAX_COUNT " + std::to_string(PRE_ALLOCATED_VERTICES_COUNT));
-        m_graphicsManager->AddShaderGlobalDefine("INDEX_MAX_COUNT " + std::to_string(PRE_ALLOCATED_INDICES_COUNT));
-        m_graphicsManager->AddShaderGlobalDefine("INSTANCE_MAX_COUNT " + std::to_string(PRE_ALLOCATED_INSTANCES_COUNT));
+        m_graphicsManager->AddShaderGlobalDefine("VERTEX_MAX_COUNT " + std::to_string(VERTEX_MAX_COUNT));
+        m_graphicsManager->AddShaderGlobalDefine("INDEX_MAX_COUNT " + std::to_string(INDEX_MAX_COUNT));
+        m_graphicsManager->AddShaderGlobalDefine("INSTANCE_MAX_COUNT " + std::to_string(INSTANCE_MAX_COUNT));
         m_graphicsManager->AddShaderGlobalDefine("MATERIAL_MAX_COUNT " + std::to_string(MATERIAL_MAX_COUNT));
+        m_graphicsManager->AddShaderGlobalDefine("TEXTURE_MAX_COUNT " + std::to_string(TEXTURE_MAX_COUNT));
         
         const VertexLayoutBindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
         std::vector<VertexAttribute> vertexAttributes = 
@@ -323,6 +330,26 @@ namespace Rendering
         m_boundShader->UnbindActive();
         m_boundShader = nullptr;
     }
+    void Renderer::BindFrameBuffer(FrameBuffer* buffer)
+    {
+        if (m_boundFrameBuffer != buffer)
+        {
+            if (m_boundFrameBuffer != nullptr)
+                m_boundFrameBuffer->UnbindActive();
+            if (buffer != nullptr)
+                buffer->BindActive();
+
+            m_boundFrameBuffer = buffer;
+        }
+        //Whether the new bound is the same as before or is compeltely different
+        //we reset ouput
+        if (m_boundFrameBuffer != nullptr)
+            m_boundFrameBuffer->RemoveAllOutputs();
+    }
+    void Renderer::UnbindActiveFrameBuffer()
+    {
+        BindFrameBuffer(nullptr);
+    }
     Texture& Renderer::GetDefaultAlbedo()
     {
         return *m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultAlbedoMutable();
@@ -363,7 +390,7 @@ namespace Rendering
     RenderBatch* Renderer::TryGetSameDrawBatch(const Shader& shader, const Material& material, std::uint32_t vertexCount)
     {
         //TODO: also consider alpha of texture and then return nullptr if it has alpha != 255
-        if (!Utils::ApproximateEqualsF(material.m_Alpha, MAX_FLOAT_COLOR_CHANNEL))
+        if (!Utils::ApproximateEqualsF(material.GetAlpha(), MAX_FLOAT_COLOR_CHANNEL))
             return nullptr;
 
         if (material.m_Albedo == nullptr)
@@ -408,31 +435,10 @@ namespace Rendering
             return;
 
         auto& currPassData = GetPassDataMutable(pass);
-        //const bool hasFrameBufferBound = m_boundFrameBuffer != nullptr;
-        //const bool hasNewStateFrameBuffer = currPassData.m_FrameBuffer != nullptr;
-        if (m_boundFrameBuffer != currPassData.m_FrameBuffer)
-        {
-            if (m_boundFrameBuffer != nullptr)
-                m_boundFrameBuffer->UnbindActive();
-            if (currPassData.m_FrameBuffer != nullptr)
-                currPassData.m_FrameBuffer->BindActive();
-
-            m_boundFrameBuffer = currPassData.m_FrameBuffer;
-        }
-        //If they are the same and not nullptr, we reset outputs
-        if (m_boundFrameBuffer != nullptr)
-            m_boundFrameBuffer->RemoveAllOutputs();
-
-        //if (m_boundShader != currPassData.m_Shader)
-        //{
-        //    if (m_boundShader != nullptr)
-        //        UnbindActiveShader();
-        //    if (currPassData.m_Shader != nullptr)
-        //        BindShader(currPassData.m_Shader);
-        //}
+        BindFrameBuffer(currPassData.m_FrameBuffer);
     }
 
-    size_t Renderer::CalculateBatchHash(const Shader& shader, const Texture& texture, std::uint32_t totalVertices) const
+    size_t Renderer::CalculateBatchHash(const Shader& shader, const Texture&  texture, std::uint32_t totalVertices) const
     {
         const BatchKey batchKey = BatchKey(shader.GetId(), texture.GetInfo().m_id, totalVertices);
         return std::hash<BatchHash>{}(*reinterpret_cast<const BatchHash*>(&batchKey));
@@ -532,7 +538,7 @@ namespace Rendering
         auto cachedMaterialIt = m_cachedMaterials.find(material.m_Name);
         if (cachedMaterialIt == m_cachedMaterials.end())
         {
-            m_materialData.emplace_back(MaterialData(material));
+            m_materialData.emplace_back(MaterialData(material, GetEnqueuedTextureIndex(material.m_Albedo)));
             cachedMaterialIt = m_cachedMaterials.emplace(material.m_Name, m_materialData.size() - 1).first;
         }
         /*LogError(std::format("Original:{} inversed:{} normaModel:{} inserted", modelMatrix.ToString(),
@@ -541,7 +547,8 @@ namespace Rendering
         m_instances.emplace_back(cachedMaterialIt->second, modelMatrix, normalMatrix.Transpose());
         if (DO_RAYTRACING)
         {
-            if (material.m_EmissiveColor.HasVisibleNonzeroRGB()) m_emissiveInstanceIndices.emplace_back(m_instances.size() - 1);
+            if (material.GetEmissiveColor().HasVisibleNonzeroRGB()) 
+                m_emissiveInstanceIndices.emplace_back(m_instances.size() - 1);
             //LogWarning(std::format("Added instance meshes: {}", Utils::ToStringIterable<std::vector<InstanceMesh>, InstanceMesh>(m_instanceMeshes)));
             //if (m_instanceMeshes.size() >= PRE_ALLOCATED_INSTANCES_COUNT) LogError("surpassed");
         }
@@ -558,6 +565,32 @@ namespace Rendering
     {
         if (DO_RAYTRACING) m_instanceMeshes.emplace_back(InstanceMesh(batch.m_IndicesStartIndex, batch.m_IndicesCount));
     }
+    int Renderer::GetEnqueuedTextureIndex(Texture* texture)
+    {
+        if (texture == nullptr)
+            return INVALID_TEXTURE_INDEX;
+
+        for (std::uint8_t i = 0; i < m_bindQueuedTextures.size(); i++)
+        {
+            if (m_bindQueuedTextures[i] == texture)
+                return i;
+        }
+
+        if (m_bindQueuedTextures.size() >= TEXTURE_MAX_COUNT)
+        {
+            LogError(std::format("Attempted to enqueue texture for bind but reached max texture count: {}/{}",
+                m_bindQueuedTextures.size(), TEXTURE_MAX_COUNT));
+            return INVALID_TEXTURE_INDEX;
+        }
+
+        m_bindQueuedTextures.push_back(texture);
+        return m_bindQueuedTextures.size() - 1;
+    }
+    void Renderer::ClearQueuedTextures()
+    {
+        m_bindQueuedTextures.clear();
+    }
+
     MaterialData* Renderer::CreateRuntimeMaterial(const Material& material)
     {
         auto cachedMaterialIt = m_cachedMaterials.find(material.m_Name);
@@ -566,7 +599,7 @@ namespace Rendering
             LogError(std::format("Attempted to create runtime material named:{} but one exists with that name", material.m_Name));
             return nullptr;
         }
-        MaterialData* createdData = &(m_materialData.emplace_back(MaterialData(material)));
+        MaterialData* createdData = &(m_materialData.emplace_back(MaterialData(material, GetEnqueuedTextureIndex(material.m_Albedo))));
         m_cachedMaterials.emplace(material.m_Name, m_materialData.size() - 1);
         return createdData;
     }
@@ -576,6 +609,20 @@ namespace Rendering
         return Vec3Int(worldSize.m_X / (2 * worldSize.m_X + 2 * worldSize.m_Z) * textureSize.m_X, 
                        worldSize.m_Y / (worldSize.m_Y + 2 * worldSize.m_Z) * textureSize.m_Y, 
                        worldSize.m_Z/ (2 * worldSize.m_Z + 2 * worldSize.m_X) * textureSize.m_X);
+    }
+    void Renderer::CalculateCubeMapMatrices(const Vec3 pos, const float nearDistance, const float farDistance, 
+        std::array<Mat4, 6>& outViewMatrices, Mat4& outProjMatrix)
+    {
+        outViewMatrices =
+        {
+            CalculateViewMatrix(pos, ENGINE_RIGHT_DIR,      -ENGINE_UP_DIR),
+            CalculateViewMatrix(pos, -ENGINE_RIGHT_DIR,     -ENGINE_UP_DIR),
+            CalculateViewMatrix(pos, ENGINE_UP_DIR,         ENGINE_FORWARD_DIR),
+            CalculateViewMatrix(pos, -ENGINE_UP_DIR,        -ENGINE_FORWARD_DIR),
+            CalculateViewMatrix(pos, ENGINE_FORWARD_DIR,    -ENGINE_UP_DIR),
+            CalculateViewMatrix(pos, -ENGINE_FORWARD_DIR,   -ENGINE_UP_DIR)
+        };
+        outProjMatrix = PlatformMath::CalculatePlatformPerspectiveProjMatrix(Utils::ToRadians(90), 1, nearDistance, farDistance);
     }
 
     void Renderer::AddCallBox3DMulti(Shader& shader, Material& material, const Vec3& size, const Mat4& modelMatrix)
@@ -871,6 +918,29 @@ namespace Rendering
     {
         AddCallBox3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), size, modelMatrix);
     }
+    void Renderer::AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix)
+    {
+        constexpr size_t TOTAL_INDEX_COUNT = 6;
+        constexpr size_t TOTAL_VERTEX_COUNT = 4;
+
+        Shader& baseShader = GetBaseTextureShader();
+        Material& baseMaterial = GetMaterialOrDefault(material);
+        RenderBatch* sameStatebatch = TryGetSameDrawBatch(baseShader, baseMaterial, TOTAL_INDEX_COUNT);
+        if (sameStatebatch != nullptr)
+        {
+            AddCompleteInstanceToBatch(*sameStatebatch, modelMatrix, baseMaterial);
+            return;
+        }
+
+        Vertex vertices[TOTAL_VERTEX_COUNT] = {
+            Vertex(Vec3(-size.m_X/2, 0, -size.m_Y/2), UV(0, 0), ENGINE_UP_DIR), 
+            Vertex(Vec3(size.m_X/2, 0, -size.m_Y/2), UV(1, 0), ENGINE_UP_DIR),
+            Vertex(Vec3(size.m_X/2, 0, size.m_Y/2), UV(1, 1), ENGINE_UP_DIR),
+            Vertex(Vec3(-size.m_X/2, 0, size.m_Y/2), UV(0, 1), ENGINE_UP_DIR)
+        };
+        IndexType indices[TOTAL_INDEX_COUNT] = {0, 1, 2, 2, 3, 0};
+        CreateBatch(baseShader, baseMaterial, vertices, TOTAL_VERTEX_COUNT, indices, TOTAL_INDEX_COUNT, modelMatrix, true);
+    }
 
     void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const Color color)
     {
@@ -918,6 +988,41 @@ namespace Rendering
                     &(mesh->m_Indices[0]), mesh->m_Indices.size(), modelMatrix * meshGroup.m_GlobalTransform, true);
             }
         }
+    }
+
+    void Renderer::SetSkybox(Texture* texture)
+    {
+        m_skybox = texture;
+        /*
+        Shader& skyboxConverter = GetCoreShader(CoreShader::SkyboxConverted);
+        BindShader(skyboxConverter);
+        BindFrameBuffer(&m_frameBuffer);
+
+        const Vec2Int faceTextureSize = m_skybox.GetData().m_texelSize;
+        Backend::SetViewport(faceTextureSize.m_X, faceTextureSize.m_Y);
+
+        SlotIndex skyboxSlot = m_textureController.TryBindToFreeSlot<Texture>(*texture);
+        skyboxConverter.TrySetUniform(UniformDataType::Sampler2D, SKYBOX_UNIFORM_NAME, &skyboxSlot);
+
+        std::array<Mat4, 6> viewMatrices = {};
+        Mat4 projMatrix = {};
+        CalculateCubeMapMatrices(Vec3(), 0.1, 10, viewMatrices, projMatrix);
+        for (std::uint8_t i = 0; i < 6; i++)
+        {
+            SetViewerData(Vec3::Zero(), viewMatrices[i], projMatrix);
+            m_frameBuffer.SetOutputTextureCube(FrameBufferAttachmentType::Color0, &m_skybox, static_cast<TextureCubeFace>(i));
+            Backend::ClearBackground();
+
+            //NOTE: since the vertices are stored in the shader, we can just invoke with
+            //how many verticies to do
+            Backend::DrawVertices(36);
+        }
+
+        UnbindActiveShader();
+        m_textureController.TryRemoveFromSlot(skyboxSlot);
+        //This forces the viewport to be set back to rendering for the window
+        m_engineState->m_GraphicsContext.m_Window->ForceSizeUpdate();
+        */
     }
 
     void Renderer::RenderStartActions() const
@@ -988,23 +1093,14 @@ namespace Rendering
             auto& light = m_uniformData.m_LightBlock.m_PointLights[i];
             auto& otherLightData = m_uniformData.m_ExtraPointLightData[i];
 
-            lightViewMatrices = 
-            {
-                CalculateViewMatrix(light.m_Pos, ENGINE_RIGHT_DIR,      -ENGINE_UP_DIR),
-                CalculateViewMatrix(light.m_Pos, -ENGINE_RIGHT_DIR,     -ENGINE_UP_DIR),
-                CalculateViewMatrix(light.m_Pos, ENGINE_UP_DIR,         ENGINE_FORWARD_DIR),
-                CalculateViewMatrix(light.m_Pos, -ENGINE_UP_DIR,        -ENGINE_FORWARD_DIR),
-                CalculateViewMatrix(light.m_Pos, ENGINE_FORWARD_DIR,    -ENGINE_UP_DIR),
-                CalculateViewMatrix(light.m_Pos, -ENGINE_FORWARD_DIR,   -ENGINE_UP_DIR)
-            };
-            lightProjMatrix= PlatformMath::CalculatePlatformPerspectiveProjMatrix(Utils::ToRadians(90), 1, SHADOW_NEAR_DISTANCE, light.m_Radius);
+            CalculateCubeMapMatrices(light.m_Pos, SHADOW_NEAR_DISTANCE, light.m_Radius, lightViewMatrices, lightProjMatrix);
             Backend::SetViewport(m_shadowMaps[i].GetData().m_texelSize.m_X, m_shadowMaps[i].GetData().m_texelSize.m_Y);
 
             //For every single face on cube, we redraw scene from light perspective
             for (size_t j = 0; j < 6; j++)
             {
                 m_frameBuffer.SetOutputTextureCube(FrameBufferAttachmentType::Depth, &m_shadowMaps[i], static_cast<TextureCubeFace>(j));
-                Backend::ClearDepth();
+                Backend::ClearBufferBit(BufferBitType::Depth);
 
                 SetViewerData(light.m_Pos, lightViewMatrices[j], lightProjMatrix);
 
@@ -1333,12 +1429,11 @@ namespace Rendering
             m_emissiveInstanceIndexStorageBuffer.WriteData(0, 
                 m_emissiveInstanceIndices.size() * sizeof(std::uint32_t), &m_emissiveInstanceIndices[0]);
         }
-        //TODO: add light indices
 
         const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
         const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
         Vec3 worldFoward, worldUp, worldRight;
-        camera.CalculateWorldDirections(&worldFoward, &worldUp, &worldRight);
+        camera.GetTransform().CalculateWorldDirections(&worldFoward, &worldUp, &worldRight);
         SetViewerData(camera.GetTransform().GetGlobalPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix, 
             worldFoward, worldRight, worldUp, camera.GetSettings().m_FieldOfViewYRadians);
         const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
@@ -1346,6 +1441,7 @@ namespace Rendering
         if (Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix))
             m_unmovingFrames = 0;
         rayTraceShader.TrySetUniform(UniformDataType::Uint, UNMOVING_FRAME_NUMBER_UNIFORM_NAME, &m_unmovingFrames);
+        m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
 
         SlotIndex bloomSlot = INVALID_SLOT_INDEX;
         if (DO_BLOOM)
@@ -1354,6 +1450,32 @@ namespace Rendering
             rayTraceShader.TrySetUniform(UniformDataType::Image2D, BRIGHTNESS_IMAGE_UNIFORM_NAME, &bloomSlot);
         }
 
+        const bool doSkybox = m_skybox != nullptr;
+        rayTraceShader.TrySetUniform(UniformDataType::Bool, "uHasSkybox", &doSkybox);
+        SlotIndex skyboxSlot = INVALID_SLOT_INDEX;
+        if (doSkybox)
+        {
+            skyboxSlot = m_textureController.TryBindToFreeSlot<Texture>(*m_skybox);
+            rayTraceShader.TrySetUniform(UniformDataType::Sampler2D, SKYBOX_UNIFORM_NAME, &skyboxSlot);
+        }
+        
+        int* textureSampleSlots = (int*)alloca(sizeof(int) * m_bindQueuedTextures.size());
+        if (!m_bindQueuedTextures.empty())
+        {            
+            for (std::uint8_t i = 0; i < m_bindQueuedTextures.size(); i++)
+            {
+                SlotIndex slotIndex = m_textureController.TryBindToFreeSlot<Texture>(*m_bindQueuedTextures[i]);
+                if (slotIndex == INVALID_SLOT_INDEX)
+                {
+                    LogError("Attempted to bind a texture for raytracing but failed");
+                    return;
+                }
+                textureSampleSlots[i] = slotIndex;
+            }
+
+            rayTraceShader.TrySetUniformArray(UniformDataType::Sampler2D,
+                TEXTURES_UNIFORM_NAME, textureSampleSlots, m_bindQueuedTextures.size());
+        }
         /*
         static int times = 0;
         times++;
@@ -1384,6 +1506,12 @@ namespace Rendering
         m_imageController.TryRemoveFromSlot(inputTextureSlot);
         m_imageController.TryRemoveFromSlot(outputTextureSlot);
         if (bloomSlot != INVALID_SLOT_INDEX) m_imageController.TryRemoveFromSlot(bloomSlot);
+        if (skyboxSlot != INVALID_SLOT_INDEX) m_textureController.TryRemoveFromSlot(skyboxSlot);
+
+        for (std::uint8_t i = 0; i < m_bindQueuedTextures.size(); i++)
+        {
+            m_textureController.TryRemoveFromSlot(textureSampleSlots[i]);
+        }
     }
 
     void Renderer::FlushBatches()

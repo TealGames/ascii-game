@@ -1,5 +1,4 @@
 #pragma once
-#include "Utils/Data/Vec3Type.hpp"
 #include "Utils/Data/Matrix.hpp"
 #include <string>
 #include <cstdint>
@@ -37,9 +36,21 @@ public:
 		return Quat(0, 0, 0, 1);
 	}
 
+	Vec4 AsVec4() const;
+	const float* GetMemPointer() const;
+
+	Quat GetNormalized() const;
+
 	Vec3 ToRadians() const;
 	Vec3 ToDegrees() const;
 	static Quat ToQuaternion(const Vec3& radianEulerAngles);
+	/// <summary>
+	/// Will create a quaternion by applying a radian rotation around the given axis
+	/// </summary>
+	/// <param name="axis"></param>
+	/// <param name="radianAmount"></param>
+	/// <returns></returns>
+	static Quat FromAxisAngle(const Vec3& axis, const float radianRotation);
 
 	void SetAsRadians(const Vec3& radianEulerAngle);
 	void SetAsDegrees(const Vec3& degreeEulerAngle);

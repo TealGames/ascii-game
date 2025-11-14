@@ -118,7 +118,8 @@ void main()
             thisToLightDir = normalize(thisToLightDist);
             //attenuation = 1.0 / (1.0 + (dist*dist)/(pl.radius*pl.radius));
             //attenuation = clamp(1.0 / (dist * dist), 0.0, 1.0);
-            attenuation = (1.0 - smoothstep(pl.radius * 0.75, pl.radius, dist)) / (1.0 + dist*dist);
+            attenuation = 1.0 / (dist * dist);
+            attenuation *= smoothstep(pl.radius, 0.0, dist);
 
             lightInNormalDir = max(dot(normal, thisToLightDir), 0.0);
             if (lightInNormalDir >= 0.0) 

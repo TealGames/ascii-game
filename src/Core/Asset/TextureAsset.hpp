@@ -23,4 +23,5 @@ public:
 };
 
 bool HasTextureExtension(const std::string& extension);
+bool IsHdrTextureExtension(const std::string& extension);
 

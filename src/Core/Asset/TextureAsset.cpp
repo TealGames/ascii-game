@@ -8,12 +8,25 @@
 TextureAsset::TextureAsset(const std::filesystem::path& path)
 	: Asset(path, false), m_texture() 
 {
+	stbi_set_flip_vertically_on_load(true);
 	/*if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a texture asset from path:{} (extension:{})"
 		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
 		return;*/
+	const bool isHdrTexture = IsHdrTextureExtension(path.extension().string());
 
 	int width = 0, height = 0, channels = 0;
-	std::byte* data = reinterpret_cast<std::byte*>(stbi_load(path.string().c_str(), &width, &height, &channels, 0));
+	std::byte* data = nullptr;
+	if (isHdrTexture)
+	{
+		data = reinterpret_cast<std::byte*>(stbi_loadf(path.string().c_str(), &width, &height, &channels, 0));
+		//LogError(std::format("Hdr width:{} height:{} channelsL:{}", width, height, channels));
+	}
+	else
+	{
+		data = reinterpret_cast<std::byte*>(stbi_load(path.string().c_str(), &width, &height, &channels, 0));
+		//LogError(std::format("Hdr width:{} height:{}", width, height));
+	}
+
 	if (data == nullptr)
 	{
 		LogError(std::format("Attempted to load texture from path:{} "
@@ -29,7 +42,18 @@ TextureAsset::TextureAsset(const std::filesystem::path& path)
 	//LogError(std::format("path:{} Image chnnaels:{} wid:{} heigh:{}", path.string(), channels, width, height));
 	
 	Rendering::TexelStorageType internalStorage = Rendering::TexelStorageType::RGBA8;
-	if (channels == 1) internalStorage = Rendering::TexelStorageType::R8;
+	if (isHdrTexture)
+	{
+		if (channels == 3) internalStorage = Rendering::TexelStorageType::RGB16F;
+		else if (channels == 4) internalStorage = Rendering::TexelStorageType::RGBA16F;
+		else
+		{
+			LogError(std::format("Tried to get internal storage for hdr texture asset "
+				"but it has unsupported channels:{}", channels));
+			return;
+		}
+	}
+	else if (channels == 1) internalStorage = Rendering::TexelStorageType::R8;
 	else if (channels == 3) internalStorage = Rendering::TexelStorageType::RGB8;
 	else if (channels == 4) internalStorage = Rendering::TexelStorageType::RGBA8;
 	else
@@ -39,6 +63,7 @@ TextureAsset::TextureAsset(const std::filesystem::path& path)
 		return;
 	}
 
+	//if (isHdrTexture) LogError(std::format());
 	m_texture = Rendering::CreateTexture(data, Vec2Int(width, height), internalStorage);
 	stbi_image_free(data);
 }
@@ -51,7 +76,11 @@ TextureAsset::~TextureAsset()
 
 bool HasTextureExtension(const std::string& path)
 {
-	return path == ".png" || path == ".jpg";
+	return path == ".png" || path == ".jpg" || IsHdrTextureExtension(path);
+}
+bool IsHdrTextureExtension(const std::string& path) 
+{
+	return path == ".hdr" || path == ".exr";
 }
 
 bool TextureAsset::IsValidTexture() const

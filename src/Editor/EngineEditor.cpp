@@ -1,4 +1,5 @@
 #include "pch.hpp"
+#include <numbers>
 #include "Editor/EngineEditor.hpp"
 #include "Core/Time/TimeKeeper.hpp"
 #include "ECS/Systems/Types/World/PlayerSystem.hpp"
@@ -30,7 +31,7 @@ static constexpr Input::KeyCode PAUSE_TOGGLE_KEY = Input::KeyCode::P;
 static constexpr Input::KeyCode SELECT_KEY = Input::KeyCode::MouseLeft;
 static constexpr float HELD_TIME_FOR_OBJECT_MOVE = 0.2;
 static constexpr Vec3 CAMERA_MOVE_SPEED = {0.2, 0.2, 0.2};
-static constexpr float MOUSE_SENSITIVITY = 0.2;
+static constexpr float MOUSE_SENSITIVITY = 0.5;
 static constexpr Vec2 CAMERA_ROTATE_RADIANS_PER_POS = Vec2(1.0f / SCREEN_WIDTH, 1.0f / SCREEN_HEIGHT) * std::numbers::pi;
 
 EditModeInfo::EditModeInfo() : m_Selected(nullptr) {}
@@ -48,7 +49,7 @@ EngineEditor::EngineEditor(TimeKeeper& time, const Input::InputManager& input, P
 	m_entityEditor(m_inputManager, m_cameraController, m_guiTree, m_popupManager, assetManager),
 	m_spriteEditor(m_guiTree, m_inputManager, assetManager),
 	m_overheadBarContainer(nullptr), m_toggleLayout(nullptr), m_pauseGameToggle(nullptr), m_editModeToggle(nullptr), m_mousePosText(nullptr),
-	m_editModeInfo(), m_assetEditorButton(nullptr), m_inCameraFreemode(true), m_inputProfile(nullptr)
+	m_editModeInfo(), m_assetEditorButton(nullptr), m_inCameraFreemode(true), m_inputProfile(nullptr), m_freelookPitch(), m_freelookYaw()
 {
 	
 }
@@ -327,8 +328,23 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 	{
 		if (mouseDelta != Vec2::Zero())
 		{
-			const Vec2 rotationInput = Vec2(mouseDelta.m_Y, mouseDelta.m_X) * CAMERA_ROTATE_RADIANS_PER_POS * MOUSE_SENSITIVITY;
-			mainCamera.GetTransformMutable().GetLocalRotationMutable() *= Vec3(rotationInput, 0);
+			constexpr float pi = std::numbers::pi_v<float>;
+			const Vec2 rotationInput = mouseDelta * CAMERA_ROTATE_RADIANS_PER_POS * MOUSE_SENSITIVITY;
+			
+			m_freelookPitch += rotationInput.m_Y;
+			m_freelookPitch = std::clamp(m_freelookPitch, -pi / 2 + 0.01f, pi / 2 - 0.01f);
+			m_freelookYaw += rotationInput.m_X;
+			LogWarning(std::format("Rtoation input: {} pitch:{} yaw:{}", rotationInput.ToString(), m_freelookPitch, m_freelookYaw));
+
+			//Quat yawQuat = Quat::FromAxisAngle(ENGINE_UP_DIR, m_freelookYaw);
+			//Quat pitchQuat = Quat::FromAxisAngle(ENGINE_RIGHT_DIR, m_freelookPitch);
+
+			Quat yawQuat = Quat::FromAxisAngle(ENGINE_UP_DIR, m_freelookYaw);
+			Vec3 rotatedRight = yawQuat.ApplyRotationToDir(ENGINE_RIGHT_DIR);
+			Quat pitchQuat = Quat::FromAxisAngle(rotatedRight, m_freelookPitch);
+
+			// Step 4: combine them — yaw first, then pitch
+			mainCamera.GetTransformMutable().GetLocalRotationMutable() = pitchQuat * yawQuat;
 		}
 
 		const Input::CompoundInput* moveCompound = m_inputProfile->TryGetCompoundInputAction(MAIN_INPUT_PROFILE_MOVE_ACTION);
@@ -346,7 +362,7 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 		{
 			//LogWarning(std::format("World forward of camera: {}s", mainCamera.CalculateWorldForward().ToString()));
 			//const Vec3 rotatedDir= mainCamera.GetTransformMutable().GetGlobalRotation().ApplyRotationToDir(ENGINE_FORWARD_DIR);
-			Vec3 facingDir = mainCamera.CalculateWorldForward();
+			Vec3 facingDir = mainCamera.GetTransform().CalculateWorldForward();
 			mainCamera.GetTransformMutable().GetLocalPosMutable() += mainCamera.GetTransform().GetLocalRotation().ApplyRotationToDir(pressedDir.AsFloat())
 				//* mainCamera.CalculateWorldForward() 
 				* CAMERA_MOVE_SPEED * unscaledDeltaTime;

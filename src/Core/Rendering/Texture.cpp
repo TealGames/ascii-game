@@ -20,6 +20,8 @@ namespace Rendering
 			return 3;
 		else if (storage == TexelStorageType::RGBA8)
 			return 4;
+		else if (storage == TexelStorageType::RGB16F)
+			return 12;
 		//NOTE: since c++ has no half floats, we use 4 channels * 4 bytes = 16 bytes
 		else if (storage == TexelStorageType::RGBA16F)
 			return 16;

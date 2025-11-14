@@ -71,6 +71,11 @@ public:
 	Vec3& GetLocalScaleMutable();
 	Quat& GetLocalRotationMutable();
 
+	Vec3 CalculateWorldForward() const;
+	Vec3 CalculateWorldUp() const;
+	Vec3 CalculateWorldRight() const;
+	void CalculateWorldDirections(Vec3* outForward, Vec3* outUp, Vec3* outRight) const;
+
 	const TransformPrecalculatedData& GetLastUpdateData() const;
 
 	//std::vector<std::string> GetDependencyFlags() const override;

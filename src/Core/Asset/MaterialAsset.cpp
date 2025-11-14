@@ -28,13 +28,12 @@ void MaterialAsset::UpdateAssetFromFile()
 	fig.GetAllProperties(PROPERTY_MARKER, figProperties);
 
 	m_material.m_Albedo = ToTexture(figProperties[0].GetValue().front());
-	m_material.m_BaseColor = ToColor(figProperties[1].GetValue().front());
-	m_material.m_Alpha = std::clamp(ToFloat(figProperties[2].GetValue().front()), 0.0f, float(MAX_INT_COLOR_CHANNEL));
-	if (m_material.m_Alpha > 1.0f) m_material.m_Alpha /= MAX_INT_COLOR_CHANNEL;
+	m_material.SetBaseColor(ToColor(figProperties[1].GetValue().front()));
+	m_material.SetAlpha(ToFloat(figProperties[2].GetValue().front()));
 
-	m_material.m_EmissiveColor = ToColor(figProperties[3].GetValue().front());
-	m_material.m_Roughness = std::clamp(ToFloat(figProperties[4].GetValue().front()), 0.0f, 1.0f);
-	m_material.m_Metallic = std::clamp(ToFloat(figProperties[5].GetValue().front()), 0.0f, 1.0f);
+	m_material.SetEmissiveColor(ToColor(figProperties[3].GetValue().front()));
+	m_material.SetRoughness(ToFloat(figProperties[4].GetValue().front()));
+	m_material.SetMetallic(ToFloat(figProperties[5].GetValue().front()));
 	m_material.m_NormalMap = ToTexture(figProperties[6].GetValue().front());
 }
 

@@ -2,6 +2,15 @@
 #include <format>
 #include <numbers>
 
+Vec4 Quat::AsVec4() const { return Vec4(m_X, m_Y, m_Z, m_W); }
+const float* Quat::GetMemPointer() const { return &m_X; }
+
+Quat Quat::GetNormalized() const 
+{
+    float length = std::sqrt(m_X * m_X + m_Y * m_Y + m_Z * m_Z + m_W * m_W);
+    return Quat(m_X / length, m_Y / length, m_Z / length, m_W / length);
+}
+
 Vec3 Quat::ToRadians() const
 {
     //Note: ROLL(X) PITCH (y), YAW(Z)
@@ -46,6 +55,15 @@ Quat Quat::ToQuaternion(const Vec3& radianEulerAngles)
     q.m_Z = cr * cp * sy - sr * sp * cy;
     return q;
 }
+Quat Quat::FromAxisAngle(const Vec3& axis, const float radianRotation)
+{
+    const Vec3 normalizedAxis = axis.GetNormalized();
+    const float halfAngle = radianRotation * 0.5f;
+    const float s = std::sin(halfAngle);
+    const float c = std::cos(halfAngle);
+    return Quat(normalizedAxis.m_X * s, normalizedAxis.m_Y * s, normalizedAxis.m_Z * s, c);
+}
+
 void Quat::SetAsRadians(const Vec3& radianEulerAngle)
 {
     *this = ToQuaternion(radianEulerAngle);

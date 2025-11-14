@@ -71,7 +71,7 @@ namespace Rendering
 				return GL_UNSIGNED_BYTE;
 			//NOTE: technically, this needs to be GL_HALF_FLOAT
 			//but since c++ does not have native 16 bit float we use 32
-			else if (storage == TexelStorageType::RGBA16F)
+			else if (storage == TexelStorageType::RGBA16F || storage == TexelStorageType::RGB16F)
 				return GL_FLOAT;
 			else if (storage == TexelStorageType::Depth24)
 				return GL_UNSIGNED_INT;

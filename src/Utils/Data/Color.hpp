@@ -29,7 +29,7 @@ public:
 		: Col(r, g, b, MAX_CHANNEL_VALUE) {}
 
 	constexpr Col(const T r, const T g, const T b, const T a)
-		: m_R(r), m_G(g), m_B(b), m_A(a) {}
+		: m_R(r), m_G(g), m_B(b), m_A(std::min(a, T(1))) {}
 
 	constexpr Col(const Vec<T, 2>& rg, const T b, const T a)
 		: Col(rg.m_X, rg.m_Y, b, a) {}
@@ -44,7 +44,10 @@ public:
 		: Col(rgb.m_X, rgb.m_Y, rgb.m_Z, a) {}
 
 	constexpr Col(const T r, const Vec<T, 3>& gba)
-		: Col(r, gba.m_X, gba.m_Y, gba.m_W) {}
+		: Col(r, gba.m_X, gba.m_Y, gba.m_Z) {}
+
+	constexpr Col(const Vec<T, 4>& rgba)
+		: Col(rgba.m_X, rgba.m_Y, rgba.m_Z, rgba.m_W) {}
 
 
 	constexpr Col(const Col& rg, const T b, const T a)
@@ -78,7 +81,6 @@ public:
 	constexpr Col(int r, int g, int b, int a)
 		requires (!std::is_same_v<T, int>&& std::is_floating_point_v<T>)
 		: Col(std::max(r / 255.0f, 0.0f), std::max(g / 255.0f, 0.0f), std::max(b / 255.0f, 0.0f), std::max(a / 255.0f, 0.0f)) {}
-
 
 	Col(const Col&) = default;
 	Col(Col&&) noexcept = default;
@@ -150,13 +152,84 @@ public:
 
 	void ApplyRangeClamp(const bool clampNegatives, const bool clampGreaterThan1)
 	{
-		for (int i = 0; i < 4; i++)
+		for (std::uint8_t i = 0; i < 4; i++)
 		{
-			if (m_Channels[i] < 0 && clampNegatives)
-				m_Channels[i] = 0;
-			if (m_Channels[i] > 1.0f && clampGreaterThan1)
-				m_Channels[i] = 1f;
+			ApplyRangeClamp(i, clampNegatives, clampGreaterThan1);
 		}
+	}
+	Col GetRangeClamp(const bool clampNegatives, const bool clampGreaterThan1) const
+	{
+		Vec<T, 4> newChannels = Vec<T, 4>();
+		for (std::uint8_t i = 0; i < 4; i++)
+		{
+			newChannels[i] = GetRangeClampSingular(i, clampNegatives, clampGreaterThan1);
+		}
+		return Col(newChannels);
+	}
+
+	void ApplyRangeClamp(const std::uint8_t channelIndex, const bool clampNegative, const bool clampGreaterThan1)
+		requires std::is_floating_point_v<T>
+	{
+		if (channelIndex >= 4)
+		{
+			LogError(std::format("Attempted to clamp invalid color channel index:{}", channelIndex));
+			return;
+		}
+
+		if (m_Channels[channelIndex] < 0 && clampNegative)
+			m_Channels[channelIndex] = 0;
+		else if (m_Channels[channelIndex] > 1.0f && clampGreaterThan1)
+			m_Channels[channelIndex] = 1f;
+	}
+	Col GetRangeClamp(const std::uint8_t channelIndex, const bool clampNegative, const bool clampGreaterThan1) const
+		requires std::is_floating_point_v<T>
+	{
+		if (channelIndex >= 4)
+		{
+			LogError(std::format("Attempted to clamp invalid color channel index:{}", channelIndex));
+			return Col();
+		}
+		
+		Vec<T, 4> channels = Vec<T, 4>();
+		if (channels[channelIndex] < 0 && clampNegative)
+			channels[channelIndex] = 0;
+		else if (channels[channelIndex] > 1.0f && clampGreaterThan1)
+			channels[channelIndex] = 1f;
+
+		return Col(channels);
+	}
+	T GetRangeClampSingular(const std::uint8_t channelIndex, const bool clampNegative, const bool clampGreaterThan1) const
+		requires std::is_floating_point_v<T>
+	{
+		if (channelIndex >= 4)
+		{
+			LogError(std::format("Attempted to clamp invalid color channel index:{}", channelIndex));
+			return T();
+		}
+
+		T newChannelValue = T(m_Channels[channelIndex]);
+		if (m_Channels[channelIndex] < 0 && clampNegative)
+			newChannelValue = 0;
+		else if (m_Channels[channelIndex] > 1.0f && clampGreaterThan1)
+			newChannelValue = 1.0f;
+
+		return newChannelValue;
+	}
+
+	/// <summary>
+	/// Will clamp each rgb channel to [0, infinity) (NOTE: since this assumes it is hdr, it will NOT
+	/// clamp the rgb channels with max of 1 since hdr can have >1), but alpha will be clamped to [0,1]
+	/// </summary>
+	/// <returns></returns>
+	Col GetRangeClampAsHDR() const
+	{
+		Vec<T, 4> newChannels = Vec<T, 4>();
+		for (std::uint8_t i = 0; i < 3; i++)
+		{
+			newChannels[i] = GetRangeClampSingular(i, true, false);
+		}
+		newChannels[3] = GetRangeClampSingular(3, true, false);
+		return Col(newChannels);
 	}
 
 	std::string ToString(const std::uint8_t& decimalPlaces = 5) const

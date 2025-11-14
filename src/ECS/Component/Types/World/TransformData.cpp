@@ -4,6 +4,7 @@
 #include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Core/Serialization/JsonSerializers.hpp"
+#include "Math/PlatformMath.hpp"
 //#include "glm/gtc/matrix_transform.hpp"
 
 TransformComponent::TransformComponent(const Json& json) : TransformComponent()
@@ -167,6 +168,38 @@ Quat& TransformComponent::GetLocalRotationMutable()
 		SetChildrenDirty();
 	}
 	return m_localRotation;
+}
+
+Vec3 TransformComponent::CalculateWorldForward() const
+{
+	return GetGlobalRotation().ApplyRotationToDir(ENGINE_FORWARD_DIR);
+}
+Vec3 TransformComponent::CalculateWorldUp() const
+{
+	return GetGlobalRotation().ApplyRotationToDir(ENGINE_UP_DIR);
+}
+Vec3 TransformComponent::CalculateWorldRight() const
+{
+	return GetGlobalRotation().ApplyRotationToDir(ENGINE_RIGHT_DIR);
+}
+void TransformComponent::CalculateWorldDirections(Vec3* outForward, Vec3* outUp, Vec3* outRight) const
+{
+	if (outForward != nullptr) *outForward = CalculateWorldForward();
+	if (outUp != nullptr) *outUp = CalculateWorldUp();
+	if (outRight != nullptr)
+	{
+		Vec3 up;
+		if (outUp != nullptr) up = *outUp;
+		else up = CalculateWorldUp();
+
+		Vec3 forward;
+		if (outForward != nullptr) forward = *outForward;
+		else forward = CalculateWorldForward();
+
+		if constexpr (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative)
+			*outRight = CrossProduct(forward, up).GetNormalized();
+		else *outRight = CrossProduct(up, forward).GetNormalized();
+	}
 }
 
 Mat4 CalculateTranslationMatrix(const Vec3& pos)

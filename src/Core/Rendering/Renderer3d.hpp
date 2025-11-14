@@ -54,15 +54,19 @@ namespace Rendering
     };
 
     //NOTE: must be aligned to std::430 (members and struct at 16 byte alignment)
+    constexpr int INVALID_TEXTURE_INDEX = -1;
     struct MaterialData
     {
         Color m_BaseColor;
-        float m_Alpha;
-        float _padding[3];
         Color m_EmissiveColor;
+        float m_Alpha;
+        float m_Metallic;
+        float m_Roughness;
+        int m_AlbedoIndex;
+        //float _padding;
 
         MaterialData();
-        MaterialData(const Material& material);
+        MaterialData(const Material& material, const int albedoIndx);
 
         std::string ToString() const;
     };
@@ -135,8 +139,9 @@ namespace Rendering
         PostProcess      = 4,
         GaussianBlur     = 5,
         RayTrace         = 6,
+        SkyboxConverted  = 7,
     };
-    inline constexpr CoreShaderIntegralType CORE_SHADER_COUNT = 7;
+    inline constexpr CoreShaderIntegralType CORE_SHADER_COUNT = 8;
 
     using IntegralRenderPassType = std::uint8_t;
     enum class RenderPassType : IntegralRenderPassType
@@ -190,6 +195,7 @@ namespace Rendering
         std::vector<InstanceType> m_instances;
         std::vector<InstanceMesh> m_instanceMeshes;
         std::vector<MaterialData> m_materialData;
+        std::vector<Texture*> m_bindQueuedTextures;
         std::vector<std::uint32_t> m_emissiveInstanceIndices;
         std::unordered_map<BatchHash, size_t> m_hashToBatchIndex;
         std::unordered_map<String16, std::uint32_t> m_cachedMaterials;
@@ -204,6 +210,7 @@ namespace Rendering
 
         FrameBuffer m_frameBuffer;
         TextureCube m_shadowMaps[MAX_POINT_LIGHTS];
+        Texture* m_skybox;
         //The io texture is used for scenarios when we need a secondary texture
         //for input and/or output to prevent writing/reading of same texture
         Texture m_ioTexture;
@@ -250,6 +257,8 @@ namespace Rendering
         void AddIndicesToBatch(RenderBatch& batch, const IndexType* indexArray, const size_t indicesSize);
         void AddInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
         void AddMeshInstanceToBatch(RenderBatch& batch);
+        int GetEnqueuedTextureIndex(Texture* texture);
+        void ClearQueuedTextures();
 
         void FlushBatches();
         void RenderStartActions() const;
@@ -285,6 +294,8 @@ namespace Rendering
         Shader& GetBaseTextureShader();
         void BindShader(Shader& shader);
         void UnbindActiveShader();
+        void BindFrameBuffer(FrameBuffer* buffer);
+        void UnbindActiveFrameBuffer();
 
         Texture& GetDefaultAlbedo();
         Texture& GetMaterialAlbedoOrDefault(Material& material);
@@ -314,6 +325,8 @@ namespace Rendering
         /// <param name="textureSize"></param>
         /// <returns></returns>
         Vec3Int CalculateFaceSizeForTexture(const WorldPosition3D& worldSize, const Vec2Int textureSize);
+        void CalculateCubeMapMatrices(const Vec3 pos, const float nearDistance, const float farDistance, 
+            std::array<Mat4, 6>& outViewMatrices, Mat4& outProjMatrix);
 
     public:
         Renderer(const EngineState& engineState);
@@ -321,11 +334,14 @@ namespace Rendering
         bool WasInit() const;
 
         void InitCoreShaders();
+        
+        void SetSkybox(Texture* texture);
 
         void AddCallBox3D(Material* material, const Vec3& size, const Mat4& modelMatrix);
         void AddCallSphere3D(Material* material, const float radius, const Mat4& modelMatrix);
         void AddCallTextureSphere3D(Material* material, const float radius, const Mat4& modelMatrix);
         void AddCallTextureBox3D(Material* material, const Vec3& size, const Mat4& modelMatrix);
+        void AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix);
         //void AddCallText(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Color color);
 
         void AddCallModel(Model3d& model, const Mat4& modelMatrix);

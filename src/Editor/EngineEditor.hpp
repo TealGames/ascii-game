@@ -72,6 +72,9 @@ private:
 	bool m_displayingGameView;
 	bool m_inCameraFreemode;
 
+	float m_freelookYaw;
+	float m_freelookPitch;
+
 private:
 	void InitConsoleCommands(ECS::PlayerSystem& playerSystem);
 	void SelectEntityEditor(EntityData& entity);

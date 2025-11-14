@@ -52,10 +52,22 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 			//TODO: also get roughness, normal map and albedo from the material
 			aiMaterial* modelMaterial = modelScene->mMaterials[currentImportMesh->mMaterialIndex];
 			aiColor4D baseColor;
-			if (modelMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS)
+			if (modelMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS 
+				|| modelMaterial->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS)
 			{
-				currentEngineMesh->m_Material.m_BaseColor =
-					Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a);
+				currentEngineMesh->m_Material.SetBaseColor(
+					Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a));
+			}
+
+			float metallic = 0;
+			if (modelMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
+			{
+				currentEngineMesh->m_Material.SetMetallic(metallic);
+			}
+			float roughness = 0;
+			if (modelMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, metallic) == AI_SUCCESS)
+			{
+				currentEngineMesh->m_Material.SetRoughness(metallic);
 			}
 		}
 	}
@@ -83,7 +95,6 @@ Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, fals
 	m_model.m_Meshes.reserve(modelScene->mNumMeshes);
 	//NOTE: default assimp matrix creates identity
 	ProcessSceneNode(m_model, modelScene, modelScene->mRootNode, nullptr);
-
 	//LogError("FINSIHED MODEL: "+ m_model.ToString());
 }
 
