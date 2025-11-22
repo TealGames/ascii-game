@@ -334,7 +334,7 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 			m_freelookPitch += rotationInput.m_Y;
 			m_freelookPitch = std::clamp(m_freelookPitch, -pi / 2 + 0.01f, pi / 2 - 0.01f);
 			m_freelookYaw += rotationInput.m_X;
-			LogWarning(std::format("Rtoation input: {} pitch:{} yaw:{}", rotationInput.ToString(), m_freelookPitch, m_freelookYaw));
+			/*LogWarning(std::format("Rtoation input: {} pitch:{} yaw:{}", rotationInput.ToString(), m_freelookPitch, m_freelookYaw));*/
 
 			//Quat yawQuat = Quat::FromAxisAngle(ENGINE_UP_DIR, m_freelookYaw);
 			//Quat pitchQuat = Quat::FromAxisAngle(ENGINE_RIGHT_DIR, m_freelookPitch);
@@ -367,8 +367,8 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 				//* mainCamera.CalculateWorldForward() 
 				* CAMERA_MOVE_SPEED * unscaledDeltaTime;
 
-			LogWarning(std::format("Camera pressed dir:{} facedir:{} newRotnewPos:{}", pressedDir.ToString(), facingDir.ToString(), 
-				(pressedDir.AsFloat() * facingDir * CAMERA_MOVE_SPEED * unscaledDeltaTime).ToString()));
+			/*LogWarning(std::format("Camera pressed dir:{} facedir:{} newRotnewPos:{}", pressedDir.ToString(), facingDir.ToString(), 
+				(pressedDir.AsFloat() * facingDir * CAMERA_MOVE_SPEED * unscaledDeltaTime).ToString()));*/
 		}
 		//LogWarning(std::format("Camera transform:{}", mainCamera.GetTransformMutable().ToString()));
 		//mainCamera.GetTransformMutable().GetLocalRotationMutable() *= Vec3(0, 0.13 * unscaledDeltaTime, 0);

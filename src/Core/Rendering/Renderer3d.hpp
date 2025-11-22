@@ -47,10 +47,10 @@ namespace Rendering
     constexpr size_t MAX_POINT_LIGHTS = 2;
     struct LightBlockData
     {
-        DirectionalLightData m_DirLight;
-        int m_PointLightsCount;
+        DirectionalLightData m_DirLight = {};
+        int m_PointLightsCount = 0;
         float _padding[3];
-        PointLightData m_PointLights[MAX_POINT_LIGHTS];
+        PointLightData m_PointLights[MAX_POINT_LIGHTS] = {};
     };
 
     //NOTE: must be aligned to std::430 (members and struct at 16 byte alignment)
@@ -175,8 +175,10 @@ namespace Rendering
     class Renderer
     {
     private:
+        //TODO: make flags if many bools here
         bool m_isInit;
         bool m_isRenderStalled;
+        bool m_isStaticGeometryInit;
         size_t m_framesSinceStart;
         size_t m_unmovingFrames;
 
@@ -240,6 +242,8 @@ namespace Rendering
     private:
         std::uint8_t GenerateRuntimeMaterialId();
         void ResetRuntimeMaterialId();
+
+        void WriteVertexDataToSSBOs();
 
         RenderBatch* TryGetBatch(const Shader& shader, const Texture& texture, std::uint32_t vertexCount);
         size_t CalculateBatchHash(const Shader& shader, const Texture& texture, std::uint32_t totalVertices) const;

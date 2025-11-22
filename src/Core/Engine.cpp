@@ -318,9 +318,6 @@ namespace Core
 
 		m_engineState.SetExecutionState(ExecutionState::Validation);
 		ValidateAll();
-
-		//LogWarning(std::format("Tree hierarcxhy: {}", m_uiHierarchy.ToStringTree()));
-		StartAll();
 	}
 
 	Engine::~Engine()
@@ -342,6 +339,39 @@ namespace Core
 		if (!Assert(newScene != nullptr, "Tried to call start on all systems but there "
 			"are no scenes set as active right now"))
 			return;
+
+		const Vec3 objectCenter = Vec3(0, 0, 0.3);
+		static Quat rot = Quat::Identity();
+		//rot *= Vec3{ 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime };
+		const Mat4 modelMatrix = CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
+		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Color_BLUE
+		//m_renderer.AddCircleCall2D(0.13f, modelMatrix, Color_RED);
+		//m_renderer.AddSphereCall3D(0.13f, modelMatrix, Color_GREEN);
+		//m_renderer.AddRectangleCall2D(Vec2(0.13, 0.13), modelMatrix, Color_BLUE);
+		Rendering::Texture& tex = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/test.jpg")->GetTextureMutable();
+		Rendering::Material material = Rendering::Material("Test", nullptr, Color(100, 100, 100, 255));
+		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Color_BLUE);
+		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Color_BLUE);
+		//m_renderer.AddCallDirectionalLight(Vec3(0, -1, 0), COLOR_GREEN);
+		m_renderer.AddCallPointLight(Vec3(0.2, 0, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
+		m_renderer.AddCallPointLight(Vec3(0, 0.2, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_BLUE);
+
+		const Mat4 modelMatrix3 = CalculateModelMatrix(nullptr, Vec3(0, -0.3, 0.4), Vec3::One(), Quat::Identity());
+		Rendering::Material* defaultMaterial = m_engineState.m_GraphicsContext.m_GraphicsManager->GetDefaultMaterialMutable();
+		m_renderer.AddCallSphere3D(defaultMaterial, 0.2, modelMatrix3);
+		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
+
+		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
+		model->GetModelMutable().m_Meshes[0].m_Material.SetSurface(1, 1, nullptr);
+		const Mat4 modelMatrix2 = CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3(0.001, 0.001, -0.001), Quat::Identity());
+		const Mat4 modelMatrix4 = CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3::One(), Quat::Identity());
+		m_renderer.AddCallModel(model->GetModelMutable(), modelMatrix2);
+		//m_renderer.AddCallSphere3D(&model->GetModelMutable().m_Meshes[0].m_Material, 0.2, modelMatrix4);
+
+		Rendering::Texture& checkerboard = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/checkerboard_2.png")->GetTextureMutable();
+		Rendering::Material planeMaterial = Rendering::Material("Plane", &checkerboard, COLOR_WHITE);
+		const Mat4 planeMatrix = CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3::One(), Quat::Identity());
+		m_renderer.AddCallPlane3D(&planeMaterial, Vec2(1, 1), planeMatrix);
 	}
 
 	void Engine::SetUpdateStatusCode(const UpdateStatusCode& code)
@@ -428,39 +458,6 @@ namespace Core
 		m_uiSystemExecutor.SystemsUpdate(m_sceneManager.m_GlobalEntityManager, unscaledDeltaTime);
 
 		m_gizmosOverlay.MoveCallsToRenderBuffer(m_renderer);
-
-		const Vec3 objectCenter = Vec3(0, 0, 0.3);
-		static Quat rot = Quat::Identity();
-		rot *= Vec3{ 0.3f* unscaledDeltaTime, 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime};
-		const Mat4 modelMatrix = CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
-		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Color_BLUE
-		//m_renderer.AddCircleCall2D(0.13f, modelMatrix, Color_RED);
-		//m_renderer.AddSphereCall3D(0.13f, modelMatrix, Color_GREEN);
-		//m_renderer.AddRectangleCall2D(Vec2(0.13, 0.13), modelMatrix, Color_BLUE);
-		Rendering::Texture& tex= m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/test.jpg")->GetTextureMutable();
-		Rendering::Material material = Rendering::Material("Test", nullptr, Color(100, 100, 100, 255));
-		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Color_BLUE);
-		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Color_BLUE);
-		//m_renderer.AddCallDirectionalLight(Vec3(0, -1, 0), COLOR_GREEN);
-		m_renderer.AddCallPointLight(Vec3(0.2, 0, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
-		m_renderer.AddCallPointLight(Vec3(0, 0.2, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_BLUE);
-
-		const Mat4 modelMatrix3 = CalculateModelMatrix(nullptr, Vec3(0, -0.3, 0.4), Vec3::One(), Quat::Identity());
-		Rendering::Material* defaultMaterial = m_engineState.m_GraphicsContext.m_GraphicsManager->GetDefaultMaterialMutable();
-		m_renderer.AddCallSphere3D(defaultMaterial, 0.2, modelMatrix3);
-		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
-
-		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
-		model->GetModelMutable().m_Meshes[0].m_Material.SetSurface(1, 1, nullptr);
-		const Mat4 modelMatrix2 = CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3(0.001, 0.001, -0.001), Quat::Identity());
-		const Mat4 modelMatrix4 = CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallModel(model->GetModelMutable(), modelMatrix2);
-		//m_renderer.AddCallSphere3D(&model->GetModelMutable().m_Meshes[0].m_Material, 0.2, modelMatrix4);
-
-		Rendering::Texture& checkerboard = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/checkerboard_2.png")->GetTextureMutable();
-		Rendering::Material planeMaterial = Rendering::Material("Plane", &checkerboard, COLOR_WHITE);
-		const Mat4 planeMatrix = CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallPlane3D(&planeMaterial, Vec2(1, 1), planeMatrix);
 
 		/*const Mat4 modelMatrix = CalculateTranslationMatrix(objectCenter) * CalculateTranslationMatrix(Vec3::Zero()) * 
 			CalculateRotationMatrix(rot) * CalculateTranslationatrix(-Vec3::Zero())  * CalculateScaleMatrix(Vec3::One());*/

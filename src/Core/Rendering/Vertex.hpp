@@ -2,6 +2,7 @@
 #include "Utils/Data/WorldPosition.hpp"
 #include "Utils/Data/Matrix.hpp"
 #include "Utils/Data/Color.hpp"
+#include "Utils/Data/AABB.hpp"
 
 namespace Rendering
 {
@@ -30,6 +31,18 @@ namespace Rendering
         Vertex(const WorldPosition3D& localPos, const UV& uvPos, const Vec3& normal);
 
         std::string ToString() const;
+    };
+    
+    struct Triangle
+    {
+        Vertex m_Vertex0;
+        Vertex m_Vertex1;
+        Vertex m_Vertex2;
+
+        bool IsIntersectedByRay(const WorldPosition3D& rayOrigin, const WorldPosition3D& rayDir);
+        WorldPosition3D GetCenter() const;
+
+        AABB3D GetBounds() const;
     };
 
     struct Instance

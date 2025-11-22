@@ -17,7 +17,7 @@
 #include "Core/Serialization/SerializableField.hpp"
 #include "Utils/Data/ColorGradient.hpp"
 #include "Core/Serialization/JsonUtils.hpp"
-#include "Core/Collision/AABB.hpp"
+#include "Utils/Data/AABB.hpp"
 #include <functional>
 #include <type_traits>
 #include <cstdint>
@@ -108,11 +108,8 @@ void to_json(Json& json, const SpriteAnimationFrame& frame);
 void from_json(const Json& json, SpriteAnimation& anim);
 void to_json(Json& json, const SpriteAnimation& anim);
 
-namespace Physics
-{
-	void from_json(const Json& json, Physics::AABB2D& aabb);
-	void to_json(Json& json, const Physics::AABB2D& aabb);
-}
+void from_json(const Json& json, AABB2D& aabb);
+void to_json(Json& json, const AABB2D& aabb);
 
 Json TrySerializeAsset(const Asset* asset);
 Json TrySerializeAssets(const std::vector<const Asset*>& assets);

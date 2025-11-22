@@ -21,6 +21,11 @@
 
 namespace Rendering
 {
+    /// <summary>
+    /// If true, all verticies must be present at the start before first frame update
+    /// </summary>
+    constexpr bool DO_STATIC_GEOMETRY = true;
+
     constexpr bool DO_RAYTRACING = true;
     constexpr std::uint32_t MAX_RAYTRACE_BOUNCES = 5;
 
@@ -134,7 +139,7 @@ namespace Rendering
 
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
     Renderer::Renderer(const EngineState& engineState)
-        : m_isInit(false), m_engineState(&engineState), m_uniformData(), //m_staticRenderData(),
+        : m_isInit(false), m_isStaticGeometryInit(false), m_engineState(&engineState), m_uniformData(), //m_staticRenderData(),
         m_batches(), m_hashToBatchIndex(), m_graphicsManager(nullptr), m_frameGeometryMetrics(), m_runtimeMaterialId(),
         m_textureController(Backend::CreateTextureController()),
         m_imageController(Backend::CreateImageController()),
@@ -261,6 +266,22 @@ namespace Rendering
     bool Renderer::WasInit() const
     {
         return m_isInit;
+    }
+
+    void Renderer::WriteVertexDataToSSBOs()
+    {
+        m_vertexStorageBuffer.WriteData(0, m_vertices.size() * m_vertexBuffer.GetElementSize(), &m_vertices[0]);
+        m_indexStorageBuffer.WriteData(0, m_vertexIndices.size() * m_indexBuffer.GetElementSize(), &m_vertexIndices[0]);
+        m_instanceStorageBuffer.WriteData(0, m_instances.size() * m_instancedBuffer.GetElementSize(), &m_instances[0]);
+        /*LogWarning(std::format("Instance mesh buffer elements:{} write:{} bytes:{}", m_instanceMeshStorageBuffer.GetAllocatedByteSize() / sizeof(InstanceMesh),
+            m_instanceMeshes.size(), m_instanceMeshes.size() * sizeof(InstanceMesh)));*/
+        m_instanceMeshStorageBuffer.WriteData(0, m_instanceMeshes.size() * sizeof(InstanceMesh), &m_instanceMeshes[0]);
+        const std::uint32_t emissiveMaterialCount = m_emissiveInstanceIndices.size();
+        if (emissiveMaterialCount > 0)
+        {
+            m_emissiveInstanceIndexStorageBuffer.WriteData(0,
+                emissiveMaterialCount * sizeof(std::uint32_t), &m_emissiveInstanceIndices[0]);
+        }
     }
 
     void Renderer::InitCoreShaders()
@@ -627,41 +648,6 @@ namespace Rendering
 
     void Renderer::AddCallBox3DMulti(Shader& shader, Material& material, const Vec3& size, const Mat4& modelMatrix)
     {
-        /*
-        if (texture == nullptr)
-        {
-            constexpr size_t VERTEX_COUNT = 8;
-            constexpr size_t INDEX_COUNT = 36;
-
-            if (material->m_BaseColor.m_A == MAX_INT_COLOR_CHANNEL)
-            {
-                RenderBatch* sameStatebatch = TryGetBatch(shader, texture, INDEX_COUNT);
-                if (sameStatebatch != nullptr)
-                {
-                    AddInstanceDataToBatch(*sameStatebatch, modelMatrix, color);
-                    return;
-                }
-            }
-
-            const WorldPosition3D halfSize = size / 2;
-            //NOTE: with 8 vertex cube it is impossible to calculate normals since one vertex connects 3 sides
-            Vertex vertices[VERTEX_COUNT] = { Vertex(halfSize, UV()),                       Vertex(halfSize * Vec3(1, -1, 1), UV()),
-                                              Vertex(halfSize * Vec3(-1, -1, 1), UV()),     Vertex(halfSize * Vec3(-1, 1, 1), UV()),
-                                              Vertex(halfSize * Vec3(1, 1, -1), UV()),      Vertex(halfSize * Vec3(1, -1, -1), UV()),
-                                              Vertex(halfSize * Vec3(-1, -1, -1), UV()),    Vertex(halfSize * Vec3(-1, 1, -1), UV()) };
-
-            //Front face, back face, right, left, top, bottom
-            IndexType indices[INDEX_COUNT] = { 0, 1, 2, 0, 3, 2,
-                                               4, 5, 6, 4, 7, 6,
-                                               4, 5, 1, 4, 0, 1,
-                                               7, 6, 2, 7, 3, 2,
-                                               4, 0, 3, 4, 7, 3,
-                                               5, 1, 2, 5, 6, 2 };
-            CreateBatch(shader, texture, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, color, true);
-            return;
-        }
-        */
-
         constexpr size_t VERTEX_COUNT = 24;
         constexpr size_t INDEX_COUNT = 36;
         //NOTE: since opaque objects can get depth tested, we can cram as many of them as we want into
@@ -944,6 +930,7 @@ namespace Rendering
 
     void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const Color color)
     {
+        LogWarning(std::format("Invoked light call with: {}", m_uniformData.m_LightBlock.m_PointLightsCount));
         if (m_uniformData.m_LightBlock.m_PointLightsCount >= MAX_POINT_LIGHTS)
         {
             LogError(std::format("Attempted to add point light call at:{} colored:{} "
@@ -951,11 +938,13 @@ namespace Rendering
             return;
         }
 
-        auto& pointlightData = m_uniformData.m_LightBlock.m_PointLights[m_uniformData.m_LightBlock.m_PointLightsCount];
+        std::uint32_t lightIndex = m_uniformData.m_LightBlock.m_PointLightsCount;
+        auto& pointlightData = m_uniformData.m_LightBlock.m_PointLights[lightIndex];
         pointlightData = PointLightData(worldPos, color, radius);
-        pointlightData.m_ShadowMapIndex = m_uniformData.m_LightBlock.m_PointLightsCount;
-        m_uniformData.m_ExtraPointLightData[m_uniformData.m_LightBlock.m_PointLightsCount] = ExtraPointLightData{worldRot};
+        pointlightData.m_ShadowMapIndex = lightIndex;
+        m_uniformData.m_ExtraPointLightData[lightIndex] = ExtraPointLightData{worldRot};
         m_uniformData.m_LightBlock.m_PointLightsCount++;
+        LogWarning(std::format("Ended light call with: {}", m_uniformData.m_LightBlock.m_PointLightsCount));
 
         if (DRAW_LIGHT_AREAS)
         {
@@ -993,36 +982,6 @@ namespace Rendering
     void Renderer::SetSkybox(Texture* texture)
     {
         m_skybox = texture;
-        /*
-        Shader& skyboxConverter = GetCoreShader(CoreShader::SkyboxConverted);
-        BindShader(skyboxConverter);
-        BindFrameBuffer(&m_frameBuffer);
-
-        const Vec2Int faceTextureSize = m_skybox.GetData().m_texelSize;
-        Backend::SetViewport(faceTextureSize.m_X, faceTextureSize.m_Y);
-
-        SlotIndex skyboxSlot = m_textureController.TryBindToFreeSlot<Texture>(*texture);
-        skyboxConverter.TrySetUniform(UniformDataType::Sampler2D, SKYBOX_UNIFORM_NAME, &skyboxSlot);
-
-        std::array<Mat4, 6> viewMatrices = {};
-        Mat4 projMatrix = {};
-        CalculateCubeMapMatrices(Vec3(), 0.1, 10, viewMatrices, projMatrix);
-        for (std::uint8_t i = 0; i < 6; i++)
-        {
-            SetViewerData(Vec3::Zero(), viewMatrices[i], projMatrix);
-            m_frameBuffer.SetOutputTextureCube(FrameBufferAttachmentType::Color0, &m_skybox, static_cast<TextureCubeFace>(i));
-            Backend::ClearBackground();
-
-            //NOTE: since the vertices are stored in the shader, we can just invoke with
-            //how many verticies to do
-            Backend::DrawVertices(36);
-        }
-
-        UnbindActiveShader();
-        m_textureController.TryRemoveFromSlot(skyboxSlot);
-        //This forces the viewport to be set back to rendering for the window
-        m_engineState->m_GraphicsContext.m_Window->ForceSizeUpdate();
-        */
     }
 
     void Renderer::RenderStartActions() const
@@ -1031,6 +990,7 @@ namespace Rendering
     }
     void Renderer::SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix)
     {
+        LogWarning("SETTING GVIEWER SATA");
         m_viewerUniformBuffer.TryWriteData("worldPos", sizeof(Vec3), worldPos.GetMemPointer());
         if (!m_viewerUniformBuffer.TryWriteData("viewMatrix", sizeof(Mat4),
             viewMatrix.GetMemPointer()))
@@ -1400,8 +1360,16 @@ namespace Rendering
         rayTraceShader.BindActive();
         //LogWarning("BOUND RAY TRACE");
 
-      
-         //TODO: get propert emissive material count
+        //If we dont do static goemetry we write every frame, otherwise
+        //we only write during the first geometry init
+        if (!DO_STATIC_GEOMETRY) WriteVertexDataToSSBOs();
+        else if (!m_isStaticGeometryInit)
+        {
+            m_isStaticGeometryInit = true;
+            WriteVertexDataToSSBOs();
+        }
+
+        //TODO: get propert emissive material count
         const std::uint32_t emissiveMaterialCount = m_emissiveInstanceIndices.size();
         rayTraceShader.TrySetUniform(UniformDataType::Uint, EMISSIVE_MATERIAL_COUNT_UNIFORM_NAME, &emissiveMaterialCount);
         const std::uint32_t instanceCount = m_instances.size();
@@ -1416,19 +1384,6 @@ namespace Rendering
         const SlotIndex outputTextureSlot = m_imageController.TryBindToFreeSlot<Texture>(m_ioTexture, AccessPermissions::Write);
         rayTraceShader.TrySetUniform(UniformDataType::Image2D, INPUT_TEXTURE_UNIFORM_NAME, &inputTextureSlot);
         rayTraceShader.TrySetUniform(UniformDataType::Image2D, OUTPUT_TEXTURE_UNIFORM_NAME, &outputTextureSlot);
-
-
-        m_vertexStorageBuffer.WriteData(0, m_vertices.size() * m_vertexBuffer.GetElementSize(), &m_vertices[0]);
-        m_indexStorageBuffer.WriteData(0, m_vertexIndices.size() * m_indexBuffer.GetElementSize(), &m_vertexIndices[0]);
-        m_instanceStorageBuffer.WriteData(0, m_instances.size() * m_instancedBuffer.GetElementSize(), &m_instances[0]);
-        /*LogWarning(std::format("Instance mesh buffer elements:{} write:{} bytes:{}", m_instanceMeshStorageBuffer.GetAllocatedByteSize() / sizeof(InstanceMesh), 
-            m_instanceMeshes.size(), m_instanceMeshes.size() * sizeof(InstanceMesh)));*/
-        m_instanceMeshStorageBuffer.WriteData(0, m_instanceMeshes.size() * sizeof(InstanceMesh), &m_instanceMeshes[0]);
-        if (emissiveMaterialCount > 0)
-        {
-            m_emissiveInstanceIndexStorageBuffer.WriteData(0, 
-                m_emissiveInstanceIndices.size() * sizeof(std::uint32_t), &m_emissiveInstanceIndices[0]);
-        }
 
         const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
         const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
@@ -1549,12 +1504,6 @@ namespace Rendering
         {
             RenderStartActions();
             FlushBatches();
-
-            //TODO: is this the best option for perofmrance amd should all be force cleared?
-            //ideally we want to remove from middle, but that forces shifts in memory which may greatloy reduce performance
-            //Tradeoff: performance cost for erasing some > performance cost of clearing all/having to reallocate frequent batches?
-            m_batches.clear();
-            m_hashToBatchIndex.clear();
         }
         RenderEndActions();
     }
@@ -1564,20 +1513,30 @@ namespace Rendering
         Backend::EndRenderingMarker();
 
         m_uniformData.m_CameraUpdatedThisFrame = false;
-        m_uniformData.m_LightBlock.m_PointLightsCount = 0;
 
         m_framesSinceStart++;
         m_unmovingFrames++;
-        m_frameGeometryMetrics = {};
+        
+        if (!DO_STATIC_GEOMETRY)
+        {
+            m_uniformData.m_LightBlock.m_PointLightsCount = 0;
+            m_frameGeometryMetrics = {};
 
-        m_vertices.clear();
-        m_vertexIndices.clear();
-        m_instances.clear();
-        m_instanceMeshes.clear();
-        m_emissiveInstanceIndices.clear();
-        m_batches.clear();
+            m_vertices.clear();
+            m_vertexIndices.clear();
+            m_instances.clear();
+            m_instanceMeshes.clear();
+            m_emissiveInstanceIndices.clear();
+            m_batches.clear();
 
-        ResetRuntimeMaterialId();
+            //TODO: is this the best option for perofmrance amd should all be force cleared?
+            //ideally we want to remove from middle, but that forces shifts in memory which may greatloy reduce performance
+            //Tradeoff: performance cost for erasing some > performance cost of clearing all/having to reallocate frequent batches?
+            m_batches.clear();
+            m_hashToBatchIndex.clear();
+            ResetRuntimeMaterialId();
+        }
+        
         UpdatePassRenderState(RenderPassType::None);
     }
 

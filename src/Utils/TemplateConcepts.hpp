@@ -27,3 +27,6 @@ template<typename T>
 concept IsInvocable = requires(T t) {
     &T::operator();
 };
+
+template<typename T, typename ...Args>
+concept AllSame = (std::same_as<Args, T> && ...);

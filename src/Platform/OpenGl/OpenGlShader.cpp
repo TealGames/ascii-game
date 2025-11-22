@@ -65,7 +65,7 @@ namespace Rendering
 				return INVALID_OBJ_ID;
 			}
 
-			LogWarning(std::format("Compiled source: {}", shaderSource.m_fullSource));
+			//LogWarning(std::format("Compiled source: {}", shaderSource.m_fullSource));
 			return shaderId;
 		}
 
@@ -216,8 +216,7 @@ namespace Rendering
 		}
 		static void DispatchComputeShaderGroups(std::uint32_t x, std::uint32_t y, std::uint32_t z)
 		{
-			GLint activeProgram = INVALID_OBJ_ID;
-			GL_CALL(glGetIntegerv(GL_CURRENT_PROGRAM, &activeProgram));
+			RenderObjectId activeProgram = GetActiveShaderProgramId();
 			if (activeProgram == INVALID_OBJ_ID)
 			{
 				LogError(std::format("Attempted to dispatch compute shader groups "

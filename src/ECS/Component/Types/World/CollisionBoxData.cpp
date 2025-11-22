@@ -185,7 +185,7 @@ WorldPosition2D CollisionBoxData::GetGlobalMax() const
 	return m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
 }
 
-const Physics::AABB2D& CollisionBoxData::GetAABB() const
+const AABB2D& CollisionBoxData::GetAABB() const
 {
 	return m_aabb;
 }
@@ -423,7 +423,7 @@ std::string CollisionBoxData::ToStringRelative() const
 
 void CollisionBoxData::Deserialize(const Json& json)
 {
-	m_aabb = json.at("AABB").get<Physics::AABB2D>();
+	m_aabb = json.at("AABB").get<AABB2D>();
 	m_transformOffset = json.at("Offset").get<WorldPosition2D>();
 }
 Json CollisionBoxData::Serialize()

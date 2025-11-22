@@ -28,6 +28,20 @@ namespace Utils
 		return base;
 	}
 
+	std::uint32_t NextPowerOf2(std::uint32_t num)
+	{
+		if (num == 0) return 1;
+		num--;
+		num |= num >> 1;
+		num |= num >> 2;
+		num |= num >> 4;
+		num |= num >> 8;
+		num |= num >> 16;
+		num++;
+		return num;
+
+	}
+
 	bool ApproximateEqualsF(float a, float b, const float relEps, const float absEps)
 	{
 		return std::fabs(a - b) <= std::fmax(relEps * std::fmax(std::fabs(a), std::fabs(b)), absEps);

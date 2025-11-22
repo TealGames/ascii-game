@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS/Component/Types/World/CollisionBoxData.hpp"
+#include "Utils/Data/Direction.hpp"
 #include <unordered_map>
 #include <string>
 

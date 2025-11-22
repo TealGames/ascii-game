@@ -4,13 +4,19 @@
 #define DO_SMOOTH_SHADING 1
 //Will use the modified normal for environment lighting
 #define USE_BENT_NORMAL_FOR_LIGHTING 1
-#define DO_AMBIENT_OCCLUSION 0
+#define DO_AMBIENT_OCCLUSION 1
 
 struct Vertex 
 {
     vec3 localPos;
     vec2 uvPos;
     vec3 normal;
+};
+struct Triangle
+{
+    Vertex v0;
+    Vertex v1;
+    Vertex v2;
 };
 struct Material
 {
@@ -82,6 +88,7 @@ layout(std140) uniform LightsBlock
 //This is a shader storage buffer object -> similar to uniform buffer
 //but allows more space, dynamic arrays (no compile time predefined size), and read + write
 layout(std430) buffer Vertices { Vertex vertices[VERTEX_MAX_COUNT]; };
+//layout(std430) buffer Triangles { Triangle triangles[TRIANGLE_MAX_COUNT]; };
 layout(std430) buffer Indices { uint indices[INDEX_MAX_COUNT]; };
 layout(std430) buffer Instances { Instance instances[INSTANCE_MAX_COUNT]; };
 layout(std430) buffer Materials { Material materials[MATERIAL_MAX_COUNT]; };

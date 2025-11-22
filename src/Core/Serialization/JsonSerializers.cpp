@@ -464,27 +464,24 @@ void to_json(Json& json, const TextBufferCharPosition2D& textChar)
 	json["Font"] = textChar.m_FontData;
 }
 
-namespace Physics
+void from_json(const Json& json, AABB2D& aabb)
 {
-	void from_json(const Json& json, Physics::AABB2D& aabb)
-	{
-		const char* SIZE_PROPERTY = "Size";
-		if (!HasRequiredProperties(json, { SIZE_PROPERTY }))
-			return;
+	const char* SIZE_PROPERTY = "Size";
+	if (!HasRequiredProperties(json, { SIZE_PROPERTY }))
+		return;
 
-		try
-		{
-			aabb = Physics::AABB2D(json.at(SIZE_PROPERTY).get<Vec2>());
-		}
-		catch (const std::exception& e)
-		{
-			Assert(false, std::format("Tried to deserialize aabb:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
-		}
-	}
-	void to_json(Json& json, const Physics::AABB2D& aabb)
+	try
 	{
-		json = { {"Size", aabb.GetSize()}};
+		aabb = AABB2D(json.at(SIZE_PROPERTY).get<Vec2>());
 	}
+	catch (const std::exception& e)
+	{
+		Assert(false, std::format("Tried to deserialize aabb:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+	}
+}
+void to_json(Json& json, const AABB2D& aabb)
+{
+	json = { {"Size", aabb.GetSize()} };
 }
 
 void from_json(const Json& json, VisualData& visualData)

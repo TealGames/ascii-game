@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Core/Collision/AABB.hpp"
+#include "Utils/Data/AABB.hpp"
 #include "ECS/Component/Component.hpp"
 #include "Core/IValidateable.hpp"
 #include <unordered_map>
@@ -43,7 +43,7 @@ using CollidingInfoCollection = std::vector<CollidingBoxInfo>;
 class CollisionBoxData : public Component
 {
 private:
-	Physics::AABB2D m_aabb;
+	AABB2D m_aabb;
 	WorldPosition2D m_transformOffset;
 
 	CollidingInfoCollection m_collidingBoxes;
@@ -80,7 +80,7 @@ public:
 
 	bool operator==(const CollisionBoxData& other) const;
 
-	const Physics::AABB2D& GetAABB() const;
+	const AABB2D& GetAABB() const;
 	WorldPosition2D GetOffset() const;
 
 	//bool HasValidTransform() const;

@@ -757,4 +757,27 @@ namespace Rendering
 
 		BufferProperties* GetBufferDataMutable(const VertexLayoutBindIndex bindIndex);
 	};
+
+	template<typename T>
+	class LazyStaticBuffer
+	{
+	private:
+		bool m_isInit;
+		T m_buffer;
+	public:
+
+	private:
+	public:
+		LazyStaticBuffer(T&& buffer) : m_buffer(std::move(buffer)), m_isInit(false) {}
+
+		T& GetBufferMutable() { return m_buffer; }
+		const T& GetBuffer() { return m_buffer; }
+		T& GetBufferForInit()
+		{
+			m_isInit = true;
+			return m_buffer;
+		}
+
+		bool IsInit() const { return m_isInit; }
+	};
 }

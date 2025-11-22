@@ -1,12 +1,34 @@
 #pragma once
 #include <string>
 #include <numbers>
+#include "Utils/TemplateConcepts.hpp"
 
 namespace Utils
 {
 	constexpr double RAD_TO_DEG_CONSTANT = std::numbers::pi / 180.0;
 	constexpr double DEG_TO_RAD_CONSTANT = 180.0 / std::numbers::pi;
-	/// <summary>
+	constexpr double EPSILON = 1e-8f;
+
+	template<typename T>
+	T Max(T first) { return first; }
+
+	template<typename T, typename... OtherT>
+	requires AllSame<T, OtherT...>
+	T Max(T first, OtherT... next)
+	{
+		return std::max(first, Max(next...));
+	}
+
+	template<typename T>
+	T Min(T first) { return first; }
+
+	template<typename T, typename... OtherT>
+	requires AllSame<T, OtherT...>
+	T Min(T first, OtherT... next)
+	{
+		return std::min(first, Min(next...));
+	}
+
 	/// Computes a power as just repeated multiplication
 	/// Faster than std::pow because std::pow must account for complex
 	/// edge cases so it uses a process that uses logs and exponents (which are 
@@ -19,6 +41,14 @@ namespace Utils
 	float FastIntPow(float base, int exponent);
 
 	/// <summary>
+	/// Calculates next power of 2 of a number by filling all bits lower than higher level bit
+	/// which we can then add 1 to get the next base2 value (which essentially gets next power of 2)
+	/// </summary>
+	/// <param name="num"></param>
+	/// <returns></returns>
+	std::uint32_t NextPowerOf2(std::uint32_t num);
+
+	/// <summary>
 	/// Handles approximate values for floats for values close to 0 (by checking absolute diff < abs epsilon)
 	/// and also for large positive and small negatives aka big deltas/big abs values 
 	/// (by checking scaled relative epsilon based on max abs value < diff)
@@ -28,7 +58,7 @@ namespace Utils
 	/// <param name="relEps"></param>
 	/// <param name="absEps"></param>
 	/// <returns></returns>
-	bool ApproximateEqualsF(float f1, float f2, const float relEps = 1e-5f, const float absEps = 1e-8f);
+	bool ApproximateEqualsF(float f1, float f2, const float relEps = 1e-5f, const float absEps = EPSILON);
 
 	/// <summary>
 	/// Will round a float to contain the set amount of places after DECIMAL

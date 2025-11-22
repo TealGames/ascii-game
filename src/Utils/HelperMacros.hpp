@@ -74,10 +74,28 @@ Type& Type::operator/=(const Type& other)               \
     return *this;                                       \
 }                                                       \
 
+#define DEFINE_TEMPLATE_HAS_FUNCTION_NAMED(FUNCTION)                            \
+template<typename T, typename ReturnType, typename... Args>                     \
+concept HasFunction##FUNCTION = requires(T t, Args... args) {                   \
+    { t.FUNCTION(args...) } -> std::convertible_to<ReturnType>;                 \
+};
+
 #define DEFINE_TEMPLATE_HAS_FUNCTION(FUNCTION, RETURN_TYPE)                             \
 template<typename T>                                                                    \
 concept HasFunction##FUNCTION = requires(T t) {                                         \
     { t.FUNCTION() } -> std::convertible_to<RETURN_TYPE>;                               \
+};
+
+#define DEFINE_TEMPLATE_HAS_FUNCTION_ARG1(FUNCTION, RETURN_TYPE, T0) \
+template<typename T> \
+concept HasFunction##FUNCTION = requires(T t) { \
+    { t.FUNCTION(std::declval<T0>()) } -> std::convertible_to<RETURN_TYPE>; \
+};
+
+#define DEFINE_TEMPLATE_HAS_FUNCTION_ARG2(FUNCTION, RETURN_TYPE, T0, T1) \
+template<typename T> \
+concept HasFunction##FUNCTION = requires(T t) { \
+    { t.FUNCTION(std::declval<T0>(), std::declval<T1>()) } -> std::convertible_to<RETURN_TYPE>; \
 };
 
 #define DEFINE_TEMPLATE_HAS_PROPERTY(MEMBER, RETURN_TYPE)                               \
