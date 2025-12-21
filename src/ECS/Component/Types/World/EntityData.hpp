@@ -64,9 +64,8 @@ private:
 	{
 		if (!GlobalComponentInfo::PassesComponentRequirementCheck(*this, typeid(T)))
 		{
-			Assert(false, std::format("Attempted to add a component of type:'{}' to entity:{} "
+			LogError(std::format("Attempted to add a component of type:'{}' to entity:{} "
 				"but it does not have the required components", FormatComponentName(typeid(T)), ToString()));
-			throw std::invalid_argument("Missing required components");
 		}
 	}
 
@@ -143,8 +142,8 @@ public:
 	requires std::is_base_of_v<Component, T>
 	T& AddComponent(const T& component)
 	{
-		if (!Assert(!HasComponent<T>(), std::format("Tried to add component of type: '{}' to '{}' "
-			"but it already has this type (and duplicates are not allowed)", FormatComponentName(typeid(T)), ToString())))
+		if (!Assert(!HasComponent<T>(), "Tried to add component of type: '{}' to '{}' "
+			"but it already has this type (and duplicates are not allowed)", FormatComponentName(typeid(T)), ToString()))
 			throw std::invalid_argument("Attempted to add duplicate component");
 
 		return AddComponentUnsafe<T>(component);

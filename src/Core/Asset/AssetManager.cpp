@@ -48,8 +48,8 @@ namespace AssetManagement
 	{
 		for (const auto& asset : m_assets)
 		{
-			if (!Assert(asset.second->AreDependenciesSet(), std::format("Tried to validate asset manager but "
-				"asset:{} has not all dependencies set!", asset.second->ToString())))
+			if (!Assert(asset.second->AreDependenciesSet(), "Tried to validate asset manager but "
+				"asset:{} has not all dependencies set!", asset.second->ToString()))
 				return false;
 		}
 		return true;
@@ -57,8 +57,8 @@ namespace AssetManagement
 
 	void AssetManager::SetAssetHiddenStatus(const std::filesystem::path& path, const bool doHide)
 	{
-		if (!Assert(IsValidAssetPath(path), std::format("Attempted to set asset hidden status with path:{} "
-			"but it is not a valid asset path", path.string())))
+		if (!Assert(IsValidAssetPath(path), "Attempted to set asset hidden status with path:{} "
+			"but it is not a valid asset path", path.string()))
 			return;
 
 		const std::filesystem::path relPath = GetRelativeAssetPath(path);
@@ -68,8 +68,8 @@ namespace AssetManagement
 	bool AssetManager::IsAssetHiddenFromPath(std::filesystem::path path, const bool isAbsolutePath) const
 	{
 		if (m_hiddenAssetPaths.empty()) return false;
-		if (!Assert(IsValidAssetPath(path), std::format("Attempted to get whether asset is hidden at path:{} "
-			"but it is not a valid asset path", path.string())))
+		if (!Assert(IsValidAssetPath(path), "Attempted to get whether asset is hidden at path:{} "
+			"but it is not a valid asset path", path.string()))
 			return false;
 
 		if (isAbsolutePath) path = GetRelativeAssetPath(path);
@@ -169,13 +169,13 @@ namespace AssetManagement
 
 	std::filesystem::path AssetManager::TryCreateAssetPath(const std::string& fileName, const std::string& extension) const
 	{
-		if (!Assert(extension.substr(0, 1) == ".", std::format("Tried to get assed path from file name:{} "
-			"and extension but extension is invalid:{}", fileName, extension)))
+		if (!Assert(extension.substr(0, 1) == ".", "Tried to get assed path from file name:{} "
+			"and extension but extension is invalid:{}", fileName, extension))
 			return {};
 
 		auto extensionIt = m_allFiles.find(extension);
-		if (!Assert(extensionIt != m_allFiles.end(), std::format("Tried to get asset path from file:{} extension:{} "
-			"but asset manager contains no assets with that extension", fileName, extension)))
+		if (!Assert(extensionIt != m_allFiles.end(), "Tried to get asset path from file:{} extension:{} "
+			"but asset manager contains no assets with that extension", fileName, extension))
 			return {};
 
 		for (const auto& path : extensionIt->second)
@@ -184,26 +184,26 @@ namespace AssetManagement
 				return path;
 		}
 
-		Assert(false, std::format("Tried to get asset path from file:{} extension:{} "
-			"but asset manager could not find any assets with that file name", fileName, extension));
+		Assert(false, "Tried to get asset path from file:{} extension:{} "
+			"but asset manager could not find any assets with that file name", fileName, extension);
 		return {};
 	}
 
 	bool AssetManager::TryExecuteOnAssetFile(const std::filesystem::path& path, const IO::FileLineAction& action) const
 	{
-		if (!Assert(IsValidAssetPath(path), std::format("Attempted to execute fil line action on path:{} "
-			"but it is not a valid asset path", path.string())))
+		if (!Assert(IsValidAssetPath(path), "Attempted to execute fil line action on path:{} "
+			"but it is not a valid asset path", path.string()))
 			return false;
 
 		const std::string extension = path.extension().string();
 		auto allFileExtensionIt = m_allFiles.find(extension);
-		if (!Assert(allFileExtensionIt != m_allFiles.end(), std::format("Attempted to execute file line action on asset file path:{} "
-			"but no asset with this extension exists", path.string())))
+		if (!Assert(allFileExtensionIt != m_allFiles.end(), "Attempted to execute file line action on asset file path:{} "
+			"but no asset with this extension exists", path.string()))
 			return false;
 
 		auto fileIt = allFileExtensionIt->second.find(path.string());
-		if (!Assert(fileIt != allFileExtensionIt->second.end(), std::format("Attempted to execute file line action on asset file path:{} "
-			"but no asset file exists in asset manager with that path", path.string())))
+		if (!Assert(fileIt != allFileExtensionIt->second.end(), "Attempted to execute file line action on asset file path:{} "
+			"but no asset file exists in asset manager with that path", path.string()))
 			return false;
 
 		return IO::TryExecuteOnFileByLine(GetAbsoluteAssetPath(path), action);
@@ -211,8 +211,8 @@ namespace AssetManagement
 
 	Asset* AssetManager::TryGetAssetFromPathMutable(const std::filesystem::path& relPath)
 	{
-		if (!Assert(IsValidAssetPath(relPath), std::format("Attempted to get asset from path:{} MUTABLE"
-			"but it is not a valid asset path", relPath.string())))
+		if (!Assert(IsValidAssetPath(relPath), "Attempted to get asset from path:{} MUTABLE"
+			"but it is not a valid asset path", relPath.string()))
 			return nullptr;
 
 		if (PREVENT_HIDDEN_ASSET_LOOKUP && IsAssetHiddenFromPath(relPath, false))

@@ -12,8 +12,8 @@ layout(std140) uniform ViewerBlock
 } uViewerBlock;
 
 layout(location=0) in vec3 aPosition;
-
-layout(location=4) in mat4 aModelMatrix;
+//These are instanced per object
+layout(location=5) in mat4 aModelMatrix;
 
 void main()
 {

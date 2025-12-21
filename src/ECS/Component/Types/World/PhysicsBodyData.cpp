@@ -80,10 +80,8 @@ void PhysicsBodyData::RemovePhysicsWorldRef()
 }
 const Physics::PhysicsWorld& PhysicsBodyData::GetPhysicsWorldSafe()
 {
-	if (!Assert(m_physicsSimulation != nullptr,
-		std::format("Tried to get physics world of body: '{}' "
-			"but it is NULL", GetEntity().m_Name)))
-		throw std::invalid_argument("Failed to retrieve physics world");
+	ENGINE_ASSERT(m_physicsSimulation != nullptr,
+		"Tried to get physics world of body: '{}' but it is NULL", GetEntity().m_Name);
 
 	return *m_physicsSimulation;
 }
@@ -184,148 +182,9 @@ bool PhysicsBodyData::HasAnyConstraints() const
 
 const CollisionBoxData& PhysicsBodyData::GetCollisionBox() const
 {
-	if (!Assert(m_collider!=nullptr, std::format("Tried to get collider data for entity:{} but was NULL", 
-		GetEntity().m_Name)))
-		throw std::invalid_argument(std::format("Invalid Collision Box data for entity:{}", GetEntity().m_Name));
-
+	ENGINE_ASSERT(m_collider != nullptr, "Tried to get collider data for entity:{} but was NULL", GetEntity().m_Name);
 	return *m_collider;
 }
-
-/*
-const Physics::AABB& PhysicsBodyData::GetAABB() const
-{
-	return m_aabb;
-}
-
-const WorldPosition PhysicsBodyData::GetAABBTopLeftWorldPos() const
-{
-	return GetAABBWorldPos(Vec2{ 0, 1 });	
-	
-	//const Vec2 aabbHalfExtent = m_aabb.GetHalfExtent();
-	//return GetEntitySafe().m_Transform.m_Pos + m_transformOffset + WorldPosition(-aabbHalfExtent.m_X, aabbHalfExtent.m_Y);
-}
-
-const WorldPosition PhysicsBodyData::GetAABBWorldPos(const NormalizedPosition& relativePos) const
-{
-	return m_aabb.GetWorldPos(GetAABBCenterWorldPos(), relativePos);
-}
-
-const WorldPosition PhysicsBodyData::GetAABBCenterWorldPos() const
-{
-	return GetEntitySafe().m_Transform.m_Pos + m_transformOffset;
-}
-
-bool PhysicsBodyData::DoesAABBContainPos(const WorldPosition& pos) const
-{
-	WorldPosition minPos = m_aabb.GetGlobalMin(GetAABBCenterWorldPos());
-	WorldPosition maxPos = m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
-
-	return minPos.m_X <= pos.m_X && pos.m_X <= maxPos.m_X && 
-		   minPos.m_Y <= pos.m_Y && pos.m_Y <= maxPos.m_Y;
-}
-*/
-
-/*
-void PhysicsBodyData::AddCollidingBody(PhysicsBodyData& collidingBody)
-{
-	//Vec2 collidingDir = GetVector(GetEntitySafeMutable().m_Transform.m_Pos, collidingBody.GetEntitySafeMutable().m_Transform.m_Pos);
-	
-	//Note: although we are using current pos to get dir and pos may change, no matter what direction colliding body goes
-	//it should maintain its direction from this body OR it would not be considered a colliding body and should get removed
-	//Vec2 collidingDir = Physics::GetAABBDirection(GetAABBCenterWorldPos(), GetAABB(),
-	//collidingBody.GetAABBCenterWorldPos(), collidingBody.GetAABB(), true);
-
-	Vec2 collidingDir = m_collider.GetAABBDirection(collidingBody.GetCollisionBox(), true);
-	std::optional<MoveDirection> maybeDirType = TryConvertVectorToDirection(collidingDir);
-	if (!Assert(maybeDirType.has_value(), std::format("Tried to add colliding body named '{}' "
-		"to body: '{}' but could not deduce direction from vector: {} of colliding body (Pos:{}) relative to this body(Pos:{})", 
-		collidingBody.GetEntitySafe().GetName(), GetEntitySafe().GetName(), collidingDir.ToString(), 
-		collidingBody.GetEntitySafe().m_Transform.ToString(), GetEntitySafe().m_Transform.ToString())))
-	{
-		return;
-	}
-
-	m_collidingBodies.push_back(CollidingObject(&collidingBody, maybeDirType.value()));
-}
-void PhysicsBodyData::RemoveCollidingBody(const CollidingBodiesCollection::iterator& removeBodyIterator)
-{
-	m_collidingBodies.erase(removeBodyIterator);
-}
-
-bool PhysicsBodyData::IsValidCollidingBodyIterator(const CollidingBodiesCollection::iterator& removeBodyIterator) const
-{
-	return removeBodyIterator != m_collidingBodies.end();
-}
-CollidingBodiesCollection::iterator PhysicsBodyData::GetCollidingBodyIterator(const PhysicsBodyData& physicsBody)
-{
-	if (!IsCollidingWithAnyBody()) return m_collidingBodies.end();
-
-	CollidingObject currentObj = {};
-	for (int i=0; i<m_collidingBodies.size(); i++)
-	{
-		currentObj = m_collidingBodies[i];
-		if (currentObj.m_Body == nullptr) continue;
-		//TODO: possible problem because globals and locals are stored separately so there could be 
-		//a local and global with same id
-		if (currentObj.m_Body->GetEntitySafeMutable().m_Id == physicsBody.GetEntitySafe().m_Id &&
-			currentObj.m_Body->GetEntitySafeMutable().GetName() == physicsBody.GetEntitySafe().GetName())
-		{
-			return m_collidingBodies.begin() + i;
-		}
-	}
-	return m_collidingBodies.end();
-}
-const bool& PhysicsBodyData::IsCollidingWithAnyBody() const
-{
-	return !m_collidingBodies.empty();
-}
-bool PhysicsBodyData::IsCollidingWithBodyInDirs(const std::vector<MoveDirection>& dirs) const
-{
-	if (!IsCollidingWithAnyBody()) return false;
-
-	CollidingObject currentObj = {};
-	for (int i = 0; i < m_collidingBodies.size(); i++)
-	{
-		currentObj = m_collidingBodies[i];
-		if (currentObj.m_Body == nullptr) continue;
-		//TODO: possible problem because globals and locals are stored separately so there could be 
-		//a local and global with same id
-		if (std::find(dirs.begin(), dirs.end(), currentObj.m_Direction)!=dirs.end())
-		{
-			return true;
-		}
-	}
-	return false;
-
-}
-PhysicsBodyData* PhysicsBodyData::TryGetCollidingBody(const PhysicsBodyData& physicsBody)
-{
-	auto it = GetCollidingBodyIterator(physicsBody);
-	if (it == m_collidingBodies.end()) return nullptr;
-	return it->m_Body;
-}
-bool PhysicsBodyData::IsCollidingWithBody(const PhysicsBodyData& physicsBody)
-{
-	return TryGetCollidingBody(physicsBody) != nullptr;
-}
-int PhysicsBodyData::GetTotalBodyCollisions()
-{
-	return m_collidingBodies.size();
-}
-std::string PhysicsBodyData::ToStringCollidingBodies() const
-{
-	if (m_collidingBodies.empty()) return "[]";
-	std::string bodiesStr = "[";
-
-	for (const auto& currentObj : m_collidingBodies)
-	{
-		if (currentObj.m_Body== nullptr) continue;
-		bodiesStr += std::format("{},", currentObj.m_Body->GetEntitySafe().ToString());
-	}
-	bodiesStr += "]";
-	return bodiesStr;
-}
-*/
 
 std::string PhysicsBodyData::ToString() const
 {

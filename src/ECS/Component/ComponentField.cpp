@@ -11,10 +11,9 @@ ComponentField::ComponentField(const char* name, const ComponentFieldVariant& va
 ComponentField::ComponentField(const char* name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value)
 	: m_FieldName(name), m_Value(value), m_MaybeSetFunction(setAction), m_isReadonly(false)
 {
-	if (!Assert(setAction.index() == m_Value.index(), std::format("Tried to create a component field named: '{}' with set action, "
-		"but that action does not acceot the same type of argument as the internal reference to field: {}!", 
-		m_FieldName, GetCurrentType().name()))) 
-		throw std::invalid_argument("Invalid set action");
+	ENGINE_ASSERT(setAction.index() == m_Value.index(), "Tried to create a component field named: '{}' with set action, "
+		"but that action does not acceot the same type of argument as the internal reference to field: {}!",
+		m_FieldName, GetCurrentType().name());
 }
 
 bool ComponentField::IsReadonly() const

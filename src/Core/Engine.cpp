@@ -20,7 +20,7 @@
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/World/PointLight3DComponent.hpp"
 #include "Utils/Data/ColorConstants.hpp"
-
+#include "Utils/MathAdvanced.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Asset/Model3dAsset.hpp"
 
@@ -151,6 +151,32 @@ namespace Core
 	//Also, buffers who are dynamic with many updates should probably do bufferrange and mapbuffer to get pointer to memory that is always allocated for writing
 	//instead of doing map and unmap every time which can be slow
 	//TODO: replace all instances of comparing types with typeid with constexpr is same type trait
+	//TODO: add optimizations for debug builds so that on DEBUG macro, things like string functions, debug operations, etc are not included in build
+	//TODO: add SIMD for vector, matrices, quaternions
+	//TODO: optimize headers more to reduce rebuild times (put all stable related things into one header, like maybe put all vector types into one header
+	//since they are often used together and should rarely change, maybe move all to stirng function into separate header)
+	//TODO: add parallelization/concurency especially for expensive operations like physics, rendering
+	//TODO: REwrite render system:
+	// 1) Make vertex layout (we call vertex layout, opengl calls it VertexArrayObject) have a separate Bind function
+	//	  so that we can bind different layouts before draw so we can use different vertex/index/instance buffer pairs for different draw calls
+	//	  since right now we assume all shaders must use the same vertex layouts which can be wasteful for things like debug draw calls which do not
+	//	  need the vertices to have that must data. NOTE: LAYOUT MUST BE BOUND BEFORE ADDING ATTRIBUTES (MAKE SURE OPENGL IMPLEMENATION INTERNALLY
+	//	  CHECKS THE VAO IS BOUND BEFORE ATTRIBUTES ARE ADDED SINCE OPENGL ASSOCIATES ATTRIBUTES BASED ON BOUND VAO) AND BEFORE CREATING INDEX BUFFER
+	//	  (SINCE OPENGL IMPLICITLY LINKS AN INDEX BUFFER TO A VAO BASED ON WHICH IS BOUND UNLIKE A VERTEX BUFFER WHICH NEEDS TO BE EXPLICITLY BOUND)
+	// 2) Create Render Unit which should ideally store geometry with SAME LAYOUT and should not really do much more except be a storage container
+	//	  that contains the vertex layout, vertex, index and instance buffers cpu side as well as their gpu handle counterparts
+	// 3) A render batch should instead store RenderUnit Pointer, the size and offset into vertex, index and instance buffers in that Unit. 
+	//	  NOTE: each render batch is essnetially a separate draw call
+	// 4) Each pass data should store a shader, any textures that need to be bound (good opporunity for optimization where objects can be part of same pass
+	//	  even if they have different textures as long as it is less than the max amount of textures that can be bound) and all batch information, which 
+	//	  must be contiguous. Also, it would need to store a map of batch hash to key indices in its batch list. 
+	// 5) When we draw, we go through all passes. Each pass will then have all of its batches contigously. The textures/images 
+	//	  associated with a pass will be bound, the shader will also be bound. NOTE: since we bind one shader per pass, there should be 
+	//    *technically* the same vertex/index/instance for all draws and thus only one vao/vertex layout bound at the start (accessed via batch->renderUnit->layout)
+	//	  For each batch in the pass, we will draw the segment from the vertex/index/instance buffers 
+	// 6) When deciding what objects to add to what pass render calls now have more control to decide if those objects might need shadow, lighting
+	//	  and based off of that, we add them to the corresponding pass or passes. Then we compute a batch hash based on color (like alpha which needs separate pass)
+	//	  vertex count to determine the batch index it should be placed in the pass
 
 	constexpr std::uint8_t TERMINATE_AFTTER_FRAMES = TimeKeeper::NO_FRAME_LIMIT;
 	constexpr bool SHOW_FPS = true;
@@ -267,8 +293,7 @@ namespace Core
 		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {StartAll(); });
 		EngineLog("LOADED ALL SCENES");
 
-		if (!Assert(m_sceneManager.TrySetActiveScene(0),
-			std::format("Tried to set the active scene to the first one, but failed!")))
+		if (!Assert(m_sceneManager.TrySetActiveScene(0), "Tried to set the active scene to the first one, but failed!"))
 			return;
 
 		EngineLog(std::format("SET FIRST SCENE:{}", m_sceneManager.GetActiveScene()->ToString()));
@@ -343,35 +368,31 @@ namespace Core
 		const Vec3 objectCenter = Vec3(0, 0, 0.3);
 		static Quat rot = Quat::Identity();
 		//rot *= Vec3{ 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime };
-		const Mat4 modelMatrix = CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
-		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Color_BLUE
-		//m_renderer.AddCircleCall2D(0.13f, modelMatrix, Color_RED);
-		//m_renderer.AddSphereCall3D(0.13f, modelMatrix, Color_GREEN);
-		//m_renderer.AddRectangleCall2D(Vec2(0.13, 0.13), modelMatrix, Color_BLUE);
+		const Mat4 modelMatrix = Utils::CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
 		Rendering::Texture& tex = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/test.jpg")->GetTextureMutable();
 		Rendering::Material material = Rendering::Material("Test", nullptr, Color(100, 100, 100, 255));
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Color_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Color_BLUE);
 		//m_renderer.AddCallDirectionalLight(Vec3(0, -1, 0), COLOR_GREEN);
-		m_renderer.AddCallPointLight(Vec3(0.2, 0, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
-		m_renderer.AddCallPointLight(Vec3(0, 0.2, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_BLUE);
+		//m_renderer.AddCallPointLight(Vec3(0.2, 0, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
+		//m_renderer.AddCallPointLight(Vec3(0, 0.2, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_BLUE);
 
-		const Mat4 modelMatrix3 = CalculateModelMatrix(nullptr, Vec3(0, -0.3, 0.4), Vec3::One(), Quat::Identity());
+		const Mat4 modelMatrix3 = Utils::CalculateModelMatrix(nullptr, Vec3(0, -0.3, 0.4), Vec3::One(), Quat::Identity());
 		Rendering::Material* defaultMaterial = m_engineState.m_GraphicsContext.m_GraphicsManager->GetDefaultMaterialMutable();
-		m_renderer.AddCallSphere3D(defaultMaterial, 0.2, modelMatrix3);
+		m_renderer.AddCallSphere3D(defaultMaterial, objectCenter, 0.2, rot);
 		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
 
 		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
 		model->GetModelMutable().m_Meshes[0].m_Material.SetSurface(1, 1, nullptr);
-		const Mat4 modelMatrix2 = CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3(0.001, 0.001, -0.001), Quat::Identity());
-		const Mat4 modelMatrix4 = CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallModel(model->GetModelMutable(), modelMatrix2);
+		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3(0.001, 0.001, -0.001), Quat::Identity());
+		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3::One(), Quat::Identity());
+		//m_renderer.AddCallModel(model->GetModelMutable(), modelMatrix2);
 		//m_renderer.AddCallSphere3D(&model->GetModelMutable().m_Meshes[0].m_Material, 0.2, modelMatrix4);
 
 		Rendering::Texture& checkerboard = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/checkerboard_2.png")->GetTextureMutable();
 		Rendering::Material planeMaterial = Rendering::Material("Plane", &checkerboard, COLOR_WHITE);
-		const Mat4 planeMatrix = CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallPlane3D(&planeMaterial, Vec2(1, 1), planeMatrix);
+		const Mat4 planeMatrix = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3::One(), Quat::Identity());
+		//m_renderer.AddCallPlane3D(&planeMaterial, Vec2(1, 1), planeMatrix);
 	}
 
 	void Engine::SetUpdateStatusCode(const UpdateStatusCode& code)
@@ -407,8 +428,8 @@ namespace Core
 				return;
 			}
 
-			if (!Assert(activeScene->HasEntities(), std::format("Tried to update the active scene:{} but there "
-				"are no entities in the scene", activeScene->GetName())))
+			if (!Assert(activeScene->HasEntities(), "Tried to update the active scene:{} but there "
+				"are no entities in the scene", activeScene->GetName()))
 			{
 				SetUpdateStatusCode(UpdateStatusCode::Error);
 				return;
@@ -419,9 +440,9 @@ namespace Core
 
 			std::string cameraSceneName = mainCamera.GetEntity().m_SceneName;
 			if (!Assert(cameraSceneName == EntityData::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
-				std::format("Tried to get active camera:{} during update loop, "
+				"Tried to get active camera:{} during update loop, "
 					"but that camera is not in the active scene OR global storage (main camera scene:{}, active scene:{})", mainCamera.ToString(),
-					cameraSceneName, activeScene->GetName())))
+					cameraSceneName, activeScene->GetName()))
 			{
 				SetUpdateStatusCode(UpdateStatusCode::Error);
 				return;

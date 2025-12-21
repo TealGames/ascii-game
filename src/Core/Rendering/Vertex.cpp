@@ -12,7 +12,22 @@ namespace Rendering
         return std::format("[{}]", m_LocalPos.ToString());
     }
 
-    bool Triangle::IsIntersectedByRay(const WorldPosition3D& rayOrigin, const WorldPosition3D& rayDir)
+    AABB3D CalculateTriangleAABB(const Triangle& triangle, const Vertex* vertexArray)
+    {
+        const WorldPosition3D world0 = vertexArray[triangle.m_VertexIndex0].m_LocalPos;
+        const WorldPosition3D world1 = vertexArray[triangle.m_VertexIndex1].m_LocalPos;
+        const WorldPosition3D world2 = vertexArray[triangle.m_VertexIndex2].m_LocalPos;
+        return AABB3D(Min(world0, world1, world2), Max(world0, world1, world2));
+    }
+    WorldPosition3D CalculateTriangleCenter(const Triangle& triangle, const Vertex* vertexArray)
+    {
+        const WorldPosition3D world0 = vertexArray[triangle.m_VertexIndex0].m_LocalPos;
+        const WorldPosition3D world1 = vertexArray[triangle.m_VertexIndex1].m_LocalPos;
+        const WorldPosition3D world2 = vertexArray[triangle.m_VertexIndex2].m_LocalPos;
+        return (world0 + world1 + world2) / 3;
+    }
+
+   /* bool Triangle::IsIntersectedByRay(const WorldPosition3D& rayOrigin, const WorldPosition3D& rayDir)
     {
         return Utils::RayIntersectsTriangle(m_Vertex0.m_LocalPos, m_Vertex1.m_LocalPos, m_Vertex2.m_LocalPos, rayOrigin, rayDir);
     }
@@ -24,17 +39,19 @@ namespace Rendering
     {
         return AABB3D(Min(m_Vertex0.m_LocalPos, m_Vertex1.m_LocalPos, m_Vertex2.m_LocalPos), 
                       Max(m_Vertex0.m_LocalPos, m_Vertex1.m_LocalPos, m_Vertex2.m_LocalPos));
-    }
+    }*/
 
-    Instance::Instance() : Instance(-1, {}, {}) {}
-    Instance::Instance(const std::uint32_t materialIndex, const Mat4& modelMatrix, const Mat3& normalMatrix)
-        : m_MaterialIndex(materialIndex), m_ModelMatrix(modelMatrix), m_NormalModelMatrix(normalMatrix), _padding{} {}
+    Instance::Instance() : Instance(-1, -1, {}, {}) {}
+    Instance::Instance(const std::uint32_t materialIndex, const std::uint32_t meshIndex, const Mat4& modelMatrix, const Mat3& normalMatrix)
+        : m_MaterialIndex(materialIndex), m_MeshIndex(meshIndex), m_ModelMatrix(modelMatrix), m_InverseModelMatrix(m_ModelMatrix.InverseUnsafe()),
+          m_NormalModelMatrix(normalMatrix), _padding{} {}
 
     std::string Instance::ToString() const
     {
         return std::format("[Instance MaterialIndex:{} ModelMat:{} NormalModelMat:{}]", 
             m_MaterialIndex, m_ModelMatrix.ToString(), m_NormalModelMatrix.ToString());
     }
+
     std::string InstanceMesh::ToString() const
     {
         return std::format("[InstanceMesh Off:{} Count:{}]", m_IndexOffset, m_NumIndices);

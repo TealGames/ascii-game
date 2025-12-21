@@ -6,6 +6,7 @@
 #include "StaticGlobals.hpp"
 #include "Utils/Data/Vec4Type.hpp"
 #include "Math/PlatformMath.hpp"
+#include "Utils/MathAdvanced.hpp"
 
 std::string CameraPrecalculatedData::ToString() const
 {
@@ -166,7 +167,7 @@ ScreenPosition CameraComponent::WorldToScreenPosition(const WorldPosition3D& pos
 }
 Ray3D CameraComponent::ScreenToWorldPosition(const ScreenPosition& pos) const
 {
-	const WorldPosition3D cameraPos = GetEntity().GetTransform().GetGlobalPos();
+	const WorldPosition3D cameraPos = GetEntity().GetTransform().GetWorldPos();
 	const Vec2 nearSize = m_cameraSettings.CalculateViewportSize(m_cameraSettings.m_NearDistance);
 	//const WorldPosition2D bottomLeftPos = cameraPos.GetXY() - (m_cameraSettings.m_WorldViewportSize / 2);
 	const Vec2 screenPercent{ pos.m_X / SCREEN_WIDTH, (SCREEN_HEIGHT - pos.m_Y) / SCREEN_HEIGHT };
@@ -207,11 +208,11 @@ Vec2 CameraComponent::WorldToScreenSize(const float cameraDepthDistance, const V
 
 WorldPosition3D CameraComponent::CalculateNearPlaneWorldCenter() const
 {
-	return GetTransform().GetGlobalPos() + (GetTransform().CalculateWorldForward() * m_cameraSettings.m_NearDistance);
+	return GetTransform().GetWorldPos() + (GetTransform().CalculateWorldForward() * m_cameraSettings.m_NearDistance);
 }
 WorldPosition3D CameraComponent::CalculateFarPlaneWorldCenter() const
 {
-	return GetTransform().GetGlobalPos() + (GetTransform().CalculateWorldForward() * m_cameraSettings.m_FarDistance);
+	return GetTransform().GetWorldPos() + (GetTransform().CalculateWorldForward() * m_cameraSettings.m_FarDistance);
 }
 
 std::array<InfinitePlane3D, 6> CameraComponent::CalculateFrustumPlanes() const
@@ -250,9 +251,9 @@ bool CameraComponent::DoesViewVolumeContainPos(const WorldPosition3D& point) con
 Mat4 CalculateViewMatrix(const WorldPosition3D& globalPos, const Quat& globalRotation)
 {
 	//Since the rotation matrix is a special kind of matrix its inverse == tranpose (this is not normally true)
-	const Mat4 invertedRotationMatrix = CalculateRotationMatrix(globalRotation).Transpose();
+	const Mat4 invertedRotationMatrix = Utils::CalculateRotationMatrix(globalRotation).Transpose();
 	const Vec4 rotatedTranslation = Vec4(-globalPos, 1.0f);
-	return invertedRotationMatrix * CalculateTranslationMatrix(rotatedTranslation.GetXYZ());
+	return invertedRotationMatrix * Utils::CalculateTranslationMatrix(rotatedTranslation.GetXYZ());
 }
 Mat4 CalculateViewMatrix(const WorldPosition3D& globalPos, const Vec3& forwardDir, const Vec3& upDir) 
 {
@@ -263,11 +264,11 @@ Mat4 CalculateViewMatrix(const WorldPosition3D& globalPos, const Vec3& forwardDi
 	const Vec3 upDirSafe = CrossProduct(forwardDirNormalized, rightDir);
 
 	Mat4 rot = Mat4::GetIdentity();
-	rot.Set(0, Vec4(rightDir, 0));
-	rot.Set(1, Vec4(upDirSafe, 0.0f));
-	rot.Set(2, Vec4(-forwardDirNormalized, 0.0f));
+	rot.SetCol(0, Vec4(rightDir, 0));
+	rot.SetCol(1, Vec4(upDirSafe, 0.0f));
+	rot.SetCol(2, Vec4(-forwardDirNormalized, 0.0f));
 
-	return rot * CalculateTranslationMatrix(-globalPos);
+	return rot * Utils::CalculateTranslationMatrix(-globalPos);
 }
 
 Mat4 CameraComponent::CalculateProjectionMatrix(const ProjectionMatrixType type) const
@@ -287,7 +288,7 @@ Mat4 CameraComponent::CalculateProjectionMatrix(const ProjectionMatrixType type)
 	}
 	else
 	{
-		const WorldPosition3D globalPos = GetTransform().GetGlobalPos();
+		const WorldPosition3D globalPos = GetTransform().GetWorldPos();
 		const Vec2 viewportSize = m_cameraSettings.CalculateViewportSize();
 		const float l = globalPos.m_X - viewportSize.m_X / 2;
 		const float r = globalPos.m_X + viewportSize.m_X / 2;
@@ -319,7 +320,7 @@ const CameraPrecalculatedData& CameraComponent::GetLastUpdateData() const
 	const bool projMatrixDirty = HasDirtyFlag(PROJ_MATRIX_DIRTY_FLAG);
 	if (viewMatrixDirty)
 	{
-		m_lastUpdateData.m_ViewMatrix = CalculateViewMatrix(GetTransform().GetGlobalPos(), GetTransform().GetGlobalRotation());
+		m_lastUpdateData.m_ViewMatrix = CalculateViewMatrix(GetTransform().GetWorldPos(), GetTransform().GetWorldRotation());
 		m_lastUpdateData.m_UpdatedThisFrame |= CameraPrecalculatedDataUpdate::ViewMatrix;
 	}
 	if (projMatrixDirty)

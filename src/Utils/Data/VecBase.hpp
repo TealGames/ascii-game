@@ -49,7 +49,7 @@ T Sum(const Vec<T, N>& vec)
 }
 
 template<typename AxisT, size_t N, typename... OtherT>
-requires AllSame<Vec<AxisT, N>, OtherT...>
+requires Utils::AllSameType<Vec<AxisT, N>, OtherT...>
 AxisT MaxAxis(const std::uint8_t axisIndex, const Vec<AxisT, N>& first, const OtherT& ...other)
 {
 	return Utils::Max(first[axisIndex], other[axisIndex]...);
@@ -64,7 +64,7 @@ AxisT MaxAxis(const std::uint8_t axisIndex, const Vec<AxisT, N>& first, const Ot
 /// <param name="...other"></param>
 /// <returns></returns>
 template<typename AxisT, size_t N, typename... OtherT>
-requires AllSame<Vec<AxisT, N>, OtherT...>
+requires Utils::AllSameType<Vec<AxisT, N>, OtherT...>
 Vec<AxisT, N> Max(const Vec<AxisT, N>& first, const OtherT& ...other)
 {
 	Vec<AxisT, N> result = {};
@@ -76,7 +76,7 @@ Vec<AxisT, N> Max(const Vec<AxisT, N>& first, const OtherT& ...other)
 }
 
 template<typename AxisT, size_t N, typename... OtherT>
-requires AllSame<Vec<AxisT, N>, OtherT...>
+requires Utils::AllSameType<Vec<AxisT, N>, OtherT...>
 AxisT MinAxis(const std::uint8_t axisIndex, const Vec<AxisT, N>& first, const OtherT& ...other)
 {
 	return Utils::Min(first[axisIndex], other[axisIndex]...);
@@ -91,7 +91,7 @@ AxisT MinAxis(const std::uint8_t axisIndex, const Vec<AxisT, N>& first, const Ot
 /// <param name="...other"></param>
 /// <returns></returns>
 template<typename AxisT, size_t N, typename... OtherT>
-requires AllSame<Vec<AxisT, N>, OtherT...>
+requires Utils::AllSameType<Vec<AxisT, N>, OtherT...>
 Vec<AxisT, N> Min(const Vec<AxisT, N>& first, const OtherT& ...other)
 {
 	Vec<AxisT, N> result = {};

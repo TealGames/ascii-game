@@ -5,6 +5,7 @@
 #include "ECS/Component/Types/World/EntityData.hpp"
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "Math/PlatformMath.hpp"
+#include "Utils/MathAdvanced.hpp"
 //#include "glm/gtc/matrix_transform.hpp"
 
 TransformComponent::TransformComponent(const Json& json) : TransformComponent()
@@ -56,15 +57,15 @@ void TransformComponent::UpdatePrecalculatedData() const
 	}
 	else
 	{
-		m_lastUpdateData.m_GlobalPos = parent->GetGlobalPos() + m_localPos;
-		m_lastUpdateData.m_GlobalScale = parent->GetGlobalScale() * m_localScale;
-		m_lastUpdateData.m_GlobalRotation = parent->GetGlobalRotation() * m_localRotation;
+		m_lastUpdateData.m_GlobalPos = parent->GetWorldPos() + m_localPos;
+		m_lastUpdateData.m_GlobalScale = parent->GetWorldScale() * m_localScale;
+		m_lastUpdateData.m_GlobalRotation = parent->GetWorldRotation() * m_localRotation;
 	}
-	m_lastUpdateData.m_GlobalModelMatrix = CalculateModelMatrix(nullptr, m_lastUpdateData.m_GlobalPos, 
+	m_lastUpdateData.m_GlobalModelMatrix = Utils::CalculateModelMatrix(nullptr, m_lastUpdateData.m_GlobalPos, 
 		m_lastUpdateData.m_GlobalScale, m_lastUpdateData.m_GlobalRotation);
 }
 
-const Vec3& TransformComponent::GetGlobalPos() const
+const Vec3& TransformComponent::GetWorldPos() const
 {
 	//TODO: isnt it a little hacky to use MUTABLE modifier to the last update data
 	//so you can modify internal state even in const function?
@@ -77,7 +78,7 @@ const Vec3& TransformComponent::GetGlobalPos() const
 
 	return m_lastUpdateData.m_GlobalPos;
 }
-const Vec3& TransformComponent::GetGlobalScale() const
+const Vec3& TransformComponent::GetWorldScale() const
 {
 	if (IsDirty())
 	{
@@ -88,7 +89,7 @@ const Vec3& TransformComponent::GetGlobalScale() const
 
 	return m_lastUpdateData.m_GlobalScale;
 }
-const Quat& TransformComponent::GetGlobalRotation() const
+const Quat& TransformComponent::GetWorldRotation() const
 {
 	if (IsDirty())
 	{
@@ -172,15 +173,15 @@ Quat& TransformComponent::GetLocalRotationMutable()
 
 Vec3 TransformComponent::CalculateWorldForward() const
 {
-	return GetGlobalRotation().ApplyRotationToDir(ENGINE_FORWARD_DIR);
+	return GetWorldRotation().ApplyRotationToDir(ENGINE_FORWARD_DIR);
 }
 Vec3 TransformComponent::CalculateWorldUp() const
 {
-	return GetGlobalRotation().ApplyRotationToDir(ENGINE_UP_DIR);
+	return GetWorldRotation().ApplyRotationToDir(ENGINE_UP_DIR);
 }
 Vec3 TransformComponent::CalculateWorldRight() const
 {
-	return GetGlobalRotation().ApplyRotationToDir(ENGINE_RIGHT_DIR);
+	return GetWorldRotation().ApplyRotationToDir(ENGINE_RIGHT_DIR);
 }
 void TransformComponent::CalculateWorldDirections(Vec3* outForward, Vec3* outUp, Vec3* outRight) const
 {
@@ -200,50 +201,6 @@ void TransformComponent::CalculateWorldDirections(Vec3* outForward, Vec3* outUp,
 			*outRight = CrossProduct(forward, up).GetNormalized();
 		else *outRight = CrossProduct(up, forward).GetNormalized();
 	}
-}
-
-Mat4 CalculateTranslationMatrix(const Vec3& pos)
-{
-	return Mat4(std::array<std::array<float, 4>, 4>
-	{{
-		{ {1, 0, 0, pos.m_X} },
-		{ {0, 1, 0, pos.m_Y} },
-		{ {0, 0, 1, pos.m_Z} },
-		{ {0, 0, 0, 1} }
-		}});
-}
-Mat4 CalculateScaleMatrix(const Vec3& scale)
-{
-	return Mat4(std::array<std::array<float, 4>, 4>
-	{{
-		{ {scale.m_X, 0, 0, 0} },
-		{ {0, scale.m_Y, 0, 0} },
-		{ {0, 0, scale.m_Z, 0} },
-		{ {0, 0, 0, 1} }
-	}});
-}
-Mat4 CalculateRotationMatrix(const Quat& rotation)
-{
-	const float x = rotation.m_X, y = rotation.m_Y, z = rotation.m_Z, w = rotation.m_W;
-
-	const float xx = x * x, yy = y * y, zz = z * z;
-	const float xy = x * y, xz = x * z, yz = y * z;
-	const float wx = w * x, wy = w * y, wz = w * z;
-
-	return Mat4(
-		{ {
-			{{1 - 2 * yy - 2 * zz,	2 * xy - 2 * wz,		2 * xz + 2 * wy,		0.0f}},
-			{{2 * xy + 2 * wz,		1 - 2 * xx - 2 * zz,	2 * yz - 2 * wx,		0.0f}},
-			{{2 * xz - 2 * wy,		2 * yz + 2 * wx,		1 - 2 * xx - 2 * yy,	0.0f}},
-			{{0.0f,					0.0f,					0.0f,					1.0f}}
-		} });
-}
-Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Vec3& pos, const Vec3& scale, const Quat& rotation)
-{
-	if (parentMatrix == nullptr)
-		return CalculateTranslationMatrix(pos) * CalculateRotationMatrix(rotation) * CalculateScaleMatrix(scale);
-	else
-		return *parentMatrix * CalculateTranslationMatrix(pos) * CalculateRotationMatrix(rotation) * CalculateScaleMatrix(scale);
 }
 
 //Mat4 TransformComponent::CalculateLocalTranslationMatrix() const
@@ -294,6 +251,6 @@ std::string TransformComponent::ToString() const
 	const EntityData* parent = GetEntity().GetParent();
 	return std::format("[<Transform> Parent:{} LPos:{} GPos:{} LScale:{} GScale:{} LRot:{} GRot:{}]", 
 		parent!=nullptr? parent->m_Name : "NULL",
-		m_localPos.ToString(), GetGlobalPos().ToString(), m_localScale.ToString(), GetGlobalScale().ToString(), 
-		m_localRotation.ToString(), GetGlobalRotation().ToString());
+		m_localPos.ToString(), GetWorldPos().ToString(), m_localScale.ToString(), GetWorldScale().ToString(), 
+		m_localRotation.ToString(), GetWorldRotation().ToString());
 }

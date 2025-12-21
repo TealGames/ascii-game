@@ -5,14 +5,22 @@
 #include <sstream>
 #include <optional>
 #include <functional>
-#include "Utils/TemplateConcepts.hpp"
 #include <chrono>
+#include "Utils/TemplateConcepts.hpp"
+#include "Utils/Data/Enums.hpp"
+#include "Utils/HelperMacros.hpp"
+#include "Utils/Debug.hpp"
 
 namespace Utils
 {
+	inline constexpr const char* TREE_BRANCH_STR = "|-";
+	inline constexpr const char* TREE_BRANCH_END_STR = "--";
+	inline constexpr const char* TREE_VERTICAL_STR = "| ";
+
 	std::string ToString(const double& d, const std::uint8_t decimalPlaces);
 	std::string ToString(const char c);
 	std::string ToString(const std::uint8_t u8);
+	std::string ToString(const bool b);
 
 	template<typename T>
 	requires (!std::is_pointer_v<T>)
@@ -26,7 +34,7 @@ namespace Utils
 	}
 
 	std::string ToStringMemory(const std::byte* bytePtr, const std::size_t byteSize);
-
+	std::string ToString(const std::exception& exception);
 	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits);
 
 	template <typename T>
@@ -43,88 +51,128 @@ namespace Utils
 
 	std::string CollapseToSingleString(const std::vector<std::string>& collection);
 
-	template <typename T>
-	constexpr bool IS_NUMERIC = std::is_arithmetic_v<T>;
+	template<typename T, typename... TStringFuncArgs>
+	requires IsIterable<T>
+	std::string ToStringIterable(const T& collection, const TStringFuncArgs&... toStringArgs);
 
-	template <typename T, typename = void>
-	struct HasMemberToString : std::false_type {};
-	template <typename T>
-	struct HasMemberToString<T, std::void_t<decltype(std::declval<T>().ToString())>> : std::true_type {};
+	template<typename TKey, typename TValue, typename... TStringFuncArgs>
+	std::string ToStringPair(const std::pair<TKey, TValue>& pair, const TStringFuncArgs&... toStringArgs);
 
-	template <typename T, typename = void>
-	struct HasFreeToString : std::false_type {};
-	template <typename T>
-	struct HasFreeToString<T, std::void_t<decltype(ToString(std::declval<T>()))>> : std::true_type {};
+	template<typename T, typename... TStringFuncArgs>
+	requires IsPairType<T>
+	std::string ToStringPairAuto(const T& pair, const TStringFuncArgs&... toStringArgs);
 
-	template <typename T, typename = void>
-	struct HasOstreamOperator : std::false_type {};
-	template <typename T>
-	struct HasOstreamOperator<T, std::void_t<decltype(std::declval<std::ostringstream&>() << std::declval<T>())>> : std::true_type {};
-
-	template <typename T>
-	std::optional<std::string> TryToString(const T& obj)
+	template <typename T, typename... TStringFuncArgs>
+	std::optional<std::string> TryToString(const T& obj, const TStringFuncArgs&... funcArgs)
 	{
 		//Arithmetic checks for ints and floats -> which are available with to_string
-		if constexpr (IS_NUMERIC<T>)
-		{
+		if constexpr (std::is_same_v<T, std::string>)
+			return obj;
+		if constexpr (std::is_same_v<T, char> || std::is_same_v<T, bool> || Utils::IsExceptionType<T>)
+			return ToString(obj);
+		if constexpr (std::is_arithmetic_v<T>)
 			return std::to_string(obj);
-		}
-		else if constexpr (HasMemberToString<T>::value)
+		if constexpr (std::is_pointer_v<decltype(obj)>)
+			return TryToString(*obj, funcArgs...);
+		if constexpr (HasNamedFunctionToString<T, std::string, TStringFuncArgs...>)
+			return obj.ToString(funcArgs...);
+		if constexpr (HasFreeNamedFunctionToString<std::string, TStringFuncArgs...>)
+			return ToString(obj, funcArgs...);
+		if constexpr (HasOstreamOperator<T>::value) 
 		{
-			return obj.ToString();
-		}
-		//else if constexpr (HasFreeToString<T>::value) {
-		//	return ToString(obj);
-		//}
-		else if constexpr (HasOstreamOperator<T>::value) {
 			std::ostringstream oss;
 			oss << obj;
 			return oss.str();
 		}
-		else {
-			//throw std::invalid_argument("ToString: No suitable conversion available for the given type.");
-			return std::nullopt;
+		if constexpr (IsIterable<T>)
+			return ToStringIterable(obj, funcArgs...);
+		if constexpr (IsPairType<T>)
+		{
+			return ToStringPairAuto(obj, funcArgs...);
 		}
+
+		return std::nullopt;
+	}
+	template <typename T, typename... TStringFuncArgs>
+	std::string ToStringForced(const T& obj, const TStringFuncArgs&... funcArgs)
+	{
+		return TryToString(obj, funcArgs...).value_or("[Stringify Failed]");
 	}
 
+	template<typename... TArgs>
+	std::string ToStringTuple(const std::tuple<TArgs...>& tuple)
+	{
+		return std::apply([](const auto&... args) 
+			{
+				return ((ToStringForced(args) + " ") + ...);
+			}, tuple);
+	}
+
+	template<typename... TArgs>
+	std::string ToStringVariadicArgs(TArgs&&... args)
+	{
+		return ToStringTuple(std::tuple<TArgs...>(args...));
+	}
+	
 	/// <summary>
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
 	/// <param name="collection"></param>
 	/// <param name="toStringFunction"></param>
 	/// <returns></returns>
-	template <typename TCollection, typename TElement>
-	auto ToStringIterable(const TCollection& collection, const std::function<std::string(const TElement&)>
-		toStringFunction = nullptr)
-		-> typename std::enable_if<IS_ITERABLE<TCollection>, std::string>::type
+	//template <typename TCollection, typename TElement>
+	template<typename T, typename... TStringFuncArgs>
+	requires IsIterable<T>
+	std::string ToStringIterable(const T& collection, const TStringFuncArgs&... toStringArgs)
 	{
-		bool hasOverrideToString = toStringFunction != nullptr;
+		using Info = ContainerTypeInfo<T>;
+		using ContainerTemplate = typename Info::ContainerTemplateType;
+		using ElementType = typename Info::ElementType;
 
 		std::string str = "[";
 		std::optional<std::string> elementStr = std::nullopt;
 		int index = 0;
-		for (const TElement& element : collection)
+		for (const auto& element : collection)
 		{
-			if (hasOverrideToString) str += toStringFunction(element);
-			else
-			{
-				if constexpr (std::is_pointer_v<decltype(element)>) elementStr = Utils::TryToString(*element);
-				else elementStr = Utils::TryToString(element);
+			elementStr = Utils::TryToString(element, toStringArgs...);
 
-				if (elementStr.has_value()) str += elementStr.value();
-				else return "[PARSE FAILED: element could not convert to string]";
-			}
+			if (!elementStr.has_value())
+				return "[Stringify FAILED]";
+			
+			str += elementStr.value();
 
 			if (index < collection.size() - 1)
 				str += ", ";
 			index++;
 		}
 		str += "]";
-		return str;
+		return std::format("(Size:{}) ", collection.size()) + str;
 	}
+	
+	/*template<typename TKey, typename TValue, typename... TStringFuncArgs>
+	requires IsIterable<std::unordered_map<TKey, TValue>>
+	std::string ToStringIterable(const std::unordered_map<TKey, TValue>& collection, TStringFuncArgs&&... toStringArgs)
+	{
+		for (const auto& element : collection)
+		{
 
-	std::string ToStringIterable(const std::vector<std::string>& strings);
+		}
+	}*/
+	
+	//template<typename TCollection, typename TElement>
+	//std::string ToStringIterable(const TCollection& collection)
+	//{
+	//	return ToStringIterable<TCollection>(collection);
+	//}
+	//template<typename TKey, typename TValue>
+	//std::string ToStringIterable(const std::unordered_map<TKey, TValue>& collection)
+	//{
+	//	return ToStringIterable<std::unordered_map<TKey, TValue>>(collection);
+	//}
 
+	//std::string ToStringIterable(const std::vector<std::string>& strings);
+
+	/*
 	template <typename TKey, typename TValue>
 	std::string ToStringIterable(const std::unordered_map<TKey, TValue> collection,
 		const std::function<std::string(const std::pair<TKey, TValue>&)> toStringFunction = nullptr)
@@ -141,17 +189,26 @@ namespace Utils
 			else
 			{
 				//TODO: what if the pair key or value is another unordered map??
-				if constexpr (IS_ITERABLE<TKey>)
+				if constexpr (Utils::IsUnorderedMapType<TKey>)
+				{
+					using KeyTypeInfo = Utils::UnorderedMapTypeInfo<std::remove_cv_t<TKey>>;
+					maybeKeyStr = ToStringIterable<KeyTypeInfo::KeyType, KeyTypeInfo::ValueType>(pair.first);
+				}
+				else if constexpr (IsIterable<TKey>())
 				{
 					auto keyIt = pair.first.begin();
-					if (pair.first.empty() || keyIt == pair.first.end()) maybeKeyStr = "{}";
-					else maybeKeyStr = ToStringIterable<TKey, decltype(*keyIt)>(pair.first);
+					maybeKeyStr = ToStringIterable<TKey, decltype(*keyIt)>(pair.first);
 				}
 				else if constexpr (std::is_pointer_v<decltype(pair.first)>)
 					maybeKeyStr = Utils::TryToString(*(pair.first));
 				else maybeKeyStr = Utils::TryToString(pair.first);
 
-				if constexpr (IS_ITERABLE<TValue>)
+				if constexpr (Utils::IsUnorderedMapType<TValue>)
+				{
+					using ValueTypeInfo = Utils::UnorderedMapTypeInfo<std::remove_cv_t<TValue>>;
+					maybeKeyStr = ToStringIterable<ValueTypeInfo::KeyType, ValueTypeInfo::ValueType>(pair.second);
+				}
+				else if constexpr (IsIterable<TValue>())
 				{
 					auto valueIt = pair.second.begin();
 					if (pair.second.empty() || valueIt == pair.second.end()) maybeValueStr = "{}";
@@ -184,11 +241,71 @@ namespace Utils
 
 		return Utils::ToStringIterable<std::vector<std::string>, std::string>(vecStrs);
 	}
+	*/
 
-	template<typename KType, typename VType>
-	std::string ToStringPair(const KType& key, const VType& value)
+	template<typename TKey, typename TValue, typename... TStringFuncArgs>
+	std::string ToStringPair(const std::pair<TKey, TValue>& pair, const TStringFuncArgs&... toStringArgs)
 	{
-		return std::format("[K:{}, V:{}]", Utils::TryToString<KType>(key).value_or(""),
-			Utils::TryToString<VType>(value).value_or(""));
+		std::string keyStr = "";
+		if constexpr (IsIterable<TKey>) keyStr = ToStringIterable(pair.first, toStringArgs...);
+		else keyStr = Utils::TryToString(pair.first, toStringArgs...).value_or("");
+
+		std::string valueStr = "";
+		if constexpr (IsIterable<TValue>) valueStr = ToStringIterable(pair.second, toStringArgs...);
+		else valueStr = Utils::TryToString(pair.second, toStringArgs...).value_or("");
+
+		return std::format("[{},{}]", keyStr, valueStr);
+	}
+
+	template<typename T, typename... TStringFuncArgs>
+	requires IsPairType<T>
+	std::string ToStringPairAuto(const T& pair, const TStringFuncArgs&... toStringArgs)
+	{
+		using PairInfo = PairTypeInfo<std::remove_cv_t<T>>;
+		return ToStringPair<typename PairInfo::KeyType, typename PairInfo::ValueType, TStringFuncArgs...>(pair, 
+			toStringArgs...);
+	}
+
+	template<typename TKey, typename TValue>
+	std::string ToStringKeyValue(const TKey& key, const TValue& value)
+	{
+		return std::format("[{},{}]", Utils::TryToString<TKey>(key).value_or("KEY STRINGIFY FAILED"), 
+									  Utils::TryToString<TValue>(value).value_or("VAL STRINGIFY FAILED"));
+	}
+
+	template<typename TNode, typename... TStringFuncArgs>
+	std::string ToStringTreeHelper(const TNode& node, std::string prefixStr,
+		const std::function<const TNode*(const TNode& root, const size_t childIndex)>& getChildFunc, 
+		const std::function<std::string(const TNode& node)> overrideToStringFunc,
+		const TStringFuncArgs&... toStringArgs)
+	{
+		std::string resultStr = "";
+		if (overrideToStringFunc != nullptr) resultStr = overrideToStringFunc(node);
+		else resultStr = TryToString(node, toStringArgs...).value_or("[FAILED STRINGIFY]");
+
+		size_t i = 0;
+		const TNode* currentNode = getChildFunc(node, i);
+		bool isLastChild = getChildFunc(node, i + 1) == nullptr;
+		while (currentNode != nullptr)
+		{
+			//LogWarning(std::format("Doing indices of next node: {} {} ", currentNode->m_IndexChild0, currentNode->m_IndexChild1));
+			resultStr += "\n" + prefixStr + (isLastChild ? Utils::TREE_BRANCH_END_STR : Utils::TREE_BRANCH_STR) +
+				ToStringTreeHelper(*currentNode, prefixStr + (isLastChild ? "  " : Utils::TREE_VERTICAL_STR), 
+					getChildFunc, overrideToStringFunc, toStringArgs...);
+			if (isLastChild) break;
+
+			i++;
+			currentNode = getChildFunc(node, i);
+			isLastChild = getChildFunc(node, i + 1) == nullptr;
+		}
+		return resultStr;
+	}
+
+	template<typename TNode>
+	std::string ToStringTree(const TNode& root,
+		const std::function<const TNode* (const TNode& root, const size_t childIndex)>& getChildFunc, 
+		const std::function<std::string(const TNode& node)> overrideToStringFunc)
+	{
+		return ToStringTreeHelper<TNode>(root, "", getChildFunc, overrideToStringFunc);
 	}
 }

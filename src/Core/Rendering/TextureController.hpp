@@ -18,14 +18,14 @@ namespace Rendering
 
 	DEFINE_TEMPLATE_HAS_PROPERTY(m_ResourcePtr, void*);
 	DEFINE_TEMPLATE_HAS_PROPERTY(m_ResourceId, RenderObjectId);
-	DEFINE_TEMPLATE_HAS_FUNCTION(RemoveResource, void);
+	DEFINE_TEMPLATE_HAS_VOID_FUNCTION(RemoveResource);
 	DEFINE_TEMPLATE_HAS_FUNCTION(HasResource, bool);
 
 	template<typename TSlotData, std::size_t MAX_SLOTS>
 	requires (HasPropertym_ResourcePtr<TSlotData> && 
 			  HasFunctionHasResource<TSlotData> && 
-		      HasFunctionRemoveResource<TSlotData> && 
-		      HasFunctionToString<TSlotData>)
+		      HasVoidFunctionRemoveResource<TSlotData> && 
+		      Utils::HasFunctionToString<TSlotData>)
 	class GpuResourceSlotController
 	{
 	private:
@@ -281,7 +281,7 @@ namespace Rendering
 	};
 
 	template<typename TFunc, typename TResource>
-	concept IsImageBindFunc = IsInvocableType<void, TFunc, RenderObjectId, USlotIndex, bool>;
+	concept IsImageBindFunc = Utils::IsInvocableType<void, TFunc, RenderObjectId, USlotIndex, bool>;
 	
 	constexpr USlotIndex MAX_IMAGE_SLOTS = 8;
 	class ImageSlotController

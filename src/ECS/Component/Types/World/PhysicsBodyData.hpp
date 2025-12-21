@@ -120,35 +120,6 @@ public:
 	bool HasYConstraint() const;
 	bool HasAnyConstraints() const;
 
-	/*
-	const Physics::AABB& GetAABB() const;
-	const WorldPosition GetAABBCenterWorldPos() const;
-	const WorldPosition GetAABBTopLeftWorldPos() const;
-	bool DoesAABBContainPos(const WorldPosition& pos) const;
-	/// <summary>
-	/// Will get the AABB pos based on the relative pos of the AABB
-	/// where (0,0) is bottom left and (1, 1) is top right
-	/// </summary>
-	/// <param name="relativePos"></param>
-	/// <returns></returns>
-	const WorldPosition GetAABBWorldPos(const NormalizedPosition& relativePos) const;
-	*/
-
-	/*
-	void AddCollidingBody(PhysicsBodyData& collidingBody);
-	void RemoveCollidingBody(const CollidingBodiesCollection::iterator& removeBodyIterator);
-	bool IsCollidingWithBodyInDirs(const std::vector<MoveDirection>& dirs) const;
-	const bool& IsCollidingWithAnyBody() const;
-
-	CollidingBodiesCollection::iterator GetCollidingBodyIterator(const PhysicsBodyData& physicsBody);
-	bool IsValidCollidingBodyIterator(const CollidingBodiesCollection::iterator& removeBodyIterator) const;
-	PhysicsBodyData* TryGetCollidingBody(const PhysicsBodyData& physicsBody);
-	bool IsCollidingWithBody(const PhysicsBodyData& physicsBody);
-	int GetTotalBodyCollisions();
-
-	std::string ToStringCollidingBodies() const;
-	*/
-
 	//std::vector<std::string> GetDependencyFlags() const override;
 	void InitFields() override;
 	std::string ToString() const override;

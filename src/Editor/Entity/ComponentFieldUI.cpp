@@ -184,16 +184,12 @@ void ComponentFieldUI::SetField(ComponentField& field)
 
 const Input::InputManager& ComponentFieldUI::GetInputManager() const
 {
-	if (!Assert(m_inputManager != nullptr, std::format("Tried to get Input Manager but it is null")))
-		throw std::invalid_argument("Invalid input manager state");
-
+	ENGINE_ASSERT(m_inputManager != nullptr, "Tried to get Input Manager but it is null");
 	return *m_inputManager;
 }
 ComponentField& ComponentFieldUI::GetFieldInfo()
 {
-	if (!Assert(m_fieldInfo != nullptr, std::format("Tried to get field info but it is NULL")))
-		throw std::invalid_argument("Invalid field info");
-
+	ENGINE_ASSERT(m_fieldInfo != nullptr, "Tried to get field info but it is NULL");
 	return *m_fieldInfo;
 }
 
@@ -328,17 +324,13 @@ void ComponentFieldUI::Update()
 
 const ComponentField& ComponentFieldUI::GetFieldInfo() const
 {
-	if (!Assert(m_fieldInfo != nullptr, std::format("Tried to get field info from component field GUI but it is NULL")))
-		throw std::invalid_argument("Invalid field info state");
+	ENGINE_ASSERT(m_fieldInfo != nullptr, "Tried to get field info from component field GUI but it is NULL");
 	return *m_fieldInfo;
 }
 
 const ComponentUI& ComponentFieldUI::GetComponentGUISafe() const
 {
-	if (!Assert(m_componentGUI != nullptr, std::format("Tried to get component GUI "
-		"from a field named : '{}'", GetFieldInfo().ToString())))
-	{
-		throw std::invalid_argument("Failed to retrieve entity gui");
-	}
+	ENGINE_ASSERT(m_componentGUI != nullptr, "Tried to get component GUI "
+		"from a field named : '{}'", GetFieldInfo().ToString());
 	return *m_componentGUI;
 }

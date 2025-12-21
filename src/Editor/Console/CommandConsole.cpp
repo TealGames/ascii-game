@@ -143,11 +143,11 @@ bool CommandConsole::TryInvokePrompt()
 	std::vector<std::string> promptSegments = Utils::Split(formattedPrompt, ' ');
 
 	if (!Assert(!promptSegments.empty(), 
-		std::format("Tried to check input for command prompt but found no prompt segments!")))
+		"Tried to check input for command prompt but found no prompt segments!"))
 		return false;
 
 	if (!Assert(!promptSegments[0].empty(),
-		std::format("Tried to check input for command prompt but first prompt segment is empty")))
+		"Tried to check input for command prompt but first prompt segment is empty"))
 		return false;
 	
 	if (promptSegments[0][0] != COMMAND_CHAR)
@@ -183,7 +183,7 @@ bool CommandConsole::TryInvokePrompt()
 	}
 	LogOutputMessage(std::format("No command matches name: '{}' ({} overloads) and args: '{}'", promptName,
 		std::to_string(it->second.size()),
-		Utils::ToStringIterable<std::vector<std::string>, std::string>(promptSegments)), ConsoleOutputMessageType::Error);
+		Utils::ToStringIterable(promptSegments)), ConsoleOutputMessageType::Error);
 	return false;
 	//TODO: we probably want to print some errors if not prompt was found DIRECTLY in the console
 }

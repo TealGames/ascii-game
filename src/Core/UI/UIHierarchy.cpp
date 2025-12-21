@@ -25,7 +25,7 @@ void UIHierarchy::Init()
 
 	if (m_uiRoot == nullptr)
 	{
-		Assert(false, std::format("Attmpted to create the ui root element "
+		LogError(std::format("Attmpted to create the ui root element "
 			"but its ui transform element was null. Entity:{}", uiRootEntity.ToString()));
 	}
 
@@ -62,7 +62,7 @@ bool UIHierarchy::IsValidLayer(const UILayer layer, const bool logError) const
 	const bool isValid= layer <= TOP_LAYER;
 	if (logError && !isValid)
 	{
-		Assert(false, std::format("Attempted to use a gui layer:{} "
+		LogError(std::format("Attempted to use a gui layer:{} "
 			"but the underlying layer value is invalid", std::to_string(layer)));
 	}
 	return isValid;
@@ -73,7 +73,7 @@ UITransformData* UIHierarchy::CreateNewLayer(const UILayer layer)
 	if (!IsValidLayer(layer, true)) return nullptr;
 	if (m_layerRoots[layer]!=nullptr)
 	{
-		Assert(false, std::format("Attempted to create a new layer:{} in gui hierarchy "
+		LogError(std::format("Attempted to create a new layer:{} in gui hierarchy "
 			"but that layer has already been created", std::to_string(layer)));
 		return nullptr;
 	}
@@ -179,7 +179,7 @@ void UIHierarchy::AddToRoot(const UILayer layer, UITransformData* element)
 	//can speed up some of the process here
 	if (element == nullptr)
 	{
-		Assert(false, std::format("Tried to add element to root of gui hierarchy but element is NULL"));
+		LogError(std::format("Tried to add element to root of gui hierarchy but element is NULL"));
 		return;
 	}
 
@@ -192,13 +192,13 @@ UITransformData* UIHierarchy::RemoveFromRoot(const UILayer layer, const ECS::Ent
 {
 	if (IsLayerRootID(id))
 	{
-		Assert(false, std::format("Tried to remove element with id:'{}' from hierarchy, "
+		LogError(std::format("Tried to remove element with id:'{}' from hierarchy, "
 			"but it is a layer root element and those cannot be removed", ECS::ToString(id)));
 		return nullptr;
 	}
 	if (m_layerRoots[layer] == nullptr)
 	{
-		Assert(false, std::format("Attempted to remove element from layer:{} "
+		LogError(std::format("Attempted to remove element from layer:{} "
 			"root with id:{} but that layer has no root", std::to_string(layer), ECS::ToString(id)));
 		return nullptr;
 	}

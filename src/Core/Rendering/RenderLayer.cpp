@@ -6,7 +6,7 @@
 
 std::string ToString(const RenderLayerType& layers)
 {
-	return Utils::ToStringIterable<std::vector<std::string>, std::string>(GetLayersAsStrings(layers));
+	return Utils::ToStringIterable(GetLayersAsStrings(layers));
 }
 std::vector<std::string> GetLayersAsStrings(const RenderLayerType& layers)
 {
@@ -31,8 +31,8 @@ RenderLayerType GetLayersFromStrings(const std::vector<std::string> layerStrs)
 		else if (layerStr == "UI") layers |= RenderLayerType::UI;
 		else
 		{
-			Assert(false, std::format("Tried to get layers from strings: {} but encountered layer name that could not be parsed: '{}'",
-				Utils::ToStringIterable < std::vector<std::string>, std::string>(layerStrs), layerStr));
+			LogError(std::format("Tried to get layers from strings: {} but encountered layer name that could not be parsed: '{}'",
+				Utils::ToStringIterable(layerStrs), layerStr));
 		}
 	}
 	return layers;
@@ -218,6 +218,6 @@ std::string RenderLayer::ToString() const
 	{
 		layerStr.push_back(text.ToString());
 	}
-	return Utils::ToStringIterable<std::vector<std::string>, std::string>(layerStr);
+	return Utils::ToStringIterable(layerStr);
 }
 

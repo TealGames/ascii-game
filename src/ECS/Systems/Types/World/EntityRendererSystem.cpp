@@ -68,10 +68,10 @@ namespace ECS
 
 	void EntityRendererSystem::AddTextToRenderer(EntityRendererData& data, const CameraComponent& mainCamera)
 	{
-		const float zPos = data.GetTransform().GetGlobalPos().m_Z;
+		const float zPos = data.GetTransform().GetWorldPos().m_Z;
 		const VisualData& visual = data.GetVisualData();
 		const auto& visualBuffer = visual.GetBuffer();
-		const WorldPosition3D pivotWorldPos = data.GetVisualData().GetPivotWorldPos(data.GetTransform().GetGlobalPos());
+		const WorldPosition3D pivotWorldPos = data.GetVisualData().GetPivotWorldPos(data.GetTransform().GetWorldPos());
 
 		for (const auto& charPos : visualBuffer)
 		{

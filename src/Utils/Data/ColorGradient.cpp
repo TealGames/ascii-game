@@ -38,11 +38,11 @@ ColorGradient::ColorGradient(const std::vector<ColorGradientKeyFrame>& frames)
 	: m_colorFrames(frames)
 {
 	if (!Assert(!frames.empty(),
-		std::format("Tried creating a gradient with no frames!")))
+		"Tried creating a gradient with no frames!"))
 		return;
 
 	if (!Assert(frames.size()!=1,
-		std::format("Tried creating a gradient with only 1 frame!")))
+		"Tried creating a gradient with only 1 frame!"))
 		return;
 
 	ColorGradientKeyFrame& firstFrame = m_colorFrames.front();
@@ -130,6 +130,5 @@ const std::vector<ColorGradientKeyFrame>& ColorGradient::GetKeyframes() const
 
 std::string ColorGradient::ToString() const
 {
-	return Utils::ToStringIterable<std::vector<ColorGradientKeyFrame>, 
-		ColorGradientKeyFrame>(m_colorFrames);
+	return Utils::ToStringIterable(m_colorFrames);
 }

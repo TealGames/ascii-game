@@ -221,9 +221,12 @@ public:
 
 	std::pair<Iterator, bool> Insert(const KType& key, const VType& value)
 	{
-		if (!Assert(!HasKey(key), std::format("Tried to insert key value pair:{} but key already exists", 
-			Utils::ToStringPair<KType, VType>(key, value))))
+		if (HasKey(key))
+		{
+			LogError(std::format("Tried to insert key value pair:{} but key already exists",
+				Utils::ToStringKeyValue<KType, VType>(key, value)));
 			return { EndMutable(), false };
+		}
 
 		const std::pair<MapType::iterator, bool> mapResult = m_map.emplace(key, value);
 		m_keysOrdered.push_back(key);
@@ -269,7 +272,7 @@ public:
 				return ConstIterator(m_map, m_keysOrdered, i);
 		}
 
-		Assert(false, std::format("PreservedMap tried to find key: {} when HasKey returned "
+		LogError(std::format("PreservedMap tried to find key: {} when HasKey returned "
 			"TRUE but could not be found", Utils::TryToString<KType>(key).value_or("")));
 		return End();
 	}
@@ -368,19 +371,19 @@ public:
 		std::string mapAndKeyOrderStr = "";
 		if (displayMapAndKeyOrder)
 		{
-			mapAndKeyOrderStr += std::format("[KeyOrder:{}]", Utils::ToStringIterable<KeyOrderType, KType>(m_keysOrdered));
-			mapAndKeyOrderStr += std::format("[Map:{}]", Utils::ToStringIterable<KType, VType>(m_map));
+			mapAndKeyOrderStr += std::format("[KeyOrder:{}]", Utils::ToStringIterable<KeyOrderType>(m_keysOrdered));
+			mapAndKeyOrderStr += std::format("[Map:{}]", Utils::ToStringIterable<std::unordered_map<KType, VType>>(m_map));
 		}
 
 		std::vector<std::string> elementsStr = {};
 		for (const auto& pair : RetrieveAll())
 		{
 			if (typeid(KType) == typeid(std::string) && typeid(VType) == typeid(std::vector<std::string>))
-				elementsStr.push_back(std::format("[K:{} V:{}]", pair.GetKey(), Utils::ToStringIterable<VType, std::string>(pair.GetValue())));
-			else elementsStr.push_back(Utils::ToStringPair<KType, VType>(pair.GetKey(), pair.GetValue()));
+				elementsStr.push_back(std::format("[K:{} V:{}]", pair.GetKey(), Utils::ToStringIterable<VType>(pair.GetValue())));
+			//else elementsStr.push_back(Utils::ToStringPair<KType, VType>(pair.GetKey(), pair.GetValue()));
 		}
 		return std::format("[{}elements:{}]", displayMapAndKeyOrder? mapAndKeyOrderStr : "", 
-			Utils::ToStringIterable<std::vector<std::string>, std::string>(elementsStr));
+			Utils::ToStringIterable(elementsStr));
 	}
 };
 

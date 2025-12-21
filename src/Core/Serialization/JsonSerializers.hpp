@@ -125,7 +125,7 @@ T* TryDeserializeTypeAsset(const Json& json)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize Asset into type:{} but ran into error:{}", 
+		LogError(std::format("Tried to deserialize Asset into type:{} but ran into error:{}", 
 			Utils::ToStringTypeName<T>(), e.what()));
 	}
 	return nullptr;
@@ -145,7 +145,7 @@ std::vector<T*> TryDeserializeTypeAssets(const Json& json)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize Asset into type:{} but ran into error:{}",
+		LogError(std::format("Tried to deserialize Asset into type:{} but ran into error:{}",
 			Utils::ToStringTypeName<T>(), e.what()));
 	}
 	return {};
@@ -176,13 +176,13 @@ T* TryDeserializeComponent(const Json& json, EntityData& entitySelf, const bool&
 			try
 			{
 				EntityData* entity = TryDeserializeEntity(json);
-				if (!Assert(entity != nullptr, std::format("Tried to deserialize component from json:{} but failed to retrieve entity",
-					JsonUtils::ToStringProperties(json))))
+				if (!Assert(entity != nullptr, "Tried to deserialize component from json:{} but failed to retrieve entity",
+					JsonUtils::ToStringProperties(json)))
 					return nullptr;
 
 				Component* componentData = entity->TryGetComponentWithNameMutable(serializableComponent.m_ComponentName);
-				if (!Assert(componentData != nullptr, std::format("Tried to deserialzie component from json:{} but failed to retrieve component at index:{}",
-					JsonUtils::ToStringProperties(json), serializableComponent.m_ComponentName)))
+				if (!Assert(componentData != nullptr, "Tried to deserialzie component from json:{} but failed to retrieve component at index:{}",
+					JsonUtils::ToStringProperties(json), serializableComponent.m_ComponentName))
 					return nullptr;
 
 				//SerializableComponent serializedComponent = json.get<SerializableComponent>();
@@ -195,7 +195,7 @@ T* TryDeserializeComponent(const Json& json, EntityData& entitySelf, const bool&
 			}
 			catch (const std::exception& e)
 			{
-				Assert(false, std::format("Tried to deserialize component but ran into error:{}", e.what()));
+				Assert(false, "Tried to deserialize component but ran into error:{}", e.what());
 				return nullptr;
 			}
 		};
@@ -214,8 +214,8 @@ T* TryDeserializeComponent(const Json& json, EntityData& entitySelf, const bool&
 	}
 
 	T* tPtr = deserializationAction(json);
-	if (!Assert(tPtr != nullptr, std::format("Tried to deserialize component from json:{} but could not get a "
-		"NON NULL component pointer for NON OPTIONAL functional call", JsonUtils::ToStringProperties(json))))
+	if (!Assert(tPtr != nullptr, "Tried to deserialize component from json:{} but could not get a "
+		"NON NULL component pointer for NON OPTIONAL functional call", JsonUtils::ToStringProperties(json)))
 		return nullptr;
 	
 	//LogError(std::format("Resulting comp: from deserializ:{}", std::to_string(tPtr!=nullptr)));
@@ -244,15 +244,15 @@ T* TryDeserializeComponentSelf(const Json& json, EntityData& selfEntity, const b
 
 				const std::string tType = Utils::ToStringTypeName<T>();
 				const std::string jsonType = json.at("Component").get<std::string>();
-				if (!Assert(tType == jsonType, std::format("Tried to get component from SELF of entity:{} "
-					"but json type:{} does not match template:{}", selfEntity.ToString(), jsonType, tType)))
+				if (!Assert(tType == jsonType, "Tried to get component from SELF of entity:{} "
+					"but json type:{} does not match template:{}", selfEntity.ToString(), jsonType, tType))
 					return nullptr;
 
 				return selfEntity.TryGetComponentMutable<T>();
 			}
 			catch (const std::exception& e)
 			{
-				Assert(false, std::format("Tried to deserialize component (SELF) but ran into error:{}", e.what()));
+				Assert(false, "Tried to deserialize component (SELF) but ran into error:{}", e.what());
 				return nullptr;
 			}
 		};
@@ -291,7 +291,7 @@ Json TrySerializeComponent(const T* component, const bool& isOptional = false)
 			});
 	}
 
-	if (!Assert(component != nullptr, std::format("Tried to serialize NULL component for a NON OPTIONAL call")))
+	if (!Assert(component != nullptr, "Tried to serialize NULL component for a NON OPTIONAL call"))
 		return {};
 
 	return SerializableComponent(entity.m_SceneName, entity.m_Name, componentName);
@@ -313,7 +313,7 @@ Json TrySerializeComponentSelf(const T* component, EntityData& selfEntity, const
 			});
 	}
 
-	if (!Assert(component != nullptr, std::format("Tried to serialize NULL component (SELF) for a NON OPTIONAL call")))
+	if (!Assert(component != nullptr, "Tried to serialize NULL component (SELF) for a NON OPTIONAL call"))
 		return {};
 
 	return SerializableComponent(componentName);
@@ -345,7 +345,7 @@ void from_json(const Json& json, AnimationPropertyKeyframe<T>& var)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize animtion property keyframe but ran into error:{}", e.what()));
+		Assert(false, "Tried to deserialize animtion property keyframe but ran into error:{}", e.what());
 	}
 }
 template<typename T>
@@ -369,7 +369,7 @@ void from_json(const Json& json, AnimationProperty<T>& property)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize animtion property but ran into error:{}", e.what()));
+		Assert(false, "Tried to deserialize animtion property but ran into error:{}", e.what());
 	}
 }
 template<typename T>
@@ -392,7 +392,7 @@ std::optional<T> TryDeserializeOptional(const Json& json,
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize optional json property but ran into error:{}", e.what()));
+		Assert(false, "Tried to deserialize optional json property but ran into error:{}", e.what());
 		return std::nullopt;
 	}
 }

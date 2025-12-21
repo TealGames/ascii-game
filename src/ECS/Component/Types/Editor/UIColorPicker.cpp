@@ -35,7 +35,7 @@ void UIColorPickerData::Init()
 
 			if (popup == nullptr)
 			{
-				Assert(false, std::format("Attempted to popup color popup gui after clicking "
+				LogError(std::format("Attempted to popup color popup gui after clicking "
 					"color picker GUI:{} but popup failed to appear", ToString()));
 			}
 

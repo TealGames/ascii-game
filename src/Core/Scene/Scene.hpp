@@ -67,20 +67,6 @@ public:
 	static const std::string SCENE_FILE_PREFIX;
 
 private:
-	//void ParseSceneFile(std::ifstream& stream, std::vector<std::vector<TextCharPosition>>& charPos);
-
-	/*/// <summary>
-	/// Will return the iterator to the entity, whether global or local to the scene
-	/// that has the specified id
-	/// </summary>
-	/// <param name="id"></param>
-	/// <returns></returns>
-	EntityCollection::iterator GetEntityIterator(const EntityID& id);*/
-	//EntityIDCollection::iterator GetLocalEntityIterator(const ECS::EntityID& id);
-	//EntityNameCollection::iterator GetLocalEntityIterator(const std::string& name);
-
-	/*bool IsGlobalEntity(const EntityID& id) const;*/
-
 	Scene(const std::string& sceneName, GlobalEntityManager* manager);
 
 public:

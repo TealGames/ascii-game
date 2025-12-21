@@ -160,9 +160,9 @@ void CollisionBoxData::InitFields()
 bool CollisionBoxData::Validate()
 {
 	const Vec2 size = GetAABB().GetSize();
-	if (Assert(size.m_X != 0 && size.m_Y != 0,
-		std::format("Tried to create a Collision box but the AABB cannot have 0 x or y size: {}. "
-			"This could be due to bad bounding size or offset!", size.ToString())))
+	if (!Assert(size.m_X != 0 && size.m_Y != 0,
+		"Tried to create a Collision box but the AABB cannot have 0 x or y size: {}. "
+			"This could be due to bad bounding size or offset!", size.ToString()))
 		return false;
 
 	return true;
@@ -174,7 +174,7 @@ WorldPosition2D CollisionBoxData::GetOffset() const
 }
 WorldPosition2D CollisionBoxData::GetCenterGlobalPos() const
 {
-	return GetEntity().GetTransform().GetGlobalPos().GetXY();
+	return GetEntity().GetTransform().GetWorldPos().GetXY();
 }
 WorldPosition2D CollisionBoxData::GetGlobalMin() const
 {

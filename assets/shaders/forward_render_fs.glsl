@@ -11,8 +11,11 @@ struct PointLight
 struct Material
 {
     vec4 baseColor;
-    float alpha;
     vec4 emission;
+    float alpha;
+    float metallic;
+    float roughness;
+    int albedoIndex;
 };
 
 layout(std140) uniform LightsBlock

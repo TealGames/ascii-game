@@ -20,6 +20,13 @@ namespace Rendering
 		//	return -1;
 		//}
 
+		static RenderObjectId GetActiveShaderProgramId()
+		{
+			GLint currentProgramId = INVALID_OBJ_ID;
+			glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgramId);
+			return currentProgramId;
+		}
+
 		static GLenum GetShaderType(const ShaderType type)
 		{
 			if (type == ShaderType::Vertex)
@@ -225,13 +232,6 @@ namespace Rendering
 			}
 
 			GL_CALL(glDispatchCompute(x, y, z));
-		}
-
-		static RenderObjectId GetActiveShaderProgramId()
-		{
-			GLint currentProgramId = INVALID_OBJ_ID;
-			glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgramId);
-			return currentProgramId;
 		}
 
 		static std::string TrySetShaderUniform(const Shader& shader, const UniformDataType uniform, 

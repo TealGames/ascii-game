@@ -98,15 +98,17 @@ TextArray::TextArray(const int& width, const int& height, const std::vector<std:
 	m_width(width), m_height(height), m_TextArray(chars)
 {
 	if (m_height == 0) return;
-	if (!Assert(chars.size() == m_height, std::format("Tried to init a text array with height ({}) "
+	if (!Assert(chars.size() == m_height, "Tried to init a text array with height ({}) "
 		"that does not match character arg ({}): {}!",
-		std::to_string(chars.size()), std::to_string(m_height), ToString(chars, true)))) return;
+		std::to_string(chars.size()), std::to_string(m_height), ToString(chars, true))) 
+		return;
 
 	for (auto& textRow : m_TextArray)
 	{
-		if (!Assert(textRow.size() == m_width, std::format("Tried to init a text array "
+		if (!Assert(textRow.size() == m_width, "Tried to init a text array "
 			"with width ({}) that does not match character arg ({}): {}!",
-			std::to_string(textRow.size()), std::to_string(m_width), ToString(chars, true)))) return;
+			std::to_string(textRow.size()), std::to_string(m_width), ToString(chars, true))) 
+			return;
 	}
 }
 
@@ -202,19 +204,21 @@ bool TextArray::IsValidPos(const Array2DPosition& rowColPos) const
 
 void TextArray::SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar)
 {
-	if (!Assert(IsValidPos(rowColPos), std::format("Tried to set the char: '{}' "
+	if (!Assert(IsValidPos(rowColPos), "Tried to set the char: '{}' "
 		"at INVALID row col: {} of full buffer: (Max r:{} c:{}){}",
 		Utils::ToString(newBufferChar.GetChar()), rowColPos.ToString(), std::to_string(m_width-1), 
-		std::to_string(m_height-1), ToString()))) return;
+		std::to_string(m_height-1), ToString())) 
+		return;
 
 	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()] = newBufferChar;
 }
 
 void TextArray::SetAt(const Array2DPosition& rowColPos, const char& newChar)
 {
-	if (!Assert(IsValidPos(rowColPos), std::format("Tried to set the char: {} "
+	if (!Assert(IsValidPos(rowColPos), "Tried to set the char: {} "
 		"at INVALID row col: {} of full buffer: {}",
-		Utils::ToString(newChar), rowColPos.ToString(), ToString()))) return;
+		Utils::ToString(newChar), rowColPos.ToString(), ToString())) 
+		return;
 
 	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].SetChar(newChar);
 }
@@ -222,8 +226,9 @@ void TextArray::SetAt(const Array2DPosition& rowColPos, const char& newChar)
 void TextArray::SetAt(const Array2DPosition& rowColPos, const Color& newColor)
 {
 	if (!Assert(IsValidPos(rowColPos), 
-		std::format("Tried to set the color: {} at INVALID row col: {} of full buffer: {}",
-		newColor.ToString(), rowColPos.ToString(), ToString()))) return;
+		"Tried to set the color: {} at INVALID row col: {} of full buffer: {}",
+		newColor.ToString(), rowColPos.ToString(), ToString())) 
+		return;
 
 	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].m_Color = newColor;
 }
@@ -282,8 +287,9 @@ bool TextArray::TrySetRegion(const Array2DPosition& rowColStartPos, const Vec2In
 
 const TextChar* TextArray::GetAt(const Array2DPosition& rowColPos) const
 {
-	if (!Assert(IsValidPos(rowColPos), std::format("Tried to get INVALID pos at row col: {} of full buffer: {}",
-		rowColPos.ToString(), ToString()))) return nullptr;
+	if (!Assert(IsValidPos(rowColPos), "Tried to get INVALID pos at row col: {} of full buffer: {}",
+		rowColPos.ToString(), ToString())) 
+		return nullptr;
 
 	/*Log(std::format("WHEN ACCESSING POS {} char: {} color is: {}",
 		rowColPos.ToString(), Utils::ToString(m_TextArray[rowColPos.m_X][rowColPos.m_Y].m_Char),
@@ -299,16 +305,18 @@ const TextChar& TextArray::GetAtUnsafe(const Array2DPosition& rowColPos) const
 
 const std::vector<TextChar>& TextArray::GetAt(const int& rowPos) const
 {
-	if (!Assert(IsValidRow(rowPos), std::format("Tried to get INVALID row pos {} of full buffer: {}",
-		std::to_string(rowPos), ToString()))) return {};
+	if (!Assert(IsValidRow(rowPos), "Tried to get INVALID row pos {} of full buffer: {}",
+		std::to_string(rowPos), ToString())) 
+		return {};
 
 	return m_TextArray[rowPos];
 }
 
 std::string TextArray::GetStringAt(const int& rowColPos) const
 {
-	if (!Assert(IsValidRow(rowColPos), std::format("Tried to get INVALID row pos {} of full buffer: {}",
-		std::to_string(rowColPos), ToString()))) return {};
+	if (!Assert(IsValidRow(rowColPos), "Tried to get INVALID row pos {} of full buffer: {}",
+		std::to_string(rowColPos), ToString())) 
+		return {};
 
 	std::string rowStr = "";
 	for (const auto& textChar : m_TextArray[rowColPos])

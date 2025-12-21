@@ -3,9 +3,23 @@
 #include "Utils/Data/Matrix.hpp"
 #include "Utils/Data/Color.hpp"
 #include "Utils/Data/AABB.hpp"
+#include "Utils/Data/MemoryInterval.hpp"
 
 namespace Rendering
 {
+    enum class PrimitiveType : std::uint8_t
+    {
+        Triangle    = 0,
+        Square      = 1
+    };
+
+    enum class BasicMeshType : std::uint8_t
+    {
+        Cube                = 0,
+        Sphere              = 1,
+    };
+    inline constexpr std::uint8_t BASIC_MESHES_COUNT = 2;
+
     struct Vertex
     {
         /// <summary>
@@ -32,32 +46,54 @@ namespace Rendering
 
         std::string ToString() const;
     };
+
+    using IndexType = std::uint32_t;
     
-    struct Triangle
+    template<typename T>
+    struct TriangleBase
     {
-        Vertex m_Vertex0;
-        Vertex m_Vertex1;
-        Vertex m_Vertex2;
+        T m_VertexIndex0;
+        T m_VertexIndex1;
+        T m_VertexIndex2;
 
-        bool IsIntersectedByRay(const WorldPosition3D& rayOrigin, const WorldPosition3D& rayDir);
-        WorldPosition3D GetCenter() const;
+        TriangleBase() : TriangleBase(0, 0, 0) {}
+        TriangleBase(const T index0, const T index1, const T index2)
+            : m_VertexIndex0(index0), m_VertexIndex1(index1), m_VertexIndex2(index2) {}
+        TriangleBase(const T indexOffset, const T* arr)
+            : m_VertexIndex0(indexOffset + *arr), m_VertexIndex1(indexOffset + *(arr + 1)), m_VertexIndex2(indexOffset + *(arr + 2)) {}
+        TriangleBase(const T indexOffset, const std::array<T, 3>& triangle)
+            : m_VertexIndex0(indexOffset + triangle[0]), m_VertexIndex1(indexOffset + triangle[1]), m_VertexIndex2(indexOffset + triangle[2]) {}
+        TriangleBase(const T indexOffset, const TriangleBase<T>& other)
+            : m_VertexIndex0(indexOffset + other.m_VertexIndex0), 
+              m_VertexIndex1(indexOffset + other.m_VertexIndex1),
+              m_VertexIndex2(indexOffset + other.m_VertexIndex2) {}
 
-        AABB3D GetBounds() const;
+        std::string ToString() const
+        {
+            return std::format("[Triangle 0:{} 1:{} 2:{}]", m_VertexIndex0, m_VertexIndex1, m_VertexIndex2);
+        }
     };
+    using Triangle = TriangleBase<IndexType>;
+
+    AABB3D CalculateTriangleAABB(const Triangle& triangle, const Vertex* vertexArray);
+    WorldPosition3D CalculateTriangleCenter(const Triangle& triangle, const Vertex* vertexArray);
 
     struct Instance
     {
         //Color m_Color;
         std::uint32_t m_MaterialIndex;
-        float _padding[3];
+        std::uint32_t m_MeshIndex;
+        float _padding[2];
         Mat4 m_ModelMatrix;
+        Mat4 m_InverseModelMatrix;
         //NOTE: we use a mat3x4 (rows x cols) even though we only need mat3 because
         //due to std430 alignment, vec3 needs 4 bytes extra padding
         //so to avoid akward splitting we use mat3x4
         Mat3x4 m_NormalModelMatrix;
 
         Instance();
-        Instance(const std::uint32_t materialIndex, const Mat4& modelMatrix, const Mat3& normalMatrix);
+        Instance(const std::uint32_t materialIndex, const std::uint32_t meshIndex, 
+            const Mat4& modelMatrix, const Mat3& normalMatrix);
         std::string ToString() const;
     };
 
@@ -67,8 +103,8 @@ namespace Rendering
         //The total number of indices to read for vertices
         uint32_t m_NumIndices = 0;
 
+        ArrayInterval m_BLASTreesInterval = {};
+
         std::string ToString() const;
     };
-
-    using IndexType = std::uint32_t;
 }

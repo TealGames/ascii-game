@@ -50,9 +50,12 @@ namespace SceneManagement
 		if (!LOAD_SCENES_FROM_ASSETS) return;
 
 		auto sceneAssets = m_assetManager.GetAssetsOfTypeMutable<SceneAsset>(SCENES_FOLDER);
-		if (!Assert(sceneAssets.size() > 0, std::format("Tried to laod all scenes in scene manager "
-			"but could not find any scenes at path: '{}'", SCENES_FOLDER.string())))
+		if (sceneAssets.size() <= 0)
+		{
+			LogError(std::format("Tried to load all scenes in scene manager "
+				"but could not find any scenes at path: '{}'", SCENES_FOLDER.string()));
 			return;
+		}
 
 		//Note: by this point the asset should be valid and can be used in any way that we like
 		for (auto& sceneAsset : sceneAssets)
@@ -178,9 +181,13 @@ namespace SceneManagement
 	bool SceneManager::TrySetActiveScene(const std::string& sceneName)
 	{
 		SceneAsset* asset = TryGetSceneAssetMutable(sceneName);
-		if (!Assert(asset != nullptr, std::format("Tried to load a scene with name: {} "
-			"but that scene does not exist. Total scenes:{}", sceneName, 
-			std::to_string(GetSceneCount())))) return false;
+		if (asset != nullptr)
+		{
+			LogError(std::format("Tried to load a scene with name: {} "
+				"but that scene does not exist. Total scenes:{}", sceneName,
+				std::to_string(GetSceneCount())));
+			return false;
+		}
 
 		SetActiveScene(*asset);
 		return true;
@@ -192,10 +199,13 @@ namespace SceneManagement
 		//LogError(std::format("Active scene: {}", scene!=nullptr? scene->ToString() : "NULL"));
 		//LogError(std::format("Active scene: {}", asset != nullptr ? "SCENE" : "NULL"));
 
-		if (!Assert(asset != nullptr, std::format("Tried to load a scene with index: {} "
-			"but that scene does not exist. Total Scenes:{}", 
-			std::to_string(sceneIndex), std::to_string(GetSceneCount())))) 
+		if (asset == nullptr)
+		{
+			LogError(std::format("Tried to load a scene with index: {} "
+				"but that scene does not exist. Total Scenes:{}",
+				std::to_string(sceneIndex), std::to_string(GetSceneCount())));
 			return false;
+		}
 
 		SetActiveScene(*asset);
 		return true; 

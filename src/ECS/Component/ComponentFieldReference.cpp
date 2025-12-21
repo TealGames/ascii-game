@@ -19,15 +19,15 @@ ComponentFieldReference::ComponentFieldReference(Component* componentData, const
 		m_Entity->ToString(), fieldName, std::to_string(m_ComponentIndex))))
 		return;*/
 
-	if (!Assert(componentData!=nullptr, std::format("Tried to construct a component reference for field: {} "
-		"with NULL component data!", fieldName))) 
+	if (!Assert(componentData!=nullptr, "Tried to construct a component reference for field: {} "
+		"with NULL component data!", fieldName)) 
 		return;
 
 	m_FieldRef = componentData->TryGetFieldMutable(fieldName);
 
-	Assert(m_FieldRef != nullptr, std::format("Tried to create component field reference with component data:{} fieldNmae:{} "
+	ENGINE_ASSERT(m_FieldRef != nullptr, "Tried to create component field reference with component data:{} fieldNmae:{} "
 		"but the resulting component data of type:{} could not find field with that name", 
-		m_ComponentRef.ToString(), fieldName, typeid(*componentData).name()));
+		m_ComponentRef.ToString(), fieldName, typeid(*componentData).name());
 }
 
 ComponentFieldReference::ComponentFieldReference(EntityData& entity, const std::string& componentName, const std::string& fieldName)
@@ -40,15 +40,15 @@ ComponentFieldReference::ComponentFieldReference(EntityData& entity, const std::
 	*/
 
 	Component* data = m_ComponentRef.GetComponentDataMutable();
-	if (!Assert(data!=nullptr, std::format("Tried to construct a component field reference with component:{} "
-		"and field:{} but could not retrieve component for type:{}!", m_ComponentRef.ToString(), fieldName, componentName)))
+	if (!Assert(data!=nullptr, "Tried to construct a component field reference with component:{} "
+		"and field:{} but could not retrieve component for type:{}!", m_ComponentRef.ToString(), fieldName, componentName))
 		return;
 
 	m_FieldRef = data->TryGetFieldMutable(fieldName);
 
-	Assert(m_FieldRef != nullptr, std::format("Tried to create component field reference with component ref:{} fieldNmae:{} "
+	ENGINE_ASSERT(m_FieldRef != nullptr, "Tried to create component field reference with component ref:{} fieldNmae:{} "
 		"but the resulting component data of type:{} could not find field with that name", 
-		m_ComponentRef.ToString(), fieldName, typeid(*data).name()));
+		m_ComponentRef.ToString(), fieldName, typeid(*data).name());
 }
 
 const EntityData& ComponentFieldReference::GetEntitySafe() const
@@ -73,17 +73,15 @@ const EntityData& ComponentFieldReference::GetEntitySafe() const
 }
 const ComponentField& ComponentFieldReference::GetComponentFieldSafe() const
 {
-	if (!Assert(m_FieldRef != nullptr, std::format("Tried to get component field from component "
-		"field reference for entity: {} but it is NULL", GetEntitySafe().ToString())))
-		throw std::invalid_argument("Invalid component field reference field state");
+	ENGINE_ASSERT(m_FieldRef != nullptr, "Tried to get component field from component "
+		"field reference for entity: {} but it is NULL", GetEntitySafe().ToString());
 
 	return *m_FieldRef;
 }
 ComponentField& ComponentFieldReference::GetComponentFieldSafeMutable()
 {
-	if (!Assert(m_FieldRef != nullptr, std::format("Tried to get component field MUTABLE from component "
-		"field reference for entity: {} but it is NULL", GetEntitySafe().ToString())))
-		throw std::invalid_argument("Invalid component field reference field state");
+	ENGINE_ASSERT(m_FieldRef != nullptr, "Tried to get component field MUTABLE from component "
+		"field reference for entity: {} but it is NULL", GetEntitySafe().ToString());
 
 	return *m_FieldRef;
 }

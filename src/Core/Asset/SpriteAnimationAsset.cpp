@@ -20,8 +20,8 @@ static const std::string TIME_PROPERTY_NAME_START = "T";
 
 SpriteAnimationAsset::SpriteAnimationAsset(const std::filesystem::path& path) : Asset(path, false), m_animation()
 {
-	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a sprite animation asset from path:{} (extension:{})"
-		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
+	if (!Assert(path.extension() == EXTENSION, "Tried to create a sprite animation asset from path:{} (extension:{})"
+		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION))
 		return;
 
 	UpdateAssetFromFile();
@@ -69,14 +69,14 @@ void SpriteAnimationAsset::UpdateAssetFromFile()
 		//Since time should only have one value we do not need to keep searching
 		if (figProperties[i].GetKey().substr(0, TIME_PROPERTY_NAME_START.size()) == TIME_PROPERTY_NAME_START)
 		{
-			if (!Assert(i % 2 == 0, std::format("Tried to read time property in sprite animation asset of key:{} value:{}"
+			if (!Assert(i % 2 == 0, "Tried to read time property in sprite animation asset of key:{} value:{}"
 				"but it occured at index:{} which breaks the desired order of TIME, ANIMATION", figProperties[i].GetKey(), 
-				Utils::ToStringIterable<std::vector<std::string>, std::string>(figProperties[i].GetValue()), std::to_string(i))))
+				Utils::ToStringIterable(figProperties[i].GetValue()), std::to_string(i)))
 				return;
 
-			if (!Assert(figProperties[i].GetValue().size() == 1, std::format("Tried to read time property in sprite animation asset of key:{} value:{}"
+			if (!Assert(figProperties[i].GetValue().size() == 1, "Tried to read time property in sprite animation asset of key:{} value:{}"
 				"but it contains a value with more than one entries!", figProperties[i].GetKey(),
-				Utils::ToStringIterable<std::vector<std::string>, std::string>(figProperties[i].GetValue()))))
+				Utils::ToStringIterable(figProperties[i].GetValue())))
 				return;
 
 			currentTime = ToFloat(figProperties[i].GetValue()[0]);
@@ -84,9 +84,9 @@ void SpriteAnimationAsset::UpdateAssetFromFile()
 		}
 
 		VisualData maybeVisualData = ParseDefaultVisualData(figProperties[i].GetValue());
-		if (!Assert(!maybeVisualData.IsEmpty(), std::format("Tried to convert fig property value of sprite animation asset of key:{} value:{}"
+		if (!Assert(!maybeVisualData.IsEmpty(), "Tried to convert fig property value of sprite animation asset of key:{} value:{}"
 			"into a visual data using parser but it failed!", figProperties[i].GetKey(),
-			Utils::ToStringIterable<std::vector<std::string>, std::string>(figProperties[i].GetValue()))))
+			Utils::ToStringIterable(figProperties[i].GetValue())))
 			return;
 
 		//LogError(std::format("Began creating new frame with time:{} visual:{}", std::to_string(currentTime), visualData.ToString()));

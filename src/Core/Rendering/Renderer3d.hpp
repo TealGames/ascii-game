@@ -21,6 +21,25 @@ namespace Rendering
     using VertexType = Vertex;
     using InstanceType = Instance;
 
+    enum class RenderCallType : std::uint8_t
+    {
+        Sphere3d            = 0,
+        Box3d              = 1,
+        Plane3d             = 2,
+        PointLight3d        = 3,
+        DirectionLight3d    = 4,
+        Model3d             = 5,
+    };
+    std::string ToString(const RenderCallType call);
+
+    struct RenderCallInvocation
+    {
+        RenderCallType m_Type = RenderCallType::Model3d;
+        Mat4 m_ModelMatrix = {};
+
+        std::string ToString() const;
+    };
+
     struct PointLightData
     {
         WorldPosition3D m_Pos;
@@ -128,6 +147,20 @@ namespace Rendering
         ExtraPointLightData m_ExtraPointLightData[MAX_POINT_LIGHTS] = { };
         LightBlockData m_LightBlock = {};
     };
+
+    struct InstanceBoundsData
+    {
+        AABB3D m_RootWorldBounds;
+        /// <summary>
+        /// The instance index into the renderer instance buffer
+        /// which contains the mesh index and model matrices
+        /// </summary>
+        std::uint32_t m_InstanceIndex;
+
+        WorldPosition3D GetCenter() const;
+        AABB3D GetAABB() const;
+        std::string ToString() const;
+    };
     
     using CoreShaderIntegralType = std::uint8_t;
     enum class CoreShader : CoreShaderIntegralType
@@ -158,6 +191,7 @@ namespace Rendering
     {
         RenderPassType m_PassType = RenderPassType::None;
         FrameBuffer* m_FrameBuffer = nullptr;
+        //std::vector<RenderBatch*> m_Batches = {};
         //Shader* m_Shader = nullptr;
 
         bool UsesDefaultFrameBuffer() const;
@@ -169,8 +203,13 @@ namespace Rendering
         std::uint32_t m_TotalIndices = 0;
         std::uint32_t m_TotalInstances = 0;
         std::uint32_t m_TotalEmissiveObjects = 0;
+        std::vector<RenderCallInvocation> m_RenderCallInvocations;
     };
    
+    using BVHIndexTree = StaticBVHTree<IndexType>;
+    using BVHTriangleTree = StaticBVHTree<Triangle>;
+    using BVHInstanceBoundsTree = StaticBVHTree<InstanceBoundsData>;
+
     class GraphicsManager;
     class Renderer
     {
@@ -178,7 +217,6 @@ namespace Rendering
         //TODO: make flags if many bools here
         bool m_isInit;
         bool m_isRenderStalled;
-        bool m_isStaticGeometryInit;
         size_t m_framesSinceStart;
         size_t m_unmovingFrames;
 
@@ -190,10 +228,18 @@ namespace Rendering
         std::array<Shader*, CORE_SHADER_COUNT> m_coreShaders;
         //StaticFrameRenderData m_staticRenderData
 
+        BVHInstanceBoundsTree m_tlasTree;
+        //The per-instance bounds data which contains that instance's
+        //mesh data transformed into world bounds to be used to create tlas tree
+        //and is temporary/not submitted to the shader
+        std::vector<InstanceBoundsData> m_instanceBoundsData;
+        std::vector<BVHFlatNode> m_blasTrees;
+
         //TODO: the cpu side buffers should probabbly be fixed arrays
-        std::vector<RenderBatch> m_batches;
+        std::vector<RenderBatch> m_geometryBatches;
+        std::vector<RenderBatch> m_debugBatches;
         std::vector<VertexType> m_vertices;
-        std::vector<IndexType> m_vertexIndices;
+        std::vector<IndexType> m_indices;
         std::vector<InstanceType> m_instances;
         std::vector<InstanceMesh> m_instanceMeshes;
         std::vector<MaterialData> m_materialData;
@@ -235,6 +281,8 @@ namespace Rendering
         ShaderStorageBuffer m_instanceMeshStorageBuffer;
         ShaderStorageBuffer m_materialStorageBuffer;
         ShaderStorageBuffer m_emissiveInstanceIndexStorageBuffer;
+        ShaderStorageBuffer m_tlasTreeStorageBuffer;
+        ShaderStorageBuffer m_blasTreesStorageBuffer;
 
         UniformBufferData m_uniformData;
     public:
@@ -249,18 +297,20 @@ namespace Rendering
         size_t CalculateBatchHash(const Shader& shader, const Texture& texture, std::uint32_t totalVertices) const;
         size_t CalculateBatchHash(const RenderBatch& batch) const;
         RenderBatch& CreateBatch(Shader& shader, Material& material, const Vertex* vertexArray, const size_t vertexSize,
-            const IndexType* indexArray, const size_t indicesSize, const Mat4& modelMatrix, const bool isFinished);
+            const IndexType* indexArray, const size_t indexSize, const Mat4& modelMatrix, const BVHTriangleTree* blasTree);
         RenderBatch* TryGetSameDrawBatch(const Shader& shader, const Material& material, std::uint32_t vertexCount);
         void AddCompleteInstanceToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
 
         MaterialData* CreateRuntimeMaterial(const Material& material);
-        void FinishBatch(RenderBatch& batch);
+        void FinishBatch(RenderBatch& batch, const BVHTriangleTree* blasTree);
         void AddVertexToBatch(RenderBatch& batch, const Vertex& vertex);
         void AddVerticesToBatch(RenderBatch& batch, const Vertex* vertexArray, const size_t vertexSize);
         void AddIndicesToBatch(RenderBatch& batch, const std::array<IndexType, 3>& arr);
         void AddIndicesToBatch(RenderBatch& batch, const IndexType* indexArray, const size_t indicesSize);
-        void AddInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
-        void AddMeshInstanceToBatch(RenderBatch& batch);
+        InstanceType* AddInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
+        void AddInstanceMeshBoundsData(const std::uint32_t& instanceIndex);
+        void ConstructBLASTree(BVHTriangleTree& tree, const size_t indexStart, const size_t indexSize);
+        void ConstructTLASTree();
         int GetEnqueuedTextureIndex(Texture* texture);
         void ClearQueuedTextures();
 
@@ -313,12 +363,12 @@ namespace Rendering
         void UpdatePassRenderState(const RenderPassType pass);
 
         //PRECONDITION: material must have a non-null albedo texture
-        void AddCallBox3DMulti(Shader& shader, Material& material, const Vec3& worldSize,
-            const Mat4& modelMatrix);
+        void AddCallBox3DMulti(Shader& shader, Material& material, const Mat4& modelMatrix);
+        void AddCallBox3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix);
 
         //PRECONDITION: material must have a non-null albedo texture
-        void AddCallSphere3DMulti(Shader& shader, Material& material, const float radius,
-            const Mat4& modelMatrix);
+        void AddCallSphere3DMulti(Shader& shader, Material& material, const Mat4& modelMatrix);
+        void AddCallSphere3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix);
 
         /// <summary>
         /// Will calculate the length, width and height of a cube in terms of pixels
@@ -340,11 +390,16 @@ namespace Rendering
         void InitCoreShaders();
         
         void SetSkybox(Texture* texture);
+        bool IntersectsBVH(const WorldPosition3D& rayWorldOrigin, const Vec3& rayDir, const Vertex* outHitVertex);
+        void AddBVHTreeBoundsWireframe();
 
-        void AddCallBox3D(Material* material, const Vec3& size, const Mat4& modelMatrix);
-        void AddCallSphere3D(Material* material, const float radius, const Mat4& modelMatrix);
-        void AddCallTextureSphere3D(Material* material, const float radius, const Mat4& modelMatrix);
-        void AddCallTextureBox3D(Material* material, const Vec3& size, const Mat4& modelMatrix);
+        void AddCallBox3D(Material* material, const Mat4& modelMatrix);
+        void AddCallSphere3D(Material* material, const Mat4& modelMatrix);
+        void AddCallSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation);
+        void AddCallTextureSphere3D(Material* material, const Mat4& modelMatrix);
+        void AddCallTextureSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation);
+
+        void AddCallTextureBox3D(Material* material, const Mat4& modelMatrix);
         void AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix);
         //void AddCallText(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Color color);
 
@@ -353,12 +408,19 @@ namespace Rendering
         //void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Color color);
         //void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Color color);
 
-        void AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const Color color);
-        void AddCallDirectionalLight(const Vec3& dir, const Color color);
+        void AddCallPointLight(const WorldPosition3D& worldPos, const Quat& rotation, const float radius, const Color& color);
+        void AddCallDirectionalLight(const Vec3& dir, const Color& color);
+
+        //void AddCallPoints(PrimitiveType primitiveType, const WorldPosition3D* positions, const size_t& size);
+        void AddCallAABBWifreframe(const Mat4& modelMatrix, const Color& color, const float lineThickness);
+        void AddCallAABBWifreframe(const AABB3D& aabb, const Quat& rotation, const Color& color, const float lineThickness);
 
         void RenderBuffer();
 
         std::string ToStringBatches() const;
-        std::string ToStringAll();
+        std::string ToStringBVH() const;
+        std::string ToStringInstances() const;
+        std::string ToStringMetrics() const;
+        std::string ToStringAll() const;
     };
 }

@@ -36,7 +36,7 @@ void UIButton::SetText(const std::string& text)
 {
 	if (m_textGUI == nullptr)
 	{
-		Assert(false, std::format("Attempted to set text to:{} "
+		LogError(std::format("Attempted to set text to:{} "
 			"for button UI component on entity:{}", text, GetEntity().ToString()));
 		return;
 	}

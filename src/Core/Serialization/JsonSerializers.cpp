@@ -22,8 +22,8 @@ bool HasRequiredProperties(const Json& json, const std::vector<std::string>& pro
 	bool hasAllProperties = true;
 	for (const auto& propertyName : propertyNames)
 	{
-		if (!Assert(json.contains(propertyName), std::format("Tried to parse json: '{}' to type "
-			"but it is missing the property: '{}'", JsonUtils::ToStringProperties(json), propertyName)))
+		if (!Assert(json.contains(propertyName), "Tried to parse json: '{}' to type "
+			"but it is missing the property: '{}'", JsonUtils::ToStringProperties(json), propertyName))
 		{
 			hasAllProperties= false;
 		}
@@ -45,7 +45,7 @@ namespace Utils
 		}
 		catch (const std::exception& e)
 		{
-			Assert(false, std::format("Tried to deserialize vec2:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+			LogError(std::format("Tried to deserialize vec2:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 		}
 	}
 	void to_json(Json& json, const Vec2& vec)
@@ -66,7 +66,7 @@ namespace Utils
 		}
 		catch (const std::exception& e)
 		{
-			Assert(false, std::format("Tried to deserialize vec2int:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+			LogError(std::format("Tried to deserialize vec2int:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 		}
 	}
 	void to_json(Json& json, const Vec2Int& vec)
@@ -88,7 +88,7 @@ void from_json(const Json& json, Vec2& vec)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize vec2:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize vec2:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const Vec2& vec)
@@ -109,7 +109,7 @@ void from_json(const Json& json, Vec2Int& vec)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize vec2int:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize vec2int:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const Vec2Int& vec)
@@ -132,7 +132,7 @@ void from_json(const Json& json, Vec3& vec)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize vec3:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize vec3:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const Vec3& vec)
@@ -157,7 +157,7 @@ void from_json(const Json& json, Quat& q)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize quaternion:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize quaternion:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const Quat& q)
@@ -178,7 +178,7 @@ void from_json(const Json& json, FloatRange& range)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize floatrange:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize floatrange:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const FloatRange& range)
@@ -198,7 +198,7 @@ void from_json(const Json& json, Array2DPosition& pos)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize array2dpos:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize array2dpos:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const Array2DPosition& pos)
@@ -214,9 +214,9 @@ void from_json(const Json& json, RenderLayerType& layer)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize renderlayertype:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize renderlayertype:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
-	//Assert(false, std::format("Layer updating to; {}", ToString(layer)));
+	//LogError(std::format("Layer updating to; {}", ToString(layer)));
 }
 void to_json(Json& json, const RenderLayerType& layer)
 {
@@ -231,8 +231,8 @@ void from_json(const Json& json, Color& color)
 		if (maybeStringProperty.has_value())
 		{
 			std::optional<Color> maybeConstantColor = JsonConstants::TryGetConstantColor(maybeStringProperty.value());
-			if (!Assert(maybeConstantColor.has_value(), std::format("Tried to convert json:'{} to color using constant "
-				"names but it matches no constants!'", JsonUtils::ToStringProperties(json))))
+			if (!Assert(maybeConstantColor.has_value(), "Tried to convert json:'{} to color using constant "
+				"names but it matches no constants!'", JsonUtils::ToStringProperties(json)))
 				return;
 
 			color = maybeConstantColor.value();
@@ -254,7 +254,7 @@ void from_json(const Json& json, Color& color)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize color:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize color:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 
@@ -285,7 +285,7 @@ void from_json(const Json& json, ColorGradientKeyFrame& gradientFrame)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize colorgradient keyframe:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize colorgradient keyframe:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const ColorGradientKeyFrame& gradientFrame)
@@ -301,7 +301,7 @@ void from_json(const Json& json, ColorGradient& gradient)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize colorgradient:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize colorgradient:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const ColorGradient& gradient)
@@ -322,7 +322,7 @@ void from_json(const Json& json, TextChar& textChar)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize text char:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize text char:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const TextChar& textChar)
@@ -345,7 +345,7 @@ void from_json(const Json& json, TextCharArrayPosition& textChar)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize textcharpos:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize textcharpos:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const TextCharArrayPosition& textChar)
@@ -367,7 +367,7 @@ std::optional<Font> TryDeserializeFont(const Json& json)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize font:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize font:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 		return std::nullopt;
 	}
 }
@@ -397,8 +397,8 @@ void from_json(const Json& json, WorldFontProperties& font)
 		{
 			//LogError("Reached font json string");
 			std::optional<Vec2> maybeFontSize = JsonConstants::TryGetConstantFontSize(fontJson.get<std::string>());
-			if (!Assert(maybeFontSize.has_value(), std::format("Tried to convert json: {} to font data but font "
-				"size could not be deduced from '{}' property", JsonUtils::ToStringProperties(json), FONT_SIZE_PROPERTY)))
+			if (!Assert(maybeFontSize.has_value(), "Tried to convert json: {} to font data but font "
+				"size could not be deduced from '{}' property", JsonUtils::ToStringProperties(json), FONT_SIZE_PROPERTY))
 				return;
 			fontSize = maybeFontSize.value();
 		}
@@ -408,7 +408,7 @@ void from_json(const Json& json, WorldFontProperties& font)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize fontdata:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize fontdata:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 	
@@ -449,7 +449,7 @@ void from_json(const Json& json, TextBufferCharPosition2D& textChar)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize text buffer pos:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize text buffer pos:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const TextBufferCharPosition2D& textChar)
@@ -476,7 +476,7 @@ void from_json(const Json& json, AABB2D& aabb)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize aabb:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize aabb:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const AABB2D& aabb)
@@ -502,8 +502,8 @@ void from_json(const Json& json, VisualData& visualData)
 		if (pivotJson.is_string())
 		{
 			std::optional<Vec2> maybePivot = JsonConstants::TryGetConstantPivot(pivotJson.get<std::string>());
-			if (!Assert(maybePivot.has_value(), std::format("Tried to convert json: {} to visual data but pivot "
-				"could not be deduced from '{}' property", JsonUtils::ToStringProperties(json), PIVOT_PROPERTY)))
+			if (!Assert(maybePivot.has_value(), "Tried to convert json: {} to visual data but pivot "
+				"could not be deduced from '{}' property", JsonUtils::ToStringProperties(json), PIVOT_PROPERTY))
 				return;
 			pivotPos = maybePivot.value();
 		}
@@ -513,7 +513,7 @@ void from_json(const Json& json, VisualData& visualData)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize visualdata:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize visualdata:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const VisualData& visualData)
@@ -542,7 +542,7 @@ void from_json(const Json& json, SpriteAnimationFrame& frame)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize sprite animation frame:{} but ran into error:{}",
+		LogError(std::format("Tried to deserialize sprite animation frame:{} but ran into error:{}",
 			JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
@@ -572,7 +572,7 @@ void from_json(const Json& json, SpriteAnimation& anim)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize sprite animation:{} but ran into error:{}", 
+		LogError(std::format("Tried to deserialize sprite animation:{} but ran into error:{}", 
 			JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
@@ -597,7 +597,7 @@ void from_json(const Json& json, SerializableEntity& serializableEntity)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize serializable entity:{} but ran into error:{}", 
+		LogError(std::format("Tried to deserialize serializable entity:{} but ran into error:{}", 
 			JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
@@ -614,7 +614,7 @@ Asset* TryDeserializeAsset(const Json& json)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize asset:{} but ran into error:{}", 
+		LogError(std::format("Tried to deserialize asset:{} but ran into error:{}", 
 			JsonUtils::ToStringProperties(json), e.what()));
 	}
 	return nullptr;
@@ -641,8 +641,8 @@ EntityData* TryDeserializeEntity(const Json& json, const bool& isOptional)
 			try
 			{
 				SerializableEntity serializedEntity = json.get<SerializableEntity>();
-				if (!Assert(SceneManager != nullptr, std::format("Tried to parse entity from serialized entity "
-					"but parser does not contain valid scene manager")))
+				if (!Assert(SceneManager != nullptr, "Tried to parse entity from serialized entity "
+					"but parser does not contain valid scene manager"))
 					return nullptr;
 
 				if (serializedEntity.m_SceneName == EntityData::GLOBAL_SCENE_NAME)
@@ -651,19 +651,19 @@ EntityData* TryDeserializeEntity(const Json& json, const bool& isOptional)
 				}
 
 				Scene* maybeScene = SceneManager->TryGetSceneMutable(serializedEntity.m_SceneName);
-				if (!Assert(maybeScene != nullptr, std::format("Tried to deserialize entity with non global scene: '{}', "
-					"but no scene matches that name", serializedEntity.m_SceneName)))
+				if (!Assert(maybeScene != nullptr, "Tried to deserialize entity with non global scene : '{}', "
+					"but no scene matches that name", serializedEntity.m_SceneName))
 					return nullptr;
 
 				EntityData* maybeEntity = maybeScene->TryGetEntityMutable(serializedEntity.m_EntityName);
 				if (maybeEntity == nullptr)
 				{
-					if (!Assert(maybeScene->GetEntityCount() > 0, std::format("Tried to deserialize entity with non glboal scene:'{}', "
+					if (!Assert(maybeScene->GetEntityCount() > 0, "Tried to deserialize entity with non glboal scene:'{}', "
 						"but no entities exist in that scene. It could be because that scene was no loaded yet "
-						"(and another scene tried to create a reference to an entity)", serializedEntity.m_SceneName)))
+						"(and another scene tried to create a reference to an entity)", serializedEntity.m_SceneName))
 						return nullptr;
 
-					Assert(false, std::format("Tried to deserialize entity with non glboal scene:'{}', "
+					LogError(std::format("Tried to deserialize entity with non glboal scene:'{}', "
 						"but no entities with that name exist!", serializedEntity.m_SceneName));
 					return nullptr;
 				}
@@ -672,7 +672,7 @@ EntityData* TryDeserializeEntity(const Json& json, const bool& isOptional)
 			}
 			catch (const std::exception& e)
 			{
-				Assert(false, std::format("Tried to deserialize entity:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+				LogError(std::format("Tried to deserialize entity:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 				return nullptr;
 			}
 		};
@@ -685,7 +685,7 @@ EntityData* TryDeserializeEntity(const Json& json, const bool& isOptional)
 			{
 				return deserializationAction(json);
 			});
-		/*Assert(false, std::format("Deserialized entity jsoN:{} to has value:{} entity value:{}", JsonUtils::ToStringProperties(json), std::to_string(maybeEntity.has_value()), 
+		/*LogError(std::format("Deserialized entity jsoN:{} to has value:{} entity value:{}", JsonUtils::ToStringProperties(json), std::to_string(maybeEntity.has_value()), 
 			maybeEntity.has_value()? (maybeEntity.value()!=nullptr? maybeEntity.value()->ToString() : "NULL") : "NO VALUE"));*/
 
 		if (!maybeEntity.has_value()) return nullptr;
@@ -695,9 +695,9 @@ EntityData* TryDeserializeEntity(const Json& json, const bool& isOptional)
 	}
 
 	EntityData* entityPtr = deserializationAction(json);
-	if (!Assert(entityPtr != nullptr, std::format("Tried to deserialize entity for json:{} "
+	if (!Assert(entityPtr != nullptr, "Tried to deserialize entity for json:{} "
 		"but the resulting entity is NULLPTR which is not allowed since it was called as NON OPTIONAL",
-		JsonUtils::ToStringProperties(json))))
+		JsonUtils::ToStringProperties(json)))
 		return nullptr;
 
 	return entityPtr;
@@ -712,12 +712,12 @@ Json TrySerializeEntity(const EntityData* entity, const bool& isOptional)
 				return SerializableEntity(entity->m_SceneName, entity->m_Name);
 			});
 
-		//Assert(false, std::format("Serialized optioan entity: {} is:{}", entity!=nullptr? entity->ToString() : "NULL", JsonUtils::ToStringProperties(json)));
+		//LogError(std::format("Serialized optioan entity: {} is:{}", entity!=nullptr? entity->ToString() : "NULL", JsonUtils::ToStringProperties(json)));
 		return json;
 	}
 
-	if (!Assert(entity != nullptr, std::format("Tried to serialize entity to json but entity is "
-		"NULL even with a NON OPTIOANL functional call")))
+	if (!Assert(entity != nullptr, "Tried to serialize entity to json but entity is "
+		"NULL even with a NON OPTIOANL functional call"))
 		return {};
 
 	return SerializableEntity{entity->m_SceneName, entity->m_Name};
@@ -748,7 +748,7 @@ void from_json(const Json& json, SerializableComponent& serializableComponent)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize serializable component:{} but ran into error:{}", 
+		LogError(std::format("Tried to deserialize serializable component:{} but ran into error:{}", 
 			JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
@@ -764,9 +764,9 @@ void from_json(const Json& json, ComponentReference& fieldReference)
 	try
 	{
 		SerializableComponent component = json.get<SerializableComponent>();
-		if (!Assert(!component.IsComponentOfEntitySelf(), std::format("Tried to deserialize component reference from json:{} "
+		if (!Assert(!component.IsComponentOfEntitySelf(), "Tried to deserialize component reference from json:{} "
 			"but its storage as serializable component resulted in a self component serialization which is not allowed", 
-			JsonUtils::ToStringProperties(json))))
+			JsonUtils::ToStringProperties(json)))
 			return;
 
 		EntityData* maybeEntity = SceneManager->TryGetEntityMutable(component.m_SerializedEntity.m_SceneName,
@@ -777,7 +777,7 @@ void from_json(const Json& json, ComponentReference& fieldReference)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize component reference:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize component reference:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const ComponentReference& fieldReference)
@@ -803,7 +803,7 @@ void from_json(const Json& json, SerializableField& serializableField)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize serializable field:{} but ran into error:{}", 
+		LogError(std::format("Tried to deserialize serializable field:{} but ran into error:{}", 
 			JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
@@ -827,7 +827,7 @@ void from_json(const Json& json, ComponentFieldReference& fieldReference)
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize component field reference:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize component field reference:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }	
 void to_json(Json& json, const ComponentFieldReference& fieldReference)
@@ -862,13 +862,13 @@ void from_json(const Json& json, AnimationPropertyVariant& variant)
 		}
 		else
 		{
-			Assert(false, std::format("Tried to deserialize json:{} to animtion property variant, "
+			LogError(std::format("Tried to deserialize json:{} to animtion property variant, "
 				"but could not find actions for type:{}", JsonUtils::ToStringProperties(json), propertyType));
 		}
 	}
 	catch (const std::exception& e)
 	{
-		Assert(false, std::format("Tried to deserialize animtion property variant:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
+		LogError(std::format("Tried to deserialize animtion property variant:{} but ran into error:{}", JsonUtils::ToStringProperties(json), e.what()));
 	}
 }
 void to_json(Json& json, const AnimationPropertyVariant& var)
@@ -891,7 +891,7 @@ void to_json(Json& json, const AnimationPropertyVariant& var)
 	}
 	else
 	{
-		Assert(false, std::format("Tried to serialize animation property variatn to json, "
+		LogError(std::format("Tried to serialize animation property variatn to json, "
 			"but could not find actions for its type"));
 	}
 }

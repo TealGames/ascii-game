@@ -1,8 +1,7 @@
 #pragma once
 #include "Utils/Data/Vec2Type.hpp"
 #include <optional>
-#include <string>
-#include "Utils/Data/DirectionEnums.hpp"
+#include "Utils/Data/Enums.hpp"
 
 bool IsAngledDirection(const MoveDirection& dir);
 

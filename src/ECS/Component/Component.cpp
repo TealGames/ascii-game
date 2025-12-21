@@ -108,7 +108,7 @@ std::string Component::ToStringFields() const
 	{
 		fieldStrings.emplace_back(field.ToString());
 	}
-	return Utils::ToStringIterable<std::vector<std::string>, std::string>(fieldStrings);
+	return Utils::ToStringIterable(fieldStrings);
 }
 
 bool Component::Validate()

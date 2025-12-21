@@ -16,12 +16,6 @@ NormalizedPosition::NormalizedPosition() :
 NormalizedPosition::NormalizedPosition(const Vec2& pos) : 
 	NormalizedPosition(pos.m_X, pos.m_Y) {}
 
-//bool NormalizedPosition::IsValidPos() const
-//{
-//	return m_X >=0 && m_X <= 1 
-//		&& 0 <= m_pos.m_Y && m_pos.m_Y <= 1;
-//}
-
 NormalizedPosition::NormalizedPosition(const float& x, const float& y) : m_X(x), m_Y(y) {}
 NormalizedPosition::NormalizedPosition(const NormalizedValue x, const NormalizedValue y) 
 	: m_X(x), m_Y(y) {}
@@ -31,26 +25,11 @@ NormalizedPosition::NormalizedPosition(const NormalizedValue x, const float y) :
 
 const Vec2 NormalizedPosition::GetPos() const
 {
-	/*if (!Assert(IsValidPos(), std::format("Tried to retrieve normalized pos IMMUTABLE, "
-		"but it is an invalid state: {}", m_pos.ToString())))
-		throw std::invalid_argument("Invalid normalized pos state");*/
-
 	return Vec2(m_X.GetValue(), m_Y.GetValue());
 }
-//Vec2& NormalizedPosition::GetPosMutable()
-//{
-//	if (!Assert(IsValidPos(), std::format("Tried to retrieve normalized pos MUTABLE, "
-//		"but it is an invalid state: {}", m_pos.ToString())))
-//		throw std::invalid_argument("Invalid normalized pos state");
-//
-//	return m_pos;
-//}
 
 const float NormalizedPosition::GetX() const { return m_X.GetValue(); }
 const float NormalizedPosition::GetY() const { return m_Y.GetValue(); }
-
-//float& NormalizedPosition::GetXMutable() { return m_pos.m_X; }
-//float& NormalizedPosition::GetYMutable() { return m_pos.m_Y; }
 
 void NormalizedPosition::SetPos(const Vec2& relativePos)
 {
@@ -59,23 +38,6 @@ void NormalizedPosition::SetPos(const Vec2& relativePos)
 	m_X = relativePos.m_X;
 	m_Y = relativePos.m_Y;
 }
-
-//void NormalizedPosition::SetPosX(const float x)
-//{
-//	m_X = x;
-//}
-//void NormalizedPosition::SetPosY(const float y)
-//{
-//	m_Y = y;
-//}
-//void NormalizedPosition::SetPosDeltaX(const float deltaX)
-//{
-//	SetPosX(m_X + deltaX);
-//}
-//void NormalizedPosition::SetPosDeltaY(const float deltaY)
-//{
-//	SetPosY(m_pos.m_Y + deltaY);
-//}
 
 bool NormalizedPosition::IsZero() const 
 { 
@@ -105,12 +67,7 @@ NormalizedPosition NormalizedPosition::operator*(const float& scalar) const
 }
 NormalizedPosition NormalizedPosition::operator/(const float& scalar) const
 {
-	if (!Assert(scalar != 0,
-		std::format("Tried to divide a normalized position: {} by a 0 value scalar", ToString())))
-	{
-		return *this;
-	}
-
+	ENGINE_ASSERT(scalar != 0, "Tried to divide a normalized position: {} by a 0 value scalar", ToString());
 	return NormalizedPosition(m_X / scalar, m_Y / scalar);
 }
 

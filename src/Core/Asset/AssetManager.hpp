@@ -77,8 +77,8 @@ namespace AssetManagement
 				emplaceSuccess = allFileIt->second.emplace(path.string()).second;
 			}
 
-			Assert(emplaceSuccess, std::format("Attempted to register asset with argument path:{} (asset path:{})"
-				"to all files storage, but it failed to be emplaced", path.string(), path.string()));
+			Assert(emplaceSuccess, "Attempted to register asset with argument path:{} (asset path:{})"
+				"to all files storage, but it failed to be emplaced", path.string(), path.string());
 		}
 
 		/// <summary>
@@ -191,8 +191,8 @@ namespace AssetManagement
 		requires IsAssetType<T>
 		void RegisterAssets(std::vector<T*>* outTypeAssetsCreated)
 		{
-			if (!Assert(IO::DoesPathExist(ASSET_PATH), std::format("Tried to add all assets at path:{} "
-				"but path is invalid", ASSET_PATH.string())))
+			if (!Assert(IO::DoesPathExist(ASSET_PATH), "Tried to add all assets at path:{} "
+				"but path is invalid", ASSET_PATH.string()))
 				return;
 
 			std::string assetRelPath = "";
@@ -227,7 +227,7 @@ namespace AssetManagement
 					else if (creationResult == AssetCreationResult::FailedToCreate)
 						LogError(std::format("Tried to add asset at path:'{}' but failed to create asset", file.path().string()));
 					else
-						Assert(false, std::format("Encountered unidentied asset creation error for asset:'{}'", file.path().string()));
+						Assert(false, "Encountered unidentied asset creation error for asset:'{}'", file.path().string());
 				}
 				else
 				{
@@ -407,8 +407,8 @@ namespace AssetManagement
 		requires IsAssetType<T>
 		std::vector<T*> GetAssetsOfTypeMutable(const std::filesystem::path& assetDirectory)
 		{
-			if (!Assert(IsValidAssetPath(assetDirectory), std::format("Attempted to get assets of type:{} from path:{} MUTABLE"
-				"but it is not a valid asset path", Utils::ToStringTypeName<T>(), assetDirectory.string())))
+			if (!Assert(IsValidAssetPath(assetDirectory), "Attempted to get assets of type:{} from path:{} MUTABLE"
+				"but it is not a valid asset path", Utils::ToStringTypeName<T>(), assetDirectory.string()))
 				return {};
 
 			const std::string targetAssetPath = GetAbsoluteAssetPath(assetDirectory).string();
@@ -427,8 +427,8 @@ namespace AssetManagement
 		{
 			const std::string tTypeName = Utils::ToStringTypeName<T>();
 			std::vector<T*> assets = GetAssetsOfTypeMutable<T>();
-			if (!Assert(!assets.empty(), std::format("Tried to init dependencies for type:{} "
-				"but no assets of that type were found", tTypeName)))
+			if (!Assert(!assets.empty(), "Tried to init dependencies for type:{} "
+				"but no assets of that type were found", tTypeName))
 				return;
 
 			for (auto& asset : assets)

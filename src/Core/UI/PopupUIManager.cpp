@@ -64,7 +64,7 @@ PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const UIRect
 		std::optional<UIRect> maybeRect = m_hierarchy->TryCalculateRenderRect(*(popupInfo.m_UI->m_Container));
 		if (maybeRect == std::nullopt)
 		{
-			Assert(false, std::format("Attemtped to open popup at (simple) but could not find its rect"));
+			LogError(std::format("Attemtped to open popup at (simple) but could not find its rect"));
 			return nullptr;
 		}
 

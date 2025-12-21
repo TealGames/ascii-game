@@ -92,7 +92,7 @@ const Rendering::Texture& TextureAsset::GetTexture() const
 {
 	if (!IsValidTexture())
 	{
-		Assert(false, std::format("Attempted to get texture from asset:{} but is invalid", ToString()));
+		Assert(false, "Attempted to get texture from asset:{} but is invalid", ToString());
 		throw std::invalid_argument("Invalid texture state");
 	}
 	return m_texture;
@@ -101,7 +101,7 @@ Rendering::Texture& TextureAsset::GetTextureMutable()
 {
 	if (!IsValidTexture())
 	{
-		Assert(false, std::format("Attempted to get texture from asset:{} but is invalid", ToString()));
+		Assert(false, "Attempted to get texture from asset:{} but is invalid", ToString());
 		throw std::invalid_argument("Invalid texture state");
 	}
 	return m_texture;

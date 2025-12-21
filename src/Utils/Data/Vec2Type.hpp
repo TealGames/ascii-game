@@ -1,12 +1,9 @@
 #pragma once
-#include <string>
 #include <cmath>
 #include <numbers>
 #include "Utils/Data/VecBase.hpp"
-#include "VectorEnums.hpp"
 #include "Utils/Math.hpp"
 #include "Utils/ToStringFunctions.hpp"
-#include "Utils/Data/DirectionEnums.hpp"
 
 template<typename T>
 requires std::is_arithmetic_v<T>
@@ -29,20 +26,20 @@ public:
 	Vec(const Vec&) = default;
 	Vec(Vec&&) noexcept = default;
 
-	Vec GetX() const { return Vec(m_X, 0); }
-	Vec GetY() const { return Vec(0, m_Y); }
+	constexpr Vec GetX() const { return Vec(m_X, 0); }
+	constexpr Vec GetY() const { return Vec(0, m_Y); }
 
-	Vec<int, 2> AsInt() const requires (std::is_floating_point_v<T>)
+	constexpr Vec<int, 2> AsInt() const requires (std::is_floating_point_v<T>)
 	{
 		return Vec<int, 2>(m_X, m_Y);
 	}
-	Vec<float, 2> AsFloat() const requires (std::is_integral_v<T>)
+	constexpr Vec<float, 2> AsFloat() const requires (std::is_integral_v<T>)
 	{
 		return Vec<float, 2>(m_X, m_Y);
 	}
 
-	static inline constexpr Vec One() { return Vec{ 1, 1 }; }
-	static inline constexpr Vec Zero() { return Vec{ 0, 0 }; }
+	static constexpr Vec One() { return Vec{ 1, 1 }; }
+	static constexpr Vec Zero() { return Vec{ 0, 0 }; }
 
 	const T* GetMemPointer() const { return &m_X; }
 	T* GetMemPointerMutable() { return &m_X; }
@@ -50,7 +47,8 @@ public:
 	float GetAngle(const AngleMode& angleMode) const
 	{
 		//Just in case to prevent implementations returning undefined
-		if (Utils::ApproximateEqualsF(GetMagnitude(), 0)) return 0;
+		if (Utils::ApproximateEqualsF(GetMagnitude(), 0))
+			return 0;
 
 		float rad = std::atan2(m_Y, m_X);
 		//Since atan2 gives you result in [-pi/2, pi/2) we can flip negaative rads
@@ -60,7 +58,8 @@ public:
 		//which would not make sense to add 2pi to second quadrant angle. Also, this means all are in terms of -90, 90
 		//which would also make the third quadrant wrong as well
 		if (rad < 0) rad += 2 * std::numbers::pi;
-		if (angleMode == AngleMode::Degrees) return Utils::ToDegrees(rad);
+		if (angleMode == AngleMode::Degrees) 
+			return Utils::ToDegrees(rad);
 
 		return rad;
 	}
@@ -82,9 +81,18 @@ public:
 	{
 		const float magnitude = GetMagnitude();
 		if (Utils::ApproximateEqualsF(magnitude, 0))
-			return Vec::Zero();
+			return {};
 
 		return Vec(m_X / magnitude, m_Y / magnitude);
+	}
+	void Normalize()
+	{
+		const float magnitude = GetMagnitude();
+		if (Utils::ApproximateEqualsF(magnitude, 0))
+			return;
+
+		m_X /= magnitude;
+		m_Y /= magnitude;
 	}
 
 	bool IsUnitVector() const
@@ -177,41 +185,25 @@ public:
 	{
 		if constexpr (std::is_floating_point_v<T>)
 		{
-			if (Utils::ApproximateEqualsF(other.m_X, 0) || Utils::ApproximateEqualsF(other.m_Y, 0))
-			{
-				throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
-				return *this;
-			}
+			ENGINE_ASSERT(!Utils::ApproximateEqualsF(other.m_X, 0) && !Utils::ApproximateEqualsF(other.m_Y, 0), 
+				"Tried to divide a vector2: {} by a 0-value vector:{}", ToString(), other.ToString());
 		}
 		else
 		{
-			if (other.m_X == 0 || other.m_Y == 0)
-			{
-				throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
-				return *this;
-			}
+			ENGINE_ASSERT(other.m_X != 0 && other.m_Y != 0,
+				"Tried to divide a vector2: {} by a 0-value vector:{}", ToString(), other.ToString());
 		}
 
 		return { m_X / other.m_X, m_Y / other.m_Y };
 	}
 	constexpr Vec operator/(const float scalar) const requires (std::same_as<T, float>)
 	{
-		if (Utils::ApproximateEqualsF(scalar,0))
-		{
-			throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0 value scalar", ToString()));
-			return *this;
-		}
-
+		ENGINE_ASSERT(!Utils::ApproximateEqualsF(scalar, 0), "Tried to divide a vector2: {} by a 0 value scalar", ToString());
 		return Vec(m_X / scalar, m_Y / scalar);
 	}
 	constexpr Vec operator/(const int scalar) const requires (std::same_as<T, int>)
 	{
-		if (scalar == 0)
-		{
-			throw std::invalid_argument(std::format("Tried to divide a vector: {} by a 0 value scalar", ToString()));
-			return *this;
-		}
-
+		ENGINE_ASSERT(scalar != 0, "Tried to divide a vector2: {} by a 0 value scalar", ToString());
 		return Vec{ m_X / scalar, m_Y / scalar };
 	}
 

@@ -44,7 +44,7 @@ NormalizedValue NormalizedValue::operator/(const NormalizedValue& other) const
 {
 	if (other.m_value == 0)
 	{
-		Assert(false, std::format("Attempted to divide a normalized value:{} "
+		LogError(std::format("Attempted to divide a normalized value:{} "
 			"by a zero value:{}", ToString(), other.ToString()));
 		return *this;
 	}
@@ -54,7 +54,7 @@ NormalizedValue NormalizedValue::operator/(const float& scalar) const
 {
 	if (scalar == 0)
 	{
-		Assert(false, std::format("Attempted to divide a normalized value:{} "
+		LogError(std::format("Attempted to divide a normalized value:{} "
 			"by a zero scalar:{}", ToString(), std::to_string(scalar)));
 		return *this;
 	}

@@ -82,10 +82,21 @@ public:
 	Vec GetNormalized() const
 	{
 		const float magnitude = GetMagnitude();
-		if (Utils::ApproximateEqualsF(magnitude, 0))
-			return Vec::Zero();
+		if (Utils::ApproximateEqualsF(magnitude, 0)) 
+			return {};
 
 		return Vec(m_X / magnitude, m_Y / magnitude, m_Z / magnitude, m_W / magnitude);
+	}
+	void Normalize()
+	{
+		const float magnitude = GetMagnitude();
+		if (Utils::ApproximateEqualsF(magnitude, 0))
+			return;
+
+		m_X /= magnitude;
+		m_Y /= magnitude;
+		m_Z /= magnitude;
+		m_W /= magnitude;
 	}
 
 	bool IsUnitVector() const { return Utils::ApproximateEqualsF(GetMagnitude(), 1); }
@@ -101,21 +112,12 @@ public:
 
 	T& operator[](const size_t index)
 	{
-		if (index >= 4)
-		{
-			LogError(std::format("Invalid vec4 index:{}", index));
-			throw std::invalid_argument(std::format("Invalid vec4 index:{}", index));
-		}
-			
+		ENGINE_ASSERT(index < 4, "Invalid vec4 index:{}", index);
 		return m_Components[index];
 	}
 	const T& operator[](const size_t index) const
 	{
-		if (index >= 4)
-		{
-			LogError(std::format("Invalid vec4 index:{}", index));
-			throw std::invalid_argument(std::format("Invalid vec4 index:{}", index));
-		}
+		ENGINE_ASSERT(index < 4, "Invalid vec4 index:{}", index);
 		return m_Components[index];
 	}
 
@@ -161,48 +163,30 @@ public:
 	{
 		return Vec{ m_X * scalar, m_Y * scalar, m_Z * scalar, m_W * scalar };
 	}
-
 	Vec operator/(const Vec& other) const
 	{
 		if constexpr (std::is_floating_point_v<T>)
 		{
-			if (Utils::ApproximateEqualsF(m_X, 0) || Utils::ApproximateEqualsF(other.m_Y, 0)
-				|| Utils::ApproximateEqualsF(other.m_Z, 0), Utils::ApproximateEqualsF(other.m_W, 0))
-			{
-				LogError(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
-				throw std::invalid_argument("Divide vec4 by 0");
-			}
+			ENGINE_ASSERT(!Utils::ApproximateEqualsF(other.m_X, 0) && !Utils::ApproximateEqualsF(other.m_Y, 0) 
+				&& !Utils::ApproximateEqualsF(other.m_Z, 0) && !Utils::ApproximateEqualsF(other.m_W, 0),
+				"Tried to divide a vec4: {} by a 0 value vector:{}", ToString(), other.ToString());
 		}
 		else
 		{
-			if (other.m_X == 0 || other.m_Y == 0 || other.m_Z == 0 || other.m_W == 0)
-			{
-				LogError(std::format("Tried to divide a vector: {} by a 0-value vector:{}", ToString(), other.ToString()));
-				throw std::invalid_argument("Divide vec4 by 0");
-			}
+			ENGINE_ASSERT(other.m_X != 0 && other.m_Y != 0 && other.m_Z != 0 && other.m_W != 0,
+				"Tried to divide a vec4: {} by a 0 value vector:{}", ToString(), other.ToString());
 		}
 		
-
 		return Vec{ m_X / other.m_X, m_Y / other.m_Y, m_Z / other.m_Z, m_W / other.m_W };
 	}
 	Vec operator/(const float scalar) const
 	{
-		if (Utils::ApproximateEqualsF(scalar, 0))
-		{
-			LogError(std::format("Tried to divide a vector: {} by a 0 float scalar:{}", ToString(), scalar));
-			throw std::invalid_argument("Divide vec4 by 0");
-		}
-
+		ENGINE_ASSERT(!Utils::ApproximateEqualsF(scalar, 0), "Tried to divide a vec4: {} by a 0 value float scalar", ToString());
 		return Vec{ m_X / scalar, m_Y / scalar, m_Z / scalar, m_W / scalar };
 	}
 	Vec operator/(const int scalar) const
 	{
-		if (scalar == 0)
-		{
-			LogError(std::format("Tried to divide a vector: {} by a 0 int scalar:{}", ToString(), scalar));
-			throw std::invalid_argument("Divide vec4 by 0");
-		}
-
+		ENGINE_ASSERT(!Utils::ApproximateEqualsF(scalar, 0), "Tried to divide a vec4: {} by a 0 value int scalar", ToString());
 		return Vec{ m_X / scalar, m_Y / scalar, m_Z / scalar, m_W / scalar };
 	}
 	Vec& operator/=(const float scalar)

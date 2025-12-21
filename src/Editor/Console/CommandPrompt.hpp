@@ -27,13 +27,9 @@ public:
 	CommandPrompt(const std::string& commandName, const std::vector<std::string>& argNames, const std::function<void(Args...)>& action) : 
 		ICommandPrompt(commandName), m_action(action)
 	{
-		if (!Assert(GetArgCount() == argNames.size(), std::format("Tried to create a command prompt "
+		ENGINE_ASSERT(GetArgCount() == argNames.size(), "Tried to create a command prompt "
 			"but the arg count names: {} does not match total args: {}",
-			std::to_string(argNames.size()), std::to_string(GetArgCount()))))
-		{
-			throw std::invalid_argument(std::format("ARG COUNT: {} does not match NAMES: {}", 
-				std::to_string(GetArgCount()), std::to_string(argNames.size())));
-		}
+			std::to_string(argNames.size()), std::to_string(GetArgCount()));
 
 		size_t argNameIndex = 0;
 		(m_args.emplace(argNames[argNameIndex++], &typeid(Args)), ...);

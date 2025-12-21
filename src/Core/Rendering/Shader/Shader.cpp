@@ -434,8 +434,7 @@ namespace Rendering
 	std::string Shader::ToString() const
 	{
 		return std::format("[Shader Id:{} Source1:\n{}\nSource2:{}\nUnboundUniforms:{}\nUniformData:{}]", 
-			m_id, m_sourceCode[0], m_sourceCode[1], m_unboundBuffers,
-			Utils::ToStringIterable<ShaderVarNameType, ShaderGlobalVarReflectionInfo>(m_globalVarData));
+			m_id, m_sourceCode[0], m_sourceCode[1], m_unboundBuffers, Utils::ToStringIterable(m_globalVarData));
 	}
 
 	Shader& Shader::operator=(Shader&& other) noexcept

@@ -20,9 +20,7 @@ TriggerData::TriggerData(const CollisionBoxData* collider) :
 
 const CollisionBoxData& TriggerData::GetCollisionBox() const
 {
-	if (!Assert(m_collider != nullptr, std::format("Tried to get collider but it is NULL")))
-		throw std::invalid_argument("Invalid collider box state");
-
+	ENGINE_ASSERT(m_collider != nullptr, "Tried to get collider but it is NULL");
 	return *m_collider;
 }
 

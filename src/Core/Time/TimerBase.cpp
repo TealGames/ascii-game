@@ -45,8 +45,7 @@ TimerBase::~TimerBase()
 
 void TimerBase::Start()
 {
-	if (!Assert(!m_isRunning, 
-		std::format("Tried to START a timer while it is already running!"))) 
+	if (!Assert(!m_isRunning, "Tried to START a timer while it is already running!")) 
 		return;
 
 	m_isRunning = true;
@@ -56,8 +55,7 @@ void TimerBase::Start()
 
 TimerResult TimerBase::Stop()
 {
-	if (!Assert(m_isRunning,
-		std::format("Tried to STOP a timer while it is not running!")))
+	if (!Assert(m_isRunning, "Tried to STOP a timer while it is not running!"))
 		return {};
 
 	m_endTimeHighRes = std::chrono::high_resolution_clock().now();

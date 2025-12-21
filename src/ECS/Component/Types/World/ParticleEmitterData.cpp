@@ -28,13 +28,13 @@ ParticleEmitterData::ParticleEmitterData(const char& c, const FloatRange& lifeTi
 	m_speedRange(speedRange), m_spawnRate(spawnRate), m_renderLayers(renderLayers)
 {
 	//LogWarning(std::format("Created particle with capacity:{}", m_particles.GetMaxCapacity()));
-	Assert(m_particles.GetMaxCapacity()!=0, std::format("Attempted to create particle emiiter with char:{} "
-		"but max particle approximation for reserving particle pool size was: {}", c, m_particles.GetMaxCapacity()));
+	Assert(m_particles.GetMaxCapacity()!=0, "Attempted to create particle emiiter with char:{} "
+		"but max particle approximation for reserving particle pool size was: {}", c, m_particles.GetMaxCapacity());
 }
 
 WorldPosition3D ParticleEmitterData::GetOriginWorldPos() const
 {
-	return GetEntity().GetTransform().GetGlobalPos() + m_originTransformOffset;
+	return GetEntity().GetTransform().GetWorldPos() + m_originTransformOffset;
 }
 void ParticleEmitterData::SetSpawnRate(const float& value)
 {

@@ -9,12 +9,12 @@ Asset::Asset(const std::filesystem::path& path, const bool hasDependencies)
 {
 	if (path.empty()) return;
 
-	if (!Assert(std::filesystem::exists(m_absolutePath), std::format("Tried to create an asset at path: {} "
-		"but that path does not exist", m_absolutePath.string())))
+	if (!Assert(std::filesystem::exists(m_absolutePath), "Tried to create an asset at path: {} "
+		"but that path does not exist", m_absolutePath.string()))
 		return;
 
-	if (!Assert(m_absolutePath.has_filename(), std::format("Tried to create an asset at path: {} "
-		"but that path does not lead to a file", m_absolutePath.string())))
+	if (!Assert(m_absolutePath.has_filename(), "Tried to create an asset at path: {} "
+		"but that path does not lead to a file", m_absolutePath.string()))
 		return;
 
 	m_name = ExtractNameFromFile(m_absolutePath);

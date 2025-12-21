@@ -29,7 +29,8 @@ public:
 	constexpr Quat() : Quat(Identity()) {}
 	constexpr Quat(const float x, const float y, const float z, const float w) :
 		m_X(x), m_Y(y), m_Z(z), m_W(w) {}
-	Quat(const Vec3& radianEulerAngles) : Quat(ToQuaternion(radianEulerAngles)) {}
+	Quat(const Vec3& radianEulerAngles);
+	Quat(const Mat3& matrix);
 
 	static inline constexpr Quat Identity()
 	{
@@ -40,17 +41,10 @@ public:
 	const float* GetMemPointer() const;
 
 	Quat GetNormalized() const;
+	void Normalize();
 
 	Vec3 ToRadians() const;
 	Vec3 ToDegrees() const;
-	static Quat ToQuaternion(const Vec3& radianEulerAngles);
-	/// <summary>
-	/// Will create a quaternion by applying a radian rotation around the given axis
-	/// </summary>
-	/// <param name="axis"></param>
-	/// <param name="radianAmount"></param>
-	/// <returns></returns>
-	static Quat FromAxisAngle(const Vec3& axis, const float radianRotation);
 
 	void SetAsRadians(const Vec3& radianEulerAngle);
 	void SetAsDegrees(const Vec3& degreeEulerAngle);
@@ -82,3 +76,23 @@ public:
 
 	std::string ToString(const AngleType angleType = AngleType::Euler) const;
 };
+
+void FromEulerAngles(Quat& quaternion, const Vec3& radianEulerAngles);
+/// <summary>
+/// Will set the quaternion from the matrix 
+/// NOTE: each COL MUST be NORMALIZED
+/// </summary>
+/// <param name="quaternion"></param>
+/// <param name="matrix"></param>
+void FromRotationMatrix(Quat& quaternion, const Mat3& matrix);
+/// <summary>
+/// Will set the quaternion by applying a radian rotation around the given axis
+/// </summary>
+/// <param name="axis"></param>
+/// <param name="radianAmount"></param>
+/// <returns></returns>
+void FromAxisAngle(Quat& quaternion, const Vec3& axis, const float radianRotation);
+
+Quat ToQuaternion(const Vec3& radianEulerAngles);
+Quat ToQuaternion(const Mat3& matrix);
+Quat ToQuaternion(const Vec3& axis, const float radianRotation);

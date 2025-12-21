@@ -2,6 +2,7 @@
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Asset/MaterialAsset.hpp"
+#include "Core/Asset/Model3dAsset.hpp"
 #include "RenderingBackend.hpp"
 
 //#define SKIP_COMPUTE_SHADER_INIT
@@ -14,9 +15,10 @@ namespace Rendering
 	static const char* DEFAULT_ALBEDO_PATH = "textures/base_albedo.png";
 	static const char* DEFAULT_MATERIAL_PATH = "materials/default.mater";
 
+	static const char* BASIC_MESH_PATHS[] = {"models/basic/cube.fbx", "models/basic/sphere.fbx"};
 
 	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager)
-		: m_assetManager(&assetManager), m_defaultAlbedo(nullptr), m_defaultMaterial(nullptr), m_shaders(),
+		: m_assetManager(&assetManager), m_defaultAlbedo(nullptr), m_defaultMaterial(nullptr), m_shaders(), m_materials(), m_basicMeshes(),
 		m_shaderBlockBuffers(), m_shaderGlobalDefines({}), m_singleUniformShaderMap() {}
 
 	void GraphicsManager::InitGraphicResources()
@@ -123,6 +125,12 @@ namespace Rendering
 				m_defaultMaterial = materialAsset;
 		}
 
+		for (size_t i = 0; i < BASIC_MESHES_COUNT; i++)
+		{
+			m_basicMeshes.emplace(static_cast<BasicMeshType>(i),
+				&m_assetManager->TryGetTypeAssetFromPathMutable<Model3dAsset>(BASIC_MESH_PATHS[i])->GetModelMutable());
+		}
+
 		m_defaultAlbedo= m_assetManager->TryGetTypeAssetFromPathMutable<TextureAsset>(DEFAULT_ALBEDO_PATH);
 		if (m_defaultAlbedo == nullptr)
 		{
@@ -157,6 +165,19 @@ namespace Rendering
 	{
 		auto it = m_shaders.find(name.c_str());
 		if (it == m_shaders.end()) return nullptr;
+		return it->second;
+	}
+
+	const Model3d* GraphicsManager::TryGetBasicMesh(const BasicMeshType mesh) const
+	{
+		auto it = m_basicMeshes.find(mesh);
+		if (it == m_basicMeshes.end()) return nullptr;
+		return it->second;
+	}
+	Model3d* GraphicsManager::TryGetBasicMeshMutable(const BasicMeshType mesh)
+	{
+		auto it = m_basicMeshes.find(mesh);
+		if (it == m_basicMeshes.end()) return nullptr;
 		return it->second;
 	}
 	//Material* GraphicsManager::CreateMaterial(const Color& baseColor, const Color& emissiveColor, const float alpha)

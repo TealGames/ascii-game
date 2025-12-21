@@ -85,7 +85,7 @@ bool CollisionRegistry::HasCollision(const CollisionBoxData& box) const
 bool CollisionRegistry::TryAddCollision(const CollisionPair& pair)
 {
 	if (!Assert(pair.m_CollisionBoxA != nullptr && pair.m_CollisionBoxB != nullptr,
-		std::format("Tried to create add collision to registry but either one or both collision boxes are NULL")))
+		"Tried to create add collision to registry but either one or both collision boxes are NULL"))
 		return false;
 
 	//We attempt to remove it a collision between the same two objects already exists

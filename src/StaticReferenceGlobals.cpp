@@ -20,7 +20,7 @@ namespace StaticReferenceGlobals
 		FontAsset* font= AssetManager->TryGetTypeAssetFromPathMutable<FontAsset>(DEFAULT_FONT_PATH);
 		if (font == nullptr)
 		{
-			Assert(false, std::format("Tried to get the default font from globals, "
+			LogError(std::format("Tried to get the default font from globals, "
 				"but font asset is null. This means InitGlobals was not called"));
 		}
 		return* font;

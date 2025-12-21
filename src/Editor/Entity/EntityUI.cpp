@@ -111,8 +111,6 @@ bool EntityUI::HasEntity() const
 }
 const EntityData& EntityUI::GetEntity() const
 {
-	if (!Assert(m_entity != nullptr, std::format("Tried to get entity from entity GUI it is in an invalid state")))
-		throw std::invalid_argument("Invalid entity gui entity state");
-
+	ENGINE_ASSERT(m_entity != nullptr, "Tried to get entity from entity GUI it is in an invalid state");
 	return *m_entity;
 }

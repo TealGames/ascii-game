@@ -16,8 +16,9 @@
 #include "Math/PlatformMath.hpp"
 #include "Core/Window/WindowManager.hpp"
 #include "Core/Time/TimeKeeper.hpp"
-
+#include "Utils/MathAdvanced.hpp"
 #include "Utils/Data/ColorConstants.hpp"
+#include "UnitTests.hpp"
 
 namespace Rendering
 {
@@ -25,12 +26,18 @@ namespace Rendering
     /// If true, all verticies must be present at the start before first frame update
     /// </summary>
     constexpr bool DO_STATIC_GEOMETRY = true;
+    constexpr bool USE_CACHED_SHAPE_ASSETS = true;
 
     constexpr bool DO_RAYTRACING = true;
     constexpr std::uint32_t MAX_RAYTRACE_BOUNCES = 5;
+    constexpr std::uint8_t AMBIENT_OCCLUSION_SAMPLES = 16;
+
+    constexpr bool DO_VISUALIZE_BVH_BOUNDS = false;
+    constexpr float BVH_BOUNDS_LINE_THICKNESS = 1;
+    constexpr Color BVH_BOUNDS_COLOR = COLOR_GREEN;
+    constexpr Color BVH_BOUNDS_LEAF_COLOR = COLOR_RED;
 
     constexpr bool DO_LIGHTING = true;
-    
     constexpr bool DRAW_LIGHT_AREAS = true;
     constexpr bool USE_LIGHT_COLOR_FOR_RANGE = true;
     constexpr Color LIGHT_AREA_COLOR = {255, 255, 255, 255};
@@ -64,6 +71,8 @@ namespace Rendering
     constexpr size_t VERTEX_MAX_COUNT = 10000;
     constexpr size_t MATERIAL_MAX_COUNT = 5;
     constexpr size_t TEXTURE_MAX_COUNT = 5;
+    constexpr size_t BLAS_NODE_MAX_COUNT = 8000;
+    constexpr size_t TLAS_NODE_MAX_COUNT = 8000;
     constexpr size_t CIRCLE_SIDE_COUNT = 12;
 
     static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { 
@@ -91,6 +100,8 @@ namespace Rendering
     constexpr const char* INSTANCE_MESHES_SSBO_BLOCK_NAME = "InstanceMeshes";
     constexpr const char* MATERIAL_SSBO_BLOCK_NAME = "Materials";
     constexpr const char* LIGHT_INDICES_SSBO_BLOCK_NAME = "LightIndices";
+    constexpr const char* BLAS_TREES_SSBO_BLOCK_NAME = "BLASTrees";
+    constexpr const char* TLAS_TREE_SSBO_BLOCK_NAME = "TLASTree";
 
     //For compute shaders
     constexpr const char* TEXTURES_UNIFORM_NAME = "uTextures";
@@ -101,9 +112,28 @@ namespace Rendering
     constexpr const char* BLUR_WEIGHTS_UNIFORM_NAME = "uWeights";
 
     constexpr const char* RAY_TRACING_MAX_RAY_BOUNCES_UNIFORM_NAME = "uMaxBounces";
+    constexpr const char* AMBIENT_OCCLUSION_SAMPLES_UNIFORM_NAME = "uAmbientOcclusionSamples";
     constexpr const char* UNMOVING_FRAME_NUMBER_UNIFORM_NAME = "uUnmovingFrameCount";
     constexpr const char* EMISSIVE_MATERIAL_COUNT_UNIFORM_NAME = "uEmissiveMaterialCount";
     constexpr const char* INSTANCE_COUNT_UNIFORM_NAME = "uInstanceCount";
+
+    std::string ToString(const RenderCallType call)
+    {
+        if (call == RenderCallType::Box3d) return "Box3d";
+        if (call == RenderCallType::Sphere3d) return "Sphere3d";
+        if (call == RenderCallType::Plane3d) return "Plane3d";
+        if (call == RenderCallType::PointLight3d) return "PointLight3d";
+        if (call == RenderCallType::DirectionLight3d) return "DirLight3d";
+        if (call == RenderCallType::Model3d) return "Model3d";
+
+        LogError("Failed to convert render call type to string due to no actions defined");
+        return "";
+    }
+    std::string RenderCallInvocation::ToString() const
+    {
+        return std::format("[RenderCallInvocation Type:{} ModelMat:{}]", 
+            Rendering::ToString(m_Type), m_ModelMatrix.ToString());
+    }
 
     PointLightData::PointLightData() : PointLightData({}, {}, 0) {}
     PointLightData::PointLightData(const WorldPosition3D& pos, const Color& color, const float radius)
@@ -132,6 +162,14 @@ namespace Rendering
             m_IndicesStartIndex, m_IndicesCount, m_InstanceStartIndex, m_InstanceCount);
     }
 
+    WorldPosition3D InstanceBoundsData::GetCenter() const { return m_RootWorldBounds.GetCenter(); }
+    AABB3D InstanceBoundsData::GetAABB() const { return m_RootWorldBounds; }
+    std::string InstanceBoundsData::ToString() const 
+    { 
+        return std::format("[RootWorldBounds:{} InstIdx:{}]", 
+            m_RootWorldBounds.ToString(), m_InstanceIndex); 
+    }
+
     bool RenderPassData::UsesDefaultFrameBuffer() const
     {
         return m_FrameBuffer != nullptr;
@@ -139,12 +177,12 @@ namespace Rendering
 
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
     Renderer::Renderer(const EngineState& engineState)
-        : m_isInit(false), m_isStaticGeometryInit(false), m_engineState(&engineState), m_uniformData(), //m_staticRenderData(),
-        m_batches(), m_hashToBatchIndex(), m_graphicsManager(nullptr), m_frameGeometryMetrics(), m_runtimeMaterialId(),
+        : m_isInit(false), m_engineState(&engineState), m_uniformData(), //m_staticRenderData(),
+        m_geometryBatches(), m_hashToBatchIndex(), m_graphicsManager(nullptr), m_frameGeometryMetrics(), m_runtimeMaterialId(),
         m_textureController(Backend::CreateTextureController()),
         m_imageController(Backend::CreateImageController()),
-        m_vertices(), m_vertexIndices(), m_instances(), m_instanceMeshes(), m_emissiveInstanceIndices(),
-        m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer(), m_vertexLayout(), m_bufferController(&m_vertexLayout),
+        m_vertices(), m_indices(), m_instances(), m_instanceMeshes(), m_emissiveInstanceIndices(),
+        m_vertexBuffer(), m_indexBuffer(), m_instancedBuffer(), m_vertexLayout(), m_bufferController(),
         m_unmovingFrames(0), m_isRenderStalled(false), m_framesSinceStart(0),
         m_frameBuffer(), m_shadowMaps(), m_hdrColorOutput(), m_hdrDepthRenderBuffer(), m_coreShaders({}),
         m_currentPass(RenderPassType::None), m_renderPassData({}), m_boundFrameBuffer(nullptr), m_boundShader(nullptr),
@@ -155,7 +193,9 @@ namespace Rendering
         m_instanceStorageBuffer(Backend::CreateShaderStorageBuffer(INSTANCE_SSBO_BLOCK_NAME)),
         m_instanceMeshStorageBuffer(Backend::CreateShaderStorageBuffer(INSTANCE_MESHES_SSBO_BLOCK_NAME)),
         m_materialStorageBuffer(Backend::CreateShaderStorageBuffer(MATERIAL_SSBO_BLOCK_NAME)),
-        m_emissiveInstanceIndexStorageBuffer(Backend::CreateShaderStorageBuffer(LIGHT_INDICES_SSBO_BLOCK_NAME))
+        m_emissiveInstanceIndexStorageBuffer(Backend::CreateShaderStorageBuffer(LIGHT_INDICES_SSBO_BLOCK_NAME)),
+        m_tlasTreeStorageBuffer(Backend::CreateShaderStorageBuffer(TLAS_TREE_SSBO_BLOCK_NAME)),
+        m_blasTreesStorageBuffer(Backend::CreateShaderStorageBuffer(BLAS_TREES_SSBO_BLOCK_NAME))
     {
         RenderPassType passType = RenderPassType::None;
         for (size_t i = 0; i < TOTAL_PASS_TYPES; i++)
@@ -189,7 +229,7 @@ namespace Rendering
         m_instancedBuffer = Backend::CreateVertexBuffer(nullptr, sizeof(Instance), INSTANCE_MAX_COUNT, VertexAttributeAdvance::Instance);
 
         m_vertices.reserve(VERTEX_MAX_COUNT);
-        m_vertexIndices.reserve(INDEX_MAX_COUNT);
+        m_indices.reserve(INDEX_MAX_COUNT);
         m_instances.reserve(INSTANCE_MAX_COUNT);
         if (DO_RAYTRACING) m_instanceMeshes.reserve(INSTANCE_MAX_COUNT);
 
@@ -207,6 +247,8 @@ namespace Rendering
         m_graphicsManager->AddShaderBuffer(&m_instanceMeshStorageBuffer);
         m_graphicsManager->AddShaderBuffer(&m_materialStorageBuffer);
         m_graphicsManager->AddShaderBuffer(&m_emissiveInstanceIndexStorageBuffer);
+        m_graphicsManager->AddShaderBuffer(&m_tlasTreeStorageBuffer);
+        m_graphicsManager->AddShaderBuffer(&m_blasTreesStorageBuffer);
 
         m_bufferController.AddShaderBuffer(&m_vertexStorageBuffer);
         m_bufferController.AddShaderBuffer(&m_indexStorageBuffer);
@@ -214,6 +256,8 @@ namespace Rendering
         m_bufferController.AddShaderBuffer(&m_instanceMeshStorageBuffer);
         m_bufferController.AddShaderBuffer(&m_materialStorageBuffer);
         m_bufferController.AddShaderBuffer(&m_emissiveInstanceIndexStorageBuffer);
+        m_bufferController.AddShaderBuffer(&m_tlasTreeStorageBuffer);
+        m_bufferController.AddShaderBuffer(&m_blasTreesStorageBuffer);
 
         m_frameBuffer = Backend::CreateFrameBuffer();
         //TODO: right now all shadows have same resolution -> this might be a light component setting
@@ -224,8 +268,6 @@ namespace Rendering
             for (auto& map : m_shadowMaps) 
                 map = CreateTextureCube(SHADOW_MAP_SIZE, TexelStorageType::Depth24);
         }
-        /*m_skybox = CreateTextureCube(SKYBOX_MAP_SIZE, TexelStorageType::RGBA16F,
-            { WrapBehavior::ClampEdge, WrapBehavior::ClampEdge, WrapBehavior::ClampEdge });*/
 
         if (DO_HDR)
         {
@@ -242,8 +284,10 @@ namespace Rendering
         m_graphicsManager->AddShaderGlobalDefine("INSTANCE_MAX_COUNT " + std::to_string(INSTANCE_MAX_COUNT));
         m_graphicsManager->AddShaderGlobalDefine("MATERIAL_MAX_COUNT " + std::to_string(MATERIAL_MAX_COUNT));
         m_graphicsManager->AddShaderGlobalDefine("TEXTURE_MAX_COUNT " + std::to_string(TEXTURE_MAX_COUNT));
+        m_graphicsManager->AddShaderGlobalDefine("BLAS_NODE_MAX_COUNT " + std::to_string(BLAS_NODE_MAX_COUNT));
+        m_graphicsManager->AddShaderGlobalDefine("TLAS_NODE_MAX_COUNT " + std::to_string(TLAS_NODE_MAX_COUNT));
         
-        const VertexLayoutBindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexBuffer, &m_indexBuffer);
+        const VertexLayoutBindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_vertexLayout, &m_vertexBuffer, &m_indexBuffer);
         std::vector<VertexAttribute> vertexAttributes = 
         { 
             VertexAttribute(0, 3, VertexAttributeBaseType::Float, false, offsetof(VertexType, m_LocalPos)), 
@@ -252,14 +296,16 @@ namespace Rendering
         };
         m_vertexLayout.AddAttributes(vertexBindIndex, vertexAttributes);
 
-        const VertexLayoutBindIndex instancedBindIndex = m_bufferController.AddVertexBuffer(&m_instancedBuffer, nullptr);
+        const VertexLayoutBindIndex instancedBindIndex = m_bufferController.AddVertexBuffer(&m_vertexLayout, &m_instancedBuffer, nullptr);
         std::vector<VertexAttribute> instancedAttributes = 
         {
             VertexAttribute(3, 1, VertexAttributeBaseType::UnsignedInteger, false, offsetof(Instance, m_MaterialIndex)),
+            VertexAttribute(4, 1, VertexAttributeBaseType::UnsignedInteger, false, offsetof(Instance, m_MeshIndex)),
         };
         m_vertexLayout.AddAttributes(instancedBindIndex, instancedAttributes);
-        m_vertexLayout.AddMatrixAttribute(Vec2Int(4, 4), instancedBindIndex, 4, false, sizeof(Vec4), offsetof(Instance, m_ModelMatrix));
-        m_vertexLayout.AddMatrixAttribute(Vec2Int(3, 3), instancedBindIndex, 8, false, sizeof(Vec3), offsetof(Instance, m_NormalModelMatrix));
+        m_vertexLayout.AddMatrixAttribute(Vec2Int(4, 4), instancedBindIndex, 5, false, sizeof(Vec4), offsetof(Instance, m_ModelMatrix));
+        m_vertexLayout.AddMatrixAttribute(Vec2Int(4, 4), instancedBindIndex, 9, false, sizeof(Vec4), offsetof(Instance, m_InverseModelMatrix));
+        m_vertexLayout.AddMatrixAttribute(Vec2Int(3, 3), instancedBindIndex, 13, false, sizeof(Vec3), offsetof(Instance, m_NormalModelMatrix));
 
         m_isInit = true;
     }
@@ -271,7 +317,7 @@ namespace Rendering
     void Renderer::WriteVertexDataToSSBOs()
     {
         m_vertexStorageBuffer.WriteData(0, m_vertices.size() * m_vertexBuffer.GetElementSize(), &m_vertices[0]);
-        m_indexStorageBuffer.WriteData(0, m_vertexIndices.size() * m_indexBuffer.GetElementSize(), &m_vertexIndices[0]);
+        m_indexStorageBuffer.WriteData(0, m_indices.size() * m_indexBuffer.GetElementSize(), &m_indices[0]);
         m_instanceStorageBuffer.WriteData(0, m_instances.size() * m_instancedBuffer.GetElementSize(), &m_instances[0]);
         /*LogWarning(std::format("Instance mesh buffer elements:{} write:{} bytes:{}", m_instanceMeshStorageBuffer.GetAllocatedByteSize() / sizeof(InstanceMesh),
             m_instanceMeshes.size(), m_instanceMeshes.size() * sizeof(InstanceMesh)));*/
@@ -282,6 +328,8 @@ namespace Rendering
             m_emissiveInstanceIndexStorageBuffer.WriteData(0,
                 emissiveMaterialCount * sizeof(std::uint32_t), &m_emissiveInstanceIndices[0]);
         }
+
+        m_blasTreesStorageBuffer.WriteData(0, sizeof(BVHFlatNode) * m_blasTrees.size(), &m_blasTrees[0]);
     }
 
     void Renderer::InitCoreShaders()
@@ -306,6 +354,7 @@ namespace Rendering
         const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
         m_graphicsManager->SetUniform(UniformDataType::IVector2, SCREEN_SIZE_UNIFORM_NAME, &windowSize);
         m_graphicsManager->SetUniform(UniformDataType::Uint, RAY_TRACING_MAX_RAY_BOUNCES_UNIFORM_NAME, &MAX_RAYTRACE_BOUNCES);
+        m_graphicsManager->SetUniform(UniformDataType::Uint, AMBIENT_OCCLUSION_SAMPLES_UNIFORM_NAME, &AMBIENT_OCCLUSION_SAMPLES);
 
        /* m_viewerUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender));
         m_lightUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender));*/
@@ -406,7 +455,7 @@ namespace Rendering
 
         if (it == m_hashToBatchIndex.end())
             return nullptr;
-        return &(m_batches[it->second]);
+        return &(m_geometryBatches[it->second]);
     }
     RenderBatch* Renderer::TryGetSameDrawBatch(const Shader& shader, const Material& material, std::uint32_t vertexCount)
     {
@@ -422,11 +471,6 @@ namespace Rendering
             return nullptr;
         }
         return TryGetBatch(shader, *material.m_Albedo, vertexCount);
-    }
-    void Renderer::AddCompleteInstanceToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material)
-    {
-        AddInstanceDataToBatch(batch, modelMatrix, material);
-        AddMeshInstanceToBatch(batch);
     }
 
     RenderPassType Renderer::GetCurrentPass() const
@@ -469,12 +513,12 @@ namespace Rendering
         return CalculateBatchHash(*batch.m_Shader, *batch.m_Texture, batch.m_VertexCount);
     }
     RenderBatch& Renderer::CreateBatch(Shader& shader, Material& material,
-        const Vertex* vertexArray, const size_t vertexSize, const IndexType* indexArray, const size_t indicesSize, 
-        const Mat4& modelMatrix, const bool isFinished)
+        const Vertex* vertexArray, const size_t vertexSize, const IndexType* indexArray, const size_t indicesSize,
+        const Mat4& modelMatrix, const BVHTriangleTree* blasTree)
     {
         SetMaterialAlbedoIfNull(material);
 
-        RenderBatch& batch = m_batches.emplace_back(&shader, material.m_Albedo);
+        RenderBatch& batch = m_geometryBatches.emplace_back(&shader, material.m_Albedo);
         if (vertexSize > 0 && vertexArray != nullptr)
         {
             AddVerticesToBatch(batch, vertexArray, vertexSize);
@@ -485,14 +529,9 @@ namespace Rendering
         }
         
         AddInstanceDataToBatch(batch, modelMatrix, material);
-        if (isFinished) FinishBatch(batch);
+        //NOTE: we wait until we have vertices and indices to be able to finish batch
+        if (vertexArray != nullptr && indexArray != nullptr) FinishBatch(batch, blasTree);
         return batch;
-    }
-    void Renderer::FinishBatch(RenderBatch& batch)
-    {
-        //NOTE: we can only add mesh instance once we finish a batch with all indices so we know what offset/size to use
-        AddMeshInstanceToBatch(batch);
-        m_hashToBatchIndex.emplace(CalculateBatchHash(batch), m_batches.size() - 1);
     }
     void Renderer::AddVertexToBatch(RenderBatch& batch, const Vertex& vertex)
     {
@@ -519,14 +558,12 @@ namespace Rendering
     void Renderer::AddIndicesToBatch(RenderBatch& batch, const std::array<IndexType, 3>& arr)
     {
         if (batch.m_IndicesCount == 0)
-            batch.m_IndicesStartIndex = m_vertexIndices.size();
+            batch.m_IndicesStartIndex = m_indices.size();
 
         //m_vertexIndices.insert(m_vertexIndices.end(), arr.begin(), arr.end());
-        for (int i = 0; i < arr.size(); i++)
-        {
-            m_vertexIndices.push_back(batch.m_VertexStartIndex + arr[i]);
-        }
-        
+        m_indices.push_back(batch.m_VertexStartIndex + arr[0]);
+        m_indices.push_back(batch.m_VertexStartIndex + arr[1]);
+        m_indices.push_back(batch.m_VertexStartIndex + arr[2]);
         
         batch.m_IndicesCount += arr.size();
         m_frameGeometryMetrics.m_TotalIndices += arr.size();
@@ -534,18 +571,18 @@ namespace Rendering
     void Renderer::AddIndicesToBatch(RenderBatch& batch, const IndexType* indexArray, const size_t indicesSize)
     {
         if (batch.m_IndicesCount == 0)
-            batch.m_IndicesStartIndex = m_vertexIndices.size();
+            batch.m_IndicesStartIndex = m_indices.size();
 
         //m_vertexIndices.insert(m_vertexIndices.end(), indexArray, indexArray + indicesSize);
         for (int i = 0; i < indicesSize; i++)
         {
-            m_vertexIndices.push_back(batch.m_VertexStartIndex + indexArray[i]);
+            m_indices.push_back(batch.m_VertexStartIndex + indexArray[i]);
         }
         
         batch.m_IndicesCount += indicesSize;
         m_frameGeometryMetrics.m_TotalIndices += indicesSize;
     }
-    void Renderer::AddInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material)
+    InstanceType* Renderer::AddInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material)
     {
         Mat3 normalMatrix = modelMatrix.GetSlice<3, 3>();
         //Mat3 inversed = {};
@@ -553,7 +590,7 @@ namespace Rendering
         {
             LogError(std::format("Attempted to add instance data to batch with model matrix:{} "
                 "but 3x3 normal model matrix fialed to inverse:{}", modelMatrix.ToString(), normalMatrix.ToString()));
-            return;
+            return nullptr;
         }
 
         auto cachedMaterialIt = m_cachedMaterials.find(material.m_Name);
@@ -565,7 +602,8 @@ namespace Rendering
         /*LogError(std::format("Original:{} inversed:{} normaModel:{} inserted", modelMatrix.ToString(),
             normalMatrix.ToString(), normalMatrix.Transpose().ToString()));*/
 
-        m_instances.emplace_back(cachedMaterialIt->second, modelMatrix, normalMatrix.Transpose());
+        InstanceType* createdInstance = &m_instances.emplace_back(cachedMaterialIt->second, 0, modelMatrix, normalMatrix.Transpose());
+
         if (DO_RAYTRACING)
         {
             if (material.GetEmissiveColor().HasVisibleNonzeroRGB()) 
@@ -579,17 +617,108 @@ namespace Rendering
         
         batch.m_InstanceCount++;
         m_frameGeometryMetrics.m_TotalInstances++;
-        //Note: every time we add new instance data to the batch, we increase the index offset since we know
-        //the current model has finished
+        return createdInstance;
     }
-    void Renderer::AddMeshInstanceToBatch(RenderBatch& batch)
+    void Renderer::AddInstanceMeshBoundsData(const std::uint32_t& instanceIndex)
     {
-        if (DO_RAYTRACING) m_instanceMeshes.emplace_back(InstanceMesh(batch.m_IndicesStartIndex, batch.m_IndicesCount));
+        const InstanceType& instance = m_instances[instanceIndex];
+        //We get the root node of this instance's mesh blas tree (NODE: first index of interval is ROOT)
+        const BVHFlatNode& blasTreeRootNode = m_blasTrees[m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval.m_StartIndex];
+        m_instanceBoundsData.push_back(InstanceBoundsData(Utils::ToWorldAABB(blasTreeRootNode.GetAABB(), instance.m_ModelMatrix), instanceIndex));
+    }
+    void Renderer::FinishBatch(RenderBatch& batch, const BVHTriangleTree* blasTree)
+    {
+        if (batch.m_InstanceCount != 1)
+        {
+            LogError(std::format("Attempted to finish a batch which has more than one instances (meaning it is already finished in setup)"));
+            return;
+        }
+        //TODO: technically it is bad to create tree + instance mesh for every time we finish batch
+        //because we may have cases where some batch equality/hash paramter is different (though mesh is the same)
+        //so we create new batch with identical mesh even if some things like alpha differ -> in that case we 
+        //want to reuse the old mesh data so we need to setup map of some kind
+
+        BVHTriangleTree constructedTree = {};
+        //NOTE: if we do not provide a tree, we just construct one from the batch indices
+        //and since we do not actually need tree, jsut the nodes to copy, it does not matter if it gets destroyed at the end of the scope
+        if (blasTree == nullptr) ConstructBLASTree(constructedTree, batch.m_IndicesStartIndex, batch.m_IndicesCount);
+        const BVHTriangleTree& batchBLASTree = (blasTree == nullptr) ? constructedTree : *blasTree;
+
+        for (const auto& node : batchBLASTree.GetNodes())
+        {
+            m_blasTrees.push_back(node);
+        }
+
+        //NOTE: the only reason why we can use the last mesh's entry for this offset into blas trees
+        //is because they are all contiguous in terms of placement into the blas trees vector and every mesh-> one tree, one tree-> one mesh
+        const size_t nextTreeStartIndex = m_instanceMeshes.empty() ? 0 : m_instanceMeshes.back().m_BLASTreesInterval.GetEndIndex();
+        //When we finish a batch now that we added the tree we can finish mesh data
+        m_instanceMeshes.emplace_back(InstanceMesh(batch.m_IndicesStartIndex, batch.m_IndicesCount, ArrayInterval(nextTreeStartIndex, batchBLASTree.Size())));
+        
+        /*if (m_instanceMeshes.back().m_BLASTreesInterval.m_Size == 1) 
+            LogError(std::format("Created array interval: {} for tree:{}", batchBLASTree.Size(), batchBLASTree.ToString(BVHToStringType::NodeBounds)));*/
+
+        m_instances[batch.m_InstanceStartIndex].m_MeshIndex = m_instanceMeshes.size() - 1;
+        AddInstanceMeshBoundsData(batch.m_InstanceStartIndex);
+
+        m_hashToBatchIndex.emplace(CalculateBatchHash(batch), m_geometryBatches.size() - 1);
+    }
+    void Renderer::AddCompleteInstanceToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material)
+    {
+        if (batch.m_InstanceCount <= 0)
+        {
+            LogError(std::format("Attempted to add complete instance to batch before the batch was setup with its first instance"));
+            return;
+        }
+
+        //NOTE: we do NOT add separate mesh instance on creation since those should only be done
+        //on the first isntance created for a batch because all instances in a batch share same mesh
+        InstanceType& createdInstance = *AddInstanceDataToBatch(batch, modelMatrix, material);
+        //If this is NOT the first instance to this batch it means the mesh for this batch must exist (NOTE: the
+        //mesh for a whole batch is the same) and we can set it to a previous set instance OTHERWSIE we
+        //will have to set the mesh index separately when the batch is fully finished
+        createdInstance.m_MeshIndex = m_instances[batch.m_InstanceStartIndex].m_MeshIndex;
+        //The most recent added instance data is the one create world mesh bounds
+        AddInstanceMeshBoundsData(batch.m_InstanceStartIndex + batch.m_InstanceCount);
+    }
+
+    void Renderer::ConstructBLASTree(BVHTriangleTree& tree, const size_t indexStart, const size_t indexSize)
+    {
+        Rendering::ConstructBVHFromIndices(tree, &m_indices[indexStart],
+            indexSize, &m_vertices[0]);
+    }
+    void Renderer::ConstructTLASTree()
+    {
+        if (m_instanceBoundsData.empty())
+            return;
+
+        m_tlasTree.Construct(&m_instanceBoundsData[0], m_instanceBoundsData.size(), true, 1, 
+            BVHSplitAlgorithm::Midpoint, &InstanceBoundsData::GetAABB, &InstanceBoundsData::GetCenter, 
+            [](const InstanceBoundsData* boundsPtr, const std::uint32_t* objectIndicesArr, const size_t boundsSize, int intendedStartIndex,
+                int& outStartIndex, std::uint32_t& outObjectCount) -> void
+            {
+                //NOTE: the only reason we can do this is because we know there will be only one 
+                //instance at the leaves
+                LogWarning(std::format("New start index from {} -> {} (intended:{}) bounds addr:{}", 
+                    outStartIndex, boundsPtr->m_InstanceIndex, intendedStartIndex, Utils::ToStringPointerAddress(boundsPtr)));
+                outStartIndex = boundsPtr[intendedStartIndex].m_InstanceIndex;
+                outObjectCount = boundsSize;
+            });
+        m_tlasTreeStorageBuffer.WriteData(0, sizeof(BVHFlatNode) * m_tlasTree.Size(), &m_tlasTree.GetRoot());
+
+        LogWarning(std::format("ALL instance bounds data: {}", Utils::ToStringIterable(m_instanceBoundsData)));
+        LogWarning(std::format("ALL render calls: {}", ToStringMetrics()));
+        LogWarning(std::format("ALL INSTANCES:{}", ToStringInstances()));
+        LogWarning(std::format("TLAS TREE {}\n", m_tlasTree.ToString(BVHToStringType::NodeBounds)));
+        LogWarning(std::format("FULL TREE {}\n", ToStringBVH()));
+        //LogError("SHIT");
     }
     int Renderer::GetEnqueuedTextureIndex(Texture* texture)
     {
         if (texture == nullptr)
+        {
             return INVALID_TEXTURE_INDEX;
+        }
 
         for (std::uint8_t i = 0; i < m_bindQueuedTextures.size(); i++)
         {
@@ -646,7 +775,31 @@ namespace Rendering
         outProjMatrix = PlatformMath::CalculatePlatformPerspectiveProjMatrix(Utils::ToRadians(90), 1, nearDistance, farDistance);
     }
 
-    void Renderer::AddCallBox3DMulti(Shader& shader, Material& material, const Vec3& size, const Mat4& modelMatrix)
+    void Renderer::AddCallBox3DMulti(Shader& shader, Material& material, const Mat4& modelMatrix)
+    {
+        m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Box3d, modelMatrix);
+
+        Model3d* boxModel = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMeshMutable(BasicMeshType::Cube);
+        if (!USE_CACHED_SHAPE_ASSETS || boxModel == nullptr)
+        {
+            LogWarning(std::format("[Renderer3D]: Added custom-constructed box 3D render call due to NULL cube asset"));
+            AddCallBox3DMultiConstructed(shader, material, modelMatrix);
+            return;
+        }
+
+        ModelMesh& boxMesh = boxModel->m_Meshes[0];
+        const size_t indexCount = boxMesh.m_Indices.size();
+        RenderBatch* sameStatebatch = TryGetSameDrawBatch(shader, material, indexCount);
+        if (sameStatebatch != nullptr)
+        {
+            AddCompleteInstanceToBatch(*sameStatebatch, modelMatrix, material);
+            return;
+        }
+        CreateBatch(shader, material, &boxMesh.m_Vertices[0], boxMesh.m_Vertices.size(),
+            &boxMesh.m_Indices[0], indexCount, modelMatrix, &boxMesh.m_BLASTree);
+    }
+
+    void Renderer::AddCallBox3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix)
     {
         constexpr size_t VERTEX_COUNT = 24;
         constexpr size_t INDEX_COUNT = 36;
@@ -660,7 +813,7 @@ namespace Rendering
             return;
         }
 
-        const WorldPosition3D halfSize = size / 2;
+        constexpr WorldPosition3D halfSize = { 0.5f, 0.5f, 0.5f };
         //ORDER is front face [top right, bottom right, bottom left, top left]
         //and then back face(looking from front face side) [top right, bottom right, bottom left, top left]
         /*
@@ -671,24 +824,25 @@ namespace Rendering
                 | /    |/
                 2------1
         */
-        const std::array<Vec3, 8> edges = 
+        const std::array<Vec3, 8> edges =
         {
             //FRONT FACE
             halfSize,
-            halfSize* Vec3(1, -1, 1),
-            halfSize* Vec3(-1, -1, 1),
-            halfSize* Vec3(-1, 1, 1),
+            halfSize * Vec3(1, -1, 1),
+            halfSize * Vec3(-1, -1, 1),
+            halfSize * Vec3(-1, 1, 1),
             //BACK FACE
-            halfSize* Vec3(1, 1, -1),
-            halfSize* Vec3(1, -1, -1),
-            halfSize* Vec3(-1, -1, -1),
-            halfSize* Vec3(-1, 1, -1)
+            halfSize * Vec3(1, 1, -1),
+            halfSize * Vec3(1, -1, -1),
+            halfSize * Vec3(-1, -1, -1),
+            halfSize * Vec3(-1, 1, -1)
         };
 
         //The size is in x, y, z axis 
         const Vec2 textureSize = material.m_Albedo->GetInfo().m_texelSize.AsFloat();
         //The size in texture pixel coords based on its world size
-        const Vec3Int pixelSize = CalculateFaceSizeForTexture(size, material.m_Albedo->GetInfo().m_texelSize);
+        const Vec3Int pixelSize = CalculateFaceSizeForTexture(Utils::ExtractScaleFromMatrix(modelMatrix),
+            material.m_Albedo->GetInfo().m_texelSize);
 
         const Vec2 frontBackFaceSize = Vec2(pixelSize.m_X, pixelSize.m_Y) / textureSize;
         const Vec2 leftRightFaceSize = Vec2(pixelSize.m_Z, pixelSize.m_Y) / textureSize;
@@ -707,7 +861,7 @@ namespace Rendering
         uvs[7] = uvs[6] + Vec2(topBottomFaceSize.m_X, 0);
         //BOTTOM FACE (bottom left, bottom right)
         uvs[8] = uvs[2] - Vec2(0, topBottomFaceSize.m_Y);
-        uvs[9] = uvs[8] + Vec2(topBottomFaceSize.m_X,0);
+        uvs[9] = uvs[8] + Vec2(topBottomFaceSize.m_X, 0);
         //RIGHT FACE (bottom right, top right)
         uvs[10] = uvs[4] + Vec2(leftRightFaceSize.m_X, 0);
         uvs[11] = uvs[4] + Vec2(0, leftRightFaceSize.m_Y);
@@ -771,9 +925,9 @@ namespace Rendering
         vertices[22] = Vertex(edges[2], uvs[8], normals[5]);
         vertices[23] = Vertex(edges[6], uvs[2], normals[5]);
 
-        IndexType indices[INDEX_COUNT] = 
-        { 
-            /*FRONT FACE*/ 0,  1,  2,  0,  3,  2, 
+        IndexType indices[INDEX_COUNT] =
+        {
+            /*FRONT FACE*/ 0,  1,  2,  0,  3,  2,
             /*BACK FACE*/  4,  5,  6,  4,  7,  6,
             /*RIGHT FACE*/ 8,  9,  10, 8,  11, 10,
             /*LEFT FACE*/  12, 13, 14, 12, 15, 14,
@@ -781,15 +935,38 @@ namespace Rendering
             /*BOTTOM FACE*/20, 21, 22, 20, 23, 22
         };
 
-        CreateBatch(shader, material, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, true);
+        const ModelMesh& cubeMesh = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMesh(BasicMeshType::Cube)->m_Meshes[0];
+        CreateBatch(shader, material, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, nullptr);
     }
 
-    void Renderer::AddCallSphere3DMulti(Shader& shader, Material& material, const float radius,
-        const Mat4& modelMatrix)
+    void Renderer::AddCallSphere3DMulti(Shader& shader, Material& material, const Mat4& modelMatrix)
     {
+        m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Sphere3d, modelMatrix);
+        Model3d* sphereModel = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMeshMutable(BasicMeshType::Sphere);
+        if (!USE_CACHED_SHAPE_ASSETS || sphereModel == nullptr)
+        {
+            LogWarning(std::format("[Renderer3D]: Added custom-constructed sphere 3D render call due to NULL sphere asset"));
+            AddCallSphere3DMultiConstructed(shader, material, modelMatrix);
+            return;
+        }
+
+        ModelMesh& sphereMesh = sphereModel->m_Meshes[0];
+        const size_t indexCount = sphereMesh.m_Indices.size();
+        RenderBatch* sameStatebatch = TryGetSameDrawBatch(shader, material, indexCount);
+        if (sameStatebatch != nullptr)
+        {
+            AddCompleteInstanceToBatch(*sameStatebatch, modelMatrix, material);
+            return;
+        }
+        CreateBatch(shader, material, &sphereMesh.m_Vertices[0], sphereMesh.m_Vertices.size(), 
+            &sphereMesh.m_Indices[0], indexCount, modelMatrix, &sphereMesh.m_BLASTree);
+    }
+
+    void Renderer::AddCallSphere3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix)
+    {
+        constexpr float RADIUS = 0.5f;
         //Note: this is the default UV method with longitudinal/"slices" (vertical) and latitudinal/"stacks" (horizontal) lines
         constexpr size_t HORIZONTAL_LINE_COUNT = 8;
-
         //Best shape is formed with 1.5 factor 
         //Note: the total number of vertices is horizontal-1 * vertical * 6 since we create square
         //for every 2 pairs going downward, thus needing to exlude the final horizontal row
@@ -798,17 +975,13 @@ namespace Rendering
         constexpr size_t TOTAL_VERTEX_COUNT = HORIZONTAL_LINE_COUNT * VERTICAL_LINE_COUNT + 2;
         constexpr size_t TOTAL_INDEX_COUNT = (HORIZONTAL_LINE_COUNT - 1) * VERTICAL_LINE_COUNT * 6 + VERTICAL_LINE_COUNT * 6;
 
-        IndexType indices[TOTAL_INDEX_COUNT] = {};
-        size_t currIndex = 0;
-        
         RenderBatch* sameStatebatch = TryGetSameDrawBatch(shader, material, TOTAL_INDEX_COUNT);
         if (sameStatebatch != nullptr)
         {
             AddCompleteInstanceToBatch(*sameStatebatch, modelMatrix, material);
             return;
         }
-
-        RenderBatch& batch= CreateBatch(shader, material, nullptr, TOTAL_VERTEX_COUNT, nullptr, TOTAL_INDEX_COUNT, modelMatrix, false);
+        RenderBatch& batch = CreateBatch(shader, material, nullptr, TOTAL_VERTEX_COUNT, nullptr, TOTAL_INDEX_COUNT, modelMatrix, nullptr);
         //TODO: right now we do not have very good uv mapping for spheres-> need to increase verticies at poles for increased precision
 
         //Here we build all the other vertices and indices making sure to create 2 triangles of every quad possible on the sphere
@@ -833,7 +1006,7 @@ namespace Rendering
                 theta = u * 2 * std::numbers::pi;
 
                 pos = Vec3(sinf(phi) * cosf(theta), cosf(phi), sinf(phi) * sinf(theta));
-                AddVertexToBatch(batch, Vertex{ pos * radius, UV(u, v), pos.GetNormalized() });
+                AddVertexToBatch(batch, Vertex{ pos * RADIUS, UV(u, v), pos.GetNormalized() });
 
                 if (hi == HORIZONTAL_LINE_COUNT - 1) continue;
                 // For the layout imagine this shape (where A is current point)
@@ -848,7 +1021,6 @@ namespace Rendering
                 nextV = (vi + 1) % VERTICAL_LINE_COUNT;
 
                 //We create them in order A, B, C, D
-                //Note: no modulus needed since 
                 aIndex = hi * (VERTICAL_LINE_COUNT)+vi;
                 bIndex = hi * (VERTICAL_LINE_COUNT)+nextV;
                 cIndex = (hi + 1) * (VERTICAL_LINE_COUNT)+vi;
@@ -861,7 +1033,7 @@ namespace Rendering
 
         //First we build the north pole vertex and create the indices
         //AddVertexToBatch(Vertex{ Vec3(0.0f, radius, 0.0f), UV(1.0f, 1.0f), ENGINE_UP_DIR });
-        AddVertexToBatch(batch, Vertex{ Vec3(0.0f, radius, 0.0f), UV(1.0f, 1.0f), ENGINE_UP_DIR });
+        AddVertexToBatch(batch, Vertex{ Vec3(0.0f, RADIUS, 0.0f), UV(1.0f, 1.0f), ENGINE_UP_DIR });
         IndexType poleIndex = HORIZONTAL_LINE_COUNT * VERTICAL_LINE_COUNT;
         for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
         {
@@ -872,7 +1044,7 @@ namespace Rendering
 
         //Finally, we connect all the bottom latitude/row verticies to the south pole vertex
         //AddVertexToBatch(Vertex{ Vec3(0.0f, -1.5 * radius, 0.0f), UV(0.0f, 0.0f), -ENGINE_UP_DIR });
-        AddVertexToBatch(batch, Vertex{ Vec3(0.0f, -1.5 * radius, 0.0f), UV(0.0f, 0.0f), -ENGINE_UP_DIR });
+        AddVertexToBatch(batch, Vertex{ Vec3(0.0f, -1.5 * RADIUS, 0.0f), UV(0.0f, 0.0f), -ENGINE_UP_DIR });
         poleIndex++;
         const IndexType bottomStartIndex = poleIndex - VERTICAL_LINE_COUNT - 1;
         for (size_t vi = 0; vi < VERTICAL_LINE_COUNT; vi++)
@@ -883,29 +1055,41 @@ namespace Rendering
             AddIndicesToBatch(batch, { aIndex, poleIndex, bIndex });
         }
 
-        FinishBatch(batch);
-        //LogError(ToStringAll());
+        FinishBatch(batch, nullptr);
     }
 
-    void Renderer::AddCallBox3D(Material* material, const Vec3& size, const Mat4& modelMatrix)
+    void Renderer::AddCallBox3D(Material* material, const Mat4& modelMatrix)
     {
-        AddCallBox3DMulti(GetBaseShader(), GetMaterialOrDefault(material), size, modelMatrix);
+        AddCallBox3DMulti(GetBaseShader(), GetMaterialOrDefault(material), modelMatrix);
     }
-    void Renderer::AddCallSphere3D(Material* material, const float radius, const Mat4& modelMatrix)
+    void Renderer::AddCallSphere3D(Material* material, const Mat4& modelMatrix)
     {
-        AddCallSphere3DMulti(GetBaseShader(), GetMaterialOrDefault(material), radius, modelMatrix);
+        AddCallSphere3DMulti(GetBaseShader(), GetMaterialOrDefault(material), modelMatrix);
+    }
+    void Renderer::AddCallSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation)
+    {
+        AddCallSphere3DMulti(GetBaseShader(), GetMaterialOrDefault(material), 
+            //NOTE: since sphere by default has diameter 1 (radius 0.5), ITS SCALE will ultiamtely be 2 * radius (or diameter)
+            Utils::CalculateModelMatrix(nullptr, worldPos, Vec3(radius*2), rotation));
+    }
+    void Renderer::AddCallTextureSphere3D(Material* material, const Mat4& modelMatrix)
+    {
+        AddCallSphere3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), modelMatrix);
+    }
+    void Renderer::AddCallTextureSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation)
+    {
+        AddCallSphere3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), 
+            Utils::CalculateModelMatrix(nullptr, worldPos, Vec3(radius), rotation));
     }
 
-    void Renderer::AddCallTextureSphere3D(Material* material, const float radius, const Mat4& modelMatrix)
+    void Renderer::AddCallTextureBox3D(Material* material, const Mat4& modelMatrix)
     {
-        AddCallSphere3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), radius, modelMatrix);
-    }
-    void Renderer::AddCallTextureBox3D(Material* material, const Vec3& size, const Mat4& modelMatrix)
-    {
-        AddCallBox3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), size, modelMatrix);
+        AddCallBox3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), modelMatrix);
     }
     void Renderer::AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix)
     {
+        m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Plane3d, modelMatrix);
+
         constexpr size_t TOTAL_INDEX_COUNT = 6;
         constexpr size_t TOTAL_VERTEX_COUNT = 4;
 
@@ -925,12 +1109,12 @@ namespace Rendering
             Vertex(Vec3(-size.m_X/2, 0, size.m_Y/2), UV(0, 1), ENGINE_UP_DIR)
         };
         IndexType indices[TOTAL_INDEX_COUNT] = {0, 1, 2, 2, 3, 0};
-        CreateBatch(baseShader, baseMaterial, vertices, TOTAL_VERTEX_COUNT, indices, TOTAL_INDEX_COUNT, modelMatrix, true);
+        CreateBatch(baseShader, baseMaterial, vertices, TOTAL_VERTEX_COUNT, indices, TOTAL_INDEX_COUNT, modelMatrix, nullptr);
     }
 
-    void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const Color color)
+    void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const Color& color)
     {
-        LogWarning(std::format("Invoked light call with: {}", m_uniformData.m_LightBlock.m_PointLightsCount));
+        //LogWarning(std::format("Invoked light call with: {}", m_uniformData.m_LightBlock.m_PointLightsCount));
         if (m_uniformData.m_LightBlock.m_PointLightsCount >= MAX_POINT_LIGHTS)
         {
             LogError(std::format("Attempted to add point light call at:{} colored:{} "
@@ -938,30 +1122,35 @@ namespace Rendering
             return;
         }
 
-        std::uint32_t lightIndex = m_uniformData.m_LightBlock.m_PointLightsCount;
+        m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::PointLight3d, Mat4{});
+
+        std::uint32_t lightIndex = m_uniformData.m_LightBlock.m_PointLightsCount; 
         auto& pointlightData = m_uniformData.m_LightBlock.m_PointLights[lightIndex];
         pointlightData = PointLightData(worldPos, color, radius);
         pointlightData.m_ShadowMapIndex = lightIndex;
         m_uniformData.m_ExtraPointLightData[lightIndex] = ExtraPointLightData{worldRot};
         m_uniformData.m_LightBlock.m_PointLightsCount++;
-        LogWarning(std::format("Ended light call with: {}", m_uniformData.m_LightBlock.m_PointLightsCount));
+        //LogWarning(std::format("Ended light call with: {}", m_uniformData.m_LightBlock.m_PointLightsCount));
 
         if (DRAW_LIGHT_AREAS)
         {
             Material lightMaterial = Material("[$LightArea:"+std::to_string(GenerateRuntimeMaterialId())+"]", &GetDefaultAlbedo(),
                 USE_LIGHT_COLOR_FOR_RANGE ? color : LIGHT_AREA_COLOR);
 
-            AddCallSphere3DMulti(GetCoreShader(CoreShader::Texture), lightMaterial, std::min(0.1f * radius, 1.0f), 
-                CalculateModelMatrix(nullptr, worldPos, Vec3::One(), Quat::Identity()));
+            AddCallSphere3DMulti(GetCoreShader(CoreShader::Texture), lightMaterial,
+                Utils::CalculateModelMatrix(nullptr, worldPos, std::min(0.1f * radius, 1.0f), Quat::Identity()));
         }
     }
-    void Renderer::AddCallDirectionalLight(const Vec3& dir, const Color color)
+    void Renderer::AddCallDirectionalLight(const Vec3& dir, const Color& color)
     {
+        m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::DirectionLight3d, Mat4{});
         m_uniformData.m_LightBlock.m_DirLight = DirectionalLightData(dir, color);
     }
 
     void Renderer::AddCallModel(Model3d& model, const Mat4& modelMatrix)
     {
+        m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Model3d, modelMatrix);
+
         ModelMesh* mesh = nullptr;
         //LogWarning(std::format("Found mesh group: {}", model.m_MeshGroups.size()));
         for (auto& meshGroup : model.m_MeshGroups)
@@ -974,14 +1163,93 @@ namespace Rendering
                 //TODO: right now we only care about color from material but we should be able 
                 // add all args to batch (maybe accept material?)
                 CreateBatch(GetBaseTextureShader(), mesh->m_Material, &(mesh->m_Vertices[0]), mesh->m_Vertices.size(),
-                    &(mesh->m_Indices[0]), mesh->m_Indices.size(), modelMatrix * meshGroup.m_GlobalTransform, true);
+                    &(mesh->m_Indices[0]), mesh->m_Indices.size(), modelMatrix * meshGroup.m_GlobalTransform, &mesh->m_BLASTree);
             }
         }
+    }
+
+    void Renderer::AddCallAABBWifreframe(const Mat4& modelMatrix, const Color& color, const float lineThickness)
+    {
+        constexpr size_t TOTAL_INDEX_COUNT = 36 * 4;
+        constexpr size_t TOTAL_VERTEX_COUNT = 36 * 4;
+
+        Shader& baseShader = GetBaseTextureShader();
+        Material& baseMaterial = GetDefaultMaterial();
+        RenderBatch* sameStatebatch = TryGetSameDrawBatch(baseShader, baseMaterial, TOTAL_INDEX_COUNT);
+        if (sameStatebatch != nullptr)
+        {
+            AddCompleteInstanceToBatch(*sameStatebatch, modelMatrix, baseMaterial);
+            return;
+        }
+        RenderBatch& batch = CreateBatch(baseShader, baseMaterial, nullptr, TOTAL_VERTEX_COUNT, nullptr, TOTAL_INDEX_COUNT, modelMatrix, nullptr);
+
+        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
+        const WorldPosition3D cameraPos = camera.GetTransform().GetWorldPos();
+        Vec3 cameraDir = {};
+        Vec3 cameraLineOrthogonal = {};
+
+        const ModelMesh& cubeMesh = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMesh(BasicMeshType::Cube)->m_Meshes[0];
+        WorldPosition3D vertex0 = {};
+        WorldPosition3D vertex1 = {};
+        for (IndexType i = 1; i < cubeMesh.m_Indices.size(); i++)
+        {
+            vertex0 = cubeMesh.m_Vertices[cubeMesh.m_Indices[i - 1]].m_LocalPos;
+            vertex1 = cubeMesh.m_Vertices[cubeMesh.m_Indices[i]].m_LocalPos;
+            cameraDir = (cameraPos - (vertex0 + vertex1) / 2).GetNormalized();
+            cameraLineOrthogonal = CrossProduct(cameraDir, (vertex1 - vertex0).GetNormalized()).GetNormalized();
+
+            //TODO: FINISH
+        }
+        FinishBatch(batch, nullptr);
+    }
+    void Renderer::AddCallAABBWifreframe(const AABB3D& aabb, const Quat& rotation, const Color& color, const float lineThickness)
+    {
+        AddCallAABBWifreframe(Utils::CalculateModelMatrix(nullptr, aabb.GetCenter(), aabb.GetSize(), rotation), color, lineThickness);
     }
 
     void Renderer::SetSkybox(Texture* texture)
     {
         m_skybox = texture;
+    }
+    void Renderer::AddBVHTreeBoundsWireframe()
+    {
+        for (const auto& node : m_tlasTree.GetNodes())
+        {
+            AddCallAABBWifreframe(node.GetAABB(), Quat::Identity(), 
+                node.IsLeaf()? BVH_BOUNDS_LEAF_COLOR : BVH_BOUNDS_COLOR, BVH_BOUNDS_LINE_THICKNESS);
+        }
+    }
+    bool Renderer::IntersectsBVH(const WorldPosition3D& rayWorldOrigin, const Vec3& rayDir, const Vertex* outHitVertex)
+    {
+        LogWarning(std::format("Invoking Intersect BVH sphere @{} for ray: {} -> {} Intersect(math): {}", 
+            Vec3(0, 0, 0.3).ToString(), rayWorldOrigin.ToString(), rayDir.ToString(), 
+            Utils::RayIntersectsSphere(Vec3(0, 0, 0.3), 0.2, rayWorldOrigin, rayDir, nullptr)));
+
+        Triangle* trianglePtr = reinterpret_cast<Triangle*>(&m_indices[0]);
+        return m_tlasTree.Intersects<InstanceType>(rayWorldOrigin, rayDir, &m_instances[0], nullptr,
+            [this, trianglePtr](const InstanceType& instance, const WorldPosition3D& rayOrigin, const Vec3& rayDir) -> bool
+            {
+                const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
+                const WorldPosition3D rayLocalOrigin = (instance.m_InverseModelMatrix * Vec4(rayOrigin, 1)).GetXYZ();
+                const WorldPosition3D rayLocalDir = (instance.m_InverseModelMatrix * Vec4(rayDir, 0)).GetXYZ().GetNormalized();
+                LogWarning(std::format("Inverse mat:{} rayO {}->{} rayDir {}->{}", instance.m_InverseModelMatrix.ToString(), 
+                    rayOrigin.ToString(), rayLocalOrigin.ToString(), rayDir.ToString(), rayLocalDir.ToString()));
+                LogWarning(std::format("Ray (LOCAL) {} -> {} reached blas level SHOULD INTERSECT:{}", rayLocalOrigin.ToString(), rayLocalDir.ToString(),
+                    Utils::RayIntersectsSphere(Vec3(), 0.2, rayLocalOrigin, rayLocalDir, nullptr)));
+
+                return ::IntersectsBVH<Triangle>(rayLocalOrigin, rayLocalDir, &m_blasTrees[treeInterval.m_StartIndex],
+                    treeInterval.m_Size, trianglePtr, nullptr, nullptr,
+                    [this](const Triangle& triangle, const WorldPosition3D& rayLocalOrigin, const Vec3& rayLocalDir) -> bool
+                    {
+                        float outHitDistance = 0;
+                        LogWarning(std::format("Ray {} -> {} reached vertex level with triangle: {} {} {}", rayLocalOrigin.ToString(), rayLocalDir.ToString(),
+                            m_vertices[triangle.m_VertexIndex0].m_LocalPos.ToString(),
+                            m_vertices[triangle.m_VertexIndex1].m_LocalPos.ToString(), m_vertices[triangle.m_VertexIndex2].m_LocalPos.ToString()));
+                        return Utils::RayIntersectsTriangle(m_vertices[triangle.m_VertexIndex0].m_LocalPos,
+                            m_vertices[triangle.m_VertexIndex1].m_LocalPos, m_vertices[triangle.m_VertexIndex2].m_LocalPos,
+                            rayLocalOrigin, rayLocalDir, &outHitDistance);
+                    });
+            });
     }
 
     void Renderer::RenderStartActions() const
@@ -990,7 +1258,6 @@ namespace Rendering
     }
     void Renderer::SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix)
     {
-        LogWarning("SETTING GVIEWER SATA");
         m_viewerUniformBuffer.TryWriteData("worldPos", sizeof(Vec3), worldPos.GetMemPointer());
         if (!m_viewerUniformBuffer.TryWriteData("viewMatrix", sizeof(Mat4),
             viewMatrix.GetMemPointer()))
@@ -1064,9 +1331,9 @@ namespace Rendering
 
                 SetViewerData(light.m_Pos, lightViewMatrices[j], lightProjMatrix);
 
-                for (size_t k = 0; k < m_batches.size(); k++)
+                for (size_t k = 0; k < m_geometryBatches.size(); k++)
                 {
-                    auto& batch = m_batches[k]; 
+                    auto& batch = m_geometryBatches[k]; 
                     if (batch.m_InstanceCount == 0)
                         continue;
 
@@ -1096,7 +1363,7 @@ namespace Rendering
         const bool needsViewMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix);
         const bool needsProjMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::PlatformProjMatrix);
 
-        SetViewerData(camera.GetTransform().GetGlobalPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix);
+        SetViewerData(camera.GetTransform().GetWorldPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix);
         //TODO: optimize so we check if light block data changed from last render batch and only then write buffer
         m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
 
@@ -1115,12 +1382,12 @@ namespace Rendering
             };
 
 
-        for (int i = 0; i < m_batches.size(); i++)
+        for (int i = 0; i < m_geometryBatches.size(); i++)
         {
 #ifdef GRAPHICS_VERBOSE_LOG
             LogWarning(std::format("Flushing batch:{}/{}", i + 1, m_batches.size()));
 #endif
-            auto& batch = m_batches[i];
+            auto& batch = m_geometryBatches[i];
 
             //If we have no instance data it means it might be a leftover batch from previous frame
             //that was not cleared
@@ -1171,6 +1438,7 @@ namespace Rendering
         //LogWarning(std::format("LIGHT PASS Texture controler after pass: {}", m_textureController.ToString()));
         //LogError(std::format("HDR color texture: {}", Utils::ToStringMemory(writePtr, byteSize)));
     } 
+
     void Renderer::ExecuteForwardRendering()
     {
         //NOTE: we do this to ensure that we only add any data as long as all 3 buffers have enough space
@@ -1188,7 +1456,7 @@ namespace Rendering
         }
 
         FencedBufferSegment& vertexFenceSeg = m_vertexBuffer.WriteDataFenced(&m_vertices[0], freeVertexSeg.value());
-        FencedBufferSegment& indexFenceSeg = m_indexBuffer.WriteDataFenced(&m_vertexIndices[0], freeIndexSeg.value());
+        FencedBufferSegment& indexFenceSeg = m_indexBuffer.WriteDataFenced(&m_indices[0], freeIndexSeg.value());
         FencedBufferSegment& instanceFenceSeg = m_instancedBuffer.WriteDataFenced(&m_instances[0], freeInstanceSeg.value());
 
         std::vector<SlotIndex> shadowCubeMapSlots = {};
@@ -1362,12 +1630,8 @@ namespace Rendering
 
         //If we dont do static goemetry we write every frame, otherwise
         //we only write during the first geometry init
-        if (!DO_STATIC_GEOMETRY) WriteVertexDataToSSBOs();
-        else if (!m_isStaticGeometryInit)
-        {
-            m_isStaticGeometryInit = true;
+        if (!DO_STATIC_GEOMETRY || (DO_STATIC_GEOMETRY && m_framesSinceStart == 0)) 
             WriteVertexDataToSSBOs();
-        }
 
         //TODO: get propert emissive material count
         const std::uint32_t emissiveMaterialCount = m_emissiveInstanceIndices.size();
@@ -1378,7 +1642,7 @@ namespace Rendering
             LogError(std::format("Attempted to execute ray tracing but there are no instances"));
             return;
         }
-        rayTraceShader.TrySetUniform(UniformDataType::Uint, INSTANCE_COUNT_UNIFORM_NAME, &instanceCount);
+        //rayTraceShader.TrySetUniform(UniformDataType::Uint, INSTANCE_COUNT_UNIFORM_NAME, &instanceCount);
 
         const SlotIndex inputTextureSlot = m_imageController.TryBindToFreeSlot<Texture>(m_hdrColorOutput, AccessPermissions::ReadWrite);
         const SlotIndex outputTextureSlot = m_imageController.TryBindToFreeSlot<Texture>(m_ioTexture, AccessPermissions::Write);
@@ -1389,7 +1653,7 @@ namespace Rendering
         const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
         Vec3 worldFoward, worldUp, worldRight;
         camera.GetTransform().CalculateWorldDirections(&worldFoward, &worldUp, &worldRight);
-        SetViewerData(camera.GetTransform().GetGlobalPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix, 
+        SetViewerData(camera.GetTransform().GetWorldPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix, 
             worldFoward, worldRight, worldUp, camera.GetSettings().m_FieldOfViewYRadians);
         const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
 
@@ -1477,13 +1741,15 @@ namespace Rendering
             LogError(std::format("Reached render frame count of: {}", m_framesSinceStart));
             return;
         }
-            
-        //LogWarning(std::format("Frame number: {}", m_framesSinceStart));
-        m_materialStorageBuffer.WriteData(0, m_materialData.size() * sizeof(MaterialData), &m_materialData[0]);
-        /*for (const auto& batch : m_batches)
+        
+        if (m_framesSinceStart == 0)
         {
-            for (const auto& data : batch.m_InstanceData) LogWarning(data.ToString());
-        }*/
+            ConstructTLASTree();
+            m_materialStorageBuffer.WriteData(0, m_materialData.size() * sizeof(MaterialData), &m_materialData[0]);
+
+            TestBVHIntersection(*this);
+        }
+        //LogWarning(std::format("Frame number: {}", m_framesSinceStart));
 
         if (DO_RAYTRACING) ExecuteRayTracing();
         else ExecuteForwardRendering();
@@ -1500,7 +1766,8 @@ namespace Rendering
         //BLOOM_THRESHOLD = 2 * std::abs(std::sin(m_engineState->m_TimeKeeper->GetTimeSinceInit(TimeUnit::Seconds)));
         //LogWarning(std::format("BLoom is: {} now: {}", BLOOM_THRESHOLD, m_engineState->m_TimeKeeper->GetTimeSinceInit(TimeUnit::Milliseconds)));
         //LogWarning("RENDER");
-        if (!m_batches.empty())
+        if (DO_VISUALIZE_BVH_BOUNDS) AddBVHTreeBoundsWireframe();
+        if (!m_geometryBatches.empty())
         {
             RenderStartActions();
             FlushBatches();
@@ -1523,16 +1790,16 @@ namespace Rendering
             m_frameGeometryMetrics = {};
 
             m_vertices.clear();
-            m_vertexIndices.clear();
+            m_indices.clear();
             m_instances.clear();
             m_instanceMeshes.clear();
             m_emissiveInstanceIndices.clear();
-            m_batches.clear();
+            m_geometryBatches.clear();
 
             //TODO: is this the best option for perofmrance amd should all be force cleared?
             //ideally we want to remove from middle, but that forces shifts in memory which may greatloy reduce performance
             //Tradeoff: performance cost for erasing some > performance cost of clearing all/having to reallocate frequent batches?
-            m_batches.clear();
+            m_geometryBatches.clear();
             m_hashToBatchIndex.clear();
             ResetRuntimeMaterialId();
         }
@@ -1542,20 +1809,83 @@ namespace Rendering
 
     std::string Renderer::ToStringBatches() const
     {
-        std::string result = std::format("TOTAL({})\n ", m_batches.size());
-        for (const auto& batch : m_batches)
+        std::string result = std::format("TOTAL({})\n ", m_geometryBatches.size());
+        for (const auto& batch : m_geometryBatches)
         {
             result += "\nBatch:" + batch.ToString() + "\n";
         }
         return result;
     }
-    std::string Renderer::ToStringAll()
+    std::string Renderer::ToStringBVH() const
+    {
+        return "TO STRING BVH: \n" + m_tlasTree.ToString(BVHToStringType::NodeBounds,
+            [this](const BVHFlatNode& node) -> std::string
+            {
+                const InstanceType& instance = m_instances[node.m_ObjectStartIndex];
+                const InstanceMesh& mesh = m_instanceMeshes[instance.m_MeshIndex];
+                const ArrayInterval interval = mesh.m_BLASTreesInterval;
+                const Vec3 aabbSize = node.GetAABB().GetSize();
+                if (Utils::ApproximateEqualsF(aabbSize.m_X, 0) || Utils::ApproximateEqualsF(aabbSize.m_Y, 0) || Utils::ApproximateEqualsF(aabbSize.m_Z, 0))
+                    LogError(std::format("Found INVALID TLAS tree node: {}", node.ToString()));
+
+                //LogWarning(std::format("Interval is: {} mesh index: {} instance index:{}", interval.m_Size, m_instances[node.m_ObjectStartIndex].m_MeshIndex));
+                return ToStringBVHNodes<BVHFlatNode>(&m_blasTrees[interval.m_StartIndex],
+                    interval.m_Size, &m_blasTrees[interval.m_StartIndex], nullptr, BVHToStringType::NodeBounds, nullptr, 
+                    [instance](const BVHFlatNode& node) -> std::string
+                    {
+                        const Vec3 aabbSize = node.GetAABB().GetSize();
+                        if (Utils::ApproximateEqualsF(aabbSize.m_X, 0) || Utils::ApproximateEqualsF(aabbSize.m_Y, 0)
+                            || Utils::ApproximateEqualsF(aabbSize.m_Z, 0))
+                        {
+                            LogError(std::format("Found INVALID BLAS tree node: {}", node.ToString()));
+                        }
+
+                        return std::format("[BLASNode Bounds:{}]", 
+                            Utils::ToWorldAABB(node.GetAABB(), instance.m_ModelMatrix).ToString());
+                    });
+            });
+    }
+    std::string Renderer::ToStringInstances() const
+    {
+        std::string result = "INSTANCES:";
+        for (const auto& batch : m_geometryBatches)
+        {
+            result += std::format("\nNew BATCH: Vertices{} Indices:{}", batch.m_VertexCount, batch.m_IndicesCount);
+            for (size_t i = 0; i < batch.m_InstanceCount; i++)
+            {
+                const InstanceType& instance = m_instances[batch.m_InstanceStartIndex + i];
+                const ArrayInterval interval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
+                std::string blasTreeString = ToStringBVHNodes<BVHFlatNode>(&m_blasTrees[interval.m_StartIndex],
+                    interval.m_Size, &m_blasTrees[interval.m_StartIndex], nullptr, BVHToStringType::NodeBounds);
+
+                std::vector<Vec3> vertexPositions = {};
+                const InstanceMesh& mesh = m_instanceMeshes[instance.m_MeshIndex];
+                for (size_t j = 0; j < mesh.m_NumIndices; j++)
+                {
+                    vertexPositions.emplace_back(m_vertices[m_indices[mesh.m_IndexOffset + j]].m_LocalPos);
+                }
+
+                result += std::format("\n[Instance]: Material(Idx:{}):{} Model:{} Vertices:{} \nMesh BLAS TREE(MeshIndex:{} IntervalStart:{} IntervalSize:{}):{}", 
+                    instance.m_MaterialIndex, m_materialData[instance.m_MaterialIndex].ToString(), instance.m_ModelMatrix.ToString(),
+                    Utils::ToStringIterable(vertexPositions), instance.m_MeshIndex, interval.m_StartIndex, interval.m_Size, blasTreeString);
+            }
+        }
+        return result;
+    }
+    std::string Renderer::ToStringMetrics() const
+    {
+        std::string result = std::format("Metrics:\n Render calls:{}", 
+            Utils::ToStringIterable(m_frameGeometryMetrics.m_RenderCallInvocations));
+        //TODO: count how many sphere counts, etc
+        return result;
+    }
+    std::string Renderer::ToStringAll() const
     {
         return std::format("DUMPING RENDERER DATA:\nCameraState:{}\nVertex({}):{}\nIndex({}):{}\nInstances({}):{}\nBatches:{}", 
             m_engineState->m_CameraController->GetActiveCamera().ToString(),
-            m_vertices.size(), Utils::ToStringIterable<std::vector<VertexType>, VertexType>(m_vertices),
-            m_vertexIndices.size(), Utils::ToStringIterable<std::vector<IndexType>, IndexType>(m_vertexIndices),
-            m_instances.size(), Utils::ToStringIterable<std::vector<InstanceType>, InstanceType>(m_instances),
+            m_vertices.size(), Utils::ToStringIterable(m_vertices),
+            m_indices.size(), Utils::ToStringIterable(m_indices),
+            m_instances.size(), Utils::ToStringIterable(m_instances),
             ToStringBatches());
     }
 }

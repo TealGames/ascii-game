@@ -29,7 +29,7 @@ std::string GlobalEntityManager::ToStringEntityData() const
 		if (entity == nullptr) continue;
 		entityStr.emplace_back(entity->ToString());
 	}
-	return Utils::ToStringIterable<std::vector<std::string>, std::string>(entityStr);
+	return Utils::ToStringIterable(entityStr);
 }
 
 std::string GlobalEntityManager::CleanName(const std::string name) const
@@ -91,9 +91,9 @@ EntityData& GlobalEntityManager::CreateGlobalEntity(const std::string& name, con
 {
 	std::string cleanedName = CleanName(name);
 	//Since we want cleaned name to use in error message, we choose to not clean second time when checking for entity
-	Assert(!HasGlobalEntity(name, false), 
-		std::format("Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
-		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName));
+	ENGINE_ASSERT(!HasGlobalEntity(name, false), 
+		"Tried to create a global entity with name: {} (cleaned:{}) that conflicts with existing global entity. "
+		"Note: it will still be added but will ruin the use of entity name searching!", name, cleanedName);
 
 	EntityData* createdEntity= m_globalEntities.emplace_back(&(m_globalRegistry.CreateNewEntity(name, transform)));
 	createdEntity->m_SceneName = EntityData::GLOBAL_SCENE_NAME;

@@ -64,12 +64,12 @@ namespace Physics
 
 		m_collisionRegistry.ExecuteOnAllCollisions([this](CollisionPair& collisionData) -> void
 			{
-				if (!Assert(collisionData.m_CollisionBoxA != nullptr, std::format("Tried to resolve a collision:{} "
-					"but collision box A is null", collisionData.ToString())))
+				if (!Assert(collisionData.m_CollisionBoxA != nullptr, "Tried to resolve a collision:{} "
+					"but collision box A is null", collisionData.ToString()))
 					return;
 
-				if (!Assert(collisionData.m_CollisionBoxB != nullptr, std::format("Tried to resolve a collision:{} "
-					"but collision box B is null", collisionData.ToString())))
+				if (!Assert(collisionData.m_CollisionBoxB != nullptr, "Tried to resolve a collision:{} "
+					"but collision box B is null", collisionData.ToString()))
 					return;
 
 				//TODO: if one has physics body while other does not do we still simulate physics?
@@ -92,8 +92,8 @@ namespace Physics
 				//for things like grounded checks/gravity)
 				
 				//TODO: using global pos everywere is expensive, perhaps we can optimize by checking parents first?
-				const Vec2 incomingBToADir = bodyA->GetEntityMutable().GetTransformMutable().GetGlobalPos().GetXY().GetY() - 
-					bodyB->GetEntityMutable().GetTransformMutable().GetGlobalPos().GetXY();
+				const Vec2 incomingBToADir = bodyA->GetEntityMutable().GetTransformMutable().GetWorldPos().GetXY().GetY() - 
+					bodyB->GetEntityMutable().GetTransformMutable().GetWorldPos().GetXY();
 				const float dotProductBofA = DotProduct(incomingBToADir, bodyB->GetVelocity());
 				/*LogError(std::format("touching:{} DOT BETWEEN B-> A:{} bodyB vel:{} is:{}", std::to_string(collisionData.m_IntersectionData.IsTouchingIntersection()), incomingBToADir.ToString(),
 					bodyB->GetVelocity().ToString(), std::to_string(dotProductBofA)));*/
@@ -233,8 +233,8 @@ namespace Physics
 		EntityData& entityA = collision.m_CollisionBoxA->GetEntityMutable();
 		EntityData& entityB = collision.m_CollisionBoxB->GetEntityMutable();
 
-		if (!Assert(bodyA != nullptr && bodyB != nullptr, std::format("Tried to resolve collision:{} body bodyA and/or bodyB "
-			"has no physicsBody", collision.ToString())))
+		if (!Assert(bodyA != nullptr && bodyB != nullptr, "Tried to resolve collision:{} body bodyA and/or bodyB "
+			"has no physicsBody", collision.ToString()))
 			return;
 
 		bool bothBodiesZeroVelocity = bodyA->GetVelocity() == Vec2::Zero() && bodyB->GetVelocity() == Vec2::Zero();

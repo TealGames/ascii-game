@@ -13,7 +13,7 @@ namespace Utils
 	T Max(T first) { return first; }
 
 	template<typename T, typename... OtherT>
-	requires AllSame<T, OtherT...>
+	requires AllSameType<T, OtherT...>
 	T Max(T first, OtherT... next)
 	{
 		return std::max(first, Max(next...));
@@ -23,7 +23,7 @@ namespace Utils
 	T Min(T first) { return first; }
 
 	template<typename T, typename... OtherT>
-	requires AllSame<T, OtherT...>
+	requires AllSameType<T, OtherT...>
 	T Min(T first, OtherT... next)
 	{
 		return std::min(first, Min(next...));

@@ -5,11 +5,11 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/Debug.hpp"
 
-enum class ReferenceType
+enum class ReferenceType : std::uint8_t
 {
-	Float,
-	Integer32,
-	Uint8,
+	Float		= 0,
+	Integer32	= 1,
+	Uint8		= 2
 };
 std::string ToString(const ReferenceType& type);
 
@@ -34,8 +34,8 @@ namespace ReferenceRegistry
 	template<typename T>
 	bool TryAddReference(const std::string& name, T& reference)
 	{
-		if (!Assert(!HasReference(name), std::format("Tried to add a reference named:{} to database,"
-			"but there is already a reference by that name", name)))
+		if (!Assert(!HasReference(name), "Tried to add a reference named:{} to database,"
+			"but there is already a reference by that name", name))
 			return false;
 
 		if (typeid(reference).name() == typeid(float))
@@ -64,12 +64,12 @@ namespace ReferenceRegistry
 	T* TryGetReference(const std::string& name)
 	{
 		auto it = TryGetReferenceMutable(name);
-		if (!Assert(it != Registry.end(), std::format("Tried to get reference named: {} from database "
-			"but no reference by that name exists", name)))
+		if (!Assert(it != Registry.end(), "Tried to get reference named: {} from database "
+			"but no reference by that name exists", name))
 			return nullptr;
 
-		if (!Assert(it->second.m_Pointer != nullptr, std::format("Tried to get reference named: {} from database"
-			" but a reference by that name has a null reference")))
+		if (!Assert(it->second.m_Pointer != nullptr, "Tried to get reference named: {} from database"
+			" but a reference by that name has a null reference"))
 			return nullptr;
 
 		if (typeid(T).name() == typeid(float) && it->second.m_Type == ReferenceType::Float)

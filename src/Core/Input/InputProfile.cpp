@@ -23,8 +23,8 @@ namespace Input
 
 	InputManager& InputProfile::GetInputManagerMutable()
 	{
-		if (!Assert(m_inputManager != nullptr, std::format("Tried to get input manager MUTABLE "
-			"in input profile:{} but it is null", GetName())))
+		if (!Assert(m_inputManager != nullptr, "Tried to get input manager MUTABLE "
+			"in input profile:{} but it is null", GetName()))
 			throw std::invalid_argument("Invalid input manager state");
 
 		return *m_inputManager;
@@ -225,8 +225,8 @@ namespace Input
 		auto onlyActionKeys = Utils::GetValuesFromMap<std::string, InputAction>(m_actions.begin(), m_actions.end());
 		auto onlyCompoundKeys= Utils::GetValuesFromMap<std::string, CompoundInput>(m_compoundInputs.begin(), m_compoundInputs.end());
 
-		output += std::format(",Actions:{}", Utils::ToStringIterable<std::vector<InputAction>, InputAction>(onlyActionKeys));
-		output += std::format(",CompooundActions:{}", Utils::ToStringIterable<std::vector<CompoundInput>, CompoundInput>(onlyCompoundKeys));
+		output += std::format(",Actions:{}", Utils::ToStringIterable(onlyActionKeys));
+		output += std::format(",CompooundActions:{}", Utils::ToStringIterable(onlyCompoundKeys));
 		output += "}";
 		return output;
 	}

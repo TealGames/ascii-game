@@ -17,8 +17,10 @@ layout(location=2) in vec3 aNormal;
 
 //These are instanced per object
 layout(location=3) in uint aMaterialIndex;
-layout(location=4) in mat4 aModelMatrix;
-layout(location=8) in mat3 aNormalModelMatrix;
+layout(location=4) in uint aMeshIndex;
+layout(location=5) in mat4 aModelMatrix;
+//NOTE: 5-8 for modelMatrix, 9-12 for inverseMOdelMatrix
+layout(location=13) in mat3 aNormalModelMatrix;
 
 //Passed to fragment shader
 out vec2 vTexCoords;

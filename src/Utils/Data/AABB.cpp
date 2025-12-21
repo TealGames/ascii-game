@@ -48,40 +48,7 @@ std::string AABB2D::ToString() const
 		m_MaxPos.ToString(), GetSize().ToString());
 }
 
-AABB3D::AABB3D() : AABB3D(WorldPosition3D{}, WorldPosition3D{}) {}
-AABB3D::AABB3D(const WorldPosition3D& minPos, const WorldPosition3D& maxPos)
-	: m_MinPos(minPos), m_MaxPos(maxPos) {}
-
-AABB3D::AABB3D(const Vec3& size) : m_MinPos(size / 2 * -1), m_MaxPos(size / 2) {}
-
-WorldPosition3D AABB3D::GetGlobalMin(const WorldPosition3D& centerWorldPos) const
+AABB3D UnifyBounds(const AABB3D& bounds1, const AABB3D& bounds2)
 {
-	return centerWorldPos + m_MinPos;
-}
-
-WorldPosition3D AABB3D::GetGlobalMax(const WorldPosition3D& centerWorldPos) const
-{
-	return centerWorldPos + m_MaxPos;
-}
-
-Vec3 AABB3D::GetSize() const
-{
-	return m_MaxPos - m_MinPos;
-}
-
-Vec3 AABB3D::GetHalfExtent() const
-{
-	return GetSize() / 2;
-}
-
-std::string AABB3D::ToString(const WorldPosition3D& transformPos) const
-{
-	return std::format("[GMin:{} GMax:{} Size: {}]", GetGlobalMin(transformPos).ToString(),
-		GetGlobalMax(transformPos).ToString(), GetSize().ToString());
-}
-
-std::string AABB3D::ToString() const
-{
-	return std::format("[Min:{} Max:{} Size: {}]", m_MinPos.ToString(),
-		m_MaxPos.ToString(), GetSize().ToString());
+	return AABB3D(Min(bounds1.m_MinPos, bounds2.m_MinPos), Max(bounds1.m_MaxPos, bounds2.m_MaxPos));
 }

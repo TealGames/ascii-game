@@ -16,12 +16,12 @@ namespace GlobalColorCodes
 				if (line == nullptr) return;
 
 				std::optional<FigProperty> maybeFig = Fig::TryGetPropertyFromLine(*line);
-				if (!Assert(maybeFig.has_value(), std::format("Tried to add global colors "
-					"from file but line : '{}' failed to be parsed into fig", *line)))
+				if (!Assert(maybeFig.has_value(), "Tried to add global colors "
+					"from file but line : '{}' failed to be parsed into fig", *line))
 					return;
 
-				if (!Assert(TryRegisterColor(maybeFig.value()), std::format("Tried to register "
-					"global color with fig line:'{}' but failed", maybeFig.value().ToString())))
+				if (!Assert(TryRegisterColor(maybeFig.value()), "Tried to register "
+					"global color with fig line:'{}' but failed", maybeFig.value().ToString()))
 					return;
 				//TryRegisterColor();
 			});

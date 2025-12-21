@@ -58,9 +58,9 @@ public:
 	void SetLocalPosDeltaY(const float& yDelta);
 	void SetLocalPosDelta(const Vec2& moveDelta);*/
 
-	const Vec3& GetGlobalPos() const;
-	const Vec3& GetGlobalScale() const;
-	const Quat& GetGlobalRotation() const;
+	const Vec3& GetWorldPos() const;
+	const Vec3& GetWorldScale() const;
+	const Quat& GetWorldRotation() const;
 	const Mat4& GetWorldModelMatrix() const;
 
 	const Vec3& GetLocalPos() const;
@@ -85,8 +85,3 @@ public:
 	void Deserialize(const Json& json) override;
 	Json Serialize() override;
 };
-
-Mat4 CalculateTranslationMatrix(const Vec3& pos);
-Mat4 CalculateScaleMatrix(const Vec3& scale);
-Mat4 CalculateRotationMatrix(const Quat& rotation);
-Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Vec3& pos, const Vec3& scale, const Quat& rotation);

@@ -18,8 +18,8 @@ ShaderAsset::ShaderAsset(const std::filesystem::path& path)
 void ShaderAsset::WriteToShaderFromFiles()
 {
 	const std::filesystem::path path = GetAbsolutePath();
-	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a shader asset from path:{} (extension:{})"
-		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
+	if (!Assert(path.extension() == EXTENSION, "Tried to create a shader asset from path:{} (extension:{})"
+		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION))
 		return;
 
 	const std::string fileNameStr = path.stem().string();

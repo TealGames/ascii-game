@@ -66,11 +66,8 @@ void UIInputField::Init()
 
 const Input::InputManager& UIInputField::GetInputManager() const
 {
-	if (!Assert(m_inputManager != nullptr,
-		std::format("Tried to retreive input manager from input field but it is NULLPTR")))
-	{
-		throw std::invalid_argument("Invalid input manager");
-	}
+	ENGINE_ASSERT(m_inputManager != nullptr,
+		"Tried to retreive input manager from input field but it is NULLPTR");
 	return *m_inputManager;
 }
 

@@ -284,7 +284,7 @@ void UIInteractionManager::AddSelectable(const UILayer layer, UISelectableData* 
 {
 	if (selectable == nullptr)
 	{
-		Assert(false, std::format("Tried to add selectable to gui selector manager but it is NULL"));
+		LogError(std::format("Tried to add selectable to gui selector manager but it is NULL"));
 		return;
 	}
 
@@ -300,7 +300,6 @@ void UIInteractionManager::AddSelectable(const UILayer layer, UISelectableData* 
 	//If we already triggered an interaction event, we have to make sure we set it before continuing
 	if (selectable->IsSelected())
 	{
-		//if (selectable->GetEntity().m_Name == "ConsoleInput") LogError("SHIT");
 		SelectableSelectCallback(selectable);
 	}
 	if (selectable->IsHoveredOver()) SelectableHoverStartCallback(selectable);
@@ -369,7 +368,7 @@ std::string UIInteractionManager::ToStringSelectableTypes() const
 			i++;
 		}
 	}
-	return Utils::ToStringIterable<std::vector<std::string>, std::string>(typeStr);
+	return Utils::ToStringIterable(typeStr);
 }
 
 std::string UIInteractionManager::ToStringSelectables() const

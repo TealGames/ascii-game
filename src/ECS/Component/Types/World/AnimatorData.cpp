@@ -16,8 +16,8 @@ AnimatorData::AnimatorData(const std::vector<AnimationPropertyVariant>& properti
 	m_Properties(properties), m_AnimationSpeed(speed), m_NormalizedTime(0), m_KeyframeIndex(0), m_AnimationLength(animationTime), m_Loop(loop)
 {
 	if (!Assert(!Utils::ApproximateEqualsF(m_AnimationSpeed, 0),
-		std::format("Tried to set animator data:{} with animation speed of zero!", 
-		Utils::ToStringIterable<std::vector<AnimationPropertyVariant>, AnimationPropertyVariant>(m_Properties)))) 
+		"Tried to set animator data:{} with animation speed of zero!", 
+		Utils::ToStringIterable(m_Properties))) 
 		return;
 
 	//if (!Assert(!m_Properties.empty(),
@@ -92,5 +92,5 @@ std::string AnimatorData::ToString() const
 	}
 	return std::format("[Animator Loop:{} Speed:{} Properties:{}]", 
 		std::to_string(m_Loop), std::to_string(m_AnimationSpeed), 
-		Utils::ToStringIterable<std::vector<std::string>, std::string>(propertyStrs));
+		Utils::ToStringIterable(propertyStrs));
 }

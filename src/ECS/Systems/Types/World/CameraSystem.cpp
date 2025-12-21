@@ -51,7 +51,7 @@ namespace ECS
     {
         //Note: we only set x y so that the depth is not messed up with objects moving farther or towards
         cameraData.GetEntityMutable().GetTransformMutable().GetLocalPosMutable().
-            SetXY(cameraData.GetFollowTarget()->GetTransform().GetGlobalPos().GetXY());
+            SetXY(cameraData.GetFollowTarget()->GetTransform().GetWorldPos().GetXY());
     }
     
     /*

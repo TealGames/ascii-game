@@ -7,7 +7,7 @@ CameraController::CameraController() : m_priorityCameras() {}
 bool CameraController::Validate()
 {
 	return Assert(!m_priorityCameras.empty(), 
-		std::format("Validated camera controller but there are no cameras set which is not allowed"));
+		"Validated camera controller but there are no cameras set which is not allowed");
 }
 
 bool CameraController::TryRegisterCamera(CameraComponent& camera, const PriorityType& priority)
@@ -34,8 +34,8 @@ void CameraController::UpdateActiveCamera()
 
 CameraComponent& CameraController::GetActiveCameraMutable()
 {
-	if (!Assert(!m_priorityCameras.empty(), std::format("Tried to get active camera MUTABLE from "
-		"camera controller, but there are no cameras registered!")))
+	if (!Assert(!m_priorityCameras.empty(), "Tried to get active camera MUTABLE from "
+		"camera controller, but there are no cameras registered!"))
 		throw std::invalid_argument("Invalid camera state");
 
 	return *(std::prev(m_priorityCameras.end())->second);
@@ -43,8 +43,8 @@ CameraComponent& CameraController::GetActiveCameraMutable()
 
 const CameraComponent& CameraController::GetActiveCamera() const
 {
-	if (!Assert(!m_priorityCameras.empty(), std::format("Tried to get active camera from "
-		"camera controller, but there are no cameras registered!")))
+	if (!Assert(!m_priorityCameras.empty(), "Tried to get active camera from "
+		"camera controller, but there are no cameras registered!"))
 		throw std::invalid_argument("Invalid camera state");
 
 	return *(std::prev(m_priorityCameras.end())->second);

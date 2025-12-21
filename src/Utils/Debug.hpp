@@ -1,10 +1,14 @@
 #pragma once
 #include <string>
-#include "Utils/Data/Event.hpp"
 #include <optional>
 #include <cstdint>
+#include <string_view>
+#include <format>
 #include <source_location>
 #include "Utils/HelperMacros.hpp"
+#include "Utils/Data/Event.hpp"
+
+#define ENGINE_DEBUG
 
 using LogTypeIntegralType = std::uint8_t;
 enum class LogType : LogTypeIntegralType
@@ -17,38 +21,6 @@ enum class LogType : LogTypeIntegralType
 };
 
 FLAG_ENUM_OPERATORS(LogType)
-//constexpr LogType operator&(const LogType& lhs, const LogType& rhs)
-//{
-//	return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
-//		& static_cast<LogTypeIntegralType>(rhs));
-//}
-//constexpr LogType& operator&=(LogType& lhs, const LogType& rhs)
-//{
-//	lhs = lhs & rhs;
-//	return lhs;
-//}
-//constexpr LogType operator|(const LogType& lhs, const LogType& rhs)
-//{
-//	return static_cast<LogType>(static_cast<LogTypeIntegralType>(lhs)
-//		| static_cast<LogTypeIntegralType>(rhs));
-//}
-//constexpr LogType& operator|=(LogType& lhs, const LogType& rhs)
-//{
-//	lhs = lhs | rhs;
-//	return lhs;
-//}
-//constexpr LogType operator~(const LogType& op)
-//{
-//	return static_cast<LogType>(~static_cast<LogTypeIntegralType>(op));
-//}
-//constexpr bool operator==(const LogType first, const LogType other)
-//{
-//	return static_cast<LogTypeIntegralType>(first) == static_cast<LogTypeIntegralType>(other);
-//}
-//constexpr bool operator!=(const LogType first, const LogType other)
-//{
-//	return !(first == other);
-//}
 
 std::optional<LogType> StringToLogType(const std::string& str);
 std::string LogTypeToString(const LogType& logType);
@@ -106,9 +78,12 @@ namespace DebugProperties
 	void RemoveLogTypeFilter(LogType logType);
 	void SetAllLogTypeFilter();
 	void SetNoneLogTypeFilter();
+	CallerLogDetails GetCallerLogDetails();
 	LogType GetLogTypeFilter();
 	void ResetLogFilters();
 }
+
+std::string FormatCurrentTime();
 
 /// <summary>
 /// Achieves the same as defualt log but also includes the class that called it
@@ -147,7 +122,33 @@ void LogWarning(const std::string& message, const bool logTime = DEFAULT_LOG_TIM
 /// <param name="logTime"></param>
 void LogError(const std::string& message, const bool logTime = DEFAULT_LOG_TIME,
 	const bool showStackTrace = DEFAULT_SHOW_STACK_TRACE, const std::source_location& loc = std::source_location::current());
+
 void Break();
 
-bool Assert(const bool condition, const std::string& errMessage, const bool showStackTrace = DEFAULT_SHOW_STACK_TRACE, 
-	const std::source_location& loc = std::source_location::current());
+//bool Assert(const bool condition, const std::string& message);
+
+template<typename ...Args>
+bool Assert(const bool condition, const char* message, Args&&... args)
+{
+	if (!condition)
+	{
+		//NOTE: we have to use vformat and NOT format because vformat is a runtime version of format which allows for 
+		//non-compile time strings like const char* which MSVC gets angry if we use with format
+		std::string formattedMessage = std::vformat(message, std::make_format_args(args...));
+		LogMessage(LogType::Error, DebugProperties::GetCallerLogDetails(), formattedMessage, false,
+			true, nullptr, (DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::EventFlag) != 0, std::source_location::current());
+		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Break) != 0) Break();
+		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Throw) != 0) throw std::invalid_argument(formattedMessage);
+	}
+	return condition;
+}
+
+#if defined(ENGINE_DEBUG)
+	//NOTE: the benefits of this version of the assert is that
+	//the args into ENIGNE_ASSERT are not evaluated if the condition is false which
+	//can helps performancej
+	#define ENGINE_ASSERT(condition, ...) \
+        ((condition) ? true : Assert(false, ##__VA_ARGS__))
+#else
+	#define ENGINE_ASSERT(condition, ...) ((void)0);
+#endif

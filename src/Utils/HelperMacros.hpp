@@ -74,28 +74,48 @@ Type& Type::operator/=(const Type& other)               \
     return *this;                                       \
 }                                                       \
 
-#define DEFINE_TEMPLATE_HAS_FUNCTION_NAMED(FUNCTION)                            \
+#define STATIC_ASSERT_HAS_FUNCTION_NAMED(FUNCTION, Type, ReturnType, ...) \
+    static_assert(HasFunction##FUNCTION<Type, ReturnType, __VA_ARGS__>, \
+                  "Type " #Type " does not have function " #FUNCTION " with the given signature");
+
+#define STATIC_ASSERT_HAS_FUNCTION(FUNCTION, Type) \
+    static_assert(HasFunction##FUNCTION<Type>, \
+                  "Type " #Type " does not have function " #FUNCTION " with the given signature");
+
+#define DEFINE_TEMPLATE_HAS_NAMED_FUNCTION(FUNCTION)                            \
 template<typename T, typename ReturnType, typename... Args>                     \
-concept HasFunction##FUNCTION = requires(T t, Args... args) {                   \
+concept HasNamedFunction##FUNCTION = requires(T t, Args... args) {              \
     { t.FUNCTION(args...) } -> std::convertible_to<ReturnType>;                 \
 };
 
-#define DEFINE_TEMPLATE_HAS_FUNCTION(FUNCTION, RETURN_TYPE)                             \
-template<typename T>                                                                    \
-concept HasFunction##FUNCTION = requires(T t) {                                         \
-    { t.FUNCTION() } -> std::convertible_to<RETURN_TYPE>;                               \
+#define DEFINE_TEMPLATE_HAS_FUNCTION(FUNCTION, RETURN_TYPE)                     \
+template<typename T>                                                            \
+concept HasFunction##FUNCTION = requires(T t) {                                 \
+    { t.FUNCTION() } -> std::convertible_to<RETURN_TYPE>;                       \
 };
 
-#define DEFINE_TEMPLATE_HAS_FUNCTION_ARG1(FUNCTION, RETURN_TYPE, T0) \
-template<typename T> \
-concept HasFunction##FUNCTION = requires(T t) { \
-    { t.FUNCTION(std::declval<T0>()) } -> std::convertible_to<RETURN_TYPE>; \
+#define DEFINE_TEMPLATE_HAS_VOID_NAMED_FUNCTION(FUNCTION)                       \
+template<typename T, typename... Args>                                          \
+concept HasVoidNamedFunction##FUNCTION = requires(T t, Args... args) {          \
+    { t.FUNCTION(args...) } -> std::same_as<void>;                              \
 };
 
-#define DEFINE_TEMPLATE_HAS_FUNCTION_ARG2(FUNCTION, RETURN_TYPE, T0, T1) \
-template<typename T> \
-concept HasFunction##FUNCTION = requires(T t) { \
-    { t.FUNCTION(std::declval<T0>(), std::declval<T1>()) } -> std::convertible_to<RETURN_TYPE>; \
+#define DEFINE_TEMPLATE_HAS_VOID_FUNCTION(FUNCTION)                             \
+template<typename T>                                                            \
+concept HasVoidFunction##FUNCTION = requires(T t) {                             \
+    { t.FUNCTION() } -> std::same_as<void>;                                     \
+};
+
+#define DEFINE_TEMPLATE_HAS_FREE_NAMED_FUNCTION(FUNCTION)                       \
+template<typename ReturnType, typename... Args>                                 \
+concept HasFreeNamedFunction##FUNCTION = requires(Args... args) {               \
+    { FUNCTION(args...) } -> std::convertible_to<ReturnType>;                   \
+};
+
+#define DEFINE_TEMPLATE_HAS_FREE_VOID_NAMED_FUNCTION(FUNCTION)                  \
+template<typename... Args>                                                      \
+concept HasFreeVoidNamedFunction##FUNCTION = requires(Args... args) {           \
+    { FUNCTION(args...) } -> std::same_as<void>;                                \
 };
 
 #define DEFINE_TEMPLATE_HAS_PROPERTY(MEMBER, RETURN_TYPE)                               \

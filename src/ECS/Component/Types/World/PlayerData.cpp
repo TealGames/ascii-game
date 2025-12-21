@@ -72,17 +72,15 @@ float PlayerData::GetVerticalDistanceToGround() const
 
 PhysicsBodyData& PlayerData::GetBodyMutableSafe()
 {
-	if (!Assert(m_body != nullptr, 
-		std::format("Tried to get the physics body MUTABLE from player data but it is NULL")))
-		throw std::invalid_argument("Invalid PlayerData PhysicsBody State");
+	ENGINE_ASSERT(m_body != nullptr, 
+		"Tried to get the physics body MUTABLE from player data but it is NULL");
 
 	return *m_body;
 }
 const PhysicsBodyData& PlayerData::GetBodySafe() const
 {
-	if (!Assert(m_body != nullptr,
-		std::format("Tried to get the physics body from player data but it is NULL")))
-		throw std::invalid_argument("Invalid PlayerData PhysicsBody State");
+	ENGINE_ASSERT(m_body != nullptr,
+		"Tried to get the physics body from player data but it is NULL");
 
 	return *m_body;
 }

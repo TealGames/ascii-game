@@ -106,8 +106,8 @@ namespace IO
 		CreatePathIfNotFound(path);
 
 		std::ofstream file(cleanedPath);
-		if (!Assert(file.is_open(), std::format("Tried to WRITE {} to file at path {} "
-			"but it could not be opened", content, cleanedPath.string())))
+		if (!Assert(file.is_open(), "Tried to WRITE {} to file at path {} "
+			"but it could not be opened", content, cleanedPath.string()))
 			return false;
 
 		file << content;
@@ -120,8 +120,8 @@ namespace IO
 		const std::filesystem::path cleanedPath = CleanPath(path);
 
 		std::ifstream file(cleanedPath);
-		if (!Assert(file.is_open(), std::format("Tried to READ from file (full) at path {} "
-			"but it could not be opened", cleanedPath.string())))
+		if (!Assert(file.is_open(), "Tried to READ from file (full) at path {} "
+			"but it could not be opened", cleanedPath.string()))
 			return "";
 
 		std::stringstream stream;
@@ -133,8 +133,8 @@ namespace IO
 	{
 		const std::filesystem::path cleanedPath = CleanPath(path);
 		std::ifstream file(cleanedPath);
-		if (!Assert(file.is_open(), std::format("Tried to check if file is empty at path {} "
-			"but it could not be opened", cleanedPath.string())))
+		if (!Assert(file.is_open(), "Tried to check if file is empty at path {} "
+			"but it could not be opened", cleanedPath.string()))
 			return false;
 
 		std::string line = "";
@@ -147,8 +147,8 @@ namespace IO
 		const std::filesystem::path cleanedPath = CleanPath(path);
 
 		std::ifstream file(cleanedPath);
-		if (!Assert(file.is_open(), std::format("Tried to READ from file (by lines) at path {} "
-			"but it could not be opened", cleanedPath.string())))
+		if (!Assert(file.is_open(), "Tried to READ from file (by lines) at path {} "
+			"but it could not be opened", cleanedPath.string()))
 			return {};
 
 		std::vector<std::string> lines = {};
@@ -170,8 +170,8 @@ namespace IO
 		const std::filesystem::path cleanedPath = CleanPath(path);
 
 		std::ifstream file(cleanedPath);
-		if (!Assert(file.is_open(), std::format("Tried to execute an action for file (by lines) at path {} "
-			"but it could not be opened", cleanedPath.string())))
+		if (!Assert(file.is_open(), "Tried to execute an action for file (by lines) at path {} "
+			"but it could not be opened", cleanedPath.string()))
 			return false;
 
 		std::vector<std::string> lines = {};

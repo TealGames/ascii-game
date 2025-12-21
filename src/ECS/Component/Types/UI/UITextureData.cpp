@@ -22,7 +22,7 @@ UIRect UITextureData::Render(const UIRect& renderRect)
 	//LogError(std::format("Rendering texture for entity:{} has:{}", GetEntity().m_Name, m_texture!=nullptr));
 	if (!HasTexture()) return {};
 
-	const Vec3 globalScale = GetEntity().GetTransform().GetGlobalScale();
+	const Vec3 globalScale = GetEntity().GetTransform().GetWorldScale();
 	const Vec2 renderAreaSize = renderRect.GetSize();
 	const float minFitToAreaScale = std::min((float)renderAreaSize.m_X / m_texture->GetTexture().GetInfo().m_texelSize.m_X, 
 											 (float)renderAreaSize.m_Y / m_texture->GetTexture().GetInfo().m_texelSize.m_Y);

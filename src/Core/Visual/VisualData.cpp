@@ -113,8 +113,8 @@ void VisualData::CreateBuffer(const std::vector<std::vector<TextBufferChar>>& ra
 	m_worldSize = { (maxRowChars - 1) * charSpacing.m_X + unpaddedSize.m_X,
 								 (rawBuffer.size() - 1) * charSpacing.m_Y + unpaddedSize.m_Y };
 
-	if (!Assert(m_worldSize.m_X != 0 && m_worldSize.m_Y != 0, std::format("Tried to create visual data but "
-		"full size was calculated to invalid value:{} unpadded:{}", m_worldSize.ToString(), unpaddedSize.ToString())))
+	if (!Assert(m_worldSize.m_X != 0 && m_worldSize.m_Y != 0, "Tried to create visual data but "
+		"full size was calculated to invalid value:{} unpadded:{}", m_worldSize.ToString(), unpaddedSize.ToString()))
 		return;
 
 	Vec2 pivotDiff = {};

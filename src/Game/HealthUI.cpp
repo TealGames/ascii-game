@@ -67,9 +67,9 @@ namespace Game
 
 					while (currentIndex != targetIndex)
 					{
-						if (!Assert(currentIndex >= 0 && currentIndex < m_health.size(), std::format("Tried to update health UI from {} -> {} "
+						if (!Assert(currentIndex >= 0 && currentIndex < m_health.size(), "Tried to update health UI from {} -> {} "
 							"but current index:{} is out of bounds of health UI:[0, {})", std::to_string(oldHealth), std::to_string(newHealth),
-							std::to_string(currentIndex), std::to_string(m_health.size()))))
+							std::to_string(currentIndex), std::to_string(m_health.size())))
 							return;
 
 						m_health[currentIndex]->TrySetEntityActive(delta > 0);

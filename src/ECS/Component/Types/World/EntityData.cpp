@@ -28,8 +28,7 @@ ECS::EntityRegistry& EntityData::GetRegistryMutable()
 {
 	if (m_registry == nullptr)
 	{
-		Assert(false, std::format("Attempted to get entity registry MUTABLE for entity:{} but it was NULL", ToString()));
-		throw std::invalid_argument("Invalid registry state");
+		LogError(std::format("Attempted to get entity registry MUTABLE for entity:{} but it was NULL", ToString()));
 	}
 	return *m_registry;
 }
@@ -37,8 +36,7 @@ const ECS::EntityRegistry& EntityData::GetRegistry() const
 {
 	if (m_registry == nullptr)
 	{
-		Assert(false, std::format("Attempted to get entity registry IMMUTABLE for entity:{} but it was NULL", ToString()));
-		throw std::invalid_argument("Invalid registry state");
+		LogError(std::format("Attempted to get entity registry IMMUTABLE for entity:{} but it was NULL", ToString()));
 	}
 	return *m_registry;
 }
@@ -53,8 +51,7 @@ TransformComponent& EntityData::GetTransformMutable()
 	TransformComponent* transform = TryGetComponentMutable<TransformComponent>();
 	if (transform == nullptr)
 	{
-		Assert(false, std::format("Attempted to get transform MUTABLE from entity:{} but failed", ToString()));
-		throw std::invalid_argument("Invalid transform");
+		LogError(std::format("Attempted to get transform MUTABLE from entity:{} but failed", ToString()));
 	}
 	return *transform;
 }
@@ -63,8 +60,7 @@ const TransformComponent& EntityData::GetTransform() const
 	const TransformComponent* transform = TryGetComponent<TransformComponent>();
 	if (transform == nullptr)
 	{
-		Assert(false, std::format("Attempted to get transform IMMUTABLE from entity:{} but failed", ToString()));
-		throw std::invalid_argument("Invalid transform");
+		LogError(std::format("Attempted to get transform IMMUTABLE from entity:{} but failed", ToString()));
 	}
 	return *transform;
 }

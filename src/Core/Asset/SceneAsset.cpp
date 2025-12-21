@@ -28,8 +28,8 @@ static const char* LEVEL_BACKGOUND_PROPERTY_NAME = "Background";
 SceneAsset::SceneAsset(const std::filesystem::path& path) : 
 	Asset(path, true), m_assetManager(nullptr), m_scene(std::nullopt), m_levelFilePath()
 {
-	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a scene asset from path:{} (extension:{})"
-		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
+	if (!Assert(path.extension() == EXTENSION, "Tried to create a scene asset from path:{} (extension:{})"
+		"but it does not have required extension:'{}'", path.string(), path.extension().string(), EXTENSION))
 		return;
 
 	std::filesystem::path maybePath = GetAbsolutePath().parent_path() / (GetName() + LEVEL_EXTENSION);
@@ -42,8 +42,8 @@ SceneAsset::SceneAsset(const std::filesystem::path& path) :
 
 AssetManagement::AssetManager& SceneAsset::GetAssetManagerMutable()
 {
-	if (!Assert(m_assetManager!=nullptr, std::format("Tried to retrieve asset manager MUTABLE from scene asset:{} "
-		"but the asset manager has no reference yet due to dependencies for this asset not initialized", ToString())))
+	if (!Assert(m_assetManager!=nullptr, "Tried to retrieve asset manager MUTABLE from scene asset:{} "
+		"but the asset manager has no reference yet due to dependencies for this asset not initialized", ToString()))
 	{
 		throw std::invalid_argument("Invalid asset manager scene asset dependency");
 	}
@@ -54,8 +54,8 @@ AssetManagement::AssetManager& SceneAsset::GetAssetManagerMutable()
 
 Scene& SceneAsset::GetSceneMutable()
 {
-	if (!Assert(m_scene.has_value(), std::format("Tried to retrieve scene MUTABLE from scene asset:{} "
-		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
+	if (!Assert(m_scene.has_value(),"Tried to retrieve scene MUTABLE from scene asset:{} "
+		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString()))
 	{
 		throw std::invalid_argument("Invalid scene asset dependency");
 	}
@@ -65,8 +65,8 @@ Scene& SceneAsset::GetSceneMutable()
 }
 const Scene& SceneAsset::GetScene() const
 {
-	if (!Assert(m_scene.has_value(), std::format("Tried to retrieve scene from scene asset:{} "
-		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
+	if (!Assert(m_scene.has_value(), "Tried to retrieve scene from scene asset:{} "
+		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString()))
 	{
 		throw std::invalid_argument("Invalid scene asset dependency");
 	}
@@ -123,8 +123,8 @@ void SceneAsset::UpdateAssetFromFile()
 			currentComponentJson = entityComponentsJson[i];
 			componentName = currentComponentJson.at("Type").get<std::string>();
 			isTransformComponent = componentName == Utils::ToStringTypeName<TransformComponent>();
-			if (i == 0 && !Assert(isTransformComponent, std::format("Tried to parse scene file at path: '{}' "
-				"but found entity component that does not begin with Transform!", GetAbsolutePathCopy().string())))
+			if (i == 0 && !Assert(isTransformComponent, "Tried to parse scene file at path: '{}' "
+				"but found entity component that does not begin with Transform!", GetAbsolutePathCopy().string()))
 				return;
 
 			if (isTransformComponent)
@@ -140,8 +140,8 @@ void SceneAsset::UpdateAssetFromFile()
 				continue;
 			}
 
-			if (!Assert(currentEntity != nullptr, std::format("Tried to parse scene file at path: '{}' "
-				"for component: {} but current entity: {} is null", GetAbsolutePathCopy().string(), componentName, entityName)))
+			if (!Assert(currentEntity != nullptr, "Tried to parse scene file at path: '{}' "
+				"for component: {} but current entity: {} is null", GetAbsolutePathCopy().string(), componentName, entityName))
 				return;
 
 			if (componentName == Utils::ToStringTypeName<AnimatorData>())
@@ -184,14 +184,14 @@ void SceneAsset::UpdateAssetFromFile()
 			}
 			else
 			{
-				Assert(false, std::format("Tried to DESERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
-					"but no component by that name exists!", componentName, entityName, GetAbsolutePathCopy().string()));
+				Assert(false, "Tried to DESERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
+					"but no component by that name exists!", componentName, entityName, GetAbsolutePathCopy().string());
 				return;
 			}
 
 			//if (componentCreated == nullptr) continue;
-			if (!Assert(componentCreated != nullptr, std::format("Tried to deserialize component but reference stored after creation is NULL. "
-				"This could mean the correct component was identified but it was not successfully added to the entity")))
+			if (!Assert(componentCreated != nullptr, "Tried to deserialize component but reference stored after creation is NULL. "
+				"This could mean the correct component was identified but it was not successfully added to the entity"))
 				return;
 
 			//auto componentDependencies = componentCreated->GetComponentDependencies();
@@ -333,8 +333,8 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 				}
 				else
 				{
-					Assert(false, std::format("Tried to SERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
-						"but no component by that name exists!", componentName, entity->m_Name, GetAbsolutePathCopy().string()));
+					Assert(false, "Tried to SERIALIZE component:'{}' of entity:'{} 'to scene file at path: '{}', "
+						"but no component by that name exists!", componentName, entity->m_Name, GetAbsolutePathCopy().string());
 					return;
 				}
 			}
@@ -346,8 +346,8 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 			}
 			//LogError(std::format("Created component json:{}", JsonUtils::ToStringProperties(serializedComponentJson)));
 
-			if (!Assert(!serializedComponentJson.empty(), std::format("Tried to deserialize scene asset for entity:{} "
-				"at component:{} but its component json is empty!", entity->m_Name, componentName)))
+			if (!Assert(!serializedComponentJson.empty(), "Tried to deserialize scene asset for entity:{} "
+				"at component:{} but its component json is empty!", entity->m_Name, componentName))
 				return;
 
 			currentComponentJson.insert(serializedComponentJson.begin(), serializedComponentJson.end());
@@ -379,9 +379,9 @@ bool SceneAsset::TryLoadLevelBackground()
 	//Assert(false, std::format("Level fig:{}", levelFig.ToString()));
 
 	VisualData groundVisual = ParseDefaultVisualData(levelFig.TryGetBaldValue(LEVEL_GROUND_PROPERTY_NAME));
-	if (!Assert(!groundVisual.IsEmpty(), std::format("Tried to parse level ground for scene asset:{} "
+	if (!Assert(!groundVisual.IsEmpty(), "Tried to parse level ground for scene asset:{} "
 		"but resulted in empty visual data when using fig value:{} visual data:{}", ToString(), 
-		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_GROUND_PROPERTY_NAME)), groundVisual.ToString())))
+		Utils::ToStringIterable(levelFig.TryGetBaldValue(LEVEL_GROUND_PROPERTY_NAME)), groundVisual.ToString()))
 		return false;
 
 	EntityData& groundEntity = GetSceneMutable().CreateEntity("Ground", TransformComponent(Vec2{ 0,-10 }));
@@ -396,9 +396,9 @@ bool SceneAsset::TryLoadLevelBackground()
 	groundBody.SetConstraint(MoveContraints(true, true));
 
 	VisualData backgroundVisual = ParseDefaultVisualData(levelFig.TryGetBaldValue(LEVEL_BACKGOUND_PROPERTY_NAME));
-	if (!Assert(!backgroundVisual.IsEmpty(), std::format("Tried to parse level background for scene asset:{} "
+	if (!Assert(!backgroundVisual.IsEmpty(), "Tried to parse level background for scene asset:{} "
 		"but resulted in empty visual data when using fig value:{} visual data:{}", ToString(),
-		Utils::ToStringIterable<FigValue, std::string>(levelFig.TryGetBaldValue(LEVEL_BACKGOUND_PROPERTY_NAME)), backgroundVisual.ToString())))
+		Utils::ToStringIterable(levelFig.TryGetBaldValue(LEVEL_BACKGOUND_PROPERTY_NAME)), backgroundVisual.ToString()))
 		return false;
 
 	EntityData& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformComponent(Vec2{ 0,5}));

@@ -108,8 +108,9 @@ namespace ECS
         //TODO: right now we use only the transform pos, but we should also use every pos on player too
         
         EntityRendererData* renderData = data.GetEntityMutable().TryGetComponentMutable<EntityRendererData>();
-        if (!Assert(renderData != nullptr, std::format("Tried to render light for entity: {} "
-            "but could not find its entity render component!", data.GetEntity().m_Name))) return;
+        if (!Assert(renderData != nullptr, "Tried to render light for entity: {} "
+            "but could not find its entity render component!", data.GetEntity().m_Name)) 
+            return;
 
         //TODO: it might not make sense for all lighting to just use the renderer to determine lighting start pos,
         //so perhaps this needs to be more customizable to allow for this and other behavior
@@ -120,7 +121,7 @@ namespace ECS
         for (auto& buffer : buffers)
         {
             if (buffer == nullptr) continue;
-            CreateLightingForPoint(data, data.GetEntity().GetTransform().GetGlobalPos(), *buffer, false);
+            CreateLightingForPoint(data, data.GetEntity().GetTransform().GetWorldPos(), *buffer, false);
 
             //Log(std::format("When rendering light start colors: {}", buffer->ToString(false)));
             //Log(std::format("Player Pos color: {}", RaylibUtils::ToString(buffer->GetAt(m_transform.m_Pos.GetFlipped())->m_Color)));

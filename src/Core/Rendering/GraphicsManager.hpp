@@ -6,6 +6,7 @@
 #include <string_view>
 #include "Utils/Data/FixedString.hpp"
 #include "Core/Rendering/Buffers.hpp"
+#include "Core/Rendering/Model3d.hpp"
 
 namespace AssetManagement { class AssetManager; }
 class ShaderAsset;
@@ -28,6 +29,7 @@ namespace Rendering
 		//Contains all shaders with their names as keys
 		std::unordered_map<std::string_view, Shader*> m_shaders;
 		std::unordered_map<std::string_view, Material*> m_materials;
+		std::unordered_map<BasicMeshType, Model3d*> m_basicMeshes;
 
 		//Contains all registered shader buffers (both uniform and ssbo) with their names as keys
 		std::unordered_map<ShaderVarNameType, ShaderBuffer*> m_shaderBlockBuffers;
@@ -50,6 +52,9 @@ namespace Rendering
 
 		const Shader* TryGetShader(const std::string& name) const;
 		Shader* TryGetShaderMutable(const std::string& name);
+
+		const Model3d* TryGetBasicMesh(const BasicMeshType mesh) const;
+		Model3d* TryGetBasicMeshMutable(const BasicMeshType mesh);
 
 		//Material* CreateMaterial(const Color& baseColor, const Color& emissiveColor, const float alpha);
 		const Material* TryGetMaterial(const std::string& name) const;

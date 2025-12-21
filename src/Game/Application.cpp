@@ -3,8 +3,10 @@
 
 #include "Core/Engine.hpp"
 //#include "raylib.h"
-#include "Utils/DataStructure/PreservedMap.hpp"
+#include "Utils/ToStringFunctions.hpp"
+#include "Utils/TemplateConcepts.hpp"
 #include "Utils/Debug.hpp"
+#include "Utils/DataStructure/BVH.hpp"
 
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
 #define _CRTDBG_MAP_ALLOC
@@ -57,17 +59,21 @@ int main()
     }
     */
 
-    try
-    {
-        /*InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME);
+    /*std::unordered_map<char, int> test0 = { {'c', 5}, {'b', 2}, {'d', 8}};
+    std::vector<int> test1 = { 1, 2, 3};
+    std::unordered_map<char, std::vector<bool>> test2 = { {'a', {true, false, true}}, {'b', {false, false}}, {'c', {true, true}} };
+    LogError(std::format("ALL:{} {} {}", Utils::ToStringIterable(test0), Utils::ToStringIterable(test1), Utils::ToStringIterable(test2)));*/
+
+    /*std::vector<BVHFlatNode> nodes = {};
+    nodes.resize(3);
+    LogError(std::format("STRING: {}", Utils::ToStringIterable(nodes, true)));*/
+
+    /*using Info = Utils::ContainerTypeInfo<std::unordered_map<char, int>>;
+    LogWarning(std::format("Is hash:{}", Utils::IsHashType<int>));
+    LogError(std::format("Key:{} Value:{}", typeid(Info::ContainerTemplateType).name(), typeid(Info::ElementType).name()));*/
+    /*InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME);
         SetTargetFPS(TARGET_FPS);*/
 
-        Core::Engine engine; 
-        engine.BeginUpdateLoop();
-    }
-    catch (const std::exception& e)
-    {
-        LogError(std::format("Encountered Engine error: {}", e.what()));
-        return 0;
-    }
+    Core::Engine engine;
+    engine.BeginUpdateLoop();
 }

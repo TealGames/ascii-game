@@ -19,8 +19,9 @@ std::uint8_t GetPlaceOfComponentType(const ComponentType& type)
 /// <returns></returns>
 ComponentType GetComponentTypeByPlace(const std::uint8_t value)
 {
-	if (!Assert(value <= MAX_COMPONENT_TYPES - 1, std::format("Tried to get component type by palce: {} "
-		"but it is outside the possible range of enum values", std::to_string(value)))) return ComponentType::None;
+	if (!Assert(value <= MAX_COMPONENT_TYPES - 1, "Tried to get component type by palce: {} "
+		"but it is outside the possible range of enum values", std::to_string(value))) 
+		return ComponentType::None;
 
 	ComponentNumericType one = 1;
 	ComponentNumericType componentBit = one << static_cast<ComponentNumericType>(value);
@@ -46,7 +47,7 @@ std::string ToString(const ComponentType& type)
 	if ((type & ComponentType::Camera) != ComponentType::None) allStrs.emplace_back("Camera");
 	if ((type & ComponentType::Player) != ComponentType::None) allStrs.emplace_back("Player");
 
-	return Utils::ToStringIterable<std::vector<std::string>, std::string>(allStrs);
+	return Utils::ToStringIterable(allStrs);
 }
 
 //template<typename T>

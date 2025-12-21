@@ -46,8 +46,8 @@ const std::string& UITextComponent::GetText() const
 }
 void UITextComponent::SetFontSize(const float& size)
 {
-	if (!Assert(size!=0, std::format("Tried to set font size "
-		"to:{} which is not allowed", std::to_string(size))))
+	if (!Assert(size!=0, "Tried to set font size "
+		"to:{} which is not allowed", std::to_string(size)))
 		return;
 
 	m_fontData.m_Size = std::abs(size);
@@ -61,8 +61,8 @@ void UITextComponent::SetTextColor(const Color color)
 
 void UITextComponent::SetFontFactorSize(const float& factor)
 {
-	if (!Assert(m_fontSizeFactor!=NULL_FONT_FACTOR, std::format("Tried to set font factor "
-		"size to:{} which is not allowed", std::to_string(factor))))
+	if (!Assert(m_fontSizeFactor!=NULL_FONT_FACTOR, "Tried to set font factor "
+		"size to:{} which is not allowed", std::to_string(factor)))
 		return;
 
 	m_fontSizeFactor = std::abs(factor);
@@ -245,10 +245,10 @@ UIRect UITextComponent::Render(const UIRect& rect)
 		spaceUsed = CalculateSpaceUsed(m_fontData.m_Size, m_fontData.m_Tracking);
 	}
 
-	if (!Assert(m_fontData.m_Size > 0, std::format("Tried to render text GUI:{} of entity:{}"
+	if (!Assert(m_fontData.m_Size > 0, "Tried to render text GUI:{} of entity:{}"
 		"but font size was calculated to be 0. valid font:{}. Usaable space:{} (total space:{}) space used:{} spacing:{}",
 		ToString(), GetEntity().ToString(), std::to_string(m_fontData.m_FontAsset->HasValidFont()), rect.ToString(),
-		usableSize.ToString(), spaceUsed.ToString(), m_fontData.m_Tracking)))
+		usableSize.ToString(), spaceUsed.ToString(), m_fontData.m_Tracking))
 		return {};
 
 	const ScreenPosition topLeftPos = CalculateTopLeftPos(rect, spaceUsed);

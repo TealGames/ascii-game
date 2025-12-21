@@ -33,17 +33,17 @@ VisualData ParseDefaultVisualData(const std::vector<std::string>& lines)
 			if (line[i] == CHAR_COLOR_ALIAS_START && i < line.size() - CHAR_COLOR_ALIAS_END.size() - 1)
 			{
 				size_t colorAliasEndIndex = line.find(CHAR_COLOR_ALIAS_END, i + 1);
-				if (!Assert(colorAliasEndIndex != std::string::npos, std::format("Tried to parse a color alias for visual data line: {} "
+				if (!Assert(colorAliasEndIndex != std::string::npos, "Tried to parse a color alias for visual data line: {} "
 					"but did not find color alias end at color alias start at index: {}",
-					line, std::to_string(i)))) 
+					line, std::to_string(i))) 
 					continue;
 
 				const std::string colorCode = line.substr(i + 1, colorAliasEndIndex - (i + 1));
 				std::optional<Color> maybeColor = GlobalColorCodes::TryGetColorFromCode(colorCode);
 				//Only if we do have found a color do we set the new color
-				if (Assert(maybeColor.has_value(), std::format("Tried to parse a color alias for visual data "
+				if (Assert(maybeColor.has_value(), "Tried to parse a color alias for visual data "
 					"at line : {} but color code: {} starting at index:{} has no color data defined that can be found in global color codes",
-					line, colorCode, std::to_string(i + 1))))
+					line, colorCode, std::to_string(i + 1)))
 				{
 					currentColor = maybeColor.value();
 					//Assert(false, std::format("Found color:{}", RaylibUtils::ToString(maybeColor.value())));

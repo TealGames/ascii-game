@@ -84,8 +84,8 @@ namespace ECS
 					if (std::abs(collision.m_Depth.m_X) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_X = 0;
 					if (std::abs(collision.m_Depth.m_Y) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_Y = 0;
 
-					if (!Assert(TryAddCollisionToRegistry(*boxA, *boxB, collision), std::format("Tried to add collision:{} to "
-						"registry but something went wrong", collision.ToString())))
+					if (!Assert(TryAddCollisionToRegistry(*boxA, *boxB, collision), "Tried to add collision:{} to "
+						"registry but something went wrong", collision.ToString()))
 						return;
 
 					//Note: internal implementation checks if they already have those collisions listed
@@ -119,9 +119,9 @@ namespace ECS
 		}
 		std::optional<MoveDirection> maybeDirType = TryConvertVectorToDirection(collidingDir);
 
-		if (!Assert(maybeDirType.has_value(), std::format("Tried to add collision between boxA:{} (entity:{}) and boxB:{} (entity:{}) "
+		if (!Assert(maybeDirType.has_value(), "Tried to add collision between boxA:{} (entity:{}) and boxB:{} (entity:{}) "
 			"but failed to get convert colliding dir:{} to direction type",
-			boxA.ToString(), boxA.GetEntity().ToString(), boxB.ToString(), boxB.GetEntity().ToString(), collidingDir.ToString())))
+			boxA.ToString(), boxA.GetEntity().ToString(), boxB.ToString(), boxB.GetEntity().ToString(), collidingDir.ToString()))
 		{
 			return false;
 		}

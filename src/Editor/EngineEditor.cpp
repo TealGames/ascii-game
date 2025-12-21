@@ -267,8 +267,8 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 	}
 
 	Scene* activeScene = m_sceneManager.GetActiveSceneMutable();
-	if (!Assert(activeScene != nullptr, std::format("Tried to update the engine editor but "
-		"there are no active scenes right now", activeScene->GetName())))
+	if (!Assert(activeScene != nullptr, "Tried to update the engine editor but "
+		"there are no active scenes right now", activeScene->GetName()))
 		return;
 
 	CameraComponent& mainCamera = m_cameraController.GetActiveCameraMutable();
@@ -339,9 +339,9 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 			//Quat yawQuat = Quat::FromAxisAngle(ENGINE_UP_DIR, m_freelookYaw);
 			//Quat pitchQuat = Quat::FromAxisAngle(ENGINE_RIGHT_DIR, m_freelookPitch);
 
-			Quat yawQuat = Quat::FromAxisAngle(ENGINE_UP_DIR, m_freelookYaw);
+			Quat yawQuat = ToQuaternion(ENGINE_UP_DIR, m_freelookYaw);
 			Vec3 rotatedRight = yawQuat.ApplyRotationToDir(ENGINE_RIGHT_DIR);
-			Quat pitchQuat = Quat::FromAxisAngle(rotatedRight, m_freelookPitch);
+			Quat pitchQuat = ToQuaternion(rotatedRight, m_freelookPitch);
 
 			// Step 4: combine them — yaw first, then pitch
 			mainCamera.GetTransformMutable().GetLocalRotationMutable() = pitchQuat * yawQuat;

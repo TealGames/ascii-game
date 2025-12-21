@@ -57,8 +57,8 @@ namespace Input
 		//if (allInputProfilePath.empty()) return;
 		//LogWarning(std::format("Does input path exist:{}", std::to_string(m_assetManager.IsValidAssetPath(INPUT_PROFILES_FOLDER))));
 		auto profiles = m_assetManager.GetAssetsOfTypeMutable<InputProfileAsset>(INPUT_PROFILES_FOLDER);
-		if (!Assert(profiles.size() > 0, std::format("Tried to load all input profiles in input manager "
-			"but could not find any input profile at path: '{}'", INPUT_PROFILES_FOLDER.string())))
+		if (!Assert(profiles.size() > 0, "Tried to load all input profiles in input manager "
+			"but could not find any input profile at path: '{}'", INPUT_PROFILES_FOLDER.string()))
 			return;
 
 		for (auto& profile : profiles)

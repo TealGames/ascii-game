@@ -1,7 +1,7 @@
+#include <numeric>
 #include "Utils/ToStringFunctions.hpp"
 #include <Utils/StringUtil.hpp>
 #include "Utils/Math.hpp"
-#include <numeric>
 
 namespace Utils
 {
@@ -25,6 +25,10 @@ namespace Utils
 	{
 		return std::to_string(static_cast<int>(u8));
 	}
+	std::string ToString(const bool b)
+	{
+		return (b == 0) ? "false" : "true";
+	}
 
 	std::string ToStringMemory(const std::byte* bytePtr, const std::size_t byteSize)
 	{
@@ -40,7 +44,12 @@ namespace Utils
 		}
 		return result;
 	}
-
+	std::string ToString(const std::exception& exception)
+	{
+		//NOTE: since what is virtual we can just use exception as an arg
+		//and due to polymorphism it should invoke most derived what() call
+		return exception.what();
+	}
 
 	std::string ToStringLeadingZeros(const int& number, const std::uint8_t& maxDigits)
 	{
@@ -81,8 +90,8 @@ namespace Utils
 	{
 		return std::accumulate(vec.begin(), vec.end(), std::string());
 	}
-	std::string ToStringIterable(const std::vector<std::string>& strings)
-	{
-		return ToStringIterable<std::vector<std::string>, std::string>(strings);
-	}
+	//std::string ToStringIterable(const std::vector<std::string>& strings)
+	//{
+	//	return ToStringIterable<std::vector<std::string>, std::string>(strings);
+	//}
 }

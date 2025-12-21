@@ -98,5 +98,5 @@ std::string SpriteAnimatorData::ToString() const
 		animtionsStr.push_back(anim.second->GetAnimation().ToString());
 	}
 	return std::format("[SpriteAniamtor Anims:{}]", 
-		Utils::ToStringIterable<std::vector<std::string>, std::string>(animtionsStr));
+		Utils::ToStringIterable(animtionsStr));
 }

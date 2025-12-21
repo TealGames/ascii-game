@@ -30,9 +30,8 @@ public:
 	const float& GetTime() const { return m_time; }
 	const T& GetValue() const 
 	{
-		if (!Assert(m_value != std::nullopt, 
-			std::format("Tried to get value from animation property key frame but value is NULL")))
-			throw std::invalid_argument("Invalid value state");
+		ENGINE_ASSERT(m_value != std::nullopt, 
+			"Tried to get value from animation property key frame but value is NULL");
 
 		return m_value.value();
 	}
@@ -75,7 +74,7 @@ struct AnimationProperty
 	std::string ToString() const
 	{
 		return std::format("[Prop:{} keyframes:{}]", typeid(T).name(), 
-			Utils::ToStringIterable<std::vector<AnimationPropertyKeyframe<T>>, AnimationPropertyKeyframe<T>>(m_Keyframes));
+			Utils::ToStringIterable<std::vector<AnimationPropertyKeyframe<T>>>(m_Keyframes));
 	}
 
 	bool operator==(const AnimationProperty& other) const = default;

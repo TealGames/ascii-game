@@ -355,8 +355,7 @@ namespace Rendering
 	std::string RingBufferAllocator::ToString() const
 	{
 		return std::format("[BufferFence segments({}):{} head:{} tail:{} allocatedSize:{} used:{}]", 
-			m_segments.size(), Utils::ToStringIterable<std::deque<FencedBufferSegment>, FencedBufferSegment>(m_segments),
-			m_head, m_tail, m_fixedByteSize, m_usedSize);
+			m_segments.size(), Utils::ToStringIterable(m_segments), m_head, m_tail, m_fixedByteSize, m_usedSize);
 	}
 
 	
@@ -746,8 +745,8 @@ namespace Rendering
 	}
 	std::string ShaderBuffer::ToString() const
 	{
-		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable<std::vector<ShaderBlockMemberMemoryInfo>, ShaderBlockMemberMemoryInfo>
-			(Utils::GetValuesFromMap<std::string, ShaderBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
+		return std::format("[UniformBuffer members:{}]", 
+			Utils::ToStringIterable(Utils::GetValuesFromMap<std::string, ShaderBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
 	}
 
 
@@ -773,8 +772,8 @@ namespace Rendering
 	}
 	std::string UniformBuffer::ToString() const
 	{
-		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable<std::vector<ShaderBlockMemberMemoryInfo>, ShaderBlockMemberMemoryInfo>
-			(Utils::GetValuesFromMap<std::string, ShaderBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
+		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable(
+			Utils::GetValuesFromMap<std::string, ShaderBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
 	}
 
 
@@ -888,10 +887,10 @@ namespace Rendering
 	}
 
 
-	BufferController::BufferController(VertexLayout* vertexLayout) 
-		: m_layout(vertexLayout), m_bufferData(), m_shaderBufferData() {}
+	BufferController::BufferController() 
+		: m_bufferData(), m_shaderBufferData() {}
 
-	VertexLayoutBindIndex BufferController::AddVertexBuffer(VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer)
+	VertexLayoutBindIndex BufferController::AddVertexBuffer(VertexLayout* layout, VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer)
 	{
 		if (!m_bufferData.empty() && m_bufferData.back().m_VertexBufferBindIndex == std::numeric_limits<VertexLayoutBindIndex>::max())
 		{
@@ -899,8 +898,8 @@ namespace Rendering
 			return 0;
 		}
 		const VertexLayoutBindIndex bindIndex = m_bufferData.empty() ? 0 : m_bufferData.back().m_VertexBufferBindIndex + 1;
-		m_layout->LinkToBuffer(*vertexBuffer, bindIndex);
-		m_bufferData.emplace_back(bindIndex, vertexBuffer, indexBuffer);
+		layout->LinkToBuffer(*vertexBuffer, bindIndex);
+		m_bufferData.emplace_back(bindIndex, layout, vertexBuffer, indexBuffer);
 
 		return bindIndex;
 	}

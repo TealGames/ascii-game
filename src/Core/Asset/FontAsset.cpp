@@ -9,8 +9,8 @@ const char* FontAsset::EXTENSION = ".ttf";
 FontAsset::FontAsset(const std::filesystem::path& path) 
 	: Asset(path, false), m_font()
 {
-	if (!Assert(path.extension()== EXTENSION, std::format("Tried to create a font asset from path:{} (extension:{})"
-		"but it does not have required font extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
+	if (!Assert(path.extension()== EXTENSION, "Tried to create a font asset from path:{} (extension:{})"
+		"but it does not have required font extension:'{}'", path.string(), path.extension().string(), EXTENSION))
 		return;
 
 	const std::string pathString = path.string();
@@ -40,7 +40,7 @@ bool FontAsset::HasValidFont() const
 
 Rendering::Font& FontAsset::GetFontMutable()
 {
-	if (!Assert(HasValidFont(), std::format("Tried to get font MUTABLE but font is invalid")))
+	if (!Assert(HasValidFont(), "Tried to get font MUTABLE but font is invalid"))
 		throw std::invalid_argument("Invalid font state");
 
 	return m_font;
@@ -48,7 +48,7 @@ Rendering::Font& FontAsset::GetFontMutable()
 
 const Rendering::Font& FontAsset::GetFont() const
 {
-	if (!Assert(HasValidFont(), std::format("Tried to get font but font is invalid")))
+	if (!Assert(HasValidFont(), "Tried to get font but font is invalid"))
 		throw std::invalid_argument("Invalid font state");
 
 	return m_font;

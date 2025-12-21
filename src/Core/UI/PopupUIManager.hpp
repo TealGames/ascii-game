@@ -66,7 +66,7 @@ private:
 		}
 		catch (const std::exception& e)
 		{
-			Assert(false, std::format("Tried to convert popup mutable of type:{} "
+			LogError(std::format("Tried to convert popup mutable of type:{} "
 				"but could not convert found type:{}", Utils::ToStringTypeName<T>(),
 				Utils::ToStringTypeName<decltype(*gui)>()));
 		}
@@ -93,34 +93,12 @@ private:
 	T* TryOpenPopupAt(PopupGUIInfo& popupInfo, const ScreenPosition& pos)
 	{
 		return TryConvertPopup<T>(OpenPopupAtSimple(popupInfo, pos));
-		/*try
-		{
-			return dynamic_cast<T*>(OpenPopupAtSimple(popupInfo, pos));
-		}
-		catch (const std::exception& e)
-		{
-			Assert(false, std::format("Tried to open popup mutable of type:{} at pos:{} "
-				"but could not convert found type:{}", Utils::GetTypeName<T>(), pos.ToString(),
-				Utils::GetTypeName<decltype(*(popupInfo.m_GUI))>()));
-		}
-		return nullptr;*/
 	}
 	template<typename T>
 	requires IsPopupType<T>
 	T* TryOpenPopupAt(PopupGUIInfo& popupInfo, const UIRect& rect, const PopupPositionFlags flags)
 	{
 		return TryConvertPopup<T>(OpenPopupAtSimple(popupInfo, rect, flags));
-		/*try
-		{
-			return dynamic_cast<T*>(OpenPopupAtSimple(popupInfo, rect, flags));
-		}
-		catch (const std::exception& e)
-		{
-			Assert(false, std::format("Tried to open popup mutable of type:{} with rect:{} "
-				"but could not convert found type:{}", Utils::GetTypeName<T>(), rect.ToString(),
-				Utils::GetTypeName<decltype(*(popupInfo.m_GUI))>()));
-		}
-		return nullptr;*/
 	}
 
 	/// <summary>
@@ -212,7 +190,7 @@ public:
 		PopupGUIInfo* infoPtr = TryGetPopupInfoMutable<T>();
 		if (infoPtr == nullptr)
 		{
-			Assert(false, std::format("Attempted to toggle popup at rect:{} with type:{} "
+			LogError(std::format("Attempted to toggle popup at rect:{} with type:{} "
 				"but no popup of that type could be found", rect.ToString(), Utils::FormatTypeName(typeid(T).name())));
 			return false;
 		}

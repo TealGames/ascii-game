@@ -16,16 +16,8 @@
 
 #include "nlohmann/json.hpp"
 #include "Core/Serialization/JsonUtils.hpp"
-using Json = nlohmann::json;
 
-//#include "ECS/Component/Types/World/AnimatorData.hpp"
-//#include "ECS/Component/Types/World/CameraData.hpp"
-//#include "ECS/Component/Types/World/EntityRendererData.hpp"
-//#include "ECS/Component/Types/World/LightSourceData.hpp"
-//#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
-//#include "ECS/Component/Types/World/PlayerData.hpp"
-//#include "ECS/Component/Types/World/SpriteAnimatorData.hpp"
-//#include "UIObjectData.hpp"
+using Json = nlohmann::json;
 
 const std::string Scene::SCENE_FILE_PREFIX = "scene_";
 
@@ -77,85 +69,6 @@ std::string Scene::ExtractSceneName(const std::filesystem::path& path)
 	//std::replace(sceneName.begin(), sceneName.end(), '_', ' ');
 	return sceneName;
 }
-/*
-void Scene::ParseSceneFile(std::ifstream& fstream,  
-	std::vector<std::vector<TextCharPosition>>& layerText) const
-{
-	int r = 0;
-	std::string currentLine = "";
-	std::unordered_map<std::string, Color> colorAliases = {};
-	const std::string keyHeader = "key:";
-	const std::string sceneHeader = "scene:";
-	const char charColorAliasStart = '[';
-	const char charColorAliasEnd = ']';
-	bool isParsingKey = false;
-
-	int lineIndex = -1;
-	const Color defaultColor = BLACK;
-	Color currentColor = defaultColor;
-	while (std::getline(fstream, currentLine))
-	{
-		lineIndex++;
-		if (currentLine.empty()) continue;
-
-		if (currentLine == keyHeader) isParsingKey = true;
-		else if (currentLine == sceneHeader) isParsingKey = false;
-
-		else if (isParsingKey)
-		{
-			std::size_t equalsSignIndex = currentLine.find('=');
-			std::string colorAlias = currentLine.substr(0, equalsSignIndex);
-			std::string hexString = currentLine.substr(equalsSignIndex + 1);
-			std::optional<uint32_t> maybeConvertedHex = Utils::TryParseHex<uint32_t>(hexString);
-			if (!Assert(maybeConvertedHex.has_value(), std::format("Tried to parse scene data: {}, but encountered "
-				"unparsable hex: '{}' at line: {}", m_SceneName, hexString, std::to_string(lineIndex)))) continue;
-
-			Color convertedColor = RaylibUtils::GetColorFromHex(maybeConvertedHex.value());
-			//Log(std::format("Found the color: {} from hex: {}", RaylibUtils::ToString(convertedColor), hexString));
-			colorAliases.emplace(colorAlias, convertedColor);
-		}
-		else
-		{
-			layerText.push_back({});
-			//std::cout << "ALLOC with line: "<<currentLine<< std::endl;
-			//if (currentLine.size() > maxLineChars) maxLineChars = currentLine.size();
-
-			for (int i = 0; i < currentLine.size(); i++)
-			{
-				if (currentLine[i] == '\t' || currentLine[i]==' ') continue;
-				//We need to make sure there is at least 2 chars in front for at least one for alias and one for ending symbol
-				if (currentLine[i] == charColorAliasStart && i< currentLine.size()-2)
-				{
-					int colorAliasEndIndex = currentLine.find(charColorAliasEnd, i + 1);
-					if (!Assert(colorAliasEndIndex != std::string::npos, std::format("Tried to parse a color alias for scene data: {} at line: {} "
-						"but did not find color alias end at color alias start at index: {}", 
-						m_SceneName, std::to_string(lineIndex), std::to_string(i)))) continue;
-
-					std::string colorAlias = currentLine.substr(i + 1, colorAliasEndIndex - (i + 1));
-					if (!Assert(colorAliases.find(colorAlias) != colorAliases.end(), std::format("Tried to parse a color alias for scene data: {} at line: {} "
-						"but color alias: {} starting at index:{} has no color data defined in KEY section",
-						m_SceneName, std::to_string(lineIndex), colorAlias, std::to_string(i + 1))))
-					{
-						i = colorAliasEndIndex;
-						continue;
-					}
-
-					//Log(std::format("Found good color alias: {}", colorAlias));
-					currentColor = colorAliases[colorAlias];
-					i = colorAliasEndIndex;
-					continue;
-				}
-
-				//TODO: what is the best way of doing this? putting in text chars and putting empty chars 
-				//which would work fine for init but hard to create collision bound 
-				//OR do we leave empty spots and put them in with positions?
-				layerText.back().push_back(TextCharPosition{ Array2DPosition(r, i), TextChar(currentColor, currentLine[i])});
-			}
-			r++;
-		}
-	}
-}
-*/
 
 std::string Scene::GetName() const
 {
@@ -163,219 +76,17 @@ std::string Scene::GetName() const
 }
 GlobalEntityManager& Scene::TryGetGlobalEntityManagerMutable()
 {
-	if (!Assert(m_globalEntities != nullptr, std::format("Tired to get global entities manager MUTABLE from scene: {} but global entities manager "
-		"is not set up (could be due to creating scene using constructor that does not include dependency", GetName())))
-		throw std::invalid_argument("Invalid global entity manager");
-
+	ENGINE_ASSERT(m_globalEntities != nullptr, "Tried to get global entities manager MUTABLE from scene: {} but global entities manager "
+		"is not set up (could be due to creating scene using constructor that does not include dependency", GetName());
 	return *m_globalEntities;
 }
 const GlobalEntityManager& Scene::TryGetGlobalEntityManager() const
 {
-	if (!Assert(m_globalEntities != nullptr, std::format("Tired to get global entities manager from scene: {} but global entities manager "
-		"is not set up (could be due to creating scene using constructor that does not include dependency", GetName())))
-		throw std::invalid_argument("Invalid global entity manager");
+	ENGINE_ASSERT(m_globalEntities != nullptr, "Tired to get global entities manager from scene: {} but global entities manager "
+		"is not set up (could be due to creating scene using constructor that does not include dependency", GetName());
 
 	return *m_globalEntities;
 }
-
-/*
-void Scene::Deserialize(const Json& json)
-{
-	Json entityComponentsJson = {};
-	Json currentComponentJson = {};
-	std::string componentName = "";
-	std::string entityName = "";
-
-	bool isTransformComponent = false;
-	ECS::Entity* currentEntity = nullptr;
-	ComponentData* componentCreated = nullptr;
-
-	Event<void> delayedSiblingDependencies;
-	Event<void> delayedEntityDependencies;
-
-	//NOTE: all entities extracted will be local (since globals are not associated with any single scene)
-	Json entitiesJson = json.at("Entities");
-	//TODO: maybe parsing entity should be extracted into a separate function in entity?
-	for (Json& entityJson : entitiesJson)
-	{
-		entityName = entityJson.at("Name");
-		entityComponentsJson = entityJson.at("Components");
-		delayedSiblingDependencies.RemoveAllListeners();
-
-		//LogError(std::format("Found compoinents: {}", std::to_string(entityComponentsJson.size())));
-		//TODO: maybe components should have to implement a parsing function for json?
-		for (size_t i = 0; i < entityComponentsJson.size(); i++)
-		{
-			currentComponentJson = entityComponentsJson[i];
-			componentName = currentComponentJson.at("Type").get<std::string>();
-			isTransformComponent = componentName == Utils::GetTypeName<TransformData>();
-			if (i == 0 && !Assert(isTransformComponent, std::format("Tried to parse scene file at path: '{}' "
-				"but found entity component that does not begin with Transform!", m_scenePath.string())))
-				return;
-
-			if (isTransformComponent)
-			{
-				TransformData newEntityTransfrom = {};
-				newEntityTransfrom.Deserialize(currentComponentJson);
-				currentEntity = &(CreateEntity(entityName, TransformData(newEntityTransfrom)));
-				//LogError(std::format("Found component json; {} for entoty; {} entity json: {}", 
-				//JsonUtils::ToStringProperties(currentComponentJson), JsonUtils::ToStringProperties(entityComponentsJson), entityName));
-
-				//currentEntity->TryGetComponentMutable<TransformData>()->Deserialize(currentComponentJson);
-				LogError(std::format("Found transform for: {} entity:{}", currentEntity->TryGetComponent<TransformData>()->ToString(), currentEntity->GetName()));
-				continue;
-			}
-
-			if (!Assert(currentEntity != nullptr, std::format("Tried to parse scene file at path: '{}' "
-				"for component: {} but current entity: {} is null", m_scenePath.string(), componentName, entityName)))
-				return;
-
-			if (componentName == Utils::GetTypeName<AnimatorData>())
-			{
-				componentCreated = &(currentEntity->AddComponent<AnimatorData>());
-			}
-			else if (componentName == Utils::GetTypeName<CameraData>())
-			{
-				componentCreated = &(currentEntity->AddComponent<CameraData>());
-			}
-			else if (componentName == Utils::GetTypeName<EntityRendererData>())
-			{
-				componentCreated = &(currentEntity->AddComponent<EntityRendererData>());
-				LogError(std::format("Deserialized entity renderer: {} to: {}", JsonUtils::ToStringProperties(currentComponentJson),
-					currentEntity->TryGetComponent<EntityRendererData>()->ToString()));
-			}
-			else if (componentName == Utils::GetTypeName<LightSourceData>())
-			{
-				componentCreated = &(currentEntity->AddComponent<LightSourceData>());
-			}
-			else if (componentName == Utils::GetTypeName<PhysicsBodyData>())
-			{
-				componentCreated = &(currentEntity->AddComponent<PhysicsBodyData>());
-			}
-			else if (componentName == Utils::GetTypeName<PlayerData>())
-			{
-				componentCreated = &(currentEntity->AddComponent<PlayerData>());
-			}
-			else if (componentName == Utils::GetTypeName<SpriteAnimatorData>())
-			{
-				componentCreated = &(currentEntity->AddComponent<SpriteAnimatorData>());
-			}
-			else if (componentName == Utils::GetTypeName<UIObjectData>())
-			{
-				componentCreated = &(currentEntity->AddComponent<UIObjectData>());
-			}
-			else
-			{
-				Assert(false, std::format("Tried to parse component:'{}' of entity:'{} 'to scene file at path: '{}', "
-					"but no component by that name exists!", componentName, entityName, m_scenePath.string()));
-				return;
-			}
-
-			//if (componentCreated == nullptr) continue;
-			if (!Assert(componentCreated != nullptr, std::format("Tried to deserialize component but reference stored after creation is NULL. "
-				"This could mean the correct component was identified but it was not successfully added to the entity")))
-				return;
-
-			HighestDependecyLevel componentDependencies = componentCreated->GetDependencyLevel();
-			if (componentDependencies == HighestDependecyLevel::None)
-			{
-				componentCreated->Deserialize(currentComponentJson);
-				LogError(std::format("Created component: {}", componentCreated->ToString()));
-			}
-			else
-			{
-				std::function<void()> delayedAction = [componentCreated, currentComponentJson]() mutable-> void
-					{
-						LogError("Deserializing delayed component");
-						componentCreated->Deserialize(currentComponentJson);
-						LogError(std::format("Created component: {}", componentCreated->ToString()));
-					};
-
-				if (componentDependencies == HighestDependecyLevel::SiblingComponent) delayedSiblingDependencies.AddListener(delayedAction);
-				else delayedEntityDependencies.AddListener(delayedAction);
-			}
-		}
-
-		//Since some components may require dependencies on other components before they could be deserialized
-		//we wait until all other non-dependent components are deserialized then we do the others
-		if (delayedSiblingDependencies.HasListeners()) delayedSiblingDependencies.Invoke();
-	}
-
-	if (delayedEntityDependencies.HasListeners()) delayedEntityDependencies.Invoke();
-	Assert(false, std::format("After scene: {} was created: found: {}", m_sceneName, ToString()));
-}
-*/
-/*
-void Scene::Load()
-{
-	std::string currentLine = "";
-	std::string fullJson = "";
-	std::ifstream fstream(m_scenePath);
-
-	while (std::getline(fstream, currentLine))
-	{
-		fullJson += currentLine;
-	}
-
-	Json parsedJson = Json::parse(fullJson);
-
-	Deserialize(parsedJson);
-
-	//Log("Creating new layer in scene");
-	const VisualData backgroundVisual = VisualData({}, GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE,
-		VisualData::DEFAULT_CHAR_SPACING, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::PIVOT_CENTER);
-	ECS::Entity& backgroundEntity = CreateEntity("Background", TransformData(Vec2{ 0,0 }));
-	EntityRendererData& backgroundRenderer = backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
-	LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().m_Text.ToString()));
-	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));
-
-	PhysicsBodyData& physicsBody = backgroundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(5, backgroundVisual.GetWorldSize(), { 0,0 }));
-	LogWarning(std::format("Created Physics body: {} visual size: {}",
-		physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), backgroundVisual.m_Text.GetSize().ToString()));
-
-	//Assert(false, "ENDED LAODING SCENE");
-}
-
-void Scene::Unload()
-{
-	m_mainCamera = nullptr;
-	//m_physicsWorld.ClearAllBodies();
-
-	m_localEntityIdLookup = {};
-	m_localEntityNameLookup = {};
-	m_localEntities.clear();
-	m_localEntities.shrink_to_fit();
-
-	m_entityMapper.clear();
-}
-*/
-
-/*
-Json Scene::Serialize()
-{
-	//TODO: implmenet
-	return {};
-}
-*/
-
-//void Scene::InitScene()
-//{
-//	for (auto& entity : m_localEntities)
-//	{
-//		if (PhysicsBodyData* maybeBody = entity.TryGetComponentMutable<PhysicsBodyData>())
-//		{
-//			m_physicsWorld.AddBody(*maybeBody);
-//		}
-//	}
-//
-//	for (auto& entity : m_globalEntities.GetAllGlobalEntitiesMutable())
-//	{
-//		if (PhysicsBodyData* maybeBody = entity.TryGetComponentMutable<PhysicsBodyData>())
-//		{
-//			m_physicsWorld.AddBody(*maybeBody);
-//		}
-//	}
-//}
 
 std::vector<RenderLayer*> Scene::GetLayersMutable()
 {
@@ -460,51 +171,9 @@ void Scene::ResetAllLayers()
 	for (auto& layer : m_layers) layer.second.ResetToDefault();
 }
 
-//EntityIDCollection::iterator Scene::GetLocalEntityIterator(const ECS::EntityID& id)
-//{
-//	return m_localEntityIdLookup.find(id);
-//}
-//EntityNameCollection::iterator Scene::GetLocalEntityIterator(const std::string& name)
-//{
-//	return m_localEntityNameLookup.find(name);
-//}
-
-//class CameraData;
-//void Scene::SetMainCamera(ECS::Entity& cameraEntity)
-//{
-//	if (!Assert(cameraEntity.HasComponent<CameraData>(), 
-//		std::format("Tried to set the non-camera entity: {} as the main camera for scene: {}",
-//			cameraEntity.GetName(), m_sceneName))) return;
-//
-//	m_mainCamera = &cameraEntity;
-//}
-//
-//bool Scene::HasMainCamera() const
-//{
-//	return m_mainCamera != nullptr;
-//}
-//
-//ECS::Entity* Scene::TryGetMainCameraEntityMutable()
-//{
-//	return m_mainCamera;
-//}
-//
-//CameraData* Scene::TryGetMainCameraMutable()
-//{
-//	if (!HasMainCamera()) return nullptr;
-//	return m_mainCamera->TryGetComponentMutable<CameraData>();
-//}
-//
-//const CameraData* Scene::TryGetMainCamera() const
-//{
-//	if (!HasMainCamera()) return nullptr;
-//	return m_mainCamera->TryGetComponent<CameraData>();
-//}
-
 int Scene::GetEntityCount() const
 {
 	return m_localRootEntities.size() + TryGetGlobalEntityManager().GetCount();
-	/*return m_entityMapper.va + m_globalEntities.GetCount();*/
 }
 
 bool Scene::HasEntities() const
@@ -653,7 +322,7 @@ std::string Scene::ToStringEntityData() const
 	}
 	return std::format("[\n-----GLOBALS----: {} \n----Local-----: {}]", 
 		TryGetGlobalEntityManager().ToStringEntityData(), 
-		Utils::ToStringIterable<std::vector<std::string>, std::string>(sceneStr));
+		Utils::ToStringIterable(sceneStr));
 }
 
 void Scene::ResetFrameDirtyComponentCount()
@@ -675,16 +344,6 @@ bool Scene::HasDirtyComponents() const
 {
 	return GetDirtyComponentCount() > 0;
 }
-
-//const Physics::PhysicsWorld& Scene::GetPhysicsWorld() const
-//{
-//	return m_physicsWorld;
-//}
-//
-//Physics::PhysicsWorld& Scene::GetPhysicsWorldMutable()
-//{
-//	return m_physicsWorld;
-//}
 
 bool Scene::Validate()
 {
@@ -714,7 +373,7 @@ std::string Scene::ToString() const
 		currentEntitiesStr.push_back(entity->ToString());
 		//LogError(std::format("Found entity str: {}", entitiesStringified.back()));
 	}
-	std::string localEntitiesStr = Utils::ToStringIterable<std::vector<std::string>, std::string>(currentEntitiesStr);
+	std::string localEntitiesStr = Utils::ToStringIterable(currentEntitiesStr);
 	
 	currentEntitiesStr.clear();
 	for (const auto& entity : TryGetGlobalEntityManager().GetAllGlobalEntities())
@@ -722,7 +381,7 @@ std::string Scene::ToString() const
 		if (entity == nullptr) continue;
 		currentEntitiesStr.push_back(entity->ToString());
 	}
-	std::string globalEntitiesStr = Utils::ToStringIterable<std::vector<std::string>, std::string>(currentEntitiesStr);
+	std::string globalEntitiesStr = Utils::ToStringIterable(currentEntitiesStr);
 	
 	return std::format("[Scene Globals:{} Local:{}]", globalEntitiesStr, localEntitiesStr);
 }

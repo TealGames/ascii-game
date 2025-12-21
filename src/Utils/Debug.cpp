@@ -18,47 +18,18 @@ namespace DebugProperties
 	/// </summary>
 	Event<void, LogType, std::string, bool> OnMessageLogged;
 
-	void SetLogMessages(const bool doLog)
-	{
-		LogMessages = doLog;
-	}
-	void SetCallerLogDetails(CallerLogDetails logDetails)
-	{
-		CallerDetails = logDetails;
-	}
+	void SetLogMessages(const bool doLog) { LogMessages = doLog; }
+	void SetCallerLogDetails(CallerLogDetails logDetails) { CallerDetails = logDetails; }
+	void SetLogMessageFilter(const std::string& message) { MessageFilter = message; }
+	void ClearLogMessageFilter() { MessageFilter = ""; }
+	void SetLogTypeFilter(LogType logType) { LogTypeFilter = logType; }
+	void AddLogTypeFilter(LogType logType) { LogTypeFilter |= logType; }
+	void RemoveLogTypeFilter(LogType logType) { LogTypeFilter &= ~logType; }
+	void SetAllLogTypeFilter() { LogTypeFilter = LogType::All; }
+	void SetNoneLogTypeFilter() { LogTypeFilter = LogType::None; }
 
-	void SetLogMessageFilter(const std::string& message)
-	{
-		MessageFilter = message;
-	}
-	void ClearLogMessageFilter()
-	{
-		MessageFilter = "";
-	}
-	void SetLogTypeFilter(LogType logType)
-	{
-		LogTypeFilter = logType;
-	}
-	void AddLogTypeFilter(LogType logType)
-	{
-		LogTypeFilter |= logType;
-	}
-	void RemoveLogTypeFilter(LogType logType)
-	{
-		LogTypeFilter &= ~logType;
-	}
-	void SetAllLogTypeFilter()
-	{
-		LogTypeFilter = LogType::All;
-	}
-	void SetNoneLogTypeFilter()
-	{
-		LogTypeFilter = LogType::None;
-	}
-	LogType GetLogTypeFilter()
-	{
-		return LogTypeFilter;
-	}
+	CallerLogDetails GetCallerLogDetails() { return CallerDetails; }
+	LogType GetLogTypeFilter() { return LogTypeFilter; }
 	void ResetLogFilters()
 	{
 		ClearLogMessageFilter();
@@ -85,14 +56,18 @@ std::string LogTypeToString(const LogType& logType)
 	if (Utils::HasFlagAll(logType, LogType::Warning)) elementBits.emplace_back("Warning");
 	if (Utils::HasFlagAll(logType, LogType::Error)) elementBits.emplace_back("Error");
 
-	return Utils::ToStringIterable<std::vector<std::string>, std::string>(elementBits);
+	return Utils::ToStringIterable(elementBits);
+}
+
+std::string FormatCurrentTime()
+{
+	return std::format("{}[{}{}{}]{}", ANSI_COLOR_WHITE, ANSI_COLOR_GRAY,
+		Utils::ToStringTime(Utils::GetCurrentTime()), ANSI_COLOR_WHITE, ANSI_COLOR_CLEAR);
 }
 
 void LogMessage(const LogType& logType, const CallerLogDetails logDetails, const std::string& message, const bool showStackTrace, const bool logTime,
 	const char* overrideANSIColor, const bool setEventFlag, const std::source_location& loc)
 {
-	//Log(logType, std::format("{}: {}", objPtr != nullptr ? typeid(T).name() : "", str), logTime);
-
 	if (!DebugProperties::LogMessages)
 		return;
 
@@ -116,8 +91,7 @@ void LogMessage(const LogType& logType, const CallerLogDetails logDetails, const
 
 	std::string logTypeMessage;
 	std::string timeFormatted = "";
-	if (logTime) timeFormatted = std::format("{}[{}{}{}]{}", ANSI_COLOR_WHITE, ANSI_COLOR_GRAY,
-		Utils::ToStringTime(Utils::GetCurrentTime()), ANSI_COLOR_WHITE, ANSI_COLOR_CLEAR);
+	if (logTime) timeFormatted = FormatCurrentTime();
 
 	const char* mainTextAnsiColor = nullptr;
 	switch (logType)
@@ -213,16 +187,4 @@ void Break()
 #else
 	std::abort();
 #endif
-}
-
-bool Assert(const bool condition, const std::string& errMessage, const bool showStackTrace, const std::source_location& loc)
-{
-	if (!condition)
-	{
-		LogMessage(LogType::Error, DebugProperties::CallerDetails, errMessage, showStackTrace, 
-			true, nullptr, (DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::EventFlag) != 0, loc);
-		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Break) != 0) Break();
-		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Throw) != 0) throw std::invalid_argument(errMessage);
-	}
-	return condition;
 }

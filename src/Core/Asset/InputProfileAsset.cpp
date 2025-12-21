@@ -16,15 +16,15 @@ static constexpr char COMPOUND_INPUT_IDENTIFIER = '>';
 InputProfileAsset::InputProfileAsset(const std::filesystem::path& path)
 	: Asset(path, true), m_profile(std::nullopt), m_inputManager(nullptr)
 {
-	if (!Assert(path.extension() == EXTENSION, std::format("Tried to create a input asset from path:{} (extension:{})"
-		"but it does not have required input extension:'{}'", path.string(), path.extension().string(), EXTENSION)))
+	if (!Assert(path.extension() == EXTENSION, "Tried to create a input asset from path:{} (extension:{})"
+		"but it does not have required input extension:'{}'", path.string(), path.extension().string(), EXTENSION))
 		return;
 }
 
 Input::InputManager& InputProfileAsset::GetInputManager()
 {
-	if (!Assert(m_inputManager!=nullptr, std::format("Tried to retrieve scene MUTABLE from scene asset:{} "
-		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
+	if (!Assert(m_inputManager!=nullptr, "Tried to retrieve scene MUTABLE from scene asset:{} "
+		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString()))
 	{
 		throw std::invalid_argument("Invalid scene asset dependency");
 	}
@@ -81,8 +81,8 @@ void InputProfileAsset::UpdateAssetFromFile()
 		}
 
 		const size_t colonIndex = line.find(':');
-		if (!Assert(colonIndex != std::string::npos, std::format("Tried to parse input profile but current line: '{}' "
-			"does not contain any colons identifying action name end", line))) return;
+		if (!Assert(colonIndex != std::string::npos, "Tried to parse input profile but current line: '{}' "
+			"does not contain any colons identifying action name end", line)) return;
 
 		inputName = line.substr(0, colonIndex);
 
@@ -133,9 +133,9 @@ void InputProfileAsset::UpdateAssetFromFile()
 				return;*/
 
 			std::optional<Input::InputDirection> actionAsDir = Input::TryConvertStringToDirection(inputName);
-			if (!Assert(actionAsDir.has_value(), std::format("Tried to parse compound input action: '{}' as direction "
+			if (!Assert(actionAsDir.has_value(), "Tried to parse compound input action: '{}' as direction "
 				"for compound input: '{}' but it failed. All compound input actions must be valid directions",
-				inputName, currentCompoundInput.GetName())))
+				inputName, currentCompoundInput.GetName()))
 				return;
 
 			currentCompoundInput.AddEntry(actionAsDir.value(), Input::InputAction(inputName, keybinds));
@@ -163,16 +163,16 @@ void InputProfileAsset::SaveToPath(const std::filesystem::path& path)
 
 Input::InputProfile& InputProfileAsset::GetProfileMutable()
 {
-	if (!Assert(m_profile.has_value(), std::format("Tried to retrieve input MUTABLE from input asset:{} "
-		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
+	if (!Assert(m_profile.has_value(), "Tried to retrieve input MUTABLE from input asset:{} "
+		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString()))
 		throw std::invalid_argument("Invalid input asset dependency");
 
 	return m_profile.value();
 }
 const Input::InputProfile& InputProfileAsset::GetProfile() const
 {
-	if (!Assert(m_profile.has_value(), std::format("Tried to retrieve input from input asset:{} "
-		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString())))
+	if (!Assert(m_profile.has_value(), "Tried to retrieve input from input asset:{} "
+		"but its asset has not been created yet due to dependencies for this asset not initialized", ToString()))
 		throw std::invalid_argument("Invalid input asset dependency");
 
 	return m_profile.value();

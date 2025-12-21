@@ -42,12 +42,19 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 
 			for (size_t j = 0; j < currentImportMesh->mNumFaces; j++)
 			{
-				const aiFace face = currentImportMesh->mFaces[j];
-				for (size_t k = 0; k < face.mNumIndices; k++)
+				const aiFace* face = &currentImportMesh->mFaces[j];
+				if (face->mNumIndices != 3)
 				{
-					currentEngineMesh->m_Indices.emplace_back(face.mIndices[k]);
+					LogError(std::format("Attempted to read Assimp importer face with invalid face index count:{}", face->mNumIndices));
+					continue;
+				}
+				for (size_t k = 0; k < face->mNumIndices; k++)
+				{
+					currentEngineMesh->m_Indices.emplace_back(face->mIndices[k]);
 				}
 			}
+			
+			currentEngineMesh->ConstructBLASTree(Rendering::BLAS_TREE_LEAF_COUNT);
 
 			//TODO: also get roughness, normal map and albedo from the material
 			aiMaterial* modelMaterial = modelScene->mMaterials[currentImportMesh->mMaterialIndex];

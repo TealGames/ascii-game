@@ -102,8 +102,8 @@ Profiler::~Profiler()
 
 	LogWarning(std::format("Writing to file at: {}!", fullOutPath.string()));
 	std::ofstream outStream(fullOutPath);
-	if (!Assert(outStream.is_open(), std::format("Tried to open a file at path: {} "
-		"for writing to output profiler data but something went wrong", fullOutPath.string()))) return;
+	if (!Assert(outStream.is_open(), "Tried to open a file at path: {} "
+		"for writing to output profiler data but something went wrong", fullOutPath.string())) return;
 
 	std::string url = EncodeGraphInDesmosURL(GraphColor::Green,
 				Utils::GetValuesFromMap<std::string, ProfilerRoutineSummary>(
@@ -134,8 +134,8 @@ Profiler::~Profiler()
 	{
 		auto graphDisplayRoutineIt = m_profilerSummary.m_RoutineSummaries.find(DISPLAY_GRAPH_ROUTINE_NAME);
 		if (!Assert(graphDisplayRoutineIt != m_profilerSummary.m_RoutineSummaries.end(), 
-			std::format("Tried to display a graph in profiler for routine: {} "
-			"but a routine of that name could not be found", DISPLAY_GRAPH_ROUTINE_NAME))) return;
+			"Tried to display a graph in profiler for routine: {} "
+			"but a routine of that name could not be found", DISPLAY_GRAPH_ROUTINE_NAME)) return;
 
 		plstream* stream = CreatePLPlotGraph(m_roundNumber, graphDisplayRoutineIt->second.m_SlowestTime, 
 			std::format("\"{}\" Routine Times", DISPLAY_GRAPH_ROUTINE_NAME).c_str());

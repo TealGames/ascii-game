@@ -113,17 +113,16 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, Scene& act
 	SetProperty("TimeStep", std::format("{} s", std::to_string(timeStep)));
 
 	EntityData* playerEntity = activeScene.TryGetEntityMutable("player", true);
-	if (!Assert(playerEntity != nullptr, std::format("Tried to update properties"
-		"for debug info but player could not be in active scene")))
+	if (!Assert(playerEntity != nullptr, "Tried to update properties"
+		"for debug info but player could not be in active scene"))
 		return;
 
-	SetProperty("KeysDown", Utils::ToStringIterable<std::vector<std::string>,
-		std::string>(input.GetAllKeysWithStateAsString(Input::KeyState::Down)));
+	SetProperty("KeysDown", Utils::ToStringIterable(input.GetAllKeysWithStateAsString(Input::KeyState::Down)));
 
 	const PhysicsBodyData* maybePhysics = playerEntity->TryGetComponent<PhysicsBodyData>();
 	const PlayerData* maybePlayer = playerEntity->TryGetComponent<PlayerData>();
 	SetProperty("Input", std::format("{}", maybePlayer->GetFrameInput().ToString()));
-	SetProperty("PlayerGPos", std::format("{} m", playerEntity->GetTransformMutable().GetGlobalPos().ToString()));
+	SetProperty("PlayerGPos", std::format("{} m", playerEntity->GetTransformMutable().GetWorldPos().ToString()));
 	SetProperty("PlayerVel", std::format("{} m/s", maybePhysics->GetVelocity().ToString(3, VectorForm::Component)));
 	SetProperty("PlayerAcc", std::format("{} m/s2", maybePhysics->GetAcceleration().ToString(3, VectorForm::Component)));
 	SetProperty("Grounded:", std::format("{}", std::to_string(maybePlayer->GetIsGrounded())));

@@ -35,7 +35,7 @@ std::string ToString(const std::vector<TextBufferCharPosition2D>& chars)
 	{
 		strs.push_back(c.ToString());
 	}
-	return Utils::ToStringIterable<std::vector<std::string>, std::string>(strs);
+	return Utils::ToStringIterable(strs);
 }
 
 TextBufferChar::TextBufferChar() : TextBufferChar({}, {}) {}

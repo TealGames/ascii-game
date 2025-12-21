@@ -238,17 +238,6 @@ namespace Rendering
 		std::string ToString() const;
 	};
 
-
-	//TODO: If the code for index and vertex buffers is similar in other rendering frameworks, condense down buffers into
-	//one buffer class since most code is duplicated
-
-	enum class BufferType : std::uint8_t
-	{
-		Vertex		= 0,
-		Index		= 1,
-		Instance	= 2
-	};
-
 	enum class BufferRenderType : std::uint8_t
 	{
 		//Buffer is created 
@@ -725,6 +714,7 @@ namespace Rendering
 		/// SINCE THEY ARE IMPLICITLY BOUND AFTER CREATION (OPENGL)
 		/// </summary>
 		VertexLayoutBindIndex m_VertexBufferBindIndex = 0;
+		VertexLayout* m_Layout = nullptr;
 		VertexBuffer* m_VertexBuffer = nullptr;
 		IndexBuffer* m_IndexBuffer = nullptr;
 	};
@@ -738,16 +728,15 @@ namespace Rendering
 	class BufferController
 	{
 	private:
-		VertexLayout* m_layout;
 		std::vector<BufferProperties> m_bufferData;
 		std::vector<ShaderBufferProperties> m_shaderBufferData;
 	public:
 
 	private:
 	public:
-		BufferController(VertexLayout* vertexLayout);
+		BufferController();
 
-		VertexLayoutBindIndex AddVertexBuffer(VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer);
+		VertexLayoutBindIndex AddVertexBuffer(VertexLayout* layout, VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer);
 		/// <summary>
 		/// Note: the buffer must already be created BEFORE you link to ensure it exits before placing in slot
 		/// </summary>
@@ -780,4 +769,33 @@ namespace Rendering
 
 		bool IsInit() const { return m_isInit; }
 	};
+
+	enum class BufferType : std::uint8_t
+	{
+		None		= 0,
+		Vertex		= 1,
+		Index		= 1<<1,
+		Instance	= 1<<2,
+		All			= 0xff
+	};
+
+	/*
+	class RenderUnit
+	{
+	private:
+		VertexLayout* m_layout;
+		std::vector<std::byte> m_cpuVertices;
+		std::vector<std::byte> m_cpuInstances;
+		std::vector<std::byte> m_cpuIndices;
+
+		IndexBuffer m_indexBufferHandle;
+		VertexBuffer m_vertexBufferHandle;
+		VertexBuffer m_instanceBufferHandle;
+	public:
+
+	private:
+	public:
+		RenderUnit(VertexLayout& layout, const BufferType createBufferFlags);
+	};
+	*/
 }

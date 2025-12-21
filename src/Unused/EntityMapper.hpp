@@ -165,13 +165,15 @@ namespace Old
 		std::optional<ComponentID> TryAddComponent(const EntityID& entityId, T&& component,
 			const ComponentType& compType = ComponentType::None, T** outComponent = nullptr)
 		{
-			if (!Assert(std::is_copy_assignable_v<T>, std::format("Tried to add component of type: {} "
+			if (!Assert(std::is_copy_assignable_v<T>, "Tried to add component of type: {} "
 				"to entity id: {} but that type does not have a valid move assignment operator to move the componnent",
-				typeid(T).name(), std::to_string(entityId)))) return std::nullopt;
+				typeid(T).name(), std::to_string(entityId))) 
+				return std::nullopt;
 
-			if (!Assert(HasEntityWithID(entityId), std::format("ENTITY:MAPPER: Tried to add component of type: {} "
+			if (!Assert(HasEntityWithID(entityId), "ENTITY:MAPPER: Tried to add component of type: {} "
 				"to entity id: {} but that entity ID is not reserved! Reserved: {}",
-				ToString(compType), std::to_string(entityId), Utils::ToStringIterable(m_entityComponentIds)))) return std::nullopt;
+				ToString(compType), std::to_string(entityId), Utils::ToStringIterable(m_entityComponentIds))) 
+				return std::nullopt;
 
 			ComponentType validCompType = compType;
 			if (validCompType == ComponentType::None)
@@ -253,15 +255,18 @@ namespace Old
 		template<typename T>
 		T* TryGetComponent(const EntityID& entityId, const ComponentType& compType)
 		{
-			if (!Assert(HasEntityWithID(entityId), std::format("ENTITY MAPPER: Tried to get component of type: {} "
+			if (!Assert(HasEntityWithID(entityId), "ENTITY MAPPER: Tried to get component of type: {} "
 				"to entity id : {} but that entity ID is not reserved!",
-				ToString(compType), std::to_string(entityId)))) return -1;
+				ToString(compType), std::to_string(entityId))) 
+				return -1;
 
 			auto entityIt = m_entityComponentIds.find(entityId);
-			if (entityIt == m_entityComponentIds.end()) return nullptr;
+			if (entityIt == m_entityComponentIds.end()) 
+				return nullptr;
 
 			auto compIt = entityIt->second.find(compType);
-			if (compIt == entityIt->second.end()) return nullptr;
+			if (compIt == entityIt->second.end()) 
+				return nullptr;
 
 			const ComponentID compId = compIt->second;
 
@@ -316,8 +321,8 @@ namespace Old
 					const ComponentID compId = CreateComponentID(type, col);
 					std::optional<EntityID> maybeId = TryGetEntityWithComponent(compId);
 
-					if (!Assert(maybeId.has_value(), std::format("ENTITY MAPPER: Tried to get all components of type: {} "
-						"but failed to retrieve its entity id from col index: {}", ToString(type), std::to_string(col)))) return {};
+					if (!Assert(maybeId.has_value(), "ENTITY MAPPER: Tried to get all components of type: {} "
+						"but failed to retrieve its entity id from col index: {}", ToString(type), std::to_string(col))) return {};
 					action(compPtr, maybeId.value());
 				}
 				result.push_back(compPtr);

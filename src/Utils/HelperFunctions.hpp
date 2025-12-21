@@ -3,7 +3,6 @@
 #include "Utils/TemplateConcepts.hpp"
 #include <string>
 #include <format>
-#include <variant>
 #include <functional>
 #include <sstream>
 #include <optional>
@@ -11,8 +10,6 @@
 #include <unordered_set>
 #include <cstdint>
 #include <filesystem>
-#include <type_traits>
-#include <ranges>
 #include <utility>
 #include <array>
 #include <random>
@@ -84,124 +81,54 @@ namespace Utils
 
 	std::string GetCurrentStackTrace();
 
-	//This is the fallback in case we supply incorrect type args
-	template <typename, typename T>
-	struct HasFunction
-	{
-		static_assert(std::integral_constant<T, false>::value,
-			"Second template parameter needs to be of function type.");
-	};
-
-	template <typename C, typename Return, typename... Args>
-	struct HasFunction<C, Return(Args...)>
-	{
-	private:
-		//NOte: -> means return, which is mainly used for generic programming
-		//This will check if the method were called would return the neccessary type
-		//and if it does will store true value, otherwise will fallback to other template
-		template <typename T>
-		static constexpr auto CheckExists(int arg)
-			-> typename std::is_same<decltype(std::declval<T>().
-				method(std::declval<Args>()...)), Return>::type;
-
-		//This is a fallback in case it does not exist, creating a false value
-		//Note: ... mean any arguments
-		template <typename>
-		static constexpr std::false_type CheckExists(...);
-
-		//This is where the result of true or false is stored by
-		//evaluating the type of CheckExists with 0 (the value does not matter since
-		//we only really need to have any args so we can first check the true function)
-		typedef decltype(CheckExists<C>(0)) type;
-
-	public:
-		static constexpr bool VALUE = type::value;
-	};
-
 	using SystemTime = std::chrono::time_point<std::chrono::system_clock>;
 	using LocalTime= std::chrono::zoned_time<std::chrono::system_clock::duration>;
 	LocalTime GetLocalTime(const SystemTime& time);
 	LocalTime GetCurrentTime();
 
-	template <typename EnumType>
-	concept HasBitwiseAnd = requires(EnumType a, EnumType b) {
-		{ a & b } -> std::convertible_to<EnumType>;
-	};
-	template <typename EnumType>
-	concept HasBitwiseOr = requires(EnumType a, EnumType b) {
-		{ a | b } -> std::convertible_to<EnumType>;
-	};
-	template <typename EnumType>
-	concept HasBitwiseNot = requires(EnumType a) {
-		{ ~a } -> std::convertible_to<EnumType>;
-	};
-
-	template <typename T, typename... Args>
-	concept AllSameType = (std::is_same_v<T, Args> && ...);
-
-	template<typename BaseType, typename... Args>
-	concept AllSameBaseType = (std::is_base_of_v< BaseType, Args> && ...);
-
-	template<typename... Args>
-	concept HasAtLeastOneArg = sizeof...(Args) >= 1;
-
-	template <typename T>
-	struct ToPointerType
+	template<typename TEnum, typename... CheckFlagType>
+	requires std::is_enum_v<TEnum> && std::is_integral_v<std::underlying_type_t<TEnum>>
+			 && HasBitwiseAnd<TEnum> && HasBitwiseOr<TEnum> &&
+			 AllSameType<TEnum, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
+	constexpr bool HasFlagAny(const TEnum enumBits, const CheckFlagType... checkFlags)
 	{
-		using Type = T*;
-	};
-
-	template<typename EnumType, typename... CheckFlagType>
-	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>>
-			 && HasBitwiseAnd<EnumType> && HasBitwiseOr<EnumType> && 
-			 AllSameType<EnumType, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
-	constexpr bool HasFlagAny(const EnumType enumBits, const CheckFlagType... checkFlags)
-	{
-		EnumType flagsCombined = (checkFlags | ...);
-		return (enumBits & flagsCombined) != static_cast<EnumType>(0);
+		TEnum flagsCombined = (checkFlags | ...);
+		return (enumBits & flagsCombined) != static_cast<TEnum>(0);
 	}
 
-	template<typename EnumType, typename... CheckFlagType>
-	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>>
-		     && HasBitwiseAnd<EnumType> && HasBitwiseOr<EnumType> && 
-			 AllSameType<EnumType, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
-	constexpr bool HasFlagAll(const EnumType enumBits, const CheckFlagType... checkFlags)
+	template<typename TEnum, typename... CheckFlagType>
+	requires std::is_enum_v<TEnum> && std::is_integral_v<std::underlying_type_t<TEnum>>
+		     && HasBitwiseAnd<TEnum> && HasBitwiseOr<TEnum> &&
+			 AllSameType<TEnum, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
+	constexpr bool HasFlagAll(const TEnum enumBits, const CheckFlagType... checkFlags)
 	{
-		EnumType flagsCombined = (checkFlags | ...);
+		TEnum flagsCombined = (checkFlags | ...);
 		return (enumBits & flagsCombined) == flagsCombined;
 	}
 
 	bool HasFlag(unsigned int fullFlag, unsigned int hasFlag);
 
-	template<typename EnumType>
-	requires std::is_enum_v<EnumType> && 
-			 std::is_integral_v<std::underlying_type_t<EnumType>> && HasBitwiseOr<EnumType>
-	constexpr void AddFlags(EnumType& enumBits, const EnumType addFlags)
+	template<typename TEnum>
+	requires std::is_enum_v<TEnum> &&
+			 std::is_integral_v<std::underlying_type_t<TEnum>> && HasBitwiseOr<TEnum>
+	constexpr void AddFlags(TEnum& enumBits, const TEnum addFlags)
 	{
 		enumBits = enumBits | addFlags;
 	}
-	template<typename EnumType>
-	requires std::is_enum_v<EnumType> && std::is_integral_v<std::underlying_type_t<EnumType>> 
-			 && HasBitwiseAnd<EnumType> && HasBitwiseNot<EnumType>
-	constexpr void RemoveFlags(EnumType& enumBits, const EnumType removeFlags)
+	template<typename TEnum>
+	requires std::is_enum_v<TEnum> && std::is_integral_v<std::underlying_type_t<TEnum>>
+			 && HasBitwiseAnd<TEnum> && HasBitwiseNot<TEnum>
+	constexpr void RemoveFlags(TEnum& enumBits, const TEnum removeFlags)
 	{
 		enumBits = enumBits & ~removeFlags;
 	}
 
-	template<typename EnumType>
-	requires std::is_enum_v<EnumType>&& std::is_integral_v<std::underlying_type_t<EnumType>>
-	constexpr EnumType SetAllFlags()
+	template<typename TEnum>
+	requires std::is_enum_v<TEnum>&& std::is_integral_v<std::underlying_type_t<TEnum>>
+	constexpr TEnum SetAllFlags()
 	{
-		return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(~0));
+		return static_cast<TEnum>(static_cast<std::underlying_type_t<TEnum>>(~0));
 	}
-
-	//TODO: make a function that can return the type that exists in a variant
-	template <size_t Index, typename Variant>
-	using VariantType = std::variant_alternative_t<Index, Variant>;
-
-	//Variant holds has a member with type 'value_types'
-	template <typename T>
-	concept IsVariant = requires { typename T::value_types; };
 
 	template <typename Variant>
 	auto GetVariantValue(const Variant& variant) 
@@ -245,9 +172,9 @@ namespace Utils
 	std::vector<std::string> Split(const std::string& str, const char& separator);
 
 	template<typename T>
-	inline bool IsIterable(const T& collection)
+	inline bool IsCollectionIterable(const T& collection)
 	{
-		return IS_ITERABLE<T>();
+		return IsIterable<T>();
 	}
 
 	/// <summary>
@@ -259,35 +186,41 @@ namespace Utils
 	/// <param name="findElement"></param>
 	/// <returns></returns>
 	template <typename T1, typename T2>
-	auto IterableHas(const T1& collection, const T2& findElement)
-		-> typename std::enable_if<IS_ITERABLE<T1>, bool>::type
+	requires IsIterable<T1>
+	bool IterableHas(const T1& collection, const T2& findElement)
 	{
-		if (collection.size() <= 0) return false;
+		if (collection.size() <= 0) 
+			return false;
 
 		auto startElement = collection.begin();
-		if (!std::is_same_v<T2, decltype(startElement)>) return -1;
+		if (!std::is_same_v<T2, decltype(startElement)>)
+			return false;
 
 		auto endElement = collection.end();
 
 		//If they are the same, this means the size is 0
-		if (endElement == startElement) return false;
+		if (endElement == startElement) 
+			return false;
 
 		auto result = std::find(startElement, endElement, findElement);
 		return result != endElement;
 	}
 
 	template <typename T1, typename T2>
-	auto GetIndexOfValue(const T1& collection, const T2& findElement)
-		-> typename std::enable_if<IS_ITERABLE<T1>, size_t>::type
+	requires IsIterable<T1>
+	int GetIndexOfValue(const T1& collection, const T2& findElement)
 	{
-		if (collection.size() <= 0) return -1;
+		if (collection.size() <= 0) 
+			return -1;
 
 		auto startElement = collection.begin();
-		if (!std::is_same_v<T1, decltype(startElement)>) return -1;
+		if (!std::is_same_v<T1, decltype(startElement)>) 
+			return -1;
 
 		auto endElement = collection.end();
 		//If they are the same, this means the size is 0
-		if (endElement == startElement) return -1;
+		if (endElement == startElement) 
+			return -1;
 
 		auto findElementIt = std::find(startElement, endElement, findElement);
 		return std::distance(startElement, findElementIt);
@@ -368,13 +301,15 @@ namespace Utils
 	}
 
 	template <typename T, std::size_t... Is, typename... Args>
-	constexpr std::array<T, sizeof...(Is)> ConstructArrayImpl(std::index_sequence<Is...>, Args&&... args) {
+	constexpr std::array<T, sizeof...(Is)> ConstructArrayImpl(std::index_sequence<Is...>, Args&&... args) 
+	{
 		// Expand the pack N times by repeating construction with the same args
 		return { ((void)Is, T(std::forward<Args>(args)...))... };
 	}
 
 	template <typename T, std::size_t N, typename... Args>
-	constexpr std::array<T, N> ConstructArray(Args&&... args) {
+	constexpr std::array<T, N> ConstructArray(Args&&... args) 
+	{
 		return ConstructArrayImpl<T>(std::make_index_sequence<N>{}, std::forward<Args>(args)...);
 	}
 

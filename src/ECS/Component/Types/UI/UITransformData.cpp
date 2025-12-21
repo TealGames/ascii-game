@@ -86,12 +86,12 @@ void UITransformData::SetSize(const NormalizedPosition& size)
 	const Vec2 currSize = GetSize().GetPos();
 	if (IsFixedHorizontal() && size.GetX() != currSize.m_X)
 	{
-		Assert(false, std::format("Attempted to set the size of gui element:{} to:{} but it is fixed HORIZONTALLY "
+		LogError(std::format("Attempted to set the size of gui element:{} to:{} but it is fixed HORIZONTALLY "
 			"so x size cannot be modified unless the HORIZONTAL lock is set to FALSE", ToString(), size.ToString()));
 	}
 	if (IsFixedVertical() && size.GetY() != currSize.m_Y)
 	{
-		Assert(false, std::format("Attempted to set the size of gui element:{} to:{} but it is fixed VERTICALLY "
+		LogError(std::format("Attempted to set the size of gui element:{} to:{} but it is fixed VERTICALLY "
 			"so x size cannot be modified unless the VERTICAL lock is set to FALSE", ToString(), size.ToString()));
 	}
 

@@ -2,21 +2,32 @@
 
 //Smooth shading will interpolate normals from vertices when tracing
 #define DO_SMOOTH_SHADING 1
+#define USE_BVH 1
 //Will use the modified normal for environment lighting
 #define USE_BENT_NORMAL_FOR_LIGHTING 1
 #define DO_AMBIENT_OCCLUSION 1
+
+struct BVHNode
+{
+    //Min pos, max pos
+	vec3 bounds[2];
+
+	int objectStartIndex;
+	uint objectCount;
+
+	int indexChild0;
+	int indexChild1;
+};
+bool IsLeaf(BVHNode node)
+{
+    return node.objectCount > 0 && node.objectStartIndex >= 0;
+}
 
 struct Vertex 
 {
     vec3 localPos;
     vec2 uvPos;
     vec3 normal;
-};
-struct Triangle
-{
-    Vertex v0;
-    Vertex v1;
-    Vertex v2;
 };
 struct Material
 {
@@ -30,7 +41,9 @@ struct Material
 struct Instance
 {
     uint materialIndex;
+    uint meshIndex;
     mat4 modelMatrix;
+    mat4 inverseModelMatrix;
     mat3 normalModelMatrix;
 };
 struct InstanceMesh
@@ -38,6 +51,9 @@ struct InstanceMesh
     uint indexOffset;
     //The total number of indices to read for vertices
     uint numIndices;
+    
+    uint blasTreeOffset;
+    uint blasTreeNodeCount;
 };
 
 struct PointLight 
@@ -54,7 +70,7 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 uniform ivec2 uScreenSize;
 uniform uint uMaxBounces;
-const uint uAmbientOcclusionSamples = 16;
+uniform uint uAmbientOcclusionSamples;
 uniform uint uUnmovingFrameCount;
 uniform uint uEmissiveMaterialCount;
 uniform uint uInstanceCount;
@@ -88,13 +104,18 @@ layout(std140) uniform LightsBlock
 //This is a shader storage buffer object -> similar to uniform buffer
 //but allows more space, dynamic arrays (no compile time predefined size), and read + write
 layout(std430) buffer Vertices { Vertex vertices[VERTEX_MAX_COUNT]; };
-//layout(std430) buffer Triangles { Triangle triangles[TRIANGLE_MAX_COUNT]; };
 layout(std430) buffer Indices { uint indices[INDEX_MAX_COUNT]; };
 layout(std430) buffer Instances { Instance instances[INSTANCE_MAX_COUNT]; };
 layout(std430) buffer Materials { Material materials[MATERIAL_MAX_COUNT]; };
 //The indices into the instance list that are emissive
 layout(std430) buffer LightIndices { uint lightIndices[INSTANCE_MAX_COUNT]; };
 layout(std430) buffer InstanceMeshes { InstanceMesh meshes[INSTANCE_MAX_COUNT]; };
+//The tree which stores the world bvh tree where each object at leaves
+//are the indices into the instances
+layout(std430) buffer TLASTree { BVHNode tlasTree[TLAS_NODE_MAX_COUNT]; };
+//The local bvh trees where each leaf object index are the indices into the vertex index buffer.
+//NOTE: this contains all mesh bvh trees packed together
+layout(std430) buffer BLASTrees { BVHNode blasTrees[BLAS_NODE_MAX_COUNT]; };
 
 //The texure that was previosuly used for output and can be blended with current one to provide more detail
 layout(rgba16f) uniform image2D uTextureInput;
@@ -281,14 +302,8 @@ bool DoesIntersectTriangle(vec3 rayWorldOrigin, vec3 rayWorldDir, vec3 v0, vec3 
     return true;
 }
 
-bool DoesIntersectTriangleInterpolated(
-    vec3 rayWorldOrigin,
-    vec3 rayWorldDir,
-    vec3 v0, vec3 v1, vec3 v2,
-    vec3 n0, vec3 n1, vec3 n2,
-    out float hitDistance,
-    out vec3 triangleNormal
-)
+bool DoesIntersectTriangleInterpolated(vec3 rayWorldOrigin, vec3 rayWorldDir, vec3 v0, vec3 v1, vec3 v2,
+    vec3 n0, vec3 n1, vec3 n2, out float hitDistance, out vec3 triangleNormal)
 {
     vec3 e1 = v1 - v0;
     vec3 e2 = v2 - v0;
@@ -323,6 +338,69 @@ bool DoesIntersectTriangleInterpolated(
     return true;
 }
 
+bool DoesIntersectBounds(vec3 bounds[2], vec3 rayOrigin, vec3 inverseRayDir, ivec3 rayDirSign, 
+                         out float outTMin, out float outTMax)
+{
+/*
+	//NOTE: we use inverse dir since multiply is faster than divide
+	vec3 tMin = (bounds.boundsMin - rayOrigin) * inverseRayDir;
+	vec3 tMax = (bounds.boundsMax - rayOrigin) * inverseRayDir;
+
+    float temp = 0;
+	if (inverseRayDir.x < 0)
+    {
+        temp = tMin.x;
+        tMin.x = tMax.x;
+        tMax.x = temp;
+    }
+	if (inverseRayDir.y < 0)
+    {
+        temp = tMin.y;
+        tMin.y = tMax.y;
+        tMax.y = temp;
+    }
+	if (inverseRayDir.z < 0)
+    {
+        temp = tMin.z;
+        tMin.z = tMax.z;
+        tMax.z = temp;
+    }
+
+	float tEnter = max(tMin.x, max(tMin.y, tMin.z));
+	float tExit = min(tMax.x, min(tMax.y, tMax.z));
+
+	return tEnter <= tExit && tExit >= 0;
+*/
+    float tMin  = (bounds[rayDirSign.x].x - rayOrigin.x) * inverseRayDir.x;
+    float tMax  = (bounds[1 - rayDirSign.x].x - rayOrigin.x) * inverseRayDir.x;
+
+    float tMinY = (bounds[rayDirSign.y].y - rayOrigin.y) * inverseRayDir.y;
+    float tMaxY = (bounds[1 - rayDirSign.y].y - rayOrigin.y) * inverseRayDir.y;
+
+    // Slab separation check
+    if (tMin > tMaxY || tMinY > tMax)
+        return false;
+
+    // Merge Y slab
+    if (tMinY > tMin) tMin = tMinY;
+    if (tMaxY < tMax) tMax = tMaxY;
+
+    float tMinZ = (bounds[rayDirSign.z].z - rayOrigin.z) * inverseRayDir.z;
+    float tMaxZ = (bounds[1 - rayDirSign.z].z - rayOrigin.z) * inverseRayDir.z;
+
+    // Slab separation check
+    if (tMin > tMaxZ || tMinZ > tMax)
+        return false;
+
+    // Merge Z slab
+    if (tMinZ > tMin) tMin = tMinZ;
+    if (tMaxZ < tMax) tMax = tMaxZ;
+
+    outTMin = tMin;
+    outTMax = tMax;
+    return true;
+}
+
 /*
    Calculates the weight of the targetPos based on the 3 positions
    in normalized position where (1, 0, 0) would be barycentric weight of
@@ -353,9 +431,121 @@ vec3 SampleEquirectangular(vec3 dir, sampler2D hdrMap)
     return texture(hdrMap, vec2(u, v)).rgb;
 }
 
-bool DoesIntersectSceneWorld(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitNormal, 
-                        out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2,
+bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance instance, out float minHitDistance, out vec3 hitWorldNormal, 
+                        out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2, 
                         out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
+{
+    vec3 inverseLocalRayDir = 1 / rayDirLocal;
+    ivec3 localRayDirSign = ivec3(lessThan(inverseLocalRayDir, vec3(0.0)));
+
+    uint nodeIndex = meshes[instance.meshIndex].blasTreeOffset;
+    BVHNode node = blasTrees[nodeIndex];
+    float tMin, tMax;
+    //NOTE: technically, if everything done correct,
+    //the index into the blas tree should never be outside the bounds of the instance tree
+    while (!IsLeaf(node))
+	{
+		if (DoesIntersectBounds(blasTrees[node.indexChild0].bounds, rayOriginLocal, inverseLocalRayDir, localRayDirSign, tMin, tMax))
+			nodeIndex = node.indexChild0;
+		else if (DoesIntersectBounds(blasTrees[node.indexChild1].bounds, rayOriginLocal, inverseLocalRayDir, localRayDirSign, tMin, tMax))
+			nodeIndex = node.indexChild1;
+		else return false;
+
+        node = blasTrees[nodeIndex];
+	}
+
+    bool hit = false;
+    float hitDistanceMin = 1e20;
+    //We iterate over all indices into the vertex index buffer
+    for (int i = 0; i < node.objectCount; i+=3)
+    {
+        uint indexV0 = indices[node.objectStartIndex + i];
+        uint indexV1 = indices[node.objectStartIndex + i + 1];
+        uint indexV2 = indices[node.objectStartIndex + i + 2];
+
+        float hitDistance;
+        vec3 triangleNormal;
+
+#if DO_SMOOTH_SHADING
+        if (DoesIntersectTriangleInterpolated(
+            rayOriginLocal, rayDirLocal,
+            vertices[indexV0].localPos, vertices[indexV1].localPos, vertices[indexV2].localPos,
+            vertices[indexV0].normal, vertices[indexV1].normal, vertices[indexV2].normal,
+            hitDistance, triangleNormal))
+#elif
+        if (DoesIntersectTriangle(rayOriginWorld, rayDirWorld, vertices[indexV0].localPos, 
+            vertices[indexV1].localPos, vertices[indexV2].localPos, hitDistance, triangleNormal))
+#endif
+        {
+            if (dot(rayDirLocal, triangleNormal) > 0.0)
+                continue;
+
+            if (hitDistance > EPSILON && hitDistance < hitDistanceMin)
+            {
+                hitIndexV0 = indexV0;
+                hitIndexV1 = indexV1;
+                hitIndexV2 = indexV2;
+
+                hitVertexWorld0 = vec3(instance.modelMatrix * vec4(vertices[indexV0].localPos, 1.0));
+                hitVertexWorld1 = vec3(instance.modelMatrix * vec4(vertices[indexV1].localPos, 1.0));
+                hitVertexWorld2 = vec3(instance.modelMatrix * vec4(vertices[indexV2].localPos, 1.0));
+
+                minHitDistance = hitDistance;
+                hitWorldNormal = instance.normalModelMatrix * normalize(triangleNormal);
+                hitMaterial = materials[instance.materialIndex];
+                hit = true;
+            }
+        }
+    }
+    return hit;
+}
+
+bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitWorldNormal, 
+                        out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2, 
+                        out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
+{
+	vec3 inverseWorldRayDir = 1 / rayDirWorld;
+    ivec3 worldRayDirSign = ivec3(lessThan(inverseWorldRayDir, vec3(0.0)));
+    float tMin, tMax;
+	if (!DoesIntersectBounds(tlasTree[0].bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tMin, tMax))
+		return false;
+
+	uint nodeIndex = 0;
+    BVHNode node = tlasTree[nodeIndex];
+	while (!IsLeaf(node))
+	{
+		if (DoesIntersectBounds(tlasTree[node.indexChild0].bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tMin, tMax))
+			nodeIndex = node.indexChild0;
+		else if (DoesIntersectBounds(tlasTree[node.indexChild1].bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tMin, tMax))
+			nodeIndex = node.indexChild1;
+		else return false;
+
+        node = tlasTree[nodeIndex];
+	}
+
+    //Here we iterate over all possible LOCAL OBJECT SPACE BLAS TREE ROOT NODES
+    bool hit = false;
+    vec3 rayOriginLocal, rayDirLocal;
+    float minHitDistance;
+	for (int i = 0; i < node.objectCount; i++)
+	{
+        Instance instance = instances[node.objectStartIndex + i];
+
+        rayOriginLocal = (instance.inverseModelMatrix * vec4(rayOriginWorld, 1)).xyz;
+        rayDirLocal = normalize((instance.inverseModelMatrix * vec4(rayDirWorld, 0)).xyz);
+        hit= DoesIntersectLocalObjectBVH(rayOriginLocal, rayDirLocal, instance, minHitDistance, hitWorldNormal, hitMaterial, seed, 
+                                         hitIndexV0, hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
+        if (hit)
+        {
+            hitPos = rayOriginWorld + rayDirWorld * minHitDistance;
+        }
+	}
+	return hit;
+}
+
+bool DoesIntersectSceneWorldNaive(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitNormal, 
+                        out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, 
+                        out uint hitIndexV2, out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
 {
     bool hit = false;
     float hitDistanceMin = 1e20;
@@ -432,6 +622,18 @@ bool DoesIntersectSceneWorld(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hit
     }
 
     return hit;
+}
+bool DoesIntersectSceneWorld(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitNormal, 
+                        out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, 
+                        out uint hitIndexV2, out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
+{
+#if USE_BVH
+    return DoesIntersectSceneWorldBVH(rayOriginWorld, rayDirWorld, hitPos, hitNormal, hitMaterial, seed, hitIndexV0, 
+                                      hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
+#else
+    return DoesIntersectSceneWorldNaive(rayOriginWorld, rayDirWorld, hitPos, hitNormal, hitMaterial, seed, hitIndexV0, 
+                                      hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
+#endif
 }
 
 uint CreateHash(uint x) 
