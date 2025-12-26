@@ -7,9 +7,9 @@
 #include "Utils/ToStringFunctions.hpp"
 #include "Utils/Debug.hpp"
 
-template<typename T>
-requires std::is_arithmetic_v<T>
-class Vec<T, 4>
+template<typename T, size_t ALIGN_BYTES>
+requires (std::is_arithmetic_v<T>)
+class alignas(ALIGN_BYTES) Vec<T, 4, ALIGN_BYTES>
 {
 private:
 public:

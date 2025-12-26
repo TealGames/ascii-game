@@ -64,7 +64,6 @@ namespace Rendering
 		Linear					= 1,
 
 		//The following are variants of linear/nearest but also with mipmaps
-
 		NearestMipmapNearest	= 2,
 		NearestMipmapLinear		= 3,
 		LinearMipmapNearest		= 4,
@@ -114,6 +113,32 @@ namespace Rendering
 	using AxesWrapBehavior = std::array<WrapBehavior, 3>;
 	AxesWrapBehavior CreateXYZWrapBehavior(const WrapBehavior xyzBehavior);
 
+	/// <summary>
+	/// The behavior that determines how UV coordinates should be computed for vertices
+	/// Similar to WrapBehavior, but as WrapBehavior is on the texture side of texture behavior,
+	/// TextureFitBehavior is on the calling side of the mesh which uses the texture. AS A RESULT,
+	/// TEXTURING IS A CONTRACT BETWEEN WHAT THE CALLER DEMANDS AND HOW THE TEXTURE RESPONDS
+	/// </summary>
+	enum class TextureFitBehavior : std::uint8_t
+	{
+		/// <summary>
+		/// The UV coords will be based on texture size and how
+		/// many textures can fit within the space. 
+		/// Simply: MESH SIZE / TEXTURE_SIZE (The result will determine how many times 
+		/// the texture will repeat) as a float with NO ROUNDING.
+		/// </summary>
+		RepeatExact		= 0,
+		/// <summary>
+		/// Same as RepeatExact except the floating result is truncated
+		/// to get perfect repeating design
+		/// </summary>
+		RepeatTruncate	= 1,
+		/// <summary>
+		/// Will fit the full texture across the mesh no matter its size
+		/// </summary>
+		BestFit			= 2
+	};
+
 	struct TextureInfo
 	{
 		RenderObjectId m_id;
@@ -133,6 +158,9 @@ namespace Rendering
 	{
 		RenderObjectId(*m_AllocateFunc)(const TextureInfo& data);
 		void(*m_SetData)(const RenderObjectId, const Vec2Int size, const TexelStorageType storage, const std::byte*);
+		void(*m_SetWrapBehavior)(const RenderObjectId, const AxesWrapBehavior);
+		void (*m_SetMinFilter)(const RenderObjectId id, const MinFilter filter);
+		void (*m_SetMagFilter)(const RenderObjectId id, const MagFilter filter);
 		void(*m_CopyData)(const RenderObjectId, const Vec2Int size, const Texture& otherTexture);
 		void(*m_GetData)(const RenderObjectId, const Vec2Int offset, const Vec2Int size, const TexelStorageType storage, 
 			std::byte* writePtr, const size_t bufferSize);
@@ -174,6 +202,11 @@ namespace Rendering
 		const TextureInfo& GetInfo() const;
 		RenderObjectId GetId() const;
 		TexelStorageType GetStorageType() const;
+
+		void SetWrapBehavior(const AxesWrapBehavior behavior);
+		void SetMinFilter(const MinFilter filter);
+		void SetMagFilter(const MagFilter filter);
+
 		/// <summary>
 		/// Will get the byte data of the texture using the TOP LEFT CORNER as the origin (0, 0)
 		/// </summary>
@@ -186,10 +219,18 @@ namespace Rendering
 		/// </summary>
 		/// <param name="writeLocationPointer"></param>
 		void GetByteData(std::byte* writeLocationPointer) const;
+
 		void SetByteData(const std::byte* data);
 		void SetByteData(const Texture& texture);
-		bool IsValid() const;
+		/// <summary>
+		/// Will set all byte data in texture to 0.
+		/// NOTE: this is expensive due to requiring a heap allocation 
+		/// and should rarely be used. If you want to clear texture data efficiently
+		/// preferably clear buffer bit when bdinging texture to frame buffer
+		/// </summary>
+		void ClearByteData();
 
+		bool IsValid() const;
 		/// <summary>
 		/// Will return the texture pixel width * height
 		/// </summary>

@@ -43,6 +43,37 @@ namespace Rendering
 	};
 	FLAG_ENUM_OPERATORS(BufferBitType)
 
+	/// <summary>
+	/// The type of depth settings enabled
+	/// </summary>
+	enum class DepthMode : std::uint8_t
+	{
+		/// <summary>
+		/// Depth writing and testing will both be OFF
+		/// </summary>
+		None		= 0,
+		/// <summary>
+		/// If set, the depth positions will be written to the 
+		/// depth buffer. By itself, this does nothing unless
+		/// testing is also set
+		/// </summary>
+		Write		= 1,
+		/// <summary>
+		/// If set, will test fragments based on depth to determine
+		/// if that fragment should be drawn or discarded. If this is set 
+		/// and Write is OFF, then every fragment will be drawn, overriding previous
+		/// fragments. If Write is ON, whether it gets drawn is determined by the
+		/// set depth function when used to compare incoming fragment depth with the 
+		/// current buffer depth for that pixel
+		/// </summary>
+		Test		= 1<<1,
+		/// <summary>
+		/// If set, both Write and Test will be ON
+		/// </summary>
+		All			= 0xff
+	};
+	FLAG_ENUM_OPERATORS(DepthMode)
+	
 	class Texture;
 	class Font;
 	namespace Backend
@@ -69,9 +100,19 @@ namespace Rendering
 		RenderObjectId GetRenderObjectId(const RenderObjectQueryType type);
 
 		void BeginRenderingMarker();
-		void ClearBackground();
-		void SetDepthStatus(const bool enable);
+		/// <summary>
+		/// Will set the clear color and clear depth and then clear both depth and color
+		/// from the currently bound attachments of the currently bound framebuffer (or default framebuffer if none bound)
+		/// NOTE: clearColorAttachments is a bitmask where bits correspond to color attachemnts (bit0 -> color0, bit1 -> color1, etc.)
+		/// EXAMPLE: if we wanted to clear color0, color2 -> clearColorAttachments would be 00000101 (0b101)
+		/// </summary>
+		void ClearBackground(std::uint8_t clearColorAttachments, const Color clearColor = Color(0, 0, 0, 0), const const float clearDepth = 1);
 		void ClearBufferBit(const BufferBitType bitType);
+
+		void SetDepthMode(const DepthMode mode);
+		void SetDefaultDepthMode();
+		void SetDepthWriting(const bool enable);
+		void SetDepthTesting(const bool enable);
 
 		/// <summary>
 		/// Since an Image data type can be invoked with parallel calls, those operations may not have 
@@ -88,16 +129,6 @@ namespace Rendering
 		/// <param name="enable"></param>
 		void SetSrgbConversionStatus(const bool enable);
 		void EndRenderingMarker();
-
-		void DrawCircle(const WorldPosition3D& pos, const float radius, const Color color);
-		void DrawRectangle(const WorldPosition3D& pos, const Vec2& size, const Color color);
-		void DrawTexture(const WorldPosition3D& destinationPos, const Vec2& destinationSize, const Vec2& sourcePos, const Vec2& sourceSize,
-			const Texture& tex, const float rotation, const Color color);
-		void DrawText(const WorldPosition3D& pos, const Font& font, const char* text, const float size, const float spacing, const Color color);
-
-		void DrawLine(const WorldPosition3D& startPos, const WorldPosition3D& endPos, const float thickness, const Color color);
-		void DrawRectangleLine(const WorldPosition3D& pos, const float thickness, const Vec2& size, const Color color);
-
 		void DrawUploadedIndexBuffer(const size_t& indicesStartByteOffset, const size_t& drawIndexCount);
 		/// <summary>
 		/// Draws vertex buffer with index buffer and instance buffer info.

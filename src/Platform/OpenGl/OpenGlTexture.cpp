@@ -81,21 +81,31 @@ namespace Rendering
 			LogError(std::format("[OPENGL]: Attempted to convert internal storage to texel storage type"));
 			return 0;
 		}
-
+		static void SetWrapBehavior(const RenderObjectId id, const AxesWrapBehavior wrap)
+		{
+			//Note: S-> x axis/U in texcoords, T-> y axis/V in tex, R-> z axis/w in tex
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_WRAP_S, GetWrapBehavior(wrap[0])));
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_WRAP_T, GetWrapBehavior(wrap[1])));
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_WRAP_R, GetWrapBehavior(wrap[2])));
+		}
+		static void SetMinFilter(const RenderObjectId id, const MinFilter filter)
+		{
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_MIN_FILTER, GetMinFilter(filter)));
+		}
+		static void SetMagFilter(const RenderObjectId id, const MagFilter filter)
+		{
+			GL_CALL(glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GetMagFilter(filter)));
+		}
 		static void SetTextureSettings(const RenderObjectId id, const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 		{
 			//TODO: do something with it
 			GL_CALL(glGenerateTextureMipmap(id));
 
-			//Note: S-> x axis/U in texcoords, T-> y axis/V in tex, R-> z axis/w in tex
-			GL_CALL(glTextureParameteri(id, GL_TEXTURE_WRAP_S, GetWrapBehavior(wrap[0])));
-			GL_CALL(glTextureParameteri(id, GL_TEXTURE_WRAP_T, GetWrapBehavior(wrap[1])));
-			GL_CALL(glTextureParameteri(id, GL_TEXTURE_WRAP_R, GetWrapBehavior(wrap[2])));
-
-			GL_CALL(glTextureParameteri(id, GL_TEXTURE_MIN_FILTER, GetMinFilter(min)));
-			GL_CALL(glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GetMagFilter(mag)));
+			SetWrapBehavior(id, wrap);
+			SetMinFilter(id, min);
+			SetMagFilter(id, mag);
 		}
-
+		
 		static RenderObjectId AllocateTexture(const TextureInfo& data)
 		{
 			RenderObjectId textureId;
@@ -146,6 +156,9 @@ namespace Rendering
 				{
 					AllocateTexture,
 					SetData,
+					SetWrapBehavior,
+					SetMinFilter,
+					SetMagFilter,
 					CopyData,
 					GetData,
 					DeallocateTexture,

@@ -43,7 +43,9 @@ namespace Rendering
 
     Instance::Instance() : Instance(-1, -1, {}, {}) {}
     Instance::Instance(const std::uint32_t materialIndex, const std::uint32_t meshIndex, const Mat4& modelMatrix, const Mat3& normalMatrix)
-        : m_MaterialIndex(materialIndex), m_MeshIndex(meshIndex), m_ModelMatrix(modelMatrix), m_InverseModelMatrix(m_ModelMatrix.InverseUnsafe()),
+        : m_MaterialIndex(materialIndex), m_MeshIndex(meshIndex), m_ModelMatrix(modelMatrix), 
+          //NOTE: we use the utility function rather than Inverse() directly on Matrix since it is optimized for model matrices
+          m_InverseModelMatrix(Utils::CalculateInverseModelMatrix(m_ModelMatrix)),
           m_NormalModelMatrix(normalMatrix), _padding{} {}
 
     std::string Instance::ToString() const

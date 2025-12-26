@@ -24,7 +24,7 @@ namespace Rendering
     enum class RenderCallType : std::uint8_t
     {
         Sphere3d            = 0,
-        Box3d              = 1,
+        Box3d               = 1,
         Plane3d             = 2,
         PointLight3d        = 3,
         DirectionLight3d    = 4,
@@ -172,7 +172,7 @@ namespace Rendering
         PostProcess      = 4,
         GaussianBlur     = 5,
         RayTrace         = 6,
-        SkyboxConverted  = 7,
+        Skybox           = 7,
     };
     inline constexpr CoreShaderIntegralType CORE_SHADER_COUNT = 8;
 
@@ -182,10 +182,11 @@ namespace Rendering
         None        = 0,
         Shadow      = 1,
         Geometry    = 2,
-        PostProcess = 3,
-        RayTrace    = 4,
+        Skybox      = 3,
+        PostProcess = 4,
+        RayTrace    = 5,
     };
-    inline constexpr IntegralRenderPassType TOTAL_PASS_TYPES = 4;
+    inline constexpr IntegralRenderPassType TOTAL_PASS_TYPES = 5;
 
     struct RenderPassData
     {
@@ -320,8 +321,10 @@ namespace Rendering
         void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix, 
             const Vec3& forwardDir, const Vec3& rightDir, const Vec3& upDir, const float yFov);
         void DrawBatch(RenderBatch& batch);
+        void ExecuteSkyboxPass(std::uint8_t* outDrawnAttachmentsMask);
         void ExecuteShadowPass();
-        void ExecuteLightingAndGeometryPass(const SlotIndex* indices);
+        void ExecuteLightingAndGeometryPass(const SlotIndex* indices, 
+            const std::uint8_t previousDrawnColorAttachmentsMask);
         void ExecuteRayTracing();
         void ExecuteForwardRendering();
         void ExecutePostProcessPass();
@@ -400,7 +403,8 @@ namespace Rendering
         void AddCallTextureSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation);
 
         void AddCallTextureBox3D(Material* material, const Mat4& modelMatrix);
-        void AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix);
+        void AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix, 
+            const Vec2& textureRepeats= Vec2::One());
         //void AddCallText(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Color color);
 
         void AddCallModel(Model3d& model, const Mat4& modelMatrix);

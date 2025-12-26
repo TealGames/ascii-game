@@ -542,7 +542,7 @@ namespace Rendering
 
 		m_platformCallbacks.m_WriteFunc(m_id, byteOffset, writeByteSize, data);
 	}
-	bool ShaderBuffer::TryWriteData(const char* name, const size_t writeSize, const void* data)
+	bool ShaderBuffer::TryWriteField(const char* name, const size_t writeSize, const void* data)
 	{
 		auto it = m_members.find(name);
 		if (it == m_members.end())
@@ -732,6 +732,11 @@ namespace Rendering
 	RenderObjectId ShaderBuffer::GetId() const { return m_id; }
 	std::string_view ShaderBuffer::GetName() const { return std::string_view(m_blockName); }
 	size_t ShaderBuffer::GetAllocatedByteSize() const { return m_allocatedByteSize; }
+
+	void ShaderBuffer::ReadData(const size_t offset, const size_t size, std::byte* writeDataPtr)
+	{
+		m_platformCallbacks.m_ReadFunc(m_id, offset, size, writeDataPtr);
+	}
 
 	ShaderBuffer& ShaderBuffer::operator=(ShaderBuffer&& other) noexcept
 	{

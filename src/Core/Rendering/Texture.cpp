@@ -122,6 +122,13 @@ namespace Rendering
 		texture.GetByteData(byteData);
 		SetByteData(byteData);*/
 	}
+	void Texture::ClearByteData()
+	{
+		LogWarning(std::format("{}",GetTotalByteSize()));
+		std::byte* emptyData = new std::byte[GetTotalByteSize()];
+		SetByteData(emptyData);
+	}
+
 	bool Texture::IsValid() const { return m_info.m_id != INVALID_OBJ_ID; }
 	std::uint32_t Texture::GetTotalTexels() const { return m_info.m_texelSize.m_X * m_info.m_texelSize.m_Y; }
 	size_t Texture::GetTotalByteSize(const Vec2Int texels) const
@@ -152,6 +159,23 @@ namespace Rendering
 	const TextureInfo& Texture::GetInfo() const { return m_info; }
 	RenderObjectId Texture::GetId() const { return m_info.m_id; }
 	TexelStorageType Texture::GetStorageType() const { return m_info.m_internalStorage; }
+
+	void Texture::SetWrapBehavior(const AxesWrapBehavior behavior)
+	{
+		m_callbacks.m_SetWrapBehavior(m_info.m_id, behavior);
+		m_info.m_wrapBehavior = behavior;
+	}
+	void Texture::SetMinFilter(const MinFilter filter)
+	{
+		m_info.m_minFilter = filter;
+		m_callbacks.m_SetMinFilter(m_info.m_id, filter);
+	}
+	void Texture::SetMagFilter(const MagFilter filter)
+	{
+		m_info.m_magFilter = filter;
+		m_callbacks.m_SetMagFilter(m_info.m_id, filter);
+	}
+
 	void Texture::GetByteData(const Vec2Int textureOffset, const Vec2Int size, std::byte* writeLocationPointer) const
 	{
 		const Vec2Int maxOffset = textureOffset + size;

@@ -41,7 +41,7 @@ namespace Rendering
 			//The depth function for depth testing (gpu uses depth to determine what should be culled in framebuffer)
 			//by comparing fragment z values (less means if it is less than existing fragment, it is culled)
 			glDepthFunc(GL_LESS);
-			SetDepthStatus(true);
+			SetDefaultDepthMode();
 
 			//Enables alpha transparency
 			glEnable(GL_BLEND);
@@ -226,12 +226,20 @@ namespace Rendering
 #endif
 		}
 
-		void ClearBackground()
+		void ClearBackground(std::uint8_t clearColorAttachments, const Color clearColor, const const float clearDepth)
 		{
 #if defined(OPENGL)
-			GL_CALL(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
+			const GLfloat* clearColorArr = reinterpret_cast<const GLfloat*>(clearColor.GetMemPointer());
+
+			//GL_CALL(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
+			for (std::uint8_t i = 0; i < 8; i++)
+			{
+				std::uint8_t colorBit = clearColorAttachments & (1 << i);
+				if (colorBit != 0) glClearBufferfv(GL_COLOR, i, clearColorArr);
+			}
+
 			GL_CALL(glClearDepth(1));
-			ClearBufferBit(BufferBitType::Color | BufferBitType::Depth);
+			ClearBufferBit(BufferBitType::Depth);
 
 #elif defined(RAYLIB)
 			ClearBackground(BLACK);
@@ -251,20 +259,33 @@ namespace Rendering
 			LogError("Attempted to clear buffer bit but either no rendering library is active or it has no defined actions");
 #endif
 		}
-		void SetDepthStatus(const bool enable)
+
+		void SetDepthWriting(const bool enable)
 		{
 #if defined(OPENGL)
-			if (enable)
-			{
-				//Enable depth testing -> if you draw triangles on top of one another, will resolve the one on bottom
-				//based on position and not draw order
-				GL_CALL(glEnable(GL_DEPTH_TEST));
-			}
-			else
-			{
-				GL_CALL(glDisable(GL_DEPTH_TEST));
-			}
+			if (enable) GL_CALL(glDepthMask(GL_TRUE));
+			else GL_CALL(glDepthMask(GL_FALSE));
 #endif
+		}
+		void SetDepthTesting(const bool enable)
+		{
+#if defined(OPENGL)
+			if (enable) GL_CALL(glEnable(GL_DEPTH_TEST));
+			else GL_CALL(glDisable(GL_DEPTH_TEST));
+#endif
+		}
+
+		void SetDepthMode(const DepthMode mode)
+		{
+#if defined(OPENGL)
+			SetDepthWriting((mode & DepthMode::Write) != 0);
+			SetDepthTesting((mode & DepthMode::Test) != 0);
+#endif
+		}
+
+		void SetDefaultDepthMode()
+		{
+			SetDepthMode(DepthMode::Write | DepthMode::Test);
 		}
 
 		void InvokeImageMemorySync(const ImageOperationBarrierType barrier)
@@ -310,60 +331,6 @@ namespace Rendering
 			//glClear(GL_COLOR_BUFFER_BIT);
 #elif defined(RAYLIB)
 			EndDrawing();
-#endif
-		}
-
-		void DrawCircle(const WorldPosition3D& pos, const float radius, const Color color)
-		{
-#if defined(RAYLIB)
-			DrawCircle(pos.m_X, pos.m_Y, radius, RaylibUtils::ToRaylibColor(color));
-#endif
-		}
-
-		void DrawRectangle(const WorldPosition3D& pos, const Vec2& size, const Color color)
-		{
-#if defined(RAYLIB)
-			DrawRectangle(pos.m_X, pos.m_Y, size.m_X, size.m_Y, RaylibUtils::ToRaylibColor(color));
-#endif
-		}
-
-		void DrawTexture(const WorldPosition3D& destinationPos, const Vec2& destinationSize, const Vec2& sourcePos, const Vec2& sourceSize,
-			const Texture& tex, const float rotation, const Color color)
-		{
-#if defined(RAYLIB)
-			//TODO: there needs to be a way to get raylib texture from Texture
-			DrawTexturePro(Texture2D(), Rectangle{sourcePos.m_X, sourcePos.m_Y, sourceSize.m_X, sourceSize.m_Y},
-				Rectangle{destinationPos.m_X, destinationPos.m_Y, destinationSize.m_X, destinationSize.m_Y}, { 0, 0 }, rotation, RaylibUtils::ToRaylibColor(color));
-#endif
-		}
-
-		void DrawText(const WorldPosition3D& pos, const Font& font, const char* text, const float size, const float spacing, const Color color)
-		{
-#if defined(RAYLIB)
-			//Note: the text seems to flicker less when we put text on integer boundaries 
-			//TODO: convert font to rayib font
-			DrawTextEx(::Font(), text, RaylibUtils::ToRaylibVector(Vec2Int(pos.m_X, pos.m_Y)), size, spacing, RaylibUtils::ToRaylibColor(color));
-#endif
-		}
-
-		void DrawLine(const WorldPosition3D& startPos, const WorldPosition3D& endPos, const float thickness, const Color color)
-		{
-#if defined(RAYLIB)
-			//DrawLineEx(RaylibUtils::ToRaylibVector(startPos), RaylibUtils::ToRaylibVector(endPos), thickness, RaylibUtils::ToRaylibColor(color));
-#endif
-		}
-
-		void DrawRectangleLine(const WorldPosition3D& pos, const float thickness, const Vec2& size, const Color color)
-		{
-#if defined(RAYLIB)
-			DrawRectangleLinesEx(Rectangle{pos.m_X, pos.m_Y, size.m_X, size.m_Y }, thickness, RaylibUtils::ToRaylibColor(color));
-#endif
-		}
-
-		void DrawUploadedIndexBuffer(const size_t& indicesStartByteOffset, const size_t& drawIndexCount)
-		{
-#if defined(OPENGL)
-			GL_CALL(glDrawElements(GL_TRIANGLES, drawIndexCount, GL_UNSIGNED_INT, (const void*)indicesStartByteOffset));
 #endif
 		}
 

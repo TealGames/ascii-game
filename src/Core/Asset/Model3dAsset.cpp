@@ -6,6 +6,12 @@
 #include "Math/PlatformMath.hpp"
 #include "Utils/Debug.hpp"
 
+static constexpr bool ADD_GLOBAL_SCALE = true;
+//NOTE: Assimp by default assumes we want to convert m in modeling software
+//coords to cm, so we must apply a scale factor in Assimp global settings to counteract that
+static constexpr float IMPORT_TO_ENGINE_SCALE_FACTOR = 0.01f;
+static constexpr bool BAKE_TRANSFORMS_IN_VERTICES = true;
+
 static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScene, aiNode* node, const aiMatrix4x4* parentTransform)
 {
 	//NOTE: we do NOT need any conversion because Assimp converts models into +x -> right, +y ->up, -z -> forward, which match this engine coordinate system
@@ -13,9 +19,12 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 	const aiMatrix4x4 globalTransform = parentTransform != nullptr ? *parentTransform * node->mTransformation : node->mTransformation;
 	/*LogWarning(std::format("Found {} global transform:{} parent:{} local:{}", node->mName.C_Str(), AssimpUtils::ToString(globalTransform),
 		parentTransform == nullptr ? "NULL" : AssimpUtils::ToString(*parentTransform), AssimpUtils::ToString(node->mTransformation)));*/
+	LogWarning(std::format("For model found parent:{} transform:{}", parentTransform != nullptr? 
+		AssimpUtils::ToString(*parentTransform) : "NULL", AssimpUtils::ToString(globalTransform)));
 	if (node->mNumMeshes > 0)
 	{
-		Rendering::ModelMeshGroup* meshGroup = &(model.m_MeshGroups.emplace_back(Rendering::ModelMeshGroup{ Mat4(&globalTransform.a1) }));
+		Rendering::ModelMeshGroup* meshGroup = &(model.m_MeshGroups.emplace_back(
+			Rendering::ModelMeshGroup{ Mat4(&globalTransform.a1) }));
 		//LogError(std::format("og global trans:{} stored:{}", AssimpUtils::ToString(globalTransform), meshGroup->m_GlobalTransform.ToString()));
 
 		const aiMesh* currentImportMesh = nullptr;
@@ -32,7 +41,9 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 
 			for (size_t j = 0; j < meshVertexCount; j++)
 			{
-				const aiVector3D pos = currentImportMesh->mVertices[j];
+				aiVector3D pos = currentImportMesh->mVertices[j];
+				//TODO: do we really want global transform here or would it be okay if we had just the local?
+				//if (BAKE_TRANSFORMS_IN_VERTICES) pos = globalTransform * pos;
 				const aiVector3D normal = currentImportMesh->HasNormals() ? currentImportMesh->mNormals[j] : aiVector3D(0, 0, 0);
 				const aiVector3D uv = currentImportMesh->HasTextureCoords(0) ? currentImportMesh->mTextureCoords[0][j] : aiVector3D(0, 0, 0);
 
@@ -87,21 +98,30 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 
 Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, false), m_model()
 {
+	LogWarning(std::format("Model at path:{}", path.string()));
 	Assimp::Importer importer;
-	std::uint32_t importFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs;
-	if (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative) importFlags |= aiProcess_ConvertToLeftHanded;
-	const aiScene* modelScene = importer.ReadFile(path.string(), importFlags);
+	if (ADD_GLOBAL_SCALE) importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, IMPORT_TO_ENGINE_SCALE_FACTOR);
 
+	// -> Triangulate:
+	// -> SmoothNormals: self explanatory
+	// -> FlipUVs: changes the winding order to be counter-clockwise
+	// -> GlobalScale: applies the global scale factor property for import
+	std::uint32_t importFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs;
+	if (ADD_GLOBAL_SCALE) importFlags |= aiProcess_GlobalScale;
+	if (BAKE_TRANSFORMS_IN_VERTICES) importFlags |= aiProcess_PreTransformVertices;
+	if (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative) importFlags |= aiProcess_ConvertToLeftHanded;
+
+	const aiScene* modelScene = importer.ReadFile(path.string(), importFlags);
 	if (modelScene == nullptr || !modelScene->HasMeshes()) 
 	{
 		LogError(std::format("Tried to load 3d model at path: '{}' but could not find any meshes", path.string()));
 		return;
 	}
 
-	Rendering::IndexType currentIndexOffset = 0;
 	m_model.m_Meshes.reserve(modelScene->mNumMeshes);
 	//NOTE: default assimp matrix creates identity
 	ProcessSceneNode(m_model, modelScene, modelScene->mRootNode, nullptr);
+	//if (GetName() == "monkey")LogError("MONKEY");
 	//LogError("FINSIHED MODEL: "+ m_model.ToString());
 }
 

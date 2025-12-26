@@ -3,7 +3,7 @@
 
 namespace Utils
 {
-	bool RayIntersectsBoundsInverseDir(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& inverseRayDir)
+	bool RayIntersectsBoundsInverseDir(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& inverseRayDir, float* outTEnter, float* outTExit)
 	{
 		//NOTE: we use inverse dir since multiply is faster than divide
 		Vec3 tMin = (bounds.m_MinPos - rayOrigin) * inverseRayDir;
@@ -14,9 +14,22 @@ namespace Utils
 		if (inverseRayDir.m_Z < 0) std::swap(tMin.m_Z, tMax.m_Z);
 
 		float tEnter = tMin.GetMaxComponentValue();
-		float tExit = tMax.GetMinComponentValue();
+		if (outTEnter != nullptr) *outTEnter = tEnter;
 
-		return tEnter <= tExit && tExit >= 0;
+		float tExit = tMax.GetMinComponentValue();
+		if (outTExit != nullptr) *outTExit = tExit;
+
+		return tExit >= std::max(tEnter, 0.0f);
+	}
+	bool RayIntersectsBoundsInverseDir(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& inverseRayDir, float* outMargin)
+	{
+		float tEnter = 0;
+		float tExit = 0;
+		bool intersects = RayIntersectsBoundsInverseDir(bounds, rayOrigin, inverseRayDir, &tEnter, &tExit);
+		if (outMargin != nullptr)
+			*outMargin = tExit - tEnter;
+
+		return intersects;
 	}
 	bool RayIntersectsTriangle(const Vec3& v0, const Vec3& v1, const Vec3& v2, const Vec3& rayOrigin, Vec3 rayDir, float* outHitDistance)
 	{
@@ -125,13 +138,40 @@ namespace Utils
 				{{0.0f,					0.0f,					0.0f,					1.0f}}
 			} });
 	}
+	Mat4 CalculateRotationMatrix(const Vec3& forwardDir, const Vec3& upDir, const Vec3& rightDir)
+	{
+		Mat4 result = Mat4::GetIdentity();
+		result.SetCol(0, rightDir);
+		result.SetCol(1, upDir);
+		result.SetCol(2, -forwardDir);
+		return result;
+	}
 
 	Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Vec3& pos, const Vec3& scale, const Quat& rotation)
 	{
+		return CalculateModelMatrix(parentMatrix, CalculateTranslationMatrix(pos), 
+			CalculateScaleMatrix(scale), CalculateRotationMatrix(rotation));
+	}
+	Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Vec3& pos, const Vec3& scale, const Mat4& rotation)
+	{
+		return CalculateModelMatrix(parentMatrix, CalculateTranslationMatrix(pos),
+			CalculateScaleMatrix(scale), rotation);
+	}
+	Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Mat4& posMatrix, const Mat4& scaleMatrix, const Mat4& rotationMatrix)
+	{
 		if (parentMatrix == nullptr)
-			return CalculateTranslationMatrix(pos) * CalculateRotationMatrix(rotation) * CalculateScaleMatrix(scale);
+			return posMatrix * scaleMatrix * rotationMatrix;
 		else
-			return *parentMatrix * CalculateTranslationMatrix(pos) * CalculateRotationMatrix(rotation) * CalculateScaleMatrix(scale);
+			return *parentMatrix * posMatrix * scaleMatrix * rotationMatrix;
+	}
+	Mat4 CalculateInverseModelMatrix(const Mat4& matrix)
+	{
+		const Mat3 inverseScaleRotation = matrix.GetSlice<3, 3>().InverseUnsafe();
+		const Vec3 inverseTranslation = -inverseScaleRotation * ExtractTranslationFromMatrix(matrix);
+		Mat4 inversedMatrix = Mat4::GetIdentity();
+		inversedMatrix.SetTopLeft(inverseScaleRotation);
+		inversedMatrix.SetCol(3, inverseTranslation);
+		return inversedMatrix;
 	}
 
 	float CalculateTransformMatrixDeterminant(const Mat4& matrix)
@@ -171,7 +211,10 @@ namespace Utils
 		col1 /= scaleY;
 		col2 /= scaleZ;
 		
-		Mat3 rotationMat = Mat3({ col0, col1, col2});
+		Mat3 rotationMat = {};
+		rotationMat.SetCol(0, col0);
+		rotationMat.SetCol(1, col1);
+		rotationMat.SetCol(2, col2);
 		const float determinant = CalculateTransformMatrixDeterminant(col0, col1, col2);
 		//If the determinant is less than 1, it means we have some negative scaling 
 		//and thus we must reverse one column to get rid of it 

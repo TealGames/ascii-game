@@ -10,7 +10,8 @@ namespace Rendering
 {
 	namespace OpenGl
 	{
-		
+		static constexpr GLboolean DO_TRANSPOSE_MATRICES = GL_FALSE;
+
 		//std::uint32_t OpenGlShader::ConvertShaderTypeToGlType(const ShaderType type) const
 		//{
 		//	if (type == ShaderType::Fragment) return GL_FRAGMENT_SHADER;
@@ -94,41 +95,6 @@ namespace Rendering
 				GL_CALL(glAttachShader(programId, idSource2));
 			}			
 			
-			//std::cout << "GL_VERSION: " << glGetString(GL_VERSION) << "\n";
-			//std::cout << "GL_SHADING_LANGUAGE_VERSION: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << "\n";
-
-			/*
-			GLint count = 0;
-			glGetProgramiv(programId, GL_ATTACHED_SHADERS, &count);
-			std::vector<GLuint> attached(count);
-			glGetAttachedShaders(programId, count, nullptr, attached.data());
-			for (auto id : attached) {
-				GLint type;
-				glGetShaderiv(id, GL_SHADER_TYPE, &type);
-				std::cout << "Attached type: 0x" << std::hex << type << "\n";
-			}
-			*/
-			//LogWarning("Is program: "+ glIsProgram(programId)!=GL_FALSE? "TRUE" : "FALSE");
-
-			/*
-			if (firstInitData.m_Type == ShaderType::Compute)
-			{
-				GLuint dummyTex;
-				glGenTextures(1, &dummyTex);
-				glBindTexture(GL_TEXTURE_2D, dummyTex);
-				glBindImageTexture(0, dummyTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
-				GLint loc = glGetUniformLocation(programId, "uTextureOutput");
-				glUniform1i(loc, 0);
-
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, dummyTex);
-				loc = glGetUniformLocation(programId, "uTextureInput");
-				glUniform1i(loc, 0);
-				LogWarning("BOUND DUMMY");
-			}
-			*/
-			
-			//TODO: this right now causes problems for compute shader creation
 			GL_CALL(glLinkProgram(programId));
 
 			GLint linkStatus = GL_FALSE;
@@ -162,7 +128,7 @@ namespace Rendering
 			GL_CALL(glGetProgramiv(programId, GL_ACTIVE_UNIFORMS, &uniformCount));
 
 			blockData->reserve(blockCount + uniformCount + storageBufferCount);
-			char nameBuffer[MAX_GLOBAL_VAR_NAME_SIZE];
+			char nameBuffer[50];
 			GLsizei nameLength = 0;
 
 			const ShaderVarNameType** uniformBlockNames = nullptr;
@@ -172,9 +138,14 @@ namespace Rendering
 				for (GLint i = 0; i < blockCount; i++)
 				{
 					GL_CALL(glGetActiveUniformBlockName(programId, i, sizeof(nameBuffer), &nameLength, nameBuffer));
-					uniformBlockNames[i] = &(blockData->emplace(FixedString<MAX_GLOBAL_VAR_NAME_SIZE>(nameBuffer, nameLength),
+					if (nameLength > MAX_GLOBAL_VAR_NAME_SIZE)
+					{
+						LogError(std::format("Attempted to store all shader uniform block names for shader but found uniform block named: '{}' with {} "
+							"chars which exceeds max block name length: {}", std::string_view(nameBuffer, nameLength), nameLength, MAX_GLOBAL_VAR_NAME_SIZE));
+						continue;
+					}
+					uniformBlockNames[i] = &(blockData->emplace(ShaderVarNameType(nameBuffer, nameLength),
 						ShaderGlobalVarReflectionInfo{ ShaderGlobalVarType::UniformBuffer }).first->first);
-					//LogWarning(std::format("Created uniform buffer: {}", nameBuffer));
 				}
 			}
 			if (uniformCount > 0)
@@ -191,6 +162,13 @@ namespace Rendering
 						uniformBlockNames, blockCount))
 						continue;
 
+					if (nameLength > MAX_GLOBAL_VAR_NAME_SIZE)
+					{
+						LogError(std::format("Attempted to store all shader uniform names for shader but found uniform named: '{}' with {} "
+							"chars which exceeds max block name length: {}", std::string_view(nameBuffer, nameLength), nameLength, MAX_GLOBAL_VAR_NAME_SIZE));
+						continue;
+					}
+
 					blockData->emplace(ShaderVarNameType(nameBuffer, nameLength),
 						ShaderGlobalVarReflectionInfo{ elementSize > 1 ? ShaderGlobalVarType::UniformArray : ShaderGlobalVarType::UniformSingle });
 					//LogWarning(std::format("Created uniform: {}", nameBuffer));
@@ -201,6 +179,13 @@ namespace Rendering
 				for (GLint i = 0; i < storageBufferCount; i++)
 				{
 					GL_CALL(glGetProgramResourceName(programId, GL_SHADER_STORAGE_BLOCK, i, sizeof(nameBuffer), &nameLength, nameBuffer));
+					if (nameLength > MAX_GLOBAL_VAR_NAME_SIZE)
+					{
+						LogError(std::format("Attempted to store all shader storage buffer names for shader but found storage buffer named: '{}' with {} "
+							"chars which exceeds max block name length: {}", std::string_view(nameBuffer, nameLength), nameLength, MAX_GLOBAL_VAR_NAME_SIZE));
+						continue;
+					}
+
 					blockData->emplace(ShaderVarNameType(nameBuffer, nameLength),
 						ShaderGlobalVarReflectionInfo{ ShaderGlobalVarType::StorageBuffer });
 					//LogWarning(std::format("Created storage buffer: {}", nameBuffer));
@@ -302,7 +287,7 @@ namespace Rendering
 			else if (uniform == UniformDataType::Matrix4x4)
 			{
 				const float* floatMat = static_cast<const GLfloat*>(valuePtr);
-				GL_CALL(glProgramUniformMatrix4fv(programId, location, 1, GL_FALSE, floatMat));
+				GL_CALL(glProgramUniformMatrix4fv(programId, location, 1, DO_TRANSPOSE_MATRICES, floatMat));
 			}
 			else
 			{
@@ -387,7 +372,7 @@ namespace Rendering
 			else if (uniform == UniformDataType::Matrix4x4)
 			{
 				GL_CALL(glProgramUniformMatrix4fv(programId, location, writeElementCount,
-					GL_FALSE, static_cast<const GLfloat*>(valuePtr)));
+					DO_TRANSPOSE_MATRICES, static_cast<const GLfloat*>(valuePtr)));
 			}
 			else
 			{

@@ -7,7 +7,7 @@
 
 CameraSettings::CameraSettings() : CameraSettings(Vec2Int{1,1}, 20, nullptr) {}
 
-CameraSettings::CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const EntityData* followTarget, 
+CameraSettings::CameraSettings(const Vec2Int& aspectRatio, const float lensSize, const EntityData* followTarget, 
     const ProjectionType projection, const float nearDistance, const float farDistance, const float fieldOfViewYRadians)
     : m_AspectRatio(aspectRatio), m_LensSize(lensSize), m_FollowTarget(followTarget), 
     m_NearDistance(nearDistance), m_FarDistance(farDistance), 

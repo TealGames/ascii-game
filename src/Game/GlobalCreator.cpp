@@ -89,7 +89,7 @@ namespace GlobalEntityCreator
 
 		//Note: the camera has to be moved back a little so objects at origin are still seen due to min near plane value= 0.1
 		EntityData& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformComponent(Vec3(0, 0, -0.1)));
-		CameraComponent& cameraData = mainCameraEntity.AddComponent<CameraComponent>(CameraComponent{ CameraSettings{SCREEN_ASPECT_RATIO, 60, nullptr} });
+		CameraComponent& cameraData = mainCameraEntity.AddComponent<CameraComponent>(CameraComponent{ CameraSettings{SCREEN_ASPECT_RATIO, 10, nullptr} });
 		cameraController.TryRegisterCamera(cameraData);
 
 		EntityData& trigger = globalsManager.CreateGlobalEntity("Trigger", TransformComponent(Vec3{15, 0, 0}));

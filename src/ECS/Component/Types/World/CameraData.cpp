@@ -250,10 +250,26 @@ bool CameraComponent::DoesViewVolumeContainPos(const WorldPosition3D& point) con
 
 Mat4 CalculateViewMatrix(const WorldPosition3D& globalPos, const Quat& globalRotation)
 {
+	/*
 	//Since the rotation matrix is a special kind of matrix its inverse == tranpose (this is not normally true)
 	const Mat4 invertedRotationMatrix = Utils::CalculateRotationMatrix(globalRotation).Transpose();
 	const Vec4 rotatedTranslation = Vec4(-globalPos, 1.0f);
 	return invertedRotationMatrix * Utils::CalculateTranslationMatrix(rotatedTranslation.GetXYZ());
+	*/
+	// For column-major: V = R^T * T(-pos)
+	// But we need to rotate the translation, so: V = [R^T | -R^T * pos]
+
+	const Mat4 rotationMatrix = Utils::CalculateRotationMatrix(globalRotation);
+	const Mat4 invertedRotation = rotationMatrix.Transpose();
+
+	// Apply inverted rotation to the NEGATED position (w=0 to ignore translation)
+	const Vec3 transformedPos = (invertedRotation * Vec4(-globalPos, 0.0f)).GetXYZ();
+
+	// Build view matrix with the transformed translation
+	Mat4 viewMatrix = invertedRotation;
+	viewMatrix.SetCol(3, Vec4(transformedPos, 1.0f));
+	return viewMatrix;
+
 }
 Mat4 CalculateViewMatrix(const WorldPosition3D& globalPos, const Vec3& forwardDir, const Vec3& upDir) 
 {
@@ -296,7 +312,7 @@ Mat4 CameraComponent::CalculateProjectionMatrix(const ProjectionMatrixType type)
 		const float t = globalPos.m_Y + viewportSize.m_Y / 2;
 
 		if (type == ProjectionMatrixType::Engine)
-			PlatformMath::CalculateOrthographicProjMatrix(ENGINE_NDC_RANGES[2], ENGINE_FORWARD_SIGN_Z, r, l, t, b, zNear, zFar);
+			return PlatformMath::CalculateOrthographicProjMatrix(ENGINE_NDC_RANGES[2], ENGINE_FORWARD_SIGN_Z, r, l, t, b, zNear, zFar);
 
 		return PlatformMath::CalculatePlatformOrthographicProjMatrix(r, l, t, b, zNear, zFar);
 	}

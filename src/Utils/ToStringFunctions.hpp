@@ -274,13 +274,13 @@ namespace Utils
 	}
 
 	template<typename TNode, typename... TStringFuncArgs>
-	std::string ToStringTreeHelper(const TNode& node, std::string prefixStr,
+	std::string ToStringTreeHelper(const TNode& node, const TNode* parentNode, std::string prefixStr,
 		const std::function<const TNode*(const TNode& root, const size_t childIndex)>& getChildFunc, 
-		const std::function<std::string(const TNode& node)> overrideToStringFunc,
+		const std::function<std::string(const TNode& node, const TNode* parentNode)> overrideToStringFunc,
 		const TStringFuncArgs&... toStringArgs)
 	{
 		std::string resultStr = "";
-		if (overrideToStringFunc != nullptr) resultStr = overrideToStringFunc(node);
+		if (overrideToStringFunc != nullptr) resultStr = overrideToStringFunc(node, parentNode);
 		else resultStr = TryToString(node, toStringArgs...).value_or("[FAILED STRINGIFY]");
 
 		size_t i = 0;
@@ -290,7 +290,7 @@ namespace Utils
 		{
 			//LogWarning(std::format("Doing indices of next node: {} {} ", currentNode->m_IndexChild0, currentNode->m_IndexChild1));
 			resultStr += "\n" + prefixStr + (isLastChild ? Utils::TREE_BRANCH_END_STR : Utils::TREE_BRANCH_STR) +
-				ToStringTreeHelper(*currentNode, prefixStr + (isLastChild ? "  " : Utils::TREE_VERTICAL_STR), 
+				ToStringTreeHelper(*currentNode, &node, prefixStr + (isLastChild ? "  " : Utils::TREE_VERTICAL_STR), 
 					getChildFunc, overrideToStringFunc, toStringArgs...);
 			if (isLastChild) break;
 
@@ -304,8 +304,8 @@ namespace Utils
 	template<typename TNode>
 	std::string ToStringTree(const TNode& root,
 		const std::function<const TNode* (const TNode& root, const size_t childIndex)>& getChildFunc, 
-		const std::function<std::string(const TNode& node)> overrideToStringFunc)
+		const std::function<std::string(const TNode& node, const TNode* parentNode)> overrideToStringFunc)
 	{
-		return ToStringTreeHelper<TNode>(root, "", getChildFunc, overrideToStringFunc);
+		return ToStringTreeHelper<TNode>(root, nullptr, "", getChildFunc, overrideToStringFunc);
 	}
 }

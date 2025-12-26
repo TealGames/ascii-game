@@ -13,29 +13,29 @@ enum class MatrixMajorOrder : std::uint8_t
 	Row		= 1,
 };
 
-template <typename T, MatrixMajorOrder ORDER, size_t ROW_SIZE, size_t COL_SIZE>
+template <typename T, size_t ROW_SIZE, size_t COL_SIZE, MatrixMajorOrder ORDER, size_t ORDER_ALIGN_BYTES>
 struct MatrixStorage {};
 
-template <typename T, size_t ROW_SIZE, size_t COL_SIZE>
-struct MatrixStorage<T, MatrixMajorOrder::Row, ROW_SIZE, COL_SIZE>
+template <typename T, size_t ROW_SIZE, size_t COL_SIZE, size_t ORDER_ALIGN_BYTES>
+struct MatrixStorage<T, ROW_SIZE, COL_SIZE, MatrixMajorOrder::Row, ORDER_ALIGN_BYTES>
 {
 	// For ROW major order, each ROW is stored contiguously 
 	// So a mat2x4 (2 rows, 4 cols)
 	// | 1 2 3 4 |
 	// | 5 6 7 8 |
 	// will be stored as: [1, 2, 3, 4] [5, 6, 7, 8]
-	using Type = Vec<T, COL_SIZE>[ROW_SIZE];
+	using Type = Vec<T, COL_SIZE, ORDER_ALIGN_BYTES>[ROW_SIZE];
 };
 
-template<typename T, size_t ROW_SIZE, size_t COL_SIZE>
-struct MatrixStorage<T, MatrixMajorOrder::Column, ROW_SIZE, COL_SIZE>
+template<typename T, size_t ROW_SIZE, size_t COL_SIZE, size_t ORDER_ALIGN_BYTES>
+struct MatrixStorage<T, ROW_SIZE, COL_SIZE, MatrixMajorOrder::Column, ORDER_ALIGN_BYTES>
 {
 	// For COL major order, each COLUMN is stored contiguously 
 	// So a mat2x4 (2 rows, 4 cols)
 	// | 1 2 3 4 |
 	// | 5 6 7 8 |
 	// will be stored as: [1, 5] [2, 6] [3, 7] [4, 8]
-	using Type = Vec<T, ROW_SIZE>[COL_SIZE];
+	using Type = Vec<T, ROW_SIZE, ORDER_ALIGN_BYTES>[COL_SIZE];
 };
 
 template<size_t ROW_SIZE, size_t COL_SIZE>
@@ -43,17 +43,48 @@ concept IsPositiveSize = (ROW_SIZE > 0 && COL_SIZE > 0);
 
 //TODO: add other matrix operations like inversion, row swapping, gausian elimination, determinant
 
-template<typename T, MatrixMajorOrder ORDER, size_t ROW_SIZE, size_t COL_SIZE>
-requires IsPositiveSize<ROW_SIZE, COL_SIZE> && std::is_arithmetic_v<T>
+template<typename T, size_t ROW_SIZE, size_t COL_SIZE, MatrixMajorOrder ORDER, size_t ORDER_ALIGN_BYTES = 0>
+requires (IsPositiveSize<ROW_SIZE, COL_SIZE> && std::is_arithmetic_v<T>)
 /// <summary>
-/// A matrix data type where the order STORED and INTERFACED is defined by ORDER.
-/// NOTE: ROW SIZE and COL SIZE should remain the same for row major and col major matrices
-/// the only difference is the way it is stored in memory
+/// A matrix data type defined by its row size, col size, internal storage ORDER and the ORDER ALIGNMENT (in bytes)
+/// NOTE: alignment changes depending on ORDER. If ORDER is ROW -> alignment for ROWS, ORDER is COL -> alignment for COLS
+/// Default alignment is 0 -> natural alignment
+/// 
+/// VERY IMPORTANT:
+/// -> STORAGE ORDER(template arg ORDER) :
+///	   The matrix INTERNALLY can store the data in COL major OR ROW major order regardless of API
+///	   with the intention of matching any other API order, such as col major storage for OpenGL for example
+/// 
+/// -> API INDEXING: 
+///	   Elements are accessed via Get(row, col) / Set(row, col) using standard matrix coordinates.
+///    This is universal notation and does NOT imply a mathematical convention. This can be viewed as 
+///	   simply accessing a chunk of data by row and col with the order of the data set by the user.
+/// 
+/// -> MATH CONVENTION:
+///	   The supported math convention is COL MAJOR meaning vector-matrix multiplication is done in COLUMNS
+///	   and in the order MATRIX * VECTOR. This also means COL 0 is X-basis vector, COL 1 is Y-basis vector, 
+///	   COL 2 is Z-basis vector.
+/// 
+/// -> CONSTRUCTOR INPUT FORMAT:
+///	   Constructors accept data in "row-major format" (array of rows) for convenience:
+///    Mat4({{
+///       {1, 0, 0, Tx},  // This becomes: X.x, Y.x, Z.x, T.x
+///       {0, 1, 0, Ty},  // This becomes: X.y, Y.y, Z.y, T.y
+///       {0, 0, 1, Tz},  // This becomes: X.z, Y.z, Z.z, T.z
+///       {0, 0, 0, 1}    // This becomes: X.w, Y.w, Z.w, T.w
+///    }})
+///    Due to column-major convention math convention, each "row" you input becomes a horizontal slice
+///    across all column vectors (NOT a row vector itself)
+/// 
+/// SUMMARY:
+/// - Storage order (memory layout) does not affect mathematical operations
+/// - Use Get/SetCol for semantic operations (basis vectors, translation)
+/// - Supply transformation data with vectors in COLUMNS, translation in column 3
 /// </summary>
 class MatrixType
 {
 private:
-	MatrixStorage<T, ORDER, ROW_SIZE, COL_SIZE>::Type m_arr;
+	MatrixStorage<T,ROW_SIZE, COL_SIZE, ORDER, ORDER_ALIGN_BYTES>::Type m_arr;
 public:
 	static constexpr size_t MATRIX_SIZE = ROW_SIZE * COL_SIZE;
 
@@ -118,9 +149,9 @@ public:
 	/// </summary>
 	/// <typeparam name="OTHER_ROW_SIZE"></typeparam>
 	/// <typeparam name="OTHER_COL_SIZE"></typeparam>
-	template<size_t OTHER_ROW_SIZE, size_t OTHER_COL_SIZE>
+	template<size_t OTHER_ROW_SIZE, size_t OTHER_COL_SIZE, MatrixMajorOrder OTHER_ORDER, size_t OTHER_ALIGN>
 	requires (IsPositiveSize<OTHER_ROW_SIZE, OTHER_COL_SIZE> && OTHER_ROW_SIZE <= ROW_SIZE && OTHER_COL_SIZE <= COL_SIZE)
-	constexpr MatrixType(const MatrixType<T, ORDER, OTHER_ROW_SIZE, OTHER_COL_SIZE>& other) : m_arr()
+	constexpr MatrixType(const MatrixType<T,OTHER_ROW_SIZE, OTHER_COL_SIZE, OTHER_ORDER, OTHER_ALIGN>& other) : m_arr()
 	{
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
@@ -138,7 +169,7 @@ public:
 	/// 
 	/// </summary>
 	/// <param name="firstElementPtr"></param>
-	constexpr MatrixType(const float* firstElementPtr) : m_arr()
+	constexpr MatrixType(const T* firstElementPtr) : m_arr()
 	{
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
@@ -151,7 +182,7 @@ public:
 
 	static constexpr MatrixType GetIdentity() requires (ROW_SIZE == COL_SIZE)
 	{
-		MatrixType<T, ORDER, ROW_SIZE, COL_SIZE> result = {};
+		MatrixType result = {};
 		for (size_t c = 0; c < COL_SIZE; c++)
 		{
 			for (size_t r = 0; r < ROW_SIZE; r++)
@@ -175,10 +206,47 @@ public:
 		return true;
 	}
 
-	const float* GetMemPointer() const
+	/// <summary>
+	/// A matrix is orthonormal if 3 conditions hold:
+	/// 1) Each basis axis is a unit vector (has magnitude 1)
+	/// 2) All basis axes are perpendicular to one another (dot product 0)
+	/// 3) Handedness is consistent (Right Handed -> determinant is always around 1, Left Handed -> -1)
+	/// </summary>
+	/// <returns></returns>
+	bool IsOrthonormal() const requires (ROW_SIZE == 3 && COL_SIZE == 3)
 	{
-		return &m_arr[0][0];
+		const Vec<T, ROW_SIZE> basisX = GetBasisVectorX();
+		if (!basisX.IsUnitVector())
+			return false;
+
+		const Vec<T, ROW_SIZE> basisY = GetBasisVectorY();
+		if (!basisY.IsUnitVector())
+			return false;
+
+		const Vec<T, ROW_SIZE> basisZ = GetBasisVectorZ();
+		if (!basisZ.IsUnitVector())
+			return false;
+
+		if (!Utils::ApproximateEqualsF(DotProduct(basisX, basisY), 0) || 
+			!Utils::ApproximateEqualsF(DotProduct(basisY, basisZ), 0) ||
+			!Utils::ApproximateEqualsF(DotProduct(basisX, basisZ), 0))
+		{
+			return false;
+		}
+
+		return Utils::ApproximateEqualsF(CalculateDeterminant(), 1);
 	}
+
+	const T* GetMemPointer() const { return &m_arr[0][0]; }
+
+#pragma region GetFunctions
+	// --------------------------------------------------------------------------------------------------------
+	//										GET FUNCTIONS
+	// --------------------------------------------------------------------------------------------------------
+
+	Vec<T, ROW_SIZE> GetBasisVectorX() const { return GetColVector(0); }
+	Vec<T, ROW_SIZE> GetBasisVectorY() const { return GetColVector(1); }
+	Vec<T, ROW_SIZE> GetBasisVectorZ() const { return GetColVector(2); }
 
 	std::array<T, MATRIX_SIZE> GetElementsRowMajor() const
 	{
@@ -205,9 +273,9 @@ public:
 		return arr;
 	}
 
-	std::array<std::array<float, COL_SIZE>, ROW_SIZE> GetElements2DRowMajor() const
+	std::array<std::array<T, COL_SIZE>, ROW_SIZE> GetElements2DRowMajor() const
 	{
-		std::array<std::array<float, COL_SIZE>, ROW_SIZE> arr = {};
+		std::array<std::array<T, COL_SIZE>, ROW_SIZE> arr = {};
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
 			for (size_t c = 0; c < COL_SIZE; c++)
@@ -218,9 +286,9 @@ public:
 		return arr;
 	}
 
-	std::array<std::array<float, ROW_SIZE>, COL_SIZE> GetElements2DColMajor() const
+	std::array<std::array<T, ROW_SIZE>, COL_SIZE> GetElements2DColMajor() const
 	{
-		std::array<std::array<float, ROW_SIZE>, COL_SIZE> arr = {};
+		std::array<std::array<T, ROW_SIZE>, COL_SIZE> arr = {};
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
 			for (size_t c = 0; c < COL_SIZE; c++)
@@ -231,25 +299,25 @@ public:
 		return arr;
 	}
 
-	constexpr const T& GetUnsafe(std::uint8_t r, const std::uint8_t c) const
+	constexpr const T& GetUnsafe(const std::uint8_t r, const std::uint8_t c) const
 	{
 		if constexpr (ORDER == MatrixMajorOrder::Row) return m_arr[r][c];
 		else return m_arr[c][r];
 	}
 
-	constexpr T& GetMutableUnsafe(std::uint8_t r, const std::uint8_t c)
+	constexpr T& GetMutableUnsafe(const std::uint8_t r, const std::uint8_t c)
 	{
 		if constexpr (ORDER == MatrixMajorOrder::Row) return m_arr[r][c];
 		else return m_arr[c][r];
 	}
 
-	const T& Get(std::uint8_t r, const std::uint8_t c) const
+	const T& Get(const std::uint8_t r, const std::uint8_t c) const
 	{
 		ENGINE_ASSERT(r < ROW_SIZE && c < COL_SIZE, "Invalid matrix[{}][{}] get access:({}, {})", ROW_SIZE, COL_SIZE, r, c);
 		return GetUnsafe(r, c);
 	}
 
-	T& GetMutable(std::uint8_t r, const std::uint8_t c)
+	T& GetMutable(const std::uint8_t r, const std::uint8_t c)
 	{
 		ENGINE_ASSERT(r < ROW_SIZE && c < COL_SIZE, "Invalid matrix[{}][{}] get (mutable) access:({}, {})", ROW_SIZE, COL_SIZE, r, c);
 		return GetMutableUnsafe(r, c);
@@ -305,18 +373,19 @@ public:
 	template<size_t SLICE_ROW_SIZE, size_t SLICE_COL_SIZE>
 	requires (IsPositiveSize<SLICE_ROW_SIZE, SLICE_COL_SIZE> 
 			  && SLICE_ROW_SIZE <= ROW_SIZE && SLICE_COL_SIZE <= COL_SIZE)
-	MatrixType<T, ORDER, SLICE_ROW_SIZE, SLICE_COL_SIZE> GetSlice() const
+		MatrixType<T,SLICE_ROW_SIZE, SLICE_COL_SIZE, ORDER> GetSlice() const
 	{
 		std::array<std::array<T, SLICE_COL_SIZE>, SLICE_ROW_SIZE> slicedArr = {};
-		for (size_t r = 0; r< SLICE_ROW_SIZE; r++)
+		for (size_t r = 0; r < SLICE_ROW_SIZE; r++)
 		{
 			for (size_t c = 0; c < SLICE_COL_SIZE; c++)
 			{
 				slicedArr[r][c] = GetUnsafe(r, c);
 			}
 		}
-		return MatrixType<T, ORDER, SLICE_ROW_SIZE, SLICE_COL_SIZE>(slicedArr);
+		return MatrixType<T, SLICE_ROW_SIZE, SLICE_COL_SIZE, ORDER>(slicedArr);
 	}
+#pragma endregion
 
 	T CalculateDeterminant() const 
 		requires (ROW_SIZE == 2 && COL_SIZE == 2)
@@ -357,7 +426,12 @@ public:
 			d * (e * (j * o - k * n) - f * (i * o - k * m) + g * (i * n - j * m));
 	}
 
-	constexpr void SetUnsafe(std::uint8_t r, const std::uint8_t c, const T& newVal)
+#pragma region SetFunctions
+	// --------------------------------------------------------------------------------------------------------
+	//										SET FUNCTIONS
+	// --------------------------------------------------------------------------------------------------------
+
+	constexpr void SetUnsafe(const std::uint8_t r, const std::uint8_t c, const T& newVal)
 	{
 		if constexpr (ORDER == MatrixMajorOrder::Row) m_arr[r][c] = newVal;
 		else m_arr[c][r] = newVal;
@@ -376,14 +450,18 @@ public:
 			SetUnsafe(r, c, vals[r]);
 		}
 	}
-	void SetCol(const std::uint8_t c, const Vec<T, ROW_SIZE>& vals)
+
+	template<size_t OTHER_ROW_SIZE>
+	requires (OTHER_ROW_SIZE >= 2 && OTHER_ROW_SIZE <= ROW_SIZE)
+	void SetCol(const std::uint8_t c, const Vec<T, OTHER_ROW_SIZE>&vals)
 	{
 		ENGINE_ASSERT(c < COL_SIZE, "Invalid matrix[{}][{}] col set access:{}", ROW_SIZE, COL_SIZE, c);
-		for (size_t r = 0; r < ROW_SIZE; r++)
+		for (size_t r = 0; r < OTHER_ROW_SIZE; r++)
 		{
 			SetUnsafe(r, c, vals[r]);
 		}
 	}
+
 	void SetRow(const std::uint8_t r, const std::array<T, COL_SIZE>& vals)
 	{
 		ENGINE_ASSERT(r < ROW_SIZE, "Invalid matrix[{}][{}] row set access:{}", ROW_SIZE, COL_SIZE, r);
@@ -400,7 +478,7 @@ public:
 			SetUnsafe(r, c, vals[c]);
 		}
 	}
-	void Set(const std::array<std::array<T, COL_SIZE>, ROW_SIZE>& rowMajorElements)
+	void SetTopLeft(const std::array<std::array<T, COL_SIZE>, ROW_SIZE>& rowMajorElements)
 	{
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
@@ -410,26 +488,32 @@ public:
 			}
 		}
 	}
-
-	template<MatrixMajorOrder OTHER_ORDER>
-	void Set(const MatrixType<T, OTHER_ORDER, ROW_SIZE, COL_SIZE>& other)
+	template<size_t OTHER_ROW_SIZE, size_t OTHER_COL_SIZE, MatrixMajorOrder OTHER_ORDER, size_t OTHER_ALIGN>
+	requires (OTHER_ROW_SIZE > 0 && OTHER_ROW_SIZE <= ROW_SIZE && OTHER_COL_SIZE > 0 && OTHER_COL_SIZE <= COL_SIZE)
+	void SetTopLeft(const MatrixType<T, OTHER_ROW_SIZE, OTHER_COL_SIZE, OTHER_ORDER, OTHER_ALIGN>& other)
 	{
-		for (size_t r = 0; r < ROW_SIZE; r++)
+		for (size_t r = 0; r < OTHER_ROW_SIZE; r++)
 		{
-			for (size_t c = 0; c < COL_SIZE; c++)
+			for (size_t c = 0; c < OTHER_COL_SIZE; c++)
 			{
 				SetUnsafe(r, c, other.GetUnsafe(r, c));
 			}
 		}
 	}
+#pragma endregion
+
+#pragma region MathOperations
+	// --------------------------------------------------------------------------------------------------------
+	//										MATRIX MATH OPERATIONS
+	// --------------------------------------------------------------------------------------------------------
 
 	/// <summary>
 	/// Transpose moves the elements so an element at pos [R, C] -> [C, R]
 	/// </summary>
 	/// <returns></returns>
-	MatrixType<T, ORDER, COL_SIZE, ROW_SIZE> Transpose() const
+	MatrixType<T, COL_SIZE, ROW_SIZE, ORDER, ORDER_ALIGN_BYTES> Transpose() const
 	{
-		MatrixType<T, ORDER, COL_SIZE, ROW_SIZE> result = {};
+		MatrixType<T, COL_SIZE, ROW_SIZE, ORDER, ORDER_ALIGN_BYTES> result = {};
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
 			for (size_t c = 0; c < COL_SIZE; c++)
@@ -447,12 +531,12 @@ public:
 			return false;
 
 		const float inverseDeterminant = 1 / determinant;
-		std::array<std::array<float, COL_SIZE>, ROW_SIZE> newArr = 
+		std::array<std::array<T, COL_SIZE>, ROW_SIZE> newArr = 
 		{{
-			{GetUnsafe(1,1) * inverseDeterminant, -GetUnsafe(1,0) * inverseDeterminant},
-			{-GetUnsafe(0,1) * inverseDeterminant, GetUnsafe(0,0) * inverseDeterminant}
+			{GetUnsafe(1,1) * inverseDeterminant, -GetUnsafe(0,1) * inverseDeterminant},
+			{-GetUnsafe(1,0) * inverseDeterminant, GetUnsafe(0,0) * inverseDeterminant}
 		}};
-		outResult.Set(newArr);
+		outResult.SetTopLeft(newArr);
 		return true;
 	}
 	bool Inverse(MatrixType& outResult) requires (ROW_SIZE == 3 && COL_SIZE == 3)
@@ -483,7 +567,7 @@ public:
 				(GetUnsafe(0,0) * GetUnsafe(1,1) - GetUnsafe(0,1) * GetUnsafe(1,0)) * inverseDeterminant
 			}
 		}};
-		outResult.Set(newArr);
+		outResult.SetTopLeft(newArr);
 
 		return true;
 	}
@@ -529,7 +613,7 @@ public:
 			   (m00 * (m11 * m22 - m12 * m21) - m01 * (m10 * m22 - m12 * m20) + m02 * (m10 * m21 - m11 * m20)) * inverseDeterminant}
 		} };
 
-		outResult.Set(newArr);
+		outResult.SetTopLeft(newArr);
 		return true;
 	}
 
@@ -542,12 +626,13 @@ public:
 		requires (ROW_SIZE >= 2 && ROW_SIZE <= 4 && COL_SIZE >= 2 && COL_SIZE <= 4 && ROW_SIZE == COL_SIZE)
 	{
 		MatrixType result = {};
-		Inverse(result);
+		const bool inverseSuccess = Inverse(result);
+		ENGINE_ASSERT(inverseSuccess, "InverseUnsafe failed due to singular matrix (determinant 0)");
 		return result;
 	}
 
-	template<MatrixMajorOrder OTHER_ORDER>
-	MatrixType<T, ORDER, ROW_SIZE, COL_SIZE> operator+(const MatrixType<T, OTHER_ORDER, ROW_SIZE, COL_SIZE>& other) const
+	template<MatrixMajorOrder OTHER_ORDER, size_t OTHER_ALIGN>
+	MatrixType operator+(const MatrixType<T, ROW_SIZE, COL_SIZE, OTHER_ORDER, OTHER_ALIGN>& other) const
 	{
 		MatrixType result = {};
 		for (size_t r = 0; r < ROW_SIZE; r++)
@@ -559,8 +644,8 @@ public:
 		}
 		return result;
 	}
-	template<MatrixMajorOrder OTHER_ORDER>
-	MatrixType& operator+=(const MatrixType<T, OTHER_ORDER, ROW_SIZE, COL_SIZE>& other)
+	template<MatrixMajorOrder OTHER_ORDER, size_t OTHER_ALIGN>
+	MatrixType& operator+=(const MatrixType<T, ROW_SIZE, COL_SIZE, OTHER_ORDER, OTHER_ALIGN>& other)
 	{
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
@@ -572,8 +657,21 @@ public:
 		return *this;
 	}
 
-	template<MatrixMajorOrder OTHER_ORDER>
-	MatrixType<T, ORDER, ROW_SIZE, COL_SIZE> operator-(const MatrixType<T, OTHER_ORDER, ROW_SIZE, COL_SIZE>& other) const
+	MatrixType operator-() const
+	{
+		MatrixType result = {};
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			for (size_t c = 0; c < COL_SIZE; c++)
+			{
+				result.SetUnsafe(r, c, -GetUnsafe(r, c));
+			}
+		}
+		return result;
+	}
+
+	template<MatrixMajorOrder OTHER_ORDER, size_t OTHER_ALIGN>
+	MatrixType operator-(const MatrixType<T,ROW_SIZE, COL_SIZE, OTHER_ORDER, OTHER_ALIGN>& other) const
 	{
 		MatrixType result = {};
 		for (size_t r = 0; r < ROW_SIZE; r++)
@@ -585,8 +683,8 @@ public:
 		}
 		return result;
 	}
-	template<MatrixMajorOrder OTHER_ORDER>
-	MatrixType& operator-=(const MatrixType<T, OTHER_ORDER, ROW_SIZE, COL_SIZE>& other)
+	template<MatrixMajorOrder OTHER_ORDER, size_t OTHER_ALIGN>
+	MatrixType& operator-=(const MatrixType<T,ROW_SIZE, COL_SIZE, OTHER_ORDER, OTHER_ALIGN>& other)
 	{
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
@@ -622,18 +720,19 @@ public:
 		return *this;
 	}
 
-	template<MatrixMajorOrder OTHER_ORDER, size_t OTHER_ROW_SIZE, size_t OTHER_COL_SIZE>
+	template<size_t OTHER_ROW_SIZE, size_t OTHER_COL_SIZE, MatrixMajorOrder OTHER_ORDER, size_t OTHER_ALIGN>
 	requires (IsPositiveSize<OTHER_ROW_SIZE, OTHER_COL_SIZE> && COL_SIZE == OTHER_ROW_SIZE)
-	MatrixType<T, ORDER, ROW_SIZE, OTHER_COL_SIZE> operator*(const MatrixType<T, OTHER_ORDER, OTHER_ROW_SIZE, OTHER_COL_SIZE>& other) const
+	MatrixType<T,ROW_SIZE, OTHER_COL_SIZE, ORDER, ORDER_ALIGN_BYTES> 
+		operator*(const MatrixType<T,OTHER_ROW_SIZE, OTHER_COL_SIZE, OTHER_ORDER, OTHER_ALIGN>& other) const
 	{
-		MatrixType<T, ORDER, ROW_SIZE, OTHER_COL_SIZE> result = {};
+		MatrixType<T,ROW_SIZE, OTHER_COL_SIZE, ORDER, ORDER_ALIGN_BYTES> result = {};
 		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
 			for (size_t otherC = 0; otherC < OTHER_COL_SIZE; otherC++)
 			{
 				for (size_t c = 0; c < COL_SIZE; c++)
 				{
-					result.SetUnsafe(r, otherC, result.GetUnsafe(r, otherC) + GetUnsafe(r, c) * other.Get(c, otherC));
+					result.SetUnsafe(r, otherC, result.GetUnsafe(r, otherC) + GetUnsafe(r, c) * other.GetUnsafe(c, otherC));
 				}
 			}
 		}
@@ -654,37 +753,21 @@ public:
 		}
 		return result;
 	}
+#pragma endregion
 
-	std::string ToString(const MatrixMajorOrder order = ORDER, const bool newLineOnRow=true) const
+	std::string ToString(const bool newLineOnRow=true) const
 	{
 		std::string result = "";
-		if (order == MatrixMajorOrder::Row)
+		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
-			for (size_t r = 0; r < ROW_SIZE; r++)
-			{
-				if (newLineOnRow) result += '\n';
-				result += '[' + std::to_string(GetUnsafe(r, 0));
+			if (newLineOnRow) result += '\n';
+			result += '[' + std::to_string(GetUnsafe(r, 0));
 
-				for (size_t c = 1; c < COL_SIZE; c++)
-				{
-					result += ',' + std::to_string(GetUnsafe(r,c));
-				}
-				result += ']';
-			}
-		}
-		else
-		{
-			for (size_t c = 0; c < COL_SIZE; c++)
+			for (size_t c = 1; c < COL_SIZE; c++)
 			{
-				if (newLineOnRow) result += '\n';
-				result += '[' + std::to_string(GetUnsafe(0, c));
-
-				for (size_t r = 1; r < ROW_SIZE; r++)
-				{
-					result += ',' + std::to_string(GetUnsafe(r, c));
-				}
-				result += ']';
+				result += ',' + std::to_string(GetUnsafe(r, c));
 			}
+			result += ']';
 		}
 		
 		if (newLineOnRow) result += '\n';
@@ -692,6 +775,5 @@ public:
 	}
 };
 
-using Mat4 = MatrixType<float, MatrixMajorOrder::Column, 4, 4>;
-using Mat3x4 = MatrixType<float, MatrixMajorOrder::Column, 3, 4>;
-using Mat3 = MatrixType<float, MatrixMajorOrder::Column, 3, 3>;
+using Mat4 = MatrixType<float, 4, 4, MatrixMajorOrder::Column>;
+using Mat3 = MatrixType<float, 3, 3, MatrixMajorOrder::Column>;

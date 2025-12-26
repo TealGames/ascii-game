@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <concepts>
 #include <functional>
+#include <stack>
+#include "AnsiCodes.hpp"
 #include "Utils/Data/WorldPosition.hpp"
 #include "Utils/HelperMacros.hpp"
 #include "Utils/MathAdvanced.hpp"
@@ -23,7 +25,10 @@ struct BVHFlatNode
 
 	bool IsLeaf() const;
 	bool IsInvalid() const;
-	bool IsIntersectedByRay(const WorldPosition3D& origin, const WorldPosition3D& inverseDir) const;
+	bool IsIntersectedByRay(const WorldPosition3D& origin, const WorldPosition3D& inverseDir, 
+		float* outMargin = nullptr) const;
+	bool IsIntersectedByRay(const WorldPosition3D& origin, const WorldPosition3D& inverseDir,
+		float* outTEnter, float* outTExit) const;
 
 	AABB3D GetAABB() const;
 	WorldPosition3D GetCenter() const;
@@ -56,24 +61,41 @@ requires (Utils::HasFunctionToString<T>)
 std::string ToStringBVHNodes(const BVHFlatNode* rootNode, const size_t nodeCount, 
 	const T* objectArray, const std::uint32_t* objectIndicesArray, BVHToStringType toStringType,
 	const std::function<std::string(const BVHFlatNode&)>& leafSuccessorToStringFunc = nullptr, 
-	std::function<std::string(const BVHFlatNode&)> overrideNodeToStringFunc = nullptr)
+	std::function<std::string(const BVHFlatNode& node, const BVHFlatNode* parentNode)> overrideNodeToStringFunc = nullptr, 
+	const bool markInvalidBounds = false)
 {
 	if (overrideNodeToStringFunc == nullptr)
 	{
 		overrideNodeToStringFunc = 
-			[&leafSuccessorToStringFunc, toStringType, objectArray, objectIndicesArray](const BVHFlatNode& node) -> std::string
+			[&leafSuccessorToStringFunc, toStringType, objectArray, objectIndicesArray, markInvalidBounds]
+			(const BVHFlatNode& node, const BVHFlatNode* parentNode) -> std::string
 			{
 				std::string leafStringSuffix = "";
 				if (node.IsLeaf() && leafSuccessorToStringFunc != nullptr)
 					leafStringSuffix = "\n" + leafSuccessorToStringFunc(node);
 
+				std::string stringPrefix = "";
+				//If the parent node's size or any of the parent's aabb min and/or max components
+				//are contained within this bound, it means the parent does not fully encompass the child
+				//and therefore we mark is red
+				if (markInvalidBounds && parentNode != nullptr)
+				{
+					const AABB3D parentBounds = parentNode->GetAABB();
+					const AABB3D thisBounds = node.GetAABB();
+					if (parentBounds.GetSize().AnyAxisLessThan(thisBounds.GetSize()) || parentBounds.m_MinPos.AnyAxisGreaterThan(thisBounds.m_MinPos) ||
+						parentBounds.m_MaxPos.AnyAxisLessThan(thisBounds.m_MaxPos))
+					{
+						stringPrefix = ANSI_COLOR_RED;
+					}
+				}
+
 				if (toStringType == BVHToStringType::NodeBounds)
-					return node.ToString(false) + leafStringSuffix;
+					return stringPrefix + node.ToString(false) + leafStringSuffix;
 				else if (toStringType == BVHToStringType::NodeFull)
-					return node.ToString(true) + leafStringSuffix;
+					return stringPrefix + node.ToString(true) + leafStringSuffix;
 				else if (toStringType == BVHToStringType::Object)
 				{
-					std::string result = "";
+					std::string result = stringPrefix;
 					for (size_t i = 0; i < node.m_ObjectCount; i++)
 					{
 						if (objectIndicesArray == nullptr)
@@ -110,23 +132,145 @@ std::string ToStringBVHNodes(const BVHFlatNode* rootNode, const size_t nodeCount
 
 template<typename T>
 bool IntersectsBVH(const WorldPosition3D& rayOrigin, const Vec3& rayDir, const BVHFlatNode* rootNode, const size_t nodeCount, 
-	T* objectArray, const std::uint32_t* objectIndicesArray, T* outHitObject,
-	const std::function<bool(const T& obj, const WorldPosition3D& rayOrigin, const Vec3& rayDir)>& objectIntersectedByRayFunc)
+	T* objectArray, const std::uint32_t* objectIndicesArray, T** outHitObject, float* outMinHitDistance,
+	const std::function<bool(const BVHFlatNode& node, const T& obj, const WorldPosition3D& rayOrigin, 
+		const Vec3& rayDir, float* outHitDistance)>& objectIntersectedByRayFunc)
 {
+	const Vec3 inverseRayDir = 1 / rayDir;
+	std::stack<int> stack = {};
+	stack.push(0);
+
+	const BVHFlatNode* node = nullptr;
+	T* object = nullptr;
+	float tEnter = 0;
+	float tExit = 0;
+	float minHitDistance = std::numeric_limits<float>::max();
+	bool foundIntersection = false;
+	while (!stack.empty())
+	{
+		node = &rootNode[stack.top()];
+		stack.pop();
+
+		if (!node->IsIntersectedByRay(rayOrigin, inverseRayDir, &tEnter, &tExit))
+			continue;
+
+		if (tEnter > minHitDistance)
+			continue;
+
+		if (node->IsLeaf())
+		{
+			for (size_t i = 0; i < node->m_ObjectCount; i++)
+			{
+				if (objectIndicesArray == nullptr) object = &objectArray[node->m_ObjectStartIndex + i];
+				else object = &objectArray[objectIndicesArray[node->m_ObjectStartIndex + i]];
+
+				float hitDistance = 0;
+				if (objectIntersectedByRayFunc(*node, *object, rayOrigin, rayDir, &hitDistance))
+				{
+					foundIntersection = true;
+					if (hitDistance < minHitDistance)
+					{
+						if (outHitObject != nullptr) *outHitObject = object;
+						minHitDistance = hitDistance;
+					}
+				}
+			}
+		}
+		else
+		{
+			float tEnterChild0 = 0;
+			float tEnterChild1 = 0;
+			bool minHitChild0 = rootNode[node->m_IndexChild0].IsIntersectedByRay(rayOrigin, 
+				inverseRayDir, &tEnterChild0) && tEnterChild0 <= minHitDistance;
+			bool minHitChild1 = rootNode[node->m_IndexChild1].IsIntersectedByRay(rayOrigin, 
+				inverseRayDir, &tEnterChild1) && tEnterChild1 <= minHitDistance;
+
+			if (minHitChild0 && minHitChild1)
+			{
+				if (tEnterChild0 < tEnterChild1)
+				{
+					stack.push(node->m_IndexChild1);
+					stack.push(node->m_IndexChild0);
+				}
+				else
+				{
+					stack.push(node->m_IndexChild0);
+					stack.push(node->m_IndexChild1);
+				}
+			}
+			else if (minHitChild0)
+				stack.push(node->m_IndexChild0);
+			else if (minHitChild1)
+				stack.push(node->m_IndexChild1);
+		}
+	}
+	if (outMinHitDistance != nullptr)
+		*outMinHitDistance = minHitDistance;
+	return foundIntersection;
+	/*
 	const Vec3 inverseRayDir = 1 / rayDir;
 	if (!rootNode[0].IsIntersectedByRay(rayOrigin, inverseRayDir))
 		return false;
 
 	int nodeIndex = 0;
+	std::stack<int> unexploredIntersectedBounds = {};
+	float marginChild0 = 0;
+	float marginChild1 = 0;
 	while (!rootNode[nodeIndex].IsLeaf())
 	{
 		const BVHFlatNode& node = rootNode[nodeIndex];
+		//NOTE: margin is <0 if NOT intersected, ==0 if intersect at EDGE, and >0 if DEEPER in bounds
+		rootNode[node.m_IndexChild0].IsIntersectedByRay(rayOrigin, inverseRayDir, &marginChild0);
+		rootNode[node.m_IndexChild1].IsIntersectedByRay(rayOrigin, inverseRayDir, &marginChild1);
 
-		if (rootNode[node.m_IndexChild0].IsIntersectedByRay(rayOrigin, inverseRayDir))
+		//NOTE: when deciding where to go, we choose the direction which has the ray most DEEP INSIDE
+		//the bounds (meaning higher positive margins) AND if we choose a >=0 margin over another,
+		//we store the other in the stack so if this path does not work we can explore the other one
+		//before quitting. The reason we do this is because there could technically be a ray that hits 
+		//at an intersection of different bounds and by choosing one over another, we could be potentially
+		//getting a false negative by not exploring both
+		if (marginChild0 >= 0 && marginChild0 >= marginChild1)
+		{
+			LogWarning(std::format("CHECKING DIR TO GO {} ->{} parent area:{} left: {} right:{} CHOOSE LEFT (IntersectL:{} IntersectR:{}) (marginsL:{} marginsR:{})",
+				rayOrigin.ToString(), rayDir.ToString(),
+				node.GetAABB().ToString(),
+				rootNode[node.m_IndexChild0].GetAABB().ToString(),
+				rootNode[node.m_IndexChild1].GetAABB().ToString(),
+				rootNode[node.m_IndexChild0].IsIntersectedByRay(rayOrigin, inverseRayDir),
+				rootNode[node.m_IndexChild1].IsIntersectedByRay(rayOrigin, inverseRayDir), marginChild0, marginChild1));
+
+			if (marginChild1 >= 0) unexploredIntersectedBounds.push(node.m_IndexChild1);
 			nodeIndex = node.m_IndexChild0;
-		else if (rootNode[node.m_IndexChild1].IsIntersectedByRay(rayOrigin, inverseRayDir))
+		}
+		else if (marginChild1 >= 0 && marginChild1 >= marginChild0)
+		{
+			LogWarning(std::format("CHECKING DIR TO GO {} ->{} parent area:{} left: {} right:{} CHOOSE RIGHT (IntersectL:{} IntersectR:{}) (marginsL:{} marginsR:{})",
+				rayOrigin.ToString(), rayDir.ToString(),
+				node.GetAABB().ToString(),
+				rootNode[node.m_IndexChild0].GetAABB().ToString(),
+				rootNode[node.m_IndexChild1].GetAABB().ToString(),
+				rootNode[node.m_IndexChild0].IsIntersectedByRay(rayOrigin, inverseRayDir),
+				rootNode[node.m_IndexChild1].IsIntersectedByRay(rayOrigin, inverseRayDir), marginChild0, marginChild1));
+
+			if (marginChild0 >= 0) unexploredIntersectedBounds.push(node.m_IndexChild0);
 			nodeIndex = node.m_IndexChild1;
-		else return false;
+		}
+		else
+		{
+			LogWarning(std::format("FAILED TO FIND INTERSECTING BOUNDS FOR RAY {} ->{} PARENT AREA:{} LEFT CHILD AREA: {} RIGHT AREA:{}",
+				rayOrigin.ToString(), rayDir.ToString(),
+				node.GetAABB().ToString(),
+				rootNode[node.m_IndexChild0].GetAABB().ToString(),
+				rootNode[node.m_IndexChild1].GetAABB().ToString()));
+			if (unexploredIntersectedBounds.empty())
+			{
+				return false;
+			}
+
+			nodeIndex = unexploredIntersectedBounds.top(); 
+			unexploredIntersectedBounds.pop();
+			LogWarning(std::format("GOING BACK TO: {}", rootNode[nodeIndex].GetAABB().ToString()));
+		}
 
 		if (nodeIndex >= nodeCount)
 		{
@@ -140,13 +284,14 @@ bool IntersectsBVH(const WorldPosition3D& rayOrigin, const Vec3& rayDir, const B
 		if (objectIndicesArray == nullptr) object = &objectArray[rootNode[nodeIndex].m_ObjectStartIndex + i];
 		else object = &objectArray[objectIndicesArray[rootNode[nodeIndex].m_ObjectStartIndex + i]];
 
-		if (objectIntersectedByRayFunc(*object, rayOrigin, rayDir))
+		if (objectIntersectedByRayFunc(rootNode[nodeIndex], *object, rayOrigin, rayDir))
 		{
 			outHitObject = object;
 			return true;
 		}
 	}
 	return false;
+	*/
 }
 
 enum class BVHSplitAlgorithm : std::uint8_t
@@ -255,6 +400,8 @@ private:
 		int i;
 		for (i = 1; i < objectCount; i ++)
 		{
+			//TODO: a potential speedup could be that instead of unifying bounds at every new object, we intead try to get the object min
+			//and max and compare that and create the bound at the end
 			nodeTightBounds = UnifyBounds(GetObjectBounds(mutateObjectsInPlace, objectStartIndex + i, getBoundsFunc), nodeTightBounds);
 			WorldPosition3D triangleCenter = GetObjectCenter(mutateObjectsInPlace, objectStartIndex + i, getCenterFunc);
 			centerBoundsMin = Min(centerBoundsMin, triangleCenter);
@@ -287,7 +434,14 @@ private:
 
 		//NOTE: since we use the center for comparing triangles, we must also use the center when calculatin the max component index
 		//otherwise there may be some inconsistencies
-		std::uint8_t maxAxisIndex = (centerBoundsMax - centerBoundsMin).GetMaxComponentIndex();
+		const Vec3 centerSpan = centerBoundsMax - centerBoundsMin;
+		std::uint8_t maxAxisIndex = centerSpan.GetMaxComponentIndex();
+		//If the centers of the objects are relatively coplanar, they may have a size that is close to 0
+		//in one or more components, and thus the max axis may be ~0 and we get degenerate splits
+		if (centerSpan[maxAxisIndex] < 1e-6f)
+		{
+			maxAxisIndex = nodeTightBounds.GetSize().GetMaxComponentIndex();
+		}
 
 		//We partition the data into smaller and greater partition compared to 
 		//the pivot as midpoint (NOTE: this is the same as partition algorithm in quicksort)
@@ -320,6 +474,8 @@ private:
 		{
 			SortObjects(mutateObjectsInPlace, objectStartIndex, objectCount, maxAxisIndex, getCenterFunc);
 
+			//TODO: right now this implemenation is expensive because we use a lot of memory and time
+			//for group of nodes. We should be caching some prefix/suffix bounds to not need to recalculate
 			AABB3D currentAABB = {};
 			AABB3D* prefixBounds = (AABB3D*)alloca(sizeof(AABB3D) * (objectCount - 1));
 			prefixBounds[0] = GetObjectBounds(mutateObjectsInPlace, objectStartIndex, getBoundsFunc);
@@ -348,10 +504,18 @@ private:
 					surfaceAreaMinCost = currentCost;
 				}
 			}
+			i = minSurfaceAreaIndex;
 		}
 
 		/*LogWarning(std::format("Made split: [{},{}] [{},{}] from [{}, {}]", objectStartIndex, objectStartIndex + i,
 			objectStartIndex + i, objectStartIndex + i + objectCount - i, objectStartIndex, objectStartIndex+objectCount)); */
+
+		//If we end up with a degenerate split no matter the algorithm to prevent
+		//infinite recursion, we force split in half
+		if (i == 0 || i == objectCount)
+		{
+			i = objectCount / 2;
+		}
 
 		//We then setup the left and right children nodes and invoke next subtree
 		//with the left and right partioned segments
@@ -414,28 +578,29 @@ public:
 	}
 
 	template<typename OutT>
-	bool Intersects(const WorldPosition3D& rayOrigin, const Vec3& rayDir, OutT* objectArray, OutT* outHitObject, 
-		const std::function<bool(const OutT& obj, const WorldPosition3D& rayOrigin, const Vec3& rayDir)>& objectIntersectedByRayFunc) const 
+	bool Intersects(const WorldPosition3D& rayOrigin, const Vec3& rayDir, OutT* objectArray, OutT** outHitObject, float* outMinHitDistance,
+		const std::function<bool(const BVHFlatNode& node, const OutT& obj, 
+			const WorldPosition3D& rayOrigin, const Vec3& rayDir, float* outHitDistance)>& objectIntersectedByRayFunc) const 
 	{
 		return ::IntersectsBVH<OutT>(rayOrigin, rayDir, &m_flatNodes[0], m_flatNodes.size(), 
-			objectArray, m_objectIndices.empty()? nullptr : &m_objectIndices[0], outHitObject, objectIntersectedByRayFunc);
+			objectArray, m_objectIndices.empty()? nullptr : &m_objectIndices[0], outHitObject, outMinHitDistance, objectIntersectedByRayFunc);
 	}
 
 	template<typename OutT>
-	requires HasNamedFunctionIsIntersectedByRay<OutT, bool, WorldPosition3D, WorldPosition3D>
-	bool Intersects(const WorldPosition3D& rayOrigin, const Vec3& rayDir, OutT* objectArray, OutT* outHitObject) const
+	requires HasNamedFunctionIsIntersectedByRay<OutT, bool, WorldPosition3D, WorldPosition3D, float*>
+	bool Intersects(const WorldPosition3D& rayOrigin, const Vec3& rayDir, OutT* objectArray, OutT** outHitObject) const
 	{
 		return Intersects<OutT>(rayOrigin, rayDir, objectArray, outHitObject,
-			[](const OutT& obj, const WorldPosition3D& rayOrigin, const Vec3& rayDir) -> bool
+			[](const OutT& obj, const WorldPosition3D& rayOrigin, const Vec3& rayDir, float* outHitDistance) -> bool
 			{
-				return obj.IsIntersectedByRay(rayOrigin, rayDir);
+				return obj.IsIntersectedByRay(rayOrigin, rayDir, outHitDistance);
 			});
 	}
 
-	bool Intersects(const WorldPosition3D& rayOrigin, const Vec3& rayDir, T* outHitObject) const
-		requires HasNamedFunctionIsIntersectedByRay<T, bool, WorldPosition3D, WorldPosition3D> 
+	bool Intersects(const WorldPosition3D& rayOrigin, const Vec3& rayDir, T** outHitObject, float* outMinHitDistance) const
+		requires HasNamedFunctionIsIntersectedByRay<T, bool, WorldPosition3D, WorldPosition3D, float*> 
 	{
-		return Intersects<T>(rayOrigin, rayDir, m_objectArray, outHitObject);
+		return Intersects<T>(rayOrigin, rayDir, m_objectArray, outHitObject, outMinHitDistance);
 	}
 
 	const std::vector<BVHFlatNode>& GetNodes() const { return m_flatNodes; }
@@ -446,11 +611,12 @@ public:
 	
 	std::string ToString(BVHToStringType toStringType, 
 		const std::function<std::string(const BVHFlatNode&)>& leafSuccessorToStringFunc = nullptr,
-		const std::function<std::string(const BVHFlatNode&)>& overrideNodeToStringFunc = nullptr) const
+		const std::function<std::string(const BVHFlatNode& node, const BVHFlatNode* parentNode)>& overrideNodeToStringFunc = nullptr, 
+		const bool markInvalidBounds = false) const
 	{
 		return ToStringBVHNodes<T>(&m_flatNodes[0], m_flatNodes.size(),
 			m_objectArray, m_objectIndices.empty()? nullptr : &m_objectIndices[0], 
-			toStringType, leafSuccessorToStringFunc, overrideNodeToStringFunc);
+			toStringType, leafSuccessorToStringFunc, overrideNodeToStringFunc, markInvalidBounds);
 	}
 
 	std::string ToStringRaw() const

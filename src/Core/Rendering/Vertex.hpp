@@ -78,6 +78,7 @@ namespace Rendering
     AABB3D CalculateTriangleAABB(const Triangle& triangle, const Vertex* vertexArray);
     WorldPosition3D CalculateTriangleCenter(const Triangle& triangle, const Vertex* vertexArray);
 
+    using Std430Mat3 = MatrixType<float, 3, 3, MatrixMajorOrder::Column, sizeof(float) * 4>;
     struct Instance
     {
         //Color m_Color;
@@ -86,10 +87,11 @@ namespace Rendering
         float _padding[2];
         Mat4 m_ModelMatrix;
         Mat4 m_InverseModelMatrix;
-        //NOTE: we use a mat3x4 (rows x cols) even though we only need mat3 because
-        //due to std430 alignment, vec3 needs 4 bytes extra padding
-        //so to avoid akward splitting we use mat3x4
-        Mat3x4 m_NormalModelMatrix;
+        //NOTE: we use a mat4x3 (4 rows, 3 cols) because we use COLUMN MAJOR STORAGE
+        //(to not need transpose on OpenGL matrix upload) and since the NormalModelMatrix is 3x3
+        //and OpenGL expects std::430 rules (flaot vec3 needs 4 byte padding), we add padding
+        //AFTER EVERY 
+        Std430Mat3 m_NormalModelMatrix;
 
         Instance();
         Instance(const std::uint32_t materialIndex, const std::uint32_t meshIndex, 

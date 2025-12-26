@@ -30,7 +30,7 @@ namespace Rendering
 
     constexpr bool DO_RAYTRACING = true;
     constexpr std::uint32_t MAX_RAYTRACE_BOUNCES = 5;
-    constexpr std::uint8_t AMBIENT_OCCLUSION_SAMPLES = 16;
+    constexpr std::uint32_t AMBIENT_OCCLUSION_SAMPLES = 16;
 
     constexpr bool DO_VISUALIZE_BVH_BOUNDS = false;
     constexpr float BVH_BOUNDS_LINE_THICKNESS = 1;
@@ -38,16 +38,17 @@ namespace Rendering
     constexpr Color BVH_BOUNDS_LEAF_COLOR = COLOR_RED;
 
     constexpr bool DO_LIGHTING = true;
-    constexpr bool DRAW_LIGHT_AREAS = true;
+    constexpr bool DRAW_LIGHT_AREAS = false;
     constexpr bool USE_LIGHT_COLOR_FOR_RANGE = true;
     constexpr Color LIGHT_AREA_COLOR = {255, 255, 255, 255};
     
-    constexpr bool DO_SHADOWS = true;
+    constexpr bool DO_SHADOWS = false;
     constexpr Vec2Int SHADOW_MAP_SIZE = {256, 256};
     constexpr Vec2Int SKYBOX_MAP_SIZE = {512, 512};
     constexpr float SHADOW_NEAR_DISTANCE = 0.001;
     constexpr float SHADOW_FAR_DISTANCE = 1000;
 
+    constexpr bool DO_POST_PROCESS = true;
     constexpr bool DO_HDR = true;
     constexpr bool DO_BLOOM = false;
     /// <summary>
@@ -77,7 +78,7 @@ namespace Rendering
 
     static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { 
         "default", "forward_render", "shadow", "texture", 
-        "post_process", "gaussian_blur", "ray_tracer", "skybox_converter"};
+        "post_process", "gaussian_blur", "ray_tracer", "skybox"};
 
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
@@ -112,9 +113,9 @@ namespace Rendering
     constexpr const char* BLUR_WEIGHTS_UNIFORM_NAME = "uWeights";
 
     constexpr const char* RAY_TRACING_MAX_RAY_BOUNCES_UNIFORM_NAME = "uMaxBounces";
-    constexpr const char* AMBIENT_OCCLUSION_SAMPLES_UNIFORM_NAME = "uAmbientOcclusionSamples";
+    constexpr const char* AMBIENT_OCCLUSION_SAMPLES_UNIFORM_NAME = "uAOSamples";
     constexpr const char* UNMOVING_FRAME_NUMBER_UNIFORM_NAME = "uUnmovingFrameCount";
-    constexpr const char* EMISSIVE_MATERIAL_COUNT_UNIFORM_NAME = "uEmissiveMaterialCount";
+    constexpr const char* EMISSIVE_MATERIAL_COUNT_UNIFORM_NAME = "uEmissiveCount";
     constexpr const char* INSTANCE_COUNT_UNIFORM_NAME = "uInstanceCount";
 
     std::string ToString(const RenderCallType call)
@@ -209,7 +210,14 @@ namespace Rendering
             {
                 data.m_FrameBuffer = &m_frameBuffer;
             }
-            else if (passType == RenderPassType::Geometry && DO_HDR)
+            else if (passType == RenderPassType::Geometry && DO_POST_PROCESS)
+            {
+                data.m_FrameBuffer = &m_frameBuffer;
+            }
+            //NOTE: if we use custom framebuffer for geometry, we must use custom framebuffer for 
+            //skybox to ensure it is drawn in the same texture as geometry (otherwise default frame
+            //buffer will be enabled when Post Process is drawn which covers whole screen with texture)
+            else if (passType == RenderPassType::Skybox && DO_POST_PROCESS)
             {
                 data.m_FrameBuffer = &m_frameBuffer;
             }
@@ -584,6 +592,7 @@ namespace Rendering
     }
     InstanceType* Renderer::AddInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material)
     {
+        //Mat4 modelTransposed = modelMatrix.Transpose();
         Mat3 normalMatrix = modelMatrix.GetSlice<3, 3>();
         //Mat3 inversed = {};
         if (!normalMatrix.Inverse())
@@ -624,7 +633,7 @@ namespace Rendering
         const InstanceType& instance = m_instances[instanceIndex];
         //We get the root node of this instance's mesh blas tree (NODE: first index of interval is ROOT)
         const BVHFlatNode& blasTreeRootNode = m_blasTrees[m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval.m_StartIndex];
-        m_instanceBoundsData.push_back(InstanceBoundsData(Utils::ToWorldAABB(blasTreeRootNode.GetAABB(), instance.m_ModelMatrix), instanceIndex));
+        m_instanceBoundsData.push_back(InstanceBoundsData(Utils::ApplyMatrixToAABB(blasTreeRootNode.GetAABB(), instance.m_ModelMatrix), instanceIndex));
     }
     void Renderer::FinishBatch(RenderBatch& batch, const BVHTriangleTree* blasTree)
     {
@@ -693,7 +702,7 @@ namespace Rendering
             return;
 
         m_tlasTree.Construct(&m_instanceBoundsData[0], m_instanceBoundsData.size(), true, 1, 
-            BVHSplitAlgorithm::Midpoint, &InstanceBoundsData::GetAABB, &InstanceBoundsData::GetCenter, 
+            BVHSplitAlgorithm::Median, &InstanceBoundsData::GetAABB, &InstanceBoundsData::GetCenter, 
             [](const InstanceBoundsData* boundsPtr, const std::uint32_t* objectIndicesArr, const size_t boundsSize, int intendedStartIndex,
                 int& outStartIndex, std::uint32_t& outObjectCount) -> void
             {
@@ -1086,7 +1095,8 @@ namespace Rendering
     {
         AddCallBox3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), modelMatrix);
     }
-    void Renderer::AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix)
+    void Renderer::AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix, 
+        const Vec2& textureRepeats)
     {
         m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Plane3d, modelMatrix);
 
@@ -1103,10 +1113,11 @@ namespace Rendering
         }
 
         Vertex vertices[TOTAL_VERTEX_COUNT] = {
-            Vertex(Vec3(-size.m_X/2, 0, -size.m_Y/2), UV(0, 0), ENGINE_UP_DIR), 
-            Vertex(Vec3(size.m_X/2, 0, -size.m_Y/2), UV(1, 0), ENGINE_UP_DIR),
-            Vertex(Vec3(size.m_X/2, 0, size.m_Y/2), UV(1, 1), ENGINE_UP_DIR),
-            Vertex(Vec3(-size.m_X/2, 0, size.m_Y/2), UV(0, 1), ENGINE_UP_DIR)
+            //Bottom Left, Bottom right, top right, top left
+            Vertex(Vec3(-size.m_X/2, 0, -size.m_Y/2), { 0, 0 }, ENGINE_UP_DIR),
+            Vertex(Vec3(size.m_X/2, 0, -size.m_Y/2), { textureRepeats.m_X, 0 }, ENGINE_UP_DIR),
+            Vertex(Vec3(size.m_X/2, 0, size.m_Y/2), textureRepeats, ENGINE_UP_DIR),
+            Vertex(Vec3(-size.m_X/2, 0, size.m_Y/2), { 0, textureRepeats.m_Y }, ENGINE_UP_DIR)
         };
         IndexType indices[TOTAL_INDEX_COUNT] = {0, 1, 2, 2, 3, 0};
         CreateBatch(baseShader, baseMaterial, vertices, TOTAL_VERTEX_COUNT, indices, TOTAL_INDEX_COUNT, modelMatrix, nullptr);
@@ -1221,33 +1232,45 @@ namespace Rendering
     }
     bool Renderer::IntersectsBVH(const WorldPosition3D& rayWorldOrigin, const Vec3& rayDir, const Vertex* outHitVertex)
     {
+        /*
         LogWarning(std::format("Invoking Intersect BVH sphere @{} for ray: {} -> {} Intersect(math): {}", 
             Vec3(0, 0, 0.3).ToString(), rayWorldOrigin.ToString(), rayDir.ToString(), 
             Utils::RayIntersectsSphere(Vec3(0, 0, 0.3), 0.2, rayWorldOrigin, rayDir, nullptr)));
+            */
 
         Triangle* trianglePtr = reinterpret_cast<Triangle*>(&m_indices[0]);
-        return m_tlasTree.Intersects<InstanceType>(rayWorldOrigin, rayDir, &m_instances[0], nullptr,
-            [this, trianglePtr](const InstanceType& instance, const WorldPosition3D& rayOrigin, const Vec3& rayDir) -> bool
+        return m_tlasTree.Intersects<InstanceType>(rayWorldOrigin, rayDir, &m_instances[0], nullptr, nullptr,
+            [this, trianglePtr](const BVHFlatNode& node, const InstanceType& instance, 
+                const WorldPosition3D& rayOrigin, const Vec3& rayDir, float* outTopHitDistance) -> bool
             {
                 const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
                 const WorldPosition3D rayLocalOrigin = (instance.m_InverseModelMatrix * Vec4(rayOrigin, 1)).GetXYZ();
                 const WorldPosition3D rayLocalDir = (instance.m_InverseModelMatrix * Vec4(rayDir, 0)).GetXYZ().GetNormalized();
+                /*
                 LogWarning(std::format("Inverse mat:{} rayO {}->{} rayDir {}->{}", instance.m_InverseModelMatrix.ToString(), 
                     rayOrigin.ToString(), rayLocalOrigin.ToString(), rayDir.ToString(), rayLocalDir.ToString()));
-                LogWarning(std::format("Ray (LOCAL) {} -> {} reached blas level SHOULD INTERSECT:{}", rayLocalOrigin.ToString(), rayLocalDir.ToString(),
+                LogWarning(std::format("Ray (LOCAL) {} -> {} reached blas level (LOCAL) area: {} SHOULD INTERSECT:{}", 
+                    rayLocalOrigin.ToString(), rayLocalDir.ToString(),
+                    Utils::ApplyMatrixToAABB(node.GetAABB(), instance.m_InverseModelMatrix).ToString(), 
                     Utils::RayIntersectsSphere(Vec3(), 0.2, rayLocalOrigin, rayLocalDir, nullptr)));
+                    */
 
                 return ::IntersectsBVH<Triangle>(rayLocalOrigin, rayLocalDir, &m_blasTrees[treeInterval.m_StartIndex],
-                    treeInterval.m_Size, trianglePtr, nullptr, nullptr,
-                    [this](const Triangle& triangle, const WorldPosition3D& rayLocalOrigin, const Vec3& rayLocalDir) -> bool
+                    treeInterval.m_Size, trianglePtr, nullptr, nullptr, nullptr,
+                    [this, outTopHitDistance](const BVHFlatNode& node, const Triangle& triangle, const WorldPosition3D& rayLocalOrigin,
+                        const Vec3& rayLocalDir, float* outBottomHitDistance) -> bool
                     {
-                        float outHitDistance = 0;
+                        /*
                         LogWarning(std::format("Ray {} -> {} reached vertex level with triangle: {} {} {}", rayLocalOrigin.ToString(), rayLocalDir.ToString(),
                             m_vertices[triangle.m_VertexIndex0].m_LocalPos.ToString(),
                             m_vertices[triangle.m_VertexIndex1].m_LocalPos.ToString(), m_vertices[triangle.m_VertexIndex2].m_LocalPos.ToString()));
-                        return Utils::RayIntersectsTriangle(m_vertices[triangle.m_VertexIndex0].m_LocalPos,
+                        */
+
+                        const bool intersectsTriangle = Utils::RayIntersectsTriangle(m_vertices[triangle.m_VertexIndex0].m_LocalPos,
                             m_vertices[triangle.m_VertexIndex1].m_LocalPos, m_vertices[triangle.m_VertexIndex2].m_LocalPos,
-                            rayLocalOrigin, rayLocalDir, &outHitDistance);
+                            rayLocalOrigin, rayLocalDir, outBottomHitDistance);
+                        *outTopHitDistance = *outBottomHitDistance;
+                        return intersectsTriangle;
                     });
             });
     }
@@ -1258,40 +1281,52 @@ namespace Rendering
     }
     void Renderer::SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix)
     {
-        m_viewerUniformBuffer.TryWriteData("worldPos", sizeof(Vec3), worldPos.GetMemPointer());
-        if (!m_viewerUniformBuffer.TryWriteData("viewMatrix", sizeof(Mat4),
+        m_viewerUniformBuffer.TryWriteField("worldPos", sizeof(Vec3), worldPos.GetMemPointer());
+        //Mat4 viewTransposed = viewMatrix.Transpose();
+        if (!m_viewerUniformBuffer.TryWriteField("viewMatrix", sizeof(Mat4),
             viewMatrix.GetMemPointer()))
         {
             LogError(std::format("Attempted to write view matrix to viewer uniform buffer but failed"));
             return;
         }
-        if (!m_viewerUniformBuffer.TryWriteData("projectionMatrix", sizeof(Mat4),
+
+        //for (size_t i = 0; i < 16; i++) std::cout << std::format("[{}]", projMatrix.GetMemPointer()[i]);
+        //std::cout << "" << std::endl;
+        //Mat4 projMatrixRight = projMatrix.Transpose();
+        if (!m_viewerUniformBuffer.TryWriteField("projectionMatrix", sizeof(Mat4),
             projMatrix.GetMemPointer()))
         {
             LogError(std::format("Attempted to write projection matrix to viewer uniform buffer but failed"));
             return;
         }
+        
+        //std::array<float, 16> floats = {};
+        //m_viewerUniformBuffer.TryReadField("projectionMatrix", &floats);
+        //for (const auto& val : floats) std::cout<<(std::format("[{}]", val));
+        //LogError(std::format("Wrote matrix: {} to proj actual values in storage order", projMatrix.ToString()));
+        //m_viewerUniformBuffer.Get
+        
     }
     void Renderer::SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix,
         const Vec3& forwardDir, const Vec3& rightDir, const Vec3& upDir, const float yFov)
     {
         SetViewerData(worldPos, viewMatrix, projMatrix);
-        if (!m_viewerUniformBuffer.TryWriteData("forwardDir", sizeof(Vec3), forwardDir.GetMemPointer()))
+        if (!m_viewerUniformBuffer.TryWriteField("forwardDir", sizeof(Vec3), forwardDir.GetMemPointer()))
         {
             LogError(std::format("Attempted to write forwardDir to viewer uniform buffer but failed"));
             return;
         }
-        if (!m_viewerUniformBuffer.TryWriteData("rightDir", sizeof(Vec3), rightDir.GetMemPointer()))
+        if (!m_viewerUniformBuffer.TryWriteField("rightDir", sizeof(Vec3), rightDir.GetMemPointer()))
         {
             LogError(std::format("Attempted to write rightDir to viewer uniform buffer but failed"));
             return;
         }
-        if (!m_viewerUniformBuffer.TryWriteData("upDir", sizeof(Vec3), upDir.GetMemPointer()))
+        if (!m_viewerUniformBuffer.TryWriteField("upDir", sizeof(Vec3), upDir.GetMemPointer()))
         {
             LogError(std::format("Attempted to write upDir to viewer uniform buffer but failed"));
             return;
         }
-        if (!m_viewerUniformBuffer.TryWriteData("yFov", sizeof(float), &yFov))
+        if (!m_viewerUniformBuffer.TryWriteField("yFov", sizeof(float), &yFov))
         {
             LogError(std::format("Attempted to write yFov to viewer uniform buffer but failed"));
             return;
@@ -1302,6 +1337,45 @@ namespace Rendering
         Backend::DrawUploadedIndexBufferInstanced(0,
             batch.m_IndicesStartIndex * m_indexBuffer.GetElementSize(),
             batch.m_IndicesCount, batch.m_InstanceStartIndex, batch.m_InstanceCount);
+    }
+
+    void Renderer::ExecuteSkyboxPass(std::uint8_t* outDrawnAttachmentsMask)
+    {
+        UpdatePassRenderState(RenderPassType::Skybox);
+        if (m_boundFrameBuffer != nullptr)
+        {
+            m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &m_hdrColorOutput);
+        }
+        //NOTE: we only need to clear the background color and not depth since we ignore depth
+        Backend::ClearBackground(0b1);
+        if (outDrawnAttachmentsMask != nullptr)
+            *outDrawnAttachmentsMask |= 0b1;
+
+        Shader& skyboxShader = GetCoreShader(CoreShader::Skybox);
+        BindShader(skyboxShader);
+
+        SlotIndex slot = m_textureController.TryBindToFreeSlot<Texture>(*m_skybox);
+        skyboxShader.TrySetUniform(UniformDataType::Sampler2D, SKYBOX_UNIFORM_NAME, &slot);
+
+        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
+        const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
+        Quat cameraRotation = camera.GetTransform().GetWorldRotation();
+        const Vec3 forwardDir = cameraRotation.ApplyRotationToDir(ENGINE_FORWARD_DIR);
+        const Vec3 rightDir = CrossProduct(ENGINE_UP_DIR, forwardDir).GetNormalized();
+        Mat4 noTranslationViewMatrix = Utils::CalculateModelMatrix(nullptr, Vec3::Zero(), Vec3::One(), 
+            Utils::CalculateRotationMatrix(forwardDir, ENGINE_UP_DIR, rightDir));
+        //SetViewerData(camera.GetTransform().GetWorldPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix);
+        SetViewerData(camera.GetTransform().GetWorldPos(), noTranslationViewMatrix, cameraData.m_PlatformProjectionMatrix);
+
+        Backend::SetDepthTesting(false);
+        Backend::SetDepthWriting(false);
+
+        Backend::DrawVertices(36);
+
+        Backend::SetDepthTesting(true);
+        Backend::SetDepthWriting(true);
+        m_textureController.TryRemoveFromSlot(slot);
+        UnbindActiveShader();
     }
 
     void Renderer::ExecuteShadowPass()
@@ -1346,16 +1420,23 @@ namespace Rendering
         //This forces the viewport to be set back to rendering for the window
         m_engineState->m_GraphicsContext.m_Window->ForceSizeUpdate();
     }
-    void Renderer::ExecuteLightingAndGeometryPass(const SlotIndex* shadowCubeMapSlots)
+    void Renderer::ExecuteLightingAndGeometryPass(const SlotIndex* shadowCubeMapSlots, const std::uint8_t previousDrawnColorAttachmentsMask)
     {
         UpdatePassRenderState(RenderPassType::Geometry);
-        if (DO_HDR)
+        if (m_boundFrameBuffer != nullptr)
         {
             m_boundFrameBuffer->SetOutputRenderBuffer(FrameBufferAttachmentType::Depth, &m_hdrDepthRenderBuffer);
             m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &m_hdrColorOutput);
             m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color1, &m_brightnessOutput);
         }
-        Backend::ClearBackground();
+        //If we did not draw to color attachments before this, we clear the two colors attachments we will need, color0 and color1
+        //to ensure we do not have previous frame color data here
+        const std::uint8_t clearBitmask = 0b11;
+        if (previousDrawnColorAttachmentsMask == 0) Backend::ClearBackground(clearBitmask);
+        //If the previous draw mask is not 0, we want to ignore any bits it drew previously but we dont want to clear now
+        //(so 0 bit in clear makes any bit 0 even if previousMask is 0 or 1 AND any 1 bit in clear stays 1 unless previous is also 1
+        //so we only clear necessary slots that we need right now, but only if they were not previouslt drawn to)
+        else Backend::ClearBackground(~(~clearBitmask | previousDrawnColorAttachmentsMask));
 
         const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
         const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
@@ -1414,7 +1495,6 @@ namespace Rendering
             if (batch.m_Texture != nullptr && lastBatchTexture != batch.m_Texture)
             {
                 SlotIndex slot = m_textureController.TryBindToFreeSlot<Texture>(*batch.m_Texture);
-                if (slot == INVALID_SLOT_INDEX)
 
                 if (!batch.m_Shader->TrySetUniform(UniformDataType::Sampler2D, TEXTURE_UNIFORM_NAME, &slot))
                     return;
@@ -1441,6 +1521,10 @@ namespace Rendering
 
     void Renderer::ExecuteForwardRendering()
     {
+        const bool hasSkybox = m_skybox != nullptr;
+        std::uint8_t previousDrawnAttachmentsMask = 0;
+        if (hasSkybox) ExecuteSkyboxPass(&previousDrawnAttachmentsMask);
+
         //NOTE: we do this to ensure that we only add any data as long as all 3 buffers have enough space
         const auto& freeVertexSeg = m_vertexBuffer.TryGetFreeSegment(m_frameGeometryMetrics.m_TotalVertices);
         const auto& freeIndexSeg = m_indexBuffer.TryGetFreeSegment(m_frameGeometryMetrics.m_TotalIndices);
@@ -1479,7 +1563,7 @@ namespace Rendering
             }
         }
 
-        ExecuteLightingAndGeometryPass(DO_SHADOWS ? &shadowCubeMapSlots[0] : nullptr);
+        ExecuteLightingAndGeometryPass(DO_SHADOWS ? &shadowCubeMapSlots[0] : nullptr, previousDrawnAttachmentsMask);
         if (DO_SHADOWS) m_textureController.RemoveFromSlots(shadowCubeMapSlots);
         else
         {
@@ -1519,7 +1603,7 @@ namespace Rendering
         //NOTE: we disable depth testing since we only draw one full screen triangle ( + its faster) and
         //since hdr draws geometry to custom frame buffer, the depth in DEFAULT fbo would be 0, thus all 
         //fragments would fail test -> result in full screen black even if backbuffer color is right
-        Backend::SetDepthStatus(false);
+        Backend::SetDepthTesting(false);
         Backend::SetSrgbConversionStatus(true);
         
         //We just draw 3 vertices -> note we do not need vertex buffer since we use vertices defined in vertex shader
@@ -1527,7 +1611,7 @@ namespace Rendering
 
         //NOTE: always unbind shader before switching shader settings like depth or srgb conversion status
         UnbindActiveShader();
-        Backend::SetDepthStatus(true);
+        Backend::SetDepthTesting(true);
         Backend::SetSrgbConversionStatus(false);
 
         m_textureController.TryRemoveFromSlot(hdrOutputIndex);
@@ -1755,7 +1839,7 @@ namespace Rendering
         else ExecuteForwardRendering();
 
         //TODO: you should be able to do pp without hdr too
-        ExecutePostProcessPass();
+        if (DO_POST_PROCESS) ExecutePostProcessPass();
     }
 
     void Renderer::RenderBuffer()
@@ -1828,10 +1912,23 @@ namespace Rendering
                 if (Utils::ApproximateEqualsF(aabbSize.m_X, 0) || Utils::ApproximateEqualsF(aabbSize.m_Y, 0) || Utils::ApproximateEqualsF(aabbSize.m_Z, 0))
                     LogError(std::format("Found INVALID TLAS tree node: {}", node.ToString()));
 
+                //Here we add a red prefix if the split between the leaf node of the tlas tree and the transformed 
+                //world root node bounds of the blas tree is wrong (the tlas leaf node bounds > blas root node bounds)
+                std::string invalidBoundsPrefix = "";
+                const BVHFlatNode& rootNode = m_blasTrees[interval.m_StartIndex];
+                AABB3D rootNodeWorldBounds = Utils::ApplyMatrixToAABB(rootNode.GetAABB(), instance.m_ModelMatrix);
+                AABB3D parentBounds = node.GetAABB();
+                if (parentBounds.GetSize().AnyAxisLessThan(rootNodeWorldBounds.GetSize()) || 
+                    parentBounds.m_MinPos.AnyAxisGreaterThan(rootNodeWorldBounds.m_MinPos) ||
+                    parentBounds.m_MaxPos.AnyAxisLessThan(rootNodeWorldBounds.m_MaxPos))
+                {
+                    invalidBoundsPrefix = ANSI_COLOR_RED;
+                }
+
                 //LogWarning(std::format("Interval is: {} mesh index: {} instance index:{}", interval.m_Size, m_instances[node.m_ObjectStartIndex].m_MeshIndex));
-                return ToStringBVHNodes<BVHFlatNode>(&m_blasTrees[interval.m_StartIndex],
-                    interval.m_Size, &m_blasTrees[interval.m_StartIndex], nullptr, BVHToStringType::NodeBounds, nullptr, 
-                    [instance](const BVHFlatNode& node) -> std::string
+                return invalidBoundsPrefix + ToStringBVHNodes<BVHFlatNode>(&rootNode,
+                    interval.m_Size, &rootNode, nullptr, BVHToStringType::NodeBounds, nullptr,
+                    [instance](const BVHFlatNode& node, const BVHFlatNode* parentNode) -> std::string
                     {
                         const Vec3 aabbSize = node.GetAABB().GetSize();
                         if (Utils::ApproximateEqualsF(aabbSize.m_X, 0) || Utils::ApproximateEqualsF(aabbSize.m_Y, 0)
@@ -1841,9 +1938,9 @@ namespace Rendering
                         }
 
                         return std::format("[BLASNode Bounds:{}]", 
-                            Utils::ToWorldAABB(node.GetAABB(), instance.m_ModelMatrix).ToString());
-                    });
-            });
+                            Utils::ApplyMatrixToAABB(node.GetAABB(), instance.m_ModelMatrix).ToString());
+                    }, true);
+            }, nullptr, true);
     }
     std::string Renderer::ToStringInstances() const
     {

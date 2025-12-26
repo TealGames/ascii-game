@@ -79,6 +79,10 @@ namespace Rendering
 	};
 	inline constexpr FrameBufferAttachmentType MIN_COLOR_ATTACHMENT = FrameBufferAttachmentType::Color0;
 	inline constexpr FrameBufferAttachmentType MAX_COLOR_ATTACHMENT = FrameBufferAttachmentType::Color3;
+	inline constexpr std::uint8_t MAX_SUPPORTED_COLOR_ATTACHMENTS = 
+		static_cast<FrameBufferAttachmentTypeIntegralType>(MAX_COLOR_ATTACHMENT) -
+		static_cast<FrameBufferAttachmentTypeIntegralType>(MIN_COLOR_ATTACHMENT) + 1;
+
 	inline constexpr FrameBufferAttachmentTypeIntegralType ATTACHMENT_TYPES_COUNT = 
 		static_cast<FrameBufferAttachmentTypeIntegralType>(FrameBufferAttachmentType::DepthAndStencil) + 1;
 
@@ -385,6 +389,7 @@ namespace Rendering
 		VertexBuffer(const VertexBuffer&) = delete;
 		VertexBuffer(VertexBuffer&&) = delete;
 		~VertexBuffer();
+
 #if !PRODUCTION_BUILD
 		template<typename T>
 		requires (std::is_default_constructible_v<T>)
@@ -470,6 +475,7 @@ namespace Rendering
 		RenderObjectId(*m_AllocateFunc)(const size_t byteSize);
 		void(*m_BindFunc)(const RenderObjectId id, const BufferBindIndex index);
 		void(*m_WriteFunc)(const RenderObjectId id, const size_t byteOffset, const size_t writeByteSize, const void* data);
+		void(*m_ReadFunc)(const RenderObjectId id, const size_t byteOffset, const size_t readSize, void* outData);
 		void(*m_DeallocateFunc)(const RenderObjectId);
 	};
 
@@ -506,7 +512,7 @@ namespace Rendering
 		bool HasValidBindingPoint() const;
 
 		void WriteData(const size_t byteOffset, const size_t writeByteSize, const void* data);
-		bool TryWriteData(const char* memberName, const size_t writeSize, const void* data);
+		bool TryWriteField(const char* memberName, const size_t writeSize, const void* data);
 
 		bool TryWriteStruct(const std::string& structName, const size_t structSize, const void* data);
 		bool TryWriteStructMember(const std::string& structName, const std::string& memberName, const size_t memberSize, const void* data);
@@ -547,6 +553,47 @@ namespace Rendering
 		RenderObjectId GetId() const;
 		std::string_view GetName() const;
 		size_t GetAllocatedByteSize() const;
+
+		void ReadData(const size_t offset, const size_t size, std::byte* writeDataPtr);
+
+		/// <summary>
+		/// Creates a heap allocated pointer which data in the buffer is copied 
+		/// to and then reinterpreted as the T type. 
+		/// NOTE: this shoudl rarely be used as it is SLOW
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="outDataPtr"></param>
+		/// <returns></returns>
+		template<typename T>
+		requires (std::is_trivially_copyable_v<T>)
+		T ReadDataAs()
+		{
+			T dataT = {};
+			ENGINE_ASSERT(sizeof(T) == GetAllocatedByteSize(),
+				"Attempted to read shader buffer data as type: {} which size:{} does not match allocated size:{}",
+				typeid(T).name(), sizeof(T), GetAllocatedByteSize());
+			ReadData(0, GetAllocatedByteSize(), reinterpret_cast<std::byte*>(&dataT));
+			return dataT;
+		}
+
+		template<typename T>
+		requires (std::is_trivially_copyable_v<T>)
+		bool TryReadField(const char* memberName, T* outValue)
+		{
+			auto it = m_members.find(memberName);
+			if (it == m_members.end())
+			{
+				LogError(std::format("Attempted to read shader buffer for member:'{}' "
+					"but it could not be found out of {} members. Members:{}", memberName, m_members.size(), ToString()));
+				return false;
+			}
+
+			if (outValue != nullptr)
+			{
+				ReadData(it->second.m_ByteOffset, sizeof(T), reinterpret_cast<std::byte*>(outValue));
+			}
+			return true;
+		}
 
 		ShaderBuffer& operator=(const ShaderBuffer&) = delete;
 		ShaderBuffer& operator=(ShaderBuffer&&) noexcept;

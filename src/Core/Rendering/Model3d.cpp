@@ -7,7 +7,7 @@ namespace Rendering
 		Triangle* triangleArray, const size_t triangleSize, const Vertex* vertexArray)
 	{
 		const std::vector<BVHFlatNode>& nodes = tree.Construct(triangleArray, triangleSize, false, 
-			Rendering::BLAS_TREE_LEAF_COUNT, BVHSplitAlgorithm::Median,
+			Rendering::BLAS_TREE_LEAF_COUNT, BVHSplitAlgorithm::Midpoint,
 			[&vertexArray](const Triangle& triangle) -> AABB3D
 			{
 				return CalculateTriangleAABB(triangle, vertexArray);

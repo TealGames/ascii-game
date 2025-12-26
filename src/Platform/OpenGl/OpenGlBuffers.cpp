@@ -176,12 +176,8 @@ namespace Rendering
 				//TODO: for SYNCRHONIZATION BIT you must be sure no other read/write is occuring to this location (ENSURE THREAD SAFTETY)
 				GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT));
 
-			if (dataPtr == nullptr)
-			{
-				LogError(std::format("[OPENGL]: Attempted to write to vertex buffer with id:{} "
-					"but the dataptr retrieved to copy is null", id));
-				return;
-			}
+			ENGINE_ASSERT(dataPtr != nullptr, "OPENGL: Attempted to write to vertex buffer with id:{} "
+				"but the dataptr retrieved to copy is null", id);
 
 			memcpy(dataPtr, vertexArray, totalByteSize);
 			GL_CALL(glUnmapNamedBuffer(id));
@@ -240,12 +236,9 @@ namespace Rendering
 				//Note: WRITE BIT-> write operation, INVALIDATE_RAMGE -> deleting old memory, UNSYNCRHOZIED-> do not stall gpu while completing operation
 				//TODO: for SYNCRHONIZATION BIT you must be sure no other read/write is occuring to this location (ENSURE THREAD SAFTETY)
 				GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_UNSYNCHRONIZED_BIT));
-			if (dataPtr == nullptr)
-			{
-				LogError(std::format("Attempted to write to index buffer with id:{} "
-					"but the dataptr retrieved to copy is null", id));
-				return;
-			}
+
+			ENGINE_ASSERT(dataPtr != nullptr, "OEPNGL: Attempted to write to index buffer with id:{} "
+				"but the dataptr retrieved to copy is null", id);
 			memcpy(dataPtr, vertexArray, totalByteSize);
 			GL_CALL(glUnmapNamedBuffer(id));
 			return;
@@ -279,13 +272,17 @@ namespace Rendering
 		}
 		static void WriteUniformBuffer(const RenderObjectId id, const size_t byteOffset, const size_t writeByteSize, const void* data)
 		{
-			if (glIsBuffer(id) == GL_FALSE)
-			{
-				LogError(std::format("Attempted to write uniform buffer but id:{} is not a valid buffer", id));
-				return;
-			}
+			ENGINE_ASSERT(data != nullptr, "OEPNGL: Attempted to WRITE uniform buffer but data pointer is NULL for buffer: {}", id);
+			ENGINE_ASSERT(glIsBuffer(id) == GL_TRUE, "OEPNGL: Attempted to WRITE uniform buffer but id:{} is not a valid buffer", id);
 			GL_CALL(glNamedBufferSubData(id, byteOffset, writeByteSize, data));
 		}
+		static void ReadUniformBuffer(const RenderObjectId id, const size_t byteOffset, const size_t readByteSize, void* writeData)
+		{
+			ENGINE_ASSERT(writeData != nullptr, "OPENGL: Attempted to READ uniform buffer but write data pointer is NULL for buffer: {}", id);
+			ENGINE_ASSERT(glIsBuffer(id) == GL_TRUE, "OPENGL: Attempted to READ uniform buffer but id:{} is not a valid buffer", id);
+			GL_CALL(glGetNamedBufferSubData(id, byteOffset, readByteSize, writeData));
+		}
+
 		static void DeallocateUniformBuffer(const RenderObjectId id)
 		{
 			GL_CALL(glDeleteBuffers(1, &id));
@@ -298,6 +295,7 @@ namespace Rendering
 					AllocateUniformBuffer,
 					BindUniformBuffer,
 					WriteUniformBuffer,
+					ReadUniformBuffer,
 					DeallocateUniformBuffer
 				});
 		}
@@ -315,12 +313,15 @@ namespace Rendering
 		}
 		static void WriteShaderStorageBuffer(const RenderObjectId id, const size_t byteOffset, const size_t writeByteSize, const void* data)
 		{
-			if (glIsBuffer(id) == GL_FALSE)
-			{
-				LogError(std::format("Attempted to write uniform buffer but id:{} is not a valid buffer", id));
-				return;
-			}
+			ENGINE_ASSERT(data != nullptr, "OPENGL: Attempted to WRITE uniform buffer but data pointer is NULL for buffer: {}", id);
+			ENGINE_ASSERT(glIsBuffer(id) == GL_TRUE, "OPENGL: Attempted to WRITE shader storage buffer but id:{} is not a valid buffer", id);
 			GL_CALL(glNamedBufferSubData(id, byteOffset, writeByteSize, data));
+		}
+		static void ReadShaderStorageBuffer(const RenderObjectId id, const size_t byteOffset, const size_t readByteSize, void* writeData)
+		{
+			ENGINE_ASSERT(writeData != nullptr, "OPENGL: Attempted to READ uniform buffer but write data pointer is NULL for buffer: {}", id);
+			ENGINE_ASSERT(glIsBuffer(id) == GL_TRUE, "OPENGL: Attempted to READ shader storage buffer but id:{} is not a valid buffer", id);
+			GL_CALL(glGetNamedBufferSubData(id, byteOffset, readByteSize, writeData));
 		}
 		static void DeallocateShaderStorageBuffer(const RenderObjectId id)
 		{
@@ -334,6 +335,7 @@ namespace Rendering
 					AllocateShaderStorageBuffer,
 					BindShaderStorageBuffer,
 					WriteShaderStorageBuffer,
+					ReadShaderStorageBuffer,
 					DeallocateShaderStorageBuffer
 				});
 		}
@@ -386,12 +388,8 @@ namespace Rendering
 			const size_t elementSize, const VertexLayoutBindIndex bindIndex, const VertexAttributeAdvance advanceType)
 		{
 			const RenderObjectId vertexArrayObjId = std::bit_cast<RenderObjectId>(implState);
-			if (vertexArrayObjId == INVALID_OBJ_ID || bufferId==INVALID_OBJ_ID)
-			{
-				LogError(std::format("OPENGL: Attempted to bind buffer:{} to vertex layout:{} "
-					"but the buffer and/or vertex array object has invalid id", bufferId, vertexArrayObjId));
-				return;
-			}
+			ENGINE_ASSERT(vertexArrayObjId != INVALID_OBJ_ID && bufferId != INVALID_OBJ_ID, "OPENGL: Attempted to bind buffer:{} to vertex layout:{} "
+				"but the buffer and/or vertex array object has invalid id", bufferId, vertexArrayObjId);
 			//LogError(std::format("buffer id:{} ({}) id:{}({}) element size:{} bindIndex:{}", bufferId, 
 			// glIsBuffer(bufferId), vertexArrayObjId, glIsBuffer(vertexArrayObjId), elementSize, bindIndex));
 			GL_CALL(glVertexArrayVertexBuffer(vertexArrayObjId, bindIndex, bufferId, 0, elementSize));

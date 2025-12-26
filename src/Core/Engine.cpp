@@ -152,7 +152,8 @@ namespace Core
 	//instead of doing map and unmap every time which can be slow
 	//TODO: replace all instances of comparing types with typeid with constexpr is same type trait
 	//TODO: add optimizations for debug builds so that on DEBUG macro, things like string functions, debug operations, etc are not included in build
-	//TODO: add SIMD for vector, matrices, quaternions
+	//TODO: add SIMD for vector, matrices, quaternions AND optimize them to run as fast as possible, esepcially by making sure
+	//expensive operations like matrix multiplication runs as fast as possible by utilizing doing operations on data close together
 	//TODO: optimize headers more to reduce rebuild times (put all stable related things into one header, like maybe put all vector types into one header
 	//since they are often used together and should rarely change, maybe move all to stirng function into separate header)
 	//TODO: add parallelization/concurency especially for expensive operations like physics, rendering
@@ -374,25 +375,27 @@ namespace Core
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Color_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Color_BLUE);
 		//m_renderer.AddCallDirectionalLight(Vec3(0, -1, 0), COLOR_GREEN);
-		//m_renderer.AddCallPointLight(Vec3(0.2, 0, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
-		//m_renderer.AddCallPointLight(Vec3(0, 0.2, 0.4), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_BLUE);
+		m_renderer.AddCallPointLight(Vec3(0.2, 0, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
+		m_renderer.AddCallPointLight(Vec3(0, 0.2, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_BLUE);
 
 		const Mat4 modelMatrix3 = Utils::CalculateModelMatrix(nullptr, Vec3(0, -0.3, 0.4), Vec3::One(), Quat::Identity());
 		Rendering::Material* defaultMaterial = m_engineState.m_GraphicsContext.m_GraphicsManager->GetDefaultMaterialMutable();
-		m_renderer.AddCallSphere3D(defaultMaterial, objectCenter, 0.2, rot);
+		m_renderer.AddCallSphere3D(defaultMaterial, objectCenter, 0.2, Quat::Identity());
 		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
 
 		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
 		model->GetModelMutable().m_Meshes[0].m_Material.SetSurface(1, 1, nullptr);
-		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3(0.001, 0.001, -0.001), Quat::Identity());
-		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0.4), Vec3::One(), Quat::Identity());
-		//m_renderer.AddCallModel(model->GetModelMutable(), modelMatrix2);
+		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity());
+		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3::One(), Quat::Identity());
+		m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, -0.1), Quat::Identity()));
 		//m_renderer.AddCallSphere3D(&model->GetModelMutable().m_Meshes[0].m_Material, 0.2, modelMatrix4);
 
-		Rendering::Texture& checkerboard = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/checkerboard_2.png")->GetTextureMutable();
-		Rendering::Material planeMaterial = Rendering::Material("Plane", &checkerboard, COLOR_WHITE);
+		Rendering::Texture& checkerboard = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/checkerboard.jpg")->GetTextureMutable();
+		//checkerboard.SetMinFilter(Rendering::MinFilter::NearestMipmapLinear);
+		//checkerboard.SetWrapBehavior({Rendering::WrapBehavior::ClampEdge,Rendering::WrapBehavior::ClampEdge, Rendering::WrapBehavior::ClampEdge });
+		Rendering::Material planeMaterial = Rendering::Material("Plane", &checkerboard, COLOR_WHITE, 1, Color(0.5, 0, 0, 0.5));
 		const Mat4 planeMatrix = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3::One(), Quat::Identity());
-		//m_renderer.AddCallPlane3D(&planeMaterial, Vec2(1, 1), planeMatrix);
+		m_renderer.AddCallPlane3D(&planeMaterial, Vec2(10, 10), planeMatrix, Vec2(2,2));
 	}
 
 	void Engine::SetUpdateStatusCode(const UpdateStatusCode& code)

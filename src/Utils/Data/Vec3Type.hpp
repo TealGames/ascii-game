@@ -6,9 +6,9 @@
 #include "Utils/ToStringFunctions.hpp"
 #include "Utils/Debug.hpp"
 
-template<typename T>
-requires std::is_arithmetic_v<T>
-class Vec<T, 3>
+template<typename T, size_t ALIGN_BYTES>
+requires (std::is_arithmetic_v<T>)
+class alignas(ALIGN_BYTES) Vec<T, 3, ALIGN_BYTES>
 {
 public:
 	union
@@ -256,6 +256,15 @@ public:
 	bool operator<=(const Vec& other) const
 	{
 		return m_X <= other.m_X && m_Y <= other.m_Y && m_Z <= other.m_Z;
+	}
+
+	bool AnyAxisGreaterThan(const Vec& other) const
+	{
+		return m_X > other.m_X || m_Y > other.m_Y || m_Z > other.m_Z;
+	}
+	bool AnyAxisLessThan(const Vec& other) const
+	{
+		return m_X < other.m_X || m_Y < other.m_Y || m_Z < other.m_Z;
 	}
 
 	Vec& operator=(const Vec& other)

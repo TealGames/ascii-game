@@ -1,7 +1,8 @@
 #version 430 core
 
-in vec3 vWorldDir;
 uniform sampler2D uSkybox;
+
+in vec3 vViewSpaceDir;
 layout(location=0) out vec4 fragColor;
 
 const vec2 invArctan = vec2(0.1591, 0.3183);
@@ -16,7 +17,8 @@ vec2 SampleSphericalMap(vec3 v)
 
 void main()
 {
-    vec2 uv = SampleSphericalMap(normalize(vWorldDir));
+    vec2 uv = SampleSphericalMap(normalize(vViewSpaceDir));
     vec3 color = texture(uSkybox, uv).rgb;
+    //vec3 color = SampleEquirectangular(vViewSpaceDir);
     fragColor = vec4(color, 1.0);
 }

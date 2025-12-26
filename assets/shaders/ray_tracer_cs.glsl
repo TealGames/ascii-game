@@ -2,10 +2,12 @@
 
 //Smooth shading will interpolate normals from vertices when tracing
 #define DO_SMOOTH_SHADING 1
-#define USE_BVH 1
+#define USE_BVH 0
 //Will use the modified normal for environment lighting
 #define USE_BENT_NORMAL_FOR_LIGHTING 1
-#define DO_AMBIENT_OCCLUSION 1
+
+//TODO: ambient occlusion is broken and causes black over all vertices
+#define DO_AMBIENT_OCCLUSION 0
 
 struct BVHNode
 {
@@ -70,10 +72,9 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 uniform ivec2 uScreenSize;
 uniform uint uMaxBounces;
-uniform uint uAmbientOcclusionSamples;
+uniform uint uAOSamples;
 uniform uint uUnmovingFrameCount;
-uniform uint uEmissiveMaterialCount;
-uniform uint uInstanceCount;
+uniform uint uEmissiveCount;
 uniform float uBloomThreshold;
 
 uniform bool uHasSkybox;
@@ -124,6 +125,7 @@ uniform writeonly image2D uBrightnessTexture;
 
 const float EPSILON = 1e-8;
 const float PI = 3.14159265359;
+const uint MAX_STACK_SIZE = 128;
 
 /* Fresnel Reflectance: computes how much light is reflected or
    refracted based on the viewing angle
@@ -339,38 +341,8 @@ bool DoesIntersectTriangleInterpolated(vec3 rayWorldOrigin, vec3 rayWorldDir, ve
 }
 
 bool DoesIntersectBounds(vec3 bounds[2], vec3 rayOrigin, vec3 inverseRayDir, ivec3 rayDirSign, 
-                         out float outTMin, out float outTMax)
+                         out float outTEnter, out float outTExit)
 {
-/*
-	//NOTE: we use inverse dir since multiply is faster than divide
-	vec3 tMin = (bounds.boundsMin - rayOrigin) * inverseRayDir;
-	vec3 tMax = (bounds.boundsMax - rayOrigin) * inverseRayDir;
-
-    float temp = 0;
-	if (inverseRayDir.x < 0)
-    {
-        temp = tMin.x;
-        tMin.x = tMax.x;
-        tMax.x = temp;
-    }
-	if (inverseRayDir.y < 0)
-    {
-        temp = tMin.y;
-        tMin.y = tMax.y;
-        tMax.y = temp;
-    }
-	if (inverseRayDir.z < 0)
-    {
-        temp = tMin.z;
-        tMin.z = tMax.z;
-        tMax.z = temp;
-    }
-
-	float tEnter = max(tMin.x, max(tMin.y, tMin.z));
-	float tExit = min(tMax.x, min(tMax.y, tMax.z));
-
-	return tEnter <= tExit && tExit >= 0;
-*/
     float tMin  = (bounds[rayDirSign.x].x - rayOrigin.x) * inverseRayDir.x;
     float tMax  = (bounds[1 - rayDirSign.x].x - rayOrigin.x) * inverseRayDir.x;
 
@@ -396,8 +368,8 @@ bool DoesIntersectBounds(vec3 bounds[2], vec3 rayOrigin, vec3 inverseRayDir, ive
     if (tMinZ > tMin) tMin = tMinZ;
     if (tMaxZ < tMax) tMax = tMaxZ;
 
-    outTMin = tMin;
-    outTMax = tMax;
+    outTEnter = tMin;
+    outTExit = tMax;
     return true;
 }
 
@@ -435,6 +407,105 @@ bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance
                         out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2, 
                         out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
 {
+    vec3 inverseLocalRayDir = 1.0 / max(abs(rayDirLocal), vec3(1e-8)) * sign(rayDirLocal);
+    ivec3 localRayDirSign = ivec3(lessThan(inverseLocalRayDir, vec3(0.0)));
+	int stack[MAX_STACK_SIZE];
+    int stackPtr = 0;
+
+    int startNodeIndex = int(meshes[instance.meshIndex].blasTreeOffset);
+	stack[stackPtr++] = startNodeIndex;
+
+	BVHNode node;
+	float tEnter = 0, tExit = 0;
+    float tEnterChild0 = 0, tExitChild0 = 0, tEnterChild1 = 0, tExitChild1 = 0;
+	bool hit = false;
+	while (stackPtr > 0)
+	{
+        //TODO: this should eventually be removed and is for debug only because it should never happen
+        if (stackPtr >= MAX_STACK_SIZE) break;
+
+		node = blasTrees[stack[--stackPtr]];
+
+        if (!DoesIntersectBounds(node.bounds, rayOriginLocal, inverseLocalRayDir, localRayDirSign, tEnter, tExit))
+			continue;
+
+		if (tEnter > minHitDistance)
+			continue;
+
+		if (IsLeaf(node))
+		{
+			for (int i = 0; i < node.objectCount; i++)
+			{
+                //NOTE: since the object indices are in terms of TRIANGLES, we must multiply by
+                //3 to get the corresponding index
+				uint indexV0 = indices[(node.objectStartIndex + i) * 3];
+                uint indexV1 = indices[(node.objectStartIndex + i) * 3 + 1];
+                uint indexV2 = indices[(node.objectStartIndex + i) * 3 + 2];
+
+                float hitDistance;
+                vec3 triangleNormal;
+
+#if DO_SMOOTH_SHADING
+                if (DoesIntersectTriangleInterpolated(
+                    rayOriginLocal, rayDirLocal,
+                    vertices[indexV0].localPos, vertices[indexV1].localPos, vertices[indexV2].localPos,
+                    vertices[indexV0].normal, vertices[indexV1].normal, vertices[indexV2].normal,
+                    hitDistance, triangleNormal))
+#else
+                if (DoesIntersectTriangle(rayOriginLocal, rayDirLocal, vertices[indexV0].localPos, 
+                    vertices[indexV1].localPos, vertices[indexV2].localPos, hitDistance, triangleNormal))
+#endif
+                {
+                    if (dot(rayDirLocal, triangleNormal) > 0.0)
+                        continue;
+
+                    if (hitDistance > EPSILON && hitDistance < minHitDistance)
+                    {
+                        hitIndexV0 = indexV0;
+                        hitIndexV1 = indexV1;
+                        hitIndexV2 = indexV2;
+
+                        hitVertexWorld0 = vec3(instance.modelMatrix * vec4(vertices[indexV0].localPos, 1.0));
+                        hitVertexWorld1 = vec3(instance.modelMatrix * vec4(vertices[indexV1].localPos, 1.0));
+                        hitVertexWorld2 = vec3(instance.modelMatrix * vec4(vertices[indexV2].localPos, 1.0));
+
+                        minHitDistance = hitDistance;
+                        hitWorldNormal = instance.normalModelMatrix * normalize(triangleNormal);
+                        hitMaterial = materials[instance.materialIndex];
+                        hit = true;
+                    }
+                }
+            }
+		}
+		else
+		{
+			bool minHitChild0 = DoesIntersectBounds(blasTrees[startNodeIndex + node.indexChild0].bounds, rayOriginLocal, inverseLocalRayDir, 
+                                                    localRayDirSign, tEnterChild0, tExitChild0) && tEnterChild0 <= minHitDistance;
+            bool minHitChild1 = DoesIntersectBounds(blasTrees[startNodeIndex + node.indexChild1].bounds, rayOriginLocal, inverseLocalRayDir, 
+                                                    localRayDirSign, tEnterChild1, tExitChild1) && tEnterChild1 <= minHitDistance;
+
+			if (minHitChild0 && minHitChild1)
+			{
+				if (tEnterChild0 < tEnterChild1)
+				{
+					stack[stackPtr++] = startNodeIndex + node.indexChild1;
+					stack[stackPtr++] = startNodeIndex + node.indexChild0;
+				}
+				else
+				{
+					stack[stackPtr++] = startNodeIndex + node.indexChild0;
+					stack[stackPtr++] = startNodeIndex + node.indexChild1;
+				}
+			}
+			else if (minHitChild0)
+				stack[stackPtr++] = startNodeIndex + node.indexChild0;
+			else if (minHitChild1)
+				stack[stackPtr++] = startNodeIndex + node.indexChild1;
+		}
+	}
+	return hit;
+
+    /*
     vec3 inverseLocalRayDir = 1 / rayDirLocal;
     ivec3 localRayDirSign = ivec3(lessThan(inverseLocalRayDir, vec3(0.0)));
 
@@ -498,12 +569,90 @@ bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance
         }
     }
     return hit;
+*/
 }
 
 bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitWorldNormal, 
                         out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2, 
                         out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
 {
+    vec3 inverseWorldRayDir =  1.0 / max(abs(rayDirWorld), vec3(1e-8)) * sign(rayDirWorld);
+    ivec3 worldRayDirSign = ivec3(lessThan(inverseWorldRayDir, vec3(0.0)));
+	int stack[MAX_STACK_SIZE];
+    int stackPtr = 0;
+
+	stack[stackPtr++] = 0;
+
+	BVHNode node;
+	float tEnter = 0, tExit = 0;
+    float tEnterChild0 = 0, tExitChild0 = 0, tEnterChild1 = 0, tExitChild1 = 0;
+    float hitDistance = 0, minHitDistance = 1e20;
+    vec3 rayOriginLocal, rayDirLocal;
+	bool hit = false;
+	while (stackPtr > 0)
+	{
+        //TODO: this should eventually be removed and is for debug only because it should never happen
+        if (stackPtr >= MAX_STACK_SIZE) break;
+		node = tlasTree[stack[--stackPtr]];
+
+        //if (DoesIntersectBounds(tlasTree[node.indexChild0].bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tMin, tMax))
+        if (!DoesIntersectBounds(node.bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tEnter, tExit))
+			continue;
+
+		if (tEnter > minHitDistance)
+			continue;
+
+		if (IsLeaf(node))
+		{
+            //NOTE: for the tlas tree, the objects are indices into the Instance buffer
+			for (int i = 0; i < node.objectCount; i++)
+			{
+				Instance instance = instances[node.objectStartIndex + i];
+
+                rayOriginLocal = (instance.inverseModelMatrix * vec4(rayOriginWorld, 1)).xyz;
+                rayDirLocal = normalize((instance.inverseModelMatrix * vec4(rayDirWorld, 0)).xyz);
+                float localMinHitDistance = 1e20;
+                hit= DoesIntersectLocalObjectBVH(rayOriginLocal, rayDirLocal, instance, localMinHitDistance, hitWorldNormal, hitMaterial, seed, 
+                                                    hitIndexV0, hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
+                //We convert the local hit distance back to world hit distance (which should
+                //technically be the same if rayDirLocal is normalized, which it is)
+                vec3 hitPosLocal = rayOriginLocal + rayDirLocal * localMinHitDistance;
+                vec3 hitPosWorld = vec3(instance.modelMatrix * vec4(hitPosLocal, 1.0));
+                minHitDistance = length(hitPosWorld - rayOriginWorld);
+                if (hit)
+                {
+                    hitPos = rayOriginWorld + rayDirWorld * minHitDistance;
+                }
+            }
+		}
+		else
+		{
+			bool minHitChild0 = DoesIntersectBounds(tlasTree[node.indexChild0].bounds, rayOriginWorld, inverseWorldRayDir, 
+                                                    worldRayDirSign, tEnterChild0, tExitChild0) && tEnterChild0 <= minHitDistance;
+            bool minHitChild1 = DoesIntersectBounds(tlasTree[node.indexChild1].bounds, rayOriginWorld, inverseWorldRayDir, 
+                                                    worldRayDirSign, tEnterChild1, tExitChild1) && tEnterChild1 <= minHitDistance;
+
+			if (minHitChild0 && minHitChild1)
+			{
+				if (tEnterChild0 < tEnterChild1)
+				{
+					stack[stackPtr++] = node.indexChild1;
+					stack[stackPtr++] = node.indexChild0;
+				}
+				else
+				{
+					stack[stackPtr++] = node.indexChild0;
+					stack[stackPtr++] = node.indexChild1;
+				}
+			}
+			else if (minHitChild0)
+				stack[stackPtr++] = node.indexChild0;
+			else if (minHitChild1)
+				stack[stackPtr++] = node.indexChild1;
+		}
+	}
+	return hit;
+/*
 	vec3 inverseWorldRayDir = 1 / rayDirWorld;
     ivec3 worldRayDirSign = ivec3(lessThan(inverseWorldRayDir, vec3(0.0)));
     float tMin, tMax;
@@ -541,6 +690,7 @@ bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 
         }
 	}
 	return hit;
+*/
 }
 
 bool DoesIntersectSceneWorldNaive(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitNormal, 
@@ -549,13 +699,11 @@ bool DoesIntersectSceneWorldNaive(vec3 rayOriginWorld, vec3 rayDirWorld, out vec
 {
     bool hit = false;
     float hitDistanceMin = 1e20;
-    for (uint instanceIndex = 0u; instanceIndex < uInstanceCount; instanceIndex++)
+    for (uint instanceIndex = 0u; instanceIndex < 4; instanceIndex++)
     {
         Instance instance = instances[instanceIndex];
         InstanceMesh mesh = meshes[instanceIndex];
-        float modelMatDeterminant = determinant(mat3(instance.modelMatrix));
 
-        // Loop through all triangles in this mesh
         for (uint indexIndex = 0u; indexIndex < mesh.numIndices; indexIndex += 3)
         {
             uint indexV0 = indices[mesh.indexOffset + indexIndex + 0];
@@ -581,14 +729,11 @@ bool DoesIntersectSceneWorldNaive(vec3 rayOriginWorld, vec3 rayDirWorld, out vec
                 normalize(mat3(instance.normalModelMatrix) * normal1),
                 normalize(mat3(instance.normalModelMatrix) * normal2),
                 hitDistance, triangleNormal))
-#elif
+#else
             if (DoesIntersectTriangle(rayOriginWorld, rayDirWorld, vertexWorld0, 
                                       vertexWorld1, vertexWorld2, hitDistance, triangleNormal))
 #endif
             {
-                //if (modelMatDeterminant < 0)
-                // triangleNormal = -triangleNormal;
-
                 if (dot(rayDirWorld, triangleNormal) > 0.0)
                     continue;
 
@@ -736,6 +881,10 @@ void main()
 		return;
 
     uint seed = uint(pixel.x * 1973u + pixel.y * 9277u) + uUnmovingFrameCount * 26699u;
+
+    //NOTE: these are only placeholders to keep blas/tlas uniforms when BVH use is FALSE
+    float num = tlasTree[0].bounds[0].x;
+    float num2 = blasTrees[0].bounds[0].x;
   
     //The following apply a small <1 jitter to the pixel coordinate in order to prevent aliasing (jagged edges)
     //If we always used the center of the pixel it would not appear smooth, so by doing this combined with accumulation
@@ -749,7 +898,6 @@ void main()
     float tanHalfFov = tan(uViewerBlock.yFov * 0.5);
     float scale = tan(uViewerBlock.yFov * 0.5);
 
-   
     vec3 rayDirWorld = normalize(uViewerBlock.forwardDir + uViewerBlock.rightDir * (jitteredNDC.x * aspectRatio * scale) 
                     + uViewerBlock.upDir * (jitteredNDC.y * scale));
     
@@ -791,28 +939,26 @@ void main()
             break;
         }
 
+        //If the hit material has emission, we add that color to the ray
         if (hitMaterial.emission.a > 0) 
         {
             radiance += throughput * hitMaterial.emission.rgb;
         }
+        //Next we get albedo by getting base color and if it has a texture(albedo index >=0)
+        //we then get the hit triangle uv coords at the hit point and combine texture color at that point 
+        //with the base color
         vec3 albedo = hitMaterial.baseColor.rgb;
         if (hitMaterial.albedoIndex >= 0) 
         {
-            // You’ll need the UVs from the hit triangle for texture lookup
-            // Interpolate UVs at hit point (requires you to compute barycentrics)
-            vec2 uv0 = vertices[hitIndexV0].uvPos;
-            vec2 uv1 = vertices[hitIndexV1].uvPos;
-            vec2 uv2 = vertices[hitIndexV2].uvPos;
+            vec2 uvEdge0 = vertices[hitIndexV0].uvPos;
+            vec2 uvEdge1 = vertices[hitIndexV1].uvPos;
+            vec2 uvEdge2 = vertices[hitIndexV2].uvPos;
 
-            // Computes barycentric weights of the hit triangle for uv coords in (u, v, w)
-            vec3 bary = CalculateBarycentricWeight(hitPos, hitWorldV0, hitWorldV1, hitWorldV2);
-            vec2 uv = bary.x * uv0 + bary.y * uv1 + bary.z * uv2;
+            //We compute barycentric weights of the hit triangle for uv coords in (u, v, w) so
+            //we get accurate texture coords at the hit point
+            vec3 baryWeights = CalculateBarycentricWeight(hitPos, hitWorldV0, hitWorldV1, hitWorldV2);
+            vec2 uv = baryWeights.x * uvEdge0 + baryWeights.y * uvEdge1 + baryWeights.z * uvEdge2;
             albedo = texture(uTextures[hitMaterial.albedoIndex], uv).rgb * hitMaterial.baseColor.rgb * hitMaterial.baseColor.a;
-            //vec3 unused = texture(uTextures[hitMaterial.albedoIndex], uv).rgb * hitMaterial.baseColor.rgb * hitMaterial.baseColor.a;
-            //albedo = texture(uTextures[hitMaterial.albedoIndex], uv).rgb;
-            //if (hitIndexV0 == 0) albedo = vec3(1, 0, 0);
-            //else albedo = vec3(0, 1, 0);
-            //albedo = vec3(hitIndexV0, hitIndexV1, hitIndexV2);
         }
         
         //-----------------------------------------------------------------------------------
@@ -822,26 +968,28 @@ void main()
         float ambientOcclusion = 1;
 
 #if DO_AMBIENT_OCCLUSION
-        ambientOcclusion = ComputeAmbientOcclusion(hitPos, hitNormalWorld, 1.0, uAmbientOcclusionSamples, seed);
+        ambientOcclusion = ComputeAmbientOcclusion(hitPos, hitNormalWorld, 1.0, uAOSamples, seed);
 #endif
-
-        vec3 envLight = vec3(0.0);
+        //Here we compute the surface normal for future lighting calculations
+        //as well as adding additional color from the environment to the ray
+        vec3 environmentLight = vec3(0.0);
         if (uHasSkybox)
         {
             vec3 lightingSurfaceNormal = hitNormalWorld;
 #if DO_AMBIENT_OCCLUSION && USE_BENT_NORMAL_FOR_LIGHTING
-            lightingSurfaceNormal = ComputeBentNormal(hitPos, hitNormalWorld, 1.0, uAmbientOcclusionSamples, seed);
+            lightingSurfaceNormal = ComputeBentNormal(hitPos, hitNormalWorld, 1.0, uAOSamples, seed);
 #endif
-            envLight = SampleEquirectangular(normalize(lightingSurfaceNormal), uSkybox);
+            environmentLight = SampleEquirectangular(normalize(lightingSurfaceNormal), uSkybox);
         }
-        vec3 diffuseEnv = albedo * envLight * ambientOcclusion;
-        radiance += throughput * diffuseEnv;
+        vec3 diffuseEnvironment = albedo * environmentLight * ambientOcclusion;
+        radiance += throughput * diffuseEnvironment;
+        break;
 
-        // ----- Stochastic light sampling -----
+        // --------------------------------- Stochastic light sampling ----------------------------------
         // Here we pick a random triangle on the light to see if hit object gets affected by this light
         // NOTE: because we assume every 3 is a triangle, we have to divide by 3 to find the triangle index
         // and we multiple by 3 to convert the triangle index to a vertex index
-        uint randomLightInstanceIndex = lightIndices[uint(GenerateRandomNum(seed) * float(uEmissiveMaterialCount))];
+        uint randomLightInstanceIndex = lightIndices[uint(GenerateRandomNum(seed) * float(uEmissiveCount))];
         Instance lightInstance= instances[randomLightInstanceIndex];
         InstanceMesh lightMeshInstance = meshes[randomLightInstanceIndex];
         uint randomTriangle = uint(GenerateRandomNum(seed) * float(lightMeshInstance.numIndices / 3));
@@ -876,7 +1024,7 @@ void main()
         if (NdotL > 0.0 && NlDot > 0.0)
         {
             // pdf for: uniform emissive instance * uniform triangle index * uniform point on triangle
-            float pdf_point = (1.0 / max(1.0, float(uEmissiveMaterialCount))) *
+            float pdf_point = (1.0 / max(1.0, float(uEmissiveCount))) *
                                 (1.0 / max(1.0, float(triCount))) *
                                 (1.0 / triArea);
 
@@ -913,10 +1061,11 @@ void main()
                 radiance += throughput * ambientLight * ambientOcclusion;
             }
         }
-
         float metallic = clamp(hitMaterial.metallic, 0.0, 1.0);
         float roughness = clamp(hitMaterial.roughness, 0.02, 1.0);
-        // ----- Directional light contribution -----
+
+        // ------------------------------- Directional light contribution -----------------------------------
+        // Here we consider the imnpact of the directional light on this ray hit
         {
             vec3 L = normalize(-uLightsBlock.directionalDir); // from surface toward directional light
             float NdotL = max(dot(hitNormalWorld, L), 0.0);
@@ -949,9 +1098,6 @@ void main()
         float specularProb = clamp(avgF0 + (1.0 - roughness) * 0.5, 0.0, 1.0); // metals & low roughness bias specular
         float diffuseProb = 1.0 - specularProb;
 
-        // random choice
-        float chooser = GenerateRandomNum(seed);
-
         vec3 nextDir;
         float pdf = 1.0;
         vec3 brdfValue = vec3(0.0);
@@ -959,7 +1105,8 @@ void main()
         vec3 V = normalize(-rayDirWorld); // view direction pointing toward viewer
         vec3 N = hitNormalWorld;
 
-        //This branche calculates specular/reflections
+        //If the random choice meets the probabilty for specular, we then apply it
+        float chooser = GenerateRandomNum(seed);
         if (chooser < specularProb) 
         {
             // sample microfacet specular lobe via GGX half-vector sampling
@@ -1042,5 +1189,5 @@ void main()
     imageStore(uTextureInput, pixel, fragColor);
 
     float luminance = dot(fragColor, vec4(0.2126, 0.7152, 0.0722, 1.0));
-    imageStore(uBrightnessTexture, pixel, luminance >= uBloomThreshold ? fragColor : vec4(0.0, 0.0, 0.0, 1.0));
+    imageStore(uBrightnessTexture, pixel, luminance >= uBloomThreshold ? fragColor : vec4(0.0));
 }

@@ -52,7 +52,7 @@ public:
 	ProjectionType m_ProjectionType;
 
 	//Default is 60 degrees
-	constexpr static inline float DEFAULT_FIELD_OF_VIEW_Y_RAD = 3.14159 / 2;
+	constexpr static inline float DEFAULT_FIELD_OF_VIEW_Y_RAD = 3.14159 / 3;
 	/// <summary>
 	/// The field of view Y angle (from top to bottom) -> how much the player 
 	/// sees vertically. It is easier to use y fov because it can remain the same 
@@ -65,7 +65,7 @@ public:
 private:
 public:
 	CameraSettings();
-	CameraSettings(const Vec2Int& aspectRatio, const float& lensSize, const EntityData* followTarget=nullptr, 
+	CameraSettings(const Vec2Int& aspectRatio, const float lensSize, const EntityData* followTarget=nullptr, 
 		const ProjectionType projection= DEFAULT_PROJECTION, const float nearDistance= DEFAULT_NEAR_DISTANCE, 
 		const float farDistance= DEFAULT_FAR_DISTANCE, const float fieldOfViewYRadians= DEFAULT_FIELD_OF_VIEW_Y_RAD);
 

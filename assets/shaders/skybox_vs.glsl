@@ -11,7 +11,7 @@ layout(std140) uniform ViewerBlock
     float yFov;
 } uViewerBlock;
 
-out vec3 vWorldDir;
+out vec3 vViewSpaceDir;
 
 const vec3 positions[36] = vec3[](
     vec3(-1.0,  1.0, -1.0), vec3(-1.0, -1.0, -1.0), vec3( 1.0, -1.0, -1.0),
@@ -30,7 +30,9 @@ const vec3 positions[36] = vec3[](
 
 void main()
 {
+    mat3 viewRot = mat3(uViewerBlock.viewMatrix);
     vec3 position = positions[gl_VertexID];
-    vWorldDir = position;
+    vViewSpaceDir = position;
+
     gl_Position = uViewerBlock.projectionMatrix * uViewerBlock.viewMatrix * vec4(position, 1.0);
 }

@@ -5,9 +5,9 @@
 #include "Utils/TemplateConcepts.hpp"
 #include "Utils/Math.hpp"
 
-template<typename T, size_t N>
+template<typename T, size_t N, size_t ALIGN_BYTES = 0>
 requires (std::is_arithmetic_v<T> && N>0)
-struct Vec
+struct alignas(ALIGN_BYTES) Vec
 {
 	T m_Components[N];
 
