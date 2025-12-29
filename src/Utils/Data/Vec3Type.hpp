@@ -33,6 +33,26 @@ public:
 
 	static inline constexpr Vec One() { return Vec{ 1, 1, 1 }; }
 	static inline constexpr Vec Zero() { return Vec{ 0, 0, 0 }; }
+	/// <summary>
+	/// Returns a vector where each component is the MIN
+	/// possible value for the specified T type
+	/// </summary>
+	/// <returns></returns>
+	static inline constexpr Vec Min()
+	{
+		T tMin = std::numeric_limits<T>::min();
+		return { tMin, tMin, tMin };
+	}
+	/// <summary>
+	/// Returns a vector where each component is the MAX
+	/// possible value for the specified T type
+	/// </summary>
+	/// <returns></returns>
+	static inline constexpr Vec Max()
+	{
+		T tMax = std::numeric_limits<T>::max();
+		return { tMax, tMax, tMax };
+	}
 
 	constexpr Vec GetX() const { return Vec(m_X, 0, 0); }
 	constexpr Vec GetY() const { return Vec(0, m_Y, 0); }
@@ -95,7 +115,16 @@ public:
 		m_Z /= magnitude;
 	}
 
-	bool IsUnitVector() const { return Utils::ApproximateEqualsF(GetMagnitude(), 1); }
+	bool IsUnitVector() const
+	{
+		return Utils::ApproximateEqualsF(GetMagnitude(), 1);
+	}
+	bool IsUniform() const
+	{
+		if constexpr (std::is_floating_point_v<T>)
+			return Utils::ApproximateEqualsF(m_X, m_Y) && Utils::ApproximateEqualsF(m_Y, m_Z);
+		return m_X == m_Y && m_Y == m_Z;
+	}
 
 	float GetMaxComponentValue() const
 	{

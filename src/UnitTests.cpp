@@ -3,7 +3,7 @@
 
 #ifdef ENGINE_DEBUG
 
-bool TestBVHIntersection(Rendering::Renderer& renderer)
+bool TestBVHIntersectionSphere(Rendering::Renderer& renderer)
 {
 	//NOTE: because c++ is so shit we must create test func so it does not get 
 	//confused with lambda
@@ -23,7 +23,8 @@ bool TestBVHIntersection(Rendering::Renderer& renderer)
 		{false, Vec3(0, 0, -0.1), Vec3(0, 0, -1).GetNormalized()}
 	};
 
-	return UnitTest::TestFunction("IntersectsBVH", testFunc, tests);
+	std::vector<size_t> failedTestIndices = {};
+	return UnitTest::TestFunction("IntersectsBVH", testFunc, tests, &failedTestIndices);
 }
 
 #endif

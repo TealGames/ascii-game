@@ -3,37 +3,80 @@
 
 namespace Utils
 {
-	bool RayIntersectsBoundsInverseDir(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& inverseRayDir, float* outTEnter, float* outTExit)
+	bool RayIntersectsBounds(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& rayDir, float* outTEnter, float* outTExit)
 	{
-		//NOTE: we use inverse dir since multiply is faster than divide
-		Vec3 tMin = (bounds.m_MinPos - rayOrigin) * inverseRayDir;
-		Vec3 tMax = (bounds.m_MaxPos - rayOrigin) * inverseRayDir;
+		ENGINE_ASSERT(rayDir.IsUnitVector(), "Attempted to invoke RayIntersectsBounds but ray dir is not unit vector:{}", rayDir.ToString());
+		Vec3 tMin, tMax;
+		// X axis
+		if (fabs(rayDir.m_X) < EPSILON)
+		{
+			// Ray is parallel and outside the slab
+			if (rayOrigin.m_X < bounds.m_MinPos.m_X || rayOrigin.m_X > bounds.m_MaxPos.m_X)
+				return false; 
+			tMin.m_X = -std::numeric_limits<float>::infinity();
+			tMax.m_X = std::numeric_limits<float>::infinity();
+		}
+		else 
+		{
+			float inv = 1.0f / rayDir.m_X;
+			tMin.m_X = (bounds.m_MinPos.m_X - rayOrigin.m_X) * inv;
+			tMax.m_X = (bounds.m_MaxPos.m_X - rayOrigin.m_X) * inv;
+			if (tMin.m_X > tMax.m_X) std::swap(tMin.m_X, tMax.m_X);
+		}
 
-		if (inverseRayDir.m_X < 0) std::swap(tMin.m_X, tMax.m_X);
-		if (inverseRayDir.m_Y < 0) std::swap(tMin.m_Y, tMax.m_Y);
-		if (inverseRayDir.m_Z < 0) std::swap(tMin.m_Z, tMax.m_Z);
+		// Y axis
+		if (fabs(rayDir.m_Y) < EPSILON)
+		{
+			if (rayOrigin.m_Y < bounds.m_MinPos.m_Y || rayOrigin.m_Y > bounds.m_MaxPos.m_Y)
+				return false;
+			tMin.m_Y = -std::numeric_limits<float>::infinity();
+			tMax.m_Y = std::numeric_limits<float>::infinity();
+		}
+		else 
+		{
+			float inv = 1.0f / rayDir.m_Y;
+			tMin.m_Y = (bounds.m_MinPos.m_Y - rayOrigin.m_Y) * inv;
+			tMax.m_Y = (bounds.m_MaxPos.m_Y - rayOrigin.m_Y) * inv;
+			if (tMin.m_Y > tMax.m_Y) std::swap(tMin.m_Y, tMax.m_Y);
+		}
+
+		// Z axis
+		if (fabs(rayDir.m_Z) < EPSILON)
+		{
+			if (rayOrigin.m_Z < bounds.m_MinPos.m_Z || rayOrigin.m_Z > bounds.m_MaxPos.m_Z)
+				return false;
+			tMin.m_Z = -std::numeric_limits<float>::infinity();
+			tMax.m_Z = std::numeric_limits<float>::infinity();
+		}
+		else 
+		{
+			float inv = 1.0f / rayDir.m_Z;
+			tMin.m_Z = (bounds.m_MinPos.m_Z - rayOrigin.m_Z) * inv;
+			tMax.m_Z = (bounds.m_MaxPos.m_Z - rayOrigin.m_Z) * inv;
+			if (tMin.m_Z > tMax.m_Z) std::swap(tMin.m_Z, tMax.m_Z);
+		}
 
 		float tEnter = tMin.GetMaxComponentValue();
-		if (outTEnter != nullptr) *outTEnter = tEnter;
-
 		float tExit = tMax.GetMinComponentValue();
-		if (outTExit != nullptr) *outTExit = tExit;
+
+		if (outTEnter) *outTEnter = tEnter;
+		if (outTExit)  *outTExit = tExit;
 
 		return tExit >= std::max(tEnter, 0.0f);
 	}
-	bool RayIntersectsBoundsInverseDir(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& inverseRayDir, float* outMargin)
+	bool RayIntersectsBounds(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& rayDir, float* outMargin)
 	{
 		float tEnter = 0;
 		float tExit = 0;
-		bool intersects = RayIntersectsBoundsInverseDir(bounds, rayOrigin, inverseRayDir, &tEnter, &tExit);
+		bool intersects = RayIntersectsBounds(bounds, rayOrigin, rayDir, &tEnter, &tExit);
 		if (outMargin != nullptr)
 			*outMargin = tExit - tEnter;
 
 		return intersects;
 	}
-	bool RayIntersectsTriangle(const Vec3& v0, const Vec3& v1, const Vec3& v2, const Vec3& rayOrigin, Vec3 rayDir, float* outHitDistance)
+	bool RayIntersectsTriangle(const Vec3& v0, const Vec3& v1, const Vec3& v2, const Vec3& rayOrigin, const Vec3& rayDir, float* outTEnter)
 	{
-		rayDir = rayDir.GetNormalized();
+		ENGINE_ASSERT(rayDir.IsUnitVector(), "Attempted to invoke RayIntersectsTriangle but ray dir is not unit vector:{}", rayDir.ToString());
 
 		const Vec3 e1 = v1 - v0;
 		const Vec3 e2 = v2 - v0;
@@ -57,12 +100,14 @@ namespace Utils
 		if (t < 0)
 			return false;
 
-		if (outHitDistance != nullptr)
-			*outHitDistance = t;
+		if (outTEnter != nullptr)
+			*outTEnter = t;
 		return true;
 	}
-	bool RayIntersectsSphere(const Vec3& sphereCenter, const float radius, const Vec3& rayOrigin, const Vec3& rayDir, float* outHitDistance)
+	bool RayIntersectsSphere(const Vec3& sphereCenter, const float radius, const Vec3& rayOrigin, const Vec3& rayDir, float* outTEnter)
 	{
+		ENGINE_ASSERT(rayDir.IsUnitVector(), "Attempted to invoke RayIntersectsSphere but ray dir is not unit vector:{}", rayDir.ToString());
+
 		//NOTE: the ray dir does not have to be normalized because it is just 
 		//used in the equation of a 3d line <x,y,z> = Vo + Vt where V is the non-unit vector direction
 		const Vec3 l = rayOrigin - sphereCenter;
@@ -75,15 +120,35 @@ namespace Utils
 		const float t0 = -tca - thc;
 		if (t0 > 0)
 		{
-			if (outHitDistance != nullptr) *outHitDistance = t0;
+			if (outTEnter != nullptr) *outTEnter = t0;
 			return true;
 		}
 		const float t1 = -tca + thc;
 		if (t1 > 0)
 		{
-			if (outHitDistance != nullptr) *outHitDistance = t1;
+			if (outTEnter != nullptr) *outTEnter = t1;
 			return true;
 		}
+		return false;
+	}
+
+	bool IsWithinBounds(const AABB3D& aabb, const Vec3& pos)
+	{
+		if (pos.AnyAxisGreaterThan(aabb.m_MaxPos))
+			return false;
+		if (pos.AnyAxisLessThan(aabb.m_MinPos))
+			return false;
+
+		return true;
+	}
+
+	bool IsFullyOutsideBounds(const AABB3D& aabb, const Vec3& pos)
+	{
+		if (pos > aabb.m_MinPos && pos > aabb.m_MaxPos)
+			return true;
+		if (pos < aabb.m_MinPos && pos < aabb.m_MaxPos)
+			return true;
+
 		return false;
 	}
 
@@ -149,16 +214,19 @@ namespace Utils
 
 	Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Vec3& pos, const Vec3& scale, const Quat& rotation)
 	{
+		ENGINE_ASSERT(scale.IsUniform(), "Non uniform scale in model matrices is not allowed due to raytracer ray distortion");
 		return CalculateModelMatrix(parentMatrix, CalculateTranslationMatrix(pos), 
 			CalculateScaleMatrix(scale), CalculateRotationMatrix(rotation));
 	}
 	Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Vec3& pos, const Vec3& scale, const Mat4& rotation)
 	{
+		ENGINE_ASSERT(scale.IsUniform(), "Non uniform scale in model matrices is not allowed due to raytracer ray distortion");
 		return CalculateModelMatrix(parentMatrix, CalculateTranslationMatrix(pos),
 			CalculateScaleMatrix(scale), rotation);
 	}
 	Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Mat4& posMatrix, const Mat4& scaleMatrix, const Mat4& rotationMatrix)
 	{
+		ENGINE_ASSERT(ExtractScaleFromMatrix(scaleMatrix).IsUniform(), "Non uniform scale in model matrices is not allowed due to raytracer ray distortion");
 		if (parentMatrix == nullptr)
 			return posMatrix * scaleMatrix * rotationMatrix;
 		else

@@ -27,7 +27,7 @@ namespace UnitTest
 
 	template<typename TReturn, typename... TArgs>
 	bool TestFunction(const char* functionName, const std::function<TReturn(TArgs...)>& testFunc, 
-		const std::vector<FunctionTest<TReturn, TArgs...>>& tests)
+		const std::vector<FunctionTest<TReturn, TArgs...>>& tests, std::vector<size_t>* outFailedTestIndices = nullptr)
 	{
 		int totalPassed = 0;
 		std::cout << std::format("{}[{}UNIT TEST @{}{}]{} Running {} test(s) for '{}'...", ANSI_COLOR_WHITE, ANSI_COLOR_GRAY, FormatCurrentTime(), 
@@ -39,6 +39,7 @@ namespace UnitTest
 				TReturn testResult = std::apply(testFunc, tests[i].m_Input);
 				if (tests[i].m_ExpectedOutput != testResult)
 				{
+					if (outFailedTestIndices != nullptr) outFailedTestIndices->push_back(i);
 					LogFailedTest(i + 1, tests.size(), tests[i], testResult);
 				}
 				else
@@ -49,6 +50,7 @@ namespace UnitTest
 			}
 			catch (const std::exception& unexpectedException)
 			{
+				if (outFailedTestIndices != nullptr) outFailedTestIndices->push_back(i);
 				LogFailedTest(i + 1, tests.size(), tests[i], unexpectedException);
 			}
 		}

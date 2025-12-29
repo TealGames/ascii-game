@@ -5,7 +5,7 @@
 namespace Utils
 {
 	
-	bool RayIntersectsBoundsInverseDir(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& inverseRayDir, float* outTEnter, float* outTExit);
+	bool RayIntersectsBounds(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& rayDir, float* outTEnter, float* outTExit);
 	/// <summary>
 	/// Computes if the ray intersects the 3d bounds and returns the margin, how close the ray was to hitting the bounds
 	/// AND SHOULD NOT BE USED AS SPATIAL DISTANCE (since it correlates to ray position from edge but IS NOT distance)
@@ -19,9 +19,12 @@ namespace Utils
 	/// <param name="inverseRayDir"></param>
 	/// <param name="outMargin"></param>
 	/// <returns></returns>
-	bool RayIntersectsBoundsInverseDir(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& inverseRayDir, float* outMargin);
-	bool RayIntersectsTriangle(const Vec3& v0, const Vec3& v1, const Vec3& v2, const Vec3& rayOrigin, Vec3 rayDir, float* outHitDistance = nullptr);
-	bool RayIntersectsSphere(const Vec3& sphereCenter, const float radius, const Vec3& rayOrigin, const Vec3& rayDir, float* outHitDistance = nullptr);
+	bool RayIntersectsBounds(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& rayDir, float* outTMargin);
+	bool RayIntersectsTriangle(const Vec3& v0, const Vec3& v1, const Vec3& v2, const Vec3& rayOrigin, const Vec3& rayDir, float* outTEnter = nullptr);
+	bool RayIntersectsSphere(const Vec3& sphereCenter, const float radius, const Vec3& rayOrigin, const Vec3& rayDir, float* outTEnter = nullptr);
+
+	bool IsWithinBounds(const AABB3D& bounds, const Vec3& pos);
+	bool IsFullyOutsideBounds(const AABB3D& bounds, const Vec3& pos);
 
 	float CalculateSurfaceArea(const Vec3& minPos, const Vec3& maxPos);
 	float CalculateSurfaceArea(const AABB3D& bounds);

@@ -393,7 +393,8 @@ namespace Rendering
         void InitCoreShaders();
         
         void SetSkybox(Texture* texture);
-        bool IntersectsBVH(const WorldPosition3D& rayWorldOrigin, const Vec3& rayDir, const Vertex* outHitVertex);
+        bool IntersectsBVH(const WorldPosition3D& rayWorldOrigin, Vec3 rayDir, const Vertex* outHitVertex);
+        bool IsValidBVH();
         void AddBVHTreeBoundsWireframe();
 
         void AddCallBox3D(Material* material, const Mat4& modelMatrix);

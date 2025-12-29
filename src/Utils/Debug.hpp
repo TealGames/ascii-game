@@ -105,6 +105,13 @@ void LogMessage(const LogType& logType, const CallerLogDetails callerDetails, co
 void Log(const std::string& message, const bool logTime = DEFAULT_LOG_TIME, 
 	const char* overrideAnsiColor = nullptr, const bool setEventFlag = DEFAULT_MESSAGE_EVENT_FLAG, const std::source_location& loc = std::source_location::current());
 
+template<typename ...Args>
+void LogSimple(const char* message, Args&&... args)
+{
+	std::string formattedMessage = std::vformat(message, std::make_format_args(args...));
+	LogMessage(LogType::Log, CallerLogDetails::None, formattedMessage, false, DEFAULT_LOG_TIME, nullptr, DEFAULT_MESSAGE_EVENT_FLAG);
+}
+
 /// <summary>
 /// Logs a message as a WARNING type
 /// </summary>

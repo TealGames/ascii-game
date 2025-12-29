@@ -157,6 +157,7 @@ namespace Core
 	//TODO: optimize headers more to reduce rebuild times (put all stable related things into one header, like maybe put all vector types into one header
 	//since they are often used together and should rarely change, maybe move all to stirng function into separate header)
 	//TODO: add parallelization/concurency especially for expensive operations like physics, rendering
+	//TODO: add support for negative scale with BVH by converting negative scale to rotation during the calculate model matrix part
 	//TODO: REwrite render system:
 	// 1) Make vertex layout (we call vertex layout, opengl calls it VertexArrayObject) have a separate Bind function
 	//	  so that we can bind different layouts before draw so we can use different vertex/index/instance buffer pairs for different draw calls
@@ -375,19 +376,20 @@ namespace Core
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Color_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Color_BLUE);
 		//m_renderer.AddCallDirectionalLight(Vec3(0, -1, 0), COLOR_GREEN);
-		m_renderer.AddCallPointLight(Vec3(0.2, 0, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
-		m_renderer.AddCallPointLight(Vec3(0, 0.2, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_BLUE);
+		//m_renderer.AddCallPointLight(Vec3(0.2, 0, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
+		//m_renderer.AddCallPointLight(Vec3(0, 0.2, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_BLUE);
 
 		const Mat4 modelMatrix3 = Utils::CalculateModelMatrix(nullptr, Vec3(0, -0.3, 0.4), Vec3::One(), Quat::Identity());
 		Rendering::Material* defaultMaterial = m_engineState.m_GraphicsContext.m_GraphicsManager->GetDefaultMaterialMutable();
-		m_renderer.AddCallSphere3D(defaultMaterial, objectCenter, 0.2, Quat::Identity());
+		//m_renderer.AddCallSphere3D(defaultMaterial, objectCenter, 3, Quat::Identity());
 		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
 
 		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
 		model->GetModelMutable().m_Meshes[0].m_Material.SetSurface(1, 1, nullptr);
 		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity());
 		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, -0.1), Quat::Identity()));
+		m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity()));
+		//LogError(std::format("Tight bounds are model: {}", model->GetModelMutable().m_Meshes[0].CalculateTightBounds().ToString()));
 		//m_renderer.AddCallSphere3D(&model->GetModelMutable().m_Meshes[0].m_Material, 0.2, modelMatrix4);
 
 		Rendering::Texture& checkerboard = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/checkerboard.jpg")->GetTextureMutable();

@@ -6,13 +6,13 @@ namespace Rendering
 	const std::vector<BVHFlatNode>& ConstructBVHFromTriangles(StaticBVHTree<Triangle>& tree,
 		Triangle* triangleArray, const size_t triangleSize, const Vertex* vertexArray)
 	{
-		const std::vector<BVHFlatNode>& nodes = tree.Construct(triangleArray, triangleSize, false, 
+		const std::vector<BVHFlatNode>& nodes = tree.Construct(triangleArray, triangleSize, true, 
 			Rendering::BLAS_TREE_LEAF_COUNT, BVHSplitAlgorithm::Midpoint,
-			[&vertexArray](const Triangle& triangle) -> AABB3D
+			[vertexArray](const Triangle& triangle) -> AABB3D
 			{
 				return CalculateTriangleAABB(triangle, vertexArray);
 			},
-			[&vertexArray](const Triangle& triangle) -> WorldPosition3D
+			[vertexArray](const Triangle& triangle) -> WorldPosition3D
 			{
 				return CalculateTriangleCenter(triangle, vertexArray);
 			}, nullptr); /*
@@ -24,7 +24,8 @@ namespace Rendering
 				outStartIndex = intendedStartIndex * 3;
 				outObjectCount = triangleSize * 3;
 			});*/
-		LogWarning("BLAS TREE: " + tree.ToString(BVHToStringType::NodeBounds));
+		//LogWarning("BLAS TREE: " + tree.ToString(BVHToStringType::NodeBounds));
+		ENGINE_ASSERT(tree.IsValid(nullptr, true), "After constructing BLAS BVH from triangles tree was invalid");
 		return nodes;
 	}
 
@@ -45,6 +46,17 @@ namespace Rendering
 	const std::vector<BVHFlatNode>& ModelMesh::ConstructBLASTree(const size_t leafCount)
 	{
 		return ConstructBVHFromIndices(m_BLASTree, &m_Indices[0], m_Indices.size(), &m_Vertices[0]);
+	}
+	AABB3D ModelMesh::CalculateTightBounds() const
+	{
+		WorldPosition3D minVertex = Vec3::Max();
+		WorldPosition3D maxVertex = Vec3::Min();
+		for (const auto& vertex : m_Vertices)
+		{
+			minVertex = Min(minVertex, vertex.m_LocalPos);
+			maxVertex = Max(maxVertex, vertex.m_LocalPos);
+		}
+		return AABB3D(maxVertex - minVertex);
 	}
 
 	std::string ModelMesh::ToString() const

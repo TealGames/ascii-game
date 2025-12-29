@@ -4,6 +4,5 @@
 #ifdef ENGINE_DEBUG
 
 namespace Rendering { class Renderer; }
-bool TestBVHIntersection(Rendering::Renderer& renderer);
-
+bool TestBVHIntersectionSphere(Rendering::Renderer& renderer);
 #endif

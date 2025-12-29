@@ -637,11 +637,7 @@ namespace Rendering
     }
     void Renderer::FinishBatch(RenderBatch& batch, const BVHTriangleTree* blasTree)
     {
-        if (batch.m_InstanceCount != 1)
-        {
-            LogError(std::format("Attempted to finish a batch which has more than one instances (meaning it is already finished in setup)"));
-            return;
-        }
+        ENGINE_ASSERT(batch.m_InstanceCount == 1, "Attempted to finish a batch which has more than one instances (meaning it is already finished in setup)");
         //TODO: technically it is bad to create tree + instance mesh for every time we finish batch
         //because we may have cases where some batch equality/hash paramter is different (though mesh is the same)
         //so we create new batch with identical mesh even if some things like alpha differ -> in that case we 
@@ -650,12 +646,28 @@ namespace Rendering
         BVHTriangleTree constructedTree = {};
         //NOTE: if we do not provide a tree, we just construct one from the batch indices
         //and since we do not actually need tree, jsut the nodes to copy, it does not matter if it gets destroyed at the end of the scope
-        if (blasTree == nullptr) ConstructBLASTree(constructedTree, batch.m_IndicesStartIndex, batch.m_IndicesCount);
+        if (blasTree == nullptr)
+        {
+            ConstructBLASTree(constructedTree, batch.m_IndicesStartIndex, batch.m_IndicesCount);
+        }
         const BVHTriangleTree& batchBLASTree = (blasTree == nullptr) ? constructedTree : *blasTree;
 
+        const size_t blasNodeIndexOffset = m_blasTrees.size();
+        m_blasTrees.reserve(m_blasTrees.size() + batchBLASTree.Size());
         for (const auto& node : batchBLASTree.GetNodes())
         {
             m_blasTrees.push_back(node);
+            //NOTE: since the blas tree nodes used LOCAL INDICES
+            //into a given index array segment, and it thus needs to be adapted into the global index array by
+            //getting an offset of BATCH START INDEX / 3 (because blas object node indices are TRIANGLE INDICES not any indices)
+            if (m_blasTrees.back().IsLeaf()) m_blasTrees.back().m_ObjectStartIndex += batch.m_IndicesStartIndex / 3;
+            //NOTE: since the indices are local in terms of the root node of the tree, we add the root nodes
+            //distance from the start of the tree to all nodes to adjust it
+            else
+            {
+                m_blasTrees.back().m_IndexChild0 += blasNodeIndexOffset;
+                m_blasTrees.back().m_IndexChild1 += blasNodeIndexOffset;
+            }
         }
 
         //NOTE: the only reason why we can use the last mesh's entry for this offset into blas trees
@@ -702,7 +714,7 @@ namespace Rendering
             return;
 
         m_tlasTree.Construct(&m_instanceBoundsData[0], m_instanceBoundsData.size(), true, 1, 
-            BVHSplitAlgorithm::Median, &InstanceBoundsData::GetAABB, &InstanceBoundsData::GetCenter, 
+            BVHSplitAlgorithm::Midpoint, &InstanceBoundsData::GetAABB, &InstanceBoundsData::GetCenter, 
             [](const InstanceBoundsData* boundsPtr, const std::uint32_t* objectIndicesArr, const size_t boundsSize, int intendedStartIndex,
                 int& outStartIndex, std::uint32_t& outObjectCount) -> void
             {
@@ -720,6 +732,8 @@ namespace Rendering
         LogWarning(std::format("ALL INSTANCES:{}", ToStringInstances()));
         LogWarning(std::format("TLAS TREE {}\n", m_tlasTree.ToString(BVHToStringType::NodeBounds)));
         LogWarning(std::format("FULL TREE {}\n", ToStringBVH()));
+
+        ENGINE_ASSERT(IsValidBVH(), "After finishing TLAS tree construction full BVH is INVALID");
         //LogError("SHIT");
     }
     int Renderer::GetEnqueuedTextureIndex(Texture* texture)
@@ -1230,22 +1244,18 @@ namespace Rendering
                 node.IsLeaf()? BVH_BOUNDS_LEAF_COLOR : BVH_BOUNDS_COLOR, BVH_BOUNDS_LINE_THICKNESS);
         }
     }
-    bool Renderer::IntersectsBVH(const WorldPosition3D& rayWorldOrigin, const Vec3& rayDir, const Vertex* outHitVertex)
+    bool Renderer::IntersectsBVH(const WorldPosition3D& rayWorldOrigin, Vec3 rayWorldDir, const Vertex* outHitVertex)
     {
-        /*
-        LogWarning(std::format("Invoking Intersect BVH sphere @{} for ray: {} -> {} Intersect(math): {}", 
-            Vec3(0, 0, 0.3).ToString(), rayWorldOrigin.ToString(), rayDir.ToString(), 
-            Utils::RayIntersectsSphere(Vec3(0, 0, 0.3), 0.2, rayWorldOrigin, rayDir, nullptr)));
-            */
+        rayWorldDir = rayWorldDir.GetNormalized();
 
         Triangle* trianglePtr = reinterpret_cast<Triangle*>(&m_indices[0]);
-        return m_tlasTree.Intersects<InstanceType>(rayWorldOrigin, rayDir, &m_instances[0], nullptr, nullptr,
+        return m_tlasTree.Intersects<InstanceType>(rayWorldOrigin, rayWorldDir, &m_instances[0], nullptr, nullptr,
             [this, trianglePtr](const BVHFlatNode& node, const InstanceType& instance, 
-                const WorldPosition3D& rayOrigin, const Vec3& rayDir, float* outTopHitDistance) -> bool
+                const WorldPosition3D& rayWorldOrigin, const Vec3& rayWorldDir, float* outTopHitDistance) -> bool
             {
                 const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
-                const WorldPosition3D rayLocalOrigin = (instance.m_InverseModelMatrix * Vec4(rayOrigin, 1)).GetXYZ();
-                const WorldPosition3D rayLocalDir = (instance.m_InverseModelMatrix * Vec4(rayDir, 0)).GetXYZ().GetNormalized();
+                const WorldPosition3D rayLocalOrigin = (instance.m_InverseModelMatrix * Vec4(rayWorldOrigin, 1)).GetXYZ();
+                const WorldPosition3D rayLocalDir = (instance.m_InverseModelMatrix * Vec4(rayWorldDir, 0)).GetXYZ().GetNormalized();
                 /*
                 LogWarning(std::format("Inverse mat:{} rayO {}->{} rayDir {}->{}", instance.m_InverseModelMatrix.ToString(), 
                     rayOrigin.ToString(), rayLocalOrigin.ToString(), rayDir.ToString(), rayLocalDir.ToString()));
@@ -1254,10 +1264,9 @@ namespace Rendering
                     Utils::ApplyMatrixToAABB(node.GetAABB(), instance.m_InverseModelMatrix).ToString(), 
                     Utils::RayIntersectsSphere(Vec3(), 0.2, rayLocalOrigin, rayLocalDir, nullptr)));
                     */
-
                 return ::IntersectsBVH<Triangle>(rayLocalOrigin, rayLocalDir, &m_blasTrees[treeInterval.m_StartIndex],
                     treeInterval.m_Size, trianglePtr, nullptr, nullptr, nullptr,
-                    [this, outTopHitDistance](const BVHFlatNode& node, const Triangle& triangle, const WorldPosition3D& rayLocalOrigin,
+                    [this, outTopHitDistance, &instance, rayWorldOrigin](const BVHFlatNode& node, const Triangle& triangle, const WorldPosition3D& rayLocalOrigin,
                         const Vec3& rayLocalDir, float* outBottomHitDistance) -> bool
                     {
                         /*
@@ -1266,13 +1275,45 @@ namespace Rendering
                             m_vertices[triangle.m_VertexIndex1].m_LocalPos.ToString(), m_vertices[triangle.m_VertexIndex2].m_LocalPos.ToString()));
                         */
 
+                        float outTEnter = 0;
                         const bool intersectsTriangle = Utils::RayIntersectsTriangle(m_vertices[triangle.m_VertexIndex0].m_LocalPos,
                             m_vertices[triangle.m_VertexIndex1].m_LocalPos, m_vertices[triangle.m_VertexIndex2].m_LocalPos,
-                            rayLocalOrigin, rayLocalDir, outBottomHitDistance);
-                        *outTopHitDistance = *outBottomHitDistance;
+                            rayLocalOrigin, rayLocalDir, &outTEnter);
+                        *outBottomHitDistance = (rayLocalDir * outTEnter).GetMagnitude();
+                        const Vec3 worldHitPos = (instance.m_ModelMatrix * Vec4(rayLocalOrigin + rayLocalDir * outTEnter, 1)).GetXYZ();
+                        *outTopHitDistance = (worldHitPos - rayWorldOrigin).GetMagnitude();
                         return intersectsTriangle;
                     });
             });
+    }
+    bool Renderer::IsValidBVH()
+    {
+        //NOTE: this should ONLY be called after TLAS tree has been constructed and some blas nodes are added
+        Triangle* trianglePtr = reinterpret_cast<Triangle*>(&m_indices[0]);
+        return m_tlasTree.IsValid<InstanceType>(&m_instances[0],
+            //Override getBounds of BLAS leaf node primitives (InstanceType)
+            [this](const InstanceType& instance) -> AABB3D
+            {
+                //NOTE: since we have change the object indices in the TLAS to be indices into instances,
+                //and since each leaf in the TLAS has only 1 INSTANCE, we can just get the roots BLAS tree aabb
+                //which should be the same as the object aabb
+                const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
+                return Utils::ApplyMatrixToAABB(m_blasTrees[treeInterval.m_StartIndex].GetAABB(), instance.m_ModelMatrix);
+            },
+            //TLAS leaf successor is valid function
+            [this, trianglePtr](const BVHFlatNode& leafNode) -> bool
+            {
+                //NOTE: the object indices of TLAS tree are indices into instances
+                const InstanceType& instance = m_instances[leafNode.m_ObjectStartIndex];
+                const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
+                return ::IsValidBVH<Triangle>(&m_blasTrees[treeInterval.m_StartIndex], m_indices.size() / 3, trianglePtr, nullptr,
+                    [this](const Triangle& triangle) -> AABB3D
+                    {
+                        //NOTE: this ONLY WORKS IF WE APPLIED OBEJCT LEAF NODE INDEX OFFSET TO BLAS TREES
+                        //SO THEY INDEX INTO GLOBAL INDEX ARRAY AND NOT JUST LOCAL MESH ARRAY
+                        return CalculateTriangleAABB(triangle, &m_vertices[0]);
+                    }, nullptr, true);
+            }, true);
     }
 
     void Renderer::RenderStartActions() const
@@ -1830,12 +1871,27 @@ namespace Rendering
         {
             ConstructTLASTree();
             m_materialStorageBuffer.WriteData(0, m_materialData.size() * sizeof(MaterialData), &m_materialData[0]);
-
-            TestBVHIntersection(*this);
         }
+        //TestBVHIntersectionSphere(*this);
+
+        std::function<bool(Vec3, Vec3)> testFunc =
+            [this](Vec3 rayWorldOrigin, Vec3 rayDir) -> bool
+            {
+                return IntersectsBVH(rayWorldOrigin, rayDir, nullptr);
+            };
+            
+        /*
+        const auto& transform = m_engineState->m_CameraController->GetActiveCamera().GetTransform();
+        LogSimple("Intersects {} -> {}: {}", transform.GetWorldPos().ToString(), transform.CalculateWorldForward().ToString(),
+            IntersectsBVH(transform.GetWorldPos(), transform.CalculateWorldForward(), nullptr));
+        */
         //LogWarning(std::format("Frame number: {}", m_framesSinceStart));
 
-        if (DO_RAYTRACING) ExecuteRayTracing();
+        if (DO_RAYTRACING)
+        {
+            ExecuteRayTracing();
+            //LogError(std::format("FULL TREE: {} \nTLAS NODES:{}", ToStringBVH(), Utils::ToStringIterable(m_tlasTree.GetNodes())));
+        }
         else ExecuteForwardRendering();
 
         //TODO: you should be able to do pp without hdr too
@@ -1902,45 +1958,97 @@ namespace Rendering
     }
     std::string Renderer::ToStringBVH() const
     {
-        return "TO STRING BVH: \n" + m_tlasTree.ToString(BVHToStringType::NodeBounds,
-            [this](const BVHFlatNode& node) -> std::string
+        return "TO STRING BVH: \n" + m_tlasTree.ToString(BVHToStringType::NodeBounds, nullptr,
+            //TLAS leaf node to string function 
+            [this](const BVHFlatNode& tlasLeafNode) -> std::string
             {
-                const InstanceType& instance = m_instances[node.m_ObjectStartIndex];
+                const InstanceType& instance = m_instances[tlasLeafNode.m_ObjectStartIndex];
                 const InstanceMesh& mesh = m_instanceMeshes[instance.m_MeshIndex];
                 const ArrayInterval interval = mesh.m_BLASTreesInterval;
-                const Vec3 aabbSize = node.GetAABB().GetSize();
+                const Vec3 aabbSize = tlasLeafNode.GetAABB().GetSize();
                 if (Utils::ApproximateEqualsF(aabbSize.m_X, 0) || Utils::ApproximateEqualsF(aabbSize.m_Y, 0) || Utils::ApproximateEqualsF(aabbSize.m_Z, 0))
-                    LogError(std::format("Found INVALID TLAS tree node: {}", node.ToString()));
+                    LogWarning(std::format("[BVH]: Found INVALID 0-value TLAS tree node: {}", tlasLeafNode.ToString()));
 
                 //Here we add a red prefix if the split between the leaf node of the tlas tree and the transformed 
                 //world root node bounds of the blas tree is wrong (the tlas leaf node bounds > blas root node bounds)
                 std::string invalidBoundsPrefix = "";
-                const BVHFlatNode& rootNode = m_blasTrees[interval.m_StartIndex];
-                AABB3D rootNodeWorldBounds = Utils::ApplyMatrixToAABB(rootNode.GetAABB(), instance.m_ModelMatrix);
-                AABB3D parentBounds = node.GetAABB();
+                std::string invalidBoundsSuffix = "";
+                const BVHFlatNode& blasRootNode = m_blasTrees[interval.m_StartIndex];
+                AABB3D rootNodeWorldBounds = Utils::ApplyMatrixToAABB(blasRootNode.GetAABB(), instance.m_ModelMatrix);
+                AABB3D parentBounds = tlasLeafNode.GetAABB();
                 if (parentBounds.GetSize().AnyAxisLessThan(rootNodeWorldBounds.GetSize()) || 
                     parentBounds.m_MinPos.AnyAxisGreaterThan(rootNodeWorldBounds.m_MinPos) ||
                     parentBounds.m_MaxPos.AnyAxisLessThan(rootNodeWorldBounds.m_MaxPos))
                 {
                     invalidBoundsPrefix = ANSI_COLOR_RED;
+                    invalidBoundsSuffix = ANSI_COLOR_CLEAR;
                 }
 
                 //LogWarning(std::format("Interval is: {} mesh index: {} instance index:{}", interval.m_Size, m_instances[node.m_ObjectStartIndex].m_MeshIndex));
-                return invalidBoundsPrefix + ToStringBVHNodes<BVHFlatNode>(&rootNode,
-                    interval.m_Size, &rootNode, nullptr, BVHToStringType::NodeBounds, nullptr,
-                    [instance](const BVHFlatNode& node, const BVHFlatNode* parentNode) -> std::string
+                return invalidBoundsPrefix + ToStringBVHNodes<BVHFlatNode>(&blasRootNode,
+                    interval.m_Size, &blasRootNode, nullptr, BVHToStringType::NodeBounds,
+                    [instance, &tlasLeafNode](const BVHFlatNode& blasNode, const BVHFlatNode* parentNode) -> std::string
                     {
-                        const Vec3 aabbSize = node.GetAABB().GetSize();
+                        const Vec3 aabbSize = blasNode.GetAABB().GetSize();
                         if (Utils::ApproximateEqualsF(aabbSize.m_X, 0) || Utils::ApproximateEqualsF(aabbSize.m_Y, 0)
                             || Utils::ApproximateEqualsF(aabbSize.m_Z, 0))
                         {
-                            LogError(std::format("Found INVALID BLAS tree node: {}", node.ToString()));
+                            LogWarning(std::format("[BVH]: Found INVALID 0-value bounds for BLAS tree node: {}", blasNode.ToString()));
                         }
 
-                        return std::format("[BLASNode Bounds:{}]", 
-                            Utils::ApplyMatrixToAABB(node.GetAABB(), instance.m_ModelMatrix).ToString());
-                    }, true);
-            }, nullptr, true);
+                        return std::format("[BLASNode Bounds:{}]",
+                            Utils::ApplyMatrixToAABB(blasNode.GetAABB(), instance.m_ModelMatrix).ToString());
+                    },
+                    //BLAS Leaf node to string function -> get vertices
+                    [this, &instance, &mesh, &blasRootNode](const BVHFlatNode& blasLeafNode) -> std::string
+                    {
+                        //The object indices for blas leaves are TRIANGLE INDICES
+                        const size_t indexStartIndex = blasLeafNode.m_ObjectStartIndex * 3;
+                        const size_t indexCount = blasLeafNode.m_ObjectCount * 3;
+                        if (indexStartIndex < mesh.m_IndexOffset ||
+                            indexStartIndex + indexCount > mesh.m_IndexOffset + mesh.m_NumIndices)
+                        {
+                            LogWarning(std::format("[BVH]: Found BLAS tree leaf node (index:{}) in invalid mesh range. Leaf index start:{} count:{} "
+                                "Mesh index start:{} count:{} total indices:{}", size_t(&blasLeafNode - &blasRootNode),
+                                indexStartIndex, indexCount, mesh.m_IndexOffset, mesh.m_NumIndices, m_indices.size()));
+                        }
+
+                        std::string verticesStr = "";
+                        for (size_t i = 0; i < indexCount; i += 3)
+                        {
+                            const Vec3& v0 = m_vertices[m_indices[indexStartIndex + i]].m_LocalPos;
+                            const Vec3& v1 = m_vertices[m_indices[indexStartIndex + i + 1]].m_LocalPos;
+                            const Vec3& v2 = m_vertices[m_indices[indexStartIndex + i + 2]].m_LocalPos;
+                               
+                            std::string triangleStr = std::format("[Triangle V0:{} V1:{} V2:{}]",
+                                (instance.m_ModelMatrix * Vec4(v0, 1)).GetXYZ().ToString(),
+                                (instance.m_ModelMatrix * Vec4(v1, 1)).GetXYZ().ToString(),
+                                (instance.m_ModelMatrix * Vec4(v2, 1)).GetXYZ().ToString());
+
+                            if (!Utils::IsWithinBounds(blasLeafNode.GetAABB(), v0) || !Utils::IsWithinBounds(blasLeafNode.GetAABB(), v1) ||
+                                !Utils::IsWithinBounds(blasLeafNode.GetAABB(), v2))
+                            {
+                                //LogError(std::format("[BVH]"));
+                                verticesStr += ANSI_COLOR_RED + triangleStr + ANSI_COLOR_CLEAR;
+                            }
+                            if (Utils::IsFullyOutsideBounds(blasLeafNode.GetAABB(), v0) || Utils::IsFullyOutsideBounds(blasLeafNode.GetAABB(), v1) ||
+                                Utils::IsFullyOutsideBounds(blasLeafNode.GetAABB(), v2))
+                            {
+                                //LogError(std::format("[BVH]"));
+                                static int count = 0;
+                                count++;
+                                LogWarning(std::format("Found one completely outside boudns:{} TOTLA:{}/{}", 
+                                    size_t(&blasLeafNode - &blasRootNode), count, mesh.m_NumIndices / 3));
+                            }
+                            else
+                            {
+                                //LogWarning(std::format("FOUND GOOD at:{}", size_t(&blasLeafNode - &blasRootNode)));
+                                verticesStr += triangleStr;
+                            }
+                        }
+                        return verticesStr;
+                    }, true) + invalidBoundsSuffix;
+            }, true);
     }
     std::string Renderer::ToStringInstances() const
     {

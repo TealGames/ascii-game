@@ -16,6 +16,7 @@ namespace Rendering
 		StaticBVHTree<Triangle> m_BLASTree;
 
 		const std::vector<BVHFlatNode>& ConstructBLASTree(const size_t leafCount);
+		AABB3D CalculateTightBounds() const;
 
 		std::string ToString() const;
 	};

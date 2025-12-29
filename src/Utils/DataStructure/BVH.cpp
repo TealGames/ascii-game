@@ -5,13 +5,13 @@ bool BVHFlatNode::IsLeaf() const { return m_ObjectCount > 0 && m_ObjectStartInde
 bool BVHFlatNode::IsInvalid() const { return m_ObjectCount == 0 && m_ObjectStartIndex == -1 && m_IndexChild0 == -1 && m_IndexChild1 == -1; }
 bool BVHFlatNode::IsIntersectedByRay(const WorldPosition3D& rayOrigin, const WorldPosition3D& inverseDir, float* outMargin) const
 {
-	return Utils::RayIntersectsBoundsInverseDir(
+	return Utils::RayIntersectsBounds(
 		ConvertAlignment<AABB3D_Align16::GetAlignment(), AABB3D::GetAlignment()>(m_Bounds), rayOrigin, inverseDir, outMargin);
 }
 bool BVHFlatNode::IsIntersectedByRay(const WorldPosition3D& rayOrigin, const WorldPosition3D& inverseDir,
 	float* outTEnter, float* outTExit) const
 {
-	return Utils::RayIntersectsBoundsInverseDir(
+	return Utils::RayIntersectsBounds(
 		ConvertAlignment<AABB3D_Align16::GetAlignment(), AABB3D::GetAlignment()>(m_Bounds), rayOrigin, inverseDir, outTEnter, outTEnter);
 }
 

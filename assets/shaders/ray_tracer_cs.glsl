@@ -2,7 +2,7 @@
 
 //Smooth shading will interpolate normals from vertices when tracing
 #define DO_SMOOTH_SHADING 1
-#define USE_BVH 0
+#define USE_BVH 1
 //Will use the modified normal for environment lighting
 #define USE_BENT_NORMAL_FOR_LIGHTING 1
 
@@ -124,6 +124,10 @@ layout(rgba16f) uniform writeonly image2D uTextureOutput;
 uniform writeonly image2D uBrightnessTexture;
 
 const float EPSILON = 1e-8;
+const float EPSILON_DET = EPSILON;
+const float EPSILON_BARY = 1e-6;
+const float EPSILON_T = 1e-5;
+
 const float PI = 3.14159265359;
 const uint MAX_STACK_SIZE = 128;
 
@@ -271,41 +275,63 @@ vec3 EvaluateMicrofacetBRDF(vec3 N, vec3 V, vec3 L, vec3 albedo, float metallic,
     return diffuse + specular;
 }
 
-//Computes whether a ray at origin and dir hits a triangle defined by 3 vertices
-//where hitDistance is the scalar distance from ray origin along ray dir to the intersection point of the triangle
-//and triangle normal is the normal of the triangle
-bool DoesIntersectTriangle(vec3 rayWorldOrigin, vec3 rayWorldDir, vec3 v0, vec3 v1, vec3 v2, out float hitDistance, out vec3 triangleNormal)
+/* Moller–Trumbore ray–triangle intersection
+ * Computes whether a ray at origin and dir hits a triangle defined by 3 vertices
+ * where hitDistance is the scalar distance from ray origin along ray dir to the intersection point of the triangle
+ * and triangle normal is the normal of the triangle
+ */
+bool DoesIntersectTriangle(vec3 rayOrigin, vec3 rayDir, vec3 v0, vec3 v1, vec3 v2, out float tEnter, out vec3 triangleNormal, out int flag)
 {
-    vec3 e1 = v1 - v0;
-    vec3 e2 = v2 - v0;
-    //triangleNormal = normalize(cross(e1, e2));
-    triangleNormal = normalize(cross(e2, e1));
+    vec3 rayDirNormalized = normalize(rayDir);
 
-    vec3 pvec = cross(rayWorldDir, e2);
-    float det = dot(e1, pvec);
-    if (abs(det) < EPSILON) 
+    vec3 edge1 = v1 - v0;
+    vec3 edge2 = v2 - v0;
+    //triangleNormal = normalize(cross(e1, e2));
+    triangleNormal = normalize(cross(edge1, edge2));
+
+    vec3 rayCrossE2 = cross(rayDirNormalized, edge2);
+    float det = dot(edge1, rayCrossE2);
+    //The ray is parallel to the triangle
+    if (abs(det) < EPSILON_DET) 
+    {
+        flag = 1;
         return false;
+    }
 
     float invDet = 1.0 / det;
-    vec3 tvec = rayWorldOrigin - v0;
-    float u = dot(tvec, pvec) * invDet;
-    if (u < 0.0 || u > 1.0) 
+    vec3 s = rayOrigin - v0;
+    float u = dot(s, rayCrossE2) * invDet;
+    if (u < -EPSILON_BARY || u > 1.0 + EPSILON_BARY)
+    {
+        flag = 2;
         return false;
+    }
 
-    vec3 qvec = cross(tvec, e1);
-    float v = dot(rayWorldDir, qvec) * invDet;
-    if (v < 0.0 || u + v > 1.0) 
+    vec3 sCrossE1 = cross(s, edge1);
+    float v = dot(rayDirNormalized, sCrossE1) * invDet;
+    if (v < -EPSILON_BARY || u + v > 1.0 + EPSILON_BARY)
+    {
+        flag = 3;
         return false;
+    }
 
-    hitDistance = dot(e2, qvec) * invDet;
-    if (hitDistance < EPSILON) 
+    tEnter = dot(edge2, sCrossE1) * invDet;
+    if (tEnter < EPSILON_T) 
+    {
+        flag = 4;
         return false;
+    }
 
+    tEnter /= length(rayDir);
+    flag = 0;
     return true;
 }
 
+/* Same as DoesIntersectTriangle, but instead uses barycentric weights to interpolate the out triangle normal
+ * using the corresponding vertex normals
+ */
 bool DoesIntersectTriangleInterpolated(vec3 rayWorldOrigin, vec3 rayWorldDir, vec3 v0, vec3 v1, vec3 v2,
-    vec3 n0, vec3 n1, vec3 n2, out float hitDistance, out vec3 triangleNormal)
+    vec3 n0, vec3 n1, vec3 n2, out float tEnter, out vec3 triangleNormal)
 {
     vec3 e1 = v1 - v0;
     vec3 e2 = v2 - v0;
@@ -327,8 +353,8 @@ bool DoesIntersectTriangleInterpolated(vec3 rayWorldOrigin, vec3 rayWorldDir, ve
     if (v < 0.0 || u + v > 1.0) 
         return false;
 
-    hitDistance = dot(e2, qvec) * invDet;
-    if (hitDistance < EPSILON) 
+    tEnter = dot(e2, qvec) * invDet;
+    if (tEnter < EPSILON) 
         return false;
 
     // Compute barycentric coordinates
@@ -340,16 +366,21 @@ bool DoesIntersectTriangleInterpolated(vec3 rayWorldOrigin, vec3 rayWorldDir, ve
     return true;
 }
 
+/*
+ * Slab intersection test
+ */
 bool DoesIntersectBounds(vec3 bounds[2], vec3 rayOrigin, vec3 inverseRayDir, ivec3 rayDirSign, 
                          out float outTEnter, out float outTExit)
 {
     float tMin  = (bounds[rayDirSign.x].x - rayOrigin.x) * inverseRayDir.x;
     float tMax  = (bounds[1 - rayDirSign.x].x - rayOrigin.x) * inverseRayDir.x;
+    //If bounds behind the ray we early exit
+    if (tMax < 0.0) 
+        return false;
 
     float tMinY = (bounds[rayDirSign.y].y - rayOrigin.y) * inverseRayDir.y;
     float tMaxY = (bounds[1 - rayDirSign.y].y - rayOrigin.y) * inverseRayDir.y;
 
-    // Slab separation check
     if (tMin > tMaxY || tMinY > tMax)
         return false;
 
@@ -360,7 +391,6 @@ bool DoesIntersectBounds(vec3 bounds[2], vec3 rayOrigin, vec3 inverseRayDir, ive
     float tMinZ = (bounds[rayDirSign.z].z - rayOrigin.z) * inverseRayDir.z;
     float tMaxZ = (bounds[1 - rayDirSign.z].z - rayOrigin.z) * inverseRayDir.z;
 
-    // Slab separation check
     if (tMin > tMaxZ || tMinZ > tMax)
         return false;
 
@@ -373,6 +403,34 @@ bool DoesIntersectBounds(vec3 bounds[2], vec3 rayOrigin, vec3 inverseRayDir, ive
     return true;
 }
 
+bool IsWithinBounds(vec3 bounds[2], vec3 pos, out float pastMax)
+{
+    if (pos.x > bounds[1].x || pos.y > bounds[1].y || pos.z > bounds[1].z)
+    {
+        pastMax = max(max(max(0, pos.x - bounds[1].x), pos.y- bounds[1].y), pos.z- bounds[1].z);
+        return false;
+    }
+    if (pos.x < bounds[0].x || pos.y < bounds[0].y || pos.z < bounds[0].z)
+    {
+        pastMax = max(max(max(0, bounds[0].x - pos.x), bounds[0].y - pos.y), bounds[0].z - pos.z);
+        return false;
+    }
+    return true;
+}
+
+bool IsFullyOutsideBounds(vec3 bounds[2], vec3 pos)
+{
+    if (pos.x > bounds[1].x && pos.y > bounds[1].y && pos.z > bounds[1].z &&
+        pos.x > bounds[0].x && pos.y > bounds[0].y && pos.z > bounds[0].z)
+        return true;
+
+    if (pos.x < bounds[1].x && pos.y < bounds[1].y && pos.z < bounds[1].z &&
+        pos.x < bounds[0].x && pos.y < bounds[0].y && pos.z < bounds[0].z)
+        return true;
+
+    return false;
+}
+
 /*
    Calculates the weight of the targetPos based on the 3 positions
    in normalized position where (1, 0, 0) would be barycentric weight of
@@ -380,12 +438,19 @@ bool DoesIntersectBounds(vec3 bounds[2], vec3 rayOrigin, vec3 inverseRayDir, ive
 */
 vec3 CalculateBarycentricWeight(vec3 targetPos, vec3 v0, vec3 v1, vec3 v2)
 {
+    /* 
+     * Since 0.5 * cross product(v0, v1) is the area of a triangle (NOTE: 0.5
+     * is ignored here because we use ratios of small area over full area, it would cancel)
+     * we can use that to determine how big the area of the triangle formed between the targetPos
+     * and two adjacent vertices in relation to the FULL AREA to get ratios of how close
+     * a point is (closer to vertices -> smaller triangle area -> dividing smaller value -> greater fraction)
+     */
     vec3 e1 = v1 - v0;
     vec3 e2 = v2 - v0;
-    vec3 p = targetPos - v0;
     float area = length(cross(e1, e2));
     float a0 = length(cross(v1 - targetPos, v2 - targetPos)) / area;
     float a1 = length(cross(v2 - targetPos, v0 - targetPos)) / area;
+    //NOTE: we skip the last area because we know all 3 values must equal 1
     float a2 = 1.0 - a0 - a1;
     return vec3(a0, a1, a2);
 }
@@ -403,37 +468,43 @@ vec3 SampleEquirectangular(vec3 dir, sampler2D hdrMap)
     return texture(hdrMap, vec2(u, v)).rgb;
 }
 
-bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance instance, out float minHitDistance, out vec3 hitWorldNormal, 
+bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance instance, out vec3 hitPosWorld, out vec3 hitNormalWorld, 
                         out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2, 
-                        out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
+                        out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2, out float flag)
 {
     vec3 inverseLocalRayDir = 1.0 / max(abs(rayDirLocal), vec3(1e-8)) * sign(rayDirLocal);
     ivec3 localRayDirSign = ivec3(lessThan(inverseLocalRayDir, vec3(0.0)));
 	int stack[MAX_STACK_SIZE];
     int stackPtr = 0;
 
-    int startNodeIndex = int(meshes[instance.meshIndex].blasTreeOffset);
+    InstanceMesh mesh = meshes[instance.meshIndex];
+    int startNodeIndex = int(mesh.blasTreeOffset);
+    //NOTE: we only need the first node to be offset since all tree child indices
+    //should be adjusted to be in terms of the full node array
 	stack[stackPtr++] = startNodeIndex;
+
+    flag = 0;
+    int flagCount = 0;
 
 	BVHNode node;
 	float tEnter = 0, tExit = 0;
+    float leafTEnter = 0;
     float tEnterChild0 = 0, tExitChild0 = 0, tEnterChild1 = 0, tExitChild1 = 0;
 	bool hit = false;
+    float localMinTEnter = 1e20;
+    vec3 localHitNormal;
 	while (stackPtr > 0)
 	{
-        //TODO: this should eventually be removed and is for debug only because it should never happen
-        if (stackPtr >= MAX_STACK_SIZE) break;
-
 		node = blasTrees[stack[--stackPtr]];
-
         if (!DoesIntersectBounds(node.bounds, rayOriginLocal, inverseLocalRayDir, localRayDirSign, tEnter, tExit))
 			continue;
 
-		if (tEnter > minHitDistance)
-			continue;
+		if (tEnter > localMinTEnter)
+	        continue;
 
 		if (IsLeaf(node))
 		{
+            //flag = 0;
 			for (int i = 0; i < node.objectCount; i++)
 			{
                 //NOTE: since the object indices are in terms of TRIANGLES, we must multiply by
@@ -442,195 +513,88 @@ bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance
                 uint indexV1 = indices[(node.objectStartIndex + i) * 3 + 1];
                 uint indexV2 = indices[(node.objectStartIndex + i) * 3 + 2];
 
-                float hitDistance;
+                /*
+                float pastBounds = 0;
+                IsWithinBounds(node.bounds, vertices[indexV0].localPos, pastBounds);
+                flag = max(flag, pastBounds);
+                IsWithinBounds(node.bounds, vertices[indexV1].localPos, pastBounds);
+                flag = max(flag, pastBounds);
+                IsWithinBounds(node.bounds, vertices[indexV2].localPos, pastBounds);
+                flag = max(flag, pastBounds);
+                */
+
+                /*
+                if (!IsWithinBounds(node.bounds, vertices[indexV0].localPos) ||
+                    !IsWithinBounds(node.bounds, vertices[indexV1].localPos) ||
+                    !IsWithinBounds(node.bounds, vertices[indexV2].localPos))
+                {
+                    flag = 1;
+                    return false;
+                }
+                */
+
+                /*
+                if ((node.objectStartIndex + i) * 3 < mesh.indexOffset || (node.objectStartIndex + i) * 3 >= mesh.indexOffset + mesh.numIndices || 
+                    (node.objectStartIndex + i) * 3 + 2 < mesh.indexOffset || (node.objectStartIndex + i) * 3 + 2 >= mesh.indexOffset + mesh.numIndices)
+                {
+                    flag = 1;
+                    return false;
+                }
+                */
+                if (IsFullyOutsideBounds(node.bounds, vertices[indexV0].localPos) ||
+                    IsFullyOutsideBounds(node.bounds, vertices[indexV1].localPos) ||
+                    IsFullyOutsideBounds(node.bounds, vertices[indexV2].localPos))
+                {
+                    flag = 1;
+                    return false;
+                }
+
                 vec3 triangleNormal;
+                int currFlag = 0;
 
 #if DO_SMOOTH_SHADING
                 if (DoesIntersectTriangleInterpolated(
                     rayOriginLocal, rayDirLocal,
                     vertices[indexV0].localPos, vertices[indexV1].localPos, vertices[indexV2].localPos,
                     vertices[indexV0].normal, vertices[indexV1].normal, vertices[indexV2].normal,
-                    hitDistance, triangleNormal))
+                    leafTEnter, triangleNormal))
 #else
                 if (DoesIntersectTriangle(rayOriginLocal, rayDirLocal, vertices[indexV0].localPos, 
-                    vertices[indexV1].localPos, vertices[indexV2].localPos, hitDistance, triangleNormal))
+                    vertices[indexV1].localPos, vertices[indexV2].localPos, leafTEnter, triangleNormal, currFlag))
 #endif
                 {
+                    //If the dir and normal > 0 -> same dir and thus 
+                    //it means triangle is a backface and should be ignored
                     if (dot(rayDirLocal, triangleNormal) > 0.0)
                         continue;
 
-                    if (hitDistance > EPSILON && hitDistance < minHitDistance)
+                    if (leafTEnter > EPSILON && leafTEnter < localMinTEnter)
                     {
                         hitIndexV0 = indexV0;
                         hitIndexV1 = indexV1;
                         hitIndexV2 = indexV2;
 
-                        hitVertexWorld0 = vec3(instance.modelMatrix * vec4(vertices[indexV0].localPos, 1.0));
-                        hitVertexWorld1 = vec3(instance.modelMatrix * vec4(vertices[indexV1].localPos, 1.0));
-                        hitVertexWorld2 = vec3(instance.modelMatrix * vec4(vertices[indexV2].localPos, 1.0));
-
-                        minHitDistance = hitDistance;
-                        hitWorldNormal = instance.normalModelMatrix * normalize(triangleNormal);
+                        localMinTEnter = leafTEnter;
+                        localHitNormal = triangleNormal;
                         hitMaterial = materials[instance.materialIndex];
                         hit = true;
                     }
                 }
-            }
-		}
-		else
-		{
-			bool minHitChild0 = DoesIntersectBounds(blasTrees[startNodeIndex + node.indexChild0].bounds, rayOriginLocal, inverseLocalRayDir, 
-                                                    localRayDirSign, tEnterChild0, tExitChild0) && tEnterChild0 <= minHitDistance;
-            bool minHitChild1 = DoesIntersectBounds(blasTrees[startNodeIndex + node.indexChild1].bounds, rayOriginLocal, inverseLocalRayDir, 
-                                                    localRayDirSign, tEnterChild1, tExitChild1) && tEnterChild1 <= minHitDistance;
-
-			if (minHitChild0 && minHitChild1)
-			{
-				if (tEnterChild0 < tEnterChild1)
-				{
-					stack[stackPtr++] = startNodeIndex + node.indexChild1;
-					stack[stackPtr++] = startNodeIndex + node.indexChild0;
-				}
-				else
-				{
-					stack[stackPtr++] = startNodeIndex + node.indexChild0;
-					stack[stackPtr++] = startNodeIndex + node.indexChild1;
-				}
-			}
-			else if (minHitChild0)
-				stack[stackPtr++] = startNodeIndex + node.indexChild0;
-			else if (minHitChild1)
-				stack[stackPtr++] = startNodeIndex + node.indexChild1;
-		}
-	}
-	return hit;
-
-    /*
-    vec3 inverseLocalRayDir = 1 / rayDirLocal;
-    ivec3 localRayDirSign = ivec3(lessThan(inverseLocalRayDir, vec3(0.0)));
-
-    uint nodeIndex = meshes[instance.meshIndex].blasTreeOffset;
-    BVHNode node = blasTrees[nodeIndex];
-    float tMin, tMax;
-    //NOTE: technically, if everything done correct,
-    //the index into the blas tree should never be outside the bounds of the instance tree
-    while (!IsLeaf(node))
-	{
-		if (DoesIntersectBounds(blasTrees[node.indexChild0].bounds, rayOriginLocal, inverseLocalRayDir, localRayDirSign, tMin, tMax))
-			nodeIndex = node.indexChild0;
-		else if (DoesIntersectBounds(blasTrees[node.indexChild1].bounds, rayOriginLocal, inverseLocalRayDir, localRayDirSign, tMin, tMax))
-			nodeIndex = node.indexChild1;
-		else return false;
-
-        node = blasTrees[nodeIndex];
-	}
-
-    bool hit = false;
-    float hitDistanceMin = 1e20;
-    //We iterate over all indices into the vertex index buffer
-    for (int i = 0; i < node.objectCount; i+=3)
-    {
-        uint indexV0 = indices[node.objectStartIndex + i];
-        uint indexV1 = indices[node.objectStartIndex + i + 1];
-        uint indexV2 = indices[node.objectStartIndex + i + 2];
-
-        float hitDistance;
-        vec3 triangleNormal;
-
-#if DO_SMOOTH_SHADING
-        if (DoesIntersectTriangleInterpolated(
-            rayOriginLocal, rayDirLocal,
-            vertices[indexV0].localPos, vertices[indexV1].localPos, vertices[indexV2].localPos,
-            vertices[indexV0].normal, vertices[indexV1].normal, vertices[indexV2].normal,
-            hitDistance, triangleNormal))
-#elif
-        if (DoesIntersectTriangle(rayOriginWorld, rayDirWorld, vertices[indexV0].localPos, 
-            vertices[indexV1].localPos, vertices[indexV2].localPos, hitDistance, triangleNormal))
-#endif
-        {
-            if (dot(rayDirLocal, triangleNormal) > 0.0)
-                continue;
-
-            if (hitDistance > EPSILON && hitDistance < hitDistanceMin)
-            {
-                hitIndexV0 = indexV0;
-                hitIndexV1 = indexV1;
-                hitIndexV2 = indexV2;
-
-                hitVertexWorld0 = vec3(instance.modelMatrix * vec4(vertices[indexV0].localPos, 1.0));
-                hitVertexWorld1 = vec3(instance.modelMatrix * vec4(vertices[indexV1].localPos, 1.0));
-                hitVertexWorld2 = vec3(instance.modelMatrix * vec4(vertices[indexV2].localPos, 1.0));
-
-                minHitDistance = hitDistance;
-                hitWorldNormal = instance.normalModelMatrix * normalize(triangleNormal);
-                hitMaterial = materials[instance.materialIndex];
-                hit = true;
-            }
-        }
-    }
-    return hit;
-*/
-}
-
-bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitWorldNormal, 
-                        out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2, 
-                        out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
-{
-    vec3 inverseWorldRayDir =  1.0 / max(abs(rayDirWorld), vec3(1e-8)) * sign(rayDirWorld);
-    ivec3 worldRayDirSign = ivec3(lessThan(inverseWorldRayDir, vec3(0.0)));
-	int stack[MAX_STACK_SIZE];
-    int stackPtr = 0;
-
-	stack[stackPtr++] = 0;
-
-	BVHNode node;
-	float tEnter = 0, tExit = 0;
-    float tEnterChild0 = 0, tExitChild0 = 0, tEnterChild1 = 0, tExitChild1 = 0;
-    float hitDistance = 0, minHitDistance = 1e20;
-    vec3 rayOriginLocal, rayDirLocal;
-	bool hit = false;
-	while (stackPtr > 0)
-	{
-        //TODO: this should eventually be removed and is for debug only because it should never happen
-        if (stackPtr >= MAX_STACK_SIZE) break;
-		node = tlasTree[stack[--stackPtr]];
-
-        //if (DoesIntersectBounds(tlasTree[node.indexChild0].bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tMin, tMax))
-        if (!DoesIntersectBounds(node.bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tEnter, tExit))
-			continue;
-
-		if (tEnter > minHitDistance)
-			continue;
-
-		if (IsLeaf(node))
-		{
-            //NOTE: for the tlas tree, the objects are indices into the Instance buffer
-			for (int i = 0; i < node.objectCount; i++)
-			{
-				Instance instance = instances[node.objectStartIndex + i];
-
-                rayOriginLocal = (instance.inverseModelMatrix * vec4(rayOriginWorld, 1)).xyz;
-                rayDirLocal = normalize((instance.inverseModelMatrix * vec4(rayDirWorld, 0)).xyz);
-                float localMinHitDistance = 1e20;
-                hit= DoesIntersectLocalObjectBVH(rayOriginLocal, rayDirLocal, instance, localMinHitDistance, hitWorldNormal, hitMaterial, seed, 
-                                                    hitIndexV0, hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
-                //We convert the local hit distance back to world hit distance (which should
-                //technically be the same if rayDirLocal is normalized, which it is)
-                vec3 hitPosLocal = rayOriginLocal + rayDirLocal * localMinHitDistance;
-                vec3 hitPosWorld = vec3(instance.modelMatrix * vec4(hitPosLocal, 1.0));
-                minHitDistance = length(hitPosWorld - rayOriginWorld);
-                if (hit)
+                /*
+                if (currFlag != 0)
                 {
-                    hitPos = rayOriginWorld + rayDirWorld * minHitDistance;
+                    flag += currFlag;
+                    flagCount++;
                 }
+                */
             }
 		}
 		else
 		{
-			bool minHitChild0 = DoesIntersectBounds(tlasTree[node.indexChild0].bounds, rayOriginWorld, inverseWorldRayDir, 
-                                                    worldRayDirSign, tEnterChild0, tExitChild0) && tEnterChild0 <= minHitDistance;
-            bool minHitChild1 = DoesIntersectBounds(tlasTree[node.indexChild1].bounds, rayOriginWorld, inverseWorldRayDir, 
-                                                    worldRayDirSign, tEnterChild1, tExitChild1) && tEnterChild1 <= minHitDistance;
+			bool minHitChild0 = DoesIntersectBounds(blasTrees[node.indexChild0].bounds, rayOriginLocal, inverseLocalRayDir, 
+                                                    localRayDirSign, tEnterChild0, tExitChild0) && tEnterChild0 <= localMinTEnter;
+            bool minHitChild1 = DoesIntersectBounds(blasTrees[node.indexChild1].bounds, rayOriginLocal, inverseLocalRayDir, 
+                                                    localRayDirSign, tEnterChild1, tExitChild1) && tEnterChild1 <= localMinTEnter;
 
 			if (minHitChild0 && minHitChild1)
 			{
@@ -651,46 +615,115 @@ bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 
 				stack[stackPtr++] = node.indexChild1;
 		}
 	}
+
+    if (hit)
+    {
+        hitVertexWorld0 = vec3(instance.modelMatrix * vec4(vertices[hitIndexV0].localPos, 1.0));
+        hitVertexWorld1 = vec3(instance.modelMatrix * vec4(vertices[hitIndexV1].localPos, 1.0));
+        hitVertexWorld2 = vec3(instance.modelMatrix * vec4(vertices[hitIndexV2].localPos, 1.0));
+
+        hitNormalWorld = normalize(instance.normalModelMatrix * localHitNormal);
+        hitPosWorld = (instance.modelMatrix * vec4(rayOriginLocal + rayDirLocal * localMinTEnter, 1)).xyz;
+    }
+    //flag = flag / flagCount;
 	return hit;
-/*
-	vec3 inverseWorldRayDir = 1 / rayDirWorld;
+}
+
+bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitWorldNormal, 
+                        out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2, 
+                        out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2, out float flag)
+{
+    vec3 inverseWorldRayDir =  1.0 / max(abs(rayDirWorld), vec3(1e-8)) * sign(rayDirWorld);
     ivec3 worldRayDirSign = ivec3(lessThan(inverseWorldRayDir, vec3(0.0)));
-    float tMin, tMax;
-	if (!DoesIntersectBounds(tlasTree[0].bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tMin, tMax))
-		return false;
+	int stack[MAX_STACK_SIZE];
+    int stackPtr = 0;
 
-	uint nodeIndex = 0;
-    BVHNode node = tlasTree[nodeIndex];
-	while (!IsLeaf(node))
-	{
-		if (DoesIntersectBounds(tlasTree[node.indexChild0].bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tMin, tMax))
-			nodeIndex = node.indexChild0;
-		else if (DoesIntersectBounds(tlasTree[node.indexChild1].bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tMin, tMax))
-			nodeIndex = node.indexChild1;
-		else return false;
+	stack[stackPtr++] = 0;
 
-        node = tlasTree[nodeIndex];
-	}
-
-    //Here we iterate over all possible LOCAL OBJECT SPACE BLAS TREE ROOT NODES
-    bool hit = false;
+	BVHNode node;
+	float tEnter = 0, tExit = 0;
+    float tEnterChild0 = 0, tExitChild0 = 0, tEnterChild1 = 0, tExitChild1 = 0;
+    float hitDistance = 0, minHitDistance = 1e20;
     vec3 rayOriginLocal, rayDirLocal;
-    float minHitDistance;
-	for (int i = 0; i < node.objectCount; i++)
-	{
-        Instance instance = instances[node.objectStartIndex + i];
+	bool hit = false;
+    flag = 0;
+    int flagCount = 0;
 
-        rayOriginLocal = (instance.inverseModelMatrix * vec4(rayOriginWorld, 1)).xyz;
-        rayDirLocal = normalize((instance.inverseModelMatrix * vec4(rayDirWorld, 0)).xyz);
-        hit= DoesIntersectLocalObjectBVH(rayOriginLocal, rayDirLocal, instance, minHitDistance, hitWorldNormal, hitMaterial, seed, 
-                                         hitIndexV0, hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
-        if (hit)
-        {
-            hitPos = rayOriginWorld + rayDirWorld * minHitDistance;
-        }
+	while (stackPtr > 0)
+	{
+		node = tlasTree[stack[--stackPtr]];
+        if (!DoesIntersectBounds(node.bounds, rayOriginWorld, inverseWorldRayDir, worldRayDirSign, tEnter, tExit))
+			continue;
+
+        //TODO: check all occurences of DoesIntersectSceneWorld and if thye all use normalized ray dir, 
+        //we can directly compare tEnter and minHitDistance
+		if (length(tEnter * rayDirWorld) > minHitDistance)
+            continue;
+
+		if (IsLeaf(node))
+		{
+            //hitLeaf = max(0, hitLeaf);
+            //NOTE: for the tlas tree, the objects are indices into the Instance buffer
+			for (int i = 0; i < node.objectCount; i++)
+			{
+				Instance instance = instances[node.objectStartIndex + i];
+                rayOriginLocal = vec3(instance.inverseModelMatrix * vec4(rayOriginWorld, 1.0));
+                rayDirLocal = normalize(vec3(instance.inverseModelMatrix * vec4(rayDirWorld, 0.0)));
+                vec3 thisHitPosWorld;
+
+                float currFlag = 0;
+                if (DoesIntersectLocalObjectBVH(rayOriginLocal, rayDirLocal, instance, thisHitPosWorld, hitWorldNormal, hitMaterial, seed, 
+                                                    hitIndexV0, hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2, currFlag))
+                {
+                    float thisMinHitDistanceWorld = length(thisHitPosWorld - rayOriginWorld);
+                    if (thisMinHitDistanceWorld < minHitDistance)
+                    {
+                        minHitDistance= thisMinHitDistanceWorld;
+                        hitPos = thisHitPosWorld;
+                        hit = true;
+                    }
+                }
+                flag = max(flag, currFlag);
+                //if (flag == 0) hitLeaf = max(1, hitLeaf);
+                //else if (flag == 1) hitLeaf = max(2, hitLeaf);
+                //flag = max(flag, currFlag);
+                /*
+                if (currFlag !=0) 
+                {
+                    flag += currFlag;
+                    flagCount++;
+                }
+                */
+            }
+		}
+		else
+		{
+			bool minHitChild0 = DoesIntersectBounds(tlasTree[node.indexChild0].bounds, rayOriginWorld, inverseWorldRayDir, 
+                                                    worldRayDirSign, tEnterChild0, tExitChild0) && length(tEnterChild0 * rayDirWorld) <= minHitDistance;
+            bool minHitChild1 = DoesIntersectBounds(tlasTree[node.indexChild1].bounds, rayOriginWorld, inverseWorldRayDir, 
+                                                    worldRayDirSign, tEnterChild1, tExitChild1) && length(tEnterChild1 * rayDirWorld) <= minHitDistance;
+
+			if (minHitChild0 && minHitChild1)
+			{
+				if (tEnterChild0 < tEnterChild1)
+				{
+					stack[stackPtr++] = node.indexChild1;
+					stack[stackPtr++] = node.indexChild0;
+				}
+				else
+				{
+					stack[stackPtr++] = node.indexChild0;
+					stack[stackPtr++] = node.indexChild1;
+				}
+			}
+			else if (minHitChild0)
+				stack[stackPtr++] = node.indexChild0;
+			else if (minHitChild1)
+				stack[stackPtr++] = node.indexChild1;
+		}
 	}
+    //flag = flag / flagCount;
 	return hit;
-*/
 }
 
 bool DoesIntersectSceneWorldNaive(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitNormal, 
@@ -730,8 +763,9 @@ bool DoesIntersectSceneWorldNaive(vec3 rayOriginWorld, vec3 rayDirWorld, out vec
                 normalize(mat3(instance.normalModelMatrix) * normal2),
                 hitDistance, triangleNormal))
 #else
+            float dummyFlag = 0;
             if (DoesIntersectTriangle(rayOriginWorld, rayDirWorld, vertexWorld0, 
-                                      vertexWorld1, vertexWorld2, hitDistance, triangleNormal))
+                                      vertexWorld1, vertexWorld2, hitDistance, triangleNormal, dummyFlag))
 #endif
             {
                 if (dot(rayDirWorld, triangleNormal) > 0.0)
@@ -770,11 +804,11 @@ bool DoesIntersectSceneWorldNaive(vec3 rayOriginWorld, vec3 rayDirWorld, out vec
 }
 bool DoesIntersectSceneWorld(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitNormal, 
                         out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, 
-                        out uint hitIndexV2, out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
+                        out uint hitIndexV2, out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2, out float flag)
 {
 #if USE_BVH
     return DoesIntersectSceneWorldBVH(rayOriginWorld, rayDirWorld, hitPos, hitNormal, hitMaterial, seed, hitIndexV0, 
-                                      hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
+                                      hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2, flag);
 #else
     return DoesIntersectSceneWorldNaive(rayOriginWorld, rayDirWorld, hitPos, hitNormal, hitMaterial, seed, hitIndexV0, 
                                       hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
@@ -820,7 +854,8 @@ float ComputeAmbientOcclusion(vec3 P, vec3 N, float maxDist, uint aoSamples, ino
         uint a,b,c;
         vec3 w0,w1,w2;
 
-        if (!DoesIntersectSceneWorld(origin, L, hp, hn, hm, seed, a,b,c,w0,w1,w2))
+        float flag= 0;
+        if (!DoesIntersectSceneWorld(origin, L, hp, hn, hm, seed, a,b,c,w0,w1,w2, flag))
         {
             // No hit at all means definitely unoccluded
             unoccluded += 1.0;
@@ -858,7 +893,8 @@ vec3 ComputeBentNormal(vec3 P, vec3 N, float maxDist, uint aoSamples, inout uint
         uint a,b,c;
         vec3 w0,w1,w2;
 
-        if (!DoesIntersectSceneWorld(origin, L, hp, hn, hm, seed, a,b,c,w0,w1,w2))
+        float flag = 0;
+        if (!DoesIntersectSceneWorld(origin, L, hp, hn, hm, seed, a,b,c,w0,w1,w2, flag))
             avgDir += L;
     }
 
@@ -916,15 +952,51 @@ void main()
     //and energy decreases based on the color (how much light is absorbed)
     vec3 throughput = vec3(1.0);
     
+    
     for (int bounce = 0; bounce < uMaxBounces; bounce++) 
     {   
+        /*
+        vec3 diff = abs(uViewerBlock.forwardDir - rayDirWorld);
+        if (length(diff) < 0.01)
+        {
+            radiance = vec3(0, 0, 1);
+            break;
+        }
+        */
+
         vec3 hitPos, hitNormalWorld;
         Material hitMaterial;
         uint hitIndexV0, hitIndexV1, hitIndexV2;
         vec3 hitWorldV0, hitWorldV1, hitWorldV2;
+        
+        float flag = 0;
         if (!DoesIntersectSceneWorld(rayOriginWorld, rayDirWorld, hitPos, hitNormalWorld, hitMaterial, seed, 
-            hitIndexV0, hitIndexV1, hitIndexV2, hitWorldV0, hitWorldV1, hitWorldV2)) 
+            hitIndexV0, hitIndexV1, hitIndexV2, hitWorldV0, hitWorldV1, hitWorldV2, flag)) 
         {
+            //-1 -> no hit, 0 -> world leaf, 1 -> local leaf, 2 -> triangle outisde bounds
+            /*
+            if (hitLeaf == -1) radiance = vec3(1, 0, 0);
+            else if (hitLeaf == 0) radiance = vec3(0, 0, 1);
+            else if (hitLeaf == 1) radiance = vec3(1, 1, 0);
+            else if (hitLeaf == 2) radiance = vec3(1, 1, 1);
+            else radiance = vec3(0, 0, 0);
+            */
+            //radiance = vec3(0, 0, flag / 4);
+            //int flagConverted = int(round(flag));
+
+            /*
+            if (flag >= 4) radiance = vec3(1, 0, 1);
+            else if (flag >= 3) radiance = vec3(0, 1, 1);
+            else if (flag >= 2) radiance = vec3(1, 1, 0);
+            else if (flag >= 1) radiance = vec3(0, 0, 1);
+            else if (flag >= 0) radiance = vec3(1, 1, 1);
+            else radiance = vec3(0, 0, 0);
+            */
+            //if (flag >= 1) radiance = vec3(1, 1, 0);
+            //else radiance = vec3(0, 1, 1);
+            //break;
+            
+
             vec3 sky = vec3(0);
             if (uHasSkybox)
             {
@@ -938,6 +1010,8 @@ void main()
             radiance += throughput * sky;
             break;
         }
+        //radiance = vec3(0, 1, 0);
+        //break;
 
         //If the hit material has emission, we add that color to the ray
         if (hitMaterial.emission.a > 0) 
@@ -1049,8 +1123,9 @@ void main()
             vec3 shadowOrigin = hitPos + hitNormalWorld * EPSILON;
             vec3 shadowHitPos, shadowHitNormal;
             Material shadowHitMaterial;
+            float dummyCount = 0;
             bool blocked = DoesIntersectSceneWorld(shadowOrigin, lightDir, shadowHitPos, shadowHitNormal, shadowHitMaterial, seed, 
-                                                    dummyIndex0, dummyIndex1, dummyIndex2, dummyV0, dummyV1, dummyV2);
+                                                    dummyIndex0, dummyIndex1, dummyIndex2, dummyV0, dummyV1, dummyV2, dummyCount);
 
             if (!blocked || length(shadowHitPos - hitPos) > hitDistanceToLight - 0.001)
                 radiance += throughput * direct;
@@ -1074,8 +1149,9 @@ void main()
                 vec3 shadowOrigin = hitPos + hitNormalWorld * EPSILON;
                 vec3 shadowHitPos, shadowHitNormal;
                 Material shadowHitMaterial;
+                float dummyCount = 0;
                 bool blocked = DoesIntersectSceneWorld(shadowOrigin, L, shadowHitPos, shadowHitNormal, shadowHitMaterial, seed, 
-                                                        dummyIndex0, dummyIndex1, dummyIndex2, dummyV0, dummyV1, dummyV2);
+                                                        dummyIndex0, dummyIndex1, dummyIndex2, dummyV0, dummyV1, dummyV2, dummyCount);
 
                 if (!blocked) 
                 {
