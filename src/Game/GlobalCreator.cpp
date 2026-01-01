@@ -88,8 +88,10 @@ namespace GlobalEntityCreator
 		//m_playerInfo = ECS::EntityComponents<PlayerData, PhysicsBodyData>{ playerEntity, playerData, playerRB };
 
 		//Note: the camera has to be moved back a little so objects at origin are still seen due to min near plane value= 0.1
-		EntityData& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformComponent(Vec3(0, 0, -0.1)));
-		CameraComponent& cameraData = mainCameraEntity.AddComponent<CameraComponent>(CameraComponent{ CameraSettings{SCREEN_ASPECT_RATIO, 10, nullptr} });
+		Quat cameraRotation = {};
+		FromRadianEulerAngles(cameraRotation, Vec3(0, std::numbers::pi, 0));
+		EntityData& mainCameraEntity = globalsManager.CreateGlobalEntity("MainCamera", TransformComponent(Vec3(0, 0.1, 0.5), Vec3::One(), cameraRotation));
+		CameraComponent& cameraData = mainCameraEntity.AddComponent<CameraComponent>(CameraComponent{ CameraSettings{SCREEN_ASPECT_RATIO, 10, nullptr, ProjectionType::Orthographic} });
 		cameraController.TryRegisterCamera(cameraData);
 
 		EntityData& trigger = globalsManager.CreateGlobalEntity("Trigger", TransformComponent(Vec3{15, 0, 0}));

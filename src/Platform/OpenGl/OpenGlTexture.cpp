@@ -96,6 +96,17 @@ namespace Rendering
 		{
 			GL_CALL(glTextureParameteri(id, GL_TEXTURE_MAG_FILTER, GetMagFilter(filter)));
 		}
+		/// <summary>
+		/// Will change the way the channel data is output when retrieving the color at texel
+		/// coordinates. NOTE: this does NOT create additional data to the texture and only changes
+		/// the way in which RGBA data is retrieved after sampling texture
+		/// </summary>
+		/// <param name="id"></param>
+		/// <param name="channelOutputs"></param>
+		static void SetSwizzleMask(const RenderObjectId id, const GLint (*channelOutputs)[4])
+		{
+			GL_CALL(glTextureParameteriv(id, GL_TEXTURE_SWIZZLE_RGBA, *channelOutputs));
+		}
 		static void SetTextureSettings(const RenderObjectId id, const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 		{
 			//TODO: do something with it
@@ -110,8 +121,15 @@ namespace Rendering
 		{
 			RenderObjectId textureId;
 			GL_CALL(glCreateTextures(GL_TEXTURE_2D, 1, &textureId));
-			//GL_CALL(glTextureStorage2D(GL_TEXTURE_2, 0, format, size.m_X, size.m_Y, 0, format, GL_UNSIGNED_BYTE, data));
 			GL_CALL(glTextureStorage2D(textureId, 1, OpenGlUtils::GetStorage(data.m_internalStorage), data.m_texelSize.m_X, data.m_texelSize.m_Y));
+
+			//If the texels are stored in a singular byte channel (NOTE: one channel always gets stored in RED)
+			//it means the texture is most likely grayscale, so we apply red channel data to all channels
+			if (data.m_internalStorage == TexelStorageType::R8)
+			{
+				const GLint swizzleMask[4] = {GL_RED, GL_RED, GL_RED, GL_ONE};
+				SetSwizzleMask(textureId, &swizzleMask);
+			}
 
 			SetTextureSettings(textureId, data.m_wrapBehavior, data.m_minFilter, data.m_magFilter);
 			return textureId;

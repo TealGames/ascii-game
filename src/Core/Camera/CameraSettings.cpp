@@ -36,7 +36,7 @@ float CameraSettings::CalculateAspectRatio() const
 }
 float CameraSettings::CalculateFovX() const
 {
-    return 2 * std::atan(std::tan(m_FieldOfViewYRadians/2)* CalculateAspectRatio());
+    return 2 * std::atan(std::tan(m_FieldOfViewYRadians * 0.5f)* CalculateAspectRatio());
 }
 
 void CameraSettings::SetFieldOfViewYDegrees(const float fovY)

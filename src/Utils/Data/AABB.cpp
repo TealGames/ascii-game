@@ -3,9 +3,15 @@
 
 AABB2D::AABB2D() : AABB2D(WorldPosition2D{}, WorldPosition2D{}) {}
 AABB2D::AABB2D(const WorldPosition2D& minPos, const WorldPosition2D& maxPos)
-	: m_MinPos(minPos), m_MaxPos(maxPos) {}
+	: m_MinPos(minPos), m_MaxPos(maxPos) 
+{
+	ENGINE_ASSERT(maxPos > minPos, "Attempted to create AABB2d with invalid max: {} and/or min pos:{}", maxPos.ToString(), minPos.ToString());
+}
 
-AABB2D::AABB2D(const Vec2& size) : m_MinPos(size / 2 * -1), m_MaxPos(size / 2) {}
+AABB2D::AABB2D(const Vec2& size) : m_MinPos(size / 2 * -1), m_MaxPos(size / 2) 
+{
+	ENGINE_ASSERT(size.m_X >= 0 && size.m_Y >= 0, "Attempted to create AABB2d with invalid negative-value size:{}", size.ToString());
+}
 
 WorldPosition2D AABB2D::GetGlobalMin(const WorldPosition2D& centerWorldPos) const
 {

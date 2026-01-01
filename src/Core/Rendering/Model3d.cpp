@@ -15,16 +15,7 @@ namespace Rendering
 			[vertexArray](const Triangle& triangle) -> WorldPosition3D
 			{
 				return CalculateTriangleCenter(triangle, vertexArray);
-			}, nullptr); /*
-			[](const Triangle* trianglePtr, const size_t triangleSize, int intendedStartIndex,
-				int& outStartIndex, std::uint32_t& outObjectCount) -> void
-			{
-				//NOTE: since each primitive is a triangle, the intended start index
-				//and size is based off of that, but we really want the interval in terms of indices
-				outStartIndex = intendedStartIndex * 3;
-				outObjectCount = triangleSize * 3;
-			});*/
-		//LogWarning("BLAS TREE: " + tree.ToString(BVHToStringType::NodeBounds));
+			}, nullptr); 
 		ENGINE_ASSERT(tree.IsValid(nullptr, true), "After constructing BLAS BVH from triangles tree was invalid");
 		return nodes;
 	}
@@ -32,11 +23,8 @@ namespace Rendering
 	const std::vector<BVHFlatNode>& ConstructBVHFromIndices(StaticBVHTree<Triangle>& tree,
 		IndexType* indices, const size_t indexSize, const Vertex* vertexArray)
 	{
-		if (indexSize % 3 != 0)
-		{
-			LogError(std::format("Attempted to construct BVH from indices by "
-				"reinterpreting as triangles but size is not divisible by 3: {}", indexSize));
-		}
+		ENGINE_ASSERT(indexSize % 3 == 0, "Attempted to construct BVH from indices by "
+				"reinterpreting as triangles but size is not divisible by 3: {}", indexSize);
 		//NOTE: we CAN re-order the indices since they are just the redferences for the vertex buffer
 		//therefore it does not matter as long as we move all 3 indices
 		Triangle* triangles = reinterpret_cast<Triangle*>(&indices[0]);

@@ -61,7 +61,7 @@ namespace Rendering
     /// <summary>
     /// Multiplier applied to final color
     /// </summary>
-    constexpr float EXPOSURE = 0.6;
+    constexpr float EXPOSURE = 1;
 
     constexpr size_t NO_RENDER_FRAME_COUNT_LIMIT = 0;
     constexpr size_t RENDER_FRAMES_COUNT = NO_RENDER_FRAME_COUNT_LIMIT;
@@ -70,7 +70,7 @@ namespace Rendering
     constexpr size_t INSTANCE_MAX_COUNT = 16;
     constexpr size_t INDEX_MAX_COUNT = 20000;
     constexpr size_t VERTEX_MAX_COUNT = 10000;
-    constexpr size_t MATERIAL_MAX_COUNT = 5;
+    constexpr size_t MATERIAL_MAX_COUNT = 10;
     constexpr size_t TEXTURE_MAX_COUNT = 5;
     constexpr size_t BLAS_NODE_MAX_COUNT = 8000;
     constexpr size_t TLAS_NODE_MAX_COUNT = 8000;
@@ -178,7 +178,7 @@ namespace Rendering
 
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
     Renderer::Renderer(const EngineState& engineState)
-        : m_isInit(false), m_engineState(&engineState), m_uniformData(), //m_staticRenderData(),
+        : m_isInit(false), m_engineState(&engineState), m_uniformData(), m_skybox(),//m_staticRenderData(),
         m_geometryBatches(), m_hashToBatchIndex(), m_graphicsManager(nullptr), m_frameGeometryMetrics(), m_runtimeMaterialId(),
         m_textureController(Backend::CreateTextureController()),
         m_imageController(Backend::CreateImageController()),
@@ -720,21 +720,18 @@ namespace Rendering
             {
                 //NOTE: the only reason we can do this is because we know there will be only one 
                 //instance at the leaves
-                LogWarning(std::format("New start index from {} -> {} (intended:{}) bounds addr:{}", 
-                    outStartIndex, boundsPtr->m_InstanceIndex, intendedStartIndex, Utils::ToStringPointerAddress(boundsPtr)));
                 outStartIndex = boundsPtr[intendedStartIndex].m_InstanceIndex;
                 outObjectCount = boundsSize;
             });
         m_tlasTreeStorageBuffer.WriteData(0, sizeof(BVHFlatNode) * m_tlasTree.Size(), &m_tlasTree.GetRoot());
 
-        LogWarning(std::format("ALL instance bounds data: {}", Utils::ToStringIterable(m_instanceBoundsData)));
+        /*LogWarning(std::format("ALL instance bounds data: {}", Utils::ToStringIterable(m_instanceBoundsData)));
         LogWarning(std::format("ALL render calls: {}", ToStringMetrics()));
         LogWarning(std::format("ALL INSTANCES:{}", ToStringInstances()));
         LogWarning(std::format("TLAS TREE {}\n", m_tlasTree.ToString(BVHToStringType::NodeBounds)));
-        LogWarning(std::format("FULL TREE {}\n", ToStringBVH()));
+        LogWarning(std::format("FULL TREE {}\n", ToStringBVH()));*/
 
-        ENGINE_ASSERT(IsValidBVH(), "After finishing TLAS tree construction full BVH is INVALID");
-        //LogError("SHIT");
+        ENGINE_ASSERT(IsValidBVH(), "After finishing TLAS tree construction full BVH is INVALID: {}", ToStringBVH());
     }
     int Renderer::GetEnqueuedTextureIndex(Texture* texture)
     {
@@ -1148,6 +1145,7 @@ namespace Rendering
         }
 
         m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::PointLight3d, Mat4{});
+        m_uniformData.m_LightBufferNeedsUpdate = true;
 
         std::uint32_t lightIndex = m_uniformData.m_LightBlock.m_PointLightsCount; 
         auto& pointlightData = m_uniformData.m_LightBlock.m_PointLights[lightIndex];
@@ -1166,10 +1164,17 @@ namespace Rendering
                 Utils::CalculateModelMatrix(nullptr, worldPos, std::min(0.1f * radius, 1.0f), Quat::Identity()));
         }
     }
-    void Renderer::AddCallDirectionalLight(const Vec3& dir, const Color& color)
+    void Renderer::SetDirectionalLight(const Vec3& dir, const Color& color)
     {
         m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::DirectionLight3d, Mat4{});
+
         m_uniformData.m_LightBlock.m_DirLight = DirectionalLightData(dir, color);
+        m_uniformData.m_LightBufferNeedsUpdate = true;
+    }
+    void Renderer::ClearDirectionalLight()
+    {
+        m_uniformData.m_LightBlock.m_DirLight = DirectionalLightData();
+        m_uniformData.m_LightBufferNeedsUpdate = true;
     }
 
     void Renderer::AddCallModel(Model3d& model, const Mat4& modelMatrix)
@@ -1373,6 +1378,25 @@ namespace Rendering
             return;
         }
     }
+    void Renderer::UpdateUniformBuffers()
+    {
+        if (m_uniformData.m_LightBufferNeedsUpdate)
+        {
+            m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
+            m_uniformData.m_LightBufferNeedsUpdate = false;
+        }
+        //TODO: right now camera data is always written FIX THIS
+        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
+        const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
+        Vec3 worldFoward, worldUp, worldRight;
+        camera.GetTransform().CalculateWorldDirections(&worldFoward, &worldUp, &worldRight);
+        SetViewerData(camera.GetTransform().GetWorldPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix,
+            worldFoward, worldRight, worldUp, camera.GetSettings().m_FieldOfViewYRadians);
+
+        if (Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix))
+            m_unmovingFrames = 0;
+    }
+
     void Renderer::DrawBatch(RenderBatch& batch)
     {
         Backend::DrawUploadedIndexBufferInstanced(0,
@@ -1478,16 +1502,7 @@ namespace Rendering
         //(so 0 bit in clear makes any bit 0 even if previousMask is 0 or 1 AND any 1 bit in clear stays 1 unless previous is also 1
         //so we only clear necessary slots that we need right now, but only if they were not previouslt drawn to)
         else Backend::ClearBackground(~(~clearBitmask | previousDrawnColorAttachmentsMask));
-
-        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
-        const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
-        //TODO: this is still a problem since multiple flushes per frame means multiple updates
-        const bool needsViewMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix);
-        const bool needsProjMatrixUpdate = Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::PlatformProjMatrix);
-
-        SetViewerData(camera.GetTransform().GetWorldPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix);
-        //TODO: optimize so we check if light block data changed from last render batch and only then write buffer
-        m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
+        UpdateUniformBuffers();
 
         const Texture* lastBatchTexture = nullptr;
         const auto removeLastBatchTexture = [this, &lastBatchTexture]() -> void
@@ -1774,16 +1789,6 @@ namespace Rendering
         rayTraceShader.TrySetUniform(UniformDataType::Image2D, INPUT_TEXTURE_UNIFORM_NAME, &inputTextureSlot);
         rayTraceShader.TrySetUniform(UniformDataType::Image2D, OUTPUT_TEXTURE_UNIFORM_NAME, &outputTextureSlot);
 
-        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
-        const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
-        Vec3 worldFoward, worldUp, worldRight;
-        camera.GetTransform().CalculateWorldDirections(&worldFoward, &worldUp, &worldRight);
-        SetViewerData(camera.GetTransform().GetWorldPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix, 
-            worldFoward, worldRight, worldUp, camera.GetSettings().m_FieldOfViewYRadians);
-        const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
-
-        if (Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix))
-            m_unmovingFrames = 0;
         rayTraceShader.TrySetUniform(UniformDataType::Uint, UNMOVING_FRAME_NUMBER_UNIFORM_NAME, &m_unmovingFrames);
         m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
 
@@ -1839,7 +1844,10 @@ namespace Rendering
             ));
         }
         */
+
+        UpdateUniformBuffers();
         
+        const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
         rayTraceShader.DispatchComputeShaderGroups(Vec3Int(windowSize, 1));
 
         //We must invoke memory sync to ensure image operation applied to OUTPUT texture go through before
@@ -1919,7 +1927,7 @@ namespace Rendering
     {
         Backend::EndRenderingMarker();
 
-        m_uniformData.m_CameraUpdatedThisFrame = false;
+        m_uniformData.m_ViewBufferNeedsUpdate = false;
 
         m_framesSinceStart++;
         m_unmovingFrames++;
@@ -1985,8 +1993,9 @@ namespace Rendering
                 }
 
                 //LogWarning(std::format("Interval is: {} mesh index: {} instance index:{}", interval.m_Size, m_instances[node.m_ObjectStartIndex].m_MeshIndex));
-                return invalidBoundsPrefix + ToStringBVHNodes<BVHFlatNode>(&blasRootNode,
-                    interval.m_Size, &blasRootNode, nullptr, BVHToStringType::NodeBounds,
+                const Triangle* trianglePtr = reinterpret_cast<const Triangle*>(m_indices[0]);
+                return invalidBoundsPrefix + ToStringBVHNodes<Triangle>(&m_blasTrees[0], interval.m_StartIndex,
+                    interval.m_Size, trianglePtr, nullptr, BVHToStringType::NodeBounds,
                     [instance, &tlasLeafNode](const BVHFlatNode& blasNode, const BVHFlatNode* parentNode) -> std::string
                     {
                         const Vec3 aabbSize = blasNode.GetAABB().GetSize();
@@ -2060,8 +2069,9 @@ namespace Rendering
             {
                 const InstanceType& instance = m_instances[batch.m_InstanceStartIndex + i];
                 const ArrayInterval interval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
-                std::string blasTreeString = ToStringBVHNodes<BVHFlatNode>(&m_blasTrees[interval.m_StartIndex],
-                    interval.m_Size, &m_blasTrees[interval.m_StartIndex], nullptr, BVHToStringType::NodeBounds);
+                const Triangle* trianglePtr = reinterpret_cast<const Triangle*>(&m_indices[0]);
+                std::string blasTreeString = ToStringBVHNodes<Triangle>(&m_blasTrees[0], interval.m_StartIndex,
+                    interval.m_Size, trianglePtr, nullptr, BVHToStringType::NodeBounds);
 
                 std::vector<Vec3> vertexPositions = {};
                 const InstanceMesh& mesh = m_instanceMeshes[instance.m_MeshIndex];

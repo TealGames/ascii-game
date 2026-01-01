@@ -142,8 +142,8 @@ namespace Rendering
     
     struct UniformBufferData
     {
-        bool m_CameraUpdatedThisFrame = false;
-        bool m_LightingUpdatedThisFrame = false;
+        bool m_ViewBufferNeedsUpdate = false;
+        bool m_LightBufferNeedsUpdate = false;
         ExtraPointLightData m_ExtraPointLightData[MAX_POINT_LIGHTS] = { };
         LightBlockData m_LightBlock = {};
     };
@@ -320,6 +320,8 @@ namespace Rendering
         void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix);
         void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix, 
             const Vec3& forwardDir, const Vec3& rightDir, const Vec3& upDir, const float yFov);
+        void UpdateUniformBuffers();
+
         void DrawBatch(RenderBatch& batch);
         void ExecuteSkyboxPass(std::uint8_t* outDrawnAttachmentsMask);
         void ExecuteShadowPass();
@@ -414,7 +416,8 @@ namespace Rendering
         //void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Color color);
 
         void AddCallPointLight(const WorldPosition3D& worldPos, const Quat& rotation, const float radius, const Color& color);
-        void AddCallDirectionalLight(const Vec3& dir, const Color& color);
+        void SetDirectionalLight(const Vec3& dir, const Color& color);
+        void ClearDirectionalLight();
 
         //void AddCallPoints(PrimitiveType primitiveType, const WorldPosition3D* positions, const size_t& size);
         void AddCallAABBWifreframe(const Mat4& modelMatrix, const Color& color, const float lineThickness);

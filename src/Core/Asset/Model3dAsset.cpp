@@ -19,8 +19,8 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 	const aiMatrix4x4 globalTransform = parentTransform != nullptr ? *parentTransform * node->mTransformation : node->mTransformation;
 	/*LogWarning(std::format("Found {} global transform:{} parent:{} local:{}", node->mName.C_Str(), AssimpUtils::ToString(globalTransform),
 		parentTransform == nullptr ? "NULL" : AssimpUtils::ToString(*parentTransform), AssimpUtils::ToString(node->mTransformation)));*/
-	LogWarning(std::format("For model found parent:{} transform:{}", parentTransform != nullptr? 
-		AssimpUtils::ToString(*parentTransform) : "NULL", AssimpUtils::ToString(globalTransform)));
+	//LogWarning(std::format("For model found parent:{} transform:{}", parentTransform != nullptr? 
+	//	AssimpUtils::ToString(*parentTransform) : "NULL", AssimpUtils::ToString(globalTransform)));
 	if (node->mNumMeshes > 0)
 	{
 		Rendering::ModelMeshGroup* meshGroup = &(model.m_MeshGroups.emplace_back(
@@ -98,7 +98,6 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 
 Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, false), m_model()
 {
-	LogWarning(std::format("Model at path:{}", path.string()));
 	Assimp::Importer importer;
 	if (ADD_GLOBAL_SCALE) importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, IMPORT_TO_ENGINE_SCALE_FACTOR);
 

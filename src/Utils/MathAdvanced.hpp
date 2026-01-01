@@ -2,9 +2,29 @@
 #include "Utils/Data/AABB.hpp"
 #include "Utils/Data/Quaternion.hpp"
 
+inline constexpr float PI = std::numbers::pi;
+inline constexpr float RAD_90 = PI / 2.0f;
+inline constexpr float RAD_180 = PI;
+inline constexpr float RAD_270 = 3.0f * PI / 2.0f;
+inline constexpr float RAD_360 = 2.0f * PI;
+
+inline constexpr float RAD_30 = PI / 6.0f;
+inline constexpr float RAD_150 = 5.0f * PI / 6.0f;
+inline constexpr float RAD_210 = 7.0f * PI / 6.0f;
+inline constexpr float RAD_330 = 11.0f * PI / 6.0f;
+
+inline constexpr float RAD_60 = PI / 3.0f;
+inline constexpr float RAD_120 = 2.0f * PI / 3.0f;
+inline constexpr float RAD_240 = 4.0f * PI / 3.0f;
+inline constexpr float RAD_300 = 5.0f * PI / 3.0f;
+
+inline constexpr float RAD_45 = PI / 4.0f;
+inline constexpr float RAD_135 = 3.0f * PI / 4.0f;
+inline constexpr float RAD_225 = 5.0f * PI / 4.0f;
+inline constexpr float RAD_315 = 7.0f * PI / 4.0f;
+
 namespace Utils
 {
-	
 	bool RayIntersectsBounds(const AABB3D& bounds, const Vec3& rayOrigin, const Vec3& rayDir, float* outTEnter, float* outTExit);
 	/// <summary>
 	/// Computes if the ray intersects the 3d bounds and returns the margin, how close the ray was to hitting the bounds
@@ -30,10 +50,17 @@ namespace Utils
 	float CalculateSurfaceArea(const AABB3D& bounds);
 
 	template<AlignType Align>
-	AABB3DBase<Align> ApplyMatrixToAABB(const AABB3DBase<Align>& localBounds, const Mat4& localToWorldMatrix)
+	AABB3DBase<Align> ApplyMatrixToAABB(const AABB3DBase<Align>& localBounds, const Mat4& matrix)
 	{
-		return AABB3DBase<Align>((localToWorldMatrix * Vec4(localBounds.m_MinPos, 1)).GetXYZ(),
-			(localToWorldMatrix * Vec4(localBounds.m_MaxPos, 1)).GetXYZ());
+		WorldPosition3D newMin = (matrix * Vec4(localBounds.m_MinPos, 1)).GetXYZ();
+		WorldPosition3D newMax = (matrix * Vec4(localBounds.m_MaxPos, 1)).GetXYZ();
+		//Since some matrices may end up flipping min and max pos, 
+		//we ensure they stay in the correct order
+		if (newMin.m_X > newMax.m_X) std::swap(newMin.m_X, newMax.m_X);
+		if (newMin.m_Y > newMax.m_Y) std::swap(newMin.m_Y, newMax.m_Y);
+		if (newMin.m_Z > newMax.m_Z) std::swap(newMin.m_Z, newMax.m_Z);
+
+		return AABB3DBase<Align>(newMin, newMax);
 	}
 
 	Mat4 CalculateTranslationMatrix(const Vec3& pos);

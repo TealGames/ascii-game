@@ -77,7 +77,7 @@ public:
 	std::string ToString(const AngleType angleType = AngleType::Euler) const;
 };
 
-void FromEulerAngles(Quat& quaternion, const Vec3& radianEulerAngles);
+void FromRadianEulerAngles(Quat& quaternion, const Vec3& radianEulerAngles);
 /// <summary>
 /// Will set the quaternion from the matrix 
 /// NOTE: each COL MUST be NORMALIZED

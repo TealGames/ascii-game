@@ -107,7 +107,7 @@ namespace Rendering
 #endif
 
 			BackendLoaded = true;
-			Core::EngineLog(std::format("LOADED RENDER BACKEND:{}", GetBackendVersion()));
+			Core::EngineLog("LOADED RENDER BACKEND:{}", GetBackendVersion());
 		}
 		bool IsBackendLoaded()
 		{

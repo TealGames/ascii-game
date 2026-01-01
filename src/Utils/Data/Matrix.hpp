@@ -183,9 +183,9 @@ public:
 	static constexpr MatrixType GetIdentity() requires (ROW_SIZE == COL_SIZE)
 	{
 		MatrixType result = {};
-		for (size_t c = 0; c < COL_SIZE; c++)
+		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
-			for (size_t r = 0; r < ROW_SIZE; r++)
+			for (size_t c = 0; c < COL_SIZE; c++)
 			{
 				result.SetUnsafe(r, c, (c == r) ? 1 : 0);
 			}
@@ -193,17 +193,42 @@ public:
 		return result;
 	}
 
-	bool IsZero() const
+	bool IsAllZero() const
 	{
-		for (size_t c = 0; c < COL_SIZE; c++)
+		for (size_t r = 0; r < ROW_SIZE; r++)
 		{
-			for (size_t r = 0; r < ROW_SIZE; r++)
+			for (size_t c = 0; c < COL_SIZE; c++)
 			{
 				if (!Utils::ApproximateEqualsF(GetUnsafe(r, c), 0.0f))
 					return false;
 			}
 		}
 		return true;
+	}
+
+	bool HasValue(const T& val) const
+	{
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			for (size_t c = 0; c < COL_SIZE; c++)
+			{
+				if (Utils::ApproximateEqualsF(GetUnsafe(r, c), val))
+					return true;
+			}
+		}
+		return false;
+	}
+	bool HasNegativeValues() const
+	{
+		for (size_t r = 0; r < ROW_SIZE; r++)
+		{
+			for (size_t c = 0; c < COL_SIZE; c++)
+			{
+				if (GetUnsafe(r, c) < 0)
+					return true;
+			}
+		}
+		return false;
 	}
 
 	/// <summary>

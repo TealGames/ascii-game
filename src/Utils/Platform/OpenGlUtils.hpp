@@ -49,11 +49,25 @@ namespace OpenGlUtils
 }
 
 #define ASSERT(x) if (!(x)) __debugbreak();
-#define GL_CALL(x) do {\
-	OpenGlUtils::GLClearError();\
-	x;\
-	ASSERT(OpenGlUtils::GLLogCall(#x, __FILE__, __LINE__))\
-}while(0)
+
+#if defined(ENGINE_DEBUG)
+
+#define GL_CALL(x)                                \
+    do {                                         \
+        OpenGlUtils::GLClearError();              \
+        x;                                       \
+        ASSERT(OpenGlUtils::GLLogCall(            \
+            #x, __FILE__, __LINE__));             \
+    } while (0)
+
+#else
+
+#define GL_CALL(x)                                \
+    do {                                         \
+        x;                                       \
+    } while (0)
+
+#endif
 
 #endif
 

@@ -150,6 +150,8 @@ namespace Core
 	//api call using drawIndirectMulti. this is most usefl when things get more complicated and you want finer control over the process
 	//Also, buffers who are dynamic with many updates should probably do bufferrange and mapbuffer to get pointer to memory that is always allocated for writing
 	//instead of doing map and unmap every time which can be slow
+	//TODO: remove all unnecessary color constructors especially int and std::uint8_t for floating types as they should just divide by 255 if you dont want to 
+	//write out the conversion or explicit constructor
 	//TODO: replace all instances of comparing types with typeid with constexpr is same type trait
 	//TODO: add optimizations for debug builds so that on DEBUG macro, things like string functions, debug operations, etc are not included in build
 	//TODO: add SIMD for vector, matrices, quaternions AND optimize them to run as fast as possible, esepcially by making sure
@@ -289,7 +291,7 @@ namespace Core
 
 		//Rendering::Texture& skybox = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/skybox.hdr")->GetTextureMutable();
 		Rendering::Texture& skybox = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/skybox_stylized_night.png")->GetTextureMutable();
-		m_renderer.SetSkybox(&skybox);
+		//m_renderer.SetSkybox(&skybox);
 
 		//TODO: find a way to do this more procedurally
 		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {StartAll(); });
@@ -298,7 +300,7 @@ namespace Core
 		if (!Assert(m_sceneManager.TrySetActiveScene(0), "Tried to set the active scene to the first one, but failed!"))
 			return;
 
-		EngineLog(std::format("SET FIRST SCENE:{}", m_sceneManager.GetActiveScene()->ToString()));
+		EngineLog("SET FIRST SCENE:{}", m_sceneManager.GetActiveScene()->ToString());
 		//m_sceneManager.GetActiveSceneMutable()->InitScene();
 		//m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
 		//LogError(std::format("Scene active: {}", m_sceneManager.GetActiveScene()->ToString()));
@@ -375,9 +377,9 @@ namespace Core
 		Rendering::Material material = Rendering::Material("Test", nullptr, Color(100, 100, 100, 255));
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Color_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Color_BLUE);
-		//m_renderer.AddCallDirectionalLight(Vec3(0, -1, 0), COLOR_GREEN);
 		//m_renderer.AddCallPointLight(Vec3(0.2, 0, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
-		//m_renderer.AddCallPointLight(Vec3(0, 0.2, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_BLUE);
+		m_renderer.AddCallPointLight(Vec3(0, 0.3, 0), Quat(Vec3(0, 0, 0)), 1.0f, Color(0.0f, 0.0f, 1.0f, 1.0f));
+		//m_renderer.SetDirectionalLight(Vec3(0, -1, 0), COLOR_WHITE);
 
 		const Mat4 modelMatrix3 = Utils::CalculateModelMatrix(nullptr, Vec3(0, -0.3, 0.4), Vec3::One(), Quat::Identity());
 		Rendering::Material* defaultMaterial = m_engineState.m_GraphicsContext.m_GraphicsManager->GetDefaultMaterialMutable();
@@ -385,19 +387,36 @@ namespace Core
 		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
 
 		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
-		model->GetModelMutable().m_Meshes[0].m_Material.SetSurface(1, 1, nullptr);
+		model->GetModelMutable().m_Meshes[0].m_Material.SetSurface(1, 0, nullptr);
 		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity());
 		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity()));
+		m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity()));
 		//LogError(std::format("Tight bounds are model: {}", model->GetModelMutable().m_Meshes[0].CalculateTightBounds().ToString()));
 		//m_renderer.AddCallSphere3D(&model->GetModelMutable().m_Meshes[0].m_Material, 0.2, modelMatrix4);
 
 		Rendering::Texture& checkerboard = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/checkerboard.jpg")->GetTextureMutable();
 		//checkerboard.SetMinFilter(Rendering::MinFilter::NearestMipmapLinear);
 		//checkerboard.SetWrapBehavior({Rendering::WrapBehavior::ClampEdge,Rendering::WrapBehavior::ClampEdge, Rendering::WrapBehavior::ClampEdge });
-		Rendering::Material planeMaterial = Rendering::Material("Plane", &checkerboard, COLOR_WHITE, 1, Color(0.5, 0, 0, 0.5));
+		Rendering::Material planeMaterial = Rendering::Material("Plane", &checkerboard, COLOR_WHITE, 1, Color(0.0f, 0.0f, 0.0f, 0.0f), 0.1, 0);
+
 		const Mat4 planeMatrix = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3::One(), Quat::Identity());
 		m_renderer.AddCallPlane3D(&planeMaterial, Vec2(10, 10), planeMatrix, Vec2(2,2));
+
+		Rendering::Material wallLeftMaterial = Rendering::Material("WallLeft", nullptr, COLOR_RED, 1);
+		Rendering::Material wallRightMaterial = Rendering::Material("WallRight", nullptr, COLOR_GREEN, 1);
+		Rendering::Material wallBackMaterial = Rendering::Material("WallBack", nullptr, COLOR_WHITE, 1);
+		Rendering::Material roofMaterial = Rendering::Material("Roof", nullptr, COLOR_WHITE, 1, Color(5.0f, 5.0f, 5.0f, 1.0f));
+
+		constexpr float planeSize = 1;
+		m_renderer.AddCallPlane3D(&wallLeftMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(-planeSize/2, planeSize/2, 0),
+			Vec3::One(), ToQuaternion(Vec3(0, 0, RAD_90))));
+
+		m_renderer.AddCallPlane3D(&wallRightMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(0.5, 0.5, 0),
+			Vec3::One(), ToQuaternion(Vec3(0, 0, RAD_270))));
+		m_renderer.AddCallPlane3D(&wallBackMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, -0.5),
+			Vec3::One(), ToQuaternion(Vec3(RAD_270,0, 0))));
+		m_renderer.AddCallPlane3D(&roofMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, 0), Vec3::One(), 
+			ToQuaternion(Vec3(RAD_180, 0, 0))));
 	}
 
 	void Engine::SetUpdateStatusCode(const UpdateStatusCode& code)
@@ -494,6 +513,20 @@ namespace Core
 		//m_renderer.AddRectangleCall3D(Vec3(0.13, 0.13, 0.13), modelMatrix, Color_BLUE);
 		//bool inView = m_cameraController.GetActiveCamera().DoesViewVolumeContainPos(Vec3(-10, 0, 0));
 		//LogError(std::format("rectange oirign screen pos:{}", m_cameraController.GetActiveCamera().WorldToScreenPosition(Vec3(0, 0, 4.9)).ToString()));
+
+		/*
+		static float time = 0;
+		static bool onLight = false;
+		time += unscaledDeltaTime;
+		if (time > 1)
+		{
+			if (onLight) m_renderer.ClearDirectionalLight();
+			else 
+			onLight = !onLight;
+			time = 0;
+		}
+		*/
+		
 		m_renderer.RenderBuffer();
 
 		//if (m_editor.IsInGameView())

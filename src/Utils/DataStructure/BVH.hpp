@@ -58,12 +58,13 @@ enum class BVHToStringType : std::uint8_t
 
 template<typename T>
 requires (Utils::HasFunctionToString<T>)
-std::string ToStringBVHNodes(const BVHFlatNode* rootNode, const size_t nodeCount, 
+std::string ToStringBVHNodes(const BVHFlatNode* nodeArray, const size_t arrayNodeOffset, const size_t nodeCount, 
 	const T* objectArray, const std::uint32_t* objectIndicesArray, BVHToStringType toStringType,
 	std::function<std::string(const BVHFlatNode& node, const BVHFlatNode* parentNode)> overrideNodeToStringFunc = nullptr, 
 	const std::function<std::string(const BVHFlatNode&)>& leafSuccessorToStringFunc = nullptr,
 	const bool markInvalidBounds = false)
 {
+	const BVHFlatNode* rootNode = &nodeArray[arrayNodeOffset];
 	if (overrideNodeToStringFunc == nullptr)
 	{
 		overrideNodeToStringFunc = 
@@ -121,22 +122,32 @@ std::string ToStringBVHNodes(const BVHFlatNode* rootNode, const size_t nodeCount
 		};
 
 	return Utils::ToStringTree<BVHFlatNode>(*rootNode,
-		[rootNode, nodeCount](const BVHFlatNode& node, const size_t childIndex) -> const BVHFlatNode*
+		[nodeArray, arrayNodeOffset, nodeCount](const BVHFlatNode& node, const size_t childIndex) -> const BVHFlatNode*
 		{
 			if (childIndex >= 2 || node.IsLeaf())
 			{
 				return nullptr;
 			}
+			const int minValidIndex = static_cast<int>(arrayNodeOffset);
+			const int maxValidIndex = minValidIndex + nodeCount - 1;
 			if (childIndex == 0)
 			{
-				if (node.m_IndexChild0 >= (int)nodeCount)
-					LogError(std::format("Attempted to convert BVH to string but found invalid child index: {}", node.m_IndexChild0));
-				return &rootNode[node.m_IndexChild0];
+				if (node.m_IndexChild0 < minValidIndex || node.m_IndexChild0 > maxValidIndex)
+				{
+					LogError(std::format("Attempted to convert BVH to string "
+						"but found invalid child index: {} (BVH Tree Valid Indices: [{}, {}])", node.m_IndexChild0, minValidIndex, maxValidIndex));
+					return nullptr;
+				}
+				return &nodeArray[node.m_IndexChild0];
 			}
 
-			if (node.m_IndexChild1 >= (int)nodeCount)
-				LogError(std::format("Attempted to convert BVH to string but found invalid child index: {}", node.m_IndexChild1));
-			return &rootNode[node.m_IndexChild1];
+			if (node.m_IndexChild1 < minValidIndex || node.m_IndexChild1 > maxValidIndex)
+			{
+				LogError(std::format("Attempted to convert BVH to string "
+					"but found invalid child index: {} (BVH Tree Valid Indices: [{}, {}])", node.m_IndexChild0, minValidIndex, maxValidIndex));
+				return nullptr;
+			}
+			return &nodeArray[node.m_IndexChild1];
 		}, overrideNodeToStringFunc);
 }
 
@@ -649,7 +660,7 @@ public:
 		const std::function<std::string(const BVHFlatNode&)>& leafSuccessorToStringFunc = nullptr,
 		const bool markInvalidBounds = false) const
 	{
-		return ToStringBVHNodes<T>(&m_flatNodes[0], m_flatNodes.size(),
+		return ToStringBVHNodes<T>(&m_flatNodes[0], 0, m_flatNodes.size(),
 			m_objectArray, m_objectIndices.empty()? nullptr : &m_objectIndices[0], 
 			toStringType, overrideNodeToStringFunc, leafSuccessorToStringFunc, markInvalidBounds);
 	}

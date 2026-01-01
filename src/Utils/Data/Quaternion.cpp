@@ -2,7 +2,7 @@
 #include <format>
 #include <numbers>
 
-Quat::Quat(const Vec3& radianEulerAngles) : m_X(), m_Y(), m_Z(), m_W() { FromEulerAngles(*this, radianEulerAngles); }
+Quat::Quat(const Vec3& radianEulerAngles) : m_X(), m_Y(), m_Z(), m_W() { FromRadianEulerAngles(*this, radianEulerAngles); }
 Quat::Quat(const Mat3& matrix) : m_X(), m_Y(), m_Z(), m_W() { FromRotationMatrix(*this, matrix); }
 
 Vec4 Quat::AsVec4() const { return Vec4(m_X, m_Y, m_Z, m_W); }
@@ -63,7 +63,7 @@ Vec3 Quat::ToDegrees() const
 
 void Quat::SetAsRadians(const Vec3& radianEulerAngle)
 {
-    FromEulerAngles(*this, radianEulerAngle);
+    FromRadianEulerAngles(*this, radianEulerAngle);
 }
 void Quat::SetAsDegrees(const Vec3& degreeEulerAngle)
 {
@@ -112,7 +112,7 @@ std::string Quat::ToString(const AngleType angleType) const
     return std::format("({},{},{},{})", m_X, m_Y, m_Z, m_W);
 }
 
-void FromEulerAngles(Quat& q, const Vec3& radianEulerAngles)
+void FromRadianEulerAngles(Quat& q, const Vec3& radianEulerAngles)
 {
     const double cy = std::cos(radianEulerAngles.m_Z * 0.5);
     const double sy = std::sin(radianEulerAngles.m_Z * 0.5);
@@ -187,7 +187,7 @@ void FromAxisAngle(Quat& q, const Vec3& axis, const float radianRotation)
 Quat ToQuaternion(const Vec3& radianEulerAngles)
 {
     Quat q = {};
-    FromEulerAngles(q, radianEulerAngles);
+    FromRadianEulerAngles(q, radianEulerAngles);
     return q;
 }
 Quat ToQuaternion(const Mat3& matrix)

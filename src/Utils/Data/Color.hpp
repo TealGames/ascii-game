@@ -67,11 +67,11 @@ public:
 
 
 	constexpr Col(std::uint8_t r, std::uint8_t g, std::uint8_t b) 
-		requires (!std::is_same_v<T, std::uint8_t>&& std::is_floating_point_v<T>)
+		requires (!std::is_same_v<T, std::uint8_t> && std::is_floating_point_v<T>)
 		: Col(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f) {}
 
 	constexpr Col(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a)
-		requires (!std::is_same_v<T, std::uint8_t>&& std::is_floating_point_v<T>)
+		requires (!std::is_same_v<T, std::uint8_t> && std::is_floating_point_v<T>)
 		: Col(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f) {}
 
 	constexpr Col(int r, int g, int b)

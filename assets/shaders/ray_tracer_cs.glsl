@@ -1,10 +1,14 @@
 #version 430 core
 
+//Applying small offsets to initial pixel location for ray to prevent jagged edges to geometry
+#define DO_PIXEL_JITTERING 1
 //Smooth shading will interpolate normals from vertices when tracing
 #define DO_SMOOTH_SHADING 1
 #define USE_BVH 1
 //Will use the modified normal for environment lighting
 #define USE_BENT_NORMAL_FOR_LIGHTING 1
+//Will add lighting from the skybox onto the scene
+#define ADD_SKYBOX_LIGHTING 0
 
 //TODO: ambient occlusion is broken and causes black over all vertices
 #define DO_AMBIENT_OCCLUSION 0
@@ -130,6 +134,25 @@ const float EPSILON_T = 1e-5;
 
 const float PI = 3.14159265359;
 const uint MAX_STACK_SIZE = 128;
+
+uint CreateHash(uint x) 
+{
+    x ^= x >> 17; 
+    x *= 0xed5ad4bbu;
+    x ^= x >> 11; 
+    x *= 0xac4c1b51u;
+    x ^= x >> 15; 
+    x *= 0x31848babu;
+    x ^= x >> 14;
+    return x;
+}
+
+//Generates a random number in range [0, 1)
+float GenerateRandomNum(inout uint state) 
+{ 
+    state = CreateHash(state); 
+    return float(state) / 4294967296.0; 
+}
 
 /* Fresnel Reflectance: computes how much light is reflected or
    refracted based on the viewing angle
@@ -273,6 +296,70 @@ vec3 EvaluateMicrofacetBRDF(vec3 N, vec3 V, vec3 L, vec3 albedo, float metallic,
     // PDF mix is computed where sampling is performed; here return placeholder 0
     outPdf = 0.0;
     return diffuse + specular;
+}
+
+void EvaluateBSDF(vec3 normal, vec3 V, vec3 lightDir, vec3 albedo, float metallic, float roughness, out vec3 f, 
+    out float diffusePdf, out float specularPdf, out float mixedPdf) {
+    f = vec3(0.0);
+    diffusePdf = 0.0;
+    specularPdf = 0.0;
+
+    float NdotL = max(dot(normal, lightDir), 0.0);
+    float NdotV = max(dot(normal, V), 0.0);
+    if (NdotL <= 0.0 || NdotV <= 0.0)
+        return;
+
+    vec3 H = normalize(V + lightDir);
+    float NdotH = max(dot(normal, H), 0.0);
+    float VdotH = max(dot(V, H), 0.0);
+
+    float alpha = roughness * roughness;
+    vec3 F0 = mix(vec3(0.04), albedo, metallic);
+
+    float D = NormalDistributionGGX(NdotH, alpha);
+    float k = (alpha + 1.0) * (alpha + 1.0) / 8.0;
+    float G = GeometrySmith(NdotV, NdotL, k);
+    vec3 F = FresnelSchlickReflectance(VdotH, F0);
+
+    vec3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, EPSILON);
+
+    vec3 kd = (1.0 - F) * (1.0 - metallic);
+    vec3 diffuse = kd * albedo / PI;
+
+    f = diffuse + specular;
+    diffusePdf = NdotL / PI;
+    specularPdf = PDF_GGX(NdotH, alpha, VdotH);
+
+    float specularWeight = clamp(max(F0.r, max(F0.g, F0.b)), 0.05, 0.95);
+    mixedPdf= specularWeight * specularPdf + (1.0 - specularWeight) * diffusePdf;
+}
+
+void SampleBSDF(inout uint seed, vec3 normal, vec3 V, vec3 albedo, float metallic, float roughness, out vec3 L, out vec3 f, out float pdf) 
+{
+    float alpha = roughness * roughness;
+
+    vec3 F0 = mix(vec3(0.04), albedo, metallic);
+    float specularWeight = clamp(max(F0.r, max(F0.g, F0.b)), 0.05, 0.95);
+    bool chooseSpecular =  GenerateRandomNum(seed) < specularWeight;
+
+    //Here we choose to do specular for pdf
+    if (chooseSpecular) 
+    {
+        vec3 H = ImportanceSampleGGX(GenerateRandomNum(seed), 
+                 GenerateRandomNum(seed), normal, roughness * roughness);
+        L = reflect(-V, H);
+    } 
+    //Here we do diffuse pdf
+    else 
+    {
+        L = CosineSampleHemisphere(GenerateRandomNum(seed), GenerateRandomNum(seed), normal);
+    }
+
+    float specularPdf = 0;
+    float diffusePdf = 0;
+    float mixedPdf = 0;
+    EvaluateBSDF(normal, V, L, albedo, metallic, roughness, f, diffusePdf, specularPdf, mixedPdf);
+    pdf = mixedPdf;
 }
 
 /* Moller–Trumbore ray–triangle intersection
@@ -431,6 +518,15 @@ bool IsFullyOutsideBounds(vec3 bounds[2], vec3 pos)
     return false;
 }
 
+float CalculateParallelogramArea(vec3 v0, vec3 v1, vec3 v2)
+{
+    return length(cross(v1- v0, v2- v0));
+}
+float CalculateTriangleArea(vec3 v0, vec3 v1, vec3 v2)
+{
+    return 0.5f * CalculateParallelogramArea(v0, v1, v2);
+}
+
 /*
    Calculates the weight of the targetPos based on the 3 positions
    in normalized position where (1, 0, 0) would be barycentric weight of
@@ -439,15 +535,15 @@ bool IsFullyOutsideBounds(vec3 bounds[2], vec3 pos)
 vec3 CalculateBarycentricWeight(vec3 targetPos, vec3 v0, vec3 v1, vec3 v2)
 {
     /* 
-     * Since 0.5 * cross product(v0, v1) is the area of a triangle (NOTE: 0.5
-     * is ignored here because we use ratios of small area over full area, it would cancel)
+     * Since 0.5 * cross product(v0, v1) is the area of a triangle 
      * we can use that to determine how big the area of the triangle formed between the targetPos
      * and two adjacent vertices in relation to the FULL AREA to get ratios of how close
      * a point is (closer to vertices -> smaller triangle area -> dividing smaller value -> greater fraction)
      */
-    vec3 e1 = v1 - v0;
-    vec3 e2 = v2 - v0;
-    float area = length(cross(e1, e2));
+
+    //(NOTE: we use parallogram area (just doing cross(v0, v1, v2)) because we use ratios of small area over full area
+    //the 0.5 would cancel out
+    float area = CalculateParallelogramArea(v0, v1, v2);
     float a0 = length(cross(v1 - targetPos, v2 - targetPos)) / area;
     float a1 = length(cross(v2 - targetPos, v0 - targetPos)) / area;
     //NOTE: we skip the last area because we know all 3 values must equal 1
@@ -470,7 +566,7 @@ vec3 SampleEquirectangular(vec3 dir, sampler2D hdrMap)
 
 bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance instance, out vec3 hitPosWorld, out vec3 hitNormalWorld, 
                         out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2, 
-                        out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2, out float flag)
+                        out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
 {
     vec3 inverseLocalRayDir = 1.0 / max(abs(rayDirLocal), vec3(1e-8)) * sign(rayDirLocal);
     ivec3 localRayDirSign = ivec3(lessThan(inverseLocalRayDir, vec3(0.0)));
@@ -482,9 +578,6 @@ bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance
     //NOTE: we only need the first node to be offset since all tree child indices
     //should be adjusted to be in terms of the full node array
 	stack[stackPtr++] = startNodeIndex;
-
-    flag = 0;
-    int flagCount = 0;
 
 	BVHNode node;
 	float tEnter = 0, tExit = 0;
@@ -504,7 +597,6 @@ bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance
 
 		if (IsLeaf(node))
 		{
-            //flag = 0;
 			for (int i = 0; i < node.objectCount; i++)
 			{
                 //NOTE: since the object indices are in terms of TRIANGLES, we must multiply by
@@ -513,44 +605,7 @@ bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance
                 uint indexV1 = indices[(node.objectStartIndex + i) * 3 + 1];
                 uint indexV2 = indices[(node.objectStartIndex + i) * 3 + 2];
 
-                /*
-                float pastBounds = 0;
-                IsWithinBounds(node.bounds, vertices[indexV0].localPos, pastBounds);
-                flag = max(flag, pastBounds);
-                IsWithinBounds(node.bounds, vertices[indexV1].localPos, pastBounds);
-                flag = max(flag, pastBounds);
-                IsWithinBounds(node.bounds, vertices[indexV2].localPos, pastBounds);
-                flag = max(flag, pastBounds);
-                */
-
-                /*
-                if (!IsWithinBounds(node.bounds, vertices[indexV0].localPos) ||
-                    !IsWithinBounds(node.bounds, vertices[indexV1].localPos) ||
-                    !IsWithinBounds(node.bounds, vertices[indexV2].localPos))
-                {
-                    flag = 1;
-                    return false;
-                }
-                */
-
-                /*
-                if ((node.objectStartIndex + i) * 3 < mesh.indexOffset || (node.objectStartIndex + i) * 3 >= mesh.indexOffset + mesh.numIndices || 
-                    (node.objectStartIndex + i) * 3 + 2 < mesh.indexOffset || (node.objectStartIndex + i) * 3 + 2 >= mesh.indexOffset + mesh.numIndices)
-                {
-                    flag = 1;
-                    return false;
-                }
-                */
-                if (IsFullyOutsideBounds(node.bounds, vertices[indexV0].localPos) ||
-                    IsFullyOutsideBounds(node.bounds, vertices[indexV1].localPos) ||
-                    IsFullyOutsideBounds(node.bounds, vertices[indexV2].localPos))
-                {
-                    flag = 1;
-                    return false;
-                }
-
                 vec3 triangleNormal;
-                int currFlag = 0;
 
 #if DO_SMOOTH_SHADING
                 if (DoesIntersectTriangleInterpolated(
@@ -580,13 +635,6 @@ bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance
                         hit = true;
                     }
                 }
-                /*
-                if (currFlag != 0)
-                {
-                    flag += currFlag;
-                    flagCount++;
-                }
-                */
             }
 		}
 		else
@@ -625,13 +673,12 @@ bool DoesIntersectLocalObjectBVH(vec3 rayOriginLocal, vec3 rayDirLocal, Instance
         hitNormalWorld = normalize(instance.normalModelMatrix * localHitNormal);
         hitPosWorld = (instance.modelMatrix * vec4(rayOriginLocal + rayDirLocal * localMinTEnter, 1)).xyz;
     }
-    //flag = flag / flagCount;
 	return hit;
 }
 
 bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitWorldNormal, 
                         out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, out uint hitIndexV2, 
-                        out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2, out float flag)
+                        out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
 {
     vec3 inverseWorldRayDir =  1.0 / max(abs(rayDirWorld), vec3(1e-8)) * sign(rayDirWorld);
     ivec3 worldRayDirSign = ivec3(lessThan(inverseWorldRayDir, vec3(0.0)));
@@ -646,8 +693,6 @@ bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 
     float hitDistance = 0, minHitDistance = 1e20;
     vec3 rayOriginLocal, rayDirLocal;
 	bool hit = false;
-    flag = 0;
-    int flagCount = 0;
 
 	while (stackPtr > 0)
 	{
@@ -671,9 +716,8 @@ bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 
                 rayDirLocal = normalize(vec3(instance.inverseModelMatrix * vec4(rayDirWorld, 0.0)));
                 vec3 thisHitPosWorld;
 
-                float currFlag = 0;
                 if (DoesIntersectLocalObjectBVH(rayOriginLocal, rayDirLocal, instance, thisHitPosWorld, hitWorldNormal, hitMaterial, seed, 
-                                                    hitIndexV0, hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2, currFlag))
+                                                    hitIndexV0, hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2))
                 {
                     float thisMinHitDistanceWorld = length(thisHitPosWorld - rayOriginWorld);
                     if (thisMinHitDistanceWorld < minHitDistance)
@@ -683,17 +727,6 @@ bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 
                         hit = true;
                     }
                 }
-                flag = max(flag, currFlag);
-                //if (flag == 0) hitLeaf = max(1, hitLeaf);
-                //else if (flag == 1) hitLeaf = max(2, hitLeaf);
-                //flag = max(flag, currFlag);
-                /*
-                if (currFlag !=0) 
-                {
-                    flag += currFlag;
-                    flagCount++;
-                }
-                */
             }
 		}
 		else
@@ -722,7 +755,6 @@ bool DoesIntersectSceneWorldBVH(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 
 				stack[stackPtr++] = node.indexChild1;
 		}
 	}
-    //flag = flag / flagCount;
 	return hit;
 }
 
@@ -804,34 +836,15 @@ bool DoesIntersectSceneWorldNaive(vec3 rayOriginWorld, vec3 rayDirWorld, out vec
 }
 bool DoesIntersectSceneWorld(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hitPos, out vec3 hitNormal, 
                         out Material hitMaterial, inout uint seed, out uint hitIndexV0, out uint hitIndexV1, 
-                        out uint hitIndexV2, out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2, out float flag)
+                        out uint hitIndexV2, out vec3 hitVertexWorld0, out vec3 hitVertexWorld1, out vec3 hitVertexWorld2)
 {
 #if USE_BVH
     return DoesIntersectSceneWorldBVH(rayOriginWorld, rayDirWorld, hitPos, hitNormal, hitMaterial, seed, hitIndexV0, 
-                                      hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2, flag);
+                                      hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
 #else
     return DoesIntersectSceneWorldNaive(rayOriginWorld, rayDirWorld, hitPos, hitNormal, hitMaterial, seed, hitIndexV0, 
                                       hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
 #endif
-}
-
-uint CreateHash(uint x) 
-{
-    x ^= x >> 17; 
-    x *= 0xed5ad4bbu;
-    x ^= x >> 11; 
-    x *= 0xac4c1b51u;
-    x ^= x >> 15; 
-    x *= 0x31848babu;
-    x ^= x >> 14;
-    return x;
-}
-
-//Generates a random number in range [0, 1)
-float GenerateRandomNum(inout uint state) 
-{ 
-    state = CreateHash(state); 
-    return float(state) / 4294967296.0; 
 }
 
 float ComputeAmbientOcclusion(vec3 P, vec3 N, float maxDist, uint aoSamples, inout uint seed) 
@@ -855,7 +868,7 @@ float ComputeAmbientOcclusion(vec3 P, vec3 N, float maxDist, uint aoSamples, ino
         vec3 w0,w1,w2;
 
         float flag= 0;
-        if (!DoesIntersectSceneWorld(origin, L, hp, hn, hm, seed, a,b,c,w0,w1,w2, flag))
+        if (!DoesIntersectSceneWorld(origin, L, hp, hn, hm, seed, a,b,c,w0,w1,w2))
         {
             // No hit at all means definitely unoccluded
             unoccluded += 1.0;
@@ -893,8 +906,7 @@ vec3 ComputeBentNormal(vec3 P, vec3 N, float maxDist, uint aoSamples, inout uint
         uint a,b,c;
         vec3 w0,w1,w2;
 
-        float flag = 0;
-        if (!DoesIntersectSceneWorld(origin, L, hp, hn, hm, seed, a,b,c,w0,w1,w2, flag))
+        if (!DoesIntersectSceneWorld(origin, L, hp, hn, hm, seed, a,b,c,w0,w1,w2))
             avgDir += L;
     }
 
@@ -903,7 +915,7 @@ vec3 ComputeBentNormal(vec3 P, vec3 N, float maxDist, uint aoSamples, inout uint
 }
 
 
-vec3 SamplePointOnTriangle(vec3 v0, vec3 v1, vec3 v2, inout uint seed) 
+vec3 SampleRandomTrianglePoint(vec3 v0, vec3 v1, vec3 v2, inout uint seed) 
 {
     float u = sqrt(GenerateRandomNum(seed));
     float v = GenerateRandomNum(seed);
@@ -922,29 +934,30 @@ void main()
     float num = tlasTree[0].bounds[0].x;
     float num2 = blasTrees[0].bounds[0].x;
   
+
+    float aspectRatio = float(uScreenSize.x) / float(uScreenSize.y);
+    float scale = tan(uViewerBlock.yFov * 0.5);
+    
+#if DO_PIXEL_JITTERING
     //The following apply a small <1 jitter to the pixel coordinate in order to prevent aliasing (jagged edges)
     //If we always used the center of the pixel it would not appear smooth, so by doing this combined with accumulation
     //we get a nicer more-filled and less jagged look to edges
-    float jitteredPixelX = (float(pixel.x) + GenerateRandomNum(seed)) / float(uScreenSize.x);
-    float jitteredPixelY = (float(pixel.y) + GenerateRandomNum(seed)) / float(uScreenSize.y);
+    float normalizedPixelX = (float(pixel.x) + GenerateRandomNum(seed)) / float(uScreenSize.x);
+    float normalizedPixelY = (float(pixel.y) + GenerateRandomNum(seed)) / float(uScreenSize.y);
+#else
+    //Normalized pixels are [0, 1] of screen size
+    float normalizedPixelX = pixel.x / float(uScreenSize.x);
+    float normalizedPixelY = pixel.y / float(uScreenSize.y);
+#endif
+
     //This is the jittered pixel coord in normalized device coordinate pos [-1, 1] 
     //(horizontal and vertical offset from center of screen)
-    vec2 jitteredNDC = vec2(jitteredPixelX * 2.0 - 1.0, jitteredPixelY * 2.0 - 1.0);
-    float aspectRatio = float(uScreenSize.x) / float(uScreenSize.y);
-    float tanHalfFov = tan(uViewerBlock.yFov * 0.5);
-    float scale = tan(uViewerBlock.yFov * 0.5);
-
-    vec3 rayDirWorld = normalize(uViewerBlock.forwardDir + uViewerBlock.rightDir * (jitteredNDC.x * aspectRatio * scale) 
-                    + uViewerBlock.upDir * (jitteredNDC.y * scale));
-    
+    vec2 ndcPos = vec2(normalizedPixelX * 2.0 - 1.0, normalizedPixelY * 2.0 - 1.0);
+    //NOTE: this is a shortcut for doing inverse projection and inverse view matrix multiplication
+    //ASSUMING frustum is symmetric (meaning no offset between camera center and near plane rectangle center)
+    vec3 rayDirWorld = normalize(uViewerBlock.forwardDir + uViewerBlock.rightDir * (ndcPos.x * aspectRatio * scale) 
+                                 + uViewerBlock.upDir * (ndcPos.y * scale));
     vec3 rayOriginWorld = uViewerBlock.worldPos;
-
-    /*
-    vec3 debugDir = rayDirWorld * 0.5 + 0.5; 
-    imageStore(uTextureOutput, pixel, vec4(debugDir, 1.0));
-    imageStore(uTextureInput, pixel, vec4(debugDir, 1.0));
-    return;
-    */
 
     //Radiance is the total color that gets accumulated for this ray
     vec3 radiance = vec3(0.0);
@@ -952,75 +965,26 @@ void main()
     //and energy decreases based on the color (how much light is absorbed)
     vec3 throughput = vec3(1.0);
     
-    
     for (int bounce = 0; bounce < uMaxBounces; bounce++) 
     {   
-        /*
-        vec3 diff = abs(uViewerBlock.forwardDir - rayDirWorld);
-        if (length(diff) < 0.01)
-        {
-            radiance = vec3(0, 0, 1);
-            break;
-        }
-        */
-
         vec3 hitPos, hitNormalWorld;
         Material hitMaterial;
         uint hitIndexV0, hitIndexV1, hitIndexV2;
         vec3 hitWorldV0, hitWorldV1, hitWorldV2;
         
-        float flag = 0;
         if (!DoesIntersectSceneWorld(rayOriginWorld, rayDirWorld, hitPos, hitNormalWorld, hitMaterial, seed, 
-            hitIndexV0, hitIndexV1, hitIndexV2, hitWorldV0, hitWorldV1, hitWorldV2, flag)) 
+            hitIndexV0, hitIndexV1, hitIndexV2, hitWorldV0, hitWorldV1, hitWorldV2)) 
         {
-            //-1 -> no hit, 0 -> world leaf, 1 -> local leaf, 2 -> triangle outisde bounds
-            /*
-            if (hitLeaf == -1) radiance = vec3(1, 0, 0);
-            else if (hitLeaf == 0) radiance = vec3(0, 0, 1);
-            else if (hitLeaf == 1) radiance = vec3(1, 1, 0);
-            else if (hitLeaf == 2) radiance = vec3(1, 1, 1);
-            else radiance = vec3(0, 0, 0);
-            */
-            //radiance = vec3(0, 0, flag / 4);
-            //int flagConverted = int(round(flag));
-
-            /*
-            if (flag >= 4) radiance = vec3(1, 0, 1);
-            else if (flag >= 3) radiance = vec3(0, 1, 1);
-            else if (flag >= 2) radiance = vec3(1, 1, 0);
-            else if (flag >= 1) radiance = vec3(0, 0, 1);
-            else if (flag >= 0) radiance = vec3(1, 1, 1);
-            else radiance = vec3(0, 0, 0);
-            */
-            //if (flag >= 1) radiance = vec3(1, 1, 0);
-            //else radiance = vec3(0, 1, 1);
-            //break;
-            
-
             vec3 sky = vec3(0);
             if (uHasSkybox)
             {
-                //sky = SampleEquirectangular(rayDirWorld, uSkybox);
                 sky = SampleEquirectangular(rayDirWorld, uSkybox);
-                //sky = texture(uSkybox, rayDirWorld).rgb;
             }
-            else sky = mix(vec3(0.6, 0.7, 0.9), vec3(0.2, 0.35, 0.6), 0.5 * (jitteredPixelY + 1.0));
             
-            //vec3 sky = vec3(0, 0, 0);
             radiance += throughput * sky;
             break;
         }
-        //radiance = vec3(0, 1, 0);
-        //break;
 
-        //If the hit material has emission, we add that color to the ray
-        if (hitMaterial.emission.a > 0) 
-        {
-            radiance += throughput * hitMaterial.emission.rgb;
-        }
-        //Next we get albedo by getting base color and if it has a texture(albedo index >=0)
-        //we then get the hit triangle uv coords at the hit point and combine texture color at that point 
-        //with the base color
         vec3 albedo = hitMaterial.baseColor.rgb;
         if (hitMaterial.albedoIndex >= 0) 
         {
@@ -1034,235 +998,141 @@ void main()
             vec2 uv = baryWeights.x * uvEdge0 + baryWeights.y * uvEdge1 + baryWeights.z * uvEdge2;
             albedo = texture(uTextures[hitMaterial.albedoIndex], uv).rgb * hitMaterial.baseColor.rgb * hitMaterial.baseColor.a;
         }
-        
-        //-----------------------------------------------------------------------------------
-        //                          LIGHTING SECTION
-        //-----------------------------------------------------------------------------------
-        // Environment / ambient lighting section
-        float ambientOcclusion = 1;
-
-#if DO_AMBIENT_OCCLUSION
-        ambientOcclusion = ComputeAmbientOcclusion(hitPos, hitNormalWorld, 1.0, uAOSamples, seed);
-#endif
-        //Here we compute the surface normal for future lighting calculations
-        //as well as adding additional color from the environment to the ray
-        vec3 environmentLight = vec3(0.0);
-        if (uHasSkybox)
-        {
-            vec3 lightingSurfaceNormal = hitNormalWorld;
-#if DO_AMBIENT_OCCLUSION && USE_BENT_NORMAL_FOR_LIGHTING
-            lightingSurfaceNormal = ComputeBentNormal(hitPos, hitNormalWorld, 1.0, uAOSamples, seed);
-#endif
-            environmentLight = SampleEquirectangular(normalize(lightingSurfaceNormal), uSkybox);
-        }
-        vec3 diffuseEnvironment = albedo * environmentLight * ambientOcclusion;
-        radiance += throughput * diffuseEnvironment;
-        break;
-
-        // --------------------------------- Stochastic light sampling ----------------------------------
-        // Here we pick a random triangle on the light to see if hit object gets affected by this light
-        // NOTE: because we assume every 3 is a triangle, we have to divide by 3 to find the triangle index
-        // and we multiple by 3 to convert the triangle index to a vertex index
-        uint randomLightInstanceIndex = lightIndices[uint(GenerateRandomNum(seed) * float(uEmissiveCount))];
-        Instance lightInstance= instances[randomLightInstanceIndex];
-        InstanceMesh lightMeshInstance = meshes[randomLightInstanceIndex];
-        uint randomTriangle = uint(GenerateRandomNum(seed) * float(lightMeshInstance.numIndices / 3));
-        uint baseIndex = lightMeshInstance.indexOffset + randomTriangle * 3u;
-        uint lightIndexV0 = indices[baseIndex + 0];
-        uint lightIndexV1 = indices[baseIndex + 1];
-        uint lightIndexV2 = indices[baseIndex + 2];
-        
-        uint triCount = lightMeshInstance.numIndices / 3u;
-        vec3 v0w = vec3(lightInstance.modelMatrix * vec4(vertices[lightIndexV0].localPos, 1.0));
-        vec3 v1w = vec3(lightInstance.modelMatrix * vec4(vertices[lightIndexV1].localPos, 1.0));
-        vec3 v2w = vec3(lightInstance.modelMatrix * vec4(vertices[lightIndexV2].localPos, 1.0));
-        // Here we find the sample of the light using the random triangle we choose above
-        vec3 lightSampleWorld = SamplePointOnTriangle(v0w, v1w, v2w, seed);
-
-        // We use world vertex triangle positions to get triangle area and world normal
-        vec3 e1 = v1w - v0w;
-        vec3 e2 = v2w - v0w;
-        vec3 lightNormalWorld = normalize(cross(e1, e2));
-        float triArea = 0.5 * length(cross(e1, e2)) + EPSILON;
-
-        // direction from hit point toward light (correct sign)
-        vec3 lightDir = normalize(lightSampleWorld - hitPos);
-        float hitDistanceToLight = length(lightSampleWorld - hitPos);
-
-        float NdotL = max(0.0, dot(hitNormalWorld, lightDir));
-        float NlDot = max(0.0, dot(lightNormalWorld, -lightDir));
-
-        //NOTE: the following are only for required scene intersection test out params and are not used for anything
-        uint dummyIndex0, dummyIndex1, dummyIndex2;
-        vec3 dummyV0, dummyV1, dummyV2;
-        if (NdotL > 0.0 && NlDot > 0.0)
-        {
-            // pdf for: uniform emissive instance * uniform triangle index * uniform point on triangle
-            float pdf_point = (1.0 / max(1.0, float(uEmissiveCount))) *
-                                (1.0 / max(1.0, float(triCount))) *
-                                (1.0 / triArea);
-
-            // geometry term (including 1/r^2)
-            float G = (NdotL * NlDot) / max(EPSILON, hitDistanceToLight * hitDistanceToLight);
-
-            // light emission (material emission) scaled by multiplier uniform
-            vec3 Le = materials[lightInstance.materialIndex].emission.rgb;
-
-            vec3 outSpec;
-            float dummyPdf;
-            vec3 brdf = EvaluateMicrofacetBRDF(hitNormalWorld, -rayDirWorld, lightDir, albedo, hitMaterial.metallic, hitMaterial.roughness, outSpec, dummyPdf);
-
-            // Monte Carlo estimator: Le * G * (area / pdf_point) * BRDF * cos term
-            // NOTE: our BRDF evaluate already includes cosine multiplication when used for energy. We include NdotL here for correctness
-            float weight = triArea / max(EPSILON, pdf_point);
-            vec3 direct = Le * G * weight * brdf;
-
-            //If the object we hit is affected by a light (meaning there are no objects blocking the path from a random 
-            //light to this object), we can then add that light's intensity/color to ray -> gains energy
-            //NOTE: it does not matter that we choose a random light because due to accumulation, this will eventually fill out all lights
-            vec3 shadowOrigin = hitPos + hitNormalWorld * EPSILON;
-            vec3 shadowHitPos, shadowHitNormal;
-            Material shadowHitMaterial;
-            float dummyCount = 0;
-            bool blocked = DoesIntersectSceneWorld(shadowOrigin, lightDir, shadowHitPos, shadowHitNormal, shadowHitMaterial, seed, 
-                                                    dummyIndex0, dummyIndex1, dummyIndex2, dummyV0, dummyV1, dummyV2, dummyCount);
-
-            if (!blocked || length(shadowHitPos - hitPos) > hitDistanceToLight - 0.001)
-                radiance += throughput * direct;
-            //NOTE: we apply a small amount of ambient light to ensure objects with no light do not look flat
-            else
-            {
-                vec3 ambientLight = vec3(0, 0, 0);
-                radiance += throughput * ambientLight * ambientOcclusion;
-            }
-        }
         float metallic = clamp(hitMaterial.metallic, 0.0, 1.0);
         float roughness = clamp(hitMaterial.roughness, 0.02, 1.0);
 
-        // ------------------------------- Directional light contribution -----------------------------------
-        // Here we consider the imnpact of the directional light on this ray hit
-        {
-            vec3 L = normalize(-uLightsBlock.directionalDir); // from surface toward directional light
-            float NdotL = max(dot(hitNormalWorld, L), 0.0);
-            if (NdotL > 0.0)
-            {
-                vec3 shadowOrigin = hitPos + hitNormalWorld * EPSILON;
-                vec3 shadowHitPos, shadowHitNormal;
-                Material shadowHitMaterial;
-                float dummyCount = 0;
-                bool blocked = DoesIntersectSceneWorld(shadowOrigin, L, shadowHitPos, shadowHitNormal, shadowHitMaterial, seed, 
-                                                        dummyIndex0, dummyIndex1, dummyIndex2, dummyV0, dummyV1, dummyV2, dummyCount);
-
-                if (!blocked) 
-                {
-                    vec3 spec;
-                    float dummyPdf;
-                    //NOTE: we have to use the hitMaterial NOT the shadow hit material (which is the material in the way blocking ray)
-                    vec3 brdf = EvaluateMicrofacetBRDF(hitNormalWorld, -rayDirWorld, L, albedo, metallic, roughness, spec, dummyPdf);
-                    radiance += throughput * uLightsBlock.directionalColor.rgb * uLightsBlock.directionalColor.a * brdf * NdotL;
-                } 
-            }
-        }
-
-        // --- BSDF sampling for next bounce (mixture specular/diffuse) ---
-        // compute F0 and albedo
-        
-        vec3 F0 = mix(vec3(0.04), albedo, metallic);
-
-        // compute a simple energy-based probability to sample specular vs diffuse
-        float avgF0 = (F0.r + F0.g + F0.b) / 3.0;
-        float specularProb = clamp(avgF0 + (1.0 - roughness) * 0.5, 0.0, 1.0); // metals & low roughness bias specular
-        float diffuseProb = 1.0 - specularProb;
-
-        vec3 nextDir;
-        float pdf = 1.0;
-        vec3 brdfValue = vec3(0.0);
-
-        vec3 V = normalize(-rayDirWorld); // view direction pointing toward viewer
-        vec3 N = hitNormalWorld;
-
-        //If the random choice meets the probabilty for specular, we then apply it
-        float chooser = GenerateRandomNum(seed);
-        if (chooser < specularProb) 
-        {
-            // sample microfacet specular lobe via GGX half-vector sampling
-            float Xi1 = GenerateRandomNum(seed);
-            float Xi2 = GenerateRandomNum(seed);
-            float alpha = roughness * roughness;
-            vec3 H = ImportanceSampleGGX(Xi1, Xi2, N, alpha);
-
-            // reflect V about H to get outgoing L
-            nextDir = normalize(2.0 * dot(V, H) * H - V);
-            // ensure nextDir is in the hemisphere
-            if (dot(nextDir, N) <= 0.0) 
-            {
-                // fallback to cosine hemisphere
-                float x1 = GenerateRandomNum(seed);
-                float x2 = GenerateRandomNum(seed);
-                nextDir = CosineSampleHemisphere(x1, x2, N);
-            }
-
-            // Evaluate BRDF and PDF for this sample
-            float NdotL = max(dot(N, nextDir), 0.0);
-            float NdotH = max(dot(N, H), 0.0);
-            float VdotH = max(dot(V, H), 0.0);
-
-            // Evaluate microfacet BRDF components
-            vec3 specular;
-            float tmpPdf;
-            brdfValue = EvaluateMicrofacetBRDF(N, V, nextDir, albedo, metallic, roughness, specular, tmpPdf);
-
-            // pdf for sampling this L via H sampling:
-            float pdf_spec = PDF_GGX(NdotH, alpha, VdotH);
-            // account for mixture probability selection:
-            pdf = specularProb * pdf_spec + diffuseProb * PDF_CosineHemisphere(max(dot(N, nextDir), 0.0));
-        } 
-        //This handles the diffuse part (indirect bounces so no specular)
-        else 
-        {
-            // cosine-weighted sample for diffuse
-            float x1 = GenerateRandomNum(seed);
-            float x2 = GenerateRandomNum(seed);
-            nextDir = CosineSampleHemisphere(x1, x2, N);
-
-            // evaluate BRDF and pdf for diffuse sample
-            vec3 specular;
-            float tmpPdf;
-            brdfValue = EvaluateMicrofacetBRDF(N, V, nextDir, albedo, metallic, roughness, specular, tmpPdf);
-
-            float NdotL = max(dot(N, nextDir), 0.0);
-            pdf = diffuseProb * PDF_CosineHemisphere(NdotL) + specularProb * EPSILON;
-        }
-
-        if (pdf < EPSILON) 
-            break;
-
-        // Update throughput using rendering equation: throughput *= (f * cos / pdf)
-        float cosTheta = max(dot(N, nextDir), 0.0);
-        throughput *= brdfValue * cosTheta / pdf;
-
-        rayDirWorld = nextDir;
         rayOriginWorld = hitPos + hitNormalWorld * EPSILON;
+        vec3 reflectedRayDirWorld = -rayDirWorld;
 
-        // Russian roulette termination:
-        // if the max rgb channel with energy left is surpassed by random number
-        // then we exit
-        float maxThroughput = max(max(throughput.r, throughput.g), throughput.b);
-        if (GenerateRandomNum(seed) > maxThroughput) 
+        //--------------------------------------------------------------------------------------------------
+        //                                  DIRECT LIGHTING (NEXT EVENT ESTIMATION)
+        //--------------------------------------------------------------------------------------------------
+        {
+            // --------------------------------- Stochastic light sampling ----------------------------------
+            // Here we pick a random triangle on the light to see if hit object gets affected by this light
+            // NOTE: because we assume every 3 is a triangle, we have to divide by 3 to find the triangle index
+            // and we multiple by 3 to convert the triangle index to a vertex index
+            uint randomLightInstanceIndex = lightIndices[uint(GenerateRandomNum(seed) * float(uEmissiveCount))];
+            Instance lightInstance= instances[randomLightInstanceIndex];
+            InstanceMesh lightMeshInstance = meshes[randomLightInstanceIndex];
+            uint randomTriangle = uint(GenerateRandomNum(seed) * float(lightMeshInstance.numIndices / 3));
+            uint baseIndex = lightMeshInstance.indexOffset + randomTriangle * 3u;
+            uint lightIndexV0 = indices[baseIndex + 0];
+            uint lightIndexV1 = indices[baseIndex + 1];
+            uint lightIndexV2 = indices[baseIndex + 2];
+        
+            vec3 lightVertex0 = vec3(lightInstance.modelMatrix * vec4(vertices[lightIndexV0].localPos, 1.0));
+            vec3 lightVertex1 = vec3(lightInstance.modelMatrix * vec4(vertices[lightIndexV1].localPos, 1.0));
+            vec3 lightVertex2 = vec3(lightInstance.modelMatrix * vec4(vertices[lightIndexV2].localPos, 1.0));
+            // Here we find the sample of the light using the random triangle we choose above
+            vec3 randomLightTriangleWorldPoint = SampleRandomTrianglePoint(lightVertex0, lightVertex1, lightVertex2, seed);
+            float lightTriangleArea = CalculateTriangleArea(lightVertex0, lightVertex1, lightVertex2);
+            vec3 lightNormalWorld = normalize(cross(lightVertex1 - lightVertex0, lightVertex2 - lightVertex0));
+
+            vec3 lightVec = randomLightTriangleWorldPoint - hitPos;
+            float hitDistanceToLight = length(lightVec);
+            vec3 lightDir = lightVec / hitDistanceToLight;
+
+            float NdotL = max(0.0, dot(hitNormalWorld, lightDir));
+            float NlDot = max(0.0, dot(lightNormalWorld, -lightDir));
+
+            vec3 shadowHitPos, shadowHitNormal;
+            Material shadowHitMaterial;
+            uint dummyIndex0, dummyIndex1, dummyIndex2;
+            vec3 dummyV0, dummyV1, dummyV2;
+            if (NdotL > EPSILON && NlDot > EPSILON)
+            {
+                bool occluded = DoesIntersectSceneWorld(rayOriginWorld, lightDir, shadowHitPos, shadowHitNormal, shadowHitMaterial, seed, 
+                                                        dummyIndex0, dummyIndex1, dummyIndex2, dummyV0, dummyV1, dummyV2)
+                                && length(shadowHitPos - rayOriginWorld) < hitDistanceToLight - EPSILON;
+                if (!occluded)
+                {
+                    float lightTrianglePdfArea = 1.0 / (lightTriangleArea * float(uEmissiveCount));
+                    float lightPdf = lightTrianglePdfArea * hitDistanceToLight * hitDistanceToLight / max(NlDot, EPSILON);
+
+                    vec3 thisF = vec3(0);
+                    float pdfDiffuse = 0;
+                    float pdfSpecular = 0;
+                    float mixedBsdfPdf =0;
+                    EvaluateBSDF(hitNormalWorld, normalize(-rayDirWorld), lightDir, albedo, metallic, roughness, thisF, pdfDiffuse, pdfSpecular, mixedBsdfPdf);
+
+                    // MIS power heuristic (more stable that balance heuristic)
+                    float w = (lightPdf * lightPdf) / (lightPdf * lightPdf + mixedBsdfPdf * mixedBsdfPdf);
+                    vec4 materialEmission = materials[lightInstance.materialIndex].emission;
+                    vec3 lightRadiance = materialEmission.rgb * materialEmission.a;
+
+                    radiance += throughput * thisF * lightRadiance * NdotL * w / lightPdf;
+                }
+            }
+
+            // ----------------------------------- POINT LIGHTS ------------------------------
+            // In physics based rendering we can not just give point lights an area and glow, 
+            // we must do the same process as sampling an emissive texture and this also
+            // means the point light emits light in all directions infinitely with a cutoff function
+            for (int i=0; i<uLightsBlock.pointLightsCount; i++)
+            {
+                PointLight light = uLightsBlock.pointLights[i];
+                lightVec = light.position - hitPos;
+                hitDistanceToLight = length(lightVec);
+                lightDir = lightVec / hitDistanceToLight;
+                float NdotL = max(0.0, dot(hitNormalWorld, lightDir));
+
+                if (NdotL <= EPSILON)
+                    continue;
+                
+                bool occluded = DoesIntersectSceneWorld(rayOriginWorld, lightDir, shadowHitPos, shadowHitNormal, shadowHitMaterial, seed, 
+                                                        dummyIndex0, dummyIndex1, dummyIndex2, dummyV0, dummyV1, dummyV2)
+                                    && length(shadowHitPos - rayOriginWorld) < hitDistanceToLight - EPSILON;
+                if (!occluded)
+                {
+                    vec3 lightIntensity = light.color.rgb * light.color.a * clamp(1 - (hitDistanceToLight / light.radius), 0.0f, 1.0f);
+                    if (length(lightIntensity) < 1e-5)
+                        continue;
+
+                    vec3 pointLightF = vec3(0);
+                    float dummy0, dummy1, dummy2;
+                    EvaluateBSDF(hitNormalWorld, normalize(-rayDirWorld), lightDir, albedo, metallic, roughness, pointLightF, dummy0, dummy1, dummy2);
+
+                    //Since point lights are single points with infinite directions 
+                    //we do not use pdf and only the f value for lighting the surface
+                    radiance += throughput * pointLightF * lightIntensity * NdotL;
+                }
+            }
+        }
+
+        //-----------------------------------------------------------------------------------------
+        //                                     INDIRECT LIGHTING   
+        //-----------------------------------------------------------------------------------------
+        vec3 f= vec3(0);
+        vec3 l = vec3(0);
+        float pdf= 0;
+        SampleBSDF(seed, hitNormalWorld, reflectedRayDirWorld, albedo, metallic, roughness, l, f, pdf);
+        if (pdf < EPSILON)
             break;
 
-        throughput /= max(maxThroughput, EPSILON);
+        float NdotL = max(dot(hitNormalWorld, l), 0.0);
+        throughput *= f * NdotL / pdf;
+
+        if (bounce > 3) 
+        {
+            float p = clamp(max(throughput.r, max(throughput.g, throughput.b)), 0.05, 0.95);
+            if (GenerateRandomNum(seed) > p) 
+                break;
+            throughput /= p;
+        }
+
+        rayDirWorld = l;
     }
 
     // Progressive accumulation using texture input
-    vec4 prev = (uUnmovingFrameCount == 0u) ? vec4(0.0) : imageLoad(uTextureInput, pixel);
-    vec3 blended = (prev.rgb * float(uUnmovingFrameCount) + radiance) / float(uUnmovingFrameCount + 1u);
-    vec4 fragColor= vec4(blended, 1.0);
+    vec4 previousColor = (uUnmovingFrameCount == 0u) ? vec4(0.0) : imageLoad(uTextureInput, pixel);
+    vec3 blended = (previousColor.rgb * float(uUnmovingFrameCount) + radiance) / float(uUnmovingFrameCount + 1u);
+    vec4 fragColor = vec4(blended, 1);
 
     //imageStore(uTextureOutput, pixel, vec4(1.0, 0, 0, 1.0));
     //TODO: transparency is not supported yet
     imageStore(uTextureOutput, pixel, fragColor);
-    imageStore(uTextureInput, pixel, fragColor);
+    //imageStore(uTextureInput, pixel, fragColor);
 
     float luminance = dot(fragColor, vec4(0.2126, 0.7152, 0.0722, 1.0));
     imageStore(uBrightnessTexture, pixel, luminance >= uBloomThreshold ? fragColor : vec4(0.0));

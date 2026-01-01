@@ -33,13 +33,6 @@ TextureAsset::TextureAsset(const std::filesystem::path& path)
 			"but failed. stbimage Error:{}", path.string(), stbi_failure_reason()));
 		return;
 	}
-	//for (size_t i = 0; i < width * height * 4; i++)
-	//{
-	//	//LogWarning(std::format("Reading pixel:{} channel:{} value:{}", i/4, i%5, data[i + 335*160*4 + 160*4]));
-	//	if (data[i]==255 && i % 4 == 3) LogError(std::format("Frist non-255 alpha:{},{}", i/4%width, i/4/width));
-	//}
-	//LogError(std::format("SHIT channels:{}", channels));
-	//LogError(std::format("path:{} Image chnnaels:{} wid:{} heigh:{}", path.string(), channels, width, height));
 	
 	Rendering::TexelStorageType internalStorage = Rendering::TexelStorageType::RGBA8;
 	if (isHdrTexture)

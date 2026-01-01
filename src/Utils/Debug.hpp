@@ -8,8 +8,6 @@
 #include "Utils/HelperMacros.hpp"
 #include "Utils/Data/Event.hpp"
 
-#define ENGINE_DEBUG
-
 using LogTypeIntegralType = std::uint8_t;
 enum class LogType : LogTypeIntegralType
 {
@@ -85,6 +83,12 @@ namespace DebugProperties
 
 std::string FormatCurrentTime();
 
+template<typename ...Args>
+std::string InvokeFormatVariadicArgs(const char* message, Args&&... args)
+{
+	return std::vformat(message, std::make_format_args(args...));
+}
+
 /// <summary>
 /// Achieves the same as defualt log but also includes the class that called it
 /// </summary>
@@ -108,7 +112,7 @@ void Log(const std::string& message, const bool logTime = DEFAULT_LOG_TIME,
 template<typename ...Args>
 void LogSimple(const char* message, Args&&... args)
 {
-	std::string formattedMessage = std::vformat(message, std::make_format_args(args...));
+	std::string formattedMessage = InvokeFormatVariadicArgs<Args...>(message, std::forward<Args>(args)...);
 	LogMessage(LogType::Log, CallerLogDetails::None, formattedMessage, false, DEFAULT_LOG_TIME, nullptr, DEFAULT_MESSAGE_EVENT_FLAG);
 }
 
@@ -141,7 +145,7 @@ bool Assert(const bool condition, const char* message, Args&&... args)
 	{
 		//NOTE: we have to use vformat and NOT format because vformat is a runtime version of format which allows for 
 		//non-compile time strings like const char* which MSVC gets angry if we use with format
-		std::string formattedMessage = std::vformat(message, std::make_format_args(args...));
+		std::string formattedMessage = InvokeFormatVariadicArgs<Args...>(message, std::forward<Args>(args)...);
 		LogMessage(LogType::Error, DebugProperties::GetCallerLogDetails(), formattedMessage, false,
 			true, nullptr, (DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::EventFlag) != 0, std::source_location::current());
 		if ((DebugProperties::ASSERT_BEHAVIOR & ErroneousBehavior::Break) != 0) Break();

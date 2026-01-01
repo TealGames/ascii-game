@@ -80,6 +80,10 @@ endif()
 
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC GLFW=1) 
 target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC OPENGL=1) 
+#Adds debug features like ENGINE_ASSERT
+target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC ENGINE_DEBUG=1) 
+#Adds engine state logging when engine processes are finished
+target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC ENGINE_LOG=1) 
 #target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC RAYLIB=1) 
 #target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC GLM=1) 
 

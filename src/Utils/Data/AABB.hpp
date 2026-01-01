@@ -61,6 +61,9 @@ struct AABB3DBase
 	AABB3DBase(const WorldPosition3D& minPos, const WorldPosition3D& maxPos, const bool fixZeroAxis = FIX_AABB_AXES_DEFAULT)
 		: m_MinPos(minPos), m_MaxPos(maxPos) 
 	{
+		// NOTE: ideally max is STRICTLY greater than min but due to floating imprecission operations
+		// we allow equal and we just fix 0 or close to 0 size axes 
+		ENGINE_ASSERT(maxPos >= minPos, "Attempted to create AABB3d with invalid max: {} and/or min pos:{}", maxPos.ToString(), minPos.ToString());
 		if (fixZeroAxis) FixZeroAxes();
 	}
 
@@ -73,6 +76,7 @@ struct AABB3DBase
 	/// <param name="fixZeroAxis"></param>
 	AABB3DBase(const Vec3& size, const bool fixZeroAxis = FIX_AABB_AXES_DEFAULT) : m_MinPos(size / 2 * -1), m_MaxPos(size / 2)
 	{
+		ENGINE_ASSERT(!size.AnyAxisLessThan(Vec3::Zero()), "Attempted to create AABB3d with invalid negative-value size:{}", size.ToString());
 		if (fixZeroAxis) FixZeroAxes();
 	}
 
@@ -89,21 +93,18 @@ struct AABB3DBase
 
 		if (isXZero)
 		{
-			const float epsilonX = std::max(AABB_EPSILON * size.m_X, AABB_EPSILON);
-			m_MinPos.m_X -= epsilonX;
-			m_MaxPos.m_X += epsilonX;
+			m_MinPos.m_X -= AABB_EPSILON;
+			m_MaxPos.m_X += AABB_EPSILON;
 		}
 		if (isYZero)
 		{
-			const float epsilonY = std::max(AABB_EPSILON * size.m_Y, AABB_EPSILON);
-			m_MinPos.m_Y -= epsilonY;
-			m_MaxPos.m_Y += epsilonY;
+			m_MinPos.m_Y -= AABB_EPSILON;
+			m_MaxPos.m_Y += AABB_EPSILON;
 		}
 		if (isZZero)
 		{
-			const float epsilonZ = std::max(AABB_EPSILON * size.m_Z, AABB_EPSILON);
-			m_MinPos.m_Z -= epsilonZ;
-			m_MaxPos.m_Z += epsilonZ;
+			m_MinPos.m_Z -= AABB_EPSILON;
+			m_MaxPos.m_Z += AABB_EPSILON;
 		}
 	}
 

@@ -99,7 +99,7 @@ namespace AssetManagement
 			//Note: since we need to do io operations on assets, we must use global path (or relative to directory)
 			//but global path is easier
 			T* assetAsT = new T(GetAbsoluteAssetPath(assetRelPath));
-			LogWarning(std::format("Created asset of type: {} stringed:{}", typeid(T).name(), assetAsT->ToString()));
+			//LogWarning(std::format("Created asset of type: {} stringed:{}", typeid(T).name(), assetAsT->ToString()));
 			auto emplaceResult = m_assets.emplace(assetRelPath.string(), assetAsT);
 
 			RegisterAssetToAllFiles(assetRelPath);
