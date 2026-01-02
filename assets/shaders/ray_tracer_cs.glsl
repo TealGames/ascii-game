@@ -10,9 +10,6 @@
 //Will add lighting from the skybox onto the scene
 #define ADD_SKYBOX_LIGHTING 0
 
-//TODO: ambient occlusion is broken and causes black over all vertices
-#define DO_AMBIENT_OCCLUSION 0
-
 struct BVHNode
 {
     //Min pos, max pos
@@ -76,7 +73,6 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 uniform ivec2 uScreenSize;
 uniform uint uMaxBounces;
-uniform uint uAOSamples;
 uniform uint uUnmovingFrameCount;
 uniform uint uEmissiveCount;
 uniform float uBloomThreshold;
@@ -845,43 +841,6 @@ bool DoesIntersectSceneWorld(vec3 rayOriginWorld, vec3 rayDirWorld, out vec3 hit
     return DoesIntersectSceneWorldNaive(rayOriginWorld, rayDirWorld, hitPos, hitNormal, hitMaterial, seed, hitIndexV0, 
                                       hitIndexV1, hitIndexV2, hitVertexWorld0, hitVertexWorld1, hitVertexWorld2);
 #endif
-}
-
-float ComputeAmbientOcclusion(vec3 P, vec3 N, float maxDist, uint aoSamples, inout uint seed) 
-{
-    float unoccluded = 0.0;
-    for (int i = 0; i < aoSamples; i++)
-    {
-        float xi1 = GenerateRandomNum(seed);
-        float xi2 = GenerateRandomNum(seed);
-
-        // Cosine-weighted hemisphere sampling (physically correct)
-        vec3 L = CosineSampleHemisphere(xi1, xi2, N);
-
-        // Offset to avoid self-intersection
-        vec3 origin = P + N * 0.001;
-
-        // Trace shadow ray
-        vec3 hp, hn;
-        Material hm;
-        uint a,b,c;
-        vec3 w0,w1,w2;
-
-        float flag= 0;
-        if (!DoesIntersectSceneWorld(origin, L, hp, hn, hm, seed, a,b,c,w0,w1,w2))
-        {
-            // No hit at all means definitely unoccluded
-            unoccluded += 1.0;
-        }
-        else
-        {
-            float dist = length(hp - origin);
-            if (dist >= maxDist)
-                unoccluded += 1.0;
-        }
-    }
-
-    return unoccluded / float(aoSamples);
 }
 
 /*

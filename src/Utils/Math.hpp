@@ -3,11 +3,32 @@
 #include <numbers>
 #include "Utils/TemplateConcepts.hpp"
 
+inline constexpr float PI = std::numbers::pi;
+inline constexpr float RAD_90 = PI / 2.0f;
+inline constexpr float RAD_180 = PI;
+inline constexpr float RAD_270 = 3.0f * PI / 2.0f;
+inline constexpr float RAD_360 = 2.0f * PI;
+
+inline constexpr float RAD_30 = PI / 6.0f;
+inline constexpr float RAD_150 = 5.0f * PI / 6.0f;
+inline constexpr float RAD_210 = 7.0f * PI / 6.0f;
+inline constexpr float RAD_330 = 11.0f * PI / 6.0f;
+
+inline constexpr float RAD_60 = PI / 3.0f;
+inline constexpr float RAD_120 = 2.0f * PI / 3.0f;
+inline constexpr float RAD_240 = 4.0f * PI / 3.0f;
+inline constexpr float RAD_300 = 5.0f * PI / 3.0f;
+
+inline constexpr float RAD_45 = PI / 4.0f;
+inline constexpr float RAD_135 = 3.0f * PI / 4.0f;
+inline constexpr float RAD_225 = 5.0f * PI / 4.0f;
+inline constexpr float RAD_315 = 7.0f * PI / 4.0f;
+
 namespace Utils
 {
-	constexpr double RAD_TO_DEG_CONSTANT = std::numbers::pi / 180.0;
-	constexpr double DEG_TO_RAD_CONSTANT = 180.0 / std::numbers::pi;
-	constexpr double EPSILON = 1e-8f;
+	inline constexpr double RAD_TO_DEG_CONSTANT = std::numbers::pi / 180.0;
+	inline constexpr double DEG_TO_RAD_CONSTANT = 180.0 / std::numbers::pi;
+	inline constexpr double EPSILON = 1e-8f;
 
 	template<typename T>
 	T Max(T first) { return first; }

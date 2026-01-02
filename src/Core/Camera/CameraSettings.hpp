@@ -1,8 +1,9 @@
 #pragma once
+#include <cmath>
+#include "Utils/Math.hpp"
 #include "Utils/Data/WorldPosition.hpp"
 #include "Utils/Data/ScreenPosition.hpp"
 #include "Utils/Data/Vec2Type.hpp"
-#include <cmath>
 
 class EntityData;
 
@@ -52,7 +53,7 @@ public:
 	ProjectionType m_ProjectionType;
 
 	//Default is 60 degrees
-	constexpr static inline float DEFAULT_FIELD_OF_VIEW_Y_RAD = 3.14159 / 3;
+	constexpr static inline float DEFAULT_FIELD_OF_VIEW_Y_RAD = RAD_60;
 	/// <summary>
 	/// The field of view Y angle (from top to bottom) -> how much the player 
 	/// sees vertically. It is easier to use y fov because it can remain the same 

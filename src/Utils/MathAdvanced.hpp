@@ -1,27 +1,7 @@
 #pragma once
+#include "Utils/Math.hpp"
 #include "Utils/Data/AABB.hpp"
 #include "Utils/Data/Quaternion.hpp"
-
-inline constexpr float PI = std::numbers::pi;
-inline constexpr float RAD_90 = PI / 2.0f;
-inline constexpr float RAD_180 = PI;
-inline constexpr float RAD_270 = 3.0f * PI / 2.0f;
-inline constexpr float RAD_360 = 2.0f * PI;
-
-inline constexpr float RAD_30 = PI / 6.0f;
-inline constexpr float RAD_150 = 5.0f * PI / 6.0f;
-inline constexpr float RAD_210 = 7.0f * PI / 6.0f;
-inline constexpr float RAD_330 = 11.0f * PI / 6.0f;
-
-inline constexpr float RAD_60 = PI / 3.0f;
-inline constexpr float RAD_120 = 2.0f * PI / 3.0f;
-inline constexpr float RAD_240 = 4.0f * PI / 3.0f;
-inline constexpr float RAD_300 = 5.0f * PI / 3.0f;
-
-inline constexpr float RAD_45 = PI / 4.0f;
-inline constexpr float RAD_135 = 3.0f * PI / 4.0f;
-inline constexpr float RAD_225 = 5.0f * PI / 4.0f;
-inline constexpr float RAD_315 = 7.0f * PI / 4.0f;
 
 namespace Utils
 {

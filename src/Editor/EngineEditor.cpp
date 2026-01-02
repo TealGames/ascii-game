@@ -248,11 +248,16 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 	InitConsoleCommands(playerSystem);
 
 	m_debugInfo.CreateUI(m_guiTree);
-
 	//Note: the init order matters because it creates the order that the objects are added to the selector
 	m_popupManager.AddPopup(new ColorPopupUI(m_inputManager));
 
-	//LogError(std::format("Created engine editor:{}", m_guiTree.ToStringTree()));
+	m_freelookYaw = RAD_180;
+	m_freelookPitch = 0;
+	const Vec3 initialCameraRotation = Vec3(m_freelookPitch, m_freelookYaw, 0);
+	const TransformComponent cameraTransform = TransformComponent(Vec3(0, 0.1, 0.5), Vec3::One(), ToQuaternion(initialCameraRotation));
+	EntityData& mainCameraEntity = m_sceneManager.m_GlobalEntityManager.CreateGlobalEntity("EditorCamera", cameraTransform);
+	CameraComponent& cameraData = mainCameraEntity.AddComponent<CameraComponent>(CameraComponent{ CameraSettings{SCREEN_ASPECT_RATIO, 10, nullptr} });
+	m_cameraController.TryRegisterCamera(cameraData);
 }
 
 void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDeltaTime, const float timeStep)

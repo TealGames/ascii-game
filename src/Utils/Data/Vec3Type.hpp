@@ -58,6 +58,25 @@ public:
 	constexpr Vec GetY() const { return Vec(0, m_Y, 0); }
 	constexpr Vec GetZ() const { return Vec(0, 0, m_Z); }
 
+	/// <summary>
+	/// Since Pitch is a rotation on the YZ plane, this 
+	/// effectively returns the X-component of this vector
+	/// </summary>
+	/// <returns></returns>
+	constexpr float GetPitch() const { return m_X; }
+	/// <summary>
+	/// Since YAW is a rotation on the XZ plane, this 
+	/// effectively returns the Y-component of this vector
+	/// </summary>
+	/// <returns></returns>
+	constexpr float GetYaw() const { return m_Y; }
+	/// <summary>
+	/// Since ROLL is a rotation on the XY plane, this 
+	/// effectively returns the Z-component of this vector
+	/// </summary>
+	/// <returns></returns>
+	constexpr float GetRoll() const { return m_Z; }
+
 	constexpr Vec<T, 2> GetXY() const { return Vec<T, 2>(m_X, m_Y); }
 	constexpr Vec<T, 2> GetYZ() const { return Vec<T, 2>(m_Y, m_Z); }
 	constexpr Vec<T, 2> GetXZ() const { return Vec<T, 2>(m_X, m_Z); }

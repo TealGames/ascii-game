@@ -30,7 +30,6 @@ namespace Rendering
 
     constexpr bool DO_RAYTRACING = true;
     constexpr std::uint32_t MAX_RAYTRACE_BOUNCES = 5;
-    constexpr std::uint32_t AMBIENT_OCCLUSION_SAMPLES = 16;
 
     constexpr bool DO_VISUALIZE_BVH_BOUNDS = false;
     constexpr float BVH_BOUNDS_LINE_THICKNESS = 1;
@@ -113,7 +112,6 @@ namespace Rendering
     constexpr const char* BLUR_WEIGHTS_UNIFORM_NAME = "uWeights";
 
     constexpr const char* RAY_TRACING_MAX_RAY_BOUNCES_UNIFORM_NAME = "uMaxBounces";
-    constexpr const char* AMBIENT_OCCLUSION_SAMPLES_UNIFORM_NAME = "uAOSamples";
     constexpr const char* UNMOVING_FRAME_NUMBER_UNIFORM_NAME = "uUnmovingFrameCount";
     constexpr const char* EMISSIVE_MATERIAL_COUNT_UNIFORM_NAME = "uEmissiveCount";
     constexpr const char* INSTANCE_COUNT_UNIFORM_NAME = "uInstanceCount";
@@ -362,7 +360,6 @@ namespace Rendering
         const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
         m_graphicsManager->SetUniform(UniformDataType::IVector2, SCREEN_SIZE_UNIFORM_NAME, &windowSize);
         m_graphicsManager->SetUniform(UniformDataType::Uint, RAY_TRACING_MAX_RAY_BOUNCES_UNIFORM_NAME, &MAX_RAYTRACE_BOUNCES);
-        m_graphicsManager->SetUniform(UniformDataType::Uint, AMBIENT_OCCLUSION_SAMPLES_UNIFORM_NAME, &AMBIENT_OCCLUSION_SAMPLES);
 
        /* m_viewerUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender));
         m_lightUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender));*/
@@ -1394,7 +1391,9 @@ namespace Rendering
             worldFoward, worldRight, worldUp, camera.GetSettings().m_FieldOfViewYRadians);
 
         if (Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix))
+        {
             m_unmovingFrames = 0;
+        }
     }
 
     void Renderer::DrawBatch(RenderBatch& batch)
