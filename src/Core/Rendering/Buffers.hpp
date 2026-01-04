@@ -365,6 +365,15 @@ namespace Rendering
 		bool HasPersistentReadWritePointer() const { return m_writePtr != nullptr; }
 	};
 
+	enum class BufferType : std::uint8_t
+	{
+		None = 0,
+		Vertex = 1,
+		Index = 1 << 1,
+		Instance = 1 << 2,
+		All = 0xff
+	};
+
 	class VertexBuffer : public FencedBufferBase<void>
 	{
 	private:
@@ -636,7 +645,6 @@ namespace Rendering
 		~ShaderStorageBuffer() = default;
 
 		void AllocateFromShaderBlock(const Shader& shader) override;
-		void DeferAllocatonFromShaderUntilWrite(Shader& shader);
 
 		ShaderStorageBuffer& operator=(const ShaderStorageBuffer&) = delete;
 		ShaderStorageBuffer& operator=(ShaderStorageBuffer&&) noexcept = default;
@@ -690,21 +698,23 @@ namespace Rendering
 		VertexLayoutBindIndex m_BufferBindIndex = 0;
 	};
 
-	inline constexpr size_t IMPL_STATE_SIZE = 4;
 	struct VertexLayoutCallbacks
 	{
-		void(*m_InitFunc)(std::array<std::byte, IMPL_STATE_SIZE>&);
-		void(*m_AddAttributeFunc)(std::array<std::byte, IMPL_STATE_SIZE>&, const VertexAttribute&);
-		void(*m_BindVertexBufferFunc)(std::array<std::byte, IMPL_STATE_SIZE>&, const RenderObjectId, const size_t elementSize, 
+		RenderObjectId(*m_InitFunc)();
+		void(*m_BindActiveFunc)(const RenderObjectId);
+		void(*m_UnbindActiveFunc)();
+		void(*m_AddAttributeFunc)(const RenderObjectId, const VertexAttribute&);
+		void(*m_BindVertexBufferFunc)(const RenderObjectId, const RenderObjectId, const size_t elementSize,
 			const VertexLayoutBindIndex, const VertexAttributeAdvance advanceType);
-		void(*m_DeallocateFunc)(std::array<std::byte, IMPL_STATE_SIZE>&);
+		void(*m_DeallocateFunc)(const RenderObjectId);
 	};
 
 	class VertexLayout
 	{
 	private:
 		std::vector<VertexAttribute> m_layout;
-		std::array<std::byte, IMPL_STATE_SIZE> m_implState;
+		RenderObjectId m_id;
+		bool m_isBoundActive;
 		VertexLayoutCallbacks m_callbacks;
 	public:
 
@@ -718,6 +728,10 @@ namespace Rendering
 		VertexLayout(const VertexLayout&) = delete;
 		VertexLayout(VertexLayout&&) = delete;
 		~VertexLayout();
+
+		void BindActive();
+		void UnbindActive();
+		bool IsBoundActive() const;
 
 		void AddAttribute(const VertexAttribute& attribute);
 		/// <summary>
@@ -816,33 +830,4 @@ namespace Rendering
 
 		bool IsInit() const { return m_isInit; }
 	};
-
-	enum class BufferType : std::uint8_t
-	{
-		None		= 0,
-		Vertex		= 1,
-		Index		= 1<<1,
-		Instance	= 1<<2,
-		All			= 0xff
-	};
-
-	/*
-	class RenderUnit
-	{
-	private:
-		VertexLayout* m_layout;
-		std::vector<std::byte> m_cpuVertices;
-		std::vector<std::byte> m_cpuInstances;
-		std::vector<std::byte> m_cpuIndices;
-
-		IndexBuffer m_indexBufferHandle;
-		VertexBuffer m_vertexBufferHandle;
-		VertexBuffer m_instanceBufferHandle;
-	public:
-
-	private:
-	public:
-		RenderUnit(VertexLayout& layout, const BufferType createBufferFlags);
-	};
-	*/
 }

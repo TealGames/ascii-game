@@ -219,13 +219,6 @@ namespace Rendering
 			return currentFBO;
 		}
 
-		void BeginRenderingMarker()
-		{
-#if defined(RAYLIB)
-			BeginDrawing();
-#endif
-		}
-
 		void ClearBackground(std::uint8_t clearColorAttachments, const Color clearColor, const const float clearDepth)
 		{
 #if defined(OPENGL)
@@ -321,16 +314,6 @@ namespace Rendering
 			{
 				GL_CALL(glDisable(GL_FRAMEBUFFER_SRGB));
 			}
-#endif
-		}
-
-		void EndRenderingMarker()
-		{
-#if defined(OPENGL)
-			//glClearColor(1, 0, 0, 1); 
-			//glClear(GL_COLOR_BUFFER_BIT);
-#elif defined(RAYLIB)
-			EndDrawing();
 #endif
 		}
 

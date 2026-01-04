@@ -378,7 +378,7 @@ namespace Core
 		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Color_BLUE);
 		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Color_BLUE);
 		//m_renderer.AddCallPointLight(Vec3(0.2, 0, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
-		m_renderer.AddCallPointLight(Vec3(0, 0.3, 0), Quat(Vec3(0, 0, 0)), 1.0f, Color(0.0f, 0.0f, 1.0f, 1.0f));
+		//m_renderer.AddCallPointLight(Vec3(0, 0.3, 0), Quat(Vec3(0, 0, 0)), 1.0f, Color(0.0f, 0.0f, 1.0f, 1.0f));
 		//m_renderer.SetDirectionalLight(Vec3(0, -1, 0), COLOR_WHITE);
 
 		const Mat4 modelMatrix3 = Utils::CalculateModelMatrix(nullptr, Vec3(0, -0.3, 0.4), Vec3::One(), Quat::Identity());

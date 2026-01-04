@@ -96,8 +96,8 @@ namespace Rendering
 
 	void FrameBuffer::BindActive()
 	{
-		if (m_isBoundActive)
-			return;
+		ENGINE_ASSERT(m_isBoundActive, "Attempted to bind already active framebuffer");
+		ENGINE_ASSERT(m_id != INVALID_OBJ_ID, "Attempted to bind active invalid id framebuffer");
 
 		const FrameBufferAttachmentTypeIntegralType startColorAttachmentValue = 
 			(FrameBufferAttachmentTypeIntegralType)MIN_COLOR_ATTACHMENT;
@@ -120,8 +120,7 @@ namespace Rendering
 	}
 	void FrameBuffer::UnbindActive()
 	{
-		if (!m_isBoundActive)
-			return;
+		ENGINE_ASSERT(m_isBoundActive, "Attempted to unbind non-active framebuffer");
 
 		m_callbacks.m_UnbindActiveFunc();
 		m_isBoundActive = false;
@@ -803,21 +802,19 @@ namespace Rendering
 		if (m_bindIndex != INVALID_BUFFER_BIND_INDEX)
 			LinkBufferToCurrentBindingPoint();
 	}
-	void ShaderStorageBuffer::DeferAllocatonFromShaderUntilWrite(Shader& shader)
-	{
-
-	}
 	std::string ShaderStorageBuffer::ToString() const
 	{
 		return std::format("[ShaderStorageBuffer]");
 	}
 
 
-	VertexLayout::VertexLayout(const VertexLayoutCallbacks& callbacks) : m_layout(), m_callbacks(callbacks), m_implState()
+	VertexLayout::VertexLayout(const VertexLayoutCallbacks& callbacks) 
+		: m_layout(), m_callbacks(callbacks), m_isBoundActive(false), m_id(INVALID_OBJ_ID)
 	{
-		m_callbacks.m_InitFunc(m_implState);
+		m_id = m_callbacks.m_InitFunc();
 	}
-	VertexLayout::VertexLayout() : m_layout(), m_callbacks(), m_implState() {}
+	VertexLayout::VertexLayout()
+		: m_layout(), m_callbacks({}), m_isBoundActive(false), m_id(INVALID_OBJ_ID) {}
 	VertexLayout::~VertexLayout()
 	{
 		Deallocate();
@@ -825,16 +822,39 @@ namespace Rendering
 
 	void VertexLayout::Deallocate()
 	{
-		if (m_layout.empty())
+		if (m_id == INVALID_OBJ_ID)
 			return;
 
-		m_callbacks.m_DeallocateFunc(m_implState);
+		if (m_isBoundActive)
+			UnbindActive();
+
+		m_callbacks.m_DeallocateFunc(m_id);
+	}
+
+	void VertexLayout::BindActive()
+	{
+		ENGINE_ASSERT(!m_isBoundActive, "Attempted to bind active already bound vertex layout");
+		ENGINE_ASSERT(m_id != INVALID_OBJ_ID, "Attempted to bind invalid id vertex layout");
+
+		m_callbacks.m_BindActiveFunc(m_id);
+		m_isBoundActive = true;
+	}
+	void VertexLayout::UnbindActive()
+	{
+		ENGINE_ASSERT(m_isBoundActive, "Attempted to unbind not bound vertex layout");
+
+		m_callbacks.m_UnbindActiveFunc();
+		m_isBoundActive = false;
+	}
+	bool VertexLayout::IsBoundActive() const
+	{
+		return m_isBoundActive;
 	}
 
 	void VertexLayout::AddAttribute(const VertexAttribute& attribute)
 	{
 		m_layout.push_back(attribute);
-		m_callbacks.m_AddAttributeFunc(m_implState, m_layout.back());
+		m_callbacks.m_AddAttributeFunc(m_id, m_layout.back());
 	}
 
 	void VertexLayout::AddAttributes(const VertexLayoutBindIndex bufferBindIndex, std::vector<VertexAttribute>& attributes)
@@ -855,10 +875,11 @@ namespace Rendering
 				initialByteOffset + matrixColumnTypeSize * i, bufferBindIndex));
 		}
 	}
-	void VertexLayout::LinkToBuffer(const RenderObjectId id, const size_t elementSize, 
+	void VertexLayout::LinkToBuffer(const RenderObjectId bufferId, const size_t elementSize, 
 		const VertexAttributeAdvance advance, const VertexLayoutBindIndex bindIndex)
 	{
-		m_callbacks.m_BindVertexBufferFunc(m_implState, id, elementSize, bindIndex, advance);
+		ENGINE_ASSERT(bufferId != INVALID_OBJ_ID, "Attempted to link vertex layout with invalid id buffer");
+		m_callbacks.m_BindVertexBufferFunc(m_id, bufferId, elementSize, bindIndex, advance);
 	}
 	void VertexLayout::LinkToBuffer(const VertexBuffer& buffer, const VertexLayoutBindIndex bindIndex)
 	{
@@ -886,8 +907,9 @@ namespace Rendering
 	VertexLayout& VertexLayout::operator=(VertexLayout&& other) noexcept
 	{
 		m_layout = std::exchange(other.m_layout, {});
-		m_implState = std::exchange(other.m_implState, {});
+		m_id = std::exchange(other.m_id, INVALID_OBJ_ID);
 		m_callbacks = std::exchange(other.m_callbacks, {});
+		m_isBoundActive = std::exchange(other.m_isBoundActive, false);
 		return *this;
 	}
 

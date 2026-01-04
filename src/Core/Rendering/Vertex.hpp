@@ -46,6 +46,13 @@ namespace Rendering
 
         std::string ToString() const;
     };
+    struct VertexUI
+    {
+        Vec3 m_NormalizedScreenPos;
+        float _padding0;
+        UV m_UVPos = {};
+        float _padding1[2];
+    };
 
     using IndexType = std::uint32_t;
     

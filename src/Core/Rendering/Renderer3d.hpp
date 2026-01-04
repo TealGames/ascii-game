@@ -1,6 +1,5 @@
 #pragma once
-#include "Core/Rendering/RenderCall.hpp"
-#include "Core/Rendering/Buffers.hpp"
+#include "Core/Rendering/RenderUnit.hpp"
 #include "Core/Rendering/TextureController.hpp"
 #include "Utils/Data/Matrix.hpp"
 #include "Core/Rendering/Material.hpp"
@@ -18,9 +17,6 @@ class CameraPrecalculatedData;
 
 namespace Rendering
 {
-    using VertexType = Vertex;
-    using InstanceType = Instance;
-
     enum class RenderCallType : std::uint8_t
     {
         Sphere3d            = 0,
@@ -88,45 +84,6 @@ namespace Rendering
         MaterialData(const Material& material, const int albedoIndx);
 
         std::string ToString() const;
-    };
-
-    class Shader;
-    struct RenderBatch
-    {
-        Shader* m_Shader = nullptr;
-        Texture* m_Texture = nullptr;
-
-        size_t m_VertexStartIndex = -1;
-        size_t m_VertexCount = 0;
-
-        size_t m_IndicesStartIndex = -1;
-        size_t m_IndicesCount = 0;
-
-        size_t m_InstanceStartIndex = -1;
-        size_t m_InstanceCount = 0;
-        //bool m_removeAfterFlush = true;
-        //std::vector<VertexType> m_Vertices = {};
-
-        /// <summary>
-        /// Since we use local indices for easier calcualtions
-        /// we need a way to convert to global vertex index for a batch
-        /// so we add offset to all indices added (offset is just size of 
-        /// vertex count prior to the first model instance being added
-        /// </summary>
-        //IndexType m_IndexOffset = 0;
-        //std::vector<IndexType> m_VertexIndices = {};
-        //std::vector<InstanceType> m_InstanceData = {};
-
-        std::string ToString() const;
-    };
-    using BatchHash = std::uint64_t;
-    using BatchIndex = std::uint8_t;
-    constexpr BatchIndex INVALID_BATCH_INDEX = -1;
-    struct BatchKey
-    {
-        std::uint16_t m_ShaderId;
-        std::uint16_t m_TextureId;
-        std::uint32_t m_VertexCount;
     };
 
    /* struct StaticFrameRenderData
@@ -227,6 +184,8 @@ namespace Rendering
         const EngineState* m_engineState;
         GraphicsManager* m_graphicsManager;
         std::array<Shader*, CORE_SHADER_COUNT> m_coreShaders;
+
+        
         //StaticFrameRenderData m_staticRenderData
 
         BVHInstanceBoundsTree m_tlasTree;
@@ -236,17 +195,11 @@ namespace Rendering
         std::vector<InstanceBoundsData> m_instanceBoundsData;
         std::vector<BVHFlatNode> m_blasTrees;
 
-        //TODO: the cpu side buffers should probabbly be fixed arrays
-        std::vector<RenderBatch> m_geometryBatches;
-        std::vector<RenderBatch> m_debugBatches;
-        std::vector<VertexType> m_vertices;
-        std::vector<IndexType> m_indices;
-        std::vector<InstanceType> m_instances;
         std::vector<InstanceMesh> m_instanceMeshes;
         std::vector<MaterialData> m_materialData;
         std::vector<Texture*> m_bindQueuedTextures;
         std::vector<std::uint32_t> m_emissiveInstanceIndices;
-        std::unordered_map<BatchHash, size_t> m_hashToBatchIndex;
+        //std::unordered_map<BatchHash, size_t> m_hashToBatchIndex;
         std::unordered_map<String16, std::uint32_t> m_cachedMaterials;
         std::uint8_t m_runtimeMaterialId;
         GeometryMetrics m_frameGeometryMetrics;
@@ -267,12 +220,10 @@ namespace Rendering
         Texture m_brightnessOutput;
         RenderBuffer m_hdrDepthRenderBuffer;
 
-        VertexLayout m_vertexLayout;
+        VertexLayout m_geometryVertexLayout;
+        RenderUnit<Vertex, Instance> m_geometryUnit;
         BufferController m_bufferController;
 
-        IndexBuffer m_indexBuffer;
-        VertexBuffer m_vertexBuffer;
-        VertexBuffer m_instancedBuffer;
         UniformBuffer m_viewerUniformBuffer;
         UniformBuffer m_lightUniformBuffer;
 
@@ -292,37 +243,29 @@ namespace Rendering
         std::uint8_t GenerateRuntimeMaterialId();
         void ResetRuntimeMaterialId();
 
-        void WriteVertexDataToSSBOs();
+        void WriteGeometryVertexDataToSSBOs();
 
-        RenderBatch* TryGetBatch(const Shader& shader, const Texture& texture, std::uint32_t vertexCount);
-        size_t CalculateBatchHash(const Shader& shader, const Texture& texture, std::uint32_t totalVertices) const;
-        size_t CalculateBatchHash(const RenderBatch& batch) const;
-        RenderBatch& CreateBatch(Shader& shader, Material& material, const Vertex* vertexArray, const size_t vertexSize,
+        RenderBatch& CreateGeometryBatch(Shader& shader, Material& material, const Vertex* vertexArray, const size_t vertexSize,
             const IndexType* indexArray, const size_t indexSize, const Mat4& modelMatrix, const BVHTriangleTree* blasTree);
-        RenderBatch* TryGetSameDrawBatch(const Shader& shader, const Material& material, std::uint32_t vertexCount);
-        void AddCompleteInstanceToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
+        void FinishGeometryBatch(RenderBatch& batch, const BVHTriangleTree* blasTree);
+        RenderBatch* TryGetSameGeometryDrawBatch(const Shader& shader, const Material& material, std::uint32_t vertexCount);
+        void AddGeometryCompleteInstanceToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
+        Instance& AddGeometryInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
+        void AddGeometryInstanceMeshBoundsData(const std::uint32_t& instanceIndex);
 
         MaterialData* CreateRuntimeMaterial(const Material& material);
-        void FinishBatch(RenderBatch& batch, const BVHTriangleTree* blasTree);
-        void AddVertexToBatch(RenderBatch& batch, const Vertex& vertex);
-        void AddVerticesToBatch(RenderBatch& batch, const Vertex* vertexArray, const size_t vertexSize);
-        void AddIndicesToBatch(RenderBatch& batch, const std::array<IndexType, 3>& arr);
-        void AddIndicesToBatch(RenderBatch& batch, const IndexType* indexArray, const size_t indicesSize);
-        InstanceType* AddInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
-        void AddInstanceMeshBoundsData(const std::uint32_t& instanceIndex);
         void ConstructBLASTree(BVHTriangleTree& tree, const size_t indexStart, const size_t indexSize);
         void ConstructTLASTree();
         int GetEnqueuedTextureIndex(Texture* texture);
         void ClearQueuedTextures();
 
         void FlushBatches();
-        void RenderStartActions() const;
+        void DrawGeometryBatch(RenderBatch& batch);
         void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix);
         void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix, 
             const Vec3& forwardDir, const Vec3& rightDir, const Vec3& upDir, const float yFov);
         void UpdateUniformBuffers();
 
-        void DrawBatch(RenderBatch& batch);
         void ExecuteSkyboxPass(std::uint8_t* outDrawnAttachmentsMask);
         void ExecuteShadowPass();
         void ExecuteLightingAndGeometryPass(const SlotIndex* indices, 
@@ -425,7 +368,6 @@ namespace Rendering
 
         void RenderBuffer();
 
-        std::string ToStringBatches() const;
         std::string ToStringBVH() const;
         std::string ToStringInstances() const;
         std::string ToStringMetrics() const;

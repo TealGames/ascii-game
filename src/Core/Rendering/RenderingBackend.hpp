@@ -128,8 +128,6 @@ namespace Rendering
 		/// </summary>
 		/// <param name="enable"></param>
 		void SetSrgbConversionStatus(const bool enable);
-		void EndRenderingMarker();
-		void DrawUploadedIndexBuffer(const size_t& indicesStartByteOffset, const size_t& drawIndexCount);
 		/// <summary>
 		/// Draws vertex buffer with index buffer and instance buffer info.
 		/// NOTE: there is no offset for vertex buffer, so instead, just offset into index buffer and use basevertexindex

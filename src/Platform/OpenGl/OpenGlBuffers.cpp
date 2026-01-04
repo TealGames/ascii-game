@@ -10,7 +10,7 @@ namespace Rendering
 {
 	namespace OpenGl
 	{
-		static RenderObjectId AllocateRenderBufferFunc(const TexelStorageType storage, const Vec2Int size)
+		static RenderObjectId AllocateRenderBuffer(const TexelStorageType storage, const Vec2Int size)
 		{
 			RenderObjectId id = INVALID_OBJ_ID;
 			GL_CALL(glCreateRenderbuffers(1, &id));
@@ -18,7 +18,7 @@ namespace Rendering
 
 			return id;
 		}
-		static void DeallocateRenderBufferFunc(const RenderObjectId id)
+		static void DeallocateRenderBuffer(const RenderObjectId id)
 		{
 			GL_CALL(glDeleteRenderbuffers(1, &id));
 		}
@@ -27,8 +27,8 @@ namespace Rendering
 		{
 			return RenderBuffer(storage, size, RenderBufferPlatformCallbacks
 				{
-					AllocateRenderBufferFunc,
-					DeallocateRenderBufferFunc
+					AllocateRenderBuffer,
+					DeallocateRenderBuffer
 				});
 		}
 
@@ -43,7 +43,7 @@ namespace Rendering
 		{
 			GL_CALL(glDeleteFramebuffers(1, &id));
 		}
-		static void BindActiveFunc(const RenderObjectId id, const size_t* colorAttachmentsArr, const size_t colorAttachmentsSize)
+		static void BindActiveFrameBuffer(const RenderObjectId id, const size_t* colorAttachmentsArr, const size_t colorAttachmentsSize)
 		{
 			GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, id));
 			if (colorAttachmentsSize != 0)
@@ -56,7 +56,7 @@ namespace Rendering
 				GL_CALL(glNamedFramebufferDrawBuffers(id, colorAttachmentsSize, drawColorAttachments));
 			}
 		}
-		static void UnbindActiveFunc()
+		static void UnbindActiveFrameBuffer()
 		{
 			//NOTE: the default screen framebuffer (with attachments color, depth usually)
 			//has id 0 -> rebind the default one that renders to screen
@@ -140,8 +140,8 @@ namespace Rendering
 				{
 					AllocateFrameBufferFunc,
 					DeallocateFrameBufferFunc,
-					BindActiveFunc,
-					UnbindActiveFunc,
+					BindActiveFrameBuffer,
+					UnbindActiveFrameBuffer,
 					SetOutputTarget,
 					RemoveOutputTarget
 				});
@@ -340,17 +340,25 @@ namespace Rendering
 				});
 		}
 
-		static void InitVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState)
+		static RenderObjectId InitVertexLayout()
 		{
 			RenderObjectId id = INVALID_OBJ_ID;
 			GL_CALL(glCreateVertexArrays(1, &id));
-			GL_CALL(glBindVertexArray(id));
-			implState = std::bit_cast<std::array<std::byte, IMPL_STATE_SIZE>>(id);
+			
+			return id;
 		}
 
-		static void AddVertexLayoutAttribute(std::array<std::byte, IMPL_STATE_SIZE>& implState, const VertexAttribute& attribute)
+		static void BindActiveVertexLayout(const RenderObjectId id)
 		{
-			const RenderObjectId id = std::bit_cast<RenderObjectId>(implState);
+			GL_CALL(glBindVertexArray(id));
+		}
+		static void UnbindActiveVertexLayout()
+		{
+			GL_CALL(glBindVertexArray(0));
+		}
+
+		static void AddVertexLayoutAttribute(const RenderObjectId id, const VertexAttribute& attribute)
+		{
 			GL_CALL(glEnableVertexArrayAttrib(id, attribute.m_ShaderLocation));
 
 			GLint componentType = 0;
@@ -384,25 +392,21 @@ namespace Rendering
 				GL_CALL(glVertexArrayBindingDivisor(id, attribute.m_ShaderLocation, 1));*/
 		}
 
-		static void BindBufferToVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState, const RenderObjectId bufferId, 
+		static void BindBufferToVertexLayout(const RenderObjectId id, const RenderObjectId bufferId, 
 			const size_t elementSize, const VertexLayoutBindIndex bindIndex, const VertexAttributeAdvance advanceType)
 		{
-			const RenderObjectId vertexArrayObjId = std::bit_cast<RenderObjectId>(implState);
-			ENGINE_ASSERT(vertexArrayObjId != INVALID_OBJ_ID && bufferId != INVALID_OBJ_ID, "OPENGL: Attempted to bind buffer:{} to vertex layout:{} "
-				"but the buffer and/or vertex array object has invalid id", bufferId, vertexArrayObjId);
 			//LogError(std::format("buffer id:{} ({}) id:{}({}) element size:{} bindIndex:{}", bufferId, 
 			// glIsBuffer(bufferId), vertexArrayObjId, glIsBuffer(vertexArrayObjId), elementSize, bindIndex));
-			GL_CALL(glVertexArrayVertexBuffer(vertexArrayObjId, bindIndex, bufferId, 0, elementSize));
+			GL_CALL(glVertexArrayVertexBuffer(id, bindIndex, bufferId, 0, elementSize));
 
 			if (advanceType == VertexAttributeAdvance::Instance)
 			{
-				GL_CALL(glVertexArrayBindingDivisor(vertexArrayObjId, bindIndex, 1));
+				GL_CALL(glVertexArrayBindingDivisor(id, bindIndex, 1));
 			}
 		}
 
-		static void DeallocateVertexLayout(std::array<std::byte, IMPL_STATE_SIZE>& implState)
+		static void DeallocateVertexLayout(const RenderObjectId id)
 		{
-			const RenderObjectId id = std::bit_cast<RenderObjectId>(implState);
 			GL_CALL(glDeleteVertexArrays(1, &id));
 		}
 
@@ -412,6 +416,8 @@ namespace Rendering
 				VertexLayoutCallbacks
 				{
 					InitVertexLayout,
+					BindActiveVertexLayout,
+					UnbindActiveVertexLayout,
 					AddVertexLayoutAttribute,
 					BindBufferToVertexLayout,
 					DeallocateVertexLayout
