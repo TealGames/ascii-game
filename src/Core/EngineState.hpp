@@ -16,6 +16,7 @@ enum class UpdateStatusCode : std::uint8_t
 
 
 namespace Core { class Window; }
+namespace AssetManagement { class AssetManager; }
 namespace Rendering
 {
 	class GraphicsManager;
@@ -36,6 +37,7 @@ public:
 	UpdateStatusCode m_LastUpdateStatus;
 	Rendering::GraphicsContext m_GraphicsContext;
 	CameraController* m_CameraController;
+	AssetManagement::AssetManager* m_AssetManager;
 	const TimeKeeper* m_TimeKeeper;
 
 private:

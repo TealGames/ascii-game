@@ -5,14 +5,13 @@
 #include <limits>
 //#include "raylib.h"
 #include "ECS/Component/Component.hpp"
-#include "ECS/Systems/MultiBodySystem.hpp"
-#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
+#include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
-#include "ECS/Systems/Types/World/LightSourceSystem.hpp"
+#include "ECS/Systems/Types/World/LightSource2DSystem.hpp"
 #include "Utils/Data/Point4D.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/Data/ColorGradient.hpp"
-#include "ECS/Component/Types/World/LightSourceData.hpp"
+#include "ECS/Component/Types/World/LightSource2DComponent.hpp"
 #include "Core/Scene/Scene.hpp"
 
 class EntityData;
@@ -33,10 +32,10 @@ namespace ECS
 		Circle,
 	};
 
-	class LightSourceSystem : MultiBodySystem
+	class LightSource2DSystem
 	{
 	private:
-		const EntityRendererSystem& m_rendererSystem;
+		const EntityRenderer2DSystem& m_rendererSystem;
 
 	public:
 
@@ -51,12 +50,12 @@ namespace ECS
 		/// <returns></returns>
 		Color GetColorFromMultiplier(const Color& originalColor, const Color& filterColor, const float& multiplier) const;
 
-		void CreateLightingForPoint(LightSourceData& data, const WorldPosition3D& centerPos,
+		void CreateLightingForPoint(LightSource2DComponent& data, const WorldPosition3D& centerPos,
 			FragmentedTextBuffer2D& buffer, bool displayLightLevels);
 
-		void RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer2D*>& buffers, bool displayLightLevels = false);
-		std::uint8_t CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const;
-		Color CalculateNewColor(LightSourceData& data, const TextBufferCharPosition2D& bufferPos, const float& distance, 
+		void RenderLight(LightSource2DComponent& data, std::vector<FragmentedTextBuffer2D*>& buffers, bool displayLightLevels = false);
+		std::uint8_t CalculateLightLevelFromDistance(const LightSource2DComponent& data, const float& distance) const;
+		Color CalculateNewColor(LightSource2DComponent& data, const TextBufferCharPosition2D& bufferPos, const float& distance, 
 			std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:
@@ -71,9 +70,9 @@ namespace ECS
 		/// <param name="initialLightLevel">The light level that is present at the object's center/transform position</param>
 		/// <param name="falloffValue">THe rate that the light will fade away where <1 creates more logarithmic curves, 
 		//=1 creates linear and >1 creates exponential decay</param>
-		LightSourceSystem(const EntityRendererSystem& renderer);
+		LightSource2DSystem(const EntityRenderer2DSystem& renderer);
 
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
 	};
 
 }

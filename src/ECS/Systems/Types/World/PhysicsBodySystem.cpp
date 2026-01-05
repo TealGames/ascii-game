@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/PhysicsBodySystem.hpp"
-#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "Core/Physics/PhysicsWorld.hpp"
 #include "Core/PositionConversions.hpp"
 #include "Utils/HelperFunctions.hpp"
@@ -18,11 +18,11 @@ namespace ECS
 	PhysicsBodySystem::PhysicsBodySystem(Physics::PhysicsManager& physicsManager) 
 		: m_physicsManager(physicsManager) //m_lineBuffer(),
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(PhysicsBodyData), 
+		GlobalComponentInfo::AddComponentInfo(typeid(PhysicsBodyComponent), 
 			ComponentInfo(CreateComponentTypes<CollisionBoxData>(), CreateRequiredComponentFunction(CollisionBoxData()),
 				[](EntityData& entity)-> void
 				{
-					PhysicsBodyData& body = *(entity.TryGetComponentMutable<PhysicsBodyData>());
+					PhysicsBodyComponent& body = *(entity.TryGetComponentMutable<PhysicsBodyComponent>());
 					//Note: since we allow assigning collider from physics body, we only set it if it was not set from constructor
 					if (body.m_collider == nullptr)
 					{

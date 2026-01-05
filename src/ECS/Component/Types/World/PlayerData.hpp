@@ -1,13 +1,13 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
-#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "Utils/Data/Vec2Type.hpp"
 
 namespace ECS { class PlayerSystem; }
 class PlayerData : public Component
 {
 private:
-	PhysicsBodyData* m_body;
+	PhysicsBodyComponent* m_body;
 
 	float m_xMoveSpeed;
 	float m_initialJumpSpeed;
@@ -23,7 +23,7 @@ private:
 	float CalculateInitialJumpSpeed() const;
 
 private:
-	PlayerData(PhysicsBodyData* body, const float& moveSpeed, const float& maxJumpHeight);
+	PlayerData(PhysicsBodyComponent* body, const float& moveSpeed, const float& maxJumpHeight);
 
 	void TrySetInitialJumpSpeed();
 
@@ -31,7 +31,7 @@ public:
 	PlayerData();
 	PlayerData(const Json& json);
 	//TODO: what if the wrong boddy is provided meaning one that does not share the same entity as this
-	PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const float& maxJumpHeight);
+	PlayerData(PhysicsBodyComponent& bodyData, const float& moveSpeed, const float& maxJumpHeight);
 
 	float GetMoveSpeed() const;
 	float GetInitialJumpSpeed() const;
@@ -44,8 +44,8 @@ public:
 	/// <returns></returns>
 	float GetVerticalDistanceToGround() const;
 
-	PhysicsBodyData& GetBodyMutableSafe();
-	const PhysicsBodyData& GetBodySafe() const;
+	PhysicsBodyComponent& GetBodyMutableSafe();
+	const PhysicsBodyComponent& GetBodySafe() const;
 
 	Vec2Int GetFrameInput() const;
 	Vec2Int GetLastFrameInput() const;

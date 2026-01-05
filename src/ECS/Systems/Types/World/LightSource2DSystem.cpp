@@ -1,10 +1,10 @@
-#include "pch.hpp"
 #include <cmath>
-#include "ECS/Systems/Types/World/LightSourceSystem.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "pch.hpp"
+#include "ECS/Systems/Types/World/LightSource2DSystem.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Utils/Data/Vec2Type.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
+#include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/Data/ColorGradient.hpp"
 #include "Core/Scene/Scene.hpp"
@@ -18,12 +18,12 @@ namespace ECS
     static constexpr bool CACHE_LAST_BUFFER = true;
     static constexpr bool STORE_LIGHT_MAP = true;
 
-	LightSourceSystem::LightSourceSystem(const EntityRendererSystem& renderer) :
+	LightSource2DSystem::LightSource2DSystem(const EntityRenderer2DSystem& renderer) :
         m_rendererSystem(renderer)
 	{
 	}
 
-    void LightSourceSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+    void LightSource2DSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("LightSourceSystem::SystemUpdate"); 
@@ -39,8 +39,8 @@ namespace ECS
 
         
         std::vector<FragmentedTextBuffer2D*> affectedLayerBuffers = {};
-        scene.OperateOnComponents<LightSourceData>(
-            [this, &scene, &affectedLayerBuffers](LightSourceData& data)-> void
+        scene.OperateOnActiveComponents<LightSource2DComponent>(
+            [this, &scene, &affectedLayerBuffers](LightSource2DComponent& data)-> void
             {
                 //Log(LogType::Warning, std::format("Light data for {} is mutated: {}", entity.m_Name, std::to_string(data.m_MutatedThisFrame)));
                 affectedLayerBuffers = scene.GetLayerBufferMutable(data.m_AffectedLayers);
@@ -103,11 +103,11 @@ namespace ECS
             
     }
 
-	void LightSourceSystem::RenderLight(LightSourceData& data, std::vector<FragmentedTextBuffer2D*>& buffers, bool displayLightLevels)
+	void LightSource2DSystem::RenderLight(LightSource2DComponent& data, std::vector<FragmentedTextBuffer2D*>& buffers, bool displayLightLevels)
     {
         //TODO: right now we use only the transform pos, but we should also use every pos on player too
         
-        EntityRendererData* renderData = data.GetEntityMutable().TryGetComponentMutable<EntityRendererData>();
+        EntityRenderer2DComponent* renderData = data.GetEntityMutable().TryGetComponentMutable<EntityRenderer2DComponent>();
         if (!Assert(renderData != nullptr, "Tried to render light for entity: {} "
             "but could not find its entity render component!", data.GetEntity().m_Name)) 
             return;
@@ -130,7 +130,7 @@ namespace ECS
 
     //TODO: this probably needs to be optimized
     //TODO: there is a lot of get flopped and conversions from cartesia and row col pos so that could be optimized
-    void LightSourceSystem::CreateLightingForPoint(LightSourceData& data,
+    void LightSource2DSystem::CreateLightingForPoint(LightSource2DComponent& data,
         const WorldPosition3D& centerPos, FragmentedTextBuffer2D& buffer, bool displayLightLevels)
     {
         std::sort(buffer.begin(), buffer.end(), 
@@ -150,21 +150,21 @@ namespace ECS
         }
     }
 
-    std::uint8_t LightSourceSystem::CalculateLightLevelFromDistance(const LightSourceData& data, const float& distance) const
+    std::uint8_t LightSource2DSystem::CalculateLightLevelFromDistance(const LightSource2DComponent& data, const float& distance) const
     {
         //We do radius +1 since we want there to be 0 light when we go PAST the radius
         //NOTE: pow is expensive and can take 50-100 clock cycles
         return data.m_Intensity* std::powf(1 - (distance / (data.m_LightRadius + 1)), data.m_FalloffStrength);
     }
 
-    Color LightSourceSystem::GetColorFromMultiplier(const Color& originalColor, const Color& filterColor, const float& colorMultiplier) const
+    Color LightSource2DSystem::GetColorFromMultiplier(const Color& originalColor, const Color& filterColor, const float& colorMultiplier) const
     {
         return Color(std::roundf((originalColor.m_R) * (1 - colorMultiplier) + (filterColor.m_R) * (colorMultiplier)),
                      std::roundf((originalColor.m_G) * (1 - colorMultiplier) + (filterColor.m_G) * (colorMultiplier)),
                      std::roundf((originalColor.m_B) * (1 - colorMultiplier) + (filterColor.m_B) * (colorMultiplier)), 1.0f);
     }
 
-    Color LightSourceSystem::CalculateNewColor(LightSourceData& data,
+    Color LightSource2DSystem::CalculateNewColor(LightSource2DComponent& data,
         const TextBufferCharPosition2D& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
         //Log(std::format("Distance between {} and {} is: {}",

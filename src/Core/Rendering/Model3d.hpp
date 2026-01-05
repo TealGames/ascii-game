@@ -12,11 +12,18 @@ namespace Rendering
 	{
 		std::vector<Vertex> m_Vertices = {};
 		std::vector<IndexType> m_Indices = {};
-		Rendering::Material m_Material = {};
-		StaticBVHTree<Triangle> m_BLASTree;
+		StaticBVHTree<Triangle> m_BLASTree = {};
 
 		const std::vector<BVHFlatNode>& ConstructBLASTree(const size_t leafCount);
 		AABB3D CalculateTightBounds() const;
+
+		std::string ToString() const;
+	};
+
+	struct ModelObject
+	{
+		ModelMesh m_Mesh = {};
+		Material m_Material = {};
 
 		std::string ToString() const;
 	};
@@ -26,13 +33,13 @@ namespace Rendering
 	const std::vector<BVHFlatNode>& ConstructBVHFromIndices(StaticBVHTree<Triangle>& tree,
 		IndexType* indices, const size_t indexSize, const Vertex* vertexArray);
 
-	struct ModelMeshGroup
+	struct ModelObjectGroup
 	{
 		Mat4 m_GlobalTransform = Mat4::GetIdentity();
 		/// <summary>
-		/// The indices into the model mesh array
+		/// The indices into the model object array
 		/// </summary>
-		std::vector<size_t> m_MeshIndices = {};
+		std::vector<size_t> m_ObjectIndices = {};
 	};
 
 	struct Model3d
@@ -40,11 +47,11 @@ namespace Rendering
 		/// <summary>
 		/// A mesh is any type of separate geometric data that has its own vertex and material data
 		/// </summary>
-		std::vector<ModelMesh> m_Meshes = {};
+		std::vector<ModelObject> m_Objects = {};
 		/// <summary>
 		/// A mesh group is a singular full object within a model
 		/// </summary>
-		std::vector<ModelMeshGroup> m_MeshGroups = {};
+		std::vector<ModelObjectGroup> m_ObjectGroups = {};
 
 		std::string ToString() const;
 	};

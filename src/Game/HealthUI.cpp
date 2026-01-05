@@ -2,7 +2,7 @@
 #include "Game/HealthUI.hpp"
 #include "Game/GameState.hpp"
 #include "Core/Scene/GlobalEntityManager.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UILayout.hpp"
 #include "Utils/Debug.hpp"

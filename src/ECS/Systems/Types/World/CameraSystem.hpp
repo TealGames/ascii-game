@@ -1,7 +1,6 @@
 #pragma once
 #include <optional>
 #include <vector>
-#include "ECS/Systems/SingleBodySystem.hpp"
 #include "Utils/Data/Vec2Type.hpp"
 #include "ECS/Entity/Entity.hpp"
 #include "ECS/Component/Component.hpp"
@@ -9,7 +8,7 @@
 #include "Core/Rendering/RenderLayer.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
 #include "Utils/Data/WorldPosition.hpp"
 #include "Utils/Data/ScreenPosition.hpp"
 #include "Core/Visual/TextBuffer.hpp"
@@ -19,7 +18,7 @@
 namespace Rendering { class Renderer; }
 namespace ECS
 {
-	class CameraSystem : public SingleBodySystem<CameraComponent>
+	class CameraSystem
 	{
 	private:
 		Rendering::Renderer* m_renderer;
@@ -48,8 +47,7 @@ namespace ECS
 
 		void UpdateCameraPosition(CameraComponent& cameraData);
 
-		void Init();
-		void SystemUpdate(Scene& scene, CameraComponent& component, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& component, const float& deltaTime);
 
 		/*const FragmentedTextBuffer& GetCurrentFrameBuffer() const;
 		const ColliderOutlineBuffer* GetCurrentColliderOutlineBuffer() const;

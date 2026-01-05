@@ -10,7 +10,7 @@
 #include "Core/Visual/TextArray.hpp"
 #include "Core/Serialization/SerializableEntity.hpp"
 #include "ECS/Component/Component.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/World/AnimatorData.hpp"
 #include "Core/Visual/SpriteAnimation.hpp"
 #include "ECS/Component/ComponentFieldReference.hpp"

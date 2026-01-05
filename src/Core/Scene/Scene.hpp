@@ -16,8 +16,8 @@
 #include "Core/Serialization/IJsonSerializable.hpp"
 #include "Core/Scene/GlobalEntityManager.hpp"
 //#include "Unused/EntityMapper.hpp"
-//#include "ECS/Component/Types/World/CameraData.hpp"
-#include "ECS/Component/Types/World/TransformData.hpp"
+//#include "ECS/Component/Types/World/CameraComponent.hpp"
+#include "ECS/Component/Types/World/TransformComponent.hpp"
 
 //using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;
 //TODO: perhaps we should consolidate the string and local entity collection into one to not take up as much memory
@@ -74,10 +74,8 @@ public:
 
 	static std::string ExtractSceneName(const std::filesystem::path& path);
 
-	/// <summary>
-	/// Will initialize the scene with deserialized entities and will initialize physics simulation
-	/// </summary>
-	//void InitScene();
+	void Start();
+	bool Validate() override;
 
 	std::string GetName() const;
 	GlobalEntityManager& TryGetGlobalEntityManagerMutable();
@@ -152,23 +150,28 @@ public:
 
 	const EntityData* TryGetEntity(const std::string& name, const bool& ignoreCase = false) const;
 
-	template<typename T>
-	requires std::is_base_of_v<Component, T>
-	void OperateOnComponents(const std::function<void(T&)> action)
+	template<typename T, typename TInvocable>
+	requires (std::is_base_of_v<Component, T> && ECS::IsComponentInvocableType<T, TInvocable>)
+	void OperateOnComponents(const ComponentStateFlag flags, TInvocable&& action)
 	{
-		ECS::OperateOnActiveComponents<T>(m_registry, action);
-		TryGetGlobalEntityManagerMutable().OperateOnComponents<T>(action);
+		ECS::OperateOnComponents<T, TInvocable>(m_registry, flags, std::forward<TInvocable>(action));
+		TryGetGlobalEntityManagerMutable().OperateOnComponents<T, TInvocable>(flags, std::forward<TInvocable>(action));
+	}
+
+	template<typename T, typename TInvocable>
+	requires (std::is_base_of_v<Component, T>&& ECS::IsComponentInvocableType<T, TInvocable>)
+	void OperateOnActiveComponents(TInvocable&& action)
+	{
+		return OperateOnComponents<T, TInvocable>(ALL_ACTIVE_ENABLED_FLAG, std::forward<TInvocable>(action));
 	}
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	void GetComponentsMutable(std::vector<T*>& inputVector)
+	void GetComponentsMutable(const ComponentStateFlag flags, std::vector<T*>& inputVector)
 	{
-		ECS::GetRegistryComponentsMutable<T>(m_registry, inputVector);
-		TryGetGlobalEntityManagerMutable().GetComponents<T>(inputVector);
+		ECS::GetRegistryComponentsMutable<T>(m_registry, flags, inputVector);
+		TryGetGlobalEntityManagerMutable().GetComponents<T>(flags, inputVector);
 	}
-
-	bool Validate() override;
 
 	std::string ToString() const;
 };

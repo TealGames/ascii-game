@@ -1,5 +1,5 @@
 #pragma once
-#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
 #include "Utils/Data/NormalizedPosition.hpp"
 
 enum class CoordinateOriginType : std::uint8_t

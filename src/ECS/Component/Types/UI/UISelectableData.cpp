@@ -4,7 +4,7 @@
 #include "Utils/Debug.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "Core/Rendering/Renderer3d.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 
 static constexpr Color HOVER_COLOR = Color(COLOR_WHITE, 90/255.0f);

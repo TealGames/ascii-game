@@ -2,13 +2,12 @@
 #include <vector>
 #include "ECS/Component/Component.hpp"
 #include "Utils/Data/Point2DInt.hpp"
-#include "ECS/Component/Types/World/TransformData.hpp"
-#include "ECS/Systems/MultiBodySystem.hpp"
+#include "ECS/Component/Types/World/TransformComponent.hpp"
 #include "Core/Scene/Scene.hpp"
 
 namespace ECS
 {
-	class TransformSystem : public MultiBodySystem
+	class TransformSystem
 	{
 	private:
 	public:
@@ -18,7 +17,7 @@ namespace ECS
 		TransformSystem() = default;
 		~TransformSystem() = default;
 
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
 		//void UpdateLastFramePos(Scene& scene);
 	};
 }

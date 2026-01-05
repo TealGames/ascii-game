@@ -1,16 +1,16 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/SpriteAnimatorSystem.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "ECS/Component/Types/World/EntityRenderer2DComponent.hpp"
 #include "Core/Visual/SpriteAnimation.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 namespace ECS
 {
-	SpriteAnimatorSystem::SpriteAnimatorSystem(EntityRendererSystem& entityRenderer) 
+	SpriteAnimatorSystem::SpriteAnimatorSystem(EntityRenderer2DSystem& entityRenderer) 
 		: m_EntityRenderer(entityRenderer) {}
 
 	void SpriteAnimatorSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
@@ -21,23 +21,26 @@ namespace ECS
 
 		if (deltaTime <= 0) return;
 
-		scene.OperateOnComponents<SpriteAnimatorData>(
+		scene.OperateOnActiveComponents<SpriteAnimatorData>(
 			[this, &scene, deltaTime](SpriteAnimatorData& data)-> void
 			{
-				if (!data.IsPlayingAnimation()) return;
+				if (!data.IsPlayingAnimation()) 
+					return;
 
 				SpriteAnimation* currentAnim = data.TryGetPlayingAnimationMutable();
-				if (currentAnim == nullptr) return;
+				if (currentAnim == nullptr) 
+					return;
 
 				if (!Assert(0 <= currentAnim->m_FrameIndex && currentAnim->m_FrameIndex < currentAnim->m_Frames.size(),
 					"Tried to update frame idnex in sprite animator, but frame index:{} is at out of bound position of frames:[0, {})",
-						std::to_string(currentAnim->m_FrameIndex), std::to_string(currentAnim->m_Frames.size())))
+					std::to_string(currentAnim->m_FrameIndex), std::to_string(currentAnim->m_Frames.size())))
 					return;
 
-				if (currentAnim->m_Frames.empty()) return;
+				if (currentAnim->m_Frames.empty()) 
+					return;
 
 				const float animDeltaTime = deltaTime* currentAnim->m_AnimationSpeed;
-				if (currentAnim->m_NormalizedTime >= currentAnim->m_SingleLoopLength && !currentAnim->m_Loop) 
+				if (currentAnim->m_NormalizedTime >= currentAnim->m_SingleLoopLength && !currentAnim->m_Loop)
 					return;
 
 				currentAnim->m_NormalizedTime += animDeltaTime;
@@ -53,7 +56,7 @@ namespace ECS
 	void SpriteAnimatorSystem::SetVisual(EntityData& entity, const SpriteAnimation& animation) const
 	{
 		//TODO: this should maybe be included as dependency for the animator?
-		EntityRendererData* renderer = entity.TryGetComponentMutable<EntityRendererData>();
+		EntityRenderer2DComponent* renderer = entity.TryGetComponentMutable<EntityRenderer2DComponent>();
 		if (!Assert(renderer != nullptr, "Tried to set the visual on sprite animator for entity: {} "
 			"but it does not have entity renderer component", entity.m_Name)) 
 			return;

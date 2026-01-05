@@ -1,11 +1,12 @@
 #pragma once
-#include "ECS/Systems/MultiBodySystem.hpp" 
 #include "Core/Collision/CollisionRegistry.hpp"
 #include "Core/Collision/ColliderOutlineBuffer.hpp"
 
+class Scene;
+class CameraComponent;
 namespace ECS
 {
-	class CollisionBoxSystem : public MultiBodySystem
+	class CollisionBoxSystem 
 	{
 	private:
 		CollisionRegistry& m_collisionRegistry;
@@ -19,7 +20,7 @@ namespace ECS
 
 	public:
 		CollisionBoxSystem(CollisionRegistry& registry);
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
 
 		const ColliderOutlineBuffer& GetColliderBuffer() const;
 		ColliderOutlineBuffer& GetColliderBufferMutable();

@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/ParticleEmitterSystem.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
 #include "ECS/Component/Types/World/ParticleEmitterData.hpp"
 
 #ifdef ENABLE_PROFILER
@@ -20,7 +20,7 @@ namespace ECS
 #endif 
 		//Note: we should NOT opyimize be having a deltaTime <=0 early return because we still need to render 
 		//particles even thoguh they do not change across time
-		scene.OperateOnComponents<ParticleEmitterData>(
+		scene.OperateOnActiveComponents<ParticleEmitterData>(
 			[this, &scene, &deltaTime](ParticleEmitterData& data)-> void
 			{
 				auto renderLayers = scene.GetLayersMutable(data.m_renderLayers);
@@ -64,7 +64,8 @@ namespace ECS
 						});
 				}
 
-				if (deltaTime <= 0) return;
+				if (deltaTime <= 0) 
+					return;
 
 				const float fractionalParticlesToSpawn = data.m_spawnRate * deltaTime + data.m_lastFrameFractionParticles;
 				const int wholeParticlesToSpawn = static_cast<int>(fractionalParticlesToSpawn);

@@ -86,24 +86,40 @@ namespace Utils
 	LocalTime GetLocalTime(const SystemTime& time);
 	LocalTime GetCurrentTime();
 
+	/// <summary>
+	/// Returns true if ANY `checkFlag` exists in `flagEnum`
+	/// </summary>
+	/// <typeparam name="TEnum"></typeparam>
+	/// <typeparam name="...CheckFlagType"></typeparam>
+	/// <param name="enumBits"></param>
+	/// <param name="...checkFlags"></param>
+	/// <returns></returns>
 	template<typename TEnum, typename... CheckFlagType>
 	requires std::is_enum_v<TEnum> && std::is_integral_v<std::underlying_type_t<TEnum>>
 			 && HasBitwiseAnd<TEnum> && HasBitwiseOr<TEnum> &&
 			 AllSameType<TEnum, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
-	constexpr bool HasFlagAny(const TEnum enumBits, const CheckFlagType... checkFlags)
+	constexpr bool HasFlagAny(const TEnum flagEnum, const CheckFlagType... checkFlags)
 	{
 		TEnum flagsCombined = (checkFlags | ...);
-		return (enumBits & flagsCombined) != static_cast<TEnum>(0);
+		return (flagEnum & flagsCombined) != static_cast<TEnum>(0);
 	}
-
+	
+	/// <summary>
+	/// Returns true if ALL `checkFlags` exist in `flagEnum`
+	/// </summary>
+	/// <typeparam name="TEnum"></typeparam>
+	/// <typeparam name="...CheckFlagType"></typeparam>
+	/// <param name="enumBits"></param>
+	/// <param name="...checkFlags"></param>
+	/// <returns></returns>
 	template<typename TEnum, typename... CheckFlagType>
 	requires std::is_enum_v<TEnum> && std::is_integral_v<std::underlying_type_t<TEnum>>
 		     && HasBitwiseAnd<TEnum> && HasBitwiseOr<TEnum> &&
 			 AllSameType<TEnum, CheckFlagType...> && HasAtLeastOneArg<CheckFlagType...>
-	constexpr bool HasFlagAll(const TEnum enumBits, const CheckFlagType... checkFlags)
+	constexpr bool HasFlagAll(const TEnum flagEnum, const CheckFlagType... checkFlags)
 	{
 		TEnum flagsCombined = (checkFlags | ...);
-		return (enumBits & flagsCombined) == flagsCombined;
+		return (flagEnum & flagsCombined) == flagsCombined;
 	}
 
 	bool HasFlag(unsigned int fullFlag, unsigned int hasFlag);

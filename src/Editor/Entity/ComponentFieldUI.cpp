@@ -2,7 +2,7 @@
 #include "Editor/Entity/ComponentFieldUI.hpp"
 #include "Utils/Debug.hpp"
 #include "Editor/Entity/ComponentUI.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 #include "ECS/Component/Types/UI/UIInputField.hpp"
 #include "Core/Input/InputManager.hpp"

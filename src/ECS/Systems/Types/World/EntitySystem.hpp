@@ -1,9 +1,8 @@
 #pragma once
-#include "ECS/Systems/MultiBodySystem.hpp"
 
 namespace ECS
 {
-	class EntitySystem : MultiBodySystem
+	class EntitySystem
 	{
 	private:
 	public:
@@ -11,7 +10,6 @@ namespace ECS
 	private:
 	public:
 		EntitySystem();
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
 	};
 }
 

@@ -5,7 +5,7 @@
 #include "Utils/Data/Vec2Type.hpp"
 #include "Utils/Data/WorldPosition.hpp"
 #include "Core/Collision/CollisionRegistry.hpp"
-#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "Utils/Data/Event.hpp"
 #include "Math/Ray.hpp"
 
@@ -28,12 +28,12 @@ namespace Physics
 
 	struct RaycastInfo2D
 	{
-		PhysicsBodyData* m_BodyHit = nullptr;
+		PhysicsBodyComponent* m_BodyHit = nullptr;
 		WorldPosition2D m_HitPos = {};
 		Vec2 m_Displacement = Vec2::Zero();
 	};
 
-	using PhysicsBodyCollection = std::vector<PhysicsBodyData*>;
+	using PhysicsBodyCollection = std::vector<PhysicsBodyComponent*>;
 	class PhysicsWorld
 	{
 	private:
@@ -62,7 +62,7 @@ namespace Physics
 		/// <summary>
 		/// Invokes when object is finished being processed by physics
 		/// </summary>
-		Event<void, PhysicsBodyData*> m_OnObjectProcessed;
+		Event<void, PhysicsBodyComponent*> m_OnObjectProcessed;
 
 	private:
 		/// <summary>
@@ -73,7 +73,7 @@ namespace Physics
 		/// <returns></returns>
 		Vec2 GetCollisionNormalBodyB(const AABBIntersectionData& data);
 		//float CalculateImpulse(const PhysicsBodyData& targetObject, const PhysicsBodyData& collidedObject, const Vec2& collisionNormal);
-		float CalculateImpulse(const PhysicsBodyData& targetObject, const PhysicsBodyData& collidedObject, const Vec2& collisionNormal);
+		float CalculateImpulse(const PhysicsBodyComponent& targetObject, const PhysicsBodyComponent& collidedObject, const Vec2& collisionNormal);
 
 		/// <summary>
 		/// Will resolve collisions in a variety of manners:
@@ -85,10 +85,10 @@ namespace Physics
 		/// </summary>
 		/// <param name="collision"></param>
 		/// <returns></returns>
-		void ResolveCollision(CollisionPair& collision, PhysicsBodyData* bodyA, PhysicsBodyData* bodyB);
+		void ResolveCollision(CollisionPair& collision, PhysicsBodyComponent* bodyA, PhysicsBodyComponent* bodyB);
 
 		void KinematicUpdate(const float& deltaTime, EntityData& entity,
-			PhysicsBodyData& body, const CollisionBoxData& collider);
+			PhysicsBodyComponent& body, const CollisionBoxData& collider);
 
 		/// <summary>
 		/// The basic type of collision resolution that will push the moved body out or the one which is not
@@ -101,7 +101,7 @@ namespace Physics
 		/// <param name="bodyB"></param>
 		/// <param name="collision"></param>
 		void PushMovedBodyOut(EntityData& entityA, EntityData& entityB,
-			PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const CollisionPair& collision);
+			PhysicsBodyComponent& bodyA, PhysicsBodyComponent& bodyB, const CollisionPair& collision);
 
 		/// <summary>
 		/// A type of collision resolution that will apply an impulse to both entities 
@@ -115,7 +115,7 @@ namespace Physics
 		/// <param name="bodyB"></param>
 		/// <param name="data"></param>
 		void ApplyImpulse(EntityData& entityA, EntityData& entityB,
-			PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& data);
+			PhysicsBodyComponent& bodyA, PhysicsBodyComponent& bodyB, const AABBIntersectionData& data);
 
 		/// <summary>
 		/// A type of collision resolution that will set the velocities of either entity A, B or both 
@@ -130,7 +130,7 @@ namespace Physics
 		/// <param name="data"></param>
 		/// <param name="updateEntityType"></param>
 		void SetVelocitiesFromRestitution(EntityData& entityA, EntityData& entityB,
-			PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& data, 
+			PhysicsBodyComponent& bodyA, PhysicsBodyComponent& bodyB, const AABBIntersectionData& data, 
 			const EntityType updateEntityType);
 
 	public:
@@ -139,7 +139,7 @@ namespace Physics
 		const PhysicsBodyCollection& GetBodies() const;
 		PhysicsBodyCollection& GetBodiesMutable();
 
-		void AddBody(PhysicsBodyData& body);
+		void AddBody(PhysicsBodyComponent& body);
 		void ClearAllBodies();
 
 		void UpdateStart(const float& deltaTime);
@@ -163,9 +163,9 @@ namespace Physics
 	/// <param name="body1"></param>
 	/// <param name="body2"></param>
 	/// <returns></returns>
-	bool DoBodiesIntersect(const PhysicsBodyData& body1, const PhysicsBodyData& body2);
+	bool DoBodiesIntersect(const PhysicsBodyComponent& body1, const PhysicsBodyComponent& body2);
 
-	Vec2 GetBodyMinDisplacement(const PhysicsBodyData& body1, const PhysicsBodyData& body2);
+	Vec2 GetBodyMinDisplacement(const PhysicsBodyComponent& body1, const PhysicsBodyComponent& body2);
 }
 
 

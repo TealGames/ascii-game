@@ -1,10 +1,10 @@
 #include "pch.hpp"
 #include "Core/Physics/PhysicsWorld.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/Debug.hpp"
-#include "ECS/Component/Types/World/CollisionBoxData.hpp"
+#include "ECS/Component/Types/World/CollisionBoxComponent.hpp"
 #include "Core/Collision/CollisionRegistry.hpp"
 
 namespace Physics
@@ -36,7 +36,7 @@ namespace Physics
 		return m_bodies;
 	}
 
-	void PhysicsWorld::AddBody(PhysicsBodyData& body)
+	void PhysicsWorld::AddBody(PhysicsBodyComponent& body)
 	{
 		//(this, std::format("Adding body: {}", body.m_Entity->GetName()));
 		body.SetPhysicsWorldRef(*this);
@@ -73,10 +73,10 @@ namespace Physics
 					return;
 
 				//TODO: if one has physics body while other does not do we still simulate physics?
-				PhysicsBodyData* bodyA = collisionData.m_CollisionBoxA->GetEntityMutable().TryGetComponentMutable<PhysicsBodyData>();
+				PhysicsBodyComponent* bodyA = collisionData.m_CollisionBoxA->GetEntityMutable().TryGetComponentMutable<PhysicsBodyComponent>();
 				if (bodyA == nullptr) return;
 
-				PhysicsBodyData* bodyB = collisionData.m_CollisionBoxB->GetEntityMutable().TryGetComponentMutable<PhysicsBodyData>();
+				PhysicsBodyComponent* bodyB = collisionData.m_CollisionBoxB->GetEntityMutable().TryGetComponentMutable<PhysicsBodyComponent>();
 				if (bodyB == nullptr) return;
 
 				//Assert(false, std::format("Found collision"));
@@ -124,7 +124,7 @@ namespace Physics
 		{
 			if (m_bodies[i] == nullptr) continue;
 
-			PhysicsBodyData& body = *(m_bodies[i]);
+			PhysicsBodyComponent& body = *(m_bodies[i]);
 			const CollisionBoxData& box = m_bodies[i]->GetCollisionBox();
 			EntityData& bodyAEntity = body.GetEntityMutable();
 
@@ -228,7 +228,7 @@ namespace Physics
 		}
 	}
 
-	void PhysicsWorld::ResolveCollision(CollisionPair& collision, PhysicsBodyData* bodyA, PhysicsBodyData* bodyB)
+	void PhysicsWorld::ResolveCollision(CollisionPair& collision, PhysicsBodyComponent* bodyA, PhysicsBodyComponent* bodyB)
 	{
 		EntityData& entityA = collision.m_CollisionBoxA->GetEntityMutable();
 		EntityData& entityB = collision.m_CollisionBoxB->GetEntityMutable();
@@ -289,7 +289,7 @@ namespace Physics
 		return;
 	}
 
-	void PhysicsWorld::KinematicUpdate(const float& deltaTime, EntityData& entity, PhysicsBodyData& body, const CollisionBoxData& box)
+	void PhysicsWorld::KinematicUpdate(const float& deltaTime, EntityData& entity, PhysicsBodyComponent& body, const CollisionBoxData& box)
 	{
 		body.SetIsGrounded(m_collisionRegistry.IsCollidingInDirs(box,
 			{ MoveDirection::South, MoveDirection::Southeast, MoveDirection::Southwest }, true));
@@ -333,7 +333,7 @@ namespace Physics
 	}
 
 	void PhysicsWorld::PushMovedBodyOut(EntityData& entityA, EntityData& entityB,
-		PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const CollisionPair& collision)
+		PhysicsBodyComponent& bodyA, PhysicsBodyComponent& bodyB, const CollisionPair& collision)
 	{
 		//If A has constraints or both have constraints (since it is first choice A will get choosen)
 		//then we select A, otherwise we select B if A has constrinats. If none have constraints,
@@ -377,7 +377,7 @@ namespace Physics
 	}
 
 	void PhysicsWorld::ApplyImpulse(EntityData& entityA, EntityData& entityB,
-		PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& intersectionData)
+		PhysicsBodyComponent& bodyA, PhysicsBodyComponent& bodyB, const AABBIntersectionData& intersectionData)
 	{
 		//Assert(false, std::format("Intersection is:{}", collision.m_IntersectionData.ToString()));
 			//const Vec2 collsionNormal = bodyA.GetVelocity().GetOppositeDirection().GetNormalized();
@@ -461,7 +461,7 @@ namespace Physics
 
 	//PRECONDITION: we assume that one of the bodies is NOT constrained
 	void PhysicsWorld::SetVelocitiesFromRestitution(EntityData& entityA, EntityData& entityB,
-		PhysicsBodyData& bodyA, PhysicsBodyData& bodyB, const AABBIntersectionData& intersectionData, 
+		PhysicsBodyComponent& bodyA, PhysicsBodyComponent& bodyB, const AABBIntersectionData& intersectionData, 
 		const EntityType updateEntityType)
 	{
 		const Vec2 collsionNormalA = -GetCollisionNormalBodyB(intersectionData);
@@ -499,7 +499,7 @@ namespace Physics
 		return data.m_Depth.GetNormalized();
 	}
 
-	float PhysicsWorld::CalculateImpulse(const PhysicsBodyData& targetObject, const PhysicsBodyData& collidedObject, const Vec2& collisionNormal)
+	float PhysicsWorld::CalculateImpulse(const PhysicsBodyComponent& targetObject, const PhysicsBodyComponent& collidedObject, const Vec2& collisionNormal)
 	{
 		const float averageRestitution = (targetObject.GetPhysicsProfile().GetRestitution() +
 									collidedObject.GetPhysicsProfile().GetRestitution()) / 2;
@@ -514,14 +514,14 @@ namespace Physics
 			   (DotProduct(velB, collisionNormal) - DotProduct(velA, collisionNormal));
 	}
 
-	bool DoBodiesIntersect(const PhysicsBodyData& body1, const PhysicsBodyData& body2)
+	bool DoBodiesIntersect(const PhysicsBodyComponent& body1, const PhysicsBodyComponent& body2)
 	{
 		/*return DoAABBIntersect(body1.m_Entity->m_Transform.m_Pos, body1.GetAABB(), 
 							   body2.m_Entity->m_Transform.m_Pos, body2.GetAABB());*/
 		return body1.GetCollisionBox().DoIntersect(body2.GetCollisionBox());
 	}
 
-	Vec2 GetBodyMinDisplacement(const PhysicsBodyData& body1, const PhysicsBodyData& body2)
+	Vec2 GetBodyMinDisplacement(const PhysicsBodyComponent& body1, const PhysicsBodyComponent& body2)
 	{
 		/*return GetAABBMinDisplacement(body1.m_Entity->m_Transform.m_Pos, body1.GetAABB(),
 			body2.m_Entity->m_Transform.m_Pos, body2.GetAABB());*/

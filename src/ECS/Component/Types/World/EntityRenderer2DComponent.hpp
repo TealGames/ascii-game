@@ -5,7 +5,7 @@
 #include "ECS/Component/Component.hpp"
 #include "Core/Visual/VisualData.hpp"
 
-class EntityRendererData : public Component
+class EntityRenderer2DComponent : public Component
 {
 private:
 	//Stores every entity's visual from top row to bottom row
@@ -17,9 +17,9 @@ public:
 	//std::vector<TextCharArrayPosition> m_LastFrameVisualData;
 	
 public:
-	EntityRendererData();
-	EntityRendererData(const Json& json);
-	EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers);
+	EntityRenderer2DComponent();
+	EntityRenderer2DComponent(const Json& json);
+	EntityRenderer2DComponent(const VisualData& visualData, const RenderLayerType& renderLayers);
 
 	RenderLayerType GetRenderLayers() const;
 	//Vec2Int GetVisualSize() const;

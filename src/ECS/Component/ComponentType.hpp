@@ -3,13 +3,13 @@
 #include <vector>
 #include <limits>
 #include <cmath>
-#include "ECS/Component/Types/World/CameraData.hpp"
-#include "ECS/Component/Types/World/TransformData.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
+#include "ECS/Component/Types/World/TransformComponent.hpp"
 #include "ECS/Component/Types/World/InputData.hpp"
 //#include "ECS/Component/Types/World/AnimatorData.hpp"#include <cstdint>
 
-#include "ECS/Component/Types/World/LightSourceData.hpp"
-#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "ECS/Component/Types/World/LightSource2DComponent.hpp"
+#include "ECS/Component/Types/World/EntityRenderer2DComponent.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/Debug.hpp"
 
@@ -90,8 +90,8 @@ ComponentType GetComponentFromType()
 {
 	//TODO: maybe a static map would be faster with O(1) lookup then checking every possible option?
 	if (typeid(T) == typeid(CameraComponent)) return ComponentType::Camera;
-	if (typeid(T) == typeid(EntityRendererData)) return ComponentType::EntityRenderer;
-	if (typeid(T) == typeid(LightSourceData)) return ComponentType::LightSource;
+	if (typeid(T) == typeid(EntityRenderer2DComponent)) return ComponentType::EntityRenderer;
+	if (typeid(T) == typeid(LightSource2DComponent)) return ComponentType::LightSource;
 	if (typeid(T) == typeid(InputData)) return ComponentType::Player;
 	if (typeid(T) == typeid(TransformComponent)) return ComponentType::Transform;
 	//if (typeid(T) == typeid(AnimatorData)) return ComponentType::Animator;

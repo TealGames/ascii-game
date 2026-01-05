@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Core/UI/PopupUI.hpp"
 #include "Editor/EditorStyles.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 #include "ECS/Component/Types/UI/UIPanel.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"

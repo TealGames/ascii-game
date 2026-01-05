@@ -3,10 +3,10 @@
 #include "Core/Rendering/Renderer3d.hpp"
 #include "ECS/Systems/Types/UI/UIRendererSystem.hpp"
 #include "Core/Physics/PhysicsManager.hpp"
-#include "ECS/Component/Types/World/TransformData.hpp"
+#include "ECS/Component/Types/World/TransformComponent.hpp"
 #include "Core/Camera/CameraController.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 
 static constexpr float LINE_THICKNESS = 1;
@@ -25,7 +25,7 @@ GizmoOverlay::GizmoOverlay(ECS::UIRenderSystem& renderSystem, Physics::PhysicsMa
 			AddRenderRectGizmo(rect->m_TopLeftPos, rect->GetSize());
 		});
 	
-	physicsManager.GetPhysicsWorldMutable().m_OnObjectProcessed.AddListener([this, &cameraController](PhysicsBodyData* body)-> void
+	physicsManager.GetPhysicsWorldMutable().m_OnObjectProcessed.AddListener([this, &cameraController](PhysicsBodyComponent* body)-> void
 		{
 			if (!Utils::HasFlagAll(m_activeGizmos, GizmoType::CollisionBoxOutline))
 				return;

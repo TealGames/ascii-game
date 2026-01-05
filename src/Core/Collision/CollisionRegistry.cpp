@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Core/Collision/CollisionRegistry.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Utils/Debug.hpp"
 
 static constexpr char COLLISION_KEY_SEPARATOR = '|';

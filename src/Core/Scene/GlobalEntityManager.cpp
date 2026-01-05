@@ -5,7 +5,7 @@
 #include "Utils/StringUtil.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Asset/SceneAsset.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 
 GlobalEntityManager::GlobalEntityManager() :

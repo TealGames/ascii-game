@@ -1,13 +1,14 @@
 #pragma once
 #include <optional>
 #include <type_traits>
-#include "ECS/Systems/MultiBodySystem.hpp"
 #include "ECS/Component/Types/World/AnimatorData.hpp"
 #include "Utils/Debug.hpp"
 
+class Scene;
+class CameraComponent;
 namespace ECS
 {
-	class AnimatorSystem : public MultiBodySystem
+	class AnimatorSystem
 	{
 	private:
 
@@ -78,48 +79,9 @@ namespace ECS
 			}
 		}
 
-		/*AnimationProperty* AnimatorSystem::TryFindMatchingProperty(AnimationKeyframe& keyframe, const AnimationProperty& property)
-		{
-			auto result = keyframe.m_Properties.find(property.m_PropertyName);
-			if (result == keyframe.m_Properties.end()) return nullptr;
-			else return &(result->second);
-		}*/
-
-		//template<typename T>
-		//void PropertyActions(const ECS::Entity& entity, const AnimatorData& data, AnimationProperty<T>& property)
-		//{
-		//	if (data.m_NormalizedTime >= property.m_Keyframes[property.m_KeyframeIndex].GetTime())
-		//	{
-		//		std::optional<size_t> newIndex = TryGetKeyFrameAtTime<T>(data, property, data.m_NormalizedTime);
-		//		if (!Assert(newIndex.has_value(), std::format("Tried to get new key frame index with time: {} "
-		//			"and end time: {} on entity: {} but failed!", std::to_string(data.m_NormalizedTime),
-		//			std::to_string(data.m_AnimationLength), entity.GetName())))
-		//			return;
-
-		//		property.m_KeyframeIndex = newIndex.value();
-		//	}
-
-		//	AnimationPropertyKeyframe<T>& currentFrame = property.m_Keyframes[property.m_KeyframeIndex];
-		//	AnimationPropertyKeyframe<T>& nextFrame = GetNextKeyFrameAtIndex<T>(property, property.m_KeyframeIndex);
-		//	float lerpVal = (data.m_NormalizedTime - currentFrame.GetTime()) / (nextFrame.GetTime() - currentFrame.GetTime());
-
-		//	if (std::is_same_v<T, int> || std::is_same_v<T, float> || std::is_same_v<T, std::uint8_t>)
-		//	{
-		//		property.m_ComponentPropertyRef = static_cast<T>(std::lerp(static_cast<double>(currentFrame.GetValue()), 
-		//																   static_cast<double>(nextFrame.GetValue()), lerpVal));
-		//		property.m_ComponentDataMutationFlagRef = true;
-		//		//Log(LogType::Warning, std::format("Set property value to; {}", std::to_string(property.m_ComponentDataMutationFlagRef)));
-		//	}
-		//	else
-		//	{
-		//		LogError(std::format("Tried to update property in animator for entity:{} "
-		//			"but could not find any Type specific actions to take for it (probably due to not defining actions for this type)", entity.GetName()));
-		//	}
-		//}
-
 	public:
 		AnimatorSystem();
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
 	};
 }
 

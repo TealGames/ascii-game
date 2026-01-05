@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>	
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Editor/Entity/ComponentUI.hpp"
 
 class UIHierarchy;

@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UILayout.hpp"
 #include "Utils/Debug.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 
 UILayout::UILayout(const LayoutType type, const SizingType sizing, const NormalizedPosition spacing)

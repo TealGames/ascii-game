@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/UI/UIInputFieldSystem.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UIPanel.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "Editor/EditorStyles.hpp"
@@ -31,7 +31,7 @@ namespace ECS
 
 	void UIInputFieldSystem::SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime)
 	{
-		globalEntityManager.OperateOnComponents<UIInputField>(
+		globalEntityManager.OperateOnComponents<UIInputField>(ALL_ACTIVE_ENABLED_FLAG,
 			[this](UIInputField& data)-> void
 			{
 				data.Update();

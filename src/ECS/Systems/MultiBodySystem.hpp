@@ -1,43 +1,29 @@
 #pragma once
 #include <vector>
+#include "Utils/TemplateConcepts.hpp"
 #include "ECS/Entity/EntityRegistry.hpp"
-#include "ECS/Component/Types/World/CameraData.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
-class Scene;
 namespace ECS
 {
-	class MultiBodySystem
-	{
-	private:
-	public:
+	template<typename T, typename TInvocable>
+	concept IsComponentInvocableType = Utils::IsInvocableType<void, TInvocable, T&>;
 
-	private:
-	public:
-		virtual void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) = 0;
-	};
-
-	/// <summary>
-	/// Will iterate throguh every component in a registry and complete the action only if the 
-	/// component and entity is active
-	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	/// <param name="registry"></param>
-	/// <param name="entityFromIDFunc"></param>
-	/// <param name="action"></param>
-	template<typename T>
-	requires std::is_base_of_v<Component, T>
-	void OperateOnActiveComponents(EntityRegistry& registry, const std::function<void(T&)>& action)
+	template<typename T, typename TInvocable>
+	requires (std::is_base_of_v<Component, T> && IsComponentInvocableType<T, TInvocable>)
+	void OperateOnComponents(EntityRegistry& registry, const ComponentStateFlag flags, TInvocable&& action)
 	{
+		if (flags == ComponentStateFlag::None)
+			return;
+
 		auto view = registry.GetInternalRegistry().view<T>();
 		for (auto entityId : view)
 		{
 			T* component = registry.TryGetComponentMutable<T>(entityId);
 			Component* componentBase = static_cast<Component*>(component);
-			if (componentBase == nullptr || !componentBase->m_IsEnabled) continue;
-
-			EntityData& entity = componentBase->GetEntityMutable();
-			if (!entity.IsEntityActive()) continue;
+			if (componentBase == nullptr || !Utils::HasFlagAll(flags, componentBase->GetStateFlags())) 
+				continue;
 
 			action(*component);
 		}
@@ -45,19 +31,12 @@ namespace ECS
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	void GetRegistryComponentsMutable(EntityRegistry& registry, std::vector<T*>& inputVector)
+	void GetRegistryComponentsMutable(EntityRegistry& registry, const ComponentStateFlag flags, std::vector<T*>& inputVector)
 	{
-		auto view = registry.GetInternalRegistry().view<T>();
-		for (auto entityId : view)
-		{
-			T* component = registry.TryGetComponentMutable<T>(entityId);
-			Component* componentBase = static_cast<Component*>(component);
-			if (componentBase==nullptr || !componentBase->m_IsEnabled) continue;
-
-			EntityData& entity = componentBase->GetEntityMutable();
-			if (!entity.IsEntityActive()) continue;
-
-			inputVector.push_back(component);
-		}
+		return OperateOnComponents<T>(registry, flags,
+			[&inputVector](T& component) -> void 
+			{ 
+				inputVector.push_back(&component);
+			});
 	}
 }

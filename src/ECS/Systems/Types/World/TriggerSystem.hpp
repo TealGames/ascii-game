@@ -1,9 +1,10 @@
 #pragma once
-#include "ECS/Systems/MultiBodySystem.hpp"
 
+class Scene;
+class CameraComponent;
 namespace ECS
 {
-	class TriggerSystem : public MultiBodySystem
+	class TriggerSystem
 	{
 	private:
 	public:
@@ -12,7 +13,7 @@ namespace ECS
 	public:
 		TriggerSystem();
 
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
 	};
 }
 

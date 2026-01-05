@@ -2,7 +2,7 @@
 #include "ECS/Component/Component.hpp"
 #include "Utils/Debug.hpp"
 #include "ECS/Entity/EntityRegistry.hpp"
-#include "ECS/Component/Types/World/TransformData.hpp"
+#include "ECS/Component/Types/World/TransformComponent.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 
 class UIPanel;
@@ -45,6 +45,11 @@ public:
 	/// again with the same data between gameplay sessions
 	/// </summary>
 	bool m_IsSerializable;
+	/// <summary>
+	/// If true, it means the object will not move during runtime. 
+	//  and allows for component optimizations. 
+	/// </summary>
+	bool m_IsImmovable;
 
 	//Event<void, EntityData*> m_OnFarthestChildElementAttached;
 

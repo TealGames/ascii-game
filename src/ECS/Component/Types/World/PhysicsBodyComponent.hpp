@@ -7,7 +7,7 @@
 //#include "Utils/Data/Direction.hpp"
 //#include "Utils/Data/NormalizedPosition.hpp"
 #include "Core/Physics/PhysicsProfile.hpp"
-#include "ECS/Component/Types/World/CollisionBoxData.hpp"
+#include "ECS/Component/Types/World/CollisionBoxComponent.hpp"
 
 namespace Physics
 {
@@ -30,7 +30,7 @@ struct MoveContraints
 
 //class CollisionBoxData;
 namespace ECS { class PhysicsBodySystem; }
-class PhysicsBodyData : public Component
+class PhysicsBodyComponent : public Component
 {
 private:
 	//The bounding box of the rigidbody that is used for collisions
@@ -82,10 +82,10 @@ private:
 	//Physics::AABB CreateAABB(const Vec2& boundingBoxSize, const WorldPosition& transformOffset);
 
 public:
-	PhysicsBodyData();
-	PhysicsBodyData(const Json& json);
-	PhysicsBodyData(const CollisionBoxData* collisionBox, const float mass);
-	PhysicsBodyData(const CollisionBoxData* collisionBox, const float mass, 
+	PhysicsBodyComponent();
+	PhysicsBodyComponent(const Json& json);
+	PhysicsBodyComponent(const CollisionBoxData* collisionBox, const float mass);
+	PhysicsBodyComponent(const CollisionBoxData* collisionBox, const float mass, 
 		const float gravity, const float terminalYVelocity);
 
 	void SetPhysicsWorldRef(const Physics::PhysicsWorld& world);

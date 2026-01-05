@@ -3,7 +3,7 @@
 #include "Utils/Data/ScreenPosition.hpp"
 //#include "Utils/RaylibUtils.hpp"
 #include "Utils/Debug.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "Core/Rendering/Renderer3d.hpp"
 #include "Core/Asset/FontAsset.hpp"

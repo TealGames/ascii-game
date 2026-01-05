@@ -2,10 +2,10 @@
 #include "Core/Analyzation/DebugInfo.hpp"
 #include "StaticGlobals.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
-#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "ECS/Component/Types/World/PlayerData.hpp"
-#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
 #include "Core/PositionConversions.hpp"
 #include "Core/Input/InputManager.hpp"
 #include "Editor/EditorStyles.hpp"
@@ -119,7 +119,7 @@ void DebugInfo::Update(const float& deltaTime, const float& timeStep, Scene& act
 
 	SetProperty("KeysDown", Utils::ToStringIterable(input.GetAllKeysWithStateAsString(Input::KeyState::Down)));
 
-	const PhysicsBodyData* maybePhysics = playerEntity->TryGetComponent<PhysicsBodyData>();
+	const PhysicsBodyComponent* maybePhysics = playerEntity->TryGetComponent<PhysicsBodyComponent>();
 	const PlayerData* maybePlayer = playerEntity->TryGetComponent<PlayerData>();
 	SetProperty("Input", std::format("{}", maybePlayer->GetFrameInput().ToString()));
 	SetProperty("PlayerGPos", std::format("{} m", playerEntity->GetTransformMutable().GetWorldPos().ToString()));

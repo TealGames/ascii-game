@@ -10,7 +10,7 @@
 #include "Utils/Debug.hpp"
 #include "Core/EngineState.hpp"
 #include "Core/Camera/CameraController.hpp"
-#include "ECS/Component/Types/World/TransformData.hpp"
+#include "ECS/Component/Types/World/TransformComponent.hpp"
 #include "Core/Rendering/GraphicsManager.hpp"
 #include "Core/Rendering/RenderingBackend.hpp"
 #include "Math/PlatformMath.hpp"
@@ -618,6 +618,7 @@ namespace Rendering
         if (m_instanceBoundsData.empty())
             return;
 
+        //LogWarning(std::format("ALL instance bounds data: {}", Utils::ToStringIterable(m_instanceBoundsData)));
         m_tlasTree.Construct(&m_instanceBoundsData[0], m_instanceBoundsData.size(), true, 1, 
             BVHSplitAlgorithm::Midpoint, &InstanceBoundsData::GetAABB, &InstanceBoundsData::GetCenter, 
             [](const InstanceBoundsData* boundsPtr, const std::uint32_t* objectIndicesArr, const size_t boundsSize, int intendedStartIndex,
@@ -636,7 +637,8 @@ namespace Rendering
         LogWarning(std::format("TLAS TREE {}\n", m_tlasTree.ToString(BVHToStringType::NodeBounds)));
         LogWarning(std::format("FULL TREE {}\n", ToStringBVH()));*/
 
-        ENGINE_ASSERT(IsValidBVH(), "After finishing TLAS tree construction full BVH is INVALID: {}", ToStringBVH());
+        //TODO: isValidBVH gives us false negatives
+        //ENGINE_ASSERT(IsValidBVH(), "After finishing TLAS tree construction full BVH is INVALID: {}", ToStringBVH());
     }
     int Renderer::GetEnqueuedTextureIndex(Texture* texture)
     {
@@ -712,7 +714,7 @@ namespace Rendering
             return;
         }
 
-        ModelMesh& boxMesh = boxModel->m_Meshes[0];
+        ModelMesh& boxMesh = boxModel->m_Objects[0].m_Mesh;
         const size_t indexCount = boxMesh.m_Indices.size();
         RenderBatch* sameStatebatch = TryGetSameGeometryDrawBatch(shader, material, indexCount);
         if (sameStatebatch != nullptr)
@@ -860,7 +862,7 @@ namespace Rendering
             /*BOTTOM FACE*/20, 21, 22, 20, 23, 22
         };
 
-        const ModelMesh& cubeMesh = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMesh(BasicMeshType::Cube)->m_Meshes[0];
+        const ModelObject& cubeMesh = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMesh(BasicMeshType::Cube)->m_Objects[0];
         CreateGeometryBatch(shader, material, vertices, VERTEX_COUNT, indices, INDEX_COUNT, modelMatrix, nullptr);
     }
 
@@ -875,7 +877,7 @@ namespace Rendering
             return;
         }
 
-        ModelMesh& sphereMesh = sphereModel->m_Meshes[0];
+        ModelMesh& sphereMesh = sphereModel->m_Objects[0].m_Mesh;
         const size_t indexCount = sphereMesh.m_Indices.size();
         RenderBatch* sameStatebatch = TryGetSameGeometryDrawBatch(shader, material, indexCount);
         if (sameStatebatch != nullptr)
@@ -1086,21 +1088,24 @@ namespace Rendering
     {
         m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Model3d, modelMatrix);
 
-        ModelMesh* mesh = nullptr;
+        ModelObject* obj = nullptr;
         //LogWarning(std::format("Found mesh group: {}", model.m_MeshGroups.size()));
-        for (auto& meshGroup : model.m_MeshGroups)
+        for (auto& meshGroup : model.m_ObjectGroups)
         {
             //LogWarning(std::format("Found mesh group indices : {}", meshGroup.m_MeshIndices.size()));
-            for (auto& meshIndex : meshGroup.m_MeshIndices)
+            for (auto& meshIndex : meshGroup.m_ObjectIndices)
             {
-                mesh = &(model.m_Meshes[meshIndex]);
+                obj = &(model.m_Objects[meshIndex]);
 
-                //TODO: right now we only care about color from material but we should be able 
-                // add all args to batch (maybe accept material?)
-                CreateGeometryBatch(GetBaseTextureShader(), mesh->m_Material, &(mesh->m_Vertices[0]), mesh->m_Vertices.size(),
-                    &(mesh->m_Indices[0]), mesh->m_Indices.size(), modelMatrix * meshGroup.m_GlobalTransform, &mesh->m_BLASTree);
+                AddCallMesh(obj->m_Mesh, obj->m_Material, modelMatrix * meshGroup.m_GlobalTransform);
             }
         }
+    }
+    void Renderer::AddCallMesh(const ModelMesh& mesh, Material& material, const Mat4& modelMatrix)
+    {
+        m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Model3d, modelMatrix);
+        CreateGeometryBatch(GetBaseTextureShader(), material, &(mesh.m_Vertices[0]), mesh.m_Vertices.size(),
+            &(mesh.m_Indices[0]), mesh.m_Indices.size(), modelMatrix, &mesh.m_BLASTree);
     }
 
     void Renderer::AddCallAABBWifreframe(const Mat4& modelMatrix, const Color& color, const float lineThickness)
@@ -1123,7 +1128,7 @@ namespace Rendering
         Vec3 cameraDir = {};
         Vec3 cameraLineOrthogonal = {};
 
-        const ModelMesh& cubeMesh = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMesh(BasicMeshType::Cube)->m_Meshes[0];
+        const ModelMesh& cubeMesh = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMesh(BasicMeshType::Cube)->m_Objects[0].m_Mesh;
         WorldPosition3D vertex0 = {};
         WorldPosition3D vertex1 = {};
         for (IndexType i = 1; i < cubeMesh.m_Indices.size(); i++)

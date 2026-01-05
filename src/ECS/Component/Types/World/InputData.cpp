@@ -2,7 +2,7 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/World/InputData.hpp"	
 #include "Utils/Debug.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 InputData::InputData() : Component(),
 	m_actions() {}

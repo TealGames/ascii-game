@@ -19,7 +19,7 @@ struct LightMapChar
 	std::string ToString() const;
 };
 
-struct LightSourceData : public Component
+struct LightSource2DComponent : public Component
 {
 	std::uint8_t m_LightRadius;
 	//The layers which the light will apply its effect to
@@ -39,9 +39,9 @@ struct LightSourceData : public Component
 	//std::vector<TextCharArrayPosition> m_LastFrameData;
 	std::vector<LightMapChar> m_LightMap;
 
-	LightSourceData();
-	LightSourceData(const Json& json);
-	LightSourceData(const std::uint8_t& lightRadius, const RenderLayerType& affectedLayers, const ColorGradient& colorFilter,
+	LightSource2DComponent();
+	LightSource2DComponent(const Json& json);
+	LightSource2DComponent(const std::uint8_t& lightRadius, const RenderLayerType& affectedLayers, const ColorGradient& colorFilter,
 		const std::uint8_t& intensity, const float& falloff);
 
 	//std::vector<std::string> GetDependencyFlags() const override;

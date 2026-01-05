@@ -1,7 +1,7 @@
 //NOT USED:
 #include "pch.hpp"
 #include "Core/Camera/CameraSettings.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 CameraSettings::CameraSettings() : CameraSettings(Vec2Int{1,1}, 20, nullptr) {}
 

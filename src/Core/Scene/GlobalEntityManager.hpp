@@ -69,18 +69,18 @@ public:
 	const std::vector<EntityData*>& GetAllGlobalEntities() const;
 	std::vector<EntityData*>& GetAllGlobalEntitiesMutable();
 
-	template<typename T>
-	requires std::is_base_of_v<Component, T>
-	void OperateOnComponents(const std::function<void(T&)> action)
+	template<typename T, typename TInvocable>
+	requires (std::is_base_of_v<Component, T> && ECS::IsComponentInvocableType<T, TInvocable>)
+	void OperateOnComponents(const ComponentStateFlag flags, TInvocable&& action)
 	{
-		ECS::OperateOnActiveComponents<T>(m_globalRegistry, action);
+		ECS::OperateOnComponents<T, TInvocable>(m_globalRegistry, flags, std::forward<TInvocable>(action));
 	}
 
 	template<typename T>
 	requires std::is_base_of_v<Component, T>
-	void GetComponents(std::vector<T*>& inputVec)
+	void GetComponents(const ComponentStateFlag flags, std::vector<T*>& inputVec)
 	{
-		ECS::GetRegistryComponentsMutable<T>(m_globalRegistry, inputVec);
+		ECS::GetRegistryComponentsMutable<T>(m_globalRegistry, flags, inputVec);
 	}
 };
 

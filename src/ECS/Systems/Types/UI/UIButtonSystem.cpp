@@ -25,7 +25,7 @@ namespace ECS
 
 	void UIButtonSystem::SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime)
 	{
-		globalEntityManager.OperateOnComponents<UIButton>(
+		globalEntityManager.OperateOnComponents<UIButton>(ALL_ACTIVE_ENABLED_FLAG,
 			[this, &deltaTime](UIButton& data)-> void
 			{
 				data.Update(deltaTime);

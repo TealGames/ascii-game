@@ -268,7 +268,7 @@ bool IsValidBVHHelper(const BVHFlatNode* rootNode, const size_t currIndex, const
 		{
 			if (outputMessages)
 			{
-				LogWarning(std::format("[ValidateBVH]: child bound at node index:{} has bounds:{} outside parent bounds:{}", 
+				LogWarning(std::format("[ValidateBVH]: node index:{} has bounds:{} outside parent bounds:{}", 
 					currIndex, thisBounds.ToString(), parentBounds.ToString()));
 			}
 			return false;

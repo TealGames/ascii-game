@@ -2,7 +2,7 @@
 #include "ECS/Component/Component.hpp"
 #include <functional>
 #include "Utils/Data/Event.hpp"
-#include "ECS/Component/Types/World/CollisionBoxData.hpp"
+#include "ECS/Component/Types/World/CollisionBoxComponent.hpp"
 
 /// <summary>
 /// The type of trigger that will determine any preset trigger functions 

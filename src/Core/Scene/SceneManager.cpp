@@ -22,7 +22,7 @@ namespace SceneManagement
 	static const std::filesystem::path SCENE_DIFFERENT_SAVE_PATH = "";
 
 	SceneManager::SceneManager(AssetManagement::AssetManager& assetmanager) :
-		m_assetManager(assetmanager), m_allScenes{}, m_activeScene(nullptr), m_GlobalEntityManager(),
+		m_assetManager(assetmanager), m_allScenes{}, m_activeSceneAsset(nullptr), m_GlobalEntityManager(),
 		m_OnLoad(), m_OnSceneChange()
 		/*m_globalEntities{}, m_globalEntitiesLookup{}, m_globalEntityMapper()*/
 	{
@@ -35,14 +35,14 @@ namespace SceneManagement
 
 	void SceneManager::SaveCurrentScene()
 	{
-		if (m_activeScene == nullptr || !DO_SCENE_SAVING) return;
+		if (m_activeSceneAsset == nullptr || !DO_SCENE_SAVING) return;
 
 		if (!SCENE_DIFFERENT_SAVE_PATH.empty())
-			m_activeScene->SaveToPath(SCENE_DIFFERENT_SAVE_PATH);
-		else if (IO::IsFileEmpty(m_activeScene->GetAbsolutePath()))
-			m_activeScene->SaveToSelf();
+			m_activeSceneAsset->SaveToPath(SCENE_DIFFERENT_SAVE_PATH);
+		else if (IO::IsFileEmpty(m_activeSceneAsset->GetAbsolutePath()))
+			m_activeSceneAsset->SaveToSelf();
 		else
-			m_activeScene->SaveToPath(m_activeScene->GetAbsolutePathCopy()+=" COPY");
+			m_activeSceneAsset->SaveToPath(m_activeSceneAsset->GetAbsolutePathCopy()+=" COPY");
 	}
 
 	void SceneManager::LoadAllScenes()
@@ -75,6 +75,7 @@ namespace SceneManagement
 		{
 			scene->UpdateAssetFromFile();
 			m_OnLoad.Invoke(&(scene->GetSceneMutable()));
+			SceneCreator::OnSceneLoad(scene->GetSceneMutable(), m_assetManager);
 			//Log(std::format("Loaded scene: {}", scene->GetName()));
 		}
 		//LogError("Finsihed scene manager");
@@ -163,7 +164,7 @@ namespace SceneManagement
 		return m_allScenes[sceneIndex];
 	}
 
-	void SceneManager::SetActiveScene(SceneAsset& activeScene)
+	void SceneManager::SetActiveScene(SceneAsset& activeSceneAsset)
 	{
 		//TODO: this should unload the old active scene and then load the new one
 		//to allow for better memory usage and not having all of scenes loaded at once
@@ -171,10 +172,13 @@ namespace SceneManagement
 
 		//We save the past scene if there was one
 		SaveCurrentScene();
+		m_activeSceneAsset = &activeSceneAsset;
+		Scene& activeScene = m_activeSceneAsset->GetSceneMutable();
 
-		m_activeScene = &activeScene;
-		//TODO: the scene change event should proably be a reference?
-		m_OnSceneChange.Invoke(&(m_activeScene->GetSceneMutable()));
+		m_OnSceneChange.Invoke(&activeScene);
+
+		activeScene.Start();
+		SceneCreator::OnSceneStart(activeScene, m_assetManager);
 		//Log(std::format("Set active scene to; {}", activeScene->ToStringLayers()));
 	}
 
@@ -213,11 +217,11 @@ namespace SceneManagement
 
 	Scene* SceneManager::GetActiveSceneMutable()
 	{
-		if (!Assert(m_activeScene != nullptr,
+		if (!Assert(m_activeSceneAsset != nullptr,
 			"Tried to get active scene (mutable) but there is no active scene set")) 
 			return nullptr;
 
-		return &(m_activeScene->GetSceneMutable());
+		return &(m_activeSceneAsset->GetSceneMutable());
 	}
 
 	const Scene* SceneManager::GetActiveScene() const
@@ -225,9 +229,9 @@ namespace SceneManagement
 		/*Log(std::format("Active scene is nullptr: {} active scene: {}", 
 			std::to_string(m_activeScene==nullptr), m_activeScene==nullptr? "NULL" : m_activeScene->m_SceneName));*/
 
-		if (!Assert(m_activeScene != nullptr,
+		if (!Assert(m_activeSceneAsset != nullptr,
 			"Tried to get active scene (immutable) but there is no active scene set")) return nullptr;
-		return &(m_activeScene->GetSceneMutable());
+		return &(m_activeSceneAsset->GetSceneMutable());
 	}
 
 	const EntityData* SceneManager::TryGetEntity(const std::string& sceneName, const std::string& entityName) const

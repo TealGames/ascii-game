@@ -1,22 +1,21 @@
 #pragma once
 #include "Core/Visual/VisualData.hpp"
-#include "ECS/Systems/MultiBodySystem.hpp"
 #include "ECS/Component/Types/World/SpriteAnimatorData.hpp"
-#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
+#include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 
 class EntityData;
 namespace ECS
 {
-	class SpriteAnimatorSystem : MultiBodySystem
+	class SpriteAnimatorSystem
 	{
 	private:
-		EntityRendererSystem& m_EntityRenderer;
+		EntityRenderer2DSystem& m_EntityRenderer;
 	public:
 
 	private:
 		void SetVisual(EntityData& entity, const SpriteAnimation& animation) const;
 	public:
-		SpriteAnimatorSystem(EntityRendererSystem& entityRenderer);
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
+		SpriteAnimatorSystem(EntityRenderer2DSystem& entityRenderer);
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
 	};
 }

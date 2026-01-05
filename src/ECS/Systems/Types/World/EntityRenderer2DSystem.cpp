@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
+#include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
 #include "ECS/Component/Component.hpp"
@@ -7,7 +7,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Core/PositionConversions.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Core/Rendering/Renderer3d.hpp"
 #include "Core/Asset/FontAsset.hpp"
 
@@ -21,12 +21,12 @@ namespace ECS
 	//is now way to know what texture is for what entity so we cant change it)
 	static constexpr bool CACHE_LAST_BUFFER = true;
 
-	EntityRendererSystem::EntityRendererSystem(Rendering::Renderer& renderer) : m_renderer(&renderer)
+	EntityRenderer2DSystem::EntityRenderer2DSystem(Rendering::Renderer& renderer) : m_renderer(&renderer)
 	{
 		
 	}
 
-	void EntityRendererSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+	void EntityRenderer2DSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("EntityRendererSystem::SystemUpdate");
@@ -36,8 +36,8 @@ namespace ECS
 		//AKA: memoization
 		std::vector<std::tuple<RenderLayerType, FragmentedTextBuffer2D*>> allLayerBuffers = scene.GetAllLayerBufferMutable();
 		FragmentedTextBuffer2D* currLayerBuffer = nullptr;
-		scene.OperateOnComponents<EntityRendererData>(
-			[this, &scene, &allLayerBuffers, &currLayerBuffer, &mainCamera](EntityRendererData& data)-> void
+		scene.OperateOnActiveComponents<EntityRenderer2DComponent>(
+			[this, &scene, &allLayerBuffers, &currLayerBuffer, &mainCamera](EntityRenderer2DComponent& data)-> void
 			{
 				AddTextToRenderer(data, mainCamera);
 
@@ -60,13 +60,13 @@ namespace ECS
 			});
 	}
 
-	std::string EntityRendererSystem::GetVisualString(const EntityRendererData& data) const
+	std::string EntityRenderer2DSystem::GetVisualString(const EntityRenderer2DComponent& data) const
 	{
 		std::string visualStr = "";
 		return data.GetVisualData().ToString();
 	}
 
-	void EntityRendererSystem::AddTextToRenderer(EntityRendererData& data, const CameraComponent& mainCamera)
+	void EntityRenderer2DSystem::AddTextToRenderer(EntityRenderer2DComponent& data, const CameraComponent& mainCamera)
 	{
 		const float zPos = data.GetTransform().GetWorldPos().m_Z;
 		const VisualData& visual = data.GetVisualData();

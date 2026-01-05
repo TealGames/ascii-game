@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Core/Physics/PhysicsManager.hpp"
 #include "Core/Scene/SceneManager.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 namespace Physics
 {
@@ -16,7 +16,7 @@ namespace Physics
 				m_physics.ClearAllBodies();
 				for (auto& entity : newScene->GetAllEntitiesMutable())
 				{
-					if (PhysicsBodyData* maybeBody = entity->TryGetComponentMutable<PhysicsBodyData>())
+					if (PhysicsBodyComponent* maybeBody = entity->TryGetComponentMutable<PhysicsBodyComponent>())
 					{
 						m_physics.AddBody(*maybeBody);
 					}

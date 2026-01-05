@@ -9,10 +9,10 @@
 #include "Utils/Data/Event.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
 #include "Core/Visual/VisualData.hpp"
-#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
-#include "ECS/Component/Types/World/TransformData.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
+#include "ECS/Component/Types/World/TransformComponent.hpp"
 #include "Utils/StringUtil.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 #include "nlohmann/json.hpp"
 #include "Core/Serialization/JsonUtils.hpp"
@@ -68,6 +68,29 @@ std::string Scene::ExtractSceneName(const std::filesystem::path& path)
 	std::string sceneName= path.stem().string().substr(SCENE_FILE_PREFIX.size() - 1);
 	//std::replace(sceneName.begin(), sceneName.end(), '_', ' ');
 	return sceneName;
+}
+
+void Scene::Start()
+{
+	
+}
+
+bool Scene::Validate()
+{
+	bool passesValidation = true;
+	for (auto& entity : m_localRootEntities)
+	{
+		if (entity == nullptr) continue;
+		if (!entity->Validate()) passesValidation = false;
+	}
+
+	for (auto& entity : TryGetGlobalEntityManagerMutable().GetAllGlobalEntitiesMutable())
+	{
+		if (entity == nullptr) continue;
+		if (!entity->Validate()) passesValidation = false;
+	}
+
+	return passesValidation;
 }
 
 std::string Scene::GetName() const
@@ -343,24 +366,6 @@ int Scene::GetDirtyComponentCount() const
 bool Scene::HasDirtyComponents() const
 {
 	return GetDirtyComponentCount() > 0;
-}
-
-bool Scene::Validate()
-{
-	bool passesValidation = true;
-	for (auto& entity : m_localRootEntities)
-	{
-		if (entity == nullptr) continue;
-		if (!entity->Validate()) passesValidation = false;
-	}
-
-	for (auto& entity : TryGetGlobalEntityManagerMutable().GetAllGlobalEntitiesMutable())
-	{
-		if (entity == nullptr) continue;
-		if (!entity->Validate()) passesValidation = false;
-	}
-
-	return passesValidation;
 }
 
 std::string Scene::ToString() const

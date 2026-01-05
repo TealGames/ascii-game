@@ -9,7 +9,7 @@
 #include <optional>
 #include <queue>
 #include "Utils/Data/Event.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 using UILayer = std::uint8_t;
 constexpr UILayer MAX_LAYERS = 8;

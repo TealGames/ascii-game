@@ -1,5 +1,3 @@
-
-//NOT USED
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/InputSystem.hpp"
 #include "Utils/HelperFunctions.hpp"
@@ -38,19 +36,5 @@ namespace ECS
         //if (UpdateData(data, moveInput)) scene.IncreaseFrameDirtyComponentCount();
         ///* Log(std::format("Update end PLAYER component dirty; {}", std::to_string(m_isDirty)));*/
     }
-
-    /// <summary>
-    /// Returns true if the player has moved based on the x and y input
-    /// </summary>
-    /// <param name="data"></param>
-    /// <param name="entity"></param>
-    /// <param name="moveDelta"></param>
-    /// <returns></returns>
-    //bool InputSystem::UpdateData(InputData& data, const Utils::Point2DInt& moveDelta)
-    //{
-    //    //Log("Player move delta: {}", moveDelta.ToString());
-    //    data.SetFrameInput(moveDelta);
-    //    return moveDelta.m_X != 0 || moveDelta.m_Y != 0;
-    //}
 }
 

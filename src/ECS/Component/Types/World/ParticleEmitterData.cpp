@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/World/ParticleEmitterData.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include <functional>
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "Utils/Data/ColorConstants.hpp"

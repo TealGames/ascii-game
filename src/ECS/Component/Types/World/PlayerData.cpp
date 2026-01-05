@@ -12,7 +12,7 @@ PlayerData::PlayerData(const Json& json) : PlayerData()
 {
 	Deserialize(json);
 }
-PlayerData::PlayerData(PhysicsBodyData* body, const float& moveSpeed, const float& maxJumpHeight) : 
+PlayerData::PlayerData(PhysicsBodyComponent* body, const float& moveSpeed, const float& maxJumpHeight) : 
 	Component(),
 	m_body(body), m_xMoveSpeed(std::abs(moveSpeed)), m_maxJumpHeight(maxJumpHeight), m_initialJumpSpeed()
 {
@@ -20,7 +20,7 @@ PlayerData::PlayerData(PhysicsBodyData* body, const float& moveSpeed, const floa
 	TrySetInitialJumpSpeed();
 }
 
-PlayerData::PlayerData(PhysicsBodyData& bodyData, const float& moveSpeed, const float& maxJumpHeight) :
+PlayerData::PlayerData(PhysicsBodyComponent& bodyData, const float& moveSpeed, const float& maxJumpHeight) :
 	PlayerData(&bodyData, moveSpeed, maxJumpHeight) {}
 
 void PlayerData::InitFields()
@@ -70,14 +70,14 @@ float PlayerData::GetVerticalDistanceToGround() const
 	//throw std::invalid_argument("FART");
 }
 
-PhysicsBodyData& PlayerData::GetBodyMutableSafe()
+PhysicsBodyComponent& PlayerData::GetBodyMutableSafe()
 {
 	ENGINE_ASSERT(m_body != nullptr, 
 		"Tried to get the physics body MUTABLE from player data but it is NULL");
 
 	return *m_body;
 }
-const PhysicsBodyData& PlayerData::GetBodySafe() const
+const PhysicsBodyComponent& PlayerData::GetBodySafe() const
 {
 	ENGINE_ASSERT(m_body != nullptr,
 		"Tried to get the physics body from player data but it is NULL");
@@ -120,13 +120,13 @@ void PlayerData::Deserialize(const Json& json)
 	m_xMoveSpeed = json.at("MoveSpeed").get<float>();
 	m_maxJumpHeight = json.at("JumpHeight").get<float>();
 
-	m_body = TryDeserializeComponent<PhysicsBodyData>(json.at("Body"), GetEntityMutable());
+	m_body = TryDeserializeComponent<PhysicsBodyComponent>(json.at("Body"), GetEntityMutable());
 	TrySetInitialJumpSpeed();
 }
 Json PlayerData::Serialize()
 {
 	//Assert(false, std::format("Serializign player data comp entity:{} scene:{}", m_body->GetEntitySafe().GetName(), m_body->GetEntitySafe().GetSceneName()));
-	return { {"MoveSpeed", m_xMoveSpeed}, {"JumpHeight", m_maxJumpHeight}, {"Body", TrySerializeComponent<PhysicsBodyData>(m_body)}};
+	return { {"MoveSpeed", m_xMoveSpeed}, {"JumpHeight", m_maxJumpHeight}, {"Body", TrySerializeComponent<PhysicsBodyComponent>(m_body)}};
 }
 
 std::string PlayerData::ToString() const

@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Core/UI/PopupUIManager.hpp"
 #include "Core/PositionConversions.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 PopupGUIInfo::PopupGUIInfo(PopupUI& gui)
 	: m_UI(&gui) {}

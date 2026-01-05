@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Component.hpp"
 
 ComponentInfo::ComponentInfo(const DependencyType dependency, const TypeCollection& componentDependencies, const ValidationAction& validationAction, const ComponentAddAction& postAddAction) :

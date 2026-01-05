@@ -5,7 +5,7 @@
 #include "ECS/Component/Types/World/AnimatorData.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
@@ -22,10 +22,11 @@ namespace ECS
 #endif 
 		if (deltaTime <= 0) return;
 
-		scene.OperateOnComponents<AnimatorData>(
+		scene.OperateOnActiveComponents<AnimatorData>(
 			[this, &scene, &deltaTime](AnimatorData& data)-> void
 			{
-				if (data.m_NormalizedTime >= data.GetTimeLength() && !data.GetDoLoop()) return;
+				if (data.m_NormalizedTime >= data.GetTimeLength() && !data.GetDoLoop())
+					return;
 
 				data.m_NormalizedTime += deltaTime;
 				if (data.m_NormalizedTime >= data.GetTimeLength() && data.GetDoLoop())

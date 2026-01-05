@@ -1,6 +1,6 @@
 #pragma once
 #include <map>
-#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
 #include "Core/IValidateable.hpp"
 #include <cstdint>
 #include <limits>

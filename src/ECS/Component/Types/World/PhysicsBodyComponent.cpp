@@ -1,7 +1,7 @@
 #include "pch.hpp"
-#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include <limits>
 #include <optional>
 #include "Core/Serialization/JsonSerializers.hpp"
@@ -10,7 +10,7 @@
 MoveContraints::MoveContraints(const bool constrainX, const bool constrainY)
 	: m_ConstrainX(constrainX), m_ConstrainY(constrainY) {}
 
-PhysicsBodyData::PhysicsBodyData(const CollisionBoxData* coliisionBox, const float mass, 
+PhysicsBodyComponent::PhysicsBodyComponent(const CollisionBoxData* coliisionBox, const float mass, 
 	const float gravity, const float terminalYVelocity)
 	: Component(),
 	m_mass(std::abs(mass)), //m_aabb(CreateAABB(boundingBoxSize, transformOffset)),
@@ -28,18 +28,18 @@ PhysicsBodyData::PhysicsBodyData(const CollisionBoxData* coliisionBox, const flo
 	//ValidateAABB(m_aabb);
 }
 
-PhysicsBodyData::PhysicsBodyData() : 
-	PhysicsBodyData(nullptr, 0, 0, std::numeric_limits<float>::max()) {}
+PhysicsBodyComponent::PhysicsBodyComponent() : 
+	PhysicsBodyComponent(nullptr, 0, 0, std::numeric_limits<float>::max()) {}
 
-PhysicsBodyData::PhysicsBodyData(const Json& json) : PhysicsBodyData()
+PhysicsBodyComponent::PhysicsBodyComponent(const Json& json) : PhysicsBodyComponent()
 {
 	Deserialize(json);
 }
 
-PhysicsBodyData::PhysicsBodyData(const CollisionBoxData* collisionBox, const float mass) :
-	PhysicsBodyData(collisionBox, mass, 0, 0) {}
+PhysicsBodyComponent::PhysicsBodyComponent(const CollisionBoxData* collisionBox, const float mass) :
+	PhysicsBodyComponent(collisionBox, mass, 0, 0) {}
 	
-void PhysicsBodyData::InitFields()
+void PhysicsBodyComponent::InitFields()
 {
 	m_Fields = 
 	{	
@@ -70,15 +70,15 @@ void PhysicsBodyData::InitFields()
 //	return {transformOffset- (boundingBoxSize/2), transformOffset+ (boundingBoxSize / 2) };
 //}
 
-void PhysicsBodyData::SetPhysicsWorldRef(const Physics::PhysicsWorld& world)
+void PhysicsBodyComponent::SetPhysicsWorldRef(const Physics::PhysicsWorld& world)
 {
 	m_physicsSimulation = &world;
 }
-void PhysicsBodyData::RemovePhysicsWorldRef()
+void PhysicsBodyComponent::RemovePhysicsWorldRef()
 {
 	m_physicsSimulation = nullptr;
 }
-const Physics::PhysicsWorld& PhysicsBodyData::GetPhysicsWorldSafe()
+const Physics::PhysicsWorld& PhysicsBodyComponent::GetPhysicsWorldSafe()
 {
 	ENGINE_ASSERT(m_physicsSimulation != nullptr,
 		"Tried to get physics world of body: '{}' but it is NULL", GetEntity().m_Name);
@@ -86,107 +86,107 @@ const Physics::PhysicsWorld& PhysicsBodyData::GetPhysicsWorldSafe()
 	return *m_physicsSimulation;
 }
 	
-void PhysicsBodyData::SetVelocityXDelta(const float& xDelta)
+void PhysicsBodyComponent::SetVelocityXDelta(const float& xDelta)
 {
 	SetVelocityDelta({ xDelta, 0 });
 }
-void PhysicsBodyData::SetVelocityYDelta(const float& yDelta)
+void PhysicsBodyComponent::SetVelocityYDelta(const float& yDelta)
 {
 	SetVelocityDelta({0, yDelta});
 }
-void PhysicsBodyData::SetVelocityDelta(const Vec2& vel)
+void PhysicsBodyComponent::SetVelocityDelta(const Vec2& vel)
 {
 	SetVelocity(m_velocity + vel);
 }
-void PhysicsBodyData::SetVelocity(const Vec2& vel)
+void PhysicsBodyComponent::SetVelocity(const Vec2& vel)
 {
 	//if (GetEntitySafe().GetName() == "player" && vel == Vec2::ZERO) Assert(false, "ZERO PLAYER VEL");
 	m_velocity.m_X = vel.m_X;
 	m_velocity.m_Y = std::max(vel.m_Y, m_terminalYVelocity);
 }
 
-void PhysicsBodyData::SetAcceleration(const Vec2& acc)
+void PhysicsBodyComponent::SetAcceleration(const Vec2& acc)
 {
 	m_acceleration = acc;
 }
 
-const Vec2& PhysicsBodyData::GetVelocity() const
+const Vec2& PhysicsBodyComponent::GetVelocity() const
 {
 	return m_velocity;
 }
 
-const Vec2& PhysicsBodyData::GetAcceleration() const
+const Vec2& PhysicsBodyComponent::GetAcceleration() const
 {
 	return m_acceleration;
 }
 
-const float& PhysicsBodyData::GetGravity() const
+const float& PhysicsBodyComponent::GetGravity() const
 {
 	return m_gravity;
 }
 
-bool PhysicsBodyData::IsExperiencingGravity() const
+bool PhysicsBodyComponent::IsExperiencingGravity() const
 {
 	//TODO: this should probably consider if the object is groudned or not rather than a
 	//accelerations since it can have net force a not equal to g, but since affected by gravity
 	return Utils::ApproximateEqualsF(m_acceleration.m_Y, m_gravity);
 }
 
-void PhysicsBodyData::SetIsGrounded(const bool grounded)
+void PhysicsBodyComponent::SetIsGrounded(const bool grounded)
 {
 	m_isGrounded = grounded;
 }
-bool PhysicsBodyData::IsGrounded() const
+bool PhysicsBodyComponent::IsGrounded() const
 {
 	return m_isGrounded;
 }
 
-const float& PhysicsBodyData::GetMass() const
+const float& PhysicsBodyComponent::GetMass() const
 {
 	return m_mass;
 }
 
-bool PhysicsBodyData::HasMass() const
+bool PhysicsBodyComponent::HasMass() const
 {
 	return m_mass > 0;
 }
-Vec2 PhysicsBodyData::GetMomentum() const
+Vec2 PhysicsBodyComponent::GetMomentum() const
 {
 	return m_velocity * m_mass;
 }
-const Physics::PhysicsProfile& PhysicsBodyData::GetPhysicsProfile() const
+const Physics::PhysicsProfile& PhysicsBodyComponent::GetPhysicsProfile() const
 {
 	return m_profile;
 }
 
-void PhysicsBodyData::SetConstraint(const MoveContraints& constraint)
+void PhysicsBodyComponent::SetConstraint(const MoveContraints& constraint)
 {
 	m_contraints = constraint;
 }
-MoveContraints PhysicsBodyData::GetConstraint() const
+MoveContraints PhysicsBodyComponent::GetConstraint() const
 {
 	return m_contraints;
 }
-bool PhysicsBodyData::HasXConstraint() const
+bool PhysicsBodyComponent::HasXConstraint() const
 {
 	return m_contraints.m_ConstrainX;
 }
-bool PhysicsBodyData::HasYConstraint() const
+bool PhysicsBodyComponent::HasYConstraint() const
 {
 	return m_contraints.m_ConstrainY;
 }
-bool PhysicsBodyData::HasAnyConstraints() const
+bool PhysicsBodyComponent::HasAnyConstraints() const
 {
 	return HasXConstraint() || HasYConstraint();
 }
 
-const CollisionBoxData& PhysicsBodyData::GetCollisionBox() const
+const CollisionBoxData& PhysicsBodyComponent::GetCollisionBox() const
 {
 	ENGINE_ASSERT(m_collider != nullptr, "Tried to get collider data for entity:{} but was NULL", GetEntity().m_Name);
 	return *m_collider;
 }
 
-std::string PhysicsBodyData::ToString() const
+std::string PhysicsBodyComponent::ToString() const
 {
 	/*return std::format("[PhysicsBody AABB:{} offset:{} M:{}, G:{}, Vel:{} Accel:{}]", 
 		m_aabb.ToString(GetAABBCenterWorldPos()), m_transformOffset.ToString(), std::to_string(m_mass),
@@ -198,7 +198,7 @@ std::string PhysicsBodyData::ToString() const
 		std::to_string(m_gravity), m_velocity.ToString(), m_acceleration.ToString());
 }
 
-void PhysicsBodyData::Deserialize(const Json& json)
+void PhysicsBodyComponent::Deserialize(const Json& json)
 {
 	//TODO: add deserialize for transform offset and aabb
 
@@ -217,7 +217,7 @@ void PhysicsBodyData::Deserialize(const Json& json)
 	m_terminalYVelocity= json.at("TerminalVelocity").get<float>();
 	SetAcceleration(json.at("Acceleration").get<Vec2>());
 }
-Json PhysicsBodyData::Serialize()
+Json PhysicsBodyComponent::Serialize()
 {
 	return //{ {"AABB", m_aabb}, 
 		//{ {"Offset", m_transformOffset}, 

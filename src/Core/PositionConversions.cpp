@@ -2,7 +2,7 @@
 #include "pch.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
 #include "Core/PositionConversions.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "StaticGlobals.hpp"
 
 namespace Conversions

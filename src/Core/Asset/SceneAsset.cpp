@@ -4,19 +4,19 @@
 #include "Core/Serialization/JsonUtils.hpp"
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "ECS/Component/Types/World/AnimatorData.hpp"
-#include "ECS/Component/Types/World/CameraData.hpp"
-#include "ECS/Component/Types/World/EntityRendererData.hpp"
-#include "ECS/Component/Types/World/LightSourceData.hpp"
-#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
+#include "ECS/Component/Types/World/EntityRenderer2DComponent.hpp"
+#include "ECS/Component/Types/World/LightSource2DComponent.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "ECS/Component/Types/World/PlayerData.hpp"
-#include "ECS/Component/Types/World/CollisionBoxData.hpp"
+#include "ECS/Component/Types/World/CollisionBoxComponent.hpp"
 #include "ECS/Component/Types/World/SpriteAnimatorData.hpp"
 #include "ECS/Component/Types/World/ParticleEmitterData.hpp"
 #include "Core/Asset/AssetManager.hpp"
 #include "Utils/IOHandler.hpp"
 #include "Core/Visual/VisualDataParser.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Utils/ToStringFunctions.hpp"
 
 const std::string SceneAsset::EXTENSION = ".json";
@@ -152,19 +152,19 @@ void SceneAsset::UpdateAssetFromFile()
 			{
 				componentCreated = &(currentEntity->GetOrAddComponentMutable<CameraComponent>());
 			}
-			else if (componentName == Utils::ToStringTypeName<EntityRendererData>())
+			else if (componentName == Utils::ToStringTypeName<EntityRenderer2DComponent>())
 			{
-				componentCreated = &(currentEntity->GetOrAddComponentMutable<EntityRendererData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<EntityRenderer2DComponent>());
 				/*LogError(std::format("Deserialized entity renderer: {} to: {}", JsonUtils::ToStringProperties(currentComponentJson),
 					currentEntity->TryGetComponent<EntityRendererData>()->ToString()));*/
 			}
-			else if (componentName == Utils::ToStringTypeName<LightSourceData>())
+			else if (componentName == Utils::ToStringTypeName<LightSource2DComponent>())
 			{
-				componentCreated = &(currentEntity->GetOrAddComponentMutable<LightSourceData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<LightSource2DComponent>());
 			}
-			else if (componentName == Utils::ToStringTypeName<PhysicsBodyData>())
+			else if (componentName == Utils::ToStringTypeName<PhysicsBodyComponent>())
 			{
-				componentCreated = &(currentEntity->GetOrAddComponentMutable<PhysicsBodyData>());
+				componentCreated = &(currentEntity->GetOrAddComponentMutable<PhysicsBodyComponent>());
 			}
 			else if (componentName == Utils::ToStringTypeName<PlayerData>())
 			{
@@ -301,19 +301,19 @@ void SceneAsset::SaveToPath(const std::filesystem::path& path)
 				{
 					serializedComponentJson = dynamic_cast<CameraComponent*>(component)->Serialize();
 				}
-				else if (componentName == Utils::ToStringTypeName<EntityRendererData>())
+				else if (componentName == Utils::ToStringTypeName<EntityRenderer2DComponent>())
 				{
-					serializedComponentJson = dynamic_cast<EntityRendererData*>(component)->Serialize();
+					serializedComponentJson = dynamic_cast<EntityRenderer2DComponent*>(component)->Serialize();
 					/*LogError(std::format("Serialized component entity renderer:{} converted:{} serialize:{}", 
 						JsonUtils::ToStringProperties(serializedComponentJson), converted->ToString(), JsonUtils::ToStringProperties(serialized)));*/
 				}
-				else if (componentName == Utils::ToStringTypeName<LightSourceData>())
+				else if (componentName == Utils::ToStringTypeName<LightSource2DComponent>())
 				{
-					serializedComponentJson = dynamic_cast<LightSourceData*>(component)->Serialize();
+					serializedComponentJson = dynamic_cast<LightSource2DComponent*>(component)->Serialize();
 				}
-				else if (componentName == Utils::ToStringTypeName<PhysicsBodyData>())
+				else if (componentName == Utils::ToStringTypeName<PhysicsBodyComponent>())
 				{
-					serializedComponentJson = dynamic_cast<PhysicsBodyData*>(component)->Serialize();
+					serializedComponentJson = dynamic_cast<PhysicsBodyComponent*>(component)->Serialize();
 				}
 				else if (componentName == Utils::ToStringTypeName<PlayerData>())
 				{
@@ -386,13 +386,13 @@ bool SceneAsset::TryLoadLevelBackground()
 
 	EntityData& groundEntity = GetSceneMutable().CreateEntity("Ground", TransformComponent(Vec2{ 0,-10 }));
 	groundEntity.m_IsSerializable = false;
-	EntityRendererData& groundRenderer = groundEntity.AddComponent<EntityRendererData>(EntityRendererData(groundVisual, RenderLayerType::Background));
+	EntityRenderer2DComponent& groundRenderer = groundEntity.AddComponent<EntityRenderer2DComponent>(EntityRenderer2DComponent(groundVisual, RenderLayerType::Background));
 
 	/*LogWarning(std::format("Created Backgorund: {}", backgroundRenderer.GetVisualData().ToString()));
 	LogWarning(std::format("Creating backgrounf entity: {} from rednerer: {}", backgroundEntity.GetName(), backgroundRenderer.m_Entity->GetName()));*/
 
 	CollisionBoxData& groundCollisionBox = groundEntity.AddComponent<CollisionBoxData>(CollisionBoxData(groundVisual.GetWorldSize(), {0,0}));
-	PhysicsBodyData& groundBody = groundEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(&groundCollisionBox, 10));
+	PhysicsBodyComponent& groundBody = groundEntity.AddComponent<PhysicsBodyComponent>(PhysicsBodyComponent(&groundCollisionBox, 10));
 	groundBody.SetConstraint(MoveContraints(true, true));
 
 	VisualData backgroundVisual = ParseDefaultVisualData(levelFig.TryGetBaldValue(LEVEL_BACKGOUND_PROPERTY_NAME));
@@ -403,7 +403,7 @@ bool SceneAsset::TryLoadLevelBackground()
 
 	EntityData& backgroundEntity = GetSceneMutable().CreateEntity("Background", TransformComponent(Vec2{ 0,5}));
 	backgroundEntity.m_IsSerializable = false;
-	EntityRendererData& backgroundRenderer = backgroundEntity.AddComponent<EntityRendererData>(EntityRendererData(backgroundVisual, RenderLayerType::Background));
+	EntityRenderer2DComponent& backgroundRenderer = backgroundEntity.AddComponent<EntityRenderer2DComponent>(EntityRenderer2DComponent(backgroundVisual, RenderLayerType::Background));
 	return true;
 	/*LogWarning(std::format("Created Physics body: {} visual size: {}", physicsBody.GetAABB().ToString(backgroundEntity.m_Transform.m_Pos), 
 		backgroundVisual.m_Text.GetSize().ToString()));*/

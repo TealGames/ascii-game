@@ -1,10 +1,10 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/PlayerSystem.hpp"
-#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
-#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
 #include "Utils/Data/Vec2Type.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "StaticGlobals.hpp"
 
 #ifdef ENABLE_PROFILER
@@ -21,11 +21,11 @@ namespace ECS
 		m_inputManager(input), m_cheatsEnabled(CHEATS_ENABLED_DEFAULT), m_lastFrameGrounded(false)
 	{
 		GlobalComponentInfo::AddComponentInfo(typeid(PlayerData), 
-			ComponentInfo(CreateComponentTypes<PhysicsBodyData>(), CreateRequiredComponentFunction(PhysicsBodyData()),
+			ComponentInfo(CreateComponentTypes<PhysicsBodyComponent>(), CreateRequiredComponentFunction(PhysicsBodyComponent()),
 			[](EntityData& entity)-> void
 			{
 				PlayerData& player = *(entity.TryGetComponentMutable<PlayerData>());
-				if (player.m_body != nullptr) player.m_body = entity.TryGetComponentMutable<PhysicsBodyData>();
+				if (player.m_body != nullptr) player.m_body = entity.TryGetComponentMutable<PhysicsBodyComponent>();
 				//fieldComponent.m_background = entity.TryGetComponentMutable<UIPanel>();
 			}));
 	}
@@ -43,7 +43,7 @@ namespace ECS
 		}
 		
 		int playerCount = 0;
-		scene.OperateOnComponents<PlayerData>(
+		scene.OperateOnActiveComponents<PlayerData>(
 			[this, &scene, deltaTime, &mainCamera, &playerCount](PlayerData& player)-> void
 			{
 				playerCount++;

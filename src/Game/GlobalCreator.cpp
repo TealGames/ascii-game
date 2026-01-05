@@ -2,14 +2,14 @@
 #include "Game/GlobalCreator.hpp"
 #include "Core/Scene/GlobalEntityManager.hpp"
 #include "StaticGlobals.hpp"
-#include "ECS/Component/Types/World/LightSourceData.hpp"
-#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "ECS/Component/Types/World/LightSource2DComponent.hpp"
+#include "ECS/Component/Types/World/EntityRenderer2DComponent.hpp"
 #include "ECS/Component/Types/World/AnimatorData.hpp"
-#include "ECS/Component/Types/World/CameraData.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
 #include "ECS/Component/Types/World/TriggerData.hpp"
-#include "ECS/Component/Types/World/CollisionBoxData.hpp"
+#include "ECS/Component/Types/World/CollisionBoxComponent.hpp"
 #include "ECS/Component/Types/World/SpriteAnimatorData.hpp"
-#include "ECS/Component/Types/World/PhysicsBodyData.hpp"
+#include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "ECS/Component/Types/World/PlayerData.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "Core/Camera/CameraController.hpp"
@@ -17,12 +17,12 @@
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Asset/SpriteAnimationAsset.hpp"
 #include "Utils/Data/ColorConstants.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "StaticReferenceGlobals.hpp"
 
 namespace GlobalEntityCreator
 {
-	void CreateGlobals(GlobalEntityManager& globalsManager, SceneManagement::SceneManager& sceneManager, 
+	void OnGlobalsInit(GlobalEntityManager& globalsManager, SceneManagement::SceneManager& sceneManager, 
 		CameraController& cameraController, AssetManagement::AssetManager& assetManager)
 	{
 		WorldFontProperties fontSettings = WorldFontProperties(VisualData::DEFAULT_FONT_SIZE, GLOBAL_FONT_CHAR_SPACING.m_X, 
@@ -30,14 +30,14 @@ namespace GlobalEntityCreator
 
 		EntityData& playerEntity = globalsManager.CreateGlobalEntity("player", TransformComponent(Vec3{ 10, 5, 0 }));
 		CollisionBoxData& playerCollider = playerEntity.AddComponent<CollisionBoxData>(CollisionBoxData(Vec2(2, 2), Vec2(0, 0)));
-		PhysicsBodyData& playerRB = playerEntity.AddComponent<PhysicsBodyData>(PhysicsBodyData(&playerCollider, 1, GRAVITY, 20));
+		PhysicsBodyComponent& playerRB = playerEntity.AddComponent<PhysicsBodyComponent>(PhysicsBodyComponent(&playerCollider, 1, GRAVITY, 20));
 		PlayerData& playerData = playerEntity.AddComponent<PlayerData>(PlayerData(playerRB, 8, 20));
 
 		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
-		LightSourceData& lightSource = playerEntity.AddComponent<LightSourceData>(LightSourceData{ 8, RenderLayerType::Background,
+		LightSource2DComponent& lightSource = playerEntity.AddComponent<LightSource2DComponent>(LightSource2DComponent{ 8, RenderLayerType::Background,
 			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
-		playerEntity.AddComponent<EntityRendererData>(EntityRendererData{
+		playerEntity.AddComponent<EntityRenderer2DComponent>(EntityRenderer2DComponent{
 			VisualData(std::vector<std::vector<TextChar>>{ {TextChar(COLOR_GRAY, 'H') }}, {0, 0}, 
 				fontSettings, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
 

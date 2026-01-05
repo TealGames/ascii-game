@@ -30,7 +30,7 @@ namespace Utils
     concept IsExceptionType = std::is_base_of_v<std::exception, TException>;
     /// <summary>
     /// Checks if an invocable type (functor, function ptr, lambda, std::function) 
-    /// has return type and arguments as specified
+    /// has return type and arguments as specified. NOTE: VOID IS FOR RETURN IS ALLOWED
     /// </summary>
     template<typename TReturn, typename TFunc, typename ...Args>
     concept IsInvocableType = std::is_invocable_r_v<TReturn, TFunc, Args...>;

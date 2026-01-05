@@ -2,7 +2,7 @@
 #include "ECS/Systems/Types/World/CollisionBoxSystem.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "Core/PositionConversions.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
@@ -30,8 +30,9 @@ namespace ECS
 
 		m_collisionRegistry.ClearAll();
 		std::vector<CollisionBoxData*> boxes = {};
-		scene.GetComponentsMutable<CollisionBoxData>(boxes);
-		if (boxes.empty()) return;
+		scene.GetComponentsMutable<CollisionBoxData>(ALL_ACTIVE_ENABLED_FLAG, boxes);
+		if (boxes.empty()) 
+			return;
 
 		for (auto& box : boxes)
 		{
@@ -40,37 +41,25 @@ namespace ECS
 
 		for (auto& boxA : boxes)
 		{
-			if (boxA == nullptr) continue;
+			if (boxA == nullptr) 
+				continue;
 
 			collision = {};
 			minBodyDisplacement = {};
 			minBodyDisplacementVec = {};
 
 			bounds.emplace_back(std::format("[ENTITY:{} BOX:{}]", boxA->GetEntity().m_Name, boxA->GetAABB().ToString(boxA->GetAABBCenterWorldPos())));
-			//if (RENDER_COLLIDER_OUTLINES)
-			//{
-			//	/*if (!Assert(mainCamera != nullptr, std::format("Tried to render collider outlines for entity: {} "
-			//		"but the scene:{} has no active camera!", entity->GetName(), scene.GetName()))) return;*/
-
-			//		//WorldPosition topLeftColliderPos = body->GetAABBTopLeftWorldPos();
-			//	WorldPosition topLeftColliderPos = boxA->GetAABBTopLeftWorldPos();
-			//	//TODO: the camera should convert to screen pos not here
-			//	ScreenPosition topLeftScreenPos = mainCamera.WorldToScreenPosition(topLeftColliderPos);
-			//	/*LogWarning(std::format("ADDING OUTLINE for entity: {} pos: {} top left collider: {} SCREEN TOP LEFT: {} half size: {}",
-			//		entity.m_Name, entity.m_Transform.m_Pos.ToString(), topLeftColliderPos.ToString(), topLeftScreenPos.ToString(), body.GetAABB().GetHalfExtent().ToString()));*/
-
-			//		//m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(body->GetAABB().GetSize(), topLeftScreenPos));
-			//	m_colliderOutlineBuffer.AddRectangle(RectangleOutlineData(boxA->GetAABB().GetSize(), topLeftScreenPos));
-			//}
 
 			for (auto& boxB : boxes)
 			{
-				if (boxB == nullptr || boxA==boxB) continue;
+				if (boxB == nullptr || boxA==boxB) 
+					continue;
 
 				//Note: we check to make sure we do not have existing collision so we do not consider the same collision
 						//twice and accidentally change state
 				bool hasThisCollision = m_collisionRegistry.HasCollision(*boxA, *boxB);
-				if (hasThisCollision) return;
+				if (hasThisCollision) 
+					return;
 
 				//Intersection is handled as BODYA is the body that is colliding with BODYB (Pretending as though bodyb is not moving)
 				//NOTE: so we are essentially saying is BODY A encroaching on any other bodies space and if so do something
@@ -146,7 +135,7 @@ namespace ECS
 	{
 		std::vector<CollisionBoxData*> bodiesFound = {};
 
-		scene.OperateOnComponents<CollisionBoxData>(
+		scene.OperateOnActiveComponents<CollisionBoxData>(
 			[&bodiesFound, &worldPos](CollisionBoxData& box) -> void
 			{
 				if (box.DoIntersect(worldPos))

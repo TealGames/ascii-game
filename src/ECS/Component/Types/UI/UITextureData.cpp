@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UITextureData.hpp"
 #include "Core/Asset/TextureAsset.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "Core/Rendering/Renderer3d.hpp"
 #include "Utils/Data/ColorConstants.hpp"

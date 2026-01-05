@@ -354,6 +354,7 @@ namespace Rendering
         //void AddCallText(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Color color);
 
         void AddCallModel(Model3d& model, const Mat4& modelMatrix);
+        void AddCallMesh(const ModelMesh& mesh, Material& material, const Mat4& modelMatrix);
 
         //void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Color color);
         //void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Color color);

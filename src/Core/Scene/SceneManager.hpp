@@ -6,6 +6,7 @@
 #include <string>
 #include "Core/Asset/SceneAsset.hpp"
 #include "Core/Scene/Scene.hpp"
+#include "Game/SceneCreator.hpp"
 #include "Core/Scene/GlobalEntityManager.hpp"
 #include "Utils/Data/Event.hpp"
 #include "Core/Asset/AssetManager.hpp"
@@ -19,7 +20,7 @@ namespace SceneManagement
 
 		AssetManagement::AssetManager& m_assetManager;
 
-		SceneAsset* m_activeScene;
+		SceneAsset* m_activeSceneAsset;
 		//TODO: sicne we may reach a poitner with many scenes, maybe we should make this a map with scene names
 		std::vector<SceneAsset*> m_allScenes;
 		std::filesystem::path m_allScenePath;

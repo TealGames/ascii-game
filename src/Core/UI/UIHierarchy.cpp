@@ -4,7 +4,7 @@
 #include <queue>
 #include <vector>
 #include "Core/Scene/GlobalEntityManager.hpp"
-//#include "ECS/Component/Types/World/EntityData.hpp"
+//#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 static constexpr bool DRAW_RENDER_BOUNDS = false;
 

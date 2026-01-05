@@ -1,13 +1,14 @@
 #pragma once
-#include "ECS/Systems/MultiBodySystem.hpp"
 #include "Core/Rendering/RenderLayer.hpp"
 
 class ParticleEmitterData;
 class Particle;
+class Scene;
+class CameraComponent;
 
 namespace ECS
 {
-	class ParticleEmitterSystem : public MultiBodySystem
+	class ParticleEmitterSystem
 	{
 	private:
 	public:
@@ -21,7 +22,7 @@ namespace ECS
 	public:
 		ParticleEmitterSystem();
 
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) override;
+		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
 	};
 
 }

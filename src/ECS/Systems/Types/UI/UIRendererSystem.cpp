@@ -3,7 +3,7 @@
 #include "ECS/Systems/Types/UI/UIRendererSystem.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 #include "ECS/Component/Types/UI/UIPanel.hpp"
 #include "ECS/Component/Types/UI/UITextureData.hpp"
@@ -25,30 +25,7 @@ namespace ECS
 				{
 					entity.TryGetComponentMutable<UIRendererData>()->m_renderer = m_renderer;
 				}));
-
-		/*m_uiHierarchy->m_OnElementAdded.AddListener([this](const UITransformData* element)-> void
-			{
-				if (m_engineState->GetExecutionState() != ExecutionState::Update) return;
-				m_hasGuiTreeUpdated = true;
-			});
-
-		m_uiHierarchy->m_OnElementRemoved.AddListener([this](const UITransformData* element)-> void
-			{
-				if (m_engineState->GetExecutionState() != ExecutionState::Update) return;
-				m_hasGuiTreeUpdated = true;
-			});
-		*/
 	}
-	/*
-	void UIRenderSystem::CreateRenderTree()
-	{
-		//m_uiRenderersHierarchyOrder.clear();
-		m_uiHierarchy->ElementTraversalDFS<UIRendererData>([this](UILayer layer, UIRendererData& renderer)-> void
-			{
-				m_uiRenderersHierarchyOrder.push_back(&renderer);
-			});
-	}
-	*/
 	UIRect UIRenderSystem::RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const UIRect& rect)
 	{
 		UIRect renderedArea = {};

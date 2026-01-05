@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Entity/EntityRegistry.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 
@@ -10,7 +10,7 @@ Event<void, EntityData*, EntityData*, size_t> EntityData::OnChildElementAdded;
 EntityData::EntityData(ECS::EntityRegistry* registry, const ECS::EntityID id,
 	const std::string& name, const std::string& sceneName, ECS::EntityID parentId) :
 	m_registry(registry), m_id(id), m_Name(name), m_SceneName(sceneName), m_parentId(parentId), m_childrenIds(), 
-	m_components(), m_IsSerializable(true), m_isActive(true)
+	m_components(), m_IsSerializable(true), m_isActive(true), m_IsImmovable(false)
 {
 
 }

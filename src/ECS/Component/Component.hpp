@@ -1,11 +1,12 @@
 #pragma once
 #include <vector>
+#include "Utils/HelperMacros.hpp"
 #include "ECS/Component/ComponentField.hpp"
 #include "Core/Serialization/IJsonSerializable.hpp"
 #include "Core/IValidateable.hpp"
 #include "ECS/Entity/EntityID.hpp"
 
-enum class HighestDependecyLevel
+enum class HighestDependecyLevel : std::uint8_t
 {
 	/// <summary>
 	/// This means the component does not depend on any other outside data
@@ -22,6 +23,30 @@ enum class HighestDependecyLevel
 	/// </summary>
 	Entity,
 };
+
+enum class ComponentStateFlag : std::uint8_t
+{	
+	None					= 0,
+	EntityActive			= 1,
+	EntityInactive			= 1<<1,
+	EntitySerializable		= 1<<2,
+	EntityUnserializable	= 1<<3,
+	EntityImmovable			= 1<<4,
+	EntityMovable			= 1<<5,
+	ComponentEnabled		= 1<<6,
+	ComponentDisbled		= 1<<7,
+	All						= 0xFF
+};
+FLAG_ENUM_OPERATORS(ComponentStateFlag)
+std::string ToString(const ComponentStateFlag flags);
+
+inline constexpr ComponentStateFlag ANY_ENTITY_ACTIVE_FLAG = ComponentStateFlag::EntityActive | ComponentStateFlag::EntityInactive;
+inline constexpr ComponentStateFlag ANY_SERIALIZABLE_FLAG = ComponentStateFlag::EntitySerializable | ComponentStateFlag::EntityUnserializable;
+inline constexpr ComponentStateFlag ANY_MOVABLE_FLAG = ComponentStateFlag::EntityImmovable | ComponentStateFlag::EntityMovable;
+inline constexpr ComponentStateFlag ANY_COMPONENT_ENABLED_FLAG = ComponentStateFlag::ComponentEnabled | ComponentStateFlag::ComponentDisbled;
+
+inline constexpr ComponentStateFlag ALL_ACTIVE_ENABLED_FLAG = ComponentStateFlag::EntityActive | ANY_SERIALIZABLE_FLAG | 
+														 ANY_MOVABLE_FLAG | ComponentStateFlag::ComponentEnabled;
 
 /// <summary>
 /// This means the component requires ether a component on ANOTHER entity
@@ -87,6 +112,7 @@ public:
 	void SetDirtyFlag(const DirtyFlag flag) const;
 	bool HasDirtyFlag(const DirtyFlag flag) const;
 	void SetAllFlagsDirty(const bool isDirty) const;
+	ComponentStateFlag GetStateFlags() const;
 
 	std::vector<ComponentField>& GetFieldsMutable();
 	/// <summary>

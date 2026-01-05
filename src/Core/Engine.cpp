@@ -5,9 +5,9 @@
 #include "EngineLog.hpp"
 #include "Core/Rendering/Renderer3D.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
-#include "ECS/Systems/Types/World/EntityRendererSystem.hpp"
+#include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 #include "ECS/Systems/Types/World/CameraSystem.hpp"
-#include "ECS/Systems/Types/World/LightSourceSystem.hpp"
+#include "ECS/Systems/Types/World/LightSource2DSystem.hpp"
 #include "ECS/Systems/Types/World/AnimatorSystem.hpp"
 #include "ECS/Systems/Types/World/SpriteAnimatorSystem.hpp"
 #include "ECS/Systems/Types/World/PhysicsBodySystem.hpp"
@@ -17,7 +17,7 @@
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "Game/GlobalCreator.hpp"
 #include "Core/Asset/GlobalColorCodes.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/World/PointLight3DComponent.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 #include "Utils/MathAdvanced.hpp"
@@ -160,6 +160,11 @@ namespace Core
 	//since they are often used together and should rarely change, maybe move all to stirng function into separate header)
 	//TODO: add parallelization/concurency especially for expensive operations like physics, rendering
 	//TODO: add support for negative scale with BVH by converting negative scale to rotation during the calculate model matrix part
+	//TODO: for every single update fro every system we create a new function which invokes the update for all objects. instead make the function local
+	//and on init or start let the system bind the update function on start so we invoke a function every time ratehr than create a new std::function
+	//and/or functor object with this capture group which may be expensive
+	//TODO: currently for immovable objects we just add draw call on start, which is bad because even though the vertex data might not change
+	//because the object does not move, some instance data like material, texture might still change and would need an update
 	//TODO: REwrite render system:
 	// 1) Make vertex layout (we call vertex layout, opengl calls it VertexArrayObject) have a separate Bind function
 	//	  so that we can bind different layouts before draw so we can use different vertex/index/instance buffer pairs for different draw calls
@@ -225,6 +230,7 @@ namespace Core
 		//m_inputSystem(m_inputManager),
 		m_spriteAnimatorSystem(m_entityRendererSystem),
 		m_animatorSystem(),
+		m_meshSystem(m_renderer, m_engineState),
 		m_collisionBoxSystem(m_collisionRegistry),
 		m_physicsBodySystem(m_physicsManager),
 		m_playerSystem(m_inputManager),
@@ -243,6 +249,7 @@ namespace Core
 	{
 		m_engineState.m_CameraController = &m_cameraController;
 		m_engineState.m_TimeKeeper = &m_timeKeeper;
+		m_engineState.m_AssetManager = &m_assetManager;
 		EngineLog("FINISHED SYSTEM CONSTRUCTORS");
 
 		m_windowManager.m_OnWindowCreated.AddListener([this](Window* window)-> void 
@@ -252,7 +259,7 @@ namespace Core
 			});
 		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void 
 			{
-				UpdateWindow(*window); 
+				SystemUpdate(*window); 
 			});
 
 		Window* createdWindow = m_windowManager.CreateNewWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_ASPECT_RATIO, WINDOW_NAME, nullptr);
@@ -282,7 +289,7 @@ namespace Core
 		m_uiHierarchy.Init();
 		m_popupManager.Init();
 		m_uiSystemExecutor.Init();
-		GlobalEntityCreator::CreateGlobals(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
+		GlobalEntityCreator::OnGlobalsInit(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
 
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
@@ -294,7 +301,7 @@ namespace Core
 		//m_renderer.SetSkybox(&skybox);
 
 		//TODO: find a way to do this more procedurally
-		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {StartAll(); });
+		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {SystemStart(*scene); });
 		EngineLog("LOADED ALL SCENES");
 
 		if (!Assert(m_sceneManager.TrySetActiveScene(0), "Tried to set the active scene to the first one, but failed!"))
@@ -306,47 +313,16 @@ namespace Core
 		//LogError(std::format("Scene active: {}", m_sceneManager.GetActiveScene()->ToString()));
 		EngineLog("SET FIRST SCENE CAMERA");
 
-		/*
-		ECS::Entity& obstacle = m_sceneManager.GetActiveSceneMutable()->CreateEntity("obstacle", TransformData(Vec2{ 20, 20 }));
-		
-		obstacle.AddComponent<EntityRendererData>(EntityRendererData{
-			VisualData({ {TextCharPosition({0,0}, TextChar(GRAY, 'B')) } },
-				GetGlobalFont(), VisualData::DEFAULT_FONT_SIZE, VisualData::DEFAULT_CHAR_SPACING, 
-				VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT), RenderLayerType::Player });
-				*/
-
-		//Log("CREATING OBSTACLE RB");
-		//PhysicsBodyData& obstacleRB= obstacle.AddComponent<PhysicsBodyData>(PhysicsBodyData(0, Vec2(10, 10), Vec2(0, 0)));
-		//m_obstacleInfo = ECS::EntityComponentPair<PhysicsBodyData>(obstacle, obstacleRB);
-
-		/*EngineLog(std::format("LOADED LAYERS FOR SCENE '{}': {}",
-			m_sceneManager.GetActiveScene()->GetName(),
-			m_sceneManager.GetActiveScene()->ToStringLayers()));*/
-
-		//Log(std::format("OBSACLE ID: {}", obstacle.ToString()));
-		//Log(std::format("CAMERA ID: {}", mainCameraEntity.ToString()));
-		//Log(std::format("PLAYER ID: {}", playerEntity.ToString()));
-
-		//m_inputManager.InitProfiles();
-		
-		//InitConsoleCommands();
 		m_editor.Init(m_playerSystem);
 		EngineLog("ADDED ALL CONSOLE COMMANDS");
 
 		//Note: globals create main menu camera that then adds itself to each scene when scene is loaded
 		//TODO: change this weird and akward way of setting camera that feels hidden
-
-		//Assert(false, std::format("FOUND ACTIVE SELECTED: {}", m_UIInteractionManager.TryGetSelectableSelected()->GetLastFrameRect().ToString()));
-		/*for (const auto& entity : m_sceneManager.GetActiveSceneMutable()->GetAllEntities())
-		{
-			LogError(std::format("Entity: {} has fields: {}", entity->m_Name,
-				Utils::ToStringIterable<std::vector<ComponentField>, ComponentField>(entity->m_Transform.GetFields())));
-		}*/
 		m_gameManager.GameStart();
 		EngineLog("FINISHED GAME INIT");
 
 		m_engineState.SetExecutionState(ExecutionState::Validation);
-		ValidateAll();
+		SystemValidate();
 	}
 
 	Engine::~Engine()
@@ -354,7 +330,7 @@ namespace Core
 		//m_commandConsole.DeletePrompts();
 	}
 
-	void Engine::ValidateAll()
+	void Engine::SystemValidate()
 	{
 		m_assetManager.Validate();
 		m_sceneManager.ValidateAllScenes();
@@ -362,12 +338,9 @@ namespace Core
 		m_gameManager.GameValidate();
 		EngineLog("FINISHED VALIDATION");
 	}
-	void Engine::StartAll()
+	void Engine::SystemStart(Scene& scene)
 	{
-		Scene* newScene = m_sceneManager.GetActiveSceneMutable();
-		if (!Assert(newScene != nullptr, "Tried to call start on all systems but there "
-			"are no scenes set as active right now"))
-			return;
+		m_meshSystem.SystemStart(scene);
 
 		const Vec3 objectCenter = Vec3(0, 0, 0.3);
 		static Quat rot = Quat::Identity();
@@ -386,11 +359,7 @@ namespace Core
 		//m_renderer.AddCallSphere3D(defaultMaterial, objectCenter, 3, Quat::Identity());
 		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
 
-		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
-		model->GetModelMutable().m_Meshes[0].m_Material.SetSurface(1, 0, nullptr);
-		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity());
-		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity()));
+		
 		//LogError(std::format("Tight bounds are model: {}", model->GetModelMutable().m_Meshes[0].CalculateTightBounds().ToString()));
 		//m_renderer.AddCallSphere3D(&model->GetModelMutable().m_Meshes[0].m_Material, 0.2, modelMatrix4);
 
@@ -417,6 +386,12 @@ namespace Core
 			Vec3::One(), ToQuaternion(Vec3(RAD_270,0, 0))));
 		m_renderer.AddCallPlane3D(&roofMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, 0), Vec3::One(), 
 			ToQuaternion(Vec3(RAD_180, 0, 0))));
+
+		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
+		model->GetModelMutable().m_Objects[0].m_Material.SetSurface(1, 0, nullptr);
+		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity());
+		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3::One(), Quat::Identity());
+		//m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity()));
 	}
 
 	void Engine::SetUpdateStatusCode(const UpdateStatusCode& code)
@@ -424,7 +399,7 @@ namespace Core
 		m_engineState.m_LastUpdateStatus = code;
 	}
 
-	void Engine::UpdateWindow(Window& window)
+	void Engine::SystemUpdate(Window& window)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("Engine::Update");
@@ -494,6 +469,7 @@ namespace Core
 			m_particleEmitterSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 			m_entityRendererSystem.SystemUpdate(*activeScene, mainCamera, unscaledDeltaTime);
 			m_lightSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
+			m_meshSystem.SystemUpdate(*activeScene, mainCamera, scaledDeltaTime);
 
 			m_gameManager.GameUpdate();
 		}

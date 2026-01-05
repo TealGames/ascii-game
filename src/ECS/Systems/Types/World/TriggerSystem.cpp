@@ -4,7 +4,6 @@
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 
-
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
@@ -29,7 +28,7 @@ namespace ECS
 		ProfilerTimer timer("TriggerSystem::SystemUpdate");
 #endif 
 
-		scene.OperateOnComponents<TriggerData>(
+		scene.OperateOnActiveComponents<TriggerData>(
 			[this, &scene, &deltaTime](TriggerData& data)-> void
 			{
 				const auto& onEnterBodies = data.GetCollisionBox().GetCollisionEnterBoxes();

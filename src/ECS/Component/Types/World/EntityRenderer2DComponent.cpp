@@ -1,23 +1,23 @@
 #include "pch.hpp"
 #include "Core/Serialization/JsonSerializers.hpp"
-#include "ECS/Component/Types/World/EntityRendererData.hpp"
+#include "ECS/Component/Types/World/EntityRenderer2DComponent.hpp"
 #include "Core/Serialization/JsonUtils.hpp"
 #include "Utils/Debug.hpp"
 
-EntityRendererData::EntityRendererData() : EntityRendererData(VisualData(), RenderLayerType::None) {}
+EntityRenderer2DComponent::EntityRenderer2DComponent() : EntityRenderer2DComponent(VisualData(), RenderLayerType::None) {}
 
-EntityRendererData::EntityRendererData(const Json& json) : EntityRendererData()
+EntityRenderer2DComponent::EntityRenderer2DComponent(const Json& json) : EntityRenderer2DComponent()
 {
 	Deserialize(json);
 }
 
-EntityRendererData::EntityRendererData(const VisualData& visualData, const RenderLayerType& renderLayers) :
+EntityRenderer2DComponent::EntityRenderer2DComponent(const VisualData& visualData, const RenderLayerType& renderLayers) :
 	Component(), m_VisualData(visualData), m_renderLayers(renderLayers)//, m_LastFrameVisualData(),
 {
 
 }
 
-RenderLayerType EntityRendererData::GetRenderLayers() const
+RenderLayerType EntityRenderer2DComponent::GetRenderLayers() const
 {
 	return m_renderLayers;
 }
@@ -26,7 +26,7 @@ RenderLayerType EntityRendererData::GetRenderLayers() const
 //	return m_VisualData.GetBufferSize();
 //}
 
-const VisualData& EntityRendererData::GetVisualData() const
+const VisualData& EntityRenderer2DComponent::GetVisualData() const
 {
 	return m_VisualData;
 }
@@ -40,12 +40,12 @@ const VisualData& EntityRendererData::GetVisualData() const
 //		m_VisualData.m_Text.SetAt(pos.m_RowColPos, pos.m_Text);
 //	}
 //}
-void EntityRendererData::OverrideVisualData(const VisualData& newVisual)
+void EntityRenderer2DComponent::OverrideVisualData(const VisualData& newVisual)
 {
 	m_VisualData = newVisual;
 }
 
-void EntityRendererData::InitFields()
+void EntityRenderer2DComponent::InitFields()
 {
 	m_Fields = {};
 }
@@ -54,20 +54,20 @@ void EntityRendererData::InitFields()
 //	return {};
 //}
 
-std::string EntityRendererData::ToString() const
+std::string EntityRenderer2DComponent::ToString() const
 {
 	return std::format("[EntityRenderer Layers:{} Visual:{}]", 
 		::ToString(m_renderLayers), m_VisualData.ToString());
 }
 
-void EntityRendererData::Deserialize(const Json& json)
+void EntityRenderer2DComponent::Deserialize(const Json& json)
 {
 	m_renderLayers = json.at("Layers").get<RenderLayerType>();
 	/*Assert(false, std::format("Deserialiazed layers: {} to: {} json:{} TOSTZRING: {}", ::ToString(json.at("Layers").get<RenderLayerType>()), 
 		::ToString(m_renderLayers), JsonUtils::ToStringProperties(json), ToString()));*/
 	m_VisualData = json.at("VisualData").get<VisualData>();
 }
-Json EntityRendererData::Serialize()
+Json EntityRenderer2DComponent::Serialize()
 {
 	return { {"Layers", m_renderLayers}, {"VisualData", m_VisualData}};
 }

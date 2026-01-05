@@ -23,21 +23,21 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 	//	AssimpUtils::ToString(*parentTransform) : "NULL", AssimpUtils::ToString(globalTransform)));
 	if (node->mNumMeshes > 0)
 	{
-		Rendering::ModelMeshGroup* meshGroup = &(model.m_MeshGroups.emplace_back(
-			Rendering::ModelMeshGroup{ Mat4(&globalTransform.a1) }));
+		Rendering::ModelObjectGroup* meshGroup = &(model.m_ObjectGroups.emplace_back(
+			Rendering::ModelObjectGroup{ Mat4(&globalTransform.a1) }));
 		//LogError(std::format("og global trans:{} stored:{}", AssimpUtils::ToString(globalTransform), meshGroup->m_GlobalTransform.ToString()));
 
 		const aiMesh* currentImportMesh = nullptr;
-		Rendering::ModelMesh* currentEngineMesh = nullptr;
+		Rendering::ModelObject* currentEngineObj = nullptr;
 
 		for (size_t i = 0; i < node->mNumMeshes; i++)
 		{
 			currentImportMesh = modelScene->mMeshes[node->mMeshes[i]];
 			const size_t meshVertexCount = currentImportMesh->mNumVertices;
 
-			currentEngineMesh = &(model.m_Meshes.emplace_back(Rendering::ModelMesh{}));
-			meshGroup->m_MeshIndices.emplace_back(model.m_Meshes.size() - 1);
-			currentEngineMesh->m_Vertices.reserve(meshVertexCount);
+			currentEngineObj = &(model.m_Objects.emplace_back(Rendering::ModelObject{}));
+			meshGroup->m_ObjectIndices.emplace_back(model.m_Objects.size() - 1);
+			currentEngineObj->m_Mesh.m_Vertices.reserve(meshVertexCount);
 
 			for (size_t j = 0; j < meshVertexCount; j++)
 			{
@@ -47,7 +47,7 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 				const aiVector3D normal = currentImportMesh->HasNormals() ? currentImportMesh->mNormals[j] : aiVector3D(0, 0, 0);
 				const aiVector3D uv = currentImportMesh->HasTextureCoords(0) ? currentImportMesh->mTextureCoords[0][j] : aiVector3D(0, 0, 0);
 
-				currentEngineMesh->m_Vertices.emplace_back(Rendering::Vertex{ WorldPosition3D(pos.x, pos.y, pos.z),
+				currentEngineObj->m_Mesh.m_Vertices.emplace_back(Rendering::Vertex{ WorldPosition3D(pos.x, pos.y, pos.z),
 					UV(uv.x, uv.y), Vec3(normal.x, normal.y, normal.z) });
 			}
 
@@ -61,11 +61,11 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 				}
 				for (size_t k = 0; k < face->mNumIndices; k++)
 				{
-					currentEngineMesh->m_Indices.emplace_back(face->mIndices[k]);
+					currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[k]);
 				}
 			}
 			
-			currentEngineMesh->ConstructBLASTree(Rendering::BLAS_TREE_LEAF_COUNT);
+			currentEngineObj->m_Mesh.ConstructBLASTree(Rendering::BLAS_TREE_LEAF_COUNT);
 
 			//TODO: also get roughness, normal map and albedo from the material
 			aiMaterial* modelMaterial = modelScene->mMaterials[currentImportMesh->mMaterialIndex];
@@ -73,19 +73,19 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 			if (modelMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS 
 				|| modelMaterial->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS)
 			{
-				currentEngineMesh->m_Material.SetBaseColor(
+				currentEngineObj->m_Material.SetBaseColor(
 					Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a));
 			}
 
 			float metallic = 0;
 			if (modelMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
 			{
-				currentEngineMesh->m_Material.SetMetallic(metallic);
+				currentEngineObj->m_Material.SetMetallic(metallic);
 			}
 			float roughness = 0;
 			if (modelMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, metallic) == AI_SUCCESS)
 			{
-				currentEngineMesh->m_Material.SetRoughness(metallic);
+				currentEngineObj->m_Material.SetRoughness(metallic);
 			}
 		}
 	}
@@ -117,7 +117,7 @@ Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, fals
 		return;
 	}
 
-	m_model.m_Meshes.reserve(modelScene->mNumMeshes);
+	m_model.m_Objects.reserve(modelScene->mNumMeshes);
 	//NOTE: default assimp matrix creates identity
 	ProcessSceneNode(m_model, modelScene, modelScene->mRootNode, nullptr);
 	//if (GetName() == "monkey")LogError("MONKEY");

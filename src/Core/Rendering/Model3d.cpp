@@ -54,15 +54,20 @@ namespace Rendering
 			Utils::ToStringIterable(m_Indices));
 	}
 
+	std::string ModelObject::ToString() const
+	{
+		return std::format("[MOdelObject Mesh:{} Material:{}]", m_Mesh.ToString(), m_Material.ToString());
+	}
+
 	std::string Model3d::ToString() const
 	{
 		std::string result = "[MODEL3D ";
-		for (const auto& group : m_MeshGroups)
+		for (const auto& group : m_ObjectGroups)
 		{
 			result += "MeshGroup\nTransform:" + group.m_GlobalTransform.ToString() + "\nMeshes: ";
-			for (const auto& meshIndex : group.m_MeshIndices)
+			for (const auto& meshIndex : group.m_ObjectIndices)
 			{
-				result += m_Meshes[meshIndex].ToString() + "\n";
+				result += m_Objects[meshIndex].ToString() + "\n";
 			}
 		}
 		result += "]";

@@ -1,8 +1,33 @@
 #include "pch.hpp"
 #include "ECS/Component/Component.hpp"
 #include "Utils/Debug.hpp"
-#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Utils/ToStringFunctions.hpp"
+
+std::string ToString(const ComponentStateFlag flags)
+{
+	if (flags == ComponentStateFlag::None)
+		return "None";
+
+	std::string result = "";
+	if ((flags & ComponentStateFlag::EntityActive) != 0)
+		result += "[EntityACTIVE]";
+	if ((flags & ComponentStateFlag::EntityInactive) != 0)
+		result += "[EntityINACTIVE]";
+	if ((flags & ComponentStateFlag::EntitySerializable) != 0)
+		result += "[EntitySERIALIZABLE]";
+	if ((flags & ComponentStateFlag::EntityUnserializable) != 0)
+		result += "[EntityUNSERIALIZABLE]";
+	if ((flags & ComponentStateFlag::EntityImmovable) != 0)
+		result += "[EntityIMMOVABLE]";
+	if ((flags & ComponentStateFlag::EntityMovable) != 0)
+		result += "[EntityMOVABLE]";
+	if ((flags & ComponentStateFlag::ComponentEnabled) != 0)
+		result += "[ComponentENABLED]";
+	if ((flags & ComponentStateFlag::ComponentDisbled) != 0)
+		result += "[ComponentDISABLED]";
+	return result;
+}
 
 Component::Component() 
 	: m_dirtyFlags(), m_IsEnabled(true), m_entity(nullptr), m_Fields() //m_dependencyLevel(dependency)
@@ -11,25 +36,15 @@ Component::Component()
 
 EntityData& Component::GetEntityMutable()
 {
-	if (m_entity == nullptr)
-	{
-		LogError(std::format("Tried to retrieve entity from component safely but it is NULLPTR "
-			"(it means a function creating or adding component probably did not update this setting)"));
-		throw std::invalid_argument("Tried to retrieve invalid entity with component");
-	}
-
+	ENGINE_ASSERT(m_entity != nullptr, "Tried to retrieve entity from component MUTABLE safely but it is NULLPTR "
+		"(it means a function creating or adding component probably did not update this setting)");
 	return *m_entity;
 }
 
 const EntityData& Component::GetEntity() const
 {
-	if (m_entity == nullptr)
-	{
-		LogError(std::format("Tried to retrieve entity from component safely but it is NULLPTR "
-			"(it means a function creating or adding component probably did not update this setting)"));
-		throw std::invalid_argument("Tried to retrieve invalid entity with component");
-	}
-		
+	ENGINE_ASSERT(m_entity != nullptr, "Tried to retrieve entity from component safely but it is NULLPTR "
+		"(it means a function creating or adding component probably did not update this setting)");
 	return *m_entity;
 }
 
@@ -61,6 +76,25 @@ void Component::SetAllFlagsDirty(const bool isDirty) const
 			m_DirtyCallback(m_dirtyFlags);
 	}
 	else m_dirtyFlags = 0;
+}
+ComponentStateFlag Component::GetStateFlags() const
+{
+	ComponentStateFlag flags = ComponentStateFlag::None;
+
+	const EntityData& entity = GetEntity();
+	if (entity.IsEntityActive()) flags |= ComponentStateFlag::EntityActive; 
+	else flags |= ComponentStateFlag::EntityInactive;
+
+	if (entity.m_IsSerializable) flags |= ComponentStateFlag::EntitySerializable;
+	else flags |= ComponentStateFlag::EntityUnserializable;
+
+	if (entity.m_IsImmovable) flags |= ComponentStateFlag::EntityImmovable;
+	else flags |= ComponentStateFlag::EntityMovable;
+
+	if (m_IsEnabled) flags |= ComponentStateFlag::ComponentEnabled;
+	else flags |= ComponentStateFlag::ComponentDisbled;
+
+	return flags;
 }
 //void Component::SetDirty(const bool isDirty)
 //{
