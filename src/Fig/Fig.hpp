@@ -121,7 +121,7 @@ public:
 	Fig(const std::filesystem::path& path, const FigFlag flag= FigFlag::None);
 	~Fig();
 
-	void CreateContents(const std::vector<std::string>& str, const FigFlag flags= FigFlag::None);
+	void CreateFigFormat(const std::vector<std::string>& lineContents, const FigFlag flags= FigFlag::None);
 
 	bool HasBaldProperty(const std::string& key) const;
 	bool HasMarkedProperty(const std::string& markerName, const std::string& key) const;

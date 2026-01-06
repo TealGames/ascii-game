@@ -8,6 +8,8 @@
 #include "Core/Rendering/Buffers.hpp"
 #include "Core/Rendering/Model3d.hpp"
 
+#define BASIC_MESH_EXTENSION ".vtx"
+
 namespace AssetManagement { class AssetManager; }
 class ShaderAsset;
 class TextureAsset;

@@ -39,7 +39,7 @@ namespace Rendering
 		/// <summary>
 		/// The indices into the model object array
 		/// </summary>
-		std::vector<size_t> m_ObjectIndices = {};
+		std::vector<std::uint32_t> m_ObjectIndices = {};
 	};
 
 	struct Model3d

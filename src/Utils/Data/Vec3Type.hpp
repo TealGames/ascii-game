@@ -2,6 +2,7 @@
 #include "Utils/Data/VecBase.hpp"
 #include <cmath>
 #include <numbers>
+#include <array>
 #include "Vec2Type.hpp"
 #include "Utils/ToStringFunctions.hpp"
 #include "Utils/Debug.hpp"
@@ -21,6 +22,8 @@ public:
 	constexpr Vec() : Vec(0, 0, 0) {}
 	constexpr Vec(const T xyz) : m_X(xyz), m_Y(xyz), m_Z(xyz) {}
 	constexpr Vec(const T x, const T y, const T z) : m_X(x), m_Y(y), m_Z(z) {}
+
+	Vec(const std::array<T, 3>& arr) : m_X(arr[0]), m_Y(arr[1]), m_Z(arr[2]) {}
 
 	constexpr Vec(const Vec<T, 2>& xy, const T zComp)
 		: Vec(xy.m_X, xy.m_Y, zComp) {}

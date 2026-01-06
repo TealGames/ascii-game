@@ -58,7 +58,7 @@ Fig::Fig(const std::string& contents) : Fig()
 		}
 		fileLines[lineIndex].push_back(c);
 	}
-	CreateContents(fileLines);
+	CreateFigFormat(fileLines);
 }
 Fig::Fig(const std::filesystem::path& path, const FigFlag flag) : Fig()
 {
@@ -70,7 +70,7 @@ Fig::Fig(const std::filesystem::path& path, const FigFlag flag) : Fig()
 	{
 		fileLines.emplace_back(currentLine);
 	}
-	CreateContents(fileLines, flag);
+	CreateFigFormat(fileLines, flag);
 }
 Fig::~Fig()
 {
@@ -239,13 +239,13 @@ void Fig::AddMarkedProperty(const std::string& header, const std::string& line, 
 	markedSectionIt->second->AddProperty(line, flag);
 }
 
-void Fig::CreateContents(const std::vector<std::string>& contents, const FigFlag flags)
+void Fig::CreateFigFormat(const std::vector<std::string>& lineContents, const FigFlag flags)
 {
 	std::string currentMarker = "";
 	std::string cleanedLine = "";
 	bool isInComment = false;
 
-	for (auto& line : contents)
+	for (auto& line : lineContents)
 	{
 		if (line.empty()) continue;
 

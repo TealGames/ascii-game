@@ -165,6 +165,9 @@ namespace Core
 	//and/or functor object with this capture group which may be expensive
 	//TODO: currently for immovable objects we just add draw call on start, which is bad because even though the vertex data might not change
 	//because the object does not move, some instance data like material, texture might still change and would need an update
+	//TODO; right now we import 3d shapes and assets to use for vertices from blender but some files might be big so it might be a good idea
+	//to extract all vertex/normal/uv data and other vertex info and write to .txt and make our own file extension which can be read
+	//TODO: there is a lot of string copies being made in fig which need to be fixed with string view
 	//TODO: REwrite render system:
 	// 1) Make vertex layout (we call vertex layout, opengl calls it VertexArrayObject) have a separate Bind function
 	//	  so that we can bind different layouts before draw so we can use different vertex/index/instance buffer pairs for different draw calls
@@ -387,7 +390,7 @@ namespace Core
 		m_renderer.AddCallPlane3D(&roofMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, 0), Vec3::One(), 
 			ToQuaternion(Vec3(RAD_180, 0, 0))));
 
-		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
+		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey" BASIC_MESH_EXTENSION);
 		model->GetModelMutable().m_Objects[0].m_Material.SetSurface(1, 0, nullptr);
 		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity());
 		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3::One(), Quat::Identity());

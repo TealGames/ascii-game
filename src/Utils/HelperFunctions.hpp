@@ -2,6 +2,7 @@
 #include "Utils/StringUtil.hpp"
 #include "Utils/TemplateConcepts.hpp"
 #include <string>
+#include <string_view>
 #include <format>
 #include <functional>
 #include <sstream>
@@ -186,6 +187,7 @@ namespace Utils
 	std::string TryExtractHexadecimal(const std::string& input);
 
 	std::vector<std::string> Split(const std::string& str, const char& separator);
+	std::string GetDiff(const std::string& originalStr, const std::string& newStr);
 
 	template<typename T>
 	inline bool IsCollectionIterable(const T& collection)
@@ -439,6 +441,15 @@ namespace Utils
 			throw std::invalid_argument(err);
 		}
 		return parsedVal;
+	}
+
+	template<typename T>
+	std::optional<T> TryParseView(const std::string_view& str, const std::uint8_t& base = DEFAULT_PARSE_BASE)
+	{
+		T convertedT;
+		auto [parseFailPtr, result] = std::from_chars(str.data(), str.data() + str.size(), convertedT);
+		if (result == std::errc{}) return convertedT;
+		else return std::nullopt;
 	}
 
 	template<typename T>

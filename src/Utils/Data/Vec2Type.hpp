@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <array>
 #include <numbers>
 #include "Utils/Data/VecBase.hpp"
 #include "Utils/Math.hpp"
@@ -22,6 +23,8 @@ public:
 	//constexpr Vec(const T xy) : m_X(xy), m_Y(xy) {}
 	constexpr Vec(const T xComp, const T yComp)
 		: m_X(xComp), m_Y(yComp) {}
+
+	Vec(const std::array<T, 2>& arr) : m_X(arr[0]), m_Y(arr[1]) {}
 
 	Vec(const Vec&) = default;
 	Vec(Vec&&) noexcept = default;

@@ -6,6 +6,7 @@
 #include "ECS/Component/Types/World/Mesh3DComponent.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Asset/Model3dAsset.hpp"
+#include "Core/Rendering/GraphicsManager.hpp"
 
 namespace SceneCreator
 {
@@ -13,7 +14,7 @@ namespace SceneCreator
 	void OnSceneLoad(Scene& scene, AssetManagement::AssetManager& assetManager)
 	{
 		EntityData& monkey = scene.CreateEntity("Monkey", TransformComponent(Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity()));
-		Model3dAsset* model = assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey.fbx");
+		Model3dAsset* model = assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey" BASIC_MESH_EXTENSION);
 		model->GetModelMutable().m_Objects[0].m_Material.SetSurface(1, 0, nullptr);
 		monkey.AddComponent<Mesh3DComponent>(Mesh3DComponent(model->GetModelMutable(), 0));
 	}

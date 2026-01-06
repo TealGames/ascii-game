@@ -5,8 +5,6 @@
 #include "Core/Asset/Model3dAsset.hpp"
 #include "RenderingBackend.hpp"
 
-//#define SKIP_COMPUTE_SHADER_INIT
-
 namespace Rendering
 {
 	static const std::filesystem::path SHADERS_FOLDER = "shaders";
@@ -15,7 +13,7 @@ namespace Rendering
 	static const char* DEFAULT_ALBEDO_PATH = "textures/base_albedo.png";
 	static const char* DEFAULT_MATERIAL_PATH = "materials/default.mater";
 
-	static const char* BASIC_MESH_PATHS[] = {"models/basic/cube.fbx", "models/basic/sphere.fbx"};
+	static const char* BASIC_MESH_PATHS[] = { "models/basic/cube" BASIC_MESH_EXTENSION, "models/basic/sphere" BASIC_MESH_EXTENSION };
 
 	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager)
 		: m_assetManager(&assetManager), m_defaultAlbedo(nullptr), m_defaultMaterial(nullptr), m_shaders(), m_materials(), m_basicMeshes(),

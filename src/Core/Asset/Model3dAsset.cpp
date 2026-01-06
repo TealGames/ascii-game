@@ -3,7 +3,9 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 #include "Utils/Platform/AssimpUtils.hpp"
+#include "Utils/StringUtil.hpp"
 #include "Math/PlatformMath.hpp"
+#include "Core/Serialization/Model3DFileFormat.hpp"
 #include "Utils/Debug.hpp"
 
 static constexpr bool ADD_GLOBAL_SCALE = true;
@@ -11,6 +13,10 @@ static constexpr bool ADD_GLOBAL_SCALE = true;
 //coords to cm, so we must apply a scale factor in Assimp global settings to counteract that
 static constexpr float IMPORT_TO_ENGINE_SCALE_FACTOR = 0.01f;
 static constexpr bool BAKE_TRANSFORMS_IN_VERTICES = true;
+//If true, will write all non-vtx formats to vtx to reduce file size
+static constexpr bool WRITE_ANY_FORMAT_TO_CUSTOM = true;
+
+static const char* CUSTOM_3D_MODEL_EXTENSION = ".vtx";
 
 static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScene, aiNode* node, const aiMatrix4x4* parentTransform)
 {
@@ -98,6 +104,13 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 
 Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, false), m_model()
 {
+	const std::string fileExtension = Utils::StringUtil(path.extension().string()).ToLowerCase().ToString();
+	if (path.extension().string() == CUSTOM_3D_MODEL_EXTENSION)
+	{
+		ReadModelAsCompressedFormat();
+		return;
+	}
+	
 	Assimp::Importer importer;
 	if (ADD_GLOBAL_SCALE) importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, IMPORT_TO_ENGINE_SCALE_FACTOR);
 
@@ -118,10 +131,30 @@ Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, fals
 	}
 
 	m_model.m_Objects.reserve(modelScene->mNumMeshes);
-	//NOTE: default assimp matrix creates identity
 	ProcessSceneNode(m_model, modelScene, modelScene->mRootNode, nullptr);
-	//if (GetName() == "monkey")LogError("MONKEY");
-	//LogError("FINSIHED MODEL: "+ m_model.ToString());
+
+	//If we write any format to vtx, then after the first import from a non-vtx format we write as compressed
+	if (WRITE_ANY_FORMAT_TO_CUSTOM && fileExtension != CUSTOM_3D_MODEL_EXTENSION)
+	{
+		WriteModelAsCompressedFormat();
+	}
+}
+
+void Model3dAsset::WriteModelAsCompressedFormat() const
+{
+	const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(CUSTOM_3D_MODEL_EXTENSION);
+	if (!VTXConverter::TryWriteModelToPathAsString(m_model, newPath))
+	{
+		LogError(std::format("Attempted to WRITE model3d asset:{} to vtx format but failed", ToString()));
+	}
+}
+void Model3dAsset::ReadModelAsCompressedFormat()
+{
+	const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(CUSTOM_3D_MODEL_EXTENSION);
+	if (!VTXConverter::TryReadModelFromPath(m_model, newPath))
+	{
+		LogError(std::format("Attempted to READ model3d asset:{} from vtx format but failed", ToString()));
+	}
 }
 
 const Rendering::Model3d& Model3dAsset::GetModel() const { return m_model; }
@@ -133,5 +166,5 @@ void Model3dAsset::UpdateAssetFromFile()
 
 bool HasModel3dExtension(const std::string& extension)
 {
-	return extension == ".obj" || extension == ".fbx" || extension == ".glb";
+	return extension == ".fbx" || extension == CUSTOM_3D_MODEL_EXTENSION;
 }

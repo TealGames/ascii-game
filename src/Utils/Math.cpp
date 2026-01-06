@@ -53,22 +53,6 @@ namespace Utils
 		return std::round(decimal * factor) / factor;
 	}
 
-	size_t GetDigitPlaces(const double& decimal)
-	{
-		std::string sigFigStr = std::to_string(decimal);
-		if (sigFigStr.find(".") != std::string::npos) return sigFigStr.size() - 1;
-		return sigFigStr.size();
-	}
-
-	size_t GetDecimalPlaces(const double& decimal)
-	{
-		std::string sigFigStr = std::to_string(decimal);
-		size_t decimalPos = sigFigStr.find(".");
-
-		if (decimalPos == std::string::npos) return 0;
-		return sigFigStr.size() - decimalPos - 1;
-	}
-
 	double ToRadians(const double deg)
 	{
 		return deg * DEG_TO_RAD_CONSTANT;

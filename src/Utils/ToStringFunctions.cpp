@@ -1,4 +1,5 @@
 #include <numeric>
+#include <string_view>
 #include "Utils/ToStringFunctions.hpp"
 #include <Utils/StringUtil.hpp>
 #include "Utils/Math.hpp"
@@ -7,15 +8,40 @@ namespace Utils
 {
 	static const char* HEX_VALUES = "0123456789ABCDEF";
 
-	std::string ToString(const double& d, const std::uint8_t decimalPlaces)
+	std::string ToString(const double d, const std::uint8_t decimalPlaces)
 	{
-		std::ostringstream oss;
+		char buffer[64];
+		//NOTE: this is the proper way to convert floating number to string without approximation and is fast
+		//FORMAT: fixed -> the length of the decimal is constant 
+		auto [stopPtr, result] = std::to_chars(buffer, buffer + sizeof(buffer), d, std::chars_format::fixed, decimalPlaces);
+		if (result != std::errc{})
+			return "[DOUBLE_TOSTRING_FAILED]";
 
-		//The precision is the total number of digits, so we do 
-		// decimal places + number of non-decimal digit places (total digits - decimal digits)
-		oss.precision(decimalPlaces + (GetDigitPlaces(d)- GetDecimalPlaces(d)));
-		oss << d;
-		return oss.str();
+		return std::string(buffer, std::size_t(stopPtr - buffer));
+	}
+	std::string ToStringRoundTrip(const double d)
+	{
+		char buffer[64];
+		//FORMAT: general -> may use scientific notation in string representation
+		auto [stopPtr, result] = std::to_chars(buffer, buffer + sizeof(buffer), d, std::chars_format::general, 
+			std::numeric_limits<double>::max_digits10);
+
+		if (result != std::errc{})
+			return "[DOUBLE_RT_TOSTRING_FAILED]";
+
+		return std::string(buffer, std::size_t(stopPtr - buffer));
+	}
+	std::string ToStringRoundTrip(const float f)
+	{
+		char buffer[32];
+		//FORMAT: general->may use scientific notation in string representation
+		auto [stopPtr, result] = std::to_chars(buffer, buffer + sizeof(buffer), f, std::chars_format::general, 
+			std::numeric_limits<float>::max_digits10);
+
+		if (result != std::errc{})
+			return "[FLOAT__RT_TOSTRING_FAILED]";
+
+		return std::string(buffer, std::size_t(stopPtr - buffer));
 	}
 	std::string ToString(const char c)
 	{

@@ -1,5 +1,4 @@
 #include "pch.hpp"
-
 #include <cctype>
 #include <numbers>
 #include <numeric>
@@ -9,6 +8,7 @@
 #include <fstream>
 #include <filesystem>
 #include "Utils/HelperFunctions.hpp"
+#include "AnsiCodes.hpp"
 #include "Utils/Math.hpp"
 
 #if _HAS_CXX23
@@ -148,6 +148,19 @@ namespace Utils
 			tokens.emplace_back(part.begin(), part.end());
 		}
 		return tokens;
+	}
+	std::string GetDiff(const std::string& originalStr, const std::string& newStr)
+	{
+		//TODO: implement
+		return "DIFF_NOT_IMPLEMENTED";
+
+		size_t i = 0;
+		size_t j = 0;
+		while (i < originalStr.size() && j < newStr.size())
+		{
+			char ci = originalStr[i];
+			char cj = originalStr[j];
+		}
 	}
 
 	bool IsNumber(char c)

@@ -57,7 +57,8 @@ namespace IO
 		std::filesystem::path canonicalInput;
 		std::filesystem::path canonicalParent;
 
-		try {
+		try 
+		{
 			canonicalInput = std::filesystem::weakly_canonical(childPath);
 			canonicalParent = std::filesystem::weakly_canonical(parentPath);
 		}
@@ -89,12 +90,22 @@ namespace IO
 
 		return std::nullopt;
 	}
+	std::filesystem::path JoinPaths(const std::filesystem::path& path0, const std::filesystem::path& path1)
+	{
+		return path0 / path1;
+	}
 
 	bool CreatePathIfNotFound(const std::filesystem::path& path, const bool forceCleanPath)
 	{
 		if (!DoesPathExist(path))
 		{
-			std::filesystem::create_directories(forceCleanPath? CleanPath(path) : path);
+			const std::filesystem::path& cleanedPath = forceCleanPath ? CleanPath(path) : path;
+
+			//NOTE: IF WE NEED FILE CREATION AND NOT JUST DIRECTORIES: 
+			//ofstream automatically creates the path, so we use "touch" behavior to create stream 
+			//and instantly close it to create an empty file at the path 
+			if (cleanedPath.has_filename()) std::ofstream(path).close();
+			else std::filesystem::create_directories(cleanedPath);
 			return true;
 		}
 		return false;
@@ -103,8 +114,8 @@ namespace IO
 	bool TryWriteFile(const std::filesystem::path& path, const std::string& content)
 	{
 		const std::filesystem::path cleanedPath = CleanPath(path);
-		CreatePathIfNotFound(path);
 
+		//NOTE: ofstream automatically creates path if it does not exist
 		std::ofstream file(cleanedPath);
 		if (!Assert(file.is_open(), "Tried to WRITE {} to file at path {} "
 			"but it could not be opened", content, cleanedPath.string()))
@@ -113,6 +124,11 @@ namespace IO
 		file << content;
 		file.close();
 		return true;
+	}
+	std::ofstream CreateWriteFileBinaryStream(const std::filesystem::path& path)
+	{
+		const std::filesystem::path cleanedPath = CleanPath(path);
+		return std::ofstream(cleanedPath, std::ios::binary);
 	}
 
 	std::string TryReadFileFull(const std::filesystem::path& path)
@@ -158,6 +174,11 @@ namespace IO
 			lines.push_back(line);
 		}
 		return lines;
+	}
+	std::ifstream CreateReadFileBinaryStream(const std::filesystem::path& path)
+	{
+		const std::filesystem::path cleanedPath = CleanPath(path);
+		return std::ifstream(cleanedPath, std::ios::binary);
 	}
 
 	bool TryExecuteOnFileByLine(const std::filesystem::path& path, const FileLineAction& action)

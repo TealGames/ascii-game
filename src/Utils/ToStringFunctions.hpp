@@ -17,7 +17,20 @@ namespace Utils
 	inline constexpr const char* TREE_BRANCH_END_STR = "--";
 	inline constexpr const char* TREE_VERTICAL_STR = "| ";
 
-	std::string ToString(const double& d, const std::uint8_t decimalPlaces);
+	inline constexpr bool INCLUDE_SPACES_BETWEEN_ELEMENTS = true;
+
+	/// <summary>
+	/// Converts a floating point number to string using fast to_chars() function
+	/// This version uses fixed decimal point numbers and should NOT be used for serialization
+	/// as round trip property requires a high amount of decimal places. 
+	/// </summary>
+	/// <param name="d"></param>
+	/// <param name="decimalPlaces"></param>
+	/// <returns></returns>
+	std::string ToString(const double d, const std::uint8_t decimalPlaces);
+	std::string ToStringRoundTrip(const double d);
+	std::string ToStringRoundTrip(const float f);
+
 	std::string ToString(const char c);
 	std::string ToString(const std::uint8_t u8);
 	std::string ToString(const bool b);
@@ -142,106 +155,16 @@ namespace Utils
 			str += elementStr.value();
 
 			if (index < collection.size() - 1)
-				str += ", ";
+			{
+				str += ',';
+				if constexpr (INCLUDE_SPACES_BETWEEN_ELEMENTS)
+					str += ' ';
+			}
 			index++;
 		}
 		str += "]";
 		return std::format("(Size:{}) ", collection.size()) + str;
 	}
-	
-	/*template<typename TKey, typename TValue, typename... TStringFuncArgs>
-	requires IsIterable<std::unordered_map<TKey, TValue>>
-	std::string ToStringIterable(const std::unordered_map<TKey, TValue>& collection, TStringFuncArgs&&... toStringArgs)
-	{
-		for (const auto& element : collection)
-		{
-
-		}
-	}*/
-	
-	//template<typename TCollection, typename TElement>
-	//std::string ToStringIterable(const TCollection& collection)
-	//{
-	//	return ToStringIterable<TCollection>(collection);
-	//}
-	//template<typename TKey, typename TValue>
-	//std::string ToStringIterable(const std::unordered_map<TKey, TValue>& collection)
-	//{
-	//	return ToStringIterable<std::unordered_map<TKey, TValue>>(collection);
-	//}
-
-	//std::string ToStringIterable(const std::vector<std::string>& strings);
-
-	/*
-	template <typename TKey, typename TValue>
-	std::string ToStringIterable(const std::unordered_map<TKey, TValue> collection,
-		const std::function<std::string(const std::pair<TKey, TValue>&)> toStringFunction = nullptr)
-	{
-		bool hasOverrideToString = toStringFunction != nullptr;
-
-		std::string str = "[";
-		int index = 0;
-		std::optional<std::string> maybeKeyStr = std::nullopt;
-		std::optional<std::string> maybeValueStr = std::nullopt;
-		for (const std::pair<TKey, TValue>& pair : collection)
-		{
-			if (hasOverrideToString) str += toStringFunction(pair);
-			else
-			{
-				//TODO: what if the pair key or value is another unordered map??
-				if constexpr (Utils::IsUnorderedMapType<TKey>)
-				{
-					using KeyTypeInfo = Utils::UnorderedMapTypeInfo<std::remove_cv_t<TKey>>;
-					maybeKeyStr = ToStringIterable<KeyTypeInfo::KeyType, KeyTypeInfo::ValueType>(pair.first);
-				}
-				else if constexpr (IsIterable<TKey>())
-				{
-					auto keyIt = pair.first.begin();
-					maybeKeyStr = ToStringIterable<TKey, decltype(*keyIt)>(pair.first);
-				}
-				else if constexpr (std::is_pointer_v<decltype(pair.first)>)
-					maybeKeyStr = Utils::TryToString(*(pair.first));
-				else maybeKeyStr = Utils::TryToString(pair.first);
-
-				if constexpr (Utils::IsUnorderedMapType<TValue>)
-				{
-					using ValueTypeInfo = Utils::UnorderedMapTypeInfo<std::remove_cv_t<TValue>>;
-					maybeKeyStr = ToStringIterable<ValueTypeInfo::KeyType, ValueTypeInfo::ValueType>(pair.second);
-				}
-				else if constexpr (IsIterable<TValue>())
-				{
-					auto valueIt = pair.second.begin();
-					if (pair.second.empty() || valueIt == pair.second.end()) maybeValueStr = "{}";
-					else maybeValueStr = ToStringIterable<TValue, decltype(*valueIt)>(pair.second);
-				}
-				else if constexpr (std::is_pointer_v<decltype(pair.second)>)
-					maybeValueStr = Utils::TryToString(*(pair.second));
-				else maybeValueStr = Utils::TryToString(pair.second);
-
-				str += std::format("({},{})", maybeKeyStr.has_value() ? maybeKeyStr.value() : "[INVALID KEY: could not stringify]",
-					maybeValueStr.has_value() ? maybeValueStr.value() : "[INVALID VALUE: could not stringify]");
-			}
-
-			if (index < collection.size() - 1)
-				str += ", ";
-			index++;
-		}
-		str += "]";
-		return str;
-	}
-
-	template<typename T>
-	std::string ToStringIterable(const std::vector<std::vector<T>>& vec2d, const bool newLineOnEveryRow = false)
-	{
-		std::vector<std::string> vecStrs = {};
-		for (const auto& vec : vec2d)
-		{
-			vecStrs.push_back(newLineOnEveryRow ? "\n" : "" + Utils::ToStringIterable<std::vector<T>, T>(vec));
-		}
-
-		return Utils::ToStringIterable<std::vector<std::string>, std::string>(vecStrs);
-	}
-	*/
 
 	template<typename TKey, typename TValue, typename... TStringFuncArgs>
 	std::string ToStringPair(const std::pair<TKey, TValue>& pair, const TStringFuncArgs&... toStringArgs)

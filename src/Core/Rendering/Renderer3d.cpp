@@ -524,7 +524,7 @@ namespace Rendering
             cachedMaterialIt = m_cachedMaterials.emplace(material.m_Name, m_materialData.size() - 1).first;
         }
         Instance& createdInstance = m_geometryUnit.AddInstanceDataToBatch(batch, 
-            cachedMaterialIt->second, 0, modelMatrix, normalMatrix.Transpose());
+            cachedMaterialIt->second, 0, modelMatrix, normalMatrix.Transpose()); 
 
         if (DO_RAYTRACING)
         {
