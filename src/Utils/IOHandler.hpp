@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <fstream>
 #include <vector>
 #include <functional>
 #include <optional>
@@ -19,11 +20,11 @@ namespace IO
 	bool IsFileEmpty(const std::filesystem::path& path);
 
 	bool TryWriteFile(const std::filesystem::path& path, const std::string& data);
-	std::ofstream CreateWriteFileBinaryStream(const std::filesystem::path& path);
+	bool TryCreateWriteFileBinaryStream(const std::filesystem::path& path, std::ofstream& outStream);
 
 	std::string TryReadFileFull(const std::filesystem::path& path);
 	std::vector<std::string> TryReadFileByLine(const std::filesystem::path& path);
-	std::ifstream CreateReadFileBinaryStream(const std::filesystem::path& path);
+	bool CreateReadFileBinaryStream(const std::filesystem::path& path, std::ifstream& outStream);
 
 	using FileLineAction = std::function<void(const std::string*)>;
 	bool TryExecuteOnFileByLine(const std::filesystem::path& path, const FileLineAction& action);

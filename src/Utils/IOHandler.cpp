@@ -1,6 +1,5 @@
 #include "pch.hpp"
 #include "Utils/IOHandler.hpp"
-#include <fstream>
 #include "Utils/Debug.hpp"
 #include "StringUtil.hpp"
 
@@ -125,10 +124,11 @@ namespace IO
 		file.close();
 		return true;
 	}
-	std::ofstream CreateWriteFileBinaryStream(const std::filesystem::path& path)
+	bool TryCreateWriteFileBinaryStream(const std::filesystem::path& path, std::ofstream& outStream)
 	{
 		const std::filesystem::path cleanedPath = CleanPath(path);
-		return std::ofstream(cleanedPath, std::ios::binary);
+		outStream = std::ofstream(cleanedPath, std::ios::binary);
+		return outStream.is_open();
 	}
 
 	std::string TryReadFileFull(const std::filesystem::path& path)
@@ -175,10 +175,11 @@ namespace IO
 		}
 		return lines;
 	}
-	std::ifstream CreateReadFileBinaryStream(const std::filesystem::path& path)
+	bool CreateReadFileBinaryStream(const std::filesystem::path& path, std::ifstream& outStream)
 	{
 		const std::filesystem::path cleanedPath = CleanPath(path);
-		return std::ifstream(cleanedPath, std::ios::binary);
+		outStream = std::ifstream(cleanedPath, std::ios::binary);
+		return outStream.is_open();
 	}
 
 	bool TryExecuteOnFileByLine(const std::filesystem::path& path, const FileLineAction& action)

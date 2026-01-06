@@ -7,13 +7,26 @@ namespace VTXConverter
 	inline constexpr const char* MODEL_3D_FILE_EXTENSION = ".vtx";
 	inline constexpr std::uint16_t CURRENT_VERSION = 1;
 
+	enum class VTXFormatType : std::uint8_t
+	{
+		String = 0,
+		Binary = 1
+	};
+
+#pragma pack(push, 1)
 	struct VTXHeader
 	{
 		std::uint16_t m_Version;
 		std::uint16_t m_VertexStride;
 		std::uint32_t m_VertexCount;
 		std::uint32_t m_IndexCount;
+		float m_PosMax[3];
+		float m_PosMin[3];
+
+		std::string ToString() const;
 	};
+#pragma pack(pop)
+
 
 //NOTE: pack push/pop pushes onto the stack new alignment for the proceeding
 //data, which in this case we want 1 byte alignment for the Vertex data to save space
@@ -27,10 +40,11 @@ namespace VTXConverter
 		std::uint16_t m_LocalPos[3];
 		std::uint16_t m_UV[2];
 		std::uint16_t m_Normal[2];
+
+		std::string ToString() const;
 	};
 #pragma pack(pop)
 
-	bool TryWriteModelToPathAsString(const Rendering::Model3d& model, const std::filesystem::path& path);
-	bool TryWriteModelToPathAsBytes(const Rendering::Model3d& model, const std::filesystem::path& path);
+	bool TryWriteModelToPath(const Rendering::Model3d& model, const std::filesystem::path& path);
 	bool TryReadModelFromPath(Rendering::Model3d& model, const std::filesystem::path& path);
 }

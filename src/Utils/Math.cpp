@@ -74,10 +74,19 @@ namespace Utils
 		return std::isinf(value) && std::signbit(value);
 	}
 
-	int GetSign(double num)
+	int GetSign(int num)
 	{
-		if (ApproximateEqualsF(num, 0)) return 0;
-		return num >= 0 ? 1 : -1;
+		return (num > 0) - (num < 0);
+	}
+	int GetSign(float num)
+	{
+		return (num > 0.0f) - (num < 0.0f);
+	}
+	int GetSignNonZerof(int num)
+	{
+		//Since >> is implementation defined, 
+		//also valid: 1 | -(num < 0);
+		return (num >> 31) | 1;
 	}
 	std::string GetSignSymbol(double num)
 	{

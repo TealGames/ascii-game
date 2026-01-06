@@ -307,4 +307,47 @@ namespace Utils
 		outPosition = ExtractTranslationFromMatrix(matrix);
 		outRotation = ExtractRotationFromMatrix(matrix, &outScale);
 	}
+
+	Vec2 OctahedralEncodeNormal(const Vec3& normal)
+	{
+		//|x| + |y| + |z| = 1 is the equation of a octahedron (similar to Plumbob from Sims -> two pyramids glued at bases)
+		//so we project the ray from sphere to octahedron surface -> same direction but different endpoint
+		//by dividing (because octahedron is smaller within the bounds of a sphere) which essentially scales the ray's magntitude
+		//NOTE: you can think of similar to normalizing a vector by dividing by magnitude (L2), except using a octahedron equation rather than a sphere (L1)
+		float invL1Norm = 1.0f / (abs(normal.m_X) + abs(normal.m_Y) + abs(normal.m_Z));
+
+		//Now we have converted to octahedron, z is reliant on x and y AND THEIR SIGNS
+		//since z = 1 - |x| - |y| OR z = -1 + |x| + |y| but now we have to worry about
+		//the two possible z values -> whether front or back hemisphere
+		Vec2 encoded = normal.GetXY() * invL1Norm;
+		//If We are in the front hemisphere (enigne uses z forward as positive)
+		//we can just collapse to diamond using x and y coordinates (since z should be positive)
+		//OTHERWISE Octahedral folding is required for the back hemisphere (z < 0)
+		//which means we take that pyramid and reflect it up.
+		//NOTE: it is NOT a regular reflection because then we would get multiple normals with same values,
+		//so think of the bottom pyramid as filling the corners of the square with the diamond (front hemisphere) in the center
+		if (normal.m_Z < 0.0f)
+		{
+			encoded = {(1.0f - abs(encoded.m_Y)) * (encoded.m_X >= 0.0f ? 1.0f : -1.0f),
+					   (1.0f - abs(encoded.m_X)) * (encoded.m_Y >= 0.0f ? 1.0f : -1.0f)};
+		}
+
+		//Now that we encoded into a 2d diamond which fits into x[-1,1] y[-1,1] we map to square -> [0,1]
+		encoded = encoded * 0.5f + Vec2(0.5f, 0.5f);
+		return encoded;
+	}
+	Vec3 OctahedralDecodeNormal(const Vec2& octahedral)
+	{
+		//We remap [0,1] for x and y to [-1,1]
+		const Vec2 neg1To1Range = (octahedral - Vec2(0.5f, 0.5f)) * 2.0f;
+		//We get z back by solving for z in the octahedral equation: |x| + |y| + |z| = 1 -> z = 1 - |x| - |y| OR z = -1 + |x| + |y|
+		Vec3 decoded = Vec3(neg1To1Range.m_X, neg1To1Range.m_Y, 1.0f - abs(neg1To1Range.m_X) - abs(neg1To1Range.m_Y));
+		//We do the same operation as for encoding to separate +z and -z
+		if (decoded.m_Z < 0.0f)
+		{
+			decoded.SetXY({(1.0f - abs(decoded.m_Y)) * (decoded.m_X >= 0.0f ? 1.0f : -1.0f),
+						   (1.0f - abs(decoded.m_X)) * (decoded.m_Y >= 0.0f ? 1.0f : -1.0f)});
+		}
+		return decoded.GetNormalized();
+	}
 }

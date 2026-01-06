@@ -250,6 +250,14 @@ public:
 	{
 		return Vec{ m_X * scalar, m_Y * scalar, m_Z * scalar };
 	}
+	Vec& operator*=(const float scalar) noexcept
+	{
+		m_X *= scalar;
+		m_Y *= scalar;
+		m_Z *= scalar;
+		return *this;
+	}
+
 	Vec operator/(const Vec& other) const
 	{
 		if constexpr (std::is_floating_point_v<T>)

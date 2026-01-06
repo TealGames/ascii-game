@@ -16,8 +16,6 @@ static constexpr bool BAKE_TRANSFORMS_IN_VERTICES = true;
 //If true, will write all non-vtx formats to vtx to reduce file size
 static constexpr bool WRITE_ANY_FORMAT_TO_CUSTOM = true;
 
-static const char* CUSTOM_3D_MODEL_EXTENSION = ".vtx";
-
 static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScene, aiNode* node, const aiMatrix4x4* parentTransform)
 {
 	//NOTE: we do NOT need any conversion because Assimp converts models into +x -> right, +y ->up, -z -> forward, which match this engine coordinate system
@@ -105,7 +103,7 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, false), m_model()
 {
 	const std::string fileExtension = Utils::StringUtil(path.extension().string()).ToLowerCase().ToString();
-	if (path.extension().string() == CUSTOM_3D_MODEL_EXTENSION)
+	if (path.extension().string() == VTXConverter::MODEL_3D_FILE_EXTENSION)
 	{
 		ReadModelAsCompressedFormat();
 		return;
@@ -134,7 +132,7 @@ Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, fals
 	ProcessSceneNode(m_model, modelScene, modelScene->mRootNode, nullptr);
 
 	//If we write any format to vtx, then after the first import from a non-vtx format we write as compressed
-	if (WRITE_ANY_FORMAT_TO_CUSTOM && fileExtension != CUSTOM_3D_MODEL_EXTENSION)
+	if (WRITE_ANY_FORMAT_TO_CUSTOM && fileExtension != VTXConverter::MODEL_3D_FILE_EXTENSION)
 	{
 		WriteModelAsCompressedFormat();
 	}
@@ -142,15 +140,15 @@ Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, fals
 
 void Model3dAsset::WriteModelAsCompressedFormat() const
 {
-	const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(CUSTOM_3D_MODEL_EXTENSION);
-	if (!VTXConverter::TryWriteModelToPathAsString(m_model, newPath))
+	const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(VTXConverter::MODEL_3D_FILE_EXTENSION);
+	if (!VTXConverter::TryWriteModelToPath(m_model, newPath))
 	{
 		LogError(std::format("Attempted to WRITE model3d asset:{} to vtx format but failed", ToString()));
 	}
 }
 void Model3dAsset::ReadModelAsCompressedFormat()
 {
-	const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(CUSTOM_3D_MODEL_EXTENSION);
+	const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(VTXConverter::MODEL_3D_FILE_EXTENSION);
 	if (!VTXConverter::TryReadModelFromPath(m_model, newPath))
 	{
 		LogError(std::format("Attempted to READ model3d asset:{} from vtx format but failed", ToString()));
@@ -166,5 +164,5 @@ void Model3dAsset::UpdateAssetFromFile()
 
 bool HasModel3dExtension(const std::string& extension)
 {
-	return extension == ".fbx" || extension == CUSTOM_3D_MODEL_EXTENSION;
+	return extension == ".fbx" || extension == VTXConverter::MODEL_3D_FILE_EXTENSION;
 }

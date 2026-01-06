@@ -89,28 +89,30 @@ namespace Utils
 	/// <returns></returns>
 	float Roundf(const float& decimal, const std::uint8_t& places);
 
-	/// <summary>
-	/// Will get the number of places the signficiant digits of a decimal occupies
-	/// 1.2 -> 2
-	/// 0.3456 -> 5
-	/// </summary>
-	size_t GetDigitPlaces(const double& decimal);
-	/// <summary>
-	/// Will get ONLY the deciaml places for significant digits of decimal
-	/// 1.2 -> 1
-	/// 0.345 -> 3
-	/// 68 -> 0
-	/// </summary>
-	/// <param name="decimal"></param>
-	/// <returns></returns>
-	size_t GetDecimalPlaces(const double& decimal);
-
 	double ToRadians(const double);
 	double ToDegrees(const double);
 
-	//Returns the sign of the number, except for 0
-	//example: 5 -> 1, -5 -> -1, 0 -> 0
-	int GetSign(double);
+	/// <summary>
+	/// Returns the sign of the number except for 0.
+	/// ex. -5 -> -1, 0 -> 0, 5 -> +1
+	/// </summary>
+	/// <param name=""></param>
+	/// <returns></returns>
+	int GetSign(int);
+	/// <summary>
+	/// Returns the sign of the number except for 0.
+	/// ex. -5.5 -> -1, 0.2 -> +1, 0 -> 0, 5.5 -> +1
+	/// </summary>
+	/// <param name=""></param>
+	/// <returns></returns>
+	int GetSign(float);
+	/// <summary>
+	/// Same as GetSignf() except 0 -> +1
+	/// Most of the time this version is only used if guaranteed 0 does NOT occur
+	/// </summary>
+	/// <param name=""></param>
+	/// <returns></returns>
+	int GetSignNonZero(int);
 	std::string GetSignSymbol(double);
 
 	bool IsPosInifinity(double);

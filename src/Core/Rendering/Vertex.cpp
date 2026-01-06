@@ -9,7 +9,7 @@ namespace Rendering
 
     std::string Vertex::ToString() const
     {
-        return std::format("[{}]", m_LocalPos.ToString());
+        return std::format("[{}]", m_Normal.ToString());
     }
 
     AABB3D CalculateTriangleAABB(const Triangle& triangle, const Vertex* vertexArray)

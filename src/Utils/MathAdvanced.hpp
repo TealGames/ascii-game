@@ -59,4 +59,20 @@ namespace Utils
 	Quat ExtractRotationFromMatrix(const Mat4& matrix, Vec3* outScale);
 	Vec3 ExtractScaleFromMatrix(const Mat4& matrix);
 	void ExtractTransformFromMatrix(const Mat4& matrix, Vec3& outPosition, Quat& outRotation, Vec3& outScale);
+
+	/// <summary>
+	/// Converts a vec3 normal to a vec2 in range [0, 1] using octahedral encoding.
+	/// NOTE: this only works because normals are normalized and lie within a unit sphere
+	/// NOTE: we could also use latitude/longitude encoding OR spherical coordiantes (theta, psi)
+	/// but those result in high error at the poles due to discontinuities
+	/// </summary>
+	/// <param name="normal"></param>
+	/// <returns></returns>
+	Vec2 OctahedralEncodeNormal(const Vec3& normal);
+	/// <summary>
+	/// Converts a vec2 in range [0, 1] to normalized vec3 normal using octahedral decoding
+	/// </summary>
+	/// <param name="octahedral"></param>
+	/// <returns></returns>
+	Vec3 OctahedralDecodeNormal(const Vec2& octahedral);
 }
