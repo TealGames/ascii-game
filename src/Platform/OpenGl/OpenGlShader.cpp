@@ -45,8 +45,7 @@ namespace Rendering
 		{
 			RenderObjectId shaderId= INVALID_OBJ_ID;
 			GL_CALL(shaderId = glCreateShader(GetShaderType(shaderSource.m_Type)));
-			LogWarning(std::format("Created shader:{}", shaderId));
-			
+
 			//TODO: consider making multiple sources with one with ifdef statements to support one shader creating multiple others based on some
 			//compile time flags, especially if there is a lot of repetitive stuff in multiple shader
 			const char* shaderSources[] = 
@@ -82,7 +81,6 @@ namespace Rendering
 		{
 			RenderObjectId programId = INVALID_OBJ_ID;
 			GL_CALL(programId = glCreateProgram());
-			LogWarning(std::format("Created program: {}", programId));
 
 			RenderObjectId idSource1 = INVALID_OBJ_ID;
 			RenderObjectId idSource2 = INVALID_OBJ_ID;

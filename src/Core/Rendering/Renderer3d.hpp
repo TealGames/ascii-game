@@ -310,6 +310,8 @@ namespace Rendering
         RenderPassData& GetPassDataMutable(const RenderPassType type);
         void UpdatePassRenderState(const RenderPassType pass);
 
+        void AddExistingMeshCall(Model3d& model, Shader& shader, Material& material, const Mat4& modelMatrix);
+
         //PRECONDITION: material must have a non-null albedo texture
         void AddCallBox3DMulti(Shader& shader, Material& material, const Mat4& modelMatrix);
         void AddCallBox3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix);
@@ -317,6 +319,7 @@ namespace Rendering
         //PRECONDITION: material must have a non-null albedo texture
         void AddCallSphere3DMulti(Shader& shader, Material& material, const Mat4& modelMatrix);
         void AddCallSphere3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix);
+        void AddCallPlane3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix, const Vec2& textureRepeats);
 
         /// <summary>
         /// Will calculate the length, width and height of a cube in terms of pixels
@@ -349,8 +352,7 @@ namespace Rendering
         void AddCallTextureSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation);
 
         void AddCallTextureBox3D(Material* material, const Mat4& modelMatrix);
-        void AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix, 
-            const Vec2& textureRepeats= Vec2::One());
+        void AddCallPlane3D(Material* material, const Mat4& modelMatrix, const Vec2& textureRepeats = Vec2::One());
         //void AddCallText(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Color color);
 
         void AddCallModel(Model3d& model, const Mat4& modelMatrix);

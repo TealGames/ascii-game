@@ -944,7 +944,7 @@ void main()
             break;
         }
 
-        vec3 albedo = hitMaterial.baseColor.rgb;
+        vec3 albedo = hitMaterial.baseColor.rgb * hitMaterial.baseColor.a;
         if (hitMaterial.albedoIndex >= 0) 
         {
             vec2 uvEdge0 = vertices[hitIndexV0].uvPos;
@@ -955,7 +955,8 @@ void main()
             //we get accurate texture coords at the hit point
             vec3 baryWeights = CalculateBarycentricWeight(hitPos, hitWorldV0, hitWorldV1, hitWorldV2);
             vec2 uv = baryWeights.x * uvEdge0 + baryWeights.y * uvEdge1 + baryWeights.z * uvEdge2;
-            albedo = texture(uTextures[hitMaterial.albedoIndex], uv).rgb * hitMaterial.baseColor.rgb * hitMaterial.baseColor.a;
+
+            albedo *= texture(uTextures[hitMaterial.albedoIndex], uv).rgb;
         }
         float metallic = clamp(hitMaterial.metallic, 0.0, 1.0);
         float roughness = clamp(hitMaterial.roughness, 0.02, 1.0);

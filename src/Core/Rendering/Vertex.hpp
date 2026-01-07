@@ -17,8 +17,8 @@ namespace Rendering
     {
         Cube                = 0,
         Sphere              = 1,
+        Plane               = 2,
     };
-    inline constexpr std::uint8_t BASIC_MESHES_COUNT = 2;
 
     struct Vertex
     {

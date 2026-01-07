@@ -34,9 +34,9 @@ namespace Rendering
 			}
 
 			//Enable not culling back faces
-			//glEnable(GL_CULL_FACE);
-			//glCullFace(GL_BACK); 
-			//glFrontFace(GL_CCW);
+			glEnable(GL_CULL_FACE);
+			glCullFace(GL_BACK); 
+			glFrontFace(GL_CCW);
 
 			//The depth function for depth testing (gpu uses depth to determine what should be culled in framebuffer)
 			//by comparing fragment z values (less means if it is less than existing fragment, it is culled)

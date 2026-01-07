@@ -78,22 +78,22 @@ namespace Rendering
 			const Color& emissiveColor = DEFAULT_EMISSIVE_COLOR, const float roughness = DEFAULT_ROUGHNESS, 
 			const float metallic = DEFAULT_METALLIC, Texture* normal = nullptr);
 
-		void SetAlpha(const float value);
+		Material& SetAlpha(const float value);
 		float GetAlpha() const;
 
-		void SetBaseColor(const Color& color);
+		Material& SetBaseColor(const Color& color);
 		const Color& GetBaseColor() const;
 
-		void SetEmissiveColor(const Color& color);
+		Material& SetEmissiveColor(const Color& color);
 		const Color& GetEmissiveColor() const;
 
-		void SetRoughness(const float value);
+		Material& SetRoughness(const float value);
 		float GetRoughness() const;
 
-		void SetMetallic(const float value);
+		Material& SetMetallic(const float value);
 		float GetMatallic() const;
 
-		void SetSurface(const float roughness, const float metallic, Texture* normalMap);
+		Material& SetSurface(const float roughness, const float metallic, Texture* normalMap);
 
 		std::string ToString() const;
 	};

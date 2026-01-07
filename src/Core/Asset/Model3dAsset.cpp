@@ -10,17 +10,20 @@
 
 static constexpr bool ADD_GLOBAL_SCALE = true;
 //NOTE: Assimp by default assumes we want to convert m in modeling software
-//coords to cm, so we must apply a scale factor in Assimp global settings to counteract that
-static constexpr float IMPORT_TO_ENGINE_SCALE_FACTOR = 0.01f;
+//coords to cm, so if we provide a global scale factor, that transform scale is ignored.
+//NOTE: the following scale factor is in units RELATIVE to Blender UNITS (Blender is in meters)
+static constexpr float IMPORT_TO_ENGINE_SCALE_FACTOR = 1.0f;
 static constexpr bool BAKE_TRANSFORMS_IN_VERTICES = true;
 //If true, will write all non-vtx formats to vtx to reduce file size
-static constexpr bool WRITE_ANY_FORMAT_TO_CUSTOM = true;
+static constexpr bool WRITE_ANY_FORMAT_TO_CUSTOM = false;
 
 static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScene, aiNode* node, const aiMatrix4x4* parentTransform)
 {
 	//NOTE: we do NOT need any conversion because Assimp converts models into +x -> right, +y ->up, -z -> forward, which match this engine coordinate system
 	//BUT assimp also applies a scale factor of 100
 	const aiMatrix4x4 globalTransform = parentTransform != nullptr ? *parentTransform * node->mTransformation : node->mTransformation;
+	/*LogWarning(std::format("Found node transform : {}\nglobal transform:{}", 
+		AssimpUtils::ToString(node->mTransformation), AssimpUtils::ToString(globalTransform)));*/
 	/*LogWarning(std::format("Found {} global transform:{} parent:{} local:{}", node->mName.C_Str(), AssimpUtils::ToString(globalTransform),
 		parentTransform == nullptr ? "NULL" : AssimpUtils::ToString(*parentTransform), AssimpUtils::ToString(node->mTransformation)));*/
 	//LogWarning(std::format("For model found parent:{} transform:{}", parentTransform != nullptr? 
@@ -63,10 +66,9 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 					LogError(std::format("Attempted to read Assimp importer face with invalid face index count:{}", face->mNumIndices));
 					continue;
 				}
-				for (size_t k = 0; k < face->mNumIndices; k++)
-				{
-					currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[k]);
-				}
+				currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[0]);
+				currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[1]);
+				currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[2]);
 			}
 			
 			currentEngineObj->m_Mesh.ConstructBLASTree(Rendering::BLAS_TREE_LEAF_COUNT);
@@ -113,10 +115,10 @@ Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, fals
 	if (ADD_GLOBAL_SCALE) importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, IMPORT_TO_ENGINE_SCALE_FACTOR);
 
 	// -> Triangulate:
-	// -> SmoothNormals: self explanatory
-	// -> FlipUVs: changes the winding order to be counter-clockwise
+	// -> SmoothNormals: will make normals smoothyl transition in neighboring areas
 	// -> GlobalScale: applies the global scale factor property for import
-	std::uint32_t importFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs;
+	// -> FlipWindingOrder: will reverse the indices of vertices for all triangles (index0, index1, index2) -> (index0, index2, index1)
+	std::uint32_t importFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipWindingOrder;
 	if (ADD_GLOBAL_SCALE) importFlags |= aiProcess_GlobalScale;
 	if (BAKE_TRANSFORMS_IN_VERTICES) importFlags |= aiProcess_PreTransformVertices;
 	if (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative) importFlags |= aiProcess_ConvertToLeftHanded;
@@ -130,6 +132,7 @@ Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, fals
 
 	m_model.m_Objects.reserve(modelScene->mNumMeshes);
 	ProcessSceneNode(m_model, modelScene, modelScene->mRootNode, nullptr);
+	if (path.stem() == "plane") LogWarning(std::format("created model: {}", m_model.ToString()));
 
 	//If we write any format to vtx, then after the first import from a non-vtx format we write as compressed
 	if (WRITE_ANY_FORMAT_TO_CUSTOM && fileExtension != VTXConverter::MODEL_3D_FILE_EXTENSION)

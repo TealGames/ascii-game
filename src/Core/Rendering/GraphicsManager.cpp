@@ -13,7 +13,9 @@ namespace Rendering
 	static const char* DEFAULT_ALBEDO_PATH = "textures/base_albedo.png";
 	static const char* DEFAULT_MATERIAL_PATH = "materials/default.mater";
 
-	static const char* BASIC_MESH_PATHS[] = { "models/basic/cube" BASIC_MESH_EXTENSION, "models/basic/sphere" BASIC_MESH_EXTENSION };
+	static const char* BASIC_MESH_PATHS[] = { BASIC_MESH_ASSET_DIR "cube" BASIC_MESH_EXTENSION, 
+											  BASIC_MESH_ASSET_DIR "sphere" BASIC_MESH_EXTENSION,
+											  BASIC_MESH_ASSET_DIR "plane" BASIC_MESH_EXTENSION };
 
 	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager)
 		: m_assetManager(&assetManager), m_defaultAlbedo(nullptr), m_defaultMaterial(nullptr), m_shaders(), m_materials(), m_basicMeshes(),
@@ -123,7 +125,7 @@ namespace Rendering
 				m_defaultMaterial = materialAsset;
 		}
 
-		for (size_t i = 0; i < BASIC_MESHES_COUNT; i++)
+		for (size_t i = 0; i < sizeof(BASIC_MESH_PATHS) / sizeof(char*); i++)
 		{
 			m_basicMeshes.emplace(static_cast<BasicMeshType>(i),
 				&m_assetManager->TryGetTypeAssetFromPathMutable<Model3dAsset>(BASIC_MESH_PATHS[i])->GetModelMutable());
@@ -178,20 +180,28 @@ namespace Rendering
 		if (it == m_basicMeshes.end()) return nullptr;
 		return it->second;
 	}
-	//Material* GraphicsManager::CreateMaterial(const Color& baseColor, const Color& emissiveColor, const float alpha)
-	//{
-	//	static std::uint16_t runtimeMaterialId = 0;
-	//	std::string materialName = "[RunMat#" + std::to_string(runtimeMaterialId) + "]";
-	//	runtimeMaterialId++;
-
-	//	return &(m_runtimeMaterials.emplace(materialName, 
-	//		Material(materialName, nullptr, baseColor, alpha, emissiveColor)).first->second);
-	//}
+	Material* GraphicsManager::TryCreateRuntimeMaterial(const Material& material)
+	{
+		auto existingIt = m_runtimeMaterials.find(material.m_Name);
+		if (existingIt != m_runtimeMaterials.end())
+		{
+			LogError(std::format("Attempted to create runtime material:{} but one with that name already exists", 
+				material.ToString()));
+		}
+		return &(m_runtimeMaterials.emplace(material.m_Name, material).first->second);
+	}
 	const Material* GraphicsManager::TryGetMaterial(const std::string& name) const
 	{
 		auto it = m_materials.find(name.c_str());
 		if (it != m_materials.end())
 			return it->second;
+
+		if (m_runtimeMaterials.size() > 0)
+		{
+			auto runtimeIt = m_runtimeMaterials.find(String16(name));
+			if (runtimeIt != m_runtimeMaterials.end())
+				return &(runtimeIt->second);
+		}
 		return nullptr;
 	}
 	Material* GraphicsManager::TryGetMaterialMutable(const std::string& name)
@@ -200,6 +210,12 @@ namespace Rendering
 		if (it != m_materials.end()) 
 			return it->second;
 
+		if (m_runtimeMaterials.size() > 0)
+		{
+			auto runtimeIt = m_runtimeMaterials.find(String16(name));
+			if (runtimeIt != m_runtimeMaterials.end())
+				return &(runtimeIt->second);
+		}
 		return nullptr;
 	}
 	void GraphicsManager::ExecuteOnAllMaterials(const std::function<void(std::string_view, const Material&)>& action)
@@ -207,6 +223,10 @@ namespace Rendering
 		for (const auto& material : m_materials)
 		{
 			action(material.first, *material.second);
+		}
+		for (const auto& material : m_runtimeMaterials)
+		{
+			action(material.second.m_Name.ToStringView(), material.second);
 		}
 	}
 

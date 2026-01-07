@@ -8,7 +8,8 @@
 #include "Core/Rendering/Buffers.hpp"
 #include "Core/Rendering/Model3d.hpp"
 
-#define BASIC_MESH_EXTENSION ".vtx"
+#define BASIC_MESH_ASSET_DIR "models/basic/"
+#define BASIC_MESH_EXTENSION ".fbx"
 
 namespace AssetManagement { class AssetManager; }
 class ShaderAsset;
@@ -31,6 +32,7 @@ namespace Rendering
 		//Contains all shaders with their names as keys
 		std::unordered_map<std::string_view, Shader*> m_shaders;
 		std::unordered_map<std::string_view, Material*> m_materials;
+		std::unordered_map<String16, Material> m_runtimeMaterials;
 		std::unordered_map<BasicMeshType, Model3d*> m_basicMeshes;
 
 		//Contains all registered shader buffers (both uniform and ssbo) with their names as keys
@@ -58,7 +60,7 @@ namespace Rendering
 		const Model3d* TryGetBasicMesh(const BasicMeshType mesh) const;
 		Model3d* TryGetBasicMeshMutable(const BasicMeshType mesh);
 
-		//Material* CreateMaterial(const Color& baseColor, const Color& emissiveColor, const float alpha);
+		Material* TryCreateRuntimeMaterial(const Material& material);
 		const Material* TryGetMaterial(const std::string& name) const;
 		Material* TryGetMaterialMutable(const std::string& name);
 		void ExecuteOnAllMaterials(const std::function<void(std::string_view nameView, const Material& material)>& action);

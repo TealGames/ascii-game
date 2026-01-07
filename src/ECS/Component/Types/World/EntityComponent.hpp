@@ -91,11 +91,6 @@ private:
 	requires std::is_base_of_v<Component, T>
 	T& AddComponentUnsafe(const T& component)
 	{
-		if (m_Name=="InputField" && FormatComponentName(typeid(T))== "UIPanel")
-		{
-			//LogWarning("Reached a point here");
-		}
-
 		ComponentRequirementCheck<T>();
 
 		T& addedComponent = m_registry->AddComponent<T>(m_id, component);

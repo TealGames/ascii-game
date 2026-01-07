@@ -9,8 +9,8 @@
 #include "Game/SceneCreator.hpp"
 #include "Core/Scene/GlobalEntityManager.hpp"
 #include "Utils/Data/Event.hpp"
-#include "Core/Asset/AssetManager.hpp"
 
+class EngineState;
 namespace SceneManagement
 {
 	class SceneManager
@@ -18,7 +18,7 @@ namespace SceneManagement
 	private:
 		static const std::filesystem::path SCENES_FOLDER;
 
-		AssetManagement::AssetManager& m_assetManager;
+		EngineState* m_engineState;
 
 		SceneAsset* m_activeSceneAsset;
 		//TODO: sicne we may reach a poitner with many scenes, maybe we should make this a map with scene names
@@ -42,7 +42,7 @@ namespace SceneManagement
 		void SetActiveScene(SceneAsset& activeScene);
 
 	public:
-		SceneManager(AssetManagement::AssetManager& assetmanager);
+		SceneManager(EngineState& state);
 		~SceneManager();
 
 		/// <summary>

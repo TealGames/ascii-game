@@ -1,9 +1,9 @@
 #pragma once
 
 class Scene;
-namespace AssetManagement { class AssetManager; }
+class EngineState;
 namespace SceneCreator
 {
-	void OnSceneLoad(Scene& scene, AssetManagement::AssetManager& assetManager);
-	void OnSceneStart(Scene& scene, AssetManagement::AssetManager& assetManager);
+	void OnSceneLoad(Scene& scene, EngineState& state);
+	void OnSceneStart(Scene& scene, EngineState& state);
 }

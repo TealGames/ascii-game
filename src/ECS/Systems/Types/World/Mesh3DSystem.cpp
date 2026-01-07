@@ -31,8 +31,10 @@ namespace ECS
 			return;
 
 		if (component.m_Material == nullptr)
+		{
 			component.m_Material = m_engineState->m_GraphicsContext.m_GraphicsManager->GetDefaultMaterialMutable();
-		
+		}
+
 		//NOTE: since we do apply model transform to vertices on upload, we do NOT need to multiply the transform matrix
 		//by the imported model's matrix
 		m_renderer->AddCallMesh(*component.m_Mesh, *component.m_Material, component.GetTransform().GetWorldModelMatrix());

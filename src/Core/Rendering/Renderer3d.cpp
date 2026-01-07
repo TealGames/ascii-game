@@ -169,7 +169,7 @@ namespace Rendering
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
     Renderer::Renderer(const EngineState& engineState)
         : m_isInit(false), m_engineState(&engineState), m_uniformData(), m_skybox(),//m_staticRenderData(),
-        m_graphicsManager(nullptr), m_frameGeometryMetrics(), m_runtimeMaterialId(),
+        m_graphicsManager(nullptr), m_frameGeometryMetrics(), m_runtimeMaterialId(),m_cachedMaterials(),
         m_textureController(Backend::CreateTextureController()),
         m_imageController(Backend::CreateImageController()),
         m_instanceMeshes(), m_emissiveInstanceIndices(), m_geometryUnit(m_geometryVertexLayout),
@@ -702,6 +702,20 @@ namespace Rendering
         outProjMatrix = PlatformMath::CalculatePlatformPerspectiveProjMatrix(Utils::ToRadians(90), 1, nearDistance, farDistance);
     }
 
+    void Renderer::AddExistingMeshCall(Model3d& model, Shader& shader, Material& material, const Mat4& modelMatrix)
+    {
+        ModelMesh& mesh = model.m_Objects[0].m_Mesh;
+        const size_t indexCount = mesh.m_Indices.size();
+        RenderBatch* sameStatebatch = TryGetSameGeometryDrawBatch(shader, material, indexCount);
+        if (sameStatebatch != nullptr)
+        {
+            AddGeometryCompleteInstanceToBatch(*sameStatebatch, modelMatrix, material);
+            return;
+        }
+        CreateGeometryBatch(shader, material, &mesh.m_Vertices[0], mesh.m_Vertices.size(),
+            &mesh.m_Indices[0], indexCount, modelMatrix, &mesh.m_BLASTree);
+    }
+
     void Renderer::AddCallBox3DMulti(Shader& shader, Material& material, const Mat4& modelMatrix)
     {
         m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Box3d, modelMatrix);
@@ -714,16 +728,7 @@ namespace Rendering
             return;
         }
 
-        ModelMesh& boxMesh = boxModel->m_Objects[0].m_Mesh;
-        const size_t indexCount = boxMesh.m_Indices.size();
-        RenderBatch* sameStatebatch = TryGetSameGeometryDrawBatch(shader, material, indexCount);
-        if (sameStatebatch != nullptr)
-        {
-            AddGeometryCompleteInstanceToBatch(*sameStatebatch, modelMatrix, material);
-            return;
-        }
-        CreateGeometryBatch(shader, material, &boxMesh.m_Vertices[0], boxMesh.m_Vertices.size(),
-            &boxMesh.m_Indices[0], indexCount, modelMatrix, &boxMesh.m_BLASTree);
+        AddExistingMeshCall(*boxModel, shader, material, modelMatrix);
     }
 
     void Renderer::AddCallBox3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix)
@@ -877,16 +882,7 @@ namespace Rendering
             return;
         }
 
-        ModelMesh& sphereMesh = sphereModel->m_Objects[0].m_Mesh;
-        const size_t indexCount = sphereMesh.m_Indices.size();
-        RenderBatch* sameStatebatch = TryGetSameGeometryDrawBatch(shader, material, indexCount);
-        if (sameStatebatch != nullptr)
-        {
-            AddGeometryCompleteInstanceToBatch(*sameStatebatch, modelMatrix, material);
-            return;
-        }
-        CreateGeometryBatch(shader, material, &sphereMesh.m_Vertices[0], sphereMesh.m_Vertices.size(),
-            &sphereMesh.m_Indices[0], indexCount, modelMatrix, &sphereMesh.m_BLASTree);
+        AddExistingMeshCall(*sphereModel, shader, material, modelMatrix);
     }
 
     void Renderer::AddCallSphere3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix)
@@ -984,6 +980,60 @@ namespace Rendering
 
         FinishGeometryBatch(batch, nullptr);
     }
+    void Renderer::AddCallPlane3DMultiConstructed(Shader& shader, Material& material, const Mat4& modelMatrix, const Vec2& textureRepeats)
+    {
+        constexpr size_t TOTAL_INDEX_COUNT = 6;
+        constexpr size_t TOTAL_VERTEX_COUNT = 4;
+
+        RenderBatch* sameStatebatch = TryGetSameGeometryDrawBatch(shader, material, TOTAL_INDEX_COUNT);
+        if (sameStatebatch != nullptr)
+        {
+            AddGeometryCompleteInstanceToBatch(*sameStatebatch, modelMatrix, material);
+            return;
+        }
+
+        constexpr Vec2 BASE_SIZE = Vec2(1, 1);
+        constexpr Vec2 BASE_EXTENTS = Vec2(BASE_SIZE.m_X / 2.0f, BASE_SIZE.m_Y / 2.0f);
+        Vertex vertices[TOTAL_VERTEX_COUNT] = {
+            //Bottom Left, Bottom right, top right, top left
+            Vertex(Vec3(-BASE_EXTENTS.m_X, 0, -BASE_EXTENTS.m_Y), { 0, 0 }, ENGINE_UP_DIR),
+            Vertex(Vec3(BASE_EXTENTS.m_X, 0, -BASE_EXTENTS.m_Y), { textureRepeats.m_X, 0 }, ENGINE_UP_DIR),
+            Vertex(Vec3(BASE_EXTENTS.m_X, 0, BASE_EXTENTS.m_Y), textureRepeats, ENGINE_UP_DIR),
+            Vertex(Vec3(-BASE_EXTENTS.m_X, 0, BASE_EXTENTS.m_Y), { 0, textureRepeats.m_Y }, ENGINE_UP_DIR)
+        };
+        IndexType indices[TOTAL_INDEX_COUNT] = { 0, 1, 2, 2, 3, 0 };
+
+        /*
+        Vertex vertices[TOTAL_VERTEX_COUNT] = {
+            Vertex(Vec3(-BASE_EXTENTS.m_X, 0, BASE_EXTENTS.m_Y), { 0, 0 }, ENGINE_UP_DIR),
+            Vertex(Vec3(BASE_EXTENTS.m_X, 0, BASE_EXTENTS.m_Y), { textureRepeats.m_X, 0 }, ENGINE_UP_DIR),
+            Vertex(Vec3(BASE_EXTENTS.m_X, 0, -BASE_EXTENTS.m_Y), textureRepeats, ENGINE_UP_DIR),
+            Vertex(Vec3(-BASE_EXTENTS.m_X, 0, -BASE_EXTENTS.m_Y), { 0, textureRepeats.m_Y }, ENGINE_UP_DIR)
+        };
+        IndexType indices[TOTAL_INDEX_COUNT] = { 0, 1, 2, 0, 2, 3 };
+        */
+        CreateGeometryBatch(shader, material, vertices, TOTAL_VERTEX_COUNT, indices, TOTAL_INDEX_COUNT, modelMatrix, nullptr);
+    }
+    void Renderer::AddCallPlane3D(Material* material, const Mat4& modelMatrix, const Vec2& textureRepeats)
+    {
+        m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Plane3d, modelMatrix);
+
+        Shader& baseShader = GetBaseTextureShader();
+        Material& baseMaterial = GetMaterialOrDefault(material);
+        Model3d* planeModel = m_engineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMeshMutable(BasicMeshType::Plane);
+        LogWarning(std::format("Imported plane:{}", planeModel->ToString()));
+        //AddCallPlane3DMultiConstructed(baseShader, baseMaterial, modelMatrix, textureRepeats);
+        //return;
+
+        if (!USE_CACHED_SHAPE_ASSETS || planeModel == nullptr)
+        {
+            LogWarning(std::format("[Renderer3D]: Added custom-constructed plane 3D render call due to NULL plane asset"));
+            AddCallPlane3DMultiConstructed(baseShader, baseMaterial, modelMatrix, textureRepeats);
+            return;
+        }
+
+        AddExistingMeshCall(*planeModel, baseShader, baseMaterial, modelMatrix);
+    }
 
     void Renderer::AddCallBox3D(Material* material, const Mat4& modelMatrix)
     {
@@ -1013,33 +1063,7 @@ namespace Rendering
     {
         AddCallBox3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), modelMatrix);
     }
-    void Renderer::AddCallPlane3D(Material* material, const Vec2& size, const Mat4& modelMatrix, 
-        const Vec2& textureRepeats)
-    {
-        m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::Plane3d, modelMatrix);
-
-        constexpr size_t TOTAL_INDEX_COUNT = 6;
-        constexpr size_t TOTAL_VERTEX_COUNT = 4;
-
-        Shader& baseShader = GetBaseTextureShader();
-        Material& baseMaterial = GetMaterialOrDefault(material);
-        RenderBatch* sameStatebatch = TryGetSameGeometryDrawBatch(baseShader, baseMaterial, TOTAL_INDEX_COUNT);
-        if (sameStatebatch != nullptr)
-        {
-            AddGeometryCompleteInstanceToBatch(*sameStatebatch, modelMatrix, baseMaterial);
-            return;
-        }
-
-        Vertex vertices[TOTAL_VERTEX_COUNT] = {
-            //Bottom Left, Bottom right, top right, top left
-            Vertex(Vec3(-size.m_X/2, 0, -size.m_Y/2), { 0, 0 }, ENGINE_UP_DIR),
-            Vertex(Vec3(size.m_X/2, 0, -size.m_Y/2), { textureRepeats.m_X, 0 }, ENGINE_UP_DIR),
-            Vertex(Vec3(size.m_X/2, 0, size.m_Y/2), textureRepeats, ENGINE_UP_DIR),
-            Vertex(Vec3(-size.m_X/2, 0, size.m_Y/2), { 0, textureRepeats.m_Y }, ENGINE_UP_DIR)
-        };
-        IndexType indices[TOTAL_INDEX_COUNT] = {0, 1, 2, 2, 3, 0};
-        CreateGeometryBatch(baseShader, baseMaterial, vertices, TOTAL_VERTEX_COUNT, indices, TOTAL_INDEX_COUNT, modelMatrix, nullptr);
-    }
+    
 
     void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const Color& color)
     {

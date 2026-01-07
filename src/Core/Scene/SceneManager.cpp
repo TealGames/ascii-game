@@ -1,6 +1,8 @@
 #include <filesystem>
 #include "pch.hpp"
 #include "Core/Scene/SceneManager.hpp"
+#include "Core/EngineState.hpp"
+#include "Core/Asset/AssetManager.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "Utils/HelperFunctions.hpp"
 
@@ -21,8 +23,8 @@ namespace SceneManagement
 	//which can be helpful for testing
 	static const std::filesystem::path SCENE_DIFFERENT_SAVE_PATH = "";
 
-	SceneManager::SceneManager(AssetManagement::AssetManager& assetmanager) :
-		m_assetManager(assetmanager), m_allScenes{}, m_activeSceneAsset(nullptr), m_GlobalEntityManager(),
+	SceneManager::SceneManager(EngineState& state) :
+		m_engineState(&state), m_allScenes{}, m_activeSceneAsset(nullptr), m_GlobalEntityManager(),
 		m_OnLoad(), m_OnSceneChange()
 		/*m_globalEntities{}, m_globalEntitiesLookup{}, m_globalEntityMapper()*/
 	{
@@ -49,7 +51,7 @@ namespace SceneManagement
 	{
 		if (!LOAD_SCENES_FROM_ASSETS) return;
 
-		auto sceneAssets = m_assetManager.GetAssetsOfTypeMutable<SceneAsset>(SCENES_FOLDER);
+		auto sceneAssets = m_engineState->m_AssetManager->GetAssetsOfTypeMutable<SceneAsset>(SCENES_FOLDER);
 		if (sceneAssets.size() <= 0)
 		{
 			LogError(std::format("Tried to load all scenes in scene manager "
@@ -75,7 +77,7 @@ namespace SceneManagement
 		{
 			scene->UpdateAssetFromFile();
 			m_OnLoad.Invoke(&(scene->GetSceneMutable()));
-			SceneCreator::OnSceneLoad(scene->GetSceneMutable(), m_assetManager);
+			SceneCreator::OnSceneLoad(scene->GetSceneMutable(), *m_engineState);
 			//Log(std::format("Loaded scene: {}", scene->GetName()));
 		}
 		//LogError("Finsihed scene manager");
@@ -178,7 +180,7 @@ namespace SceneManagement
 		m_OnSceneChange.Invoke(&activeScene);
 
 		activeScene.Start();
-		SceneCreator::OnSceneStart(activeScene, m_assetManager);
+		SceneCreator::OnSceneStart(activeScene, *m_engineState);
 		//Log(std::format("Set active scene to; {}", activeScene->ToStringLayers()));
 	}
 

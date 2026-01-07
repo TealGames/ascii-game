@@ -168,6 +168,11 @@ namespace Core
 	//TODO; right now we import 3d shapes and assets to use for vertices from blender but some files might be big so it might be a good idea
 	//to extract all vertex/normal/uv data and other vertex info and write to .txt and make our own file extension which can be read
 	//TODO: there is a lot of string copies being made in fig which need to be fixed with string view
+	//TODO: right now in renderer we cache materials based on their name which is BAD. if a material's name changes but keeps its data
+	//it will get a new entry which means the old materials with theit previous names will accumulate. instead we want to keep material by id
+	//and then check their id which should not change over the execution of the program
+	//TODO; the vtx 3d model custom engine format takes up more space than fbx which defeats the whole point of a custom format. 
+	//Optimize it more like removing unneeded uv storage AND ALSO SUPPORT FOR MATERIALS
 	//TODO: REwrite render system:
 	// 1) Make vertex layout (we call vertex layout, opengl calls it VertexArrayObject) have a separate Bind function
 	//	  so that we can bind different layouts before draw so we can use different vertex/index/instance buffer pairs for different draw calls
@@ -218,7 +223,7 @@ namespace Core
 		m_assetManager(),
 		m_globalInitializer(m_assetManager),
 		m_collisionRegistry(),
-		m_sceneManager(m_assetManager),
+		m_sceneManager(m_engineState),
 		m_inputManager(m_assetManager, m_windowManager),
 		m_cameraController(),
 		m_physicsManager(m_sceneManager, m_collisionRegistry),
@@ -345,6 +350,7 @@ namespace Core
 	{
 		m_meshSystem.SystemStart(scene);
 
+		/*
 		const Vec3 objectCenter = Vec3(0, 0, 0.3);
 		static Quat rot = Quat::Identity();
 		//rot *= Vec3{ 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime };
@@ -372,7 +378,7 @@ namespace Core
 		Rendering::Material planeMaterial = Rendering::Material("Plane", &checkerboard, COLOR_WHITE, 1, Color(0.0f, 0.0f, 0.0f, 0.0f), 0.1, 0);
 
 		const Mat4 planeMatrix = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallPlane3D(&planeMaterial, Vec2(10, 10), planeMatrix, Vec2(2,2));
+		m_renderer.AddCallPlane3D(&planeMaterial, planeMatrix, Vec2(2,2));
 
 		Rendering::Material wallLeftMaterial = Rendering::Material("WallLeft", nullptr, COLOR_RED, 1);
 		Rendering::Material wallRightMaterial = Rendering::Material("WallRight", nullptr, COLOR_GREEN, 1);
@@ -380,21 +386,22 @@ namespace Core
 		Rendering::Material roofMaterial = Rendering::Material("Roof", nullptr, COLOR_WHITE, 1, Color(5.0f, 5.0f, 5.0f, 1.0f));
 
 		constexpr float planeSize = 1;
-		m_renderer.AddCallPlane3D(&wallLeftMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(-planeSize/2, planeSize/2, 0),
+		m_renderer.AddCallPlane3D(&wallLeftMaterial, Utils::CalculateModelMatrix(nullptr, Vec3(-planeSize/2, planeSize/2, 0),
 			Vec3::One(), ToQuaternion(Vec3(0, 0, RAD_90))));
 
-		m_renderer.AddCallPlane3D(&wallRightMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(0.5, 0.5, 0),
+		m_renderer.AddCallPlane3D(&wallRightMaterial, Utils::CalculateModelMatrix(nullptr, Vec3(0.5, 0.5, 0),
 			Vec3::One(), ToQuaternion(Vec3(0, 0, RAD_270))));
-		m_renderer.AddCallPlane3D(&wallBackMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, -0.5),
+		m_renderer.AddCallPlane3D(&wallBackMaterial, Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, -0.5),
 			Vec3::One(), ToQuaternion(Vec3(RAD_270,0, 0))));
-		m_renderer.AddCallPlane3D(&roofMaterial, Vec2(planeSize, planeSize), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, 0), Vec3::One(), 
+		m_renderer.AddCallPlane3D(&roofMaterial, Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, 0), Vec3::One(), 
 			ToQuaternion(Vec3(RAD_180, 0, 0))));
 
 		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey" BASIC_MESH_EXTENSION);
 		model->GetModelMutable().m_Objects[0].m_Material.SetSurface(1, 0, nullptr);
 		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity());
 		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3::One(), Quat::Identity());
-		//m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity()));
+		m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity()));
+		*/
 	}
 
 	void Engine::SetUpdateStatusCode(const UpdateStatusCode& code)
