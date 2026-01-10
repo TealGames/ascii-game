@@ -33,20 +33,6 @@ namespace Rendering
         return (world0 + world1 + world2) / 3;
     }
 
-   /* bool Triangle::IsIntersectedByRay(const WorldPosition3D& rayOrigin, const WorldPosition3D& rayDir)
-    {
-        return Utils::RayIntersectsTriangle(m_Vertex0.m_LocalPos, m_Vertex1.m_LocalPos, m_Vertex2.m_LocalPos, rayOrigin, rayDir);
-    }
-    WorldPosition3D Triangle::GetCenter() const
-    {
-        return (m_Vertex0.m_LocalPos + m_Vertex1.m_LocalPos + m_Vertex2.m_LocalPos) / 3;
-    }
-    AABB3D Triangle::GetBounds() const
-    {
-        return AABB3D(Min(m_Vertex0.m_LocalPos, m_Vertex1.m_LocalPos, m_Vertex2.m_LocalPos), 
-                      Max(m_Vertex0.m_LocalPos, m_Vertex1.m_LocalPos, m_Vertex2.m_LocalPos));
-    }*/
-
     Instance::Instance() : Instance(-1, -1, {}, {}) {}
     Instance::Instance(const std::uint32_t materialIndex, const std::uint32_t meshIndex, const Mat4& modelMatrix, const Mat3& normalMatrix)
         : m_MaterialIndex(materialIndex), m_MeshIndex(meshIndex), m_ModelMatrix(modelMatrix), 
@@ -63,5 +49,18 @@ namespace Rendering
     std::string InstanceMesh::ToString() const
     {
         return std::format("[InstanceMesh Off:{} Count:{}]", m_IndexOffset, m_NumIndices);
+    }
+
+    VertexUI::VertexUI() : VertexUI({}, {}) {}
+    VertexUI::VertexUI(const Vec2& pos, const UV& uv) :
+        m_LocalRectPos(pos), m_UVPos(uv) {}
+
+    InstanceUI::InstanceUI() : InstanceUI(COLOR_WHITE, -1, 0, {}) {}
+    InstanceUI::InstanceUI(const HDRColor& color, int textureIndex, const float depth, const Mat3& modelMatrix)
+        : m_Color(color), m_TextureIndex(textureIndex), m_Depth(depth), m_ModelMatrix(modelMatrix) {}
+    std::string InstanceUI::ToString() const
+    {
+        return std::format("[InstanceUI color:{} texIdx:{} depth:{} modelMat:{}]", 
+            m_Color.ToString(), m_TextureIndex, m_Depth, m_ModelMatrix.ToString());
     }
 }

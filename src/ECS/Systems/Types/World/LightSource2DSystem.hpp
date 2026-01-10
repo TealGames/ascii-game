@@ -48,14 +48,14 @@ namespace ECS
 		/// <param name="filterColor"></param>
 		/// <param name="multiplier"></param>
 		/// <returns></returns>
-		Color GetColorFromMultiplier(const Color& originalColor, const Color& filterColor, const float& multiplier) const;
+		HDRColor GetColorFromMultiplier(const HDRColor& originalColor, const HDRColor& filterColor, const float& multiplier) const;
 
 		void CreateLightingForPoint(LightSource2DComponent& data, const WorldPosition3D& centerPos,
 			FragmentedTextBuffer2D& buffer, bool displayLightLevels);
 
 		void RenderLight(LightSource2DComponent& data, std::vector<FragmentedTextBuffer2D*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSource2DComponent& data, const float& distance) const;
-		Color CalculateNewColor(LightSource2DComponent& data, const TextBufferCharPosition2D& bufferPos, const float& distance, 
+		HDRColor CalculateNewColor(LightSource2DComponent& data, const TextBufferCharPosition2D& bufferPos, const float& distance, 
 			std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:

@@ -44,7 +44,7 @@ struct InfinitePlane3D
 {
 	/// <summary>
 	/// The equation for the plane where (x, y, z) is the unit vector normal of the plane
-	/// and w is the signed offset from the origin to the plan in the direction of the normal
+	/// and w is the signed offset from the origin to the plane in the direction of the normal
 	/// (basically the shortest distance from the origin to the plane)
 	/// 
 	/// In math terms, we use the equation ax + by + cz + d=0, where d is the distance to origin

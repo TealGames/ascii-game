@@ -108,13 +108,13 @@ namespace PlatformMath
 		//NOTE: when constructing matrix for this platform, we must convert to the RENDER API's NDC RANGE
 		//but to do so we MUST PROVIDE THE ENGINE's Z DIRECTION
 #if defined(OPENGL)
-		return CalculateOrthographicProjMatrix(NdcRange::NegOneToOne, ENGINE_FORWARD_SIGN_Z, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
+		return CalculateOrthographicProjMatrix(NdcRange::NegOneToOne, ZForwardSign::Negative, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #elif defined(DIRECTX)
-		return CalculateOrthographicProjMatrix(NdcZRange::ZeroToOne, ENGINE_FORWARD_SIGN_Z, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
+		return CalculateOrthographicProjMatrix(NdcZRange::ZeroToOne, ZForwardSign::Positive, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #elif defined(VULKAN)
-		return CalculateOrthographicProjMatrix(NdcZRange::ZeroToOne, ENGINE_FORWARD_SIGN_Z, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
+		return CalculateOrthographicProjMatrix(NdcZRange::ZeroToOne, ZForwardSign::Positive, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #elif defined(METAL)
-		return CalculateOrthographicProjMatrix(NdcZRange::ZeroToOne, ENGINE_FORWARD_SIGN_Z, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
+		return CalculateOrthographicProjMatrix(NdcZRange::ZeroToOne, ZForwardSign::Positive, maxWorldX, minWorldX, maxWorldY, minWorldY, zNear, zFar);
 #else
 #error "Graphics API does not have perspective view matrix defined"
 		return {};

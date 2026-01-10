@@ -25,7 +25,7 @@ struct LightSource2DComponent : public Component
 	//The layers which the light will apply its effect to
 	RenderLayerType m_AffectedLayers;
 	ColorGradient m_GradientFilter;
-	Color test;
+	HDRColor test;
 
 	//The strength of the light initially
 	std::uint8_t m_Intensity;

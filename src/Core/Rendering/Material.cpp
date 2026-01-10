@@ -4,8 +4,8 @@
 namespace Rendering
 {
 	Material::Material() : Material("", nullptr, DEFAULT_BASE_COLOR) {}
-	Material::Material(const String16& name, Texture* albedo, const Color& baseColor, const float alpha,
-		const Color& emissiveColor, const float roughness, const float metallic, Texture* normal) :
+	Material::Material(const String16& name, Texture* albedo, const HDRColor& baseColor, const float alpha,
+		const HDRColor& emissiveColor, const float roughness, const float metallic, Texture* normal) :
 		m_Name(name), m_Albedo(albedo), m_baseColor(), m_alpha(0),
 		m_emissiveColor(), m_roughness(0), m_metallic(0), m_NormalMap(nullptr)
 	{
@@ -17,19 +17,19 @@ namespace Rendering
 		SetMetallic(metallic);
 	}
 
-	Material& Material::SetBaseColor(const Color& color) 
+	Material& Material::SetBaseColor(const HDRColor& color) 
 	{ 
 		m_baseColor = color.GetRangeClampAsHDR(); 
 		return *this;
 	}
-	const Color& Material::GetBaseColor() const { return m_baseColor; }
+	const HDRColor& Material::GetBaseColor() const { return m_baseColor; }
 
-	Material& Material::SetEmissiveColor(const Color& color)
+	Material& Material::SetEmissiveColor(const HDRColor& color)
 	{
 		m_emissiveColor = color.GetRangeClampAsHDR();
 		return *this;
 	}
-	const Color& Material::GetEmissiveColor() const { return m_emissiveColor; }
+	const HDRColor& Material::GetEmissiveColor() const { return m_emissiveColor; }
 
 	Material& Material::SetAlpha(const float value)
 	{

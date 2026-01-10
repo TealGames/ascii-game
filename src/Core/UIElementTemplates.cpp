@@ -4,7 +4,7 @@
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 #include "ECS/Component/Types/UI/UIToggleComponent.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "ECS/Component/Types/UI/UITextureData.hpp"
@@ -21,7 +21,7 @@ namespace Templates
 	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateDropdownToggleTemplate(EntityData& parent, const std::string& name)
 	{
 		auto [toggleEntity, toggleTransform] = parent.CreateChildUI(name);
-		UIPanel& panel = toggleEntity->AddComponent(UIPanel());
+		UIPanelComponent& panel = toggleEntity->AddComponent(UIPanelComponent());
 		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle(), nullptr, nullptr, &panel));
 
 		if (AssetManager == nullptr)
@@ -43,7 +43,7 @@ namespace Templates
 	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateCheckboxTemplate(EntityData& parent, const std::string& name)
 	{
 		auto [toggleEntity, toggleTransform] = parent.CreateChildUI(name);
-		UIPanel& panel = toggleEntity->AddComponent(UIPanel());
+		UIPanelComponent& panel = toggleEntity->AddComponent(UIPanelComponent());
 		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle(), nullptr, nullptr, &panel));
 
 		if (AssetManager == nullptr)

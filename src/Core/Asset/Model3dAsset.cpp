@@ -80,7 +80,7 @@ static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScen
 				|| modelMaterial->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS)
 			{
 				currentEngineObj->m_Material.SetBaseColor(
-					Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a));
+					HDRColor(baseColor.r, baseColor.g, baseColor.b, baseColor.a));
 			}
 
 			float metallic = 0;

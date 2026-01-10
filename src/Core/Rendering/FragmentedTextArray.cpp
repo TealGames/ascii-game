@@ -97,7 +97,7 @@ void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArra
 
 	pos->m_Text.SetChar(newChar);
 }
-void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const Color& newColor)
+void FragmentedTextArray::SetAt(const Array2DPosition& rowColPos, const TextArrayPositionType& positionType, const HDRColor& newColor)
 {
 	TextCharArrayPosition* pos = TryGetPosMutable(rowColPos, positionType);
 	if (!Assert(pos != nullptr, "Tried to set position: {}({}) with COLOR: {} for fragmented text array "

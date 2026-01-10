@@ -10,11 +10,11 @@ namespace ECS
 
 	void UIPanelSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UIPanel),
+		GlobalComponentInfo::AddComponentInfo(typeid(UIPanelComponent),
 			ComponentInfo(CreateComponentTypes<UIRendererData>(), CreateRequiredComponentFunction(UIRendererData()),
 				[](EntityData& entity)-> void
 				{
-					entity.TryGetComponentMutable<UIPanel>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>();
+					entity.TryGetComponentMutable<UIPanelComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>();
 				}));
 	}
 }

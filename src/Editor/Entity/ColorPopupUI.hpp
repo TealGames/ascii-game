@@ -8,8 +8,8 @@ class UIInteractionManager;
 class UITransformData;
 class UISliderComponent;
 class UITextComponent;
-class UILayout;
-class UIInputField;
+class UILayoutComponent;
+class UIInputFieldComponent;
 
 struct ColorChannelUI
 {
@@ -28,8 +28,8 @@ class ColorPopupUI : public PopupUI
 {
 private:
 	const Input::InputManager* m_inputManager;
-	UILayout* m_sliderLayout;
-	UIInputField* m_hexField;
+	UILayoutComponent* m_sliderLayout;
+	UIInputFieldComponent* m_hexField;
 
 	std::array<ColorChannelUI, 3> m_rgbChannels;
 public:
@@ -39,7 +39,7 @@ public:
 	ColorPopupUI(const Input::InputManager& input);
 	void AddPopupElements() override;
 
-	void SetColor(const Color color);
-	Color GetColor() const;
+	void SetColor(const HDRColor color);
+	HDRColor GetColor() const;
 };
 

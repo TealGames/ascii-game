@@ -20,6 +20,9 @@ namespace Rendering
         Plane               = 2,
     };
 
+    //---------------------------------------------------------------------------------------------
+    //                          3D GEOMETRY VERTICES/INSTANCES
+    //---------------------------------------------------------------------------------------------
     struct Vertex
     {
         /// <summary>
@@ -45,13 +48,6 @@ namespace Rendering
         Vertex(const WorldPosition3D& localPos, const UV& uvPos, const Vec3& normal);
 
         std::string ToString() const;
-    };
-    struct VertexUI
-    {
-        Vec3 m_NormalizedScreenPos;
-        float _padding0;
-        UV m_UVPos = {};
-        float _padding1[2];
     };
 
     using IndexType = std::uint32_t;
@@ -97,7 +93,6 @@ namespace Rendering
         //NOTE: we use a mat4x3 (4 rows, 3 cols) because we use COLUMN MAJOR STORAGE
         //(to not need transpose on OpenGL matrix upload) and since the NormalModelMatrix is 3x3
         //and OpenGL expects std::430 rules (flaot vec3 needs 4 byte padding), we add padding
-        //AFTER EVERY 
         Std430Mat3 m_NormalModelMatrix;
 
         Instance();
@@ -114,6 +109,30 @@ namespace Rendering
 
         ArrayInterval m_BLASTreesInterval = {};
 
+        std::string ToString() const;
+    };
+
+
+    //---------------------------------------------------------------------------------------------
+    //                          UI VERTICES/INSTANCES
+    //---------------------------------------------------------------------------------------------
+    struct VertexUI
+    {
+        Vec2 m_LocalRectPos;
+        UV m_UVPos = {};
+
+        VertexUI();
+        VertexUI(const Vec2& pos, const UV& uv);
+    };
+    struct InstanceUI
+    {
+        HDRColor m_Color;
+        int m_TextureIndex;
+        float m_Depth;
+        Mat3 m_ModelMatrix;
+
+        InstanceUI();
+        InstanceUI(const HDRColor& color, int textureIndex, const float depth, const Mat3& modelMatrix);
         std::string ToString() const;
     };
 }

@@ -7,7 +7,7 @@
 
 namespace JsonConstants
 {
-	static const std::unordered_map<std::string, Color> COLOR_CONSTANTS = { {"White", COLOR_WHITE} };
+	static const std::unordered_map<std::string, HDRColor> COLOR_CONSTANTS = { {"White", COLOR_WHITE} };
 	static const std::unordered_map<std::string, Vec2> PIVOT_CONSTANTS = 
 		{ {"BottomCenter",VisualData::PIVOT_BOTTOM_CENTER}, {"BottomLeft",VisualData::PIVOT_BOTTOM_LEFT}, 
 		  {"BottomRight",VisualData::PIVOT_BOTTOM_RIGHT},
@@ -67,15 +67,15 @@ namespace JsonConstants
 			[](const Vec2& vec1, const Vec2& vec2)-> bool { return vec1 == vec2; });
 	}*/
 
-	std::optional<Color> TryGetConstantColor(const std::string& constant)
+	std::optional<HDRColor> TryGetConstantColor(const std::string& constant)
 	{
-		return TryGetConstantValue<Color>(COLOR_CONSTANTS, constant);
+		return TryGetConstantValue<HDRColor>(COLOR_CONSTANTS, constant);
 	}
 
-	std::optional<std::string> TryGetColorConstant(const Color& targetColor)
+	std::optional<std::string> TryGetColorConstant(const HDRColor& targetColor)
 	{
-		return TryGetValueConstant<Color>(COLOR_CONSTANTS, targetColor, 
-			[](const Color& color1, const Color& color2)-> bool { return color1==color2; });
+		return TryGetValueConstant<HDRColor>(COLOR_CONSTANTS, targetColor, 
+			[](const HDRColor& color1, const HDRColor& color2)-> bool { return color1==color2; });
 	}
 
 	std::optional<Rendering::Font> TryGetConstantFont(const std::string& constant)

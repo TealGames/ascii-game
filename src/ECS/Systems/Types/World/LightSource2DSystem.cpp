@@ -157,14 +157,14 @@ namespace ECS
         return data.m_Intensity* std::powf(1 - (distance / (data.m_LightRadius + 1)), data.m_FalloffStrength);
     }
 
-    Color LightSource2DSystem::GetColorFromMultiplier(const Color& originalColor, const Color& filterColor, const float& colorMultiplier) const
+    HDRColor LightSource2DSystem::GetColorFromMultiplier(const HDRColor& originalColor, const HDRColor& filterColor, const float& colorMultiplier) const
     {
-        return Color(std::roundf((originalColor.m_R) * (1 - colorMultiplier) + (filterColor.m_R) * (colorMultiplier)),
+        return HDRColor(std::roundf((originalColor.m_R) * (1 - colorMultiplier) + (filterColor.m_R) * (colorMultiplier)),
                      std::roundf((originalColor.m_G) * (1 - colorMultiplier) + (filterColor.m_G) * (colorMultiplier)),
                      std::roundf((originalColor.m_B) * (1 - colorMultiplier) + (filterColor.m_B) * (colorMultiplier)), 1.0f);
     }
 
-    Color LightSource2DSystem::CalculateNewColor(LightSource2DComponent& data,
+    HDRColor LightSource2DSystem::CalculateNewColor(LightSource2DComponent& data,
         const TextBufferCharPosition2D& bufferPos, const float& distance, std::uint8_t* outLightLevel, LightMapChar* lightMapChar) const
     {
         //Log(std::format("Distance between {} and {} is: {}",
@@ -177,12 +177,12 @@ namespace ECS
 
         //We want to figure out the color data even if the pos is not valid in case we might need
         //light data to be stored even on invalid positions (so the light map can be created)
-        const Color filterColor = data.m_GradientFilter.GetColorAt(distance / data.m_LightRadius, false);
+        const HDRColor filterColor = data.m_GradientFilter.GetColorAt(distance / data.m_LightRadius, false);
         const float colorMultiplier = static_cast<float>(lightLevel) / data.m_Intensity;
         //if (lightMapChar != nullptr) *lightMapChar = LightMapChar(centerPos - currentPos, RaylibUtils::GetFractionalColorRGB(filterColor, colorMultiplier), colorMultiplier);
 
-        const Color originalColor = bufferPos.m_Text.m_Color;
-        const Color newColor = GetColorFromMultiplier(originalColor, filterColor, colorMultiplier);
+        const HDRColor originalColor = bufferPos.m_Text.m_Color;
+        const HDRColor newColor = GetColorFromMultiplier(originalColor, filterColor, colorMultiplier);
 
         //Log(std::format("Color multuplier for distance: {} (center {} -> {}) light level: {} is: {} new color: {}",
         //std::to_string(distanceToCenter), centerPos.ToString(), currentPos.ToString(),

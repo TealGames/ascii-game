@@ -171,6 +171,13 @@ namespace Core
 	//TODO: right now in renderer we cache materials based on their name which is BAD. if a material's name changes but keeps its data
 	//it will get a new entry which means the old materials with theit previous names will accumulate. instead we want to keep material by id
 	//and then check their id which should not change over the execution of the program
+	//TODO: right now transform updates its global transform using recursion implicityl through a parent precalculated update call. change
+	//to use loop and not recursion since recursion may be slow and take up a lot of memory
+	//TODO: make it so that in debug assert can never be turned off so even if we ignore errors in debug settings, assert should always be invokved and shown
+	//TODO: ideally we would make the Ui rect normalized pos change so TOP LEFT is (0,0) (NOT (0,1)) so y increases DOWN (not up) so we could do vector operations
+	//without needing to flip operands for x and y components so we could get simd operation benefits
+	//TODO: improve render unit so we do not need to clear indices/vertices every frame sine most of the time vertices will stay the same, and just batches
+	//and instances will be different so we want to optimize for that
 	//TODO; the vtx 3d model custom engine format takes up more space than fbx which defeats the whole point of a custom format. 
 	//Optimize it more like removing unneeded uv storage AND ALSO SUPPORT FOR MATERIALS
 	//TODO: REwrite render system:
@@ -228,7 +235,7 @@ namespace Core
 		m_cameraController(),
 		m_physicsManager(m_sceneManager, m_collisionRegistry),
 		m_UIInteractionManager(m_inputManager, m_uiHierarchy),
-		m_uiHierarchy(m_sceneManager.m_GlobalEntityManager, Vec2Int{SCREEN_WIDTH, SCREEN_HEIGHT}),
+		m_uiHierarchy(m_sceneManager.m_GlobalEntityManager),
 		m_popupManager(m_uiHierarchy),
 		m_renderer(m_engineState),
 		m_graphicsManager(m_assetManager),
@@ -349,59 +356,6 @@ namespace Core
 	void Engine::SystemStart(Scene& scene)
 	{
 		m_meshSystem.SystemStart(scene);
-
-		/*
-		const Vec3 objectCenter = Vec3(0, 0, 0.3);
-		static Quat rot = Quat::Identity();
-		//rot *= Vec3{ 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime, 0.3f * unscaledDeltaTime };
-		const Mat4 modelMatrix = Utils::CalculateModelMatrix(nullptr, objectCenter, Vec3::One(), rot);
-		Rendering::Texture& tex = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/test.jpg")->GetTextureMutable();
-		Rendering::Material material = Rendering::Material("Test", nullptr, Color(100, 100, 100, 255));
-		//m_renderer.AddTextureCall(Vec2(0.13, 0.13), tex, modelMatrix, Color_BLUE);
-		//m_renderer.AddCallTextureSphere3D(0.13f, tex, modelMatrix, Color_BLUE);
-		//m_renderer.AddCallPointLight(Vec3(0.2, 0, 0), Quat(Vec3(0, 0, 0)), 0.2f, COLOR_YELLOW);
-		//m_renderer.AddCallPointLight(Vec3(0, 0.3, 0), Quat(Vec3(0, 0, 0)), 1.0f, Color(0.0f, 0.0f, 1.0f, 1.0f));
-		//m_renderer.SetDirectionalLight(Vec3(0, -1, 0), COLOR_WHITE);
-
-		const Mat4 modelMatrix3 = Utils::CalculateModelMatrix(nullptr, Vec3(0, -0.3, 0.4), Vec3::One(), Quat::Identity());
-		Rendering::Material* defaultMaterial = m_engineState.m_GraphicsContext.m_GraphicsManager->GetDefaultMaterialMutable();
-		//m_renderer.AddCallSphere3D(defaultMaterial, objectCenter, 3, Quat::Identity());
-		//m_renderer.AddCallTextureBox3D(Vec3(0.13, 0.13, 0.13), material, modelMatrix);
-
-		
-		//LogError(std::format("Tight bounds are model: {}", model->GetModelMutable().m_Meshes[0].CalculateTightBounds().ToString()));
-		//m_renderer.AddCallSphere3D(&model->GetModelMutable().m_Meshes[0].m_Material, 0.2, modelMatrix4);
-
-		Rendering::Texture& checkerboard = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/checkerboard.jpg")->GetTextureMutable();
-		//checkerboard.SetMinFilter(Rendering::MinFilter::NearestMipmapLinear);
-		//checkerboard.SetWrapBehavior({Rendering::WrapBehavior::ClampEdge,Rendering::WrapBehavior::ClampEdge, Rendering::WrapBehavior::ClampEdge });
-		Rendering::Material planeMaterial = Rendering::Material("Plane", &checkerboard, COLOR_WHITE, 1, Color(0.0f, 0.0f, 0.0f, 0.0f), 0.1, 0);
-
-		const Mat4 planeMatrix = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0, 0), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallPlane3D(&planeMaterial, planeMatrix, Vec2(2,2));
-
-		Rendering::Material wallLeftMaterial = Rendering::Material("WallLeft", nullptr, COLOR_RED, 1);
-		Rendering::Material wallRightMaterial = Rendering::Material("WallRight", nullptr, COLOR_GREEN, 1);
-		Rendering::Material wallBackMaterial = Rendering::Material("WallBack", nullptr, COLOR_WHITE, 1);
-		Rendering::Material roofMaterial = Rendering::Material("Roof", nullptr, COLOR_WHITE, 1, Color(5.0f, 5.0f, 5.0f, 1.0f));
-
-		constexpr float planeSize = 1;
-		m_renderer.AddCallPlane3D(&wallLeftMaterial, Utils::CalculateModelMatrix(nullptr, Vec3(-planeSize/2, planeSize/2, 0),
-			Vec3::One(), ToQuaternion(Vec3(0, 0, RAD_90))));
-
-		m_renderer.AddCallPlane3D(&wallRightMaterial, Utils::CalculateModelMatrix(nullptr, Vec3(0.5, 0.5, 0),
-			Vec3::One(), ToQuaternion(Vec3(0, 0, RAD_270))));
-		m_renderer.AddCallPlane3D(&wallBackMaterial, Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, -0.5),
-			Vec3::One(), ToQuaternion(Vec3(RAD_270,0, 0))));
-		m_renderer.AddCallPlane3D(&roofMaterial, Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.5, 0), Vec3::One(), 
-			ToQuaternion(Vec3(RAD_180, 0, 0))));
-
-		Model3dAsset* model = m_assetManager.TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey" BASIC_MESH_EXTENSION);
-		model->GetModelMutable().m_Objects[0].m_Material.SetSurface(1, 0, nullptr);
-		const Mat4 modelMatrix2 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity());
-		const Mat4 modelMatrix4 = Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3::One(), Quat::Identity());
-		m_renderer.AddCallModel(model->GetModelMutable(), Utils::CalculateModelMatrix(nullptr, Vec3(0, 0.1, 0), Vec3(0.1, 0.1, 0.1), Quat::Identity()));
-		*/
 	}
 
 	void Engine::SetUpdateStatusCode(const UpdateStatusCode& code)

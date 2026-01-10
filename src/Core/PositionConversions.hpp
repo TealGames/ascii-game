@@ -25,8 +25,8 @@ namespace Conversions
 	//ScreenPosition WorldToScreenPosition(const CameraData& camera, const WorldPosition& pos);
 	//WorldPosition ScreenToWorldPosition(const CameraData& camera, const ScreenPosition& pos);
 
-	ScreenPosition NormalizedScreenToPosition(const NormalizedPosition& pos);
-	NormalizedPosition ScreenToNormalizedPosition(const ScreenPosition& pos, const Vec2Int totalScreenArea);
+	ScreenPosition NormalizedScreenToPosition(const NormalizedPos& pos);
+	NormalizedPos ScreenToNormalizedPosition(const ScreenPosition& pos, const Vec2Int totalScreenArea);
 
 	template<typename T>
 	std::optional<Vec<T, 2>> TryToNewFixedAreaPos(const Vec<T, 2> fixedArea, const CoordinateOriginType startOriginType,

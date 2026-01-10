@@ -10,7 +10,7 @@
 #include "Core/Input/InputManager.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "Core/UI/UIHierarchy.hpp"
-#include "ECS/Component/Types/UI/UILayout.hpp"
+#include "ECS/Component/Types/UI/UILayoutComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "Utils/ToStringFunctions.hpp"
 
@@ -30,9 +30,9 @@ DebugInfo::DebugInfo() :
 void DebugInfo::CreateUI(UIHierarchy& hierarchy)
 {
 	auto [debugInfoEntity, debugInfoTransform] = hierarchy.CreateAtRoot(TOP_LAYER, "DebugInfoContainer");
-	m_containerLayout = &(debugInfoEntity->AddComponent(UILayout(LayoutType::Vertical, SizingType::ExpandAndShrink)));
-	const NormalizedPosition topLeft = { 0, TOP_LEFT_Y };
-	debugInfoTransform->SetBounds(topLeft, { DEBUG_AREA_WIDTH, topLeft.m_Y - DEBUG_AREA_HIGHER_PER_PROPERTY * DEBUG_PROPERTIES_COUNT });
+	m_containerLayout = &(debugInfoEntity->AddComponent(UILayoutComponent(LayoutType::Vertical, SizingType::ExpandAndShrink)));
+	const NormalizedPos topLeft = { 0, TOP_LEFT_Y };
+	debugInfoTransform->SetLocalBoundsTLBR(topLeft, { DEBUG_AREA_WIDTH, topLeft.m_Y - DEBUG_AREA_HIGHER_PER_PROPERTY * DEBUG_PROPERTIES_COUNT });
 
 	for (size_t i = 0; i < m_textGuis.size(); i++)
 	{

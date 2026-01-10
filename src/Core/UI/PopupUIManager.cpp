@@ -42,11 +42,9 @@ PopupUIManager::~PopupUIManager()
 	m_popups = {};
 }
 
-PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const ScreenPosition& pos)
+PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const NormalizedPos& topLeftPos)
 {
-	//Assert(false, std::format("Converted pos:{} to norm:{}", pos.ToString(), screenPos.ToString()));
-	const NormalizedPosition screenPos = Conversions::ScreenToNormalizedPosition(pos, m_hierarchy->GetRootSize());
-	popupInfo.m_UI->m_Container->SetTopLeftPos(screenPos);
+	popupInfo.m_UI->m_Container->SetLocalTopLeftPos(topLeftPos);
 	popupInfo.Enable();
 
 	m_OnPopupOpened.Invoke(Utils::FormatTypeName(typeid(*popupInfo.m_UI).name()), popupInfo.m_UI);
@@ -54,9 +52,9 @@ PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const Screen
 }
 PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const UIRect& rect, const PopupPositionFlags flags)
 {
-	ScreenPosition topLeftPos = rect.m_TopLeftPos;
+	NormalizedPos topLeftPos = UI_RECT_TOP_LEFT;
 	if (Utils::HasFlagAny(flags, PopupPositionFlags::BelowRect))
-		topLeftPos = topLeftPos+ ScreenPosition(0, rect.GetSize().m_Y);
+		topLeftPos = topLeftPos + NormalizedPos(0, rect.GetSize().m_Y);
 
 	//Then we get the x so it is centered to the rect's center
 	if (Utils::HasFlagAny(flags, PopupPositionFlags::CenteredXToRect))
@@ -68,7 +66,7 @@ PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const UIRect
 			return nullptr;
 		}
 
-		const float popupWidth = maybeRect.value().GetSize().m_X;
+		const NormalizedValue popupWidth = maybeRect.value().GetSize().m_X;
 		topLeftPos.m_X -= (popupWidth - rect.GetSize().m_X) / 2;
 	}
 	return OpenPopupAtSimple(popupInfo, topLeftPos);

@@ -10,8 +10,8 @@
 #include "Utils/Data/ColorConstants.hpp"
 
 static constexpr float LINE_THICKNESS = 1;
-static constexpr Color COLLIDER_OUTLINE_COLOR = COLOR_GREEN;
-static constexpr Color UI_RECT_OUTLINE_COLOR = COLOR_YELLOW;
+static constexpr HDRColor COLLIDER_OUTLINE_COLOR = COLOR_GREEN;
+static constexpr HDRColor UI_RECT_OUTLINE_COLOR = COLOR_YELLOW;
 
 GizmoOverlay::GizmoOverlay(ECS::UIRenderSystem& renderSystem, Physics::PhysicsManager& physicsManager, const CameraController& cameraController) 
 	: m_queuedCalls(), m_activeGizmos(GizmoType::None)
@@ -22,7 +22,7 @@ GizmoOverlay::GizmoOverlay(ECS::UIRenderSystem& renderSystem, Physics::PhysicsMa
 				return;
 
 			//LogError(std::format("Adding gizmos renderer"));
-			AddRenderRectGizmo(rect->m_TopLeftPos, rect->GetSize());
+			//AddRenderRectGizmo(rect->m_TopLeftPos, rect->GetSize());
 		});
 	
 	physicsManager.GetPhysicsWorldMutable().m_OnObjectProcessed.AddListener([this, &cameraController](PhysicsBodyComponent* body)-> void

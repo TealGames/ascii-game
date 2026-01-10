@@ -3,7 +3,7 @@
 #include "Editor/EditorStyles.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 
 static constexpr float POPUP_PADDING = 0.05;
@@ -13,10 +13,10 @@ PopupUI::PopupUI() : m_Container(nullptr) {}
 void PopupUI::CreatePopup(UITransformData& parent)
 {
 	m_Container = &parent;
-	m_Container->GetEntityMutable().AddComponent<UIPanel>(UIPanel(EditorStyles::EDITOR_BACKGROUND_COLOR));
+	m_Container->GetEntityMutable().AddComponent<UIPanelComponent>(UIPanelComponent(EditorStyles::EDITOR_BACKGROUND_COLOR));
 
 	m_Container->SetEventBlocker(true);
-	m_Container->GetPaddingMutable().SetAll(POPUP_PADDING);
+	//m_Container->GetPaddingMutable().SetAll(POPUP_PADDING);
 
 	AddPopupElements();
 }

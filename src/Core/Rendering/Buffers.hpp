@@ -399,7 +399,6 @@ namespace Rendering
 		VertexBuffer(VertexBuffer&&) = delete;
 		~VertexBuffer();
 
-#if !PRODUCTION_BUILD
 		template<typename T>
 		requires (std::is_default_constructible_v<T>)
 		void ReadDataAs(std::vector<T>& vec, const bool hasArraySegments)
@@ -412,9 +411,6 @@ namespace Rendering
 			}
 
 			const auto& segments = m_fence.GetSegments();
-			vec.resize(segments.size());
-
-			size_t vecIndex = 0;
 
 			T value = {};
 			for (const auto& segment : segments)
@@ -425,20 +421,17 @@ namespace Rendering
 					{
 						value = {};
 						memcpy(&value, m_writePtr + size_t(segment.m_ByteOffset), sizeof(T));
-						vec[vecIndex] = value;
-						vecIndex++;
+						vec.push_back(value);
 					}
 				}
 				else
 				{
 					value = {};
 					memcpy(&value, m_writePtr + size_t(segment.m_ByteOffset), sizeof(T));
-					vec[vecIndex] = value;
-					vecIndex++;
+					vec.push_back(value);
 				}
 			}
 		}
-#endif
 
 		size_t GetElementSize() const override;
 
@@ -745,17 +738,18 @@ namespace Rendering
 		/// <summary>
 		/// Rather than creating the 4 separate attributes for every column, you can plug in some basic data and the 
 		/// rest will be generated.
-		/// Note: initial byte offset is the offset of the first float of the matrix from the vertex element.
-		/// so you would do "offsetof(VERTEX_BUFFER_ELEMENT_TYPE, m_MATRIX_MEMBER_NAME)
-		/// Note: columnTypesize is the sizeof(MATRIX_COLUMN_TYPE) -> should be a 4d vector type
-		/// NOTE: matrix size is ROW, COL
 		/// </summary>
 		/// <param name="bufferBindIndex"></param>
-		/// <param name="startLocation"></param>
-		/// <param name="normalize"></param>
-		/// <param name="initialByteOffset"></param>
+		/// <param name="startLocation">Start location of the matrix in the shader (in .glsl "layout(location= START_LOCATION)" part)</param>
+		/// <param name="normalize">whether to normalize the matrix</param>
+		/// <param name="matrixColumnTypeSize">the size of every column. Normally NUM_COLS * sizeof(MATRIX_ELEMENT_SIZE). 
+		/// Ex. Float Mat4x4 -> 4 * sizeof(float) !!! BE AWARE OF EXTRA PADDING. !!! 
+		/// Ex. Float Mat3x3 with one extra float padding per column would have 4 * sizeof(float)</param>
+		/// <param name="initialByteOffset">the offset of the first float of the matrix from the vertex element.
+		/// Typically you would do "offsetof(VERTEX_TYPE, m_MATRIX_MEMBER_NAME)" for this argument</param>
 		void AddMatrixAttribute(const Vec2Int& matrixSize, const VertexLayoutBindIndex bufferBindIndex,
 			const ShaderLocation startLocation, const bool normalize, const size_t matrixColumnTypeSize, const ByteOffset initialByteOffset);
+
 
 		//Note: index buffers are NOT linked to vertex layout explicitly
 		void LinkToBuffer(const VertexBuffer& buffer, const VertexLayoutBindIndex bindIndex);

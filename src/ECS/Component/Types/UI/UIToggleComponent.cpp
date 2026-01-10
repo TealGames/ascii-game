@@ -5,14 +5,14 @@
 #include "Core/Asset/TextureAsset.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "ECS/Component/Types/UI/UITextureData.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 
 //ToggleGUI::ToggleGUI() : 
 //	SelectableGUI(nullptr), m_isToggled(false), m_settings(), 
 //	m_valueSetAction(nullptr) {}
 
 UIToggleComponent::UIToggleComponent(const bool& startValue, const UIStyle& settings, 
-	UITextureData* onTexture, UITextureData* offTexture, UIPanel* background)//, const TextureAsset* toggledTexture)
+	UITextureData* onTexture, UITextureData* offTexture, UIPanelComponent* background)//, const TextureAsset* toggledTexture)
 	: m_isToggled(startValue), m_settings(settings), 
 	//m_valueSetAction(valueSetAction), 
 	m_OnValueSet(), m_onTexture(onTexture), m_offTexture(offTexture),
@@ -54,7 +54,7 @@ void UIToggleComponent::SetStateTextures(UITextureData* onTexture, UITextureData
 	m_offTexture = offTexture;
 	SetTextureFromState();
 }
-void UIToggleComponent::SetBackground(UIPanel* background)
+void UIToggleComponent::SetBackground(UIPanelComponent* background)
 {
 	m_background = background;
 }

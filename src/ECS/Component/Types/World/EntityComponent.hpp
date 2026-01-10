@@ -5,7 +5,7 @@
 #include "ECS/Component/Types/World/TransformComponent.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 
-class UIPanel;
+class UIPanelComponent;
 
 class UITransformData;
 namespace ECS { class EntityRegistry; }

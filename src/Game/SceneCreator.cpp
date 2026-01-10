@@ -25,7 +25,7 @@ namespace SceneCreator
 		Rendering::Texture& checkerboardTexture = state.m_AssetManager->TryGetTypeAssetFromPathMutable<TextureAsset>
 																		("textures/checkerboard.jpg")->GetTextureMutable();
 		Rendering::Material* floorMaterial = state.m_GraphicsContext.m_GraphicsManager->TryCreateRuntimeMaterial(Rendering::Material("Checkerboard",
-			&checkerboardTexture, Color(0.2f, 0.2f, 0.2f, 1.0f), 1, Color(0.0f, 0.0f, 0.0f, 0.0f), 0.1, 0));
+			&checkerboardTexture, HDRColor(0.2f, 0.2f, 0.2f, 1.0f), 1, HDRColor(0.0f, 0.0f, 0.0f, 0.0f), 0.1, 0));
 		Rendering::Model3d* planeModel = state.m_GraphicsContext.m_GraphicsManager->TryGetBasicMeshMutable(Rendering::BasicMeshType::Plane);
 
 		floor.AddComponent<Mesh3DComponent>(Mesh3DComponent(*planeModel, 0, floorMaterial));
@@ -58,7 +58,7 @@ namespace SceneCreator
 		EntityData& roof = scene.CreateEntity("Roof", TransformComponent(Vec3(0, planeSize/2, 0), Vec3::One(),
 														ToQuaternion(Vec3(RAD_180, 0, 0))));
 		Rendering::Material* roofMaterial = state.m_GraphicsContext.m_GraphicsManager->TryCreateRuntimeMaterial(
-			Rendering::Material("Roof", nullptr, COLOR_WHITE, 1, Color(5.0f, 5.0f, 5.0f, 1.0f)));
+			Rendering::Material("Roof", nullptr, COLOR_WHITE, 1, HDRColor(5.0f, 5.0f, 5.0f, 1.0f)));
 		roof.AddComponent<Mesh3DComponent>(Mesh3DComponent(*planeModel, 0, roofMaterial));
 		roof.m_IsImmovable = true;
 	}

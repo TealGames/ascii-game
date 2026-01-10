@@ -1,5 +1,5 @@
 #pragma once
-#include "ECS/Component/Types/UI/UIButton.hpp"
+#include "ECS/Component/Types/UI/UIButtonComponent.hpp"
 #include "ECS/Component/Types/UI/UIContainer.hpp"
 
 class UIHierarchy;

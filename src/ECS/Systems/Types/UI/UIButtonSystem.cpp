@@ -12,12 +12,12 @@ namespace ECS
 	UIButtonSystem::UIButtonSystem() {}
 	void UIButtonSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UIButton),
+		GlobalComponentInfo::AddComponentInfo(typeid(UIButtonComponent),
 			ComponentInfo(CreateComponentTypes<UITextComponent, UISelectableData>(),
 				CreateRequiredComponentFunction(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center)), UISelectableData()),
 				[](EntityData& entity)-> void
 				{
-					UIButton& button = *(entity.TryGetComponentMutable<UIButton>());
+					UIButtonComponent& button = *(entity.TryGetComponentMutable<UIButtonComponent>());
 					button.m_textGUI = entity.TryGetComponentMutable<UITextComponent>();
 					button.m_selectable = entity.TryGetComponentMutable<UISelectableData>();
 				}));
@@ -25,8 +25,8 @@ namespace ECS
 
 	void UIButtonSystem::SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime)
 	{
-		globalEntityManager.OperateOnComponents<UIButton>(ALL_ACTIVE_ENABLED_FLAG,
-			[this, &deltaTime](UIButton& data)-> void
+		globalEntityManager.OperateOnComponents<UIButtonComponent>(ALL_ACTIVE_ENABLED_FLAG,
+			[this, &deltaTime](UIButtonComponent& data)-> void
 			{
 				data.Update(deltaTime);
 			});

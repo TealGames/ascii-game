@@ -1,13 +1,13 @@
 #include <optional>
 #include <cstdint>
 #include "pch.hpp"
-#include "ECS/Component/Types/UI/UIInputField.hpp"
 #include "Utils/Debug.hpp"
 #include "Utils/StringUtil.hpp"
 #include "StaticGlobals.hpp"
 #include "Utils/Data/Vec2Type.hpp"
+#include "ECS/Component/Types/UI/UIInputFieldComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 
 
@@ -29,7 +29,7 @@ std::string ToString(const InputFieldType& type)
 	return "";
 }
 
-UIInputField::UIInputField(const Input::InputManager& manager, const InputFieldType& type, 
+UIInputFieldComponent::UIInputFieldComponent(const Input::InputManager& manager, const InputFieldType& type, 
 	const InputFieldFlag& flags, const UIStyle& settings, 
 	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
 	: m_inputManager(&manager), m_type(type), m_input(), m_lastInput(), 
@@ -51,12 +51,12 @@ UIInputField::UIInputField(const Input::InputManager& manager, const InputFieldT
 //	const InputFieldAction& submitAction, const InputFieldKeyActions& keyPressActions)
 //	:InputFieldGUI(&manager, type, flags, settings, submitAction, keyPressActions) {}
 
-UIInputField::~UIInputField()
+UIInputFieldComponent::~UIInputFieldComponent()
 {
 	//LogError("Input field destroyed");
 }
 
-void UIInputField::Init()
+void UIInputFieldComponent::Init()
 {
 	if (HasFlag(InputFieldFlag::SelectOnStart)) m_selectable->Select();
 	if (HasFlag(InputFieldFlag::UserUIReadonly)) m_selectable->AddRenderFlags(InteractionRenderFlags::DrawDisabledOverlay);
@@ -64,19 +64,19 @@ void UIInputField::Init()
 	UpdateStyle();
 }
 
-const Input::InputManager& UIInputField::GetInputManager() const
+const Input::InputManager& UIInputFieldComponent::GetInputManager() const
 {
 	ENGINE_ASSERT(m_inputManager != nullptr,
 		"Tried to retreive input manager from input field but it is NULLPTR");
 	return *m_inputManager;
 }
 
-std::string UIInputField::CleanInput(const std::string& input) const
+std::string UIInputFieldComponent::CleanInput(const std::string& input) const
 {
 	return Utils::StringUtil(input).RemoveSpaces().ToString();
 }
 
-void UIInputField::UpdateInput()
+void UIInputFieldComponent::UpdateInput()
 {
 	if (m_selectable->IsSelected() && GetInputManager().GetInputKey(ESCAPE_KEY)->GetState().IsReleased())
 	{
@@ -131,7 +131,7 @@ void UIInputField::UpdateInput()
 	//if (keysPressed == "." && m_type == InputFieldType::Float) Assert(false, std::format("FOUND DOT"));
 	SetAttemptedInputDelta(keysPressed);
 }
-void UIInputField::Update()
+void UIInputFieldComponent::Update()
 {
 	if (m_textGUI == nullptr) return;
 	UpdateInput();
@@ -140,25 +140,25 @@ void UIInputField::Update()
 	m_textGUI->SetText(inputStr);
 }
 
-void UIInputField::SetSubmitAction(const InputFieldAction& action) { m_submitAction = action; }
-void UIInputField::SetKeyPressAction(const Input::KeyCode key, const InputFieldAction& action)
+void UIInputFieldComponent::SetSubmitAction(const InputFieldAction& action) { m_submitAction = action; }
+void UIInputFieldComponent::SetKeyPressAction(const Input::KeyCode key, const InputFieldAction& action)
 {
 	m_keyActions.emplace(key, action);
 }
 
-void UIInputField::SetSettings(const UIStyle& settings) 
+void UIInputFieldComponent::SetSettings(const UIStyle& settings) 
 { 
 	m_settings = settings; 
 	UpdateStyle();
 }
 
-void UIInputField::UpdateStyle()
+void UIInputFieldComponent::UpdateStyle()
 {
 	if (m_textGUI != nullptr) m_textGUI->SetSettings(m_settings.m_TextSettings);
 	if (m_background != nullptr) m_background->SetColor(m_settings.m_BackgroundColor);
 }
 
-void UIInputField::SetAttemptedInputDelta(const std::string& input)
+void UIInputFieldComponent::SetAttemptedInputDelta(const std::string& input)
 {
 	std::string cleanedInput = CleanInput(input);
 
@@ -187,13 +187,13 @@ void UIInputField::SetAttemptedInputDelta(const std::string& input)
 	}
 	else SetInput(m_attemptedInput + input, true);
 }
-void UIInputField::ResetInput() 
+void UIInputFieldComponent::ResetInput() 
 { 
 	m_input = ""; 
 	m_attemptedInput = "";
 }
 
-void UIInputField::SetInput(const std::string& newInput, const bool isAttemptedInput)
+void UIInputFieldComponent::SetInput(const std::string& newInput, const bool isAttemptedInput)
 {
 	if (newInput.empty()) return;
 	if (newInput == m_input) return;
@@ -218,50 +218,50 @@ void UIInputField::SetInput(const std::string& newInput, const bool isAttemptedI
 	//Assert(false, std::format("Override input with; {} newinput: {}", m_input, newInput));
 }
 
-void UIInputField::OverrideInput(const std::string& input)
+void UIInputFieldComponent::OverrideInput(const std::string& input)
 {
 	SetInput(input, false);
 }
 
-const InputFieldType& UIInputField::GetFieldType() const { return m_type; }
+const InputFieldType& UIInputFieldComponent::GetFieldType() const { return m_type; }
 
-std::string UIInputField::GetDisplayInput() const
+std::string UIInputFieldComponent::GetDisplayInput() const
 {
 	if (HasFlag(InputFieldFlag::ShowCaret)) return m_input + "_";
 	return m_input;
 }
-std::string UIInputField::GetDisplayAttemptedInput() const
+std::string UIInputFieldComponent::GetDisplayAttemptedInput() const
 {
 	if (HasFlag(InputFieldFlag::ShowCaret)) return m_attemptedInput + "_";
 	return m_attemptedInput;
 }
 
-const std::string& UIInputField::GetInput() const { return m_input; }
-const std::string& UIInputField::GetLastInput() const { return m_lastInput; }
-int UIInputField::GetIntInput() const { return std::stoi(m_input); }
-float UIInputField::GetFloatInput() const { return std::stof(m_input); }
+const std::string& UIInputFieldComponent::GetInput() const { return m_input; }
+const std::string& UIInputFieldComponent::GetLastInput() const { return m_lastInput; }
+int UIInputFieldComponent::GetIntInput() const { return std::stoi(m_input); }
+float UIInputFieldComponent::GetFloatInput() const { return std::stof(m_input); }
 
-bool UIInputField::HasFlag(const InputFieldFlag& flag) const
+bool UIInputFieldComponent::HasFlag(const InputFieldFlag& flag) const
 {
 	return Utils::HasFlagAll(m_inputFlags, flag);
 }
 
-void UIInputField::InitFields()
+void UIInputFieldComponent::InitFields()
 {
 	m_Fields = {};
 }
 
-std::string UIInputField::ToString() const
+std::string UIInputFieldComponent::ToString() const
 {
 	return std::format("[UIInputField]");
 }
 
-void UIInputField::Deserialize(const Json& json)
+void UIInputFieldComponent::Deserialize(const Json& json)
 {
 	//TODO: implement
 	return;
 }
-Json UIInputField::Serialize()
+Json UIInputFieldComponent::Serialize()
 {
 	//TOD: implement
 	return {};

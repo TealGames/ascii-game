@@ -35,7 +35,7 @@ namespace GlobalEntityCreator
 
 		//InputData& inputData = playerEntity.AddComponent<InputData>(InputData{});
 		LightSource2DComponent& lightSource = playerEntity.AddComponent<LightSource2DComponent>(LightSource2DComponent{ 8, RenderLayerType::Background,
-			ColorGradient(Color(243, 208, 67, 255), Color(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
+			ColorGradient(HDRColor(243, 208, 67, 255), HDRColor(228, 8, 10, 255)), std::uint8_t(254), 1.2f });
 
 		playerEntity.AddComponent<EntityRenderer2DComponent>(EntityRenderer2DComponent{
 			VisualData(std::vector<std::vector<TextChar>>{ {TextChar(COLOR_GRAY, 'H') }}, {0, 0}, 

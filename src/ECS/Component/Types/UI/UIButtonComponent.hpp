@@ -5,13 +5,13 @@
 #include "Utils/Data/CooldownEvent.hpp"
 #include "ECS/Component/Component.hpp"
 
-class UIButton;
+class UIButtonComponent;
 class UITextComponent;
 class UISelectableData;
-using ButtonAction = std::function<void(const UIButton&)>;
+using ButtonAction = std::function<void(const UIButtonComponent&)>;
 namespace ECS { class UIButtonSystem; }
 
-class UIButton : public Component
+class UIButtonComponent : public Component
 {
 private:
 	//ButtonAction m_clickAction;
@@ -25,12 +25,12 @@ public:
 	static constexpr float DEFAULT_COOLDOWN = 0;
 
 private:
-	UIButton(UISelectableData* selectable, UITextComponent* textComponent, 
+	UIButtonComponent(UISelectableData* selectable, UITextComponent* textComponent, 
 		const UIStyle& settings, const std::string& text, float cooldown);
 public:
-	UIButton();
-	UIButton(const UIStyle& settings);
-	UIButton(UISelectableData& selectable, UITextComponent& textComponent, 
+	UIButtonComponent();
+	UIButtonComponent(const UIStyle& settings);
+	UIButtonComponent(UISelectableData& selectable, UITextComponent& textComponent, 
 		const UIStyle& settings, const std::string& text= "", float clickCooldown = DEFAULT_COOLDOWN);
 
 	void AddClickAction(const ButtonAction& action);

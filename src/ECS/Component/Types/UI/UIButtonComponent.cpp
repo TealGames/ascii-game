@@ -1,13 +1,13 @@
 #include "pch.hpp"
-#include "ECS/Component/Types/UI/UIButton.hpp"
+#include "ECS/Component/Types/UI/UIButtonComponent.hpp"
 #include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 
-const char* UIButton::DEFAULT_TEXT = "Button";
+const char* UIButtonComponent::DEFAULT_TEXT = "Button";
 
-UIButton::UIButton(UISelectableData* selectable, UITextComponent* textComponent, 
+UIButtonComponent::UIButtonComponent(UISelectableData* selectable, UITextComponent* textComponent, 
 	const UIStyle& settings, const std::string& text, float clickCooldown) :
 	m_textGUI(textComponent), m_selectable(selectable), m_settings(settings)
 {
@@ -15,24 +15,24 @@ UIButton::UIButton(UISelectableData* selectable, UITextComponent* textComponent,
 	if (m_selectable != nullptr) SetCooldownTime(clickCooldown);
 }
 
-UIButton::UIButton() : UIButton(UIStyle()) {}
-UIButton::UIButton(const UIStyle& settings) : UIButton(nullptr, nullptr, settings, DEFAULT_TEXT, DEFAULT_COOLDOWN) {}
-UIButton::UIButton(UISelectableData& selectable, UITextComponent& textComponent,
+UIButtonComponent::UIButtonComponent() : UIButtonComponent(UIStyle()) {}
+UIButtonComponent::UIButtonComponent(const UIStyle& settings) : UIButtonComponent(nullptr, nullptr, settings, DEFAULT_TEXT, DEFAULT_COOLDOWN) {}
+UIButtonComponent::UIButtonComponent(UISelectableData& selectable, UITextComponent& textComponent,
 	const UIStyle& settings, const std::string& text, float clickCooldown)
-	: UIButton(&selectable, &textComponent, settings, text, clickCooldown) {}
+	: UIButtonComponent(&selectable, &textComponent, settings, text, clickCooldown) {}
 
-void UIButton::AddClickAction(const ButtonAction& action)
+void UIButtonComponent::AddClickAction(const ButtonAction& action)
 {
 	m_selectable->m_OnClick.AddListener([this, action](UISelectableData* ptr) -> void { action(*this); });
 }
-void UIButton::SetSettings(const UIStyle& settings)
+void UIButtonComponent::SetSettings(const UIStyle& settings)
 {
 	m_settings = settings;
 	if (m_textGUI!=nullptr) m_textGUI->SetSettings(m_settings.m_TextSettings);
 }
 
-const UITextComponent* UIButton::GetTextUI() const { return m_textGUI; }
-void UIButton::SetText(const std::string& text)
+const UITextComponent* UIButtonComponent::GetTextUI() const { return m_textGUI; }
+void UIButtonComponent::SetText(const std::string& text)
 {
 	if (m_textGUI == nullptr)
 	{
@@ -43,39 +43,39 @@ void UIButton::SetText(const std::string& text)
 	m_textGUI->SetText(text);
 }
 
-bool UIButton::HasCooldown() const
+bool UIButtonComponent::HasCooldown() const
 {
 	return m_selectable->m_OnClick.HasCooldown();
 }
-bool UIButton::IsInCooldown() const
+bool UIButtonComponent::IsInCooldown() const
 {
 	return m_selectable->m_OnClick.IsInCooldown();
 }
-void UIButton::SetCooldownTime(float time)
+void UIButtonComponent::SetCooldownTime(float time)
 {
 	m_selectable->m_OnClick.SetCooldownTime(time);
 }
 
-void UIButton::Update(const float deltaTime)
+void UIButtonComponent::Update(const float deltaTime)
 {
 	m_selectable->m_OnClick.Update(deltaTime);
 }
 
-void UIButton::InitFields()
+void UIButtonComponent::InitFields()
 {
 	m_Fields = {};
 }
-std::string UIButton::ToString() const
+std::string UIButtonComponent::ToString() const
 {
 	return std::format("[ButtonGUI]");
 }
 
-void UIButton::Deserialize(const Json& json)
+void UIButtonComponent::Deserialize(const Json& json)
 {
 	//TODO: implement
 	return;
 }
-Json UIButton::Serialize()
+Json UIButtonComponent::Serialize()
 {
 	//TODO: implement
 	return {};

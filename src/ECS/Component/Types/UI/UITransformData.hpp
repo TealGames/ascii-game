@@ -1,9 +1,9 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
 #include "Utils/HelperMacros.hpp"
-#include "Core/UI/RelativeUIRect.hpp"
-#include "Core/UI/RelativeUIPadding.hpp"
 #include "Core/UI/UIRect.hpp"
+#include "Core/UI/UIPadding.hpp"
+#include "Utils/Data/Matrix.hpp"
 
 enum class UITransformFlags : std::uint8_t
 {
@@ -23,18 +23,21 @@ FLAG_ENUM_OPERATORS(UITransformFlags)
 class UITransformData : public Component
 {
 private:
-	RelativeUIRect m_relativeRect;
+	UIRect m_localRect;
 	UITransformFlags m_flags;
 
+	UIRect m_lastGlobalScreenRect;
+public:
 	/// <summary>
 	/// This is how much the CHILDREN AREA is padded within this element. 
-	/// Values are relative to THIS ELEMENT"S SIZE
+	/// Values are relative to THIS ELEMENT'S SIZE
 	/// </summary>
-	RelativeUIPadding m_padding;
-	UIRect m_lastWorldArea;
-public:
+	UIPadding m_Padding;
 
 private:
+	bool DoLocksAllowSizeChange(const NormalizedPos& proposedNewSize) const;
+
+	void UpdateFixedChildren(const Vec2& oldSize);
 	/// <summary>
 	/// A less safe version of size settings that has less checks and assumes new size is valid
 	/// It is most often used to get around checks/for performance
@@ -43,16 +46,16 @@ private:
 	void SetSizeUnsafe(const Vec2& size);
 public:
 	UITransformData();
-	UITransformData(const RelativeUIRect& relativeRect);
-	UITransformData(const NormalizedPosition& size);
+	UITransformData(const UIRect& relativeRect);
+	UITransformData(const NormalizedPos& size);
 	~UITransformData() = default;
 
 	void SetFixed(const bool horizontal, const bool vertical);
 	bool IsFixedVertical() const;
 	bool IsFixedHorizontal() const;
 
-	void SetLastWorldArea(const UIRect& area);
-	const UIRect& GetLastWorldArea() const;
+	void SetLastGlobalScreenRect(const UIRect& area);
+	const UIRect& GetLastGlobalScreenRect() const;
 
 	/// <summary>
 	/// Although it is not a selectable, nonselectables CAN block events from propagating further
@@ -63,31 +66,41 @@ public:
 	void SetEventBlocker(const bool status);
 	bool IsSelectionEventBlocker() const;
 
-	void SetSize(const NormalizedPosition& size);
-	void SetMaxSize();
-	void SetSizeX(const float sizeNormalized);
-	void SetSizeY(const float sizeNormalized);
+	void SetLocalSize(const NormalizedPos& size);
+	void SetMaxRelativeSize();
+	void SetRelativeSizeX(const float sizeNormalized);
+	void SetRelativeSizeY(const float sizeNormalized);
 
-	void SetTopLeftPos(const NormalizedPosition& topLeftPos);
-	void SetBottomRightPos(const NormalizedPosition& bottomRightPos);
-	void SetBounds(const NormalizedPosition& topLeftPos, const NormalizedPosition& bottomRightPos);
-	void TryCenter(const bool centerX, const bool centerY);
+	void SetLocalTopLeftPos(const NormalizedPos& topLeftPos);
+	void SetLocalTopRightPos(const NormalizedPos& topRightPos);
+	void SetLocalBottomRightPos(const NormalizedPos& bottomRightPos);
+	void SetLocalBottomLeftPos(const NormalizedPos& bottomleftPos);
+	void SetLocalBoundsBLTR(const NormalizedPos& bottomLeftPos, const NormalizedPos& topRightPos);
+	void SetLocalBoundsTLBR(const NormalizedPos& topLeftPos, const NormalizedPos& bottomRightPos);
+	/// <summary>
+	/// Will center this rect's corresponding axes within the parent rect
+	/// by changing anchor positions (SIZE DOES NOT CHANGE)
+	/// </summary>
+	/// <param name="centerX"></param>
+	/// <param name="centerY"></param>
+	void CenterWithinParent(const bool centerX, const bool centerY);
 
-	void SetPadding(const RelativeUIPadding& padding);
-	const RelativeUIPadding& GetPadding() const;
-	RelativeUIPadding& GetPaddingMutable();
+	NormalizedPos GetLocalSize() const;
+	const UIRect& GetLocalRect() const;
 
-	NormalizedPosition GetSize() const;
-	const RelativeUIRect& GetRect() const;
-	RelativeUIRect& GetRectMutable();
+	UIRect CalculateWorldRect(const UIRect& parentGlobalRect) const;
+	/// <summary>
+	/// Calculates the available rect for the child to use as its parent
+	/// </summary>
+	/// <param name="thisGlobalRect"></param>
+	/// <returns></returns>
+	UIRect CalculateChildParentRect(const UIRect& thisGlobalRect) const;
 
-	UIRect CalculateRect(const UIRect& parentInfo) const;
-	UIRect CalculateChildRect(const UIRect& thisRenderInfo) const;
+	Mat3 CalculateLocalModelMatrix() const;
+	Mat3 CalculateWorldModelMatrix() const;
 
 	void InitFields() override;
-
 	std::string ToString() const override;
-
 	void Deserialize(const Json& json) override;
 	Json Serialize() override;
 };

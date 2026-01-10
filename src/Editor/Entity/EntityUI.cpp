@@ -7,13 +7,13 @@
 #include "Core/UIElementTemplates.hpp"
 #include "ECS/Component/Types/UI/UIToggleComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
-#include "ECS/Component/Types/UI/UILayout.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UILayoutComponent.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 20;
 constexpr float ACTIVE_TOGGLE_WIDTH = 0.1;
 constexpr float TOGGLE_NAME_SPACE_WIDTH = 0.05;
-const NormalizedPosition TOP_LEFT_POS_NORMALIZED = { 0.8, 1 };
+const NormalizedPos TOP_LEFT_POS_NORMALIZED = { 0.8, 1 };
 
 EntityUI::EntityUI(const Input::InputManager& manager, PopupUIManager& popupManager, AssetManagement::AssetManager& assetManager)
 	: m_inputManager(&manager), m_entity(nullptr), m_componentUIs(), 
@@ -37,18 +37,18 @@ void EntityUI::Init(EntityData& parent)
 void EntityUI::CreateLayout()
 {
 	auto [guiLayoutEntity, guiLayoutTransform] = m_layoutParent->CreateChildUI("EntityUILayout");
-	m_guiLayout = &(guiLayoutEntity->AddComponent(UILayout(LayoutType::Vertical, SizingType::ShrinkOnly)));
-	guiLayoutTransform->SetBounds(TOP_LEFT_POS_NORMALIZED, NormalizedPosition::BOTTOM_RIGHT);
+	m_guiLayout = &(guiLayoutEntity->AddComponent(UILayoutComponent(LayoutType::Vertical, SizingType::ShrinkOnly)));
+	guiLayoutTransform->SetLocalBoundsTLBR(TOP_LEFT_POS_NORMALIZED, UI_RECT_BOTTOM_RIGHT);
 	
 	auto [headerEntity, headerTransform] = guiLayoutEntity->CreateChildUI("EntityHeader");
-	m_entityHeader = &(headerEntity->AddComponent(UIPanel(EditorStyles::EDITOR_PRIMARY_COLOR)));
+	m_entityHeader = &(headerEntity->AddComponent(UIPanelComponent(EditorStyles::EDITOR_PRIMARY_COLOR)));
 	//m_entityHeader = &(headerEntity->AddComponent(UIPanel(RED)));
-	headerTransform->SetSize({ 1, 0.03 });
+	headerTransform->SetLocalSize({ 1, 0.03 });
 
 	EntityData* toggleEntity = nullptr;
 	UITransformData* toggleTransform = nullptr;
 	std::tie(toggleEntity, toggleTransform, m_activeToggle) = Templates::CreateCheckboxTemplate(*headerEntity, "EntityActiveToggle");
-	toggleTransform->SetBounds(NormalizedPosition::TOP_LEFT, { ACTIVE_TOGGLE_WIDTH, 0 });
+	toggleTransform->SetLocalBoundsTLBR(UI_RECT_TOP_LEFT, { ACTIVE_TOGGLE_WIDTH, 0 });
 	m_activeToggle->m_OnValueSet.AddListener([this](bool isChecked)-> void
 		{
 			m_entity->TrySetEntityActive(isChecked);
@@ -56,7 +56,7 @@ void EntityUI::CreateLayout()
 
 	auto [nameTextEntity, nameTextTransform] = headerEntity->CreateChildUI("EntityNameText");
 	m_entityNameText = &(nameTextEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft))));
-	nameTextTransform->SetBounds({ ACTIVE_TOGGLE_WIDTH+ TOGGLE_NAME_SPACE_WIDTH, 1 }, NormalizedPosition::BOTTOM_RIGHT);
+	nameTextTransform->SetLocalBoundsTLBR({ ACTIVE_TOGGLE_WIDTH+ TOGGLE_NAME_SPACE_WIDTH, 1 }, UI_RECT_BOTTOM_RIGHT);
 }
 
 void EntityUI::Update()

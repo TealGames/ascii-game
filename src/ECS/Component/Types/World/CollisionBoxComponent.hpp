@@ -97,7 +97,7 @@ public:
 	/// </summary>
 	/// <param name="relativePos"></param>
 	/// <returns></returns>
-	WorldPosition2D GetAABBWorldPos(const NormalizedPosition& relativePos) const;
+	WorldPosition2D GetAABBWorldPos(const NormalizedPos& relativePos) const;
 
 	bool DoIntersect(const WorldPosition2D& pos) const;
 	bool DoIntersect(const CollisionBoxData& otherBox) const;

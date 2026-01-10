@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Visual/TextBuffer.hpp"
-#include "ECS/Component/Types/UI/UIInputField.hpp"
+#include "ECS/Component/Types/UI/UIInputFieldComponent.hpp"
 
 class UIInteractionManager;
 namespace Input { class InputManager; }
@@ -8,7 +8,7 @@ namespace Input { class InputManager; }
 class SpriteCharUI //: public IRenderable
 {
 private:	
-	UIInputField m_charField;
+	UIInputFieldComponent m_charField;
 
 public:
 

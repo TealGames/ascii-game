@@ -96,7 +96,7 @@ namespace Rendering
 
 	void FrameBuffer::BindActive()
 	{
-		ENGINE_ASSERT(m_isBoundActive, "Attempted to bind already active framebuffer");
+		ENGINE_ASSERT(!m_isBoundActive, "Attempted to bind already active framebuffer");
 		ENGINE_ASSERT(m_id != INVALID_OBJ_ID, "Attempted to bind active invalid id framebuffer");
 
 		const FrameBufferAttachmentTypeIntegralType startColorAttachmentValue = 
@@ -853,6 +853,7 @@ namespace Rendering
 
 	void VertexLayout::AddAttribute(const VertexAttribute& attribute)
 	{
+		ENGINE_ASSERT(m_isBoundActive, "Attempted to add attribute to unbound active vertex layout");
 		m_layout.push_back(attribute);
 		m_callbacks.m_AddAttributeFunc(m_id, m_layout.back());
 	}

@@ -14,8 +14,8 @@ namespace JsonConstants
 	/*std::optional<Vec2> TryGetConstantDir(const std::string& constant);
 	std::optional<std::string> TryGetDirConstant(const Vec2& vec);*/
 
-	std::optional<Color> TryGetConstantColor(const std::string& constant);
-	std::optional<std::string> TryGetColorConstant(const Color& color);
+	std::optional<HDRColor> TryGetConstantColor(const std::string& constant);
+	std::optional<std::string> TryGetColorConstant(const HDRColor& color);
 
 	std::optional<Rendering::Font> TryGetConstantFont(const std::string& constant);
 	std::optional<std::string> TryGetFontConstant(const Rendering::Font& font);

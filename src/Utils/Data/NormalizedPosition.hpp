@@ -3,51 +3,30 @@
 #include "Utils/Data/NormalizedValue.hpp"
 
 /// <summary>
-/// Represents a normalized position of a rectangle where [0,0] would represent 
-/// bottom left and [1,1] would represent top right where it is in [WIDTH, HEIGHT] [X, Y]
+/// Represents a normalized coordinate where x is in range [0,1] 
+/// and y is in range [0,1]
 /// </summary>
-class NormalizedPosition
+class NormalizedPos
 {
 private:
 public:
-	static constexpr float MIN = 0;
-	static constexpr float HALF = 0.5;
-	static constexpr float MAX = 1;
-
-	static const Vec2 TOP_LEFT;
-	static const Vec2 TOP_RIGHT;
-	static const Vec2 BOTTOM_LEFT;
-	static const Vec2 BOTTOM_RIGHT;
-	static const Vec2 CENTER;
-	static const Vec2 BOTTOM_CENTER;
-	static const Vec2 TOP_CENTER;
-
 	NormalizedValue m_X;
 	NormalizedValue m_Y;
 
 private:
 	//bool IsValidPos() const;
 public:
-	NormalizedPosition();
-	NormalizedPosition(const float& x, const float& y);
-	NormalizedPosition(const Vec2& pos);
-	NormalizedPosition(const NormalizedValue x, const NormalizedValue y);
-	NormalizedPosition(const float x, const NormalizedValue y);
-	NormalizedPosition(const NormalizedValue x, const float y);
 
-	const Vec2 GetPos() const;
-	/// <summary>
-	/// Note: this should rarely be used since it can bypass the position
-	/// setting from the public set function
-	/// </summary>
-	/// <returns></returns>
-	//Vec2& GetPosMutable();
+	NormalizedPos();
+	NormalizedPos(const float& x, const float& y);
+	NormalizedPos(const Vec2& pos);
+	NormalizedPos(const NormalizedValue x, const NormalizedValue y);
+	NormalizedPos(const float x, const NormalizedValue y);
+	NormalizedPos(const NormalizedValue x, const float y);
 
-	const float GetX() const;
-	const float GetY() const;
-
-	/*float& GetXMutable();
-	float& GetYMutable();*/
+	float GetX() const;
+	float GetY() const;
+	Vec2 AsVec2() const;
 
 	void SetPos(const Vec2& relativePos);
 	//void SetPosX(const float x);
@@ -58,21 +37,21 @@ public:
 
 	std::string ToString() const;
 
-	NormalizedPosition operator+(const NormalizedPosition& other) const;
-	NormalizedPosition operator-(const NormalizedPosition& other) const;
-	NormalizedPosition operator*(const NormalizedPosition& other) const;
-	NormalizedPosition operator*(const float& scalar) const;
-	NormalizedPosition operator/(const float& scalar) const;
+	NormalizedPos operator+(const NormalizedPos& other) const;
+	NormalizedPos operator-(const NormalizedPos& other) const;
+	NormalizedPos operator*(const NormalizedPos& other) const;
+	NormalizedPos operator/(const NormalizedPos& other) const;
+	NormalizedPos operator*(const float& scalar) const;
+	NormalizedPos operator/(const float& scalar) const;
 
-	bool operator==(const NormalizedPosition& other) const;
-	bool operator!=(const NormalizedPosition& other) const;
-	bool operator>(const NormalizedPosition& other) const;
-	bool operator>=(const NormalizedPosition& other) const;
-	bool operator<(const NormalizedPosition& other) const;
-	bool operator<=(const NormalizedPosition& other) const;
+	NormalizedPos& operator+=(const NormalizedPos& other);
+	NormalizedPos& operator-=(const NormalizedPos& other);
+
+	bool operator==(const NormalizedPos& other) const;
+	bool operator!=(const NormalizedPos& other) const;
+	bool operator>(const NormalizedPos& other) const;
+	bool operator>=(const NormalizedPos& other) const;
+	bool operator<(const NormalizedPos& other) const;
+	bool operator<=(const NormalizedPos& other) const;
 };
-
-NormalizedPosition GetSizeFromCorners(const NormalizedPosition& topLeft, const NormalizedPosition& bottomRight);
-NormalizedPosition GetBottomRight(const NormalizedPosition& topLeft, const NormalizedPosition& size);
-NormalizedPosition GetTopLeft(const NormalizedPosition& bottomRight, const NormalizedPosition& size);
 

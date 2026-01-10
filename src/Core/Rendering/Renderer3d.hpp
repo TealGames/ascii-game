@@ -41,23 +41,23 @@ namespace Rendering
         WorldPosition3D m_Pos;
         //This is padding for vec3 since we can only have 2 or 4 floats
         float _padding0;
-        Color m_Color;
+        HDRColor m_Color;
         float m_Radius;
         uint32_t m_ShadowMapIndex;
         //This is padding to round data to 16 byte alignment
         float _padding1[2];
 
         PointLightData();
-        PointLightData(const WorldPosition3D& pos, const Color& color, const float radius);
+        PointLightData(const WorldPosition3D& pos, const HDRColor& color, const float radius);
     };
     struct DirectionalLightData
     {
         Vec3 m_Direction = {};
         float _padding0 = 0;
-        Color m_Color = {};
+        HDRColor m_Color = {};
 
         DirectionalLightData();
-        DirectionalLightData(const Vec3& dir, const Color& color);
+        DirectionalLightData(const Vec3& dir, const HDRColor& color);
     };
     constexpr size_t MAX_POINT_LIGHTS = 2;
     struct LightBlockData
@@ -72,8 +72,8 @@ namespace Rendering
     constexpr int INVALID_TEXTURE_INDEX = -1;
     struct MaterialData
     {
-        Color m_BaseColor;
-        Color m_EmissiveColor;
+        HDRColor m_BaseColor;
+        HDRColor m_EmissiveColor;
         float m_Alpha;
         float m_Metallic;
         float m_Roughness;
@@ -130,8 +130,9 @@ namespace Rendering
         GaussianBlur     = 5,
         RayTrace         = 6,
         Skybox           = 7,
+        UI               = 8
     };
-    inline constexpr CoreShaderIntegralType CORE_SHADER_COUNT = 8;
+    inline constexpr CoreShaderIntegralType CORE_SHADER_COUNT = 9;
 
     using IntegralRenderPassType = std::uint8_t;
     enum class RenderPassType : IntegralRenderPassType
@@ -141,9 +142,10 @@ namespace Rendering
         Geometry    = 2,
         Skybox      = 3,
         PostProcess = 4,
-        RayTrace    = 5,
+        UI          = 5,
+        RayTrace    = 6,
     };
-    inline constexpr IntegralRenderPassType TOTAL_PASS_TYPES = 5;
+    inline constexpr IntegralRenderPassType TOTAL_PASS_TYPES = 6;
 
     struct RenderPassData
     {
@@ -185,9 +187,6 @@ namespace Rendering
         GraphicsManager* m_graphicsManager;
         std::array<Shader*, CORE_SHADER_COUNT> m_coreShaders;
 
-        
-        //StaticFrameRenderData m_staticRenderData
-
         BVHInstanceBoundsTree m_tlasTree;
         //The per-instance bounds data which contains that instance's
         //mesh data transformed into world bounds to be used to create tlas tree
@@ -221,7 +220,9 @@ namespace Rendering
         RenderBuffer m_hdrDepthRenderBuffer;
 
         VertexLayout m_geometryVertexLayout;
+        VertexLayout m_uiVertexLayout;
         RenderUnit<Vertex, Instance> m_geometryUnit;
+        RenderUnit<VertexUI, InstanceUI> m_uiUnit;
         BufferController m_bufferController;
 
         UniformBuffer m_viewerUniformBuffer;
@@ -253,6 +254,11 @@ namespace Rendering
         Instance& AddGeometryInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
         void AddGeometryInstanceMeshBoundsData(const std::uint32_t& instanceIndex);
 
+        RenderBatch& CreateUIBatch(Shader& shader, Texture* texture, const VertexUI* vertexArray, const size_t vertexSize,
+            const IndexType* indexArray, const size_t indexSize, const HDRColor& color, const float depth, const Mat3& modelMatrix);
+        InstanceUI& AddUIInstanceDataToBatch(RenderBatch& batch, const HDRColor& color, Texture* texture, const float depth, const Mat3& modelMatrix);
+        RenderBatch* TryGetSameUIDrawBatch(const Shader& shader, const Texture* texture, std::uint32_t vertexCount);
+
         MaterialData* CreateRuntimeMaterial(const Material& material);
         void ConstructBLASTree(BVHTriangleTree& tree, const size_t indexStart, const size_t indexSize);
         void ConstructTLASTree();
@@ -260,7 +266,7 @@ namespace Rendering
         void ClearQueuedTextures();
 
         void FlushBatches();
-        void DrawGeometryBatch(RenderBatch& batch);
+        void DrawIndexedInstancedBatch(RenderBatch& batch, VertexLayout& bindLayout);
         void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix);
         void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix, 
             const Vec3& forwardDir, const Vec3& rightDir, const Vec3& upDir, const float yFov);
@@ -273,6 +279,7 @@ namespace Rendering
         void ExecuteRayTracing();
         void ExecuteForwardRendering();
         void ExecutePostProcessPass();
+        void ExecuteUIPass();
 
         /// <summary>
         /// Applies blur to the input texture DIRECTLY where output texture is only an intermediary
@@ -353,6 +360,7 @@ namespace Rendering
 
         void AddCallTextureBox3D(Material* material, const Mat4& modelMatrix);
         void AddCallPlane3D(Material* material, const Mat4& modelMatrix, const Vec2& textureRepeats = Vec2::One());
+        void AddCallRect2D(const HDRColor& color, Texture* texture, const float depth, const Mat3& modelMatrix);
         //void AddCallText(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Color color);
 
         void AddCallModel(Model3d& model, const Mat4& modelMatrix);
@@ -361,13 +369,13 @@ namespace Rendering
         //void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Color color);
         //void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Color color);
 
-        void AddCallPointLight(const WorldPosition3D& worldPos, const Quat& rotation, const float radius, const Color& color);
-        void SetDirectionalLight(const Vec3& dir, const Color& color);
+        void AddCallPointLight(const WorldPosition3D& worldPos, const Quat& rotation, const float radius, const HDRColor& color);
+        void SetDirectionalLight(const Vec3& dir, const HDRColor& color);
         void ClearDirectionalLight();
 
         //void AddCallPoints(PrimitiveType primitiveType, const WorldPosition3D* positions, const size_t& size);
-        void AddCallAABBWifreframe(const Mat4& modelMatrix, const Color& color, const float lineThickness);
-        void AddCallAABBWifreframe(const AABB3D& aabb, const Quat& rotation, const Color& color, const float lineThickness);
+        void AddCallAABBWifreframe(const Mat4& modelMatrix, const HDRColor& color, const float lineThickness);
+        void AddCallAABBWifreframe(const AABB3D& aabb, const Quat& rotation, const HDRColor& color, const float lineThickness);
 
         void RenderBuffer();
 

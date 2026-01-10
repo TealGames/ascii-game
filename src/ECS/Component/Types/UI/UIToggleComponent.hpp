@@ -8,7 +8,7 @@
 class TextureAsset;
 class UISelectableData;
 class UITextureData;
-class UIPanel;
+class UIPanelComponent;
 namespace ECS { class UIToggleSystem; }
 
 using ToggleAction = std::function<void(bool isChecked)>;
@@ -25,7 +25,7 @@ private:
 	UISelectableData* m_selectable;
 	UITextureData* m_onTexture;
 	UITextureData* m_offTexture;
-	UIPanel* m_background;
+	UIPanelComponent* m_background;
 
 	//ToggleAction m_valueSetAction;
 public:
@@ -40,13 +40,13 @@ private:
 
 public:
 	UIToggleComponent(const bool& startValue, const UIStyle& settings, UITextureData* onTexture=nullptr, 
-		UITextureData* offTexture=nullptr, UIPanel* background=nullptr);
+		UITextureData* offTexture=nullptr, UIPanelComponent* background=nullptr);
 	//const ToggleAction& valueSetAction=nullptr);//, const TextureAsset* overlayTexture=nullptr);
 	~UIToggleComponent();
 
 	void SetSettings(const UIStyle& settings);
 	void SetStateTextures(UITextureData* onTexture, UITextureData* offTexture);
-	void SetBackground(UIPanel* background);
+	void SetBackground(UIPanelComponent* background);
 	//void SetOverlayTexture(const TextureAsset& asset);
 	//bool HasOverlayTexture() const;
 

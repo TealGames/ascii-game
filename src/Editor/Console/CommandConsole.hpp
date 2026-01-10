@@ -26,8 +26,8 @@ class UIInteractionManager;
 class UIHierarchy;
 class UITransformData;
 class UITextComponent;
-class UIInputField;
-class UILayout;
+class UIInputFieldComponent;
+class UILayoutComponent;
 namespace Input { class InputManager; }
 
 constexpr int MAX_OUTPUT_MESSAGES = 10;
@@ -41,8 +41,8 @@ private:
 	float m_timeSinceOpen;
 
 	UITransformData* m_container;
-	UIInputField* m_inputField;
-	UILayout* m_outputMessageLayout;
+	UIInputFieldComponent* m_inputField;
+	UILayoutComponent* m_outputMessageLayout;
 	std::array<UITextComponent*, MAX_OUTPUT_MESSAGES> m_outputMessagesTextGuis;
 	std::uint8_t m_nextTextGuiIndex;
 	std::vector<float> m_messageCloseTimes;
@@ -58,8 +58,8 @@ private:
 	std::string GetDocumentationForPrompt(PromptCollection::iterator& promptIt, const size_t& index) const;
 
 	bool TryInvokePrompt();
-	Color GetColorFromMessageType(const ConsoleOutputMessageType& message);
-	void SetNextMessage(const std::string& message, const Color color);
+	HDRColor GetColorFromMessageType(const ConsoleOutputMessageType& message);
+	void SetNextMessage(const std::string& message, const HDRColor color);
 	void RemoveBackMessage();
 public:
 	CommandConsole(const Input::InputManager& input, UIInteractionManager& selector);

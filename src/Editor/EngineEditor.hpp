@@ -25,11 +25,11 @@ class UIInteractionManager;
 class PopupUIManager;
 class GizmoOverlay;
 
-class UIPanel;
+class UIPanelComponent;
 class UIToggleComponent;
 class UITextComponent;
-class UIButton;
-class UILayout;
+class UIButtonComponent;
+class UILayoutComponent;
 
 struct EditModeInfo
 {
@@ -62,11 +62,11 @@ private:
 	SpriteEditorUI m_spriteEditor;
 
 	UITextComponent* m_mousePosText;
-	UIPanel* m_overheadBarContainer;
-	UILayout* m_toggleLayout;
+	UIPanelComponent* m_overheadBarContainer;
+	UILayoutComponent* m_toggleLayout;
 	UIToggleComponent* m_pauseGameToggle;
 	UIToggleComponent* m_editModeToggle;
-	UIButton* m_assetEditorButton;
+	UIButtonComponent* m_assetEditorButton;
 	EditModeInfo m_editModeInfo;
 
 	bool m_displayingGameView;

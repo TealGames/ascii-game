@@ -3,7 +3,7 @@
 #include "Core/UI/UIStyle.hpp"
 #include "Utils/Data/Event.hpp"
 
-class UIPanel;
+class UIPanelComponent;
 class UIRendererData;
 class UITransformData;
 class UISelectableData;
@@ -21,7 +21,7 @@ private:
 
 	UIRendererData* m_renderer;
 	UISelectableData* m_selectable;
-	UIPanel* m_backgroundPanel;
+	UIPanelComponent* m_backgroundPanel;
 public:
 	friend class ECS::UISliderSystem;
 	UITransformData* m_SliderHandle;

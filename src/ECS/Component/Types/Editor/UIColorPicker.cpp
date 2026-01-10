@@ -5,7 +5,7 @@
 #include "Editor/Entity/ColorPopupUI.hpp"
 #include "Core/UI/PopupUIManager.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 
 UIColorPickerData::UIColorPickerData() : UIColorPickerData(UIStyle()) {}
@@ -30,7 +30,7 @@ void UIColorPickerData::Init()
 			//Assert(false, "PISS");
 			//LogWarning(std::format("color picker call addr:{}", Utils::ToStringPointerAddress(this)));
 			ColorPopupUI* popup = nullptr;
-			const bool isEnabled = m_popupManager->TryTogglePopupAt<ColorPopupUI>(GetEntity().TryGetComponent<UITransformData>()->GetLastWorldArea(),
+			const bool isEnabled = m_popupManager->TryTogglePopupAt<ColorPopupUI>(GetEntity().TryGetComponent<UITransformData>()->GetLastGlobalScreenRect(),
 				PopupPositionFlags::BelowRect | PopupPositionFlags::CenteredXToRect, &popup);
 
 			if (popup == nullptr)
@@ -58,15 +58,15 @@ void UIColorPickerData::SetValueSetAction(const ColorPickerAction& action)
 	m_valueSetCallback = action;
 }
 
-void UIColorPickerData::SetColor(const Color color) 
+void UIColorPickerData::SetColor(const HDRColor color) 
 { 
 	m_color = color; 
 	if (m_fieldPanel != nullptr) m_fieldPanel->SetColor(m_color);
 	if (m_valueSetCallback) m_valueSetCallback(m_color);
 }
 //void ColorPickerGUI::SetSettings(const GUIStyle& settings) { m_settings = settings; }
-Color UIColorPickerData::GetColor() const { return m_color; }
-const UIPanel* UIColorPickerData::GetFieldPanel() const { return m_fieldPanel; }
+HDRColor UIColorPickerData::GetColor() const { return m_color; }
+const UIPanelComponent* UIColorPickerData::GetFieldPanel() const { return m_fieldPanel; }
 
 void UIColorPickerData::InitFields()
 {

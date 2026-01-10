@@ -6,18 +6,18 @@
 #include "Core/UI/UIInteractionManager.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "Editor/EditorStyles.hpp"
-#include "ECS/Component/Types/UI/UIInputField.hpp"
+#include "ECS/Component/Types/UI/UIInputFieldComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
-#include "ECS/Component/Types/UI/UILayout.hpp"
+#include "ECS/Component/Types/UI/UILayoutComponent.hpp"
 #include "StaticGlobals.hpp"
 #include "Core/Input/InputManager.hpp"
 
 static constexpr float MESSAGE_DISPLAY_TIME_SECONDS = 4;
 static constexpr Input::KeyCode LAST_COMMAND_KEY = Input::KeyCode::Num1;
 
-static const Color CONSOLE_COLOR = { COLOR_GRAY, 100/255.0f };
+static const HDRColor CONSOLE_COLOR = { COLOR_GRAY, 100/255.0f };
 static constexpr float CONSOLE_HEIGHT = 0.05;
-static const NormalizedPosition OUTPUT_MESSAGE_AREA = {0.6, 0.2};
+static const NormalizedPos OUTPUT_MESSAGE_AREA = {0.6, 0.2};
 
 static constexpr int COMMAND_CONSOLE_WIDTH = SCREEN_WIDTH;
 static constexpr int COMMAND_CONSOLE_FONT_SIZE = 25;
@@ -41,17 +41,17 @@ void CommandConsole::CreateUI(UIHierarchy& hierarchy)
 {
 	EntityData* containerEntity = nullptr;
 	std::tie(containerEntity, m_container) = hierarchy.CreateAtRoot(DEFAULT_LAYER, "CommandConsoleContainer");
-	m_container->SetMaxSize();
+	m_container->SetMaxRelativeSize();
 
 	EntityData* inputFieldEntity = nullptr;
 	UITransformData* inputFieldTransform = nullptr;
 	std::tie(inputFieldEntity, inputFieldTransform, m_inputField) = containerEntity->CreateChildUI("ConsoleInput", 
-		UIInputField(m_inputManager, InputFieldType::Any,
+		UIInputFieldComponent(m_inputManager, InputFieldType::Any,
 		InputFieldFlag::SelectOnStart | InputFieldFlag::ShowCaret | InputFieldFlag::KeepSelectedOnSubmit,
 		EditorStyles::GetInputFieldStyle(TextAlignment::CenterLeft)));
 	//GUIStyle fieldSettings = GUIStyle(GRAY, TextGUIStyle(WHITE, FontProperties(COMMAND_CONSOLE_FONT_SIZE, COMMAND_CONSOLE_SPACING, GetGlobalFont()), 
 	//	TextAlignment::TopLeft, GUIPadding(COMMAND_CONSOLE_TEXT_INDENT)));
-	inputFieldTransform->SetBounds({ 0, CONSOLE_HEIGHT }, NormalizedPosition::BOTTOM_RIGHT);
+	inputFieldTransform->SetLocalBoundsTLBR({ 0, CONSOLE_HEIGHT }, UI_RECT_BOTTOM_RIGHT);
 	m_inputField->SetSubmitAction([this](std::string input) -> void
 		{
 			TryInvokePrompt();
@@ -65,10 +65,11 @@ void CommandConsole::CreateUI(UIHierarchy& hierarchy)
 		});
 
 	auto [layoutEntity, layoutTransform] = containerEntity->CreateChildUI("ConsoleLayout");
-	m_outputMessageLayout = &(layoutEntity->AddComponent(UILayout(LayoutType::Vertical, SizingType::ExpandAndShrink)));
+	m_outputMessageLayout = &(layoutEntity->AddComponent(UILayoutComponent(LayoutType::Vertical, SizingType::ExpandAndShrink)));
 
-	const NormalizedPosition messageLayoutTopLeft = inputFieldTransform->GetRect().GetTopLeftPos() + NormalizedPosition(0, OUTPUT_MESSAGE_AREA.m_Y);
-	layoutTransform->SetBounds(messageLayoutTopLeft, { messageLayoutTopLeft.m_X + OUTPUT_MESSAGE_AREA.m_X, inputFieldTransform->GetRect().GetTopLeftPos().m_Y });
+	const NormalizedPos messageLayoutTopLeft = inputFieldTransform->GetLocalRect().GetTopLeftPos() + NormalizedPos(0, OUTPUT_MESSAGE_AREA.m_Y);
+	layoutTransform->SetLocalBoundsTLBR(messageLayoutTopLeft, { messageLayoutTopLeft.m_X + OUTPUT_MESSAGE_AREA.m_X, 
+		inputFieldTransform->GetLocalRect().GetTopLeftPos().m_Y });
 
 	for (size_t i = 0; i < m_outputMessagesTextGuis.size(); i++)
 	{
@@ -215,7 +216,7 @@ std::vector<std::string> CommandConsole::GetPromptDocumentationAll()
 	return docs;
 }
 
-Color CommandConsole::GetColorFromMessageType(const ConsoleOutputMessageType& message)
+HDRColor CommandConsole::GetColorFromMessageType(const ConsoleOutputMessageType& message)
 {
 	if (message == ConsoleOutputMessageType::Error) return COLOR_RED;
 	else if (message == ConsoleOutputMessageType::Success) return COLOR_YELLOW;
@@ -233,7 +234,7 @@ void CommandConsole::LogOutputMessage(const std::string& message, const ConsoleO
 
 void CommandConsole::LogOutputMessages(const std::vector<std::string>& messages, const ConsoleOutputMessageType& messageType)
 {
-	const Color color = GetColorFromMessageType(messageType);
+	const HDRColor color = GetColorFromMessageType(messageType);
 
 	m_nextTextGuiIndex = 0;
 	for (size_t i=0; i<messages.size() && i< MAX_OUTPUT_MESSAGES; i++)
@@ -241,7 +242,7 @@ void CommandConsole::LogOutputMessages(const std::vector<std::string>& messages,
 		SetNextMessage(messages[i], color);
 	}
 }
-void CommandConsole::SetNextMessage(const std::string& message, const Color color)
+void CommandConsole::SetNextMessage(const std::string& message, const HDRColor color)
 {
 	m_messageCloseTimes.emplace(m_messageCloseTimes.begin(), m_timeSinceOpen + MESSAGE_DISPLAY_TIME_SECONDS);
 	m_outputMessagesTextGuis[m_nextTextGuiIndex]->SetText(message);

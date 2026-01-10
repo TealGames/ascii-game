@@ -5,12 +5,16 @@
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 #include "ECS/Component/Types/UI/UITextureData.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 #include "Core/EngineState.hpp"
+
+static constexpr float DEPTH_INCREMENT = 0.001;
+static constexpr float TOPMOST_DEPTH = 0.0f;
+static constexpr float BOTTOMMOST_DEPTH = 1.0f;
 
 namespace ECS
 {
@@ -26,50 +30,34 @@ namespace ECS
 					entity.TryGetComponentMutable<UIRendererData>()->m_renderer = m_renderer;
 				}));
 	}
-	UIRect UIRenderSystem::RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const UIRect& rect)
+	void UIRenderSystem::RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const float depth, const Mat3& globalModelMatrix)
 	{
-		UIRect renderedArea = {};
-		try
+		EntityData& entity = renderer.GetEntityMutable();
+		if (UIPanelComponent* panel = entity.TryGetComponentMutable<UIPanelComponent>(false))
 		{
-			EntityData& entity = renderer.GetEntityMutable();
-			if (UIPanel* panel = entity.TryGetComponentMutable<UIPanel>(false))
-			{
-				renderedArea = panel->Render(rect);
-				//if (renderer.GetEntity().m_Name == "EntityHeader") LogError(std::format("Rendered panel at pos:{}", rect.ToString()));
-			}
-			if (UITextureData* texture = entity.TryGetComponentMutable<UITextureData>(false))
-			{
-				renderedArea = texture->Render(rect);
-				/*if (entity.GetParent() != nullptr && entity.GetParent()->m_Name == "EntityActiveToggle")
-					LogError(std::format("Found child with parent toggle:{} has renderer", entity.m_Name));*/
-			}
-			if (UITextComponent* text = entity.TryGetComponentMutable<UITextComponent>(false))
-			{
-				renderedArea = text->Render(rect);
-				//if (entity.m_Name == "EntityNameText") LogError(std::format("text reder rect:{}", rect.ToString(), renderedArea.ToString()));
-			}
+			panel->Render(depth, globalModelMatrix);
+			//if (renderer.GetEntity().m_Name == "EntityHeader") LogError(std::format("Rendered panel at pos:{}", rect.ToString()));
+		}
+		if (UITextureData* texture = entity.TryGetComponentMutable<UITextureData>(false))
+		{
+			//texture->Render(rect);
+			/*if (entity.GetParent() != nullptr && entity.GetParent()->m_Name == "EntityActiveToggle")
+				LogError(std::format("Found child with parent toggle:{} has renderer", entity.m_Name));*/
+		}
+		if (UITextComponent* text = entity.TryGetComponentMutable<UITextComponent>(false))
+		{
+			//text->Render(rect);
+			//if (entity.m_Name == "EntityNameText") LogError(std::format("text reder rect:{}", rect.ToString(), renderedArea.ToString()));
+		}
 
-			if (UISelectableData* selectable = entity.TryGetComponentMutable<UISelectableData>(false))
-			{
-				selectable->RenderOverlay(renderedArea);
-			}
-		}
-		catch (const std::exception& e)
+		if (UISelectableData* selectable = entity.TryGetComponentMutable<UISelectableData>(false))
 		{
-			LogError(std::format("Attempted to render single entity:{} but encountered error:{}. Full Tree:{}", 
-				renderer.GetEntity().ToString(), e.what(), hierarchy.ToStringTree()));
+			//selectable->RenderOverlay();
 		}
-		return renderedArea;
 	}
 
 	void UIRenderSystem::RenderAll()
 	{
-		//if (m_hasGuiTreeUpdated)
-		//{
-		//	CreateRenderTree();
-		//	m_hasGuiTreeUpdated = false;
-		//}
-
 		std::stack<UIRect, std::vector<UIRect>> rectsStack = {};
 		UIRect parentRect = {};
 		UIRect currentRect = {};
@@ -79,10 +67,8 @@ namespace ECS
 		EntityData* entity = nullptr;
 		UIRendererData* renderer = nullptr;
 
-		/*for (const auto& r : m_uiRenderersHierarchyOrder)
-		{
-			LogWarning(r->GetEntity().ToString());
-		}*/
+		//TODO: depth should probably be scaled depending on how mnay objects we have to ensure they all fit
+		float depth = TOPMOST_DEPTH;
 
 		m_uiHierarchy->LayerTraversal([&, this](UILayer layer, UITransformData& rootTransform)-> void
 			{
@@ -100,46 +86,26 @@ namespace ECS
 
 					parentRect = rectsStack.top();
 					rectsStack.pop();
-					currentRect = currentTransform->CalculateRect(parentRect);
+					currentRect = currentTransform->CalculateWorldRect(parentRect);
 
-					Vec2 rectSize = currentRect.GetSize();
-					if (rectSize.m_X == 0 || rectSize.m_Y == 0)
-					{
-						LogError(std::format("Attempted to calculate rect for ui object:{} "
-							"but its render rect has a 0 component:{}. Parent rect:{} ui transform:{}. UI TREE:{}", entity->ToString(),
-							rectSize.ToString(), parentRect.ToString(), currentTransform->ToString(), m_uiHierarchy->ToStringTree()));
-						return;
-					}
-					/*if (!Assert(currentRect.GetSize().m_X != 0 && currentRect.GetSize().m_Y != 0,
-						std::format("Attempted to render all ui elements, but element:{}({}) calculated from parent rect:{} had rect with 0 size component:{}",
-							transform.ToString(), transform.GetEntity().ToString(), parentRect->ToString(), currentRect.ToString())))
-						return;*/
-
-						//Note: render single returns the actual area that is rendered
 					UIRendererData* renderer = entity->TryGetComponentMutable<UIRendererData>(false);
 					if (entity->IsEntityActive() && renderer != nullptr)
 					{
 						//if (entity->m_Name== "DebugInfoContainer") LogError(std::format("Enttiy is active and rendered"));
-						renderer->m_lastRenderArea = RenderSingle(*m_uiHierarchy, *renderer, currentRect);
+						/*LogWarning(std::format("UI panel world: {} depth:{} modelmat:{}", 
+							currentRect.ToString(), depth, currentRect.CalculateModelMatrix().ToString()));*/
+						RenderSingle(*m_uiHierarchy, *renderer, depth, currentRect.CalculateModelMatrix());
 						m_OnElementProcessed.Invoke(renderer, &(renderer->m_lastRenderArea));
+
+						depth += DEPTH_INCREMENT;
 					}
-					currentTransform->SetLastWorldArea(currentRect);
+					//currentTransform->SetLastGlobalScreenRect(currentRect);
 
 					if (entity->GetChildCount() == 0) continue;
 					//Note: we go backwards to ensure proper DFS order (aka first/top elements first, then bottom)
 					for (int i = entity->GetChildCount() - 1; i >= 0; i--)
 					{
-						UIRect childRect = currentTransform->CalculateChildRect(currentRect);
-						Vec2 rectSize = childRect.GetSize();
-						if (rectSize.m_X == 0 || rectSize.m_Y == 0)
-						{
-							LogError(std::format("Attempted to calculate child rect of ui object:{} "
-								"but its render rect has a 0 component:{}. Parent rect:{} calcualted child rect:{} parent ui transform:{}. UI TREE:{}",
-								entity->ToString(), rectSize.ToString(), currentRect.ToString(), childRect.ToString(),
-								currentTransform->ToString(), m_uiHierarchy->ToStringTree()));
-							return;
-						}
-
+						UIRect availableChildRect = currentTransform->CalculateChildParentRect(currentRect);
 						currentTransform = entity->TryGetChildComponentAtMutable<UITransformData>(i);
 						if (currentTransform == nullptr)
 						{
@@ -147,7 +113,7 @@ namespace ECS
 								"but it was null. Child:{}", i, entity->ToString(), entity->TryGetChildEntityAtMutable(i)->ToString()));
 							return;
 						}
-						rectsStack.push(childRect);
+						rectsStack.push(availableChildRect);
 						elementStack.push(currentTransform);
 					}
 				}

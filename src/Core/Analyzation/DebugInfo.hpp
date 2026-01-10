@@ -17,7 +17,7 @@ class CameraComponent;
 class UIHierarchy;
 class UITransformData;
 class UITextComponent;
-class UILayout;
+class UILayoutComponent;
 
 struct DebugMousePosition
 {
@@ -29,7 +29,7 @@ constexpr int DEBUG_PROPERTIES_COUNT = 10;
 class DebugInfo //: public IBasicRenderable
 {
 private:
-	UILayout* m_containerLayout;
+	UILayoutComponent* m_containerLayout;
 	std::array<UITextComponent*, DEBUG_PROPERTIES_COUNT> m_textGuis;
 	size_t m_nextIndex;
 	//std::vector<std::size_t> m_highlightedIndices;

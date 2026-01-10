@@ -18,7 +18,7 @@ private:
 
 	std::string m_text;
 	ScreenFontProperties m_fontData;
-	Color m_color;
+	HDRColor m_color;
 
 	/// <summary>
 	/// When is not -1, sets the font of this text 
@@ -74,21 +74,13 @@ private:
 	/// <returns></returns>
 	ScreenPosition CalculateTopLeftPos(const UIRect& renderInfo, const Vec2& fullTextArea) const;
 
-	/// <summary>
-	/// Returns the amount of ACTUAL usable space from rendering information
-	/// by taking into account padding and other factors
-	/// </summary>
-	/// <param name="renderInfo"></param>
-	/// <returns></returns>
-	Vec2 CalculateUsableSpace(const UIRect& renderInfo) const;
-
 private:
 	UITextComponent(const std::string text, const ScreenFontProperties& font, const UIPadding& padding,
-		const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea);
+		const TextAlignment& alignment, const HDRColor& color, const float& factor, const bool& fitToArea);
 
 public:
 	UITextComponent();
-	UITextComponent(const std::string text, const ScreenFontProperties& font, const Color& color);
+	UITextComponent(const std::string text, const ScreenFontProperties& font, const HDRColor& color);
 	UITextComponent(const std::string& text, const TextUIStyle& settings);
 
 	void SetSettings(const TextUIStyle& settings);
@@ -97,7 +89,7 @@ public:
 	const std::string& GetText() const;
 
 	void SetFontSize(const float& size);
-	void SetTextColor(const Color color);
+	void SetTextColor(const HDRColor color);
 	/// <summary>
 	/// Sets the factor of the text relative to the parent area. 
 	/// Note: value is clamped to be positive
@@ -118,7 +110,7 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	float GetFontSize() const;
-	Color GetFontColor() const;
+	HDRColor GetFontColor() const;
 
 	bool DoFitToArea() const;
 	void SetFitToArea(const bool& fit);

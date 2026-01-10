@@ -13,13 +13,13 @@ namespace Rendering
 		/// NOTE: base color alpha only determines the intensity/blend
 		/// of this color over the albedo
 		/// </summary>
-		Color m_baseColor;
+		HDRColor m_baseColor;
 
 		/// <summary>
 		/// The intensity and color of light that the surface emits.
 		/// This makes any object able to emit lights rather than defining them separately
 		/// </summary>
-		Color m_emissiveColor;
+		HDRColor m_emissiveColor;
 
 		/// <summary>
 		/// The alpha applied to the whole object
@@ -52,8 +52,8 @@ namespace Rendering
 		static constexpr float MIN_METALLIC = 0.0f;
 		static constexpr float MAX_METALLIC = 1.0f;
 
-		static constexpr Color DEFAULT_BASE_COLOR = COLOR_WHITE;
-		static constexpr Color DEFAULT_EMISSIVE_COLOR = COLOR_BLACK;
+		static constexpr HDRColor DEFAULT_BASE_COLOR = COLOR_WHITE;
+		static constexpr HDRColor DEFAULT_EMISSIVE_COLOR = COLOR_BLACK;
 		static constexpr float DEFAULT_ALPHA = 1;
 		static constexpr float DEFAULT_ROUGHNESS = MAX_ROUGHNESS;
 		static constexpr float DEFAULT_METALLIC = MIN_METALLIC;
@@ -74,18 +74,18 @@ namespace Rendering
 	private:
 	public:
 		Material();
-		Material(const String16& name, Texture* albedo, const Color& baseColor, const float alpha = DEFAULT_ALPHA, 
-			const Color& emissiveColor = DEFAULT_EMISSIVE_COLOR, const float roughness = DEFAULT_ROUGHNESS, 
+		Material(const String16& name, Texture* albedo, const HDRColor& baseColor, const float alpha = DEFAULT_ALPHA,
+			const HDRColor& emissiveColor = DEFAULT_EMISSIVE_COLOR, const float roughness = DEFAULT_ROUGHNESS,
 			const float metallic = DEFAULT_METALLIC, Texture* normal = nullptr);
 
 		Material& SetAlpha(const float value);
 		float GetAlpha() const;
 
-		Material& SetBaseColor(const Color& color);
-		const Color& GetBaseColor() const;
+		Material& SetBaseColor(const HDRColor& color);
+		const HDRColor& GetBaseColor() const;
 
-		Material& SetEmissiveColor(const Color& color);
-		const Color& GetEmissiveColor() const;
+		Material& SetEmissiveColor(const HDRColor& color);
+		const HDRColor& GetEmissiveColor() const;
 
 		Material& SetRoughness(const float value);
 		float GetRoughness() const;

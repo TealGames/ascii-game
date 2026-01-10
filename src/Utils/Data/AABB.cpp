@@ -33,13 +33,13 @@ Vec2 AABB2D::GetHalfExtent() const
 	return GetSize() / 2;
 }
 
-WorldPosition2D AABB2D::GetWorldPos(const WorldPosition2D& centerPos, const NormalizedPosition& relativePos) const
+WorldPosition2D AABB2D::GetWorldPos(const WorldPosition2D& centerPos, const NormalizedPos& relativePos) const
 {
 	Vec2 boundSize = GetSize();
 	WorldPosition2D bottomLeftPos = centerPos - WorldPosition2D(boundSize.m_X / 2, boundSize.m_Y / 2);
-	if (relativePos.GetPos() == Vec2{ 0, 0 }) return bottomLeftPos;
+	if (relativePos.AsVec2() == Vec2{ 0, 0 }) return bottomLeftPos;
 
-	return bottomLeftPos + WorldPosition2D(relativePos.GetPos().m_X * boundSize.m_X, relativePos.GetPos().m_Y * boundSize.m_Y);
+	return bottomLeftPos + WorldPosition2D(relativePos.AsVec2().m_X * boundSize.m_X, relativePos.AsVec2().m_Y * boundSize.m_Y);
 }
 
 std::string AABB2D::ToString(const WorldPosition2D& transformPos) const

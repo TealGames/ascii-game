@@ -6,7 +6,7 @@
 #include "Utils/Debug.hpp"
 
 ColorGradientKeyFrame::ColorGradientKeyFrame() : ColorGradientKeyFrame({}, 0) {}
-ColorGradientKeyFrame::ColorGradientKeyFrame(const Color& color, const float& location) 
+ColorGradientKeyFrame::ColorGradientKeyFrame(const HDRColor& color, const float& location) 
 	: m_Color(color), m_Location(location) {}
 
 bool ColorGradientKeyFrame::operator<(const ColorGradientKeyFrame& other) const
@@ -27,10 +27,10 @@ std::string ColorGradientKeyFrame::ToString() const
 
 ColorGradient::ColorGradient() : ColorGradient({}, {}) {}
 
-ColorGradient::ColorGradient(const Color& singleColor) : 
+ColorGradient::ColorGradient(const HDRColor& singleColor) : 
 	ColorGradient(singleColor, singleColor) {}
 
-ColorGradient::ColorGradient(const Color& leftColor, const Color& rightColor) :
+ColorGradient::ColorGradient(const HDRColor& leftColor, const HDRColor& rightColor) :
 	m_colorFrames{ ColorGradientKeyFrame{leftColor, MIN_LOCATION}, 
 	ColorGradientKeyFrame{rightColor, MAX_LOCATION} } {}
 
@@ -56,7 +56,7 @@ ColorGradient::ColorGradient(const std::vector<ColorGradientKeyFrame>& frames)
 	std::sort(m_colorFrames.begin(), m_colorFrames.end());
 }
 
-Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
+HDRColor ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 {
 	location = std::clamp(location, MIN_LOCATION, MAX_LOCATION);
 	if (m_colorFrames.size() == 1) return m_colorFrames.front().m_Color;
@@ -98,8 +98,8 @@ Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 
 	const ColorGradientKeyFrame leftKey = m_colorFrames[left];
 	const ColorGradientKeyFrame rightKey = m_colorFrames[right];
-	const Color& leftColor = leftKey.m_Color;
-	const Color& rightColor = rightKey.m_Color;
+	const HDRColor& leftColor = leftKey.m_Color;
+	const HDRColor& rightColor = rightKey.m_Color;
 
 	float keysNormalizedVal = (location - leftKey.m_Location) / (rightKey.m_Location - leftKey.m_Location);
 	unsigned char newR = std::lerp(leftColor.m_R, rightColor.m_R, keysNormalizedVal);
@@ -114,11 +114,11 @@ Color ColorGradient::GetColorAt(float location, const bool& includeAlpha) const
 	return {newR, newG, newB, newA};
 }
 
-Color ColorGradient::GetFirstColor(const bool& includeAlpha) const
+HDRColor ColorGradient::GetFirstColor(const bool& includeAlpha) const
 {
 	return GetColorAt(MIN_LOCATION, includeAlpha);
 }
-Color ColorGradient::GetLastColor(const bool& includeAlpha) const
+HDRColor ColorGradient::GetLastColor(const bool& includeAlpha) const
 {
 	return GetColorAt(MAX_LOCATION, includeAlpha);
 }

@@ -106,7 +106,7 @@ namespace Rendering
 		/// NOTE: clearColorAttachments is a bitmask where bits correspond to color attachemnts (bit0 -> color0, bit1 -> color1, etc.)
 		/// EXAMPLE: if we wanted to clear color0, color2 -> clearColorAttachments would be 00000101 (0b101)
 		/// </summary>
-		void ClearBackground(std::uint8_t clearColorAttachments, const Color clearColor = Color(0, 0, 0, 0), const const float clearDepth = 1);
+		void ClearBackground(std::uint8_t clearColorAttachments, const HDRColor clearColor = HDRColor(0, 0, 0, 0), const const float clearDepth = 1);
 		void ClearBufferBit(const BufferBitType bitType);
 
 		void SetDepthMode(const DepthMode mode);

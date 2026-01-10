@@ -5,8 +5,8 @@
 
 class UIHierarchy;
 class PopupUIManager;
-class UILayout;
-class UIPanel;
+class UILayoutComponent;
+class UIPanelComponent;
 class UIToggleComponent;
 class UITextComponent;
 namespace AssetManagement { class AssetManager; };
@@ -20,8 +20,8 @@ private:
 	AssetManagement::AssetManager* m_assetManager;
 
 	EntityData* m_layoutParent;
-	UILayout* m_guiLayout;
-	UIPanel* m_entityHeader;
+	UILayoutComponent* m_guiLayout;
+	UIPanelComponent* m_entityHeader;
 	EntityData* m_entity;
 
 	std::vector<ComponentUI> m_componentUIs;

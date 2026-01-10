@@ -15,10 +15,10 @@ namespace Rendering
 		void AddCallRectangle2DMulti(Shader& shader, const Vec2& worldSize,
 			const Mat4& modelMatrix, Material& material);
 
-		void AddCallPolygon2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Color color);
-		void AddCallCircle2D(const float radius, const Mat4& modelMatrix, const Color color);
-		void AddCallRectangle2D(const Vec2& worldSize, const Mat4& modelMatrix, const Color& color);
+		void AddCallPolygon2D(const float radius, const size_t sides, const Mat4& modelMatrix, const HDRColor color);
+		void AddCallCircle2D(const float radius, const Mat4& modelMatrix, const HDRColor color);
+		void AddCallRectangle2D(const Vec2& worldSize, const Mat4& modelMatrix, const HDRColor& color);
 
-		void AddCallTexture2D(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Color color);
+		void AddCallTexture2D(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const HDRColor color);
 	};
 }

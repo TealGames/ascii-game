@@ -2,12 +2,13 @@
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "Utils/MathAdvanced.hpp"
 
-UITransformData::UITransformData() : UITransformData(RelativeUIRect()) {}
-UITransformData::UITransformData(const NormalizedPosition& size) : UITransformData(RelativeUIRect(size)) {}
-UITransformData::UITransformData(const RelativeUIRect& relativeRect)
-	: m_relativeRect(relativeRect), m_flags(UITransformFlags::None), m_padding(), m_lastWorldArea() {}
-
+UITransformData::UITransformData() : UITransformData(UIRect()) {}
+UITransformData::UITransformData(const NormalizedPos& size) : UITransformData(UIRect(size)) {}
+UITransformData::UITransformData(const UIRect& relativeRect)
+	: m_localRect(relativeRect), m_flags(UITransformFlags::None), m_Padding(), 
+	m_lastGlobalScreenRect() {}
 
 void UITransformData::SetFixed(const bool horizontal, const bool vertical)
 {
@@ -17,25 +18,16 @@ void UITransformData::SetFixed(const bool horizontal, const bool vertical)
 	if (vertical) Utils::AddFlags(m_flags, UITransformFlags::FixedVertical);
 	else Utils::RemoveFlags(m_flags, UITransformFlags::FixedVertical);
 }
-bool UITransformData::IsFixedVertical() const
-{
-	//Assert(false, std::format("Does flag vertical contain vert:{}", 
-	// std::to_string(Utils::HasFlagAll(UITransformFlags::FixedHorizontal, UITransformFlags::FixedVertical))));
+bool UITransformData::IsFixedVertical() const { return Utils::HasFlagAll(m_flags, UITransformFlags::FixedVertical); }
+bool UITransformData::IsFixedHorizontal() const { return Utils::HasFlagAll(m_flags, UITransformFlags::FixedHorizontal); }
 
-	return Utils::HasFlagAll(m_flags, UITransformFlags::FixedVertical);
-}
-bool UITransformData::IsFixedHorizontal() const
+void UITransformData::SetLastGlobalScreenRect(const UIRect& area)
 {
-	return Utils::HasFlagAll(m_flags, UITransformFlags::FixedHorizontal);
+	m_lastGlobalScreenRect = area;
 }
-
-void UITransformData::SetLastWorldArea(const UIRect& area)
+const UIRect& UITransformData::GetLastGlobalScreenRect() const
 {
-	m_lastWorldArea = area;
-}
-const UIRect& UITransformData::GetLastWorldArea() const
-{
-	return m_lastWorldArea;
+	return m_lastGlobalScreenRect;
 }
 
 void UITransformData::SetEventBlocker(const bool status)
@@ -48,9 +40,9 @@ bool UITransformData::IsSelectionEventBlocker() const
 	return Utils::HasFlagAll(m_flags, UITransformFlags::EventBlocker);
 }
 
-void UITransformData::SetSizeUnsafe(const Vec2& size)
+void UITransformData::UpdateFixedChildren(const Vec2& oldParentSize)
 {
-	const Vec2 parentSize = GetSize().GetPos();
+	const Vec2 newParentSize = GetLocalSize().AsVec2();
 	Vec2 childSize = {};
 	bool isFixedHorizontal = false;
 	bool isFixedVertical = false;
@@ -65,98 +57,141 @@ void UITransformData::SetSizeUnsafe(const Vec2& size)
 			isFixedVertical = child->IsFixedVertical();
 			if (!isFixedHorizontal && !isFixedVertical) continue;
 
-			childSize = child->GetSize().GetPos();
-			Vec2 newSize = childSize * Vec2(isFixedHorizontal ? parentSize.m_X / size.m_X : 1,
-				isFixedVertical ? parentSize.m_Y / size.m_Y : 1);
+			childSize = child->GetLocalSize().AsVec2();
+			Vec2 newSize = childSize * Vec2(isFixedHorizontal ? newParentSize.m_X / oldParentSize.m_X : 1,
+				isFixedVertical ? newParentSize.m_Y / oldParentSize.m_Y : 1);
 
 			/*if (child->GetId() == 19) LogWarning(std::format("Setting child:{} when size set for parent:{} to newsize:{} childSize:{} og parentSize:{} new parent Size:{}",
 				child->ToStringBase(), ToStringBase(), newSize.ToString(), childSize.ToString(), parentSize.ToString(), size.ToString()));*/
 
-				//Note: by default fixed horizontal/vertical elements CANNOT have those parts modified by size,
-				//but we need to update fixed children from parent, so we get around these checks by using unsafe version
+			//Note: by default fixed horizontal/vertical elements CANNOT have those parts modified by size,
+			//but we need to update fixed children from parent, so we get around these checks by using unsafe version
 			if (newSize != childSize) child->SetSizeUnsafe(newSize);
 		}
 	}
-	m_relativeRect.SetSize(size);
+}
+void UITransformData::SetSizeUnsafe(const Vec2& size)
+{
+	const Vec2 oldParentSize = GetLocalSize().AsVec2();
+	m_localRect.SetSize(size);
+	UpdateFixedChildren(oldParentSize);
 	//m_OnSizeUpdated.Invoke(this);
 }
 
-void UITransformData::SetSize(const NormalizedPosition& size)
+bool UITransformData::DoLocksAllowSizeChange(const NormalizedPos& proposedNewSize) const
 {
-	const Vec2 currSize = GetSize().GetPos();
-	if (IsFixedHorizontal() && size.GetX() != currSize.m_X)
+	const Vec2 currSize = GetLocalSize().AsVec2();
+	if (IsFixedHorizontal() && !Utils::ApproximateEqualsF(proposedNewSize.GetX(), currSize.m_X))
+		return false;
+
+	if (IsFixedVertical() && !Utils::ApproximateEqualsF(proposedNewSize.GetY(), currSize.m_Y))
+		return false;
+
+	return true;
+}
+
+void UITransformData::SetLocalSize(const NormalizedPos& newSize)
+{
+	if (!DoLocksAllowSizeChange(newSize))
 	{
-		LogError(std::format("Attempted to set the size of gui element:{} to:{} but it is fixed HORIZONTALLY "
-			"so x size cannot be modified unless the HORIZONTAL lock is set to FALSE", ToString(), size.ToString()));
+		LogError(std::format("Attempted to set the size of UI TRANSFORM:{} to:{} but one or more locks "
+			"do not permit size changes in their direction until the FIXED size for that direction is set to false. "
+			"Fixed Vertical:{} Fixed Horizontal:{}", ToString(), newSize.ToString(), IsFixedVertical(), IsFixedHorizontal()));
+		return;
 	}
-	if (IsFixedVertical() && size.GetY() != currSize.m_Y)
+
+	SetSizeUnsafe(newSize.AsVec2());
+}
+void UITransformData::SetMaxRelativeSize() { SetLocalSize(NormalizedPos(NormalizedValue::MAX, NormalizedValue::MAX)); }
+void UITransformData::SetRelativeSizeX(const float sizeNormalized) { SetLocalSize({ sizeNormalized, m_localRect.GetSize().GetY() }); }
+void UITransformData::SetRelativeSizeY(const float sizeNormalized) { SetLocalSize({ m_localRect.GetSize().GetX(), sizeNormalized }); }
+
+//NOTE: for setting the positions since we do true for maintaining size, messing up fixed vertical/horizontal is not a problem
+void UITransformData::SetLocalTopLeftPos(const NormalizedPos& topLeftPos) { m_localRect.SetTopLeft(topLeftPos, true); }
+void UITransformData::SetLocalTopRightPos(const NormalizedPos& topRightPos) { m_localRect.SetTopRight(topRightPos, true); }
+void UITransformData::SetLocalBottomRightPos(const NormalizedPos& bottomRightPos) { m_localRect.SetBottomRight(bottomRightPos, true); }
+void UITransformData::SetLocalBottomLeftPos(const NormalizedPos& bottomLeftPos) { m_localRect.SetBottomLeft(bottomLeftPos, true); }
+
+void UITransformData::SetLocalBoundsBLTR(const NormalizedPos& bottomLeftPos, const NormalizedPos& topRightPos)
+{
+	const NormalizedPos newSize = topRightPos - bottomLeftPos;
+	if (!DoLocksAllowSizeChange(newSize))
 	{
-		LogError(std::format("Attempted to set the size of gui element:{} to:{} but it is fixed VERTICALLY "
-			"so x size cannot be modified unless the VERTICAL lock is set to FALSE", ToString(), size.ToString()));
+		LogError(std::format("Attempted to set bounds of UI TRANSFORM:{} to BottomLeft:{} TopRight:{} (newSize:{}) but one or more locks "
+			"do not permit size changes in their direction until the FIXED size for that direction is set to false. "
+			"Fixed Vertical:{} Fixed Horizontal:{}", ToString(), bottomLeftPos.ToString(), topRightPos.ToString(),
+			newSize.ToString(), IsFixedVertical(), IsFixedHorizontal()));
+		return;
 	}
 
-	SetSizeUnsafe(size.GetPos());
-	//LogWarning(std::format("Size target:{} set:{}", size.ToString(), m_relativeRect.ToString()));
+	const Vec2 oldSize = m_localRect.GetSize().AsVec2();
+	m_localRect.SetBoundsBLTR(bottomLeftPos, topRightPos);
+	UpdateFixedChildren(oldSize);
 }
-void UITransformData::SetMaxSize()
+void UITransformData::SetLocalBoundsTLBR(const NormalizedPos& topLeftPos, const NormalizedPos& bottomRightPos)
 {
-	m_relativeRect.SetMaxSize();
-	//m_OnSizeUpdated.Invoke(this);
-}
-void UITransformData::SetSizeX(const float sizeNormalized) { SetSize({ sizeNormalized, m_relativeRect.GetSize().GetY() }); }
-void UITransformData::SetSizeY(const float sizeNormalized) { SetSize({ m_relativeRect.GetSize().GetX(), sizeNormalized }); }
+	const NormalizedPos newSize = NormalizedPos(bottomRightPos.m_X - topLeftPos.m_X, topLeftPos.m_Y - bottomRightPos.m_Y);
+	if (!DoLocksAllowSizeChange(newSize))
+	{
+		LogError(std::format("Attempted to set bounds of UI TRANSFORM:{} to TopLeft:{} BottomRight:{} (newSize:{}) but one or more locks "
+			"do not permit size changes in their direction until the FIXED size for that direction is set to false. "
+			"Fixed Vertical:{} Fixed Horizontal:{}", ToString(), topLeftPos.ToString(), bottomRightPos.ToString(),
+			newSize.ToString(), IsFixedVertical(), IsFixedHorizontal()));
+		return;
+	}
 
-void UITransformData::SetTopLeftPos(const NormalizedPosition& topLeftPos)
-{
-	m_relativeRect.SetTopLeft(topLeftPos);
-}
-void UITransformData::SetBottomRightPos(const NormalizedPosition& bottomRightPos)
-{
-	m_relativeRect.SetBottomRight(bottomRightPos);
-}
-void UITransformData::SetBounds(const NormalizedPosition& topLeftPos, const NormalizedPosition& bottomRightPos)
-{
-	m_relativeRect.SetBounds(topLeftPos, bottomRightPos);
+	const Vec2 oldSize = m_localRect.GetSize().AsVec2();
+	m_localRect.SetBoundsTLBR(topLeftPos, bottomRightPos);
+	UpdateFixedChildren(oldSize);
 }
 
-void UITransformData::TryCenter(const bool centerX, const bool centerY)
+void UITransformData::CenterWithinParent(const bool centerX, const bool centerY)
 {
-	if (!centerX && !centerY) return;
-	const Vec2 size = GetSize().GetPos();
-	const Vec2 extraSpace = Vec2(NormalizedPosition::MAX, NormalizedPosition::MAX) - size;
-	const Vec2 currTopLeft = GetRect().GetTopLeftPos().GetPos();
+	if (!centerX && !centerY) 
+		return;
 
-	SetTopLeftPos({ centerX ? extraSpace.m_X / 2 : currTopLeft.m_X, centerY ? extraSpace.m_Y / 2 + size.m_Y : currTopLeft.m_Y });
+	const Vec2 size = GetLocalSize().AsVec2();
+	const Vec2 emptySpaceSize = Vec2(NormalizedValue::MAX, NormalizedValue::MAX) - size;
+	const NormalizedPos currBottomLeft = GetLocalRect().GetBottomLeftPos();
+
+	SetLocalBottomLeftPos(currBottomLeft + NormalizedPos{ centerX ? emptySpaceSize.m_X / 2 : 0.0f,
+														  centerY ? emptySpaceSize.m_Y / 2 : 0.0f});
 }
 
-void UITransformData::SetPadding(const RelativeUIPadding& padding) { m_padding = padding; }
-const RelativeUIPadding& UITransformData::GetPadding() const { return m_padding; }
-RelativeUIPadding& UITransformData::GetPaddingMutable() { return m_padding; }
+NormalizedPos UITransformData::GetLocalSize() const { return m_localRect.GetSize(); }
+const UIRect& UITransformData::GetLocalRect() const { return m_localRect; }
 
-NormalizedPosition UITransformData::GetSize() const { return m_relativeRect.GetSize(); }
-const RelativeUIRect& UITransformData::GetRect() const { return m_relativeRect; }
-RelativeUIRect& UITransformData::GetRectMutable() { return m_relativeRect; }
-
-UIRect UITransformData::CalculateRect(const UIRect& parentInfo) const
+UIRect UITransformData::CalculateWorldRect(const UIRect& parentGlobalRect) const
 {
-	return UIRect(parentInfo.m_TopLeftPos + GetSizeFromFactor(Abs(GetRect().GetTopLeftPos().GetPos() -
-		NormalizedPosition::TOP_LEFT), parentInfo.GetSize()), GetRect().GetSize(parentInfo.GetSize()));
+	return ::CalculateWorldRect(parentGlobalRect, m_localRect);
 }
-UIRect UITransformData::CalculateChildRect(const UIRect& thisRenderInfo) const
+UIRect UITransformData::CalculateChildParentRect(const UIRect& thisGlobalRect) const
 {
-	const RelativeUIPadding& padding = GetPadding();
-	if (!padding.HasNonZeroPadding()) return thisRenderInfo;
+	if (m_Padding.HasNoPadding()) 
+		return thisGlobalRect;
 
-	const ScreenPosition paddingTopLeft = ScreenPosition(padding.m_Left.GetValue() * thisRenderInfo.GetSize().m_X,
-		padding.m_Top.GetValue() * thisRenderInfo.GetSize().m_Y);
-	const ScreenPosition paddingBottomRight = ScreenPosition(padding.m_Right.GetValue() * thisRenderInfo.GetSize().m_X,
-		padding.m_Bottom.GetValue() * thisRenderInfo.GetSize().m_Y);
-	//if (padding.HasNonZeroPadding())
-	//{
-	//	//Assert(false, std::format("NOn zero padding tTL:{} bR:{} padding:{}", paddingTopLeft.ToString(), paddingBottomRight.ToString(), m_padding.ToString()));
-	//}
+	const NormalizedPos topLeftPadding = NormalizedPos(m_Padding.m_Left, m_Padding.m_Top);
+	return UIRect(m_localRect.GetTopLeftPos() - topLeftPadding,
+			      m_localRect.GetSize() - topLeftPadding - NormalizedPos(m_Padding.m_Right, m_Padding.m_Bottom));
+}
 
-	return UIRect(thisRenderInfo.m_TopLeftPos + paddingTopLeft, thisRenderInfo.GetSize() - paddingTopLeft - paddingBottomRight);
+Mat3 UITransformData::CalculateLocalModelMatrix() const
+{
+	return Utils::CalculateUIModelMatrix(nullptr, m_localRect.GetTopLeftPos().AsVec2(), 
+		m_localRect.GetSize().AsVec2(), m_localRect.m_Pivot.AsVec2());
+}
+Mat3 UITransformData::CalculateWorldModelMatrix() const
+{
+	Mat3 globalMatrix = CalculateLocalModelMatrix();
+
+	const EntityData* parent = GetEntity().GetParent();
+	if (parent != nullptr)
+	{
+		//NOTE: it is a requirement for all ui elements to be an ui context ONLY so parent should have a transform
+		globalMatrix = globalMatrix * parent->TryGetComponent<UITransformData>()->CalculateLocalModelMatrix();
+		parent = parent->GetParent();
+	}
+	return globalMatrix;
 }
 
 //std::vector<std::string> UITransformData::GetDependencyFlags() const
@@ -170,9 +205,9 @@ void UITransformData::InitFields()
 
 std::string UITransformData::ToString() const
 {
-	return std::format("[Id:{} TL:{} BR:{} Size:{} LAST WA:{}]", GetEntity().ToStringId(),
-		m_relativeRect.GetTopLeftPos().ToString(), m_relativeRect.GetBottomRighttPos().ToString(), 
-		GetSize().ToString(), m_lastWorldArea.ToString());
+	return std::format("[Id:{} BL:{} TR:{} Size:{} LAST WA:{}]", GetEntity().ToStringId(),
+		m_localRect.GetBottomLeftPos().ToString(), m_localRect.GetBottomRightPos().ToString(), 
+		GetLocalSize().ToString(), m_lastGlobalScreenRect.ToString());
 }
 
 void UITransformData::Deserialize(const Json& json)

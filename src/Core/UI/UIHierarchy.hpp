@@ -25,7 +25,6 @@ class UIHierarchy
 {
 private:
 	GlobalEntityManager* m_globalEntityManager;
-	Vec2Int m_rootSize;
 	UITransformData* m_uiRoot;
 	/// <summary>
 	/// Stores each of the layer's gui element roots. Note: layers are stored in increasing priority order 
@@ -65,14 +64,13 @@ private:
 	void RenderElementHelper(UIRendererData& renderer, const UIRect& parentInfo);*/
 	std::string ToStringElementHelper(std::string startNewLine, const UITransformData& element) const;
 public:
-	UIHierarchy(GlobalEntityManager& globalEntityManager, const Vec2Int rootCanvasSize);
+	UIHierarchy(GlobalEntityManager& globalEntityManager);
 
 	void Init();
 	void Update();
 
 	bool WasUIHierarchyUpdatedThisFrame() const;
 
-	const Vec2Int GetRootSize() const;
 	const UITransformData* GetRootElement() const;
 	UIRect GetRootRect() const;
 	const UITransformData* GetLayerRootElement(const UILayer layer) const;
@@ -83,27 +81,6 @@ public:
 	UITransformData* FindMutable(const ECS::EntityID id);
 	UITransformData* FindParentMutable(const ECS::EntityID id, size_t* foundChildIndex =nullptr);
 	std::vector<UITransformData*> GetLayerRootsMutable(const bool topLayerFirst);
-	/// <summary>
-	/// Will add the element as a child of the gui element with the id
-	/// Note: will return false if the parent id is not found and true otherwise
-	/// </summary>
-	/// <param name="layer"></param>
-	/// <param name="parentId"></param>
-	/// <param name="element"></param>
-	//bool TryAddElementAsChild(const ECS::EntityID parentId, GUIElement& element);
-	/// <summary>
-	/// Will remove the element's children from the tree
-	/// </summary>
-	/// <param name="id"></param>
-	/// <returns></returns>
-	//GUIElement* TryRemoveElementChildren(const ECS::EntityID id);
-	/// <summary>
-	/// Will remove this element from the tree including all of its children
-	/// Note: removing the root element of a layer is NOT allowed
-	/// </summary>
-	/// <param name="id"></param>
-	/// <returns></returns>
-	//GUIElement* TryRemoveElement(const ECS::EntityID id);
 
 	/// <summary>
 	/// Will execute the action on all elements (except each layer's root) 
@@ -186,25 +163,9 @@ public:
 	}
 
 	void LayerTraversal(const std::function<void(UILayer, UITransformData&)>& action);
-
-	/// <summary>
-	/// Will calculate the actual size of the element AS LONG AS IT EXISTS WITHIN THE TREE
-	/// </summary>
-	/// <param name="element"></param>
-	/// <returns></returns>
-	/*UIRect TryCalculateElementRenderInfoExisting(const UITransformData& element) const;
-	/// <summary>
-	/// Will calculate the element as if it is a root element
-	/// </summary>
-	/// <param name="element"></param>
-	/// <returns></returns>
-	
-	void UpdateAll(const float deltaTime);
-	*/
 	std::optional<UIRect> TryCalculateRenderRect(const UITransformData& element);
 
 
-	//void RenderAll();
 	std::string ToStringTree() const;
 };
 

@@ -38,18 +38,18 @@ enum class SizingType
 
 class UITransformData;
 class EntityData;
-class UILayout : public Component
+class UILayoutComponent : public Component
 {
 private:
 	LayoutType m_type;
 	SizingType m_sizingType;
-	NormalizedPosition m_spacing; 
+	NormalizedPos m_spacing; 
 public:
 
 private:
 	void LayoutUpdate();
 public:
-	UILayout(const LayoutType type, const SizingType sizing, const NormalizedPosition spacing = {});
+	UILayoutComponent(const LayoutType type, const SizingType sizing, const NormalizedPos spacing = {});
 
 	void AddLayoutElement(EntityData& element);
 	std::tuple<EntityData*, UITransformData*> CreateLayoutElement(const std::string& name);

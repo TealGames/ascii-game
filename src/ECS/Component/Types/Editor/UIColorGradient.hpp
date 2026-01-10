@@ -2,7 +2,7 @@
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "Utils/Data/ColorGradient.hpp"
 
-class UIPanel;
+class UIPanelComponent;
 class UIColorGradient : public UISelectableData
 {
 private:

@@ -7,12 +7,12 @@ class PointLight3DComponent : public Component
 private:
 public:
 	float m_Radius;
-	Color m_Color;
+	HDRColor m_Color;
 
 private:
 public:
 	PointLight3DComponent();
-	PointLight3DComponent(const float radius, const Color color);
+	PointLight3DComponent(const float radius, const HDRColor color);
 
 	void InitFields() override;
 	std::string ToString() const override;

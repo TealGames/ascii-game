@@ -16,7 +16,7 @@ float NormalizedValue::GetValue() const
 }
 void NormalizedValue::SetValue(const float value)
 {
-	m_value= std::clamp(value, float(0), float(1));
+	m_value= std::clamp(value, 0.0f, 1.0f);
 }
 
 std::string NormalizedValue::ToString() const
@@ -42,27 +42,39 @@ NormalizedValue NormalizedValue::operator*(const float& scalar) const
 }
 NormalizedValue NormalizedValue::operator/(const NormalizedValue& other) const
 {
-	if (other.m_value == 0)
-	{
-		LogError(std::format("Attempted to divide a normalized value:{} "
-			"by a zero value:{}", ToString(), other.ToString()));
-		return *this;
-	}
+	ENGINE_ASSERT(other != 0, "Attempted to divide a normalized value:{} "
+		"by a zero value:{}", ToString(), other.ToString());
 	return NormalizedValue(m_value / other.m_value);
 }
-NormalizedValue NormalizedValue::operator/(const float& scalar) const
+NormalizedValue NormalizedValue::operator/(const float& other) const
 {
-	if (scalar == 0)
-	{
-		LogError(std::format("Attempted to divide a normalized value:{} "
-			"by a zero scalar:{}", ToString(), std::to_string(scalar)));
-		return *this;
-	}
-
-	return NormalizedValue(m_value / scalar);
+	ENGINE_ASSERT(!Utils::ApproximateEqualsF(other, 0.0f), "Attempted to divide a normalized value:{} "
+		"by a zero scalar value:{}", ToString(), other);
+	return NormalizedValue(m_value / other);
 }
 
-IMPLEMENT_COMPOUND_ASSIGNMENT_OPERATORS(NormalizedValue)
+NormalizedValue& NormalizedValue::operator+=(const NormalizedValue& other)
+{
+	SetValue(m_value + other.m_value);
+	return *this;
+}
+NormalizedValue& NormalizedValue::operator-=(const NormalizedValue& other)
+{
+	SetValue(m_value - other.m_value);
+	return *this;
+}
+NormalizedValue& NormalizedValue::operator*=(const NormalizedValue& other)
+{
+	SetValue(m_value * other.m_value);
+	return *this;
+}
+NormalizedValue& NormalizedValue::operator/=(const NormalizedValue& other)
+{
+	ENGINE_ASSERT(other != 0, "Attempted to divide a normalized value:{} "
+		"by a zero value:{}", ToString(), other.ToString());
+	SetValue(m_value / other.m_value);
+	return *this;
+}
 
 bool NormalizedValue::operator==(const NormalizedValue& other) const
 {
@@ -88,8 +100,3 @@ bool NormalizedValue::operator<=(const NormalizedValue& other) const
 {
 	return *this < other || *this == other;
 }
-
-//NormalizedValue::operator float() const
-//{
-//	return m_value;
-//}

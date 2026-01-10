@@ -108,7 +108,7 @@ private:
 	/// <param name="popupInfo"></param>
 	/// <param name="pos"></param>
 	/// <returns></returns>
-	PopupUI* OpenPopupAtSimple(PopupGUIInfo& popupInfo, const ScreenPosition& pos);
+	PopupUI* OpenPopupAtSimple(PopupGUIInfo& popupInfo, const NormalizedPos& topLeftPos);
 	PopupUI* OpenPopupAtSimple(PopupGUIInfo& popupInfo, const UIRect& rect, const PopupPositionFlags flags);
 
 	/// <summary>

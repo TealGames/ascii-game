@@ -7,11 +7,11 @@
 
 struct ColorGradientKeyFrame
 {
-	Color m_Color;
+	HDRColor m_Color;
 	float m_Location;
 
 	ColorGradientKeyFrame();
-	ColorGradientKeyFrame(const Color& color, const float& location);
+	ColorGradientKeyFrame(const HDRColor& color, const float& location);
 
 	bool operator<(const ColorGradientKeyFrame& other) const;
 	bool operator>(const ColorGradientKeyFrame& other) const;
@@ -32,13 +32,13 @@ public:
 private:
 public:
 	ColorGradient();
-	explicit ColorGradient(const Color& singleColor);
-	ColorGradient(const Color& leftColor, const Color& rightColor);
+	explicit ColorGradient(const HDRColor& singleColor);
+	ColorGradient(const HDRColor& leftColor, const HDRColor& rightColor);
 	ColorGradient(const std::vector<ColorGradientKeyFrame>& frames);
 
-	Color GetColorAt(float location, const bool& includeAlpha) const;
-	Color GetFirstColor(const bool& includeAlpha) const;
-	Color GetLastColor(const bool& includeAlpha) const;
+	HDRColor GetColorAt(float location, const bool& includeAlpha) const;
+	HDRColor GetFirstColor(const bool& includeAlpha) const;
+	HDRColor GetLastColor(const bool& includeAlpha) const;
 
 	const std::vector<ColorGradientKeyFrame>& GetKeyframes() const;
 

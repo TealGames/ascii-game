@@ -33,13 +33,13 @@ namespace Rendering
 
     constexpr bool DO_VISUALIZE_BVH_BOUNDS = false;
     constexpr float BVH_BOUNDS_LINE_THICKNESS = 1;
-    constexpr Color BVH_BOUNDS_COLOR = COLOR_GREEN;
-    constexpr Color BVH_BOUNDS_LEAF_COLOR = COLOR_RED;
+    constexpr HDRColor BVH_BOUNDS_COLOR = COLOR_GREEN;
+    constexpr HDRColor BVH_BOUNDS_LEAF_COLOR = COLOR_RED;
 
     constexpr bool DO_LIGHTING = true;
     constexpr bool DRAW_LIGHT_AREAS = false;
     constexpr bool USE_LIGHT_COLOR_FOR_RANGE = true;
-    constexpr Color LIGHT_AREA_COLOR = {255, 255, 255, 255};
+    constexpr HDRColor LIGHT_AREA_COLOR = {255, 255, 255, 255};
     
     constexpr bool DO_SHADOWS = false;
     constexpr Vec2Int SHADOW_MAP_SIZE = {256, 256};
@@ -48,6 +48,7 @@ namespace Rendering
     constexpr float SHADOW_FAR_DISTANCE = 1000;
 
     constexpr bool DO_POST_PROCESS = true;
+    constexpr bool DRAW_UI = false;
     constexpr bool DO_HDR = true;
     constexpr bool DO_BLOOM = false;
     /// <summary>
@@ -69,6 +70,10 @@ namespace Rendering
     constexpr size_t INSTANCE_MAX_COUNT = 16;
     constexpr size_t INDEX_MAX_COUNT = 20000;
     constexpr size_t VERTEX_MAX_COUNT = 10000;
+    constexpr size_t UI_INSTANCE_MAX_COUNT = 50;
+    constexpr size_t UI_INDEX_MAX_COUNT = 20000;
+    constexpr size_t UI_VERTEX_MAX_COUNT = 10000;
+
     constexpr size_t MATERIAL_MAX_COUNT = 10;
     constexpr size_t TEXTURE_MAX_COUNT = 5;
     constexpr size_t BLAS_NODE_MAX_COUNT = 8000;
@@ -77,7 +82,7 @@ namespace Rendering
 
     static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { 
         "default", "forward_render", "shadow", "texture", 
-        "post_process", "gaussian_blur", "ray_tracer", "skybox"};
+        "post_process", "gaussian_blur", "ray_tracer", "skybox", "ui"};
 
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
@@ -135,11 +140,11 @@ namespace Rendering
     }
 
     PointLightData::PointLightData() : PointLightData({}, {}, 0) {}
-    PointLightData::PointLightData(const WorldPosition3D& pos, const Color& color, const float radius)
+    PointLightData::PointLightData(const WorldPosition3D& pos, const HDRColor& color, const float radius)
         : m_Pos(pos), m_Color(color), m_Radius(radius), _padding0(0), _padding1{}, m_ShadowMapIndex(-1) {}
 
     DirectionalLightData::DirectionalLightData() : DirectionalLightData({}, {}) {}
-    DirectionalLightData::DirectionalLightData(const Vec3& dir, const Color& color)
+    DirectionalLightData::DirectionalLightData(const Vec3& dir, const HDRColor& color)
         : m_Direction(dir), m_Color(color), _padding0(0) {}
 
     MaterialData::MaterialData() : MaterialData(Material{}, INVALID_TEXTURE_INDEX) {}
@@ -172,8 +177,9 @@ namespace Rendering
         m_graphicsManager(nullptr), m_frameGeometryMetrics(), m_runtimeMaterialId(),m_cachedMaterials(),
         m_textureController(Backend::CreateTextureController()),
         m_imageController(Backend::CreateImageController()),
-        m_instanceMeshes(), m_emissiveInstanceIndices(), m_geometryUnit(m_geometryVertexLayout),
-        m_geometryVertexLayout(), m_bufferController(),
+        m_instanceMeshes(), m_emissiveInstanceIndices(), 
+        m_geometryVertexLayout(), m_uiVertexLayout(), m_bufferController(),
+        m_geometryUnit(m_geometryVertexLayout), m_uiUnit(m_uiVertexLayout),
         m_unmovingFrames(0), m_isRenderStalled(false), m_framesSinceStart(0),
         m_frameBuffer(), m_shadowMaps(), m_hdrColorOutput(), m_hdrDepthRenderBuffer(), m_coreShaders({}),
         m_currentPass(RenderPassType::None), m_renderPassData({}), m_boundFrameBuffer(nullptr), m_boundShader(nullptr),
@@ -211,6 +217,11 @@ namespace Rendering
             {
                 data.m_FrameBuffer = &m_frameBuffer;
             }
+            //Similar to skybox, if we do PP, we must output the ui overlay to the same texture that goes to pp
+            else if (passType == RenderPassType::UI && DO_POST_PROCESS)
+            {
+                data.m_FrameBuffer = &m_frameBuffer;
+            }
         }
         UpdatePassRenderState(RenderPassType::None);
     }
@@ -235,7 +246,8 @@ namespace Rendering
         };
         m_geometryVertexLayout.AddAttributes(vertexBindIndex, vertexAttributes);
 
-        const VertexLayoutBindIndex instancedBindIndex = m_bufferController.AddVertexBuffer(&m_geometryVertexLayout, &m_geometryUnit.m_InstanceBufferHandle, nullptr);
+        const VertexLayoutBindIndex instancedBindIndex = m_bufferController.AddVertexBuffer(&m_geometryVertexLayout, 
+            &m_geometryUnit.m_InstanceBufferHandle, nullptr);
         std::vector<VertexAttribute> instancedAttributes =
         {
             VertexAttribute(3, 1, VertexAttributeBaseType::UnsignedInteger, false, offsetof(Instance, m_MaterialIndex)),
@@ -244,8 +256,31 @@ namespace Rendering
         m_geometryVertexLayout.AddAttributes(instancedBindIndex, instancedAttributes);
         m_geometryVertexLayout.AddMatrixAttribute(Vec2Int(4, 4), instancedBindIndex, 5, false, sizeof(Vec4), offsetof(Instance, m_ModelMatrix));
         m_geometryVertexLayout.AddMatrixAttribute(Vec2Int(4, 4), instancedBindIndex, 9, false, sizeof(Vec4), offsetof(Instance, m_InverseModelMatrix));
-        m_geometryVertexLayout.AddMatrixAttribute(Vec2Int(3, 3), instancedBindIndex, 13, false, sizeof(Vec3), offsetof(Instance, m_NormalModelMatrix));
+        //NOTE: since the normal model matrix has 4 bytes of extra padding per column due to std::430 rules (which we only need for ssbo NOT
+        //vertex buffer), the vertex layout needs full size INCLUDING padding
+        m_geometryVertexLayout.AddMatrixAttribute(Vec2Int(3, 3), instancedBindIndex, 13, false, sizeof(Vec4), offsetof(Instance, m_NormalModelMatrix));
 
+        m_uiVertexLayout = Backend::CreateVertexLayout();
+        m_uiVertexLayout.BindActive();
+        m_uiUnit.Init(UI_VERTEX_MAX_COUNT, UI_INDEX_MAX_COUNT, UI_INSTANCE_MAX_COUNT);
+        const VertexLayoutBindIndex uiVertexBindIndex = m_bufferController.AddVertexBuffer(&m_uiVertexLayout,
+            &m_uiUnit.m_VertexBufferHandle, &m_uiUnit.m_IndexBufferHandle);
+        vertexAttributes =
+        {
+            VertexAttribute(0, 2, VertexAttributeBaseType::Float, false, offsetof(VertexUI, m_LocalRectPos)),
+            VertexAttribute(1, 2, VertexAttributeBaseType::Float, false, offsetof(VertexUI, m_UVPos)),
+        };
+        m_uiVertexLayout.AddAttributes(uiVertexBindIndex, vertexAttributes);
+        const VertexLayoutBindIndex uiInstancedBindIndex = m_bufferController.AddVertexBuffer(&m_uiVertexLayout,
+            &m_uiUnit.m_InstanceBufferHandle, nullptr);
+        instancedAttributes =
+        {
+            VertexAttribute(2, 4, VertexAttributeBaseType::Float, false, offsetof(InstanceUI, m_Color)),
+            VertexAttribute(3, 1, VertexAttributeBaseType::Integer, false, offsetof(InstanceUI, m_TextureIndex)),
+            VertexAttribute(4, 1, VertexAttributeBaseType::Float, false, offsetof(InstanceUI, m_Depth)),
+        };
+        m_uiVertexLayout.AddAttributes(uiInstancedBindIndex, instancedAttributes);
+        m_uiVertexLayout.AddMatrixAttribute(Vec2Int(3, 3), uiInstancedBindIndex, 5, false, sizeof(Vec3), offsetof(InstanceUI, m_ModelMatrix));
         
 
         if (DO_RAYTRACING) m_instanceMeshes.reserve(INSTANCE_MAX_COUNT);
@@ -286,8 +321,12 @@ namespace Rendering
                 map = CreateTextureCube(SHADOW_MAP_SIZE, TexelStorageType::Depth24);
         }
 
-        if (DO_HDR)
+        //If we do post process, the color output does not immediately go into the render buffer
+        //and must go through pp pass, which means we need our own color output textures
+        if (DO_POST_PROCESS)
         {
+            //TODO; right now hdr is tightly couples with PP which should can not be this way
+            //because if we want pp but dont want hdr there is no corresponding color/depth output that is not hdr textures
             const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
             m_hdrColorOutput = CreateTexture(nullptr, windowSize, TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
             m_brightnessOutput = CreateTexture(nullptr, windowSize, TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
@@ -457,7 +496,7 @@ namespace Rendering
                 shader.ToString(), material.ToString(), vertexCount));
             return nullptr;
         }
-        return m_geometryUnit.TryGetBatch(shader, *material.m_Albedo, vertexCount);
+        return m_geometryUnit.TryGetBatch(shader, material.m_Albedo, vertexCount);
     }
 
     RenderPassType Renderer::GetCurrentPass() const
@@ -606,6 +645,31 @@ namespace Rendering
         createdInstance.m_MeshIndex = m_geometryUnit.m_CpuInstances[batch.m_InstanceStartIndex].m_MeshIndex;
         //The most recent added instance data is the one create world mesh bounds
         AddGeometryInstanceMeshBoundsData(batch.m_InstanceStartIndex + batch.m_InstanceCount);
+    }
+
+    RenderBatch& Renderer::CreateUIBatch(Shader& shader, Texture* texture, const VertexUI* vertexArray, const size_t vertexSize,
+        const IndexType* indexArray, const size_t indicesSize, const HDRColor& color, const float depth, const Mat3& modelMatrix)
+    {
+        ENGINE_ASSERT(vertexArray != nullptr && vertexSize > 0 && indexArray != nullptr && indicesSize > 0,
+            "Attempted to create create a UI batch with no vertices and/or indices");
+
+        RenderBatch& batch = m_uiUnit.CreateBatch(shader, texture);
+        m_uiUnit.AddVerticesToBatch(batch, vertexArray, vertexSize);
+        m_uiUnit.AddIndicesToBatch(batch, indexArray, indicesSize);
+
+        AddUIInstanceDataToBatch(batch, color, texture, depth, modelMatrix);
+        m_uiUnit.FinishBatch(batch);
+        return batch;
+    }
+    InstanceUI& Renderer::AddUIInstanceDataToBatch(RenderBatch& batch, const HDRColor& color, Texture* texture, 
+        const float depth, const Mat3& modelMatrix)
+    {
+        //TODO: add support for textures
+        return m_uiUnit.AddInstanceDataToBatch(batch, color, -1, depth, modelMatrix);
+    }
+    RenderBatch* Renderer::TryGetSameUIDrawBatch(const Shader& shader, const Texture* texture, std::uint32_t vertexCount)
+    {
+        return m_uiUnit.TryGetBatch(shader, texture, vertexCount);
     }
 
     void Renderer::ConstructBLASTree(BVHTriangleTree& tree, const size_t indexStart, const size_t indexSize)
@@ -1063,9 +1127,33 @@ namespace Rendering
     {
         AddCallBox3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), modelMatrix);
     }
-    
 
-    void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const Color& color)
+    void Renderer::AddCallRect2D(const HDRColor& color, Texture* texture, const float depth, const Mat3& modelMatrix)
+    {
+        constexpr size_t TOTAL_INDEX_COUNT = 6;
+        constexpr size_t TOTAL_VERTEX_COUNT = 4;
+
+        Shader& uiShader = GetCoreShader(CoreShader::UI);
+        RenderBatch* sameStatebatch = TryGetSameUIDrawBatch(uiShader, texture, TOTAL_VERTEX_COUNT);
+        if (sameStatebatch != nullptr)
+        {
+            AddUIInstanceDataToBatch(*sameStatebatch, color, texture, depth, modelMatrix);
+            return;
+        }
+
+        VertexUI vertices[TOTAL_VERTEX_COUNT] = {
+            //Bottom Left, Bottom right, top right, top left
+            VertexUI(Vec2(0,0), UV{0, 0}),
+            VertexUI(Vec2(1,0), UV{1, 0}),
+            VertexUI(Vec2(1,1), UV{1, 1,}),
+            VertexUI(Vec2(0,1), UV{0, 1})
+        };
+        IndexType indices[TOTAL_INDEX_COUNT] = { 0, 1, 2, 2, 3, 0 };
+        
+        CreateUIBatch(uiShader, texture, vertices, TOTAL_VERTEX_COUNT, indices, TOTAL_INDEX_COUNT, color, depth, modelMatrix);
+    }
+
+    void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const HDRColor& color)
     {
         //LogWarning(std::format("Invoked light call with: {}", m_uniformData.m_LightBlock.m_PointLightsCount));
         if (m_uniformData.m_LightBlock.m_PointLightsCount >= MAX_POINT_LIGHTS)
@@ -1095,7 +1183,7 @@ namespace Rendering
                 Utils::CalculateModelMatrix(nullptr, worldPos, std::min(0.1f * radius, 1.0f), Quat::Identity()));
         }
     }
-    void Renderer::SetDirectionalLight(const Vec3& dir, const Color& color)
+    void Renderer::SetDirectionalLight(const Vec3& dir, const HDRColor& color)
     {
         m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::DirectionLight3d, Mat4{});
 
@@ -1132,7 +1220,7 @@ namespace Rendering
             &(mesh.m_Indices[0]), mesh.m_Indices.size(), modelMatrix, &mesh.m_BLASTree);
     }
 
-    void Renderer::AddCallAABBWifreframe(const Mat4& modelMatrix, const Color& color, const float lineThickness)
+    void Renderer::AddCallAABBWifreframe(const Mat4& modelMatrix, const HDRColor& color, const float lineThickness)
     {
         constexpr size_t TOTAL_INDEX_COUNT = 36 * 4;
         constexpr size_t TOTAL_VERTEX_COUNT = 36 * 4;
@@ -1166,7 +1254,7 @@ namespace Rendering
         }
         FinishGeometryBatch(batch, nullptr);
     }
-    void Renderer::AddCallAABBWifreframe(const AABB3D& aabb, const Quat& rotation, const Color& color, const float lineThickness)
+    void Renderer::AddCallAABBWifreframe(const AABB3D& aabb, const Quat& rotation, const HDRColor& color, const float lineThickness)
     {
         AddCallAABBWifreframe(Utils::CalculateModelMatrix(nullptr, aabb.GetCenter(), aabb.GetSize(), rotation), color, lineThickness);
     }
@@ -1329,11 +1417,14 @@ namespace Rendering
         }
     }
 
-    void Renderer::DrawGeometryBatch(RenderBatch& batch)
+    void Renderer::DrawIndexedInstancedBatch(RenderBatch& batch, VertexLayout& bindLayout)
     {
+        if (!bindLayout.IsBoundActive())
+            bindLayout.BindActive();
+
         Backend::DrawUploadedIndexBufferInstanced(0,
-            batch.m_VertexStartIndex * m_geometryUnit.m_IndexBufferHandle.GetElementSize(),
-            batch.m_InstanceCount, batch.m_InstanceStartIndex, batch.m_InstanceCount);
+            batch.m_VertexStartIndex * sizeof(IndexType),
+            batch.m_IndicesCount, batch.m_InstanceStartIndex, batch.m_InstanceCount);
     }
 
     void Renderer::ExecuteSkyboxPass(std::uint8_t* outDrawnAttachmentsMask)
@@ -1408,7 +1499,7 @@ namespace Rendering
                     if (batch.m_InstanceCount == 0)
                         continue;
 
-                    DrawGeometryBatch(batch);
+                    DrawIndexedInstancedBatch(batch, m_geometryVertexLayout);
                 }
             }
         }
@@ -1463,11 +1554,7 @@ namespace Rendering
             if (batch.m_InstanceCount == 0)
                 continue;
 
-            if (batch.m_Shader == nullptr)
-            {
-                LogError(std::format("Tried to flush current batch in renderer, but batch shader was null"));
-                return;
-            }
+            ENGINE_ASSERT(batch.m_Shader != nullptr, "Tried to flush Lighting/Geometry batch in renderer, but batch shader was null");
 
             if (lastBatchShader != nullptr && batch.m_Shader == nullptr) unbindLastBatchShader();
             else if (lastBatchShader == nullptr || lastBatchShader != batch.m_Shader)
@@ -1497,7 +1584,7 @@ namespace Rendering
             //LogWarning(std::format("LIGHT PASS Texture controler before draw: {}", m_textureController.ToString()));
 
             //DrawBatch(batch);
-            DrawGeometryBatch(batch);
+            DrawIndexedInstancedBatch(batch, m_geometryVertexLayout);
         }
 
         if (lastBatchShader != nullptr) unbindLastBatchShader();
@@ -1520,16 +1607,19 @@ namespace Rendering
         if (freeVertexSeg == std::nullopt || freeIndexSeg == std::nullopt || freeInstanceSeg == std::nullopt)
         {
             m_isRenderStalled = true;
-            const std::string message = std::format("Stalling vertex:{} index:{} instance:{}",
+            const std::string message = std::format("Stalling FORWARD RENDERING vertex:{} index:{} instance:{}",
                 freeVertexSeg == std::nullopt, freeIndexSeg == std::nullopt, freeIndexSeg == std::nullopt);
             if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
             else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
             return;
         }
 
-        FencedBufferSegment& vertexFenceSeg = m_geometryUnit.m_VertexBufferHandle.WriteDataFenced(m_geometryUnit.GetVertexMemPointer(), freeVertexSeg.value());
-        FencedBufferSegment& indexFenceSeg = m_geometryUnit.m_IndexBufferHandle.WriteDataFenced(m_geometryUnit.GetIndexMemPointer(), freeIndexSeg.value());
-        FencedBufferSegment& instanceFenceSeg = m_geometryUnit.m_InstanceBufferHandle.WriteDataFenced(m_geometryUnit.GetInstanceMemPointer(), freeInstanceSeg.value());
+        FencedBufferSegment& vertexFenceSeg = m_geometryUnit.m_VertexBufferHandle.WriteDataFenced(
+                                              m_geometryUnit.GetVertexMemPointer(), freeVertexSeg.value());
+        FencedBufferSegment& indexFenceSeg = m_geometryUnit.m_IndexBufferHandle.WriteDataFenced(
+                                             m_geometryUnit.GetIndexMemPointer(), freeIndexSeg.value());
+        FencedBufferSegment& instanceFenceSeg = m_geometryUnit.m_InstanceBufferHandle.WriteDataFenced(
+                                                m_geometryUnit.GetInstanceMemPointer(), freeInstanceSeg.value());
 
         std::vector<SlotIndex> shadowCubeMapSlots = {};
         if (DO_SHADOWS)
@@ -1604,6 +1694,79 @@ namespace Rendering
 
         m_textureController.TryRemoveFromSlot(hdrOutputIndex);
         if (bloomSlotIndex != INVALID_SLOT_INDEX) m_textureController.TryRemoveFromSlot(bloomSlotIndex);
+    }
+    void Renderer::ExecuteUIPass()
+    {
+        UpdatePassRenderState(RenderPassType::UI);
+
+        //NOTE: we do this to ensure that we only add any data as long as all 3 buffers have enough space
+        const auto& freeVertexSeg = m_uiUnit.m_VertexBufferHandle.TryGetFreeSegment(m_uiUnit.GetVertexCount());
+        const auto& freeIndexSeg = m_uiUnit.m_IndexBufferHandle.TryGetFreeSegment(m_uiUnit.GetIndexCount());
+        const auto& freeInstanceSeg = m_uiUnit.m_InstanceBufferHandle.TryGetFreeSegment(m_uiUnit.GetInstanceCount());
+        if (freeVertexSeg == std::nullopt || freeIndexSeg == std::nullopt || freeInstanceSeg == std::nullopt)
+        {
+            m_isRenderStalled = true;
+            std::string message = std::format("Stalling UI PASS vertex:{} index:{} instance:{}",
+                freeVertexSeg == std::nullopt, freeIndexSeg == std::nullopt, freeInstanceSeg == std::nullopt);
+
+            if (freeVertexSeg == std::nullopt) message += std::format("Vertices needed:{} Allocated:{}", 
+                m_uiUnit.GetVertexCount(), m_uiUnit.m_VertexBufferHandle.GetAllocatedByteSize() / sizeof(VertexUI));
+            if (freeIndexSeg == std::nullopt) message += std::format("Indices needed:{} Allocated:{}",
+                m_uiUnit.GetIndexCount(), m_uiUnit.m_IndexBufferHandle.GetAllocatedByteSize() / sizeof(IndexType));
+            if (freeInstanceSeg == std::nullopt) message += std::format("Instances needed:{} Allocated:{}",
+                m_uiUnit.GetInstanceCount(), m_uiUnit.m_InstanceBufferHandle.GetAllocatedByteSize() / sizeof(InstanceUI));
+
+            if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
+            else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
+            return;
+        }
+        FencedBufferSegment& vertexFenceSeg = m_uiUnit.m_VertexBufferHandle.WriteDataFenced(
+            m_uiUnit.GetVertexMemPointer(), freeVertexSeg.value());
+        FencedBufferSegment& indexFenceSeg = m_uiUnit.m_IndexBufferHandle.WriteDataFenced(
+            m_uiUnit.GetIndexMemPointer(), freeIndexSeg.value());
+        FencedBufferSegment& instanceFenceSeg = m_uiUnit.m_InstanceBufferHandle.WriteDataFenced(
+            m_uiUnit.GetInstanceMemPointer(), freeInstanceSeg.value());
+
+        //If we have a custom frame buffer, it means we are doing PP so we must attach the same
+        //output that was used for geometry to override the colors on top
+        if (m_boundFrameBuffer != nullptr)
+        {
+            m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &m_hdrColorOutput);
+        }
+        //Here we clear the depth ONLY since we do not want old depth but we still need it for ui draw layers
+        //NOTE: we are guaranteed to have written to color0 either via raytracer or forward renderer
+        //so we do not clear it, but we still use it to override the colors on top
+        Backend::ClearBackground(0b0);
+
+        Shader* lastBatchShader = nullptr;
+        const auto unbindLastBatchShader = [this, &lastBatchShader]() -> void
+            {
+                UnbindActiveShader();
+                lastBatchShader = nullptr;
+            };
+
+        for (int i = 0; i < m_uiUnit.m_Batches.size(); i++)
+        {
+            auto& batch = m_uiUnit.m_Batches[i];
+            if (batch.m_InstanceCount == 0)
+                continue;
+
+            ENGINE_ASSERT(batch.m_Shader != nullptr, "Tried to flush UI batch in renderer, but batch shader was null");
+            std::vector<InstanceUI> instances = {};
+            m_uiUnit.m_InstanceBufferHandle.ReadDataAs<InstanceUI>(instances, true);
+            //LogError(std::format("UI instances: {}", Utils::ToStringIterable(instances)));
+            //LogWarning(std::format("Has indices:{}", batch.m_IndicesCount));
+
+            if (lastBatchShader != nullptr && batch.m_Shader == nullptr) unbindLastBatchShader();
+            else if (lastBatchShader == nullptr || lastBatchShader != batch.m_Shader)
+            {
+                BindShader(*batch.m_Shader);
+            }
+            lastBatchShader = batch.m_Shader;
+            DrawIndexedInstancedBatch(batch, m_uiVertexLayout);
+        }
+
+        if (lastBatchShader != nullptr) unbindLastBatchShader();
     }
 
     void Renderer::ApplyBlurInPlace(Texture& inputTexture, Texture& tempTexture, const float blurStrength)
@@ -1735,9 +1898,10 @@ namespace Rendering
             rayTraceShader.TrySetUniform(UniformDataType::Sampler2D, SKYBOX_UNIFORM_NAME, &skyboxSlot);
         }
         
-        int* textureSampleSlots = (int*)alloca(sizeof(int) * m_bindQueuedTextures.size());
+        int* textureSampleSlots = nullptr;
         if (!m_bindQueuedTextures.empty())
         {            
+            textureSampleSlots = (int*)alloca(sizeof(int) * m_bindQueuedTextures.size());
             for (std::uint8_t i = 0; i < m_bindQueuedTextures.size(); i++)
             {
                 SlotIndex slotIndex = m_textureController.TryBindToFreeSlot<Texture>(*m_bindQueuedTextures[i]);
@@ -1752,25 +1916,6 @@ namespace Rendering
             rayTraceShader.TrySetUniformArray(UniformDataType::Sampler2D,
                 TEXTURES_UNIFORM_NAME, textureSampleSlots, m_bindQueuedTextures.size());
         }
-        /*
-        static int times = 0;
-        times++;
-        if (times == 1)
-        {
-            LogWarning(std::format("RAYTRACE RENDER\nViewer: \nVertices:{}\nIndices:{}\nInstances:{}\nInstanceMeshes:{}\nLightIndices:{}\nMaterials:{}\n"
-                "CAMERA:\nPos:{}\nView:{}\nProj:{}\nForward:{} Up:{} Right:{}\nYFov:{}\n",
-                Utils::ToStringIterable<std::vector<VertexType>, VertexType>(m_geometryUnit.m_CpuVertices),
-                Utils::ToStringIterable<std::vector<IndexType>, IndexType>(m_vertexIndices),
-                Utils::ToStringIterable<std::vector<Instance>, Instance>(m_instances),
-                Utils::ToStringIterable<std::vector<InstanceMesh>, InstanceMesh>(m_instanceMeshes),
-                Utils::ToStringIterable<std::vector<std::uint32_t>, std::uint32_t>(m_emissiveInstanceIndices),
-                Utils::ToStringIterable<std::vector<MaterialData>, MaterialData>(m_materialData),
-                camera.GetTransform().GetGlobalPos().ToString(), cameraData.m_ViewMatrix.ToString(), 
-                cameraData.m_PlatformProjectionMatrix.ToString(), worldFoward.ToString(), worldUp.ToString(), worldRight.ToString(),
-                camera.GetSettings().m_FieldOfViewYRadians
-            ));
-        }
-        */
 
         UpdateUniformBuffers();
         
@@ -1815,20 +1960,10 @@ namespace Rendering
                 return IntersectsBVH(rayWorldOrigin, rayDir, nullptr);
             };
             
-        /*
-        const auto& transform = m_engineState->m_CameraController->GetActiveCamera().GetTransform();
-        LogSimple("Intersects {} -> {}: {}", transform.GetWorldPos().ToString(), transform.CalculateWorldForward().ToString(),
-            IntersectsBVH(transform.GetWorldPos(), transform.CalculateWorldForward(), nullptr));
-        */
-        //LogWarning(std::format("Frame number: {}", m_framesSinceStart));
-
-        if (DO_RAYTRACING)
-        {
-            ExecuteRayTracing();
-            //LogError(std::format("FULL TREE: {} \nTLAS NODES:{}", ToStringBVH(), Utils::ToStringIterable(m_tlasTree.GetNodes())));
-        }
+        if (DO_RAYTRACING) ExecuteRayTracing();
         else ExecuteForwardRendering();
 
+        if (DRAW_UI) ExecuteUIPass();
         //TODO: you should be able to do pp without hdr too
         if (DO_POST_PROCESS) ExecutePostProcessPass();
     }
@@ -1852,6 +1987,7 @@ namespace Rendering
     void Renderer::RenderEndActions()
     {
         m_uniformData.m_ViewBufferNeedsUpdate = false;
+        m_isRenderStalled = false;
 
         m_framesSinceStart++;
         m_unmovingFrames++;
@@ -1861,19 +1997,13 @@ namespace Rendering
             m_uniformData.m_LightBlock.m_PointLightsCount = 0;
             m_frameGeometryMetrics = {};
 
-            m_geometryUnit.m_CpuVertices.clear();
-            m_geometryUnit.m_CpuIndices.clear();
-            m_geometryUnit.m_CpuInstances.clear();
             m_instanceMeshes.clear();
             m_emissiveInstanceIndices.clear();
-            m_geometryUnit.m_Batches.clear();
 
-            //TODO: is this the best option for perofmrance amd should all be force cleared?
-            //ideally we want to remove from middle, but that forces shifts in memory which may greatloy reduce performance
-            //Tradeoff: performance cost for erasing some > performance cost of clearing all/having to reallocate frequent batches?
-            m_geometryUnit.m_Batches.clear();
+            m_geometryUnit.ClearAll();
             ResetRuntimeMaterialId();
         }
+        m_uiUnit.ClearAll();
         
         UpdatePassRenderState(RenderPassType::None);
     }

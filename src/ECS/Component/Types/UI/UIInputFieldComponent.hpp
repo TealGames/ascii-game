@@ -69,13 +69,13 @@ constexpr InputFieldFlag operator~(const InputFieldFlag& op)
 }
 
 class UITextComponent;
-class UIPanel;
+class UIPanelComponent;
 class UISelectableData;
 namespace ECS { class UIInputFieldSystem; }
 
 using InputFieldAction = std::function<void(std::string input)>;
 using InputFieldKeyActions = std::unordered_map<Input::KeyCode, InputFieldAction>;
-class UIInputField : public Component
+class UIInputFieldComponent : public Component
 {
 private:
 	InputFieldType m_type;
@@ -87,7 +87,7 @@ private:
 
 	UISelectableData* m_selectable;
 	UITextComponent* m_textGUI;
-	UIPanel* m_background;
+	UIPanelComponent* m_background;
 
 	//bool m_isSelected;
 	InputFieldAction m_submitAction;
@@ -123,10 +123,10 @@ private:
 
 public:
 	//InputField();
-	UIInputField(const Input::InputManager& manager, const InputFieldType& type, 
+	UIInputFieldComponent(const Input::InputManager& manager, const InputFieldType& type, 
 		const InputFieldFlag& flags, const UIStyle& settings, 
 		const InputFieldAction& submitAction=nullptr, const InputFieldKeyActions& keyPressActions = {});
-	~UIInputField();
+	~UIInputFieldComponent();
 
 	void Update();
 

@@ -9,7 +9,7 @@ class PopupUIManager;
 namespace Input { class InputManager; }
 class UITextComponent;
 class UITransformData;
-class UILayout;
+class UILayoutComponent;
 
 class ComponentFieldUI //: public ITreeGUIConstructible
 {
@@ -30,7 +30,7 @@ private:
 
 public:
 	ComponentFieldUI(const Input::InputManager& inputManager, PopupUIManager& popupManager,
-		const ComponentUI& componentGUI, UILayout& parent);
+		const ComponentUI& componentGUI, UILayoutComponent& parent);
 	ComponentFieldUI(const ComponentFieldUI&) = default;
 	~ComponentFieldUI();
 

@@ -55,6 +55,9 @@ void TransformComponent::UpdatePrecalculatedData() const
 		m_lastUpdateData.m_GlobalScale = parent->m_lastUpdateData.m_GlobalScale * m_localScale;
 		m_lastUpdateData.m_GlobalRotation = parent->m_lastUpdateData.m_GlobalRotation * m_localRotation;
 	}
+	//if the parent is dirty, we just invoke the same get functions which will cause it to update its
+	//own precalculated data and will keep going up the hierarchy and once recursion collapses the 
+	//laste line will have the updated global data
 	else
 	{
 		m_lastUpdateData.m_GlobalPos = parent->GetWorldPos() + m_localPos;

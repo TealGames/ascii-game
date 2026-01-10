@@ -9,8 +9,8 @@ namespace ECS
 
 	void UILayoutSystem::SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime)
 	{
-		globalEntityManager.OperateOnComponents<UILayout>(ALL_ACTIVE_ENABLED_FLAG,
-			[&deltaTime](UILayout& data)-> void
+		globalEntityManager.OperateOnComponents<UILayoutComponent>(ALL_ACTIVE_ENABLED_FLAG,
+			[&deltaTime](UILayoutComponent& data)-> void
 			{
 				data.Update(deltaTime);
 			});

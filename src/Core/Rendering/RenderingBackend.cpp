@@ -219,19 +219,21 @@ namespace Rendering
 			return currentFBO;
 		}
 
-		void ClearBackground(std::uint8_t clearColorAttachments, const Color clearColor, const const float clearDepth)
+		void ClearBackground(std::uint8_t clearColorAttachments, const HDRColor clearColor, const const float clearDepth)
 		{
 #if defined(OPENGL)
 			const GLfloat* clearColorArr = reinterpret_cast<const GLfloat*>(clearColor.GetMemPointer());
 
-			//GL_CALL(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
-			for (std::uint8_t i = 0; i < 8; i++)
+			if (clearColorAttachments != 0)
 			{
-				std::uint8_t colorBit = clearColorAttachments & (1 << i);
-				if (colorBit != 0) glClearBufferfv(GL_COLOR, i, clearColorArr);
+				for (std::uint8_t i = 0; i < 8; i++)
+				{
+					std::uint8_t colorBit = clearColorAttachments & (1 << i);
+					if (colorBit != 0) glClearBufferfv(GL_COLOR, i, clearColorArr);
+				}
 			}
-
-			GL_CALL(glClearDepth(1));
+			
+			GL_CALL(glClearDepth(clearDepth));
 			ClearBufferBit(BufferBitType::Depth);
 
 #elif defined(RAYLIB)

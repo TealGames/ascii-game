@@ -1,27 +1,28 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
 #include "Utils/Data/Color.hpp"
+#include "Utils/Data/Matrix.hpp"
 //#include "raylib.h"
 #include "Core/UI/UIRect.hpp"
 
 class UIRendererData;
 namespace ECS { class UIPanelSystem; }
-class UIPanel : public Component
+class UIPanelComponent : public Component
 {
 private:
-	Color m_color;
+	HDRColor m_color;
 	UIRendererData* m_renderer;
 public:
 	friend class ECS::UIPanelSystem;
 
 private:
 public:
-	UIPanel();
-	UIPanel(const Color color);
+	UIPanelComponent();
+	UIPanelComponent(const HDRColor color);
 
-	void SetColor(const Color color);
+	void SetColor(const HDRColor color);
 
-	UIRect Render(const UIRect& rect);
+	void Render(const float depth, const Mat3& globalModelMatrix);
 
 	void InitFields() override;
 	std::string ToString() const override;

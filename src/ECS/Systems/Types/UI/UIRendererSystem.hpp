@@ -1,5 +1,6 @@
 #pragma once
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "Utils/Data/Matrix.hpp"
 #include "Utils/Data/Event.hpp"
 
 namespace Rendering { class Renderer; }
@@ -23,7 +24,7 @@ namespace ECS
 	private:
 
 		//void CreateRenderTree();
-		UIRect RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const UIRect& rect);
+		void RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const float depth, const Mat3& globalModelMatrix);
 		void RenderAll();
 	public:
 		UIRenderSystem(const EngineState& engineState, Rendering::Renderer& renderer, UIHierarchy& hierarchy);

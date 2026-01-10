@@ -193,7 +193,7 @@ WorldPosition2D CollisionBoxData::GetAABBCenterWorldPos() const
 {
 	return GetCenterGlobalPos() + m_transformOffset;
 }
-WorldPosition2D CollisionBoxData::GetAABBWorldPos(const NormalizedPosition& relativePos) const
+WorldPosition2D CollisionBoxData::GetAABBWorldPos(const NormalizedPos& relativePos) const
 {
 	return m_aabb.GetWorldPos(GetAABBCenterWorldPos(), relativePos);
 }

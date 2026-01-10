@@ -8,20 +8,20 @@ class PopupUIManager;
 namespace Input { class InputManager; }
 namespace ECS { class UIColorPickerSystem; }
 
-class UIPanel;
+class UIPanelComponent;
 class UISelectableData;
 class UIRendererData;
 
-using ColorPickerAction = std::function<void(Color)>;
+using ColorPickerAction = std::function<void(HDRColor)>;
 class UIColorPickerData : public Component
 {
 private:
 	PopupUIManager* m_popupManager;
 	UIRendererData* m_renderer;
-	UIPanel* m_fieldPanel;
+	UIPanelComponent* m_fieldPanel;
 	UISelectableData* m_selectable;
 	//GUIStyle m_settings;
-	Color m_color;
+	HDRColor m_color;
 
 	ColorPickerAction m_valueSetCallback;
 public:
@@ -34,12 +34,12 @@ public:
 
 	void Init();
 
-	void SetColor(const Color color);
+	void SetColor(const HDRColor color);
 	//void SetSettings(const GUIStyle& settings);
 	void SetValueSetAction(const ColorPickerAction& action);
 
-	Color GetColor() const;
-	const UIPanel* GetFieldPanel() const;
+	HDRColor GetColor() const;
+	const UIPanelComponent* GetFieldPanel() const;
 
 	void InitFields() override;
 	std::string ToString() const override;

@@ -31,7 +31,7 @@ namespace Rendering
         */
     }
 
-    void Renderer2d::AddCallPolygon2D(const float radius, const size_t sides, const Mat4& modelMatrix, const Color color)
+    void Renderer2d::AddCallPolygon2D(const float radius, const size_t sides, const Mat4& modelMatrix, const HDRColor color)
     {
         //TODO: implement
         LogError(std::format("2D draw call is not supported right now"));
@@ -77,14 +77,14 @@ namespace Rendering
         CreateBatch(GetCoreShader(CoreShader::Default), nullptr, vertices, vertexCount, indices, indexCount, modelMatrix, color, true);
         */
     }
-    void Renderer2d::AddCallCircle2D(const float radius, const Mat4& modelMatrix, const Color color)
+    void Renderer2d::AddCallCircle2D(const float radius, const Mat4& modelMatrix, const HDRColor color)
     {
         LogError(std::format("2D draw call is not supported right now"));
         return;
 
         //AddCallPolygon2D(radius, CIRCLE_SIDE_COUNT, modelMatrix, color);
     }
-    void Renderer2d::AddCallRectangle2D(const Vec2& worldSize, const Mat4& modelMatrix, const Color& color)
+    void Renderer2d::AddCallRectangle2D(const Vec2& worldSize, const Mat4& modelMatrix, const HDRColor& color)
     {
         LogError(std::format("2D draw call is not supported right now"));
         return;
@@ -92,7 +92,7 @@ namespace Rendering
         //AddCallRectangle2DMulti(GetCoreShader(CoreShader::Default), nullptr, worldSize, modelMatrix, color);
     }
 
-    void Renderer2d::AddCallTexture2D(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const Color color)
+    void Renderer2d::AddCallTexture2D(const Vec2& worldSize, Texture& tex, const Mat4& modelMatrix, const HDRColor color)
     {
         LogError(std::format("2D draw call is not supported right now"));
         return;

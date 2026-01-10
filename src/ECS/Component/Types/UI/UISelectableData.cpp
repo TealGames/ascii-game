@@ -7,8 +7,8 @@
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Utils/Data/ColorConstants.hpp"
 
-static constexpr Color HOVER_COLOR = Color(COLOR_WHITE, 90/255.0f);
-static constexpr Color DISABLED_COLOR = Color(COLOR_BLACK, 155/255.0f);
+static constexpr HDRColor HOVER_COLOR = HDRColor(COLOR_WHITE, 90/255.0f);
+static constexpr HDRColor DISABLED_COLOR = HDRColor(COLOR_BLACK, 155/255.0f);
 
 UISelectableData::UISelectableData(const float clickCooldown, const TriggerInteractionEventFlags eventFlags, const InteractionRenderFlags renderFlags) :
 	m_triggerEventFlags(eventFlags), m_renderFlags(renderFlags), m_renderer(nullptr),

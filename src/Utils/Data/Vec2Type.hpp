@@ -236,6 +236,15 @@ public:
 		return m_X <= other.m_X && m_Y <= other.m_Y;
 	}
 
+	bool AnyAxisGreaterThan(const Vec& other) const
+	{
+		return m_X > other.m_X || m_Y > other.m_Y;
+	}
+	bool AnyAxisLessThan(const Vec& other) const
+	{
+		return m_X < other.m_X || m_Y < other.m_Y;
+	}
+
 	Vec& operator=(const Vec& other)
 	{
 		if (this == &other)

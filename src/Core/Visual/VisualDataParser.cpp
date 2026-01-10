@@ -14,7 +14,7 @@ VisualData ParseDefaultVisualData(const std::vector<std::string>& lines)
 {
 	if (lines.empty()) return {};
 
-	Color currentColor = COLOR_WHITE;
+	HDRColor currentColor = COLOR_WHITE;
 	std::vector<std::vector<TextChar>> textCharPos = {};
 	WorldFontProperties fontSettings = WorldFontProperties(VisualData::DEFAULT_FONT_SIZE, 0, StaticReferenceGlobals::GetDefaultRaylibFont());
 	for (const auto& line : lines)
@@ -39,7 +39,7 @@ VisualData ParseDefaultVisualData(const std::vector<std::string>& lines)
 					continue;
 
 				const std::string colorCode = line.substr(i + 1, colorAliasEndIndex - (i + 1));
-				std::optional<Color> maybeColor = GlobalColorCodes::TryGetColorFromCode(colorCode);
+				std::optional<HDRColor> maybeColor = GlobalColorCodes::TryGetColorFromCode(colorCode);
 				//Only if we do have found a color do we set the new color
 				if (Assert(maybeColor.has_value(), "Tried to parse a color alias for visual data "
 					"at line : {} but color code: {} starting at index:{} has no color data defined that can be found in global color codes",

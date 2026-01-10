@@ -153,7 +153,7 @@ void UIInteractionManager::InvokeInteractionEvents()
 					continue;
 
 				//Note: only if the event blocker contains the position do we block further events
-				if (it->second != nullptr && it->second->GetLastWorldArea().ContainsPos(newMouseScreenPos))
+				if (it->second != nullptr && it->second->GetLastGlobalScreenRect().ContainsPos(newMouseScreenPos))
 				{
 					//foundEventBlock = true;
 					//break;

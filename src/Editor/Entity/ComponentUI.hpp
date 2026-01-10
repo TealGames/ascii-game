@@ -11,8 +11,8 @@ class UIInteractionManager;
 class PopupUIManager;
 class UIToggleComponent;
 class UITextComponent;
-class UILayout;
-class UIPanel;
+class UILayoutComponent;
+class UIPanelComponent;
 namespace AssetManagement { class AssetManager; };
 class ComponentUI //: public ITreeGUIConstructible
 {
@@ -21,8 +21,8 @@ private:
 	PopupUIManager* m_popupManager;
 
 	UITransformData* m_container;
-	UILayout* m_fieldLayout;
-	UIPanel* m_nameHeader;
+	UILayoutComponent* m_fieldLayout;
+	UIPanelComponent* m_nameHeader;
 	Component* m_component;
 	std::vector<ComponentFieldUI> m_fieldGUIs;
 
@@ -37,7 +37,7 @@ private:
 
 public:
 	ComponentUI(const Input::InputManager& inputManager, PopupUIManager& popupManager, 
-		AssetManagement::AssetManager& m_assetManager, const EntityUI& entityGUI, UILayout& parent);
+		AssetManagement::AssetManager& m_assetManager, const EntityUI& entityGUI, UILayoutComponent& parent);
 	~ComponentUI();
 	
 	//void Init();

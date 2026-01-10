@@ -75,8 +75,8 @@ void to_json(Json& json, const Array2DPosition& pos);
 void from_json(const Json& json, RenderLayerType& layer);
 void to_json(Json& json, const RenderLayerType& layer);
 
-void from_json(const Json& json, Color& color);
-void to_json(Json& json, const Color& color);
+void from_json(const Json& json, HDRColor& color);
+void to_json(Json& json, const HDRColor& color);
 
 void from_json(const Json& json, ColorGradientKeyFrame& gradientFrame);
 void to_json(Json& json, const ColorGradientKeyFrame& gradientFrame);

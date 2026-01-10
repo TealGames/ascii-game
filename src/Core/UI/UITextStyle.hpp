@@ -60,12 +60,12 @@ bool IsRightAlignment(const TextAlignment& alignment);
 inline constexpr float NULL_FONT_FACTOR = 0;
 inline constexpr bool DEFAULT_FIT_TO_AREA = true;
 inline constexpr TextAlignment DEFAULT_ALIGNMENT = TextAlignment::Center;
-inline constexpr UIPadding DEFAULT_PADDING = UIPadding();
+inline const UIPadding DEFAULT_PADDING = UIPadding();
 
 class TextUIStyle
 {
 public:
-	Color m_TextColor;
+	HDRColor m_TextColor;
 	TextAlignment m_TextAlignment;
 	ScreenFontProperties m_FontData;
 	UIPadding m_Padding;
@@ -74,7 +74,7 @@ public:
 
 public:
 	TextUIStyle();
-	TextUIStyle(const Color& textColor, const ScreenFontProperties& fontData, const TextAlignment& alignment= DEFAULT_ALIGNMENT, 
+	TextUIStyle(const HDRColor& textColor, const ScreenFontProperties& fontData, const TextAlignment& alignment= DEFAULT_ALIGNMENT, 
 		const UIPadding& padding= DEFAULT_PADDING, const float& factor= NULL_FONT_FACTOR,
 		const bool& fitToArea= DEFAULT_FIT_TO_AREA);
 };

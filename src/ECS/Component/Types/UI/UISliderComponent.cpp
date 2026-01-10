@@ -2,12 +2,12 @@
 #include "ECS/Component/Types/UI/UISliderComponent.hpp"
 #include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 
-static const NormalizedPosition HANDLE_SIZE = {0.05, 1};
+static const NormalizedPos HANDLE_SIZE = {0.05, 1};
 static const float SLIDER_HEIGHT = 0.5;
 //static constexpr int SLIDER_HEIGHT = 10;
 static constexpr float MIN_DRAG_TIME_TO_MOVE = 0.1;
@@ -28,11 +28,11 @@ void UISliderComponent::Init()
 
 			if (dragTime < MIN_DRAG_TIME_TO_MOVE) return;
 
-			const Vec2 lastRenderSize = m_renderer->GetLastRenderRect().GetSize();
+			const Vec2 lastRenderSize = m_renderer->GetLastRenderRect().GetSize().AsVec2();
 			float moveFraction = mouseDelta.m_X / lastRenderSize.m_X;
 			SetValueDelta(moveFraction * (m_minMaxValues.m_Y - m_minMaxValues.m_X));
 
-			m_SliderHandle->SetTopLeftPos(NormalizedPosition(GetValueNormalized() - (0.5 * HANDLE_SIZE.GetX()), 1));
+			m_SliderHandle->SetLocalTopLeftPos(NormalizedPos(GetValueNormalized() - (0.5 * HANDLE_SIZE.GetX()), 1));
 		});
 }
 

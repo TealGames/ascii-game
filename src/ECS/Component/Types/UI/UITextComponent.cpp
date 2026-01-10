@@ -11,14 +11,14 @@
 static constexpr float FONT_SIZE_CALC_DELTA = 0.5;
 static constexpr bool DRAW_RENDER_BOUNDS = false;
 
-UITextComponent::UITextComponent() : UITextComponent("", {}, Color()) {}
+UITextComponent::UITextComponent() : UITextComponent("", {}, HDRColor()) {}
 
 UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const UIPadding& padding, 
-	const TextAlignment& alignment, const Color& color, const float& factor, const bool& fitToArea) :
+	const TextAlignment& alignment, const HDRColor& color, const float& factor, const bool& fitToArea) :
 	m_text(text), m_fontData(font), m_padding(padding), 
 	m_alignment(alignment), m_color(color), m_fontSizeFactor(factor), m_fitToArea(fitToArea), m_renderer(nullptr) {}
 
-UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const Color& color) :
+UITextComponent::UITextComponent(const std::string text, const ScreenFontProperties& font, const HDRColor& color) :
 	UITextComponent(text, font, DEFAULT_PADDING, DEFAULT_ALIGNMENT, color, NULL_FONT_FACTOR, DEFAULT_FIT_TO_AREA) {}
 	
 UITextComponent::UITextComponent(const std::string& text, const TextUIStyle& settings) :
@@ -53,7 +53,7 @@ void UITextComponent::SetFontSize(const float& size)
 	m_fontData.m_Size = std::abs(size);
 }
 
-void UITextComponent::SetTextColor(const Color color)
+void UITextComponent::SetTextColor(const HDRColor color)
 {
 	m_color = color;
 }
@@ -130,6 +130,9 @@ float UITextComponent::CalculateMaxFontSizeForSpace(const Vec2& space, const flo
 
 ScreenPosition UITextComponent::CalculateTopLeftPos(const UIRect& renderInfo, const Vec2& textRectArea) const
 {
+	//TODO: implement
+	return {};
+	/*
 	float newX = renderInfo.m_TopLeftPos.m_X + m_padding.m_Left;
 	float newY = renderInfo.m_TopLeftPos.m_Y + m_padding.m_Top;
 
@@ -157,15 +160,10 @@ ScreenPosition UITextComponent::CalculateTopLeftPos(const UIRect& renderInfo, co
 	}
 
 	return ScreenPosition{newX, newY};
+	*/
 }
 
-Vec2 UITextComponent::CalculateUsableSpace(const UIRect& renderInfo) const
-{
-	return Vec2{renderInfo.GetSize().m_X - m_padding.m_Left - m_padding.m_Right,
-			renderInfo.GetSize().m_Y - m_padding.m_Top - m_padding.m_Bottom};
-}
-
-Color UITextComponent::GetFontColor() const
+HDRColor UITextComponent::GetFontColor() const
 {
 	return m_color;
 }
@@ -222,7 +220,7 @@ UIRect UITextComponent::Render(const UIRect& rect)
 		return {};
 	}
 
-	const Vec2 usableSize = CalculateUsableSpace(rect);
+	const Vec2 usableSize = rect.GetSize().AsVec2();
 	if (HasFontSizeFactor())
 	{
 		/*LogWarning(std::format("Font size (before:{}) from area:{} is:{} entity:{} text:{}", m_fontData.m_Size, usableSize.ToString(), 

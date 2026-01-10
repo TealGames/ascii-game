@@ -23,13 +23,13 @@ namespace Rendering
 	{
 		WorldPosition3D m_Pos;
 		float m_Radius;
-		Color m_Color;
+		HDRColor m_Color;
 	};
 	struct RectCall
 	{
 		WorldPosition3D m_Pos;
 		Vec2 m_Size;
-		Color m_Color;
+		HDRColor m_Color;
 	};
 
 	using TextureID = std::uint16_t;
@@ -37,7 +37,7 @@ namespace Rendering
 	{
 		TextureID m_Id;
 		WorldPosition3D m_Pos;
-		Color m_Color;
+		HDRColor m_Color;
 	};
 	struct TextureCallData
 	{
@@ -50,7 +50,7 @@ namespace Rendering
 	{
 		TextID m_Id;
 		WorldPosition3D m_Pos;
-		Color m_Color;
+		HDRColor m_Color;
 	};
 	struct TextCallData
 	{
@@ -65,14 +65,14 @@ namespace Rendering
 		WorldPosition3D m_Pos;
 		float m_Thickness;
 		Vec2 m_Length;
-		Color m_Color;
+		HDRColor m_Color;
 	};
 	struct RectLineCall
 	{
 		WorldPosition3D m_Pos;
 		float m_Thickness;
 		Vec2 m_Size;
-		Color m_Color;
+		HDRColor m_Color;
 	};
 
 	using RenderCall = std::variant<CircleCall, RectCall, TextureCall, TextCall, LineCall, RectLineCall>;

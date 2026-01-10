@@ -11,17 +11,17 @@ namespace EditorStyles
 	//-------------------------------------------------------------------
 	//			DEBUG STYLES
 	//-------------------------------------------------------------------
-	inline constexpr Color DEBUG_TEXT_COLOR = COLOR_WHITE;
-	inline constexpr Color DEBUG_HIGHLIGHTED_TEXT_COLOR = COLOR_YELLOW;
+	inline constexpr HDRColor DEBUG_TEXT_COLOR = COLOR_WHITE;
+	inline constexpr HDRColor DEBUG_HIGHLIGHTED_TEXT_COLOR = COLOR_YELLOW;
 
 	//-------------------------------------------------------------------
 	//			EDITOR STYLES
 	//-------------------------------------------------------------------
-	inline constexpr Color EDITOR_TEXT_DEFAULT_COLOR = COLOR_WHITE;
-	inline constexpr Color EDITOR_BACKGROUND_COLOR = Color(30, 30, 30, 255);
-	inline constexpr Color EDITOR_SECONDARY_BACKGROUND_COLOR = { 60, 60, 60, 255 };
-	inline constexpr Color EDITOR_SECONDARY_COLOR = COLOR_GRAY;
-	inline constexpr Color EDITOR_PRIMARY_COLOR = {100, 100, 100, 255};
+	inline constexpr HDRColor EDITOR_TEXT_DEFAULT_COLOR = COLOR_WHITE;
+	inline constexpr HDRColor EDITOR_BACKGROUND_COLOR = HDRColor(30, 30, 30, 255);
+	inline constexpr HDRColor EDITOR_SECONDARY_BACKGROUND_COLOR = { 60, 60, 60, 255 };
+	inline constexpr HDRColor EDITOR_SECONDARY_COLOR = COLOR_GRAY;
+	inline constexpr HDRColor EDITOR_PRIMARY_COLOR = {100, 100, 100, 255};
 
 	inline constexpr Vec2 EDITOR_CHAR_SPACING = { 3, 2 };
 	inline constexpr float DEFAULT_TEXT_FACTOR = 0.8;
@@ -33,12 +33,12 @@ namespace EditorStyles
 	{
 		return StaticReferenceGlobals::GetDefaultRaylibFont();
 	}
-	inline TextUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const Color color= EDITOR_TEXT_DEFAULT_COLOR)
+	inline TextUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const HDRColor color= EDITOR_TEXT_DEFAULT_COLOR)
 	{
 		return TextUIStyle(color, ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 			alignment, UIPadding(), factor);
 	}
-	inline TextUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const Color color = EDITOR_TEXT_DEFAULT_COLOR)
+	inline TextUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const HDRColor color = EDITOR_TEXT_DEFAULT_COLOR)
 	{
 		return TextUIStyle(color, ScreenFontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
 			alignment, UIPadding());

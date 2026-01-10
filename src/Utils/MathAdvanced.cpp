@@ -173,7 +173,7 @@ namespace Utils
 			{ {0, 1, 0, pos.m_Y} },
 			{ {0, 0, 1, pos.m_Z} },
 			{ {0, 0, 0, 1} }
-			}});
+		}});
 	}
 
 	Mat4 CalculateScaleMatrix(const Vec3& scale)
@@ -184,7 +184,7 @@ namespace Utils
 			{ {0, scale.m_Y, 0, 0} },
 			{ {0, 0, scale.m_Z, 0} },
 			{ {0, 0, 0, 1} }
-			}});
+		}});
 	}
 
 	Mat4 CalculateRotationMatrix(const Quat& rotation)
@@ -240,6 +240,39 @@ namespace Utils
 		inversedMatrix.SetTopLeft(inverseScaleRotation);
 		inversedMatrix.SetCol(3, inverseTranslation);
 		return inversedMatrix;
+	}
+
+	Mat3 CalculateTranslationMatrix(const Vec2& pos)
+	{
+		return Mat3(std::array<std::array<float, 3>, 3>
+		{{
+			{ {1, 0, pos.m_X} },
+			{ {0, 1, pos.m_Y} },
+			{ {0, 0, 1} }
+		}});
+	}
+	Mat3 CalculateScaleMatrix(const Vec2& scale)
+	{
+		return Mat3(std::array<std::array<float, 3>, 3>
+		{{
+			{ {scale.m_X, 0, 0} },
+			{ {0, scale.m_Y, 0} },
+			{ {0, 0, 1} }
+		}});
+	}
+	Mat3 CalculateUIModelMatrix(const Mat3* parentMatrix, const Vec2& bottomLeftPos, const Vec2& size, const Vec2& pivot)
+	{
+		return CalculateUIModelMatrix(parentMatrix, CalculateTranslationMatrix(-pivot), CalculateScaleMatrix(size),
+			CalculateTranslationMatrix(pivot * size), CalculateTranslationMatrix(bottomLeftPos));
+	}
+	Mat3 CalculateUIModelMatrix(const Mat3* parentMatrix, const Mat3& pivotToOriginMoveMatrix, const Mat3& scaleMatrix,
+		const Mat3& scaledOriginToPivotMoveMatrix, const Mat3& posMatrix)
+	{
+		//We first apply a translation to move the pivot to origin -> we scale the rect pos at pivot origin ->
+		//we move pivot from origin back to original place in SCALED SPACE -> we apply translation
+		if (parentMatrix != nullptr)
+			return *parentMatrix * posMatrix * scaledOriginToPivotMoveMatrix * scaleMatrix * pivotToOriginMoveMatrix;
+		return posMatrix * scaledOriginToPivotMoveMatrix * scaleMatrix * pivotToOriginMoveMatrix;
 	}
 
 	float CalculateTransformMatrixDeterminant(const Mat4& matrix)

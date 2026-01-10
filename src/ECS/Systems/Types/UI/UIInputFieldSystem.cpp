@@ -2,7 +2,7 @@
 #include "ECS/Systems/Types/UI/UIInputFieldSystem.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "ECS/Systems/MultiBodySystem.hpp" 
@@ -14,15 +14,15 @@ namespace ECS
 	UIInputFieldSystem::UIInputFieldSystem() {}
 	void UIInputFieldSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UIInputField),
-			ComponentInfo(CreateComponentTypes<UITextComponent, UIPanel, UISelectableData>(),
-				CreateRequiredComponentFunction<UITextComponent, UIPanel, UISelectableData>(
-					UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center)), UIPanel(), UISelectableData()),
+		GlobalComponentInfo::AddComponentInfo(typeid(UIInputFieldComponent),
+			ComponentInfo(CreateComponentTypes<UITextComponent, UIPanelComponent, UISelectableData>(),
+				CreateRequiredComponentFunction<UITextComponent, UIPanelComponent, UISelectableData>(
+					UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center)), UIPanelComponent(), UISelectableData()),
 				[](EntityData& entity)-> void
 				{
-					UIInputField& fieldComponent = *(entity.TryGetComponentMutable<UIInputField>());
+					UIInputFieldComponent& fieldComponent = *(entity.TryGetComponentMutable<UIInputFieldComponent>());
 					fieldComponent.m_textGUI = entity.TryGetComponentMutable<UITextComponent>();
-					fieldComponent.m_background = entity.TryGetComponentMutable<UIPanel>();
+					fieldComponent.m_background = entity.TryGetComponentMutable<UIPanelComponent>();
 					fieldComponent.m_selectable = entity.TryGetComponentMutable<UISelectableData>();
 
 					fieldComponent.Init();
@@ -31,8 +31,8 @@ namespace ECS
 
 	void UIInputFieldSystem::SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime)
 	{
-		globalEntityManager.OperateOnComponents<UIInputField>(ALL_ACTIVE_ENABLED_FLAG,
-			[this](UIInputField& data)-> void
+		globalEntityManager.OperateOnComponents<UIInputFieldComponent>(ALL_ACTIVE_ENABLED_FLAG,
+			[this](UIInputFieldComponent& data)-> void
 			{
 				data.Update();
 			});

@@ -20,7 +20,11 @@ layout(location=3) in uint aMaterialIndex;
 layout(location=4) in uint aMeshIndex;
 layout(location=5) in mat4 aModelMatrix;
 //NOTE: 5-8 for modelMatrix, 9-12 for inverseMOdelMatrix
-layout(location=13) in mat3 aNormalModelMatrix;
+//NOTE: since we made the normal model matrix compatible with std::430 for raytracer
+//ssbo buffers, since we have padding after every column, vertex layout doesn't know that so we must skip every float padding
+layout(location=13) in vec3 aNormalModelMatrixCol0;
+layout(location=14) in vec3 aNormalModelMatrixCol1;
+layout(location=15) in vec3 aNormalModelMatrixCol2;
 
 //Passed to fragment shader
 out vec2 vTexCoords;
@@ -36,6 +40,8 @@ void main()
     vTexCoords= aTexCoords;
     vWorldPos= worldPos.xyz;
     vMaterialIndex= aMaterialIndex;
+
+    mat3 aNormalModelMatrix = mat3(aNormalModelMatrixCol0, aNormalModelMatrixCol1, aNormalModelMatrixCol2);
     //Just like we use model matrix by pos -> world pos,
     //we do normals by normal model matrix -> world normals
     vNormal= normalize(aNormalModelMatrix * aNormal);

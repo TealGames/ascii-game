@@ -16,16 +16,16 @@
 #include "Core/GizmoOverlay.hpp"
 #include "ECS/Component/Types/UI/UIToggleComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
-#include "ECS/Component/Types/UI/UIPanel.hpp"
-#include "ECS/Component/Types/UI/UIButton.hpp"
-#include "ECS/Component/Types/UI/UILayout.hpp"
+#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
+#include "ECS/Component/Types/UI/UIButtonComponent.hpp"
+#include "ECS/Component/Types/UI/UILayoutComponent.hpp"
 #include "Math/PlatformMath.hpp"
 
 static constexpr float TOP_BAR_HEIGHT = 0.03;
 static constexpr float ASSET_EDITOR_BUTTON_WIDTH = 0.2;
 static constexpr float TOGGLE_LAYOUT_WIDTH_PER_TOGGLE = 0.03;
 static constexpr float TOFFLE_LAYOUT_WIDTH_SPACING = 0.05;
-static const NormalizedPosition MOUSE_POS_TEXT_SIZE = {0.1, 0.05};
+static const NormalizedPos MOUSE_POS_TEXT_SIZE = {0.1, 0.05};
 
 static constexpr Input::KeyCode PAUSE_TOGGLE_KEY = Input::KeyCode::P;
 static constexpr Input::KeyCode SELECT_KEY = Input::KeyCode::MouseLeft;
@@ -174,23 +174,23 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 
 	auto [mousePosTextEntity, mousePosTextTransform] = editorRootEntity.CreateChildUI("MousePosText");
 	m_mousePosText = &(mousePosTextEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::Center))));
-	mousePosTextTransform->SetSize(MOUSE_POS_TEXT_SIZE);
+	mousePosTextTransform->SetLocalSize(MOUSE_POS_TEXT_SIZE);
 
 	//----------------------------------------------------------------
 	// OVERHEAD BAR CREATION + TOGGLE LAYOUT + ASSET EDITOR BUTTON
 	//---------------------------------------------------------------
 	auto [overheadBarEntity, overheadBarTransform] = editorRootEntity.CreateChildUI("OverheadBar");
-	m_overheadBarContainer = &(overheadBarEntity->AddComponent(UIPanel(EditorStyles::EDITOR_BACKGROUND_COLOR)));
-	overheadBarTransform->SetBounds(NormalizedPosition::TOP_LEFT, { 1, 1 - TOP_BAR_HEIGHT });
+	m_overheadBarContainer = &(overheadBarEntity->AddComponent(UIPanelComponent(EditorStyles::EDITOR_BACKGROUND_COLOR)));
+	overheadBarTransform->SetLocalBoundsTLBR(UI_RECT_TOP_LEFT, { 1, 1 - TOP_BAR_HEIGHT });
 
 	auto [toggleLayoutEntity, toggleLayoutTransform] = m_overheadBarContainer->GetEntityMutable().CreateChildUI("ToggleLayout");
-	m_toggleLayout = &(toggleLayoutEntity->AddComponent(UILayout(LayoutType::Horizontal, SizingType::ShrinkOnly, { TOFFLE_LAYOUT_WIDTH_SPACING, 0})));
+	m_toggleLayout = &(toggleLayoutEntity->AddComponent(UILayoutComponent(LayoutType::Horizontal, SizingType::ShrinkOnly, { TOFFLE_LAYOUT_WIDTH_SPACING, 0})));
 
 	auto [assetEditorButtonEntity, assetEditorButtonTransform] = m_overheadBarContainer->GetEntityMutable().CreateChildUI("AssetEditorButton");
-	m_assetEditorButton = &(assetEditorButtonEntity->AddComponent(UIButton(EditorStyles::GetButtonStyle(TextAlignment::Center))));
+	m_assetEditorButton = &(assetEditorButtonEntity->AddComponent(UIButtonComponent(EditorStyles::GetButtonStyle(TextAlignment::Center))));
 	m_assetEditorButton->SetText("AssetEditors");
-	assetEditorButtonTransform->SetBounds(NormalizedPosition::TOP_LEFT, { ASSET_EDITOR_BUTTON_WIDTH, 0 });
-	m_assetEditorButton->AddClickAction([this](const UIButton& data)-> void
+	assetEditorButtonTransform->SetLocalBoundsTLBR(UI_RECT_TOP_LEFT, { ASSET_EDITOR_BUTTON_WIDTH, 0 });
+	m_assetEditorButton->AddClickAction([this](const UIButtonComponent& data)-> void
 		{
 			m_displayingGameView = !m_displayingGameView;
 			if (m_displayingGameView)
@@ -228,7 +228,7 @@ void EngineEditor::Init(ECS::PlayerSystem& playerSystem)
 
 	const float layoutWidth = TOGGLE_LAYOUT_WIDTH_PER_TOGGLE * toggleLayoutEntity->GetChildCount();
 	const float layoutStartX = (1 - layoutWidth) / 2;
-	toggleLayoutTransform->SetBounds({ layoutStartX, 1 }, { layoutStartX + layoutWidth, 0 });
+	toggleLayoutTransform->SetLocalBoundsTLBR({ layoutStartX, 1 }, { layoutStartX + layoutWidth, 0 });
 
 
 	//m_assetEditorButton.SetSettings(buttonSettings);
@@ -319,13 +319,12 @@ void EngineEditor::Update(const float unscaledDeltaTime, const float scaledDelta
 			m_editModeInfo.m_Selected->GetTransformMutable().GetLocalPosMutable().SetXY(worldClickedRay.m_Origin.GetXY());
 		}
 
-		const Vec2Int rootSize = m_guiTree.GetRootSize();
-		const Vec2 mousePosNorm = Vec2(mousePos.m_X / rootSize.m_X, (rootSize.m_Y- mousePos.m_Y)/ rootSize.m_Y);
+		const Vec2 mousePosNorm = Vec2(mousePos.m_X / SCREEN_WIDTH, (SCREEN_HEIGHT- mousePos.m_Y)/ SCREEN_HEIGHT);
 		m_mousePosText->SetText(mousePos.ToString(2));
 
 		UITransformData& mousePosTextTransform = *(m_mousePosText->GetEntityMutable().TryGetComponentMutable<UITransformData>());
-		const Vec2 textSize = mousePosTextTransform.GetSize().GetPos();
-		mousePosTextTransform.SetTopLeftPos({ mousePosNorm.m_X- (textSize.m_X/2), mousePosNorm.m_Y+ textSize.m_Y});
+		const Vec2 textSize = mousePosTextTransform.GetLocalSize().AsVec2();
+		mousePosTextTransform.SetLocalTopLeftPos({ mousePosNorm.m_X- (textSize.m_X/2), mousePosNorm.m_Y+ textSize.m_Y});
 	}
 	m_entityEditor.Update();
 

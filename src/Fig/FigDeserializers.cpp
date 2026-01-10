@@ -20,9 +20,9 @@ std::uint8_t ToUint8(const std::string& value)
 {
 	return Utils::TryParse<std::uint8_t>(value).value_or(0);
 }
-Color ToColor(const std::string& value)
+HDRColor ToColor(const std::string& value)
 {
-	Color result = {};
+	HDRColor result = {};
 	std::string channelStr = "";
 	std::uint8_t currentChannelIndex = 0;
 	for (const auto& c : value)

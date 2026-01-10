@@ -73,7 +73,7 @@ namespace ECS
 
 				Vec3 randomVel = {};
 				float randomLifeTime = 0;
-				const Color initialColor = data.m_lifetimeColor.GetFirstColor(true);
+				const HDRColor initialColor = data.m_lifetimeColor.GetFirstColor(true);
 				for (int i = 0; i < wholeParticlesToSpawn; i++)
 				{
 					//TODO: right not we only support generating random particles in x and y dir, not z

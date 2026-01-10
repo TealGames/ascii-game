@@ -16,6 +16,9 @@ enum class MatrixMajorOrder : std::uint8_t
 template <typename T, size_t ROW_SIZE, size_t COL_SIZE, MatrixMajorOrder ORDER, size_t ORDER_ALIGN_BYTES>
 struct MatrixStorage {};
 
+template<typename T, size_t SIZE, size_t ORDER_ALIGN_BYTES>
+using MatrixMemoryRow = Vec<T, SIZE, ORDER_ALIGN_BYTES>;
+
 template <typename T, size_t ROW_SIZE, size_t COL_SIZE, size_t ORDER_ALIGN_BYTES>
 struct MatrixStorage<T, ROW_SIZE, COL_SIZE, MatrixMajorOrder::Row, ORDER_ALIGN_BYTES>
 {
@@ -24,7 +27,7 @@ struct MatrixStorage<T, ROW_SIZE, COL_SIZE, MatrixMajorOrder::Row, ORDER_ALIGN_B
 	// | 1 2 3 4 |
 	// | 5 6 7 8 |
 	// will be stored as: [1, 2, 3, 4] [5, 6, 7, 8]
-	using Type = Vec<T, COL_SIZE, ORDER_ALIGN_BYTES>[ROW_SIZE];
+	using Type = MatrixMemoryRow<T, COL_SIZE, ORDER_ALIGN_BYTES>[ROW_SIZE];
 };
 
 template<typename T, size_t ROW_SIZE, size_t COL_SIZE, size_t ORDER_ALIGN_BYTES>
@@ -35,7 +38,7 @@ struct MatrixStorage<T, ROW_SIZE, COL_SIZE, MatrixMajorOrder::Column, ORDER_ALIG
 	// | 1 2 3 4 |
 	// | 5 6 7 8 |
 	// will be stored as: [1, 5] [2, 6] [3, 7] [4, 8]
-	using Type = Vec<T, ROW_SIZE, ORDER_ALIGN_BYTES>[COL_SIZE];
+	using Type = MatrixMemoryRow<T, ROW_SIZE, ORDER_ALIGN_BYTES>[COL_SIZE];
 };
 
 template<size_t ROW_SIZE, size_t COL_SIZE>
@@ -178,6 +181,40 @@ public:
 				SetUnsafe(r, c, *(firstElementPtr + (COL_SIZE * r) + c));
 			}
 		}
+	}
+
+	static constexpr size_t GetRowSize() { return ROW_SIZE; }
+	static constexpr size_t GetRowSizeBytes() { return sizeof(T) * ROW_SIZE; }
+	static constexpr size_t GetColSize() { return COL_SIZE; }
+	static constexpr size_t GetColSizeBytes() { return sizeof(T) * COL_SIZE; }
+
+	/// <summary>
+	/// Will return the extra padding based on the ORDER specified.
+	/// -> ROW: the extra padding in BYTES per row
+	/// -> COL: the extra padding in BYTES per col
+	/// </summary>
+	/// <returns></returns>
+	static constexpr size_t GetExtraPaddingBytes()
+	{
+		if constexpr (ORDER_ALIGN_BYTES == 0)
+			return 0;
+
+		if constexpr (ORDER == MatrixMajorOrder::Row)
+			return GetSingleMemoryRowSizeBytes() - GetRowSizeBytes();
+		else
+			return GetSingleMemoryRowSizeBytes() - GetColSizeBytes();
+	}
+	/// <summary>
+	/// Will return the total memory size of one MEMORY row (NOT the same as matrix row)
+	/// -> ROW: total BYTE size of one ROW INCLUDING PADDING from alignment
+	/// -> COL: total BYTE size of one COL INCLUDING PADDING from alignment
+	/// </summary>
+	/// <returns></returns>
+	static constexpr size_t GetSingleMemoryRowSizeBytes()
+	{
+		if constexpr (ORDER == MatrixMajorOrder::Row)
+			return sizeof(MatrixMemoryRow<T, ROW_SIZE, ORDER_ALIGN_BYTES>);
+		else return sizeof(MatrixMemoryRow<T, COL_SIZE, ORDER_ALIGN_BYTES>);
 	}
 
 	static constexpr MatrixType GetIdentity() requires (ROW_SIZE == COL_SIZE)

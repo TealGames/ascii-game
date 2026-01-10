@@ -47,14 +47,16 @@ namespace Rendering
 		VertexBuffer m_VertexBufferHandle;
 		VertexBuffer m_InstanceBufferHandle;
 	private:
-		size_t CalculateBatchHash(const Shader& shader, const Texture& texture, std::uint32_t totalVertices) const
+		size_t CalculateBatchHash(const Shader& shader, const Texture* texture, std::uint32_t totalVertices) const
 		{
-			const BatchKey batchKey = BatchKey(shader.GetId(), texture.GetInfo().m_id, totalVertices);
+			const BatchKey batchKey = BatchKey(shader.GetId(), texture==nullptr? INVALID_OBJ_ID : texture->GetInfo().m_id, totalVertices);
 			return std::hash<BatchHash>{}(*reinterpret_cast<const BatchHash*>(&batchKey));
 		}
 		size_t CalculateBatchHash(const RenderBatch& batch) const
 		{
-			return CalculateBatchHash(*batch.m_Shader, *batch.m_Texture, batch.m_VertexCount);
+			ENGINE_ASSERT(batch.m_Shader != nullptr, "RenderUnit attempted to calculate batch hash for: {} "
+				"but it has no shader which is not allowed", batch.ToString());
+			return CalculateBatchHash(*batch.m_Shader, batch.m_Texture, batch.m_VertexCount);
 		}
 
 	public:
@@ -92,7 +94,7 @@ namespace Rendering
 		{
 			return m_Batches.emplace_back(&shader, texture);
 		}
-		RenderBatch* TryGetBatch(const Shader& shader, const Texture& texture, std::uint32_t vertexCount)
+		RenderBatch* TryGetBatch(const Shader& shader, const Texture* texture, std::uint32_t vertexCount)
 		{
 			const size_t hash = CalculateBatchHash(shader, texture, vertexCount);
 			auto it = m_hashToBatchIndex.find(hash);
@@ -156,8 +158,18 @@ namespace Rendering
         }
 		void FinishBatch(RenderBatch& batch)
 		{
-			ENGINE_ASSERT(batch.m_InstanceCount == 1, "Attempted to finish a batch which has more than one instances (meaning it is already finished in setup)");
+			ENGINE_ASSERT(batch.m_InstanceCount == 1, 
+				"Attempted to finish a batch which has more than one instances (meaning it is already finished in setup)");
 			m_hashToBatchIndex.emplace(CalculateBatchHash(batch), m_Batches.size() - 1);
+		}
+
+		void ClearAll()
+		{
+			m_CpuVertices.clear();
+			m_CpuIndices.clear();
+			m_CpuInstances.clear();
+			m_Batches.clear();
+			m_hashToBatchIndex.clear();
 		}
 
 		TVertex* GetVertexMemPointer() { return &m_CpuVertices[0]; }

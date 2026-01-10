@@ -52,6 +52,12 @@ namespace Utils
 	Mat4 CalculateModelMatrix(const Mat4* parentMatrix, const Mat4& pos, const Mat4& scale, const Mat4& rotation);
 	Mat4 CalculateInverseModelMatrix(const Mat4& matrix);
 
+	Mat3 CalculateTranslationMatrix(const Vec2& pos);
+	Mat3 CalculateScaleMatrix(const Vec2& scale);
+	Mat3 CalculateUIModelMatrix(const Mat3* parentMatrix, const Vec2& topLeftPos, const Vec2& size, const Vec2& pivot);
+	Mat3 CalculateUIModelMatrix(const Mat3* parentMatrix, const Mat3& pivotToOriginMoveMatrix, const Mat3& scaleMatrix, 
+		const Mat3& scaledOriginToPivotMoveMatrix, const Mat3& posMatrix);
+
 	float CalculateTransformMatrixDeterminant(const Mat4& matrix);
 	float CalculateTransformMatrixDeterminant(const Vec3& matrixCol0, const Vec3& matrixCol1, const Vec3& matrixCol2);
 

@@ -6,13 +6,11 @@
 #include "Utils/Data/NormalizedPosition.hpp" 
 #include "Utils/Data/WorldPosition.hpp"
 
-////TODO: the data from get world size of visual data should be abstracted
-////so the entity renderer does not have to guess where top left pos is
-//struct VisualSizeInfo
-//{
-//	Vec2 m_TextSize;
-//	Vec2 m_TotalSize;
-//};
+inline const NormalizedPos SPRITE_BOTTOM_LEFT = NormalizedPos(NormalizedValue::MIN, NormalizedValue::MIN);
+inline const NormalizedPos SPRITE_TOP_LEFT = NormalizedPos(NormalizedValue::MIN, NormalizedValue::MAX);
+inline const NormalizedPos SPRITE_TOP_RIGHT = NormalizedPos(NormalizedValue::MAX, NormalizedValue::MAX);
+inline const NormalizedPos SPRITE_BOTTOM_RIGHT = NormalizedPos(NormalizedValue::MAX, NormalizedValue::MIN);
+inline const NormalizedPos SPRITE_CENTER = NormalizedPos(NormalizedValue::HALF, NormalizedValue::HALF);
 
 /// <summary>
 /// The type of character spacing used for text of visual
@@ -36,11 +34,11 @@ struct VisualDataPreset
 	Vec2 m_CharSpacing = {};
 	CharAreaType m_CharAreaType = CharAreaType::Adaptive;
 	Vec2 m_PredefinedCharArea = {};
-	NormalizedPosition m_RelativePivotPos = {};
+	NormalizedPos m_RelativePivotPos = {};
 
 	VisualDataPreset(const FontAsset& font, const float& fontSize, const Vec2& charSpacing,
 		const CharAreaType& charAreaType, const Vec2& predefinedCharArea, 
-		const NormalizedPosition& relativePivotPos);
+		const NormalizedPos& relativePivotPos);
 };
 
 //using RawTextBufferBlock = std::vector<std::vector<TextCharArrayPosition>>;
@@ -79,7 +77,7 @@ private:
 	/// The position relative to the visual that corresponds to the transform position.
 	/// Note: (0,0) refers to bottom left, (1,1) refers to top right
 	/// </summary>
-	NormalizedPosition m_pivotRelative;
+	NormalizedPos m_pivotRelative;
 
 	//FontData m_fontData;
 
@@ -104,7 +102,7 @@ private:
 
 	void AddToCreatedBuffer(const size_t& r, const size_t& c, const size_t currRowElementCount, const TextChar& textChar, 
 		const WorldFontProperties& fontData, const Vec2& charSpacing, Vec2& pivotDiff, 
-		NormalizedPosition& currPosNormalized, const Vec2& fullSize, float* currentRowMaxHeight, const Vec2* predefinedCharArea);
+		NormalizedPos& currPosNormalized, const Vec2& fullSize, float* currentRowMaxHeight, const Vec2* predefinedCharArea);
 
 public:
 	VisualData();
@@ -115,7 +113,7 @@ public:
 	/// </summary>
 	/// <param name="rawBuffer"></param>
 	/// <param name="relativePivotPos"></param>
-	VisualData(const FragmentedTextBuffer2D& rawBuffer, const NormalizedPosition& relativePivotPos);
+	VisualData(const FragmentedTextBuffer2D& rawBuffer, const NormalizedPos& relativePivotPos);
 
 	/// <summary>
 	/// This overload uses a 2d array of data with char, color and font
@@ -125,7 +123,7 @@ public:
 	/// <param name="charSpacing"></param>
 	/// <param name="relativePivotPos"></param>
 	VisualData(const std::vector<std::vector<TextBufferChar>>& rawBuffer, const Vec2& charSpacing,
-		const NormalizedPosition& relativePivotPos);
+		const NormalizedPos& relativePivotPos);
 
 	/// <summary>
 	/// This overload uses a 2d array of char and color and a global font to use for all elementss
@@ -136,7 +134,7 @@ public:
 	/// <param name="fontSettings"></param>
 	/// <param name="relativePivotPos"></param>
 	VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, const Vec2& charSpacing,
-		const WorldFontProperties& fontSettings, const NormalizedPosition& relativePivotPos);
+		const WorldFontProperties& fontSettings, const NormalizedPos& relativePivotPos);
 
 	//TODO: add overload with same char for every location and one for same color in every 2d element
 
@@ -145,7 +143,7 @@ public:
 	/// Most useful for box shapes with same font and where each element occupies same amount of space regardless of font
 	/// </summary>
 	VisualData(const std::vector<std::vector<TextChar>>& rawBuffer, const Vec2& charArea, const Vec2& charSpacing,
-		const WorldFontProperties& fontSettings, const NormalizedPosition& relativePivotPos);
+		const WorldFontProperties& fontSettings, const NormalizedPos& relativePivotPos);
 
 	/*/// <summary>
 	/// This constructor is used for the adaptive char area for the text

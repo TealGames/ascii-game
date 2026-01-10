@@ -1,5 +1,5 @@
 #pragma once
-#include "ECS/Component/Types/UI/UIInputField.hpp"
+#include "ECS/Component/Types/UI/UIInputFieldComponent.hpp"
 
 class GlobalEntityManager;
 namespace ECS

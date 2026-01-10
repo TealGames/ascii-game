@@ -15,6 +15,6 @@ namespace GlobalColorCodes
 	bool TryRegisterColor(const FigProperty& property);
 
 	bool HasColor(const std::string& colorName);
-	std::optional<Color> TryGetColorFromCode(const std::string& code);
+	std::optional<HDRColor> TryGetColorFromCode(const std::string& code);
 }
 

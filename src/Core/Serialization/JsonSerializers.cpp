@@ -223,14 +223,14 @@ void to_json(Json& json, const RenderLayerType& layer)
 	json = GetLayersAsStrings(layer);
 }
 
-void from_json(const Json& json, Color& color)
+void from_json(const Json& json, HDRColor& color)
 {
 	try
 	{
 		std::optional<std::string> maybeStringProperty = JsonUtils::TryGet<std::string>(json);
 		if (maybeStringProperty.has_value())
 		{
-			std::optional<Color> maybeConstantColor = JsonConstants::TryGetConstantColor(maybeStringProperty.value());
+			std::optional<HDRColor> maybeConstantColor = JsonConstants::TryGetConstantColor(maybeStringProperty.value());
 			if (!Assert(maybeConstantColor.has_value(), "Tried to convert json:'{} to color using constant "
 				"names but it matches no constants!'", JsonUtils::ToStringProperties(json)))
 				return;
@@ -259,7 +259,7 @@ void from_json(const Json& json, Color& color)
 }
 
 
-void to_json(Json& json, const Color& color)
+void to_json(Json& json, const HDRColor& color)
 {
 	std::optional<std::string> maybeConstant = JsonConstants::TryGetColorConstant(color);
 	if (maybeConstant.has_value())
@@ -280,7 +280,7 @@ void from_json(const Json& json, ColorGradientKeyFrame& gradientFrame)
 
 	try
 	{
-		gradientFrame = ColorGradientKeyFrame(json.at(COLOR_PROPERTY).get<Color>(),
+		gradientFrame = ColorGradientKeyFrame(json.at(COLOR_PROPERTY).get<HDRColor>(),
 			json.at(LOCATION_PROPERTY).get<float>());
 	}
 	catch (const std::exception& e)
@@ -318,7 +318,7 @@ void from_json(const Json& json, TextChar& textChar)
 
 	try
 	{
-		textChar = TextChar(json.at(COLOR_PROPERTY).get<Color>(), json.at(CHAR_PROPERTY).get<char>());
+		textChar = TextChar(json.at(COLOR_PROPERTY).get<HDRColor>(), json.at(CHAR_PROPERTY).get<char>());
 	}
 	catch (const std::exception& e)
 	{
@@ -341,7 +341,7 @@ void from_json(const Json& json, TextCharArrayPosition& textChar)
 	try
 	{
 		textChar = TextCharArrayPosition(json.at(POS_PROPERTY).get<Array2DPosition>(),
-			TextChar(json.at(COLOR_PROPERTY).get<Color>(), json.at(CHAR_PROPERTY).get<std::string>()[0]));
+			TextChar(json.at(COLOR_PROPERTY).get<HDRColor>(), json.at(CHAR_PROPERTY).get<std::string>()[0]));
 	}
 	catch (const std::exception& e)
 	{
@@ -509,7 +509,7 @@ void from_json(const Json& json, VisualData& visualData)
 		}
 		else pivotPos = pivotJson.get<Vec2>();
 
-		visualData = VisualData(textChars, NormalizedPosition(pivotPos));
+		visualData = VisualData(textChars, NormalizedPos(pivotPos));
 	}
 	catch (const std::exception& e)
 	{

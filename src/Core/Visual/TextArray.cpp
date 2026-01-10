@@ -8,9 +8,9 @@
 #include "Core/Asset/FontAsset.hpp"
 
 TextChar::TextChar() :
-	TextChar(Color()) {}
+	TextChar(HDRColor()) {}
 
-TextChar::TextChar(const Color& color, const char& textChar) :
+TextChar::TextChar(const HDRColor& color, const char& textChar) :
 	m_Color(color), m_Char{ textChar, '\0'} {}
 
 bool TextChar::IsEmpty() const
@@ -82,7 +82,7 @@ std::string TextCharArrayPosition::ToString() const
 		m_RowColPos.ToString(), m_Text.ToString());
 }
 
-ColorPosition::ColorPosition(const Array2DPosition& pos, const Color& color) :
+ColorPosition::ColorPosition(const Array2DPosition& pos, const HDRColor& color) :
 	m_RowColPos(pos), m_Color(color) {}
 
 std::string ColorPosition::ToString() const
@@ -92,7 +92,7 @@ std::string ColorPosition::ToString() const
 }
 
 TextArray::TextArray() :
-	TextArray(0, 0, std::vector<std::vector<TextChar>>{ {TextChar(Color(), EMPTY_CHAR_PLACEHOLDER)} }) {}
+	TextArray(0, 0, std::vector<std::vector<TextChar>>{ {TextChar(HDRColor(), EMPTY_CHAR_PLACEHOLDER)} }) {}
 
 TextArray::TextArray(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars) :
 	m_width(width), m_height(height), m_TextArray(chars)
@@ -119,7 +119,7 @@ TextArray::TextArray(const int& width, const int& height, const TextChar& duplic
 }
 
 TextArray::TextArray(const int& width, const int& height,
-	const Color& color, const std::vector<std::vector<char>>& chars) :
+	const HDRColor& color, const std::vector<std::vector<char>>& chars) :
 	TextArray(width, height, CreateBufferOfChar(color, chars)) {}
 
 TextArray::TextArray(const TextArray& other) :
@@ -154,7 +154,7 @@ std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const int& widt
 	return chars;
 }
 
-std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const Color& color,
+std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const HDRColor& color,
 	const std::vector<std::vector<char>>& chars) const
 {
 	std::vector<std::vector<TextChar>> result = {};
@@ -223,7 +223,7 @@ void TextArray::SetAt(const Array2DPosition& rowColPos, const char& newChar)
 	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].SetChar(newChar);
 }
 
-void TextArray::SetAt(const Array2DPosition& rowColPos, const Color& newColor)
+void TextArray::SetAt(const Array2DPosition& rowColPos, const HDRColor& newColor)
 {
 	if (!Assert(IsValidPos(rowColPos), 
 		"Tried to set the color: {} at INVALID row col: {} of full buffer: {}",

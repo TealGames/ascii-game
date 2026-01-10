@@ -37,7 +37,7 @@ struct AABB2D
 	/// </summary>
 	/// <param name="relativePos"></param>
 	/// <returns></returns>
-	WorldPosition2D GetWorldPos(const WorldPosition2D& centerPos, const NormalizedPosition& relativePos) const;
+	WorldPosition2D GetWorldPos(const WorldPosition2D& centerPos, const NormalizedPos& relativePos) const;
 
 	std::string ToString() const;
 	std::string ToString(const WorldPosition2D& transformPos) const;

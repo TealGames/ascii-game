@@ -4,15 +4,15 @@
 #include "Core/Scene/GlobalEntityManager.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
-#include "ECS/Component/Types/UI/UILayout.hpp"
+#include "ECS/Component/Types/UI/UILayoutComponent.hpp"
 #include "Utils/Debug.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "StaticReferenceGlobals.hpp"
 #include "StaticGlobals.hpp"
 
-static const NormalizedPosition HEALTH_START_POS_RELATIVE = { 0.05, 0.95 };
-static const NormalizedPosition HEALTH_SIZE = { 0.03, 0.03 };
-static constexpr Color RED_ORANGE_COLOR = { 215, 71, 9, 255 };
+static const NormalizedPos HEALTH_START_POS_RELATIVE = { 0.05, 0.95 };
+static const NormalizedPos HEALTH_SIZE = { 0.03, 0.03 };
+static constexpr HDRColor RED_ORANGE_COLOR = { 215, 71, 9, 255 };
 static constexpr float HEALTH_FONT_SIZE = 24;
 
 namespace Game
@@ -25,8 +25,8 @@ namespace Game
 		{
 			m_health.reserve(GameState::MAX_HEALTH);
 			auto [healthRootEntity, healthRootTransform] = hierarchy.CreateAtRoot(TOP_LAYER, "HealthRoot");
-			UILayout& healthRootLayout = healthRootEntity->AddComponent(UILayout(LayoutType::Horizontal, SizingType::ShrinkOnly, {0.05, 0}));
-			healthRootTransform->SetTopLeftPos(HEALTH_START_POS_RELATIVE);
+			UILayoutComponent& healthRootLayout = healthRootEntity->AddComponent(UILayoutComponent(LayoutType::Horizontal, SizingType::ShrinkOnly, {0.05, 0}));
+			healthRootTransform->SetLocalTopLeftPos(HEALTH_START_POS_RELATIVE);
 
 			/*const VisualDataPreset visualPreset = { GetGlobalFont(), 4, VisualData::DEFAULT_CHAR_SPACING,
 					CharAreaType::Predefined, VisualData::DEFAULT_PREDEFINED_CHAR_AREA, VisualData::DEFAULT_PIVOT };*/
@@ -40,7 +40,7 @@ namespace Game
 				
 				//healthUIEntity->AddComponent<EntityRendererData>(EntityRendererData{ healthVisualData, RenderLayerType::UI });
 				UITextComponent& healthText= healthUIEntity->AddComponent(UITextComponent("@", fontSettings, RED_ORANGE_COLOR));
-				healthUITransform->SetSize(HEALTH_SIZE);
+				healthUITransform->SetLocalSize(HEALTH_SIZE);
 				/*healthUITransform->SetTopLeftPos(NormalizedPosition(HEALTH_START_POS_RELATIVE.GetPos().m_X +
 					HEALTH_SIZE.GetX() * i, HEALTH_START_POS_RELATIVE.GetPos().m_Y));*/
 
