@@ -1,6 +1,6 @@
 #pragma once
-#include "Utils/Data/ScreenPosition.hpp"
-#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Math/ScreenPosition.hpp"
+#include "Utils/Math/WorldPosition.hpp"
 #include "Utils/Data/Color.hpp"
 #include "Core/Rendering/Buffers.hpp"
 #include "Core/Rendering/TextureController.hpp"
@@ -99,7 +99,6 @@ namespace Rendering
 
 		RenderObjectId GetRenderObjectId(const RenderObjectQueryType type);
 
-		void BeginRenderingMarker();
 		/// <summary>
 		/// Will set the clear color and clear depth and then clear both depth and color
 		/// from the currently bound attachments of the currently bound framebuffer (or default framebuffer if none bound)

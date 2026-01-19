@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include "ECS/Component/Component.hpp"
-#include "Utils/Data/Point2DInt.hpp"
 #include "ECS/Component/Types/World/TransformComponent.hpp"
 #include "Core/Scene/Scene.hpp"
 

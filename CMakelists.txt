@@ -60,10 +60,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/sr
 
 #For better file reading/writing use the RESOURCES_PATH macro
 if(PRODUCTION_BUILD)
-	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC ASSET_PARENT_PATH="./") 
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC CURRENT_SOURCE_DIR="./") 
 	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=1) 
 else()
-	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC ASSET_PARENT_PATH="${CMAKE_CURRENT_SOURCE_DIR}/")
+	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC CURRENT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/")
 	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=0)
 	#This is for enabling debug performance profiler
 	set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo;MinSizeRel")

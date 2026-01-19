@@ -12,7 +12,7 @@
 #include "ECS/Component/Types/Editor/UIColorPicker.hpp"
 #include "ECS/Component/Types/UI/UISelectableData.hpp"
 #include "Editor/EditorStyles.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 
 constexpr static float TITLE_FONT_SIZE = 10;
 constexpr static float FIELD_TEXT_FONT_FACTOR = 0.8;

@@ -2,7 +2,7 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/LightSource2DSystem.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 #include "Core/Visual/TextBuffer.hpp"

@@ -49,7 +49,7 @@ namespace Rendering
 	private:
 		size_t CalculateBatchHash(const Shader& shader, const Texture* texture, std::uint32_t totalVertices) const
 		{
-			const BatchKey batchKey = BatchKey(shader.GetId(), texture==nullptr? INVALID_OBJ_ID : texture->GetInfo().m_id, totalVertices);
+			const BatchKey batchKey = BatchKey(shader.GetId(), texture==nullptr? INVALID_OBJ_ID : texture->GetInfo().m_Id, totalVertices);
 			return std::hash<BatchHash>{}(*reinterpret_cast<const BatchHash*>(&batchKey));
 		}
 		size_t CalculateBatchHash(const RenderBatch& batch) const

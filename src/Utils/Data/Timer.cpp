@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Timer.hpp"
-#include "Utils/Math.hpp"
+#include "Utils/Math/Math.hpp"
 
 Timer::Timer(const float time) : m_timeLeft() 
 {

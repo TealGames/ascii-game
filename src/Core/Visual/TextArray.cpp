@@ -3,7 +3,7 @@
 #include "Core/Visual/TextArray.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/Data/Array2DPosition.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "Utils/Debug.hpp"
 #include "Core/Asset/FontAsset.hpp"
 

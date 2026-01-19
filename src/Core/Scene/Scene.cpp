@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include <filesystem>
 #include <fstream>
-#include "Utils/Data/Point2DInt.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/HelperFunctions.hpp"

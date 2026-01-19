@@ -1,7 +1,7 @@
 #pragma once
 #include <optional>
 #include <vector>
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "ECS/Entity/Entity.hpp"
 #include "ECS/Component/Component.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
@@ -9,8 +9,8 @@
 #include "Core/Scene/SceneManager.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/CameraComponent.hpp"
-#include "Utils/Data/WorldPosition.hpp"
-#include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Math/WorldPosition.hpp"
+#include "Utils/Math/ScreenPosition.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Core/Collision/ColliderOutlineBuffer.hpp"
 #include "Core/Rendering/LineBuffer.hpp"

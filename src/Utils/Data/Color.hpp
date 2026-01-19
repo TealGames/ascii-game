@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Data/Vec4Type.hpp"
+#include "Utils/Math/Vec4Type.hpp"
 
 template<typename T>
 requires std::is_arithmetic_v<T>
@@ -16,20 +16,8 @@ public:
 	static constexpr T MAX_CHANNEL_VALUE = std::numeric_limits<T>::max();
 
 public:
-	constexpr Col()
-		: Col(T(1), T(1), T(1), T(1)) {}
-
-	constexpr Col() requires std::is_same_v<T, std::uint8_t>
-		: Col(MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE, MAX_CHANNEL_VALUE) {}
-
-	constexpr Col(const T r, const T g, const T b)
-		: Col(r, g, b, T(1)) {}
-
-	constexpr Col(const T r, const T g, const T b) requires std::is_same_v<T, std::uint8_t>
-		: Col(r, g, b, MAX_CHANNEL_VALUE) {}
-
-	constexpr Col(const T r, const T g, const T b, const T a)
-		: m_R(r), m_G(g), m_B(b), m_A(std::min(a, T(1))) {}
+	//NOTE: the following general constructors must use other constructors to ensure
+	//clamping of alpha occurs for floating point T types
 
 	constexpr Col(const Vec<T, 2>& rg, const T b, const T a)
 		: Col(rg.m_X, rg.m_Y, b, a) {}
@@ -49,7 +37,6 @@ public:
 	constexpr Col(const Vec<T, 4>& rgba)
 		: Col(rgba.m_X, rgba.m_Y, rgba.m_Z, rgba.m_W) {}
 
-
 	constexpr Col(const Col& rg, const T b, const T a)
 		: Col(rg.m_R, rg.m_G, b, a) {}
 
@@ -66,21 +53,46 @@ public:
 		: Col(r, gba.m_G, gba.m_B, gba.m_A) {}
 
 
-	constexpr Col(std::uint8_t r, std::uint8_t g, std::uint8_t b) 
-		requires (!std::is_same_v<T, std::uint8_t> && std::is_floating_point_v<T>)
-		: Col(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f) {}
+	// ---------------------------------------- UINT8 ONLY CONSTRUCTORS -------------------------------------
+	constexpr Col() requires std::is_same_v<T, std::uint8_t>
+		: m_R(MAX_CHANNEL_VALUE), m_G(MAX_CHANNEL_VALUE), m_B(MAX_CHANNEL_VALUE), m_A(MAX_CHANNEL_VALUE) {}
+
+	constexpr Col(std::uint8_t r, std::uint8_t g, std::uint8_t b) requires std::is_same_v<T, std::uint8_t>
+		: m_R(r), m_G(g), m_B(b), m_A(MAX_CHANNEL_VALUE) {}
+
+	constexpr Col(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a) requires std::is_same_v<T, std::uint8_t>
+		: m_R(r), m_G(g), m_B(b), m_A(a) {}
+
+
+	// ------------------------------------ FLOATING POINT ONLY CONSTRUCTORS --------------------------------
+	constexpr Col() requires std::is_floating_point_v<T>
+		: m_R(1.0f), m_G(1.0f),m_B(1.0f), m_A(1.0f) {}
+
+	constexpr Col(const T r, const T g, const T b) 
+		requires std::is_floating_point_v<T>
+		: m_R(r), m_G(g), m_B(b), m_A(1.0f) {}
+
+	constexpr Col(const T r, const T g, const T b, const T a)
+		requires std::is_floating_point_v<T>
+		: m_R(r), m_G(g), m_B(b), m_A(std::min(a, T(1))) {}
+
+	constexpr Col(std::uint8_t r, std::uint8_t g, std::uint8_t b)
+		requires (std::is_floating_point_v<T>)
+		: m_R(r / 255.0f), m_G(g / 255.0f), m_B(b / 255.0f), m_A(1.0f) {}
 
 	constexpr Col(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a)
-		requires (!std::is_same_v<T, std::uint8_t> && std::is_floating_point_v<T>)
-		: Col(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f) {}
+		requires (std::is_floating_point_v<T>)
+		: m_R(r / 255.0f), m_G(g / 255.0f), m_B(b / 255.0f), m_A(a / 255.0f) {}
 
 	constexpr Col(int r, int g, int b)
-		requires (!std::is_same_v<T, int>&& std::is_floating_point_v<T>)
-		: Col(std::max(r / 255.0f, 0.0f), std::max(g / 255.0f, 0.0f), std::max(b / 255.0f, 0.0f), 1.0f) {}
+		requires (std::is_floating_point_v<T>)
+		: m_R(std::max(r / 255.0f, 0.0f)), m_G(std::max(g / 255.0f, 0.0f)), m_B(std::max(b / 255.0f, 0.0f)), m_A(1.0f) {}
 
 	constexpr Col(int r, int g, int b, int a)
-		requires (!std::is_same_v<T, int>&& std::is_floating_point_v<T>)
-		: Col(std::max(r / 255.0f, 0.0f), std::max(g / 255.0f, 0.0f), std::max(b / 255.0f, 0.0f), std::max(a / 255.0f, 0.0f)) {}
+		requires (std::is_floating_point_v<T>)
+		: m_R(std::max(r / 255.0f, 0.0f)), m_G(std::max(g / 255.0f, 0.0f)),
+		  m_B(std::max(b / 255.0f, 0.0f)), m_A(std::max(a / 255.0f, 0.0f)) {}
+
 
 	Col(const Col&) = default;
 	Col(Col&&) noexcept = default;
@@ -232,13 +244,17 @@ public:
 		return Col(newChannels);
 	}
 
-	std::string ToString(const std::uint8_t& decimalPlaces = 5) const
+	std::string ToString(const std::uint8_t& decimalPlaces = 5) const requires std::is_floating_point_v<T>
 	{
 		return std::format("(Col {},{},{},{})",
 			Utils::ToString(Utils::Roundf(m_R, decimalPlaces), decimalPlaces),
 			Utils::ToString(Utils::Roundf(m_G, decimalPlaces), decimalPlaces),
 			Utils::ToString(Utils::Roundf(m_B, decimalPlaces), decimalPlaces),
 			Utils::ToString(Utils::Roundf(m_A, decimalPlaces), decimalPlaces));
+	}
+	std::string ToString() const requires std::is_same_v<T, std::uint8_t>
+	{
+		return std::format("[Col {},{},{},{}]", m_R, m_G, m_B, m_A);
 	}
 
 	T& operator[](const size_t index)
@@ -355,12 +371,16 @@ public:
 		return *this = *this / scalar;
 	}
 
-	bool operator==(const Col& other) const
+	bool operator==(const Col& other) const requires std::is_floating_point_v<T>
 	{
 		return Utils::ApproximateEqualsF(m_R, other.m_R) &&
 			   Utils::ApproximateEqualsF(m_G, other.m_G) &&
 			   Utils::ApproximateEqualsF(m_B, other.m_B) &&
 			   Utils::ApproximateEqualsF(m_A, other.m_A);
+	}
+	bool operator==(const Col& other) const requires std::is_same_v<T, std::uint8_t>
+	{
+		return m_R == other.m_R && m_G == other.m_G && m_B == other.m_B && m_A == other.m_A;
 	}
 	bool operator!=(const Col& other) const
 	{
@@ -425,6 +445,63 @@ constexpr HDRColor ConstructColorFromHex(const std::uint32_t& hexNumber)
 			static_cast<std::uint8_t>(hexNumber & 0xFF)
 		);
 }
+constexpr Color FromHDRColor(const HDRColor& color)
+{
+	return Color(std::uint8_t(color.m_R), std::uint8_t(color.m_G), 
+		std::uint8_t(color.m_B), std::uint8_t(color.m_A));
+}
+constexpr HDRColor ToHDRColor(const Color& color)
+{
+	return HDRColor(color.m_R, color.m_G, color.m_B, color.m_A);
+}
+
+/// <summary>
+/// Converts an HDRColor (4 channels each with 1 float32 = 16 total bytes)
+/// -> binary format with 4 channels each with float16 representation (8 total bytes)
+/// </summary>
+/// <param name="color"></param>
+/// <returns></returns>
+std::array<std::byte, 8> FromHDRColorToF16Bytes(const HDRColor& color);
+/// <summary>
+/// Converts an HDRColor (4 channels each with 1 float32 = 16 total bytes)
+/// -> binary format with 4 channels each with float32 (same layout, just in byte form)
+/// </summary>
+/// <param name="color"></param>
+/// <returns></returns>
+std::array<std::byte, 16> FromHDRColorToF32Bytes(const HDRColor& color);
+/// <summary>
+/// Converts a Color (4 channels each with 1 byte = 4 total bytes)
+/// -> binary format with 4 channels each with float16 (8 total bytes)
+/// </summary>
+/// <param name="color"></param>
+/// <returns></returns>
+std::array<std::byte, 8> FromColorToF16Bytes(const Color& color);
+
+/// <summary>
+/// Converts binary format with 4 channels each with float16 representation (8 total bytes)
+/// -> an HDRColor (4 channels each with 1 float32 = 16 total bytes)
+/// </summary>
+/// <param name="bytes"></param>
+/// <returns></returns>
+HDRColor FromF16BytesToHDRColor(const std::array<std::byte, 8>& bytes);
+HDRColor FromF16BytesToHDRColor(const std::byte* bytes);
+/// <summary>
+/// Converts binary format with 4 channels each with float32 (16 total bytes)
+/// -> an HDRColor (4 channels each with 1 float32 = 16 total bytes)
+/// </summary>
+/// <param name="bytes"></param>
+/// <returns></returns>
+HDRColor FromF32BytesToHDRColor(const std::array<std::byte, 16>& bytes);
+HDRColor FromF32BytesToHDRColor(const std::byte* bytes);
+/// <summary>
+/// Converts binary format with 4 channels each with float16 (8 total bytes)
+/// -> a Color (4 channels each with 1 byte = 4 total bytes)
+/// </summary>
+/// <param name="bytes"></param>
+/// <returns></returns>
+Color FromF16BytesToColor(const std::array<std::byte, 8>& bytes);
+Color FromBytesToColor(const std::array<std::byte, 4>& bytes);
+Color FromBytesToColor(const std::array<std::byte, 3>& bytes, const std::uint8_t alpha);
 
 inline constexpr std::uint8_t MAX_INT_COLOR_CHANNEL = 255;
 inline constexpr float MAX_FLOAT_COLOR_CHANNEL = 1.0;

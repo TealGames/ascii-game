@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include <optional>
 #include "Utils/Data/Enums.hpp"
 

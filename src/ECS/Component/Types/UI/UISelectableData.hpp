@@ -3,7 +3,7 @@
 #include "Utils/Data/CooldownEvent.hpp"
 #include "Utils/HelperMacros.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "Core/UI/UIRect.hpp"
 #include "ECS/Component/Component.hpp"
 

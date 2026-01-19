@@ -54,7 +54,6 @@ namespace OpenGlUtils
 
 #define GL_CALL(x)                                \
     do {                                         \
-        OpenGlUtils::GLClearError();              \
         x;                                       \
         ASSERT(OpenGlUtils::GLLogCall(            \
             #x, __FILE__, __LINE__));             \

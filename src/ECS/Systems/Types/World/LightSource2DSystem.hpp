@@ -8,7 +8,6 @@
 #include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
 #include "ECS/Systems/Types/World/LightSource2DSystem.hpp"
-#include "Utils/Data/Point4D.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/Data/ColorGradient.hpp"
 #include "ECS/Component/Types/World/LightSource2DComponent.hpp"
@@ -19,13 +18,6 @@ namespace ECS
 {
 	constexpr std::uint8_t MIN_LIGHT_LEVEL = std::numeric_limits< std::uint8_t>::min();
 	constexpr std::uint8_t MAX_LIGHT_LEVEL = std::numeric_limits< std::uint8_t>::max();
-
-	/*struct PositionLightData
-	{
-		Utils::Point2DInt LocalPos;
-		uint8_t LightLevel;
-	};*/
-
 
 	enum class LightShape
 	{

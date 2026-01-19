@@ -2,7 +2,7 @@
 #include "pch.hpp"
 #include "Utils/Data/ColorGradient.hpp"
 #include "Utils/ToStringFunctions.hpp"
-#include "Utils/Math.hpp"	
+#include "Utils/Math/Math.hpp"	
 #include "Utils/Debug.hpp"
 
 ColorGradientKeyFrame::ColorGradientKeyFrame() : ColorGradientKeyFrame({}, 0) {}

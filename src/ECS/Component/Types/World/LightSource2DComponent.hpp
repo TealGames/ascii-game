@@ -3,19 +3,18 @@
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/Data/ColorGradient.hpp"
 #include "Core/Rendering/RenderLayer.hpp"
-#include "Utils/Data/Point3D.hpp"
 #include "ECS/Component/Component.hpp"
 #include "Utils/Data/Color.hpp"
 
 struct LightMapChar
 {
 	Vec2Int m_RelativePos;
-	Utils::Point3D m_FractionalFilterColor;
+	Vec3 m_FractionalFilterColor;
 	float m_ColorFactor;
 
 	LightMapChar();
 	LightMapChar(const Vec2Int& relativePos,
-		const Utils::Point3D& fractionalFilterColor, const float& colorFactor);
+		const Vec3& fractionalFilterColor, const float& colorFactor);
 	std::string ToString() const;
 };
 

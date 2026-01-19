@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
-#include "Utils/Data/Vec3Type.hpp"
-#include "Utils/Data/Quaternion.hpp"
+#include "Utils/Math/Vec3Type.hpp"
+#include "Utils/Math/Quaternion.hpp"
 
 inline constexpr Vec3 DEFAULT_POS = Vec3::Zero();
 inline constexpr Vec3 DEFAULT_SCALE = Vec3::One();

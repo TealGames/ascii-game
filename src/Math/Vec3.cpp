@@ -1,6 +1,6 @@
 #include "Math/Vec3.hpp"
 #ifdef GLM
-#include "Utils/Math.hpp"
+#include "Utils/Math/Math.hpp"
 #include "Utils/HelperFunctions.hpp"
 
 namespace Math

@@ -30,20 +30,22 @@ namespace Rendering
 	{
 	private:
 		ResourceSlotController<TSlotData, MAX_SLOTS> m_slotController;
-		std::unordered_map<RenderObjectId, USlotIndex> m_resourceSlot;
+		std::unordered_map<RenderObjectId, USlotIndex> m_resourceSlotMap;
 	public:
 
 	private:
 	public:
-		GpuResourceSlotController() : m_slotController(), m_resourceSlot() {}
+		GpuResourceSlotController() : m_slotController(), m_resourceSlotMap() {}
 
 		SlotIndex TryGetResourceSlot(const RenderObjectId id) const
 		{
-			if (m_resourceSlot.empty())
+			ENGINE_ASSERT(id != INVALID_OBJ_ID, "Attempted to get invalid ID resource from GPU resource slot");
+
+			if (m_resourceSlotMap.empty())
 				return INVALID_SLOT_INDEX;
 
-			auto it = m_resourceSlot.find(id);
-			if (it != m_resourceSlot.end())
+			auto it = m_resourceSlotMap.find(id);
+			if (it != m_resourceSlotMap.end())
 				return it->second;
 
 			return INVALID_SLOT_INDEX;
@@ -55,13 +57,11 @@ namespace Rendering
 		{
 			const SlotIndex slotAdded = m_slotController.TryAdd(TSlotData(resource));
 			const RenderObjectId objectId = resource.GetId();
-			if (slotAdded == INVALID_SLOT_INDEX)
-			{
-				LogError(std::format("Attempted to bind resource to GPU resource slot "
-					"but failed to add to controller: {}", ToString()));
-				return INVALID_SLOT_INDEX;
-			}
-			m_resourceSlot.emplace(objectId, slotAdded);
+			ENGINE_ASSERT(objectId != INVALID_OBJ_ID, "Attempted to bind invalid ID resource to GPU resource slot");
+			ENGINE_ASSERT(slotAdded != INVALID_SLOT_INDEX, "Attempted to bind resource to GPU resource slot "
+				"but failed to add to controller: {}", ToString());
+
+			m_resourceSlotMap.emplace(objectId, slotAdded);
 			return slotAdded;
 		}
 
@@ -69,47 +69,37 @@ namespace Rendering
 		requires HasFunctionGetId<TResource> && std::constructible_from<TSlotData, TResource&>
 		TSlotData RebindResourceInSlot(const USlotIndex slot, TResource& resource)
 		{
-			if (slot >= MAX_SLOTS)
-			{
-				LogWarning(std::format("Attempted to replace resource from out of bounds "
-					"[0,{}) slot: {}", MAX_SLOTS, slot));
-			}
+			ENGINE_ASSERT(slot < MAX_SLOTS, "Attempted to replace resource from out of bounds "
+				"[0,{}) slot: {}", MAX_SLOTS, slot);
+			ENGINE_ASSERT(!m_slotController[slot].HasResource(), 
+				"Attempted to replace resource at slot: {} but there is no resource there. "
+				"Use BindResourceToFreeSlot instead", slot);
 
-			if (!m_slotController[slot].HasResource())
-			{
-				LogError(std::format("Attempted to replace resource at slot: {} but there is no resource there. "
-					"Use BindResourceToFreeSlot instead", slot));
-				throw std::invalid_argument("Invalid slot arg");
-			}
-			const TSlotData oldData= m_slotController.ReplaceAt(slot, TSlotData(resource));
 			const RenderObjectId objectId = resource.GetId();
-			m_resourceSlot[objectId] = slot;
+			ENGINE_ASSERT(objectId != INVALID_OBJ_ID, "Attempted to rebind resource at slot:{} with invalid ID resource", slot);
+
+			const TSlotData oldData= m_slotController.ReplaceAt(slot, TSlotData(resource));
+			m_resourceSlotMap[objectId] = slot;
 			return oldData;
 		}
 
 		void UnbindResourceFromSlot(const USlotIndex slot, const RenderObjectId resourceId)
 		{
-			if (slot >= MAX_SLOTS)
-			{
-				LogWarning(std::format("Attempted to unbind resource using id from out of bounds "
-					"[0,{}) slot: {}", MAX_SLOTS, slot));
-				return;
-			}
+			ENGINE_ASSERT(resourceId != INVALID_OBJ_ID, "Attempted to unbind invalid ID resource from slot:{}", slot);
+			ENGINE_ASSERT(slot < MAX_SLOTS, "Attempted to unbind resource using id from out of bounds "
+				"[0,{}) slot: {}", MAX_SLOTS, slot);
 
 			m_slotController[slot].RemoveResource();
 			m_slotController.RemoveAtUnsafe(slot);
-			m_resourceSlot.erase(resourceId);
+			m_resourceSlotMap.erase(resourceId);
 		}
 		void UnbindAnyResourceFromSlot(const USlotIndex slot)
 			requires HasPropertym_ResourceId<TSlotData>
 		{
 			const RenderObjectId id = m_slotController[slot].m_ResourceId;
-			if (id == INVALID_OBJ_ID)
-			{
-				LogError(std::format("Attempted to unbind any resource from slot: {} "
-					"but that slot has no resource id", slot));
-				return;
-			}
+			ENGINE_ASSERT(id != INVALID_OBJ_ID, "Attempted to unbind any resource from slot: {} "
+				"but that slot has invalid resource ID", slot);
+
 			UnbindResourceFromSlot(slot, id);
 		}
 
@@ -117,12 +107,8 @@ namespace Rendering
 		requires HasFunctionGetId<TResource>
 		TResource* UnbindResourceFromSlot(const USlotIndex slot)
 		{
-			if (slot >= MAX_SLOTS)
-			{
-				LogWarning(std::format("Attempted to unbind typed resource from out of bounds "
-					"[0,{}) slot: {}", MAX_SLOTS, slot));
-				return nullptr;
-			}
+			ENGINE_ASSERT(slot < MAX_SLOTS, "Attempted to unbind typed resource from out of bounds "
+				"[0,{}) slot: {}", MAX_SLOTS, slot);
 
 			TResource* resourcePtr = static_cast<TResource*>(m_slotController[slot].m_ResourcePtr);
 			UnbindResourceFromSlot(slot, resourcePtr->GetId());
@@ -131,12 +117,8 @@ namespace Rendering
 
 		bool HasResourceInSlot(const USlotIndex slot) const
 		{
-			if (slot >= MAX_SLOTS)
-			{
-				LogWarning(std::format("Attempted to check resource from out of bounds "
-					"[0,{}) slot: {}", MAX_SLOTS, slot));
-				return false;
-			}
+			ENGINE_ASSERT(slot < MAX_SLOTS, "Attempted to check resource from out of bounds "
+				"[0,{}) slot: {}", MAX_SLOTS, slot);
 				
 			return m_slotController[slot].HasResource();
 		}
@@ -210,13 +192,10 @@ namespace Rendering
 		requires IsValidResource<T>
 		std::vector<SlotIndex> TryBindToFreeSlots(T resources[], const size_t size)
 		{
+			ENGINE_ASSERT(m_slotController.GetEmptySlotCount() >= size, "Attempted to add resources({}) to next available slot indices "
+				"but there are not enough free spaces left. Total size:{}", size, MAX_TEXTURE_SLOTS);
+
 			std::vector<SlotIndex> slots = {};
-			if (m_slotController.GetEmptySlotCount() < size)
-			{
-				LogError(std::format("Attempted to add resources({}) to next available slot indices "
-					"but there are not enough free spaces left. Total size:{}", size, MAX_TEXTURE_SLOTS));
-				return slots;
-			}
 			for (size_t i = 0; i < size; i++)
 			{
 				slots.push_back(TryBindToFreeSlot<T>(resources[i]));
@@ -248,12 +227,8 @@ namespace Rendering
 		{
 			const RenderObjectId id = resource.GetId();
 			const SlotIndex slot = m_slotController.TryGetResourceSlot(id);
-			if (slot == INVALID_SLOT_INDEX)
-			{
-				LogError(std::format("Attempted to remove resource:{} from texture slot "
-					"but it was not found in any slots: {}", id, ToString()));
-				return false;
-			}
+			ENGINE_ASSERT(slot != INVALID_SLOT_INDEX, "Attempted to remove resource:{} from texture slot "
+				"but it was not found in any slots: {}", id, ToString());
 
 			return TryRemoveFromSlot(slot);
 		}
@@ -312,12 +287,9 @@ namespace Rendering
 		std::vector<SlotIndex> TryBindToFreeSlots(T resources[], const size_t size, const AccessPermissions permissions)
 		{
 			std::vector<SlotIndex> slots = {};
-			if (m_slotController.GetEmptySlotCount() < size)
-			{
-				LogError(std::format("Attempted to add resources({}) to next available slot indices "
-					"but there are not enough free spaces left. Total size:{}", size, MAX_IMAGE_SLOTS));
-				return slots;
-			}
+			ENGINE_ASSERT(m_slotController.GetEmptySlotCount() >= size, "Attempted to add resources({}) to next available slot indices "
+				"but there are not enough free spaces left. Total size:{}", size, MAX_IMAGE_SLOTS);
+
 			for (size_t i = 0; i < size; i++)
 			{
 				slots.push_back(TryBindToFreeSlot<T>(resources[i], permissions));
@@ -350,12 +322,8 @@ namespace Rendering
 		{
 			const RenderObjectId id = resource.GetId();
 			const SlotIndex slot = m_slotController.TryGetResourceSlot(id);
-			if (slot == INVALID_SLOT_INDEX)
-			{
-				LogError(std::format("Attempted to remove resource:{} from texture slot "
-					"but it was not found in any slots: {}", id, ToString()));
-				return false;
-			}
+			ENGINE_ASSERT(slot != INVALID_SLOT_INDEX, "Attempted to remove resource:{} from texture slot "
+				"but it was not found in any slots: {}", id, ToString());
 
 			return TryRemoveFromSlot(slot);
 		}

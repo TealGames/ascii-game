@@ -3,16 +3,16 @@
 
 namespace Rendering 
 {
-	const std::vector<BVHFlatNode>& ConstructBVHFromTriangles(StaticBVHTree<Triangle>& tree,
-		Triangle* triangleArray, const size_t triangleSize, const Vertex* vertexArray)
+	const std::vector<BVHNode>& ConstructBVHFromTriangles(StaticBVHTree<IndexTriangle>& tree,
+		IndexTriangle* triangleArray, const size_t triangleSize, const Vertex* vertexArray)
 	{
-		const std::vector<BVHFlatNode>& nodes = tree.Construct(triangleArray, triangleSize, true, 
+		const std::vector<BVHNode>& nodes = tree.Construct(triangleArray, triangleSize, true, 
 			Rendering::BLAS_TREE_LEAF_COUNT, BVHSplitAlgorithm::Midpoint,
-			[vertexArray](const Triangle& triangle) -> AABB3D
+			[vertexArray](const IndexTriangle& triangle) -> AABB3D
 			{
 				return CalculateTriangleAABB(triangle, vertexArray);
 			},
-			[vertexArray](const Triangle& triangle) -> WorldPosition3D
+			[vertexArray](const IndexTriangle& triangle) -> WorldPosition3D
 			{
 				return CalculateTriangleCenter(triangle, vertexArray);
 			}, nullptr); 
@@ -20,18 +20,18 @@ namespace Rendering
 		return nodes;
 	}
 
-	const std::vector<BVHFlatNode>& ConstructBVHFromIndices(StaticBVHTree<Triangle>& tree,
+	const std::vector<BVHNode>& ConstructBVHFromIndices(StaticBVHTree<IndexTriangle>& tree,
 		IndexType* indices, const size_t indexSize, const Vertex* vertexArray)
 	{
 		ENGINE_ASSERT(indexSize % 3 == 0, "Attempted to construct BVH from indices by "
 				"reinterpreting as triangles but size is not divisible by 3: {}", indexSize);
 		//NOTE: we CAN re-order the indices since they are just the redferences for the vertex buffer
 		//therefore it does not matter as long as we move all 3 indices
-		Triangle* triangles = reinterpret_cast<Triangle*>(&indices[0]);
+		IndexTriangle* triangles = reinterpret_cast<IndexTriangle*>(&indices[0]);
 		return ConstructBVHFromTriangles(tree, triangles, indexSize / 3, vertexArray);
 	}
 	
-	const std::vector<BVHFlatNode>& ModelMesh::ConstructBLASTree(const size_t leafCount)
+	const std::vector<BVHNode>& ModelMesh::ConstructBLASTree(const size_t leafCount)
 	{
 		return ConstructBVHFromIndices(m_BLASTree, &m_Indices[0], m_Indices.size(), &m_Vertices[0]);
 	}

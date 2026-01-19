@@ -15,8 +15,10 @@ namespace OpenGlUtils
 		if (storage == Rendering::TexelStorageType::R8) return GL_R8;
 		else if (storage == Rendering::TexelStorageType::RGB8) return GL_RGB8;
 		else if (storage == Rendering::TexelStorageType::RGB16F) return GL_RGB16F;
+		else if (storage == Rendering::TexelStorageType::RGB32F) return GL_RGB32F;
 		else if (storage == Rendering::TexelStorageType::RGBA8) return GL_RGBA8;
 		else if (storage == Rendering::TexelStorageType::RGBA16F) return GL_RGBA16F;
+		else if (storage == Rendering::TexelStorageType::RGBA32F) return GL_RGBA32F;
 		else if (storage == Rendering::TexelStorageType::Depth24) return GL_DEPTH_COMPONENT24;
 		else if (storage == Rendering::TexelStorageType::Depth24_Stencil8) return GL_DEPTH24_STENCIL8;
 

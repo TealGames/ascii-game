@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Data/NormalizedValue.hpp"
+#include "Utils/Math/NormalizedValue.hpp"
 
 struct UIPadding
 {

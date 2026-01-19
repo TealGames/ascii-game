@@ -1,5 +1,4 @@
 #include "Core/Rendering/Vertex.hpp"
-#include "Utils/MathAdvanced.hpp"
 
 namespace Rendering
 {
@@ -12,24 +11,11 @@ namespace Rendering
         return std::format("[Pos:{} Normal:{}]", m_LocalPos.ToString(), m_Normal.ToString());
     }
 
-    AABB3D CalculateTriangleAABB(const Triangle& triangle, const Vertex* vertexArray)
+    WorldPosition3D CalculateTriangleCenter(const IndexTriangle& triangle, const Vertex* vertexArray)
     {
-        const WorldPosition3D world0 = vertexArray[triangle.m_VertexIndex0].m_LocalPos;
-        const WorldPosition3D world1 = vertexArray[triangle.m_VertexIndex1].m_LocalPos;
-        const WorldPosition3D world2 = vertexArray[triangle.m_VertexIndex2].m_LocalPos;
-        const AABB3D aabb = AABB3D(Min(world0, world1, world2), Max(world0, world1, world2));
-
-        ENGINE_ASSERT(Utils::IsWithinBounds(aabb, world0) && Utils::IsWithinBounds(aabb, world1) && Utils::IsWithinBounds(aabb, world2), 
-            "Attempted to calculate triangle AABB3d givne vertices: {}, {}, {} but some did not fit within bounds formed: {}", 
-            world0.ToString(), world1.ToString(), world2.ToString(), aabb.ToString());
-
-        return aabb;
-    }
-    WorldPosition3D CalculateTriangleCenter(const Triangle& triangle, const Vertex* vertexArray)
-    {
-        const WorldPosition3D world0 = vertexArray[triangle.m_VertexIndex0].m_LocalPos;
-        const WorldPosition3D world1 = vertexArray[triangle.m_VertexIndex1].m_LocalPos;
-        const WorldPosition3D world2 = vertexArray[triangle.m_VertexIndex2].m_LocalPos;
+        const WorldPosition3D world0 = vertexArray[triangle.m_0].m_LocalPos;
+        const WorldPosition3D world1 = vertexArray[triangle.m_1].m_LocalPos;
+        const WorldPosition3D world2 = vertexArray[triangle.m_2].m_LocalPos;
         return (world0 + world1 + world2) / 3;
     }
 

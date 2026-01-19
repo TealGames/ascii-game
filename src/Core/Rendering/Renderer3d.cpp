@@ -3,10 +3,10 @@
 #include <optional>
 #include <queue>
 #include "StaticGlobals.hpp"
-
 #include "Core/Rendering/Renderer3d.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
+#include "Core/Asset/TextureAsset.hpp"
 #include "Utils/Debug.hpp"
 #include "Core/EngineState.hpp"
 #include "Core/Camera/CameraController.hpp"
@@ -16,9 +16,9 @@
 #include "Math/PlatformMath.hpp"
 #include "Core/Window/WindowManager.hpp"
 #include "Core/Time/TimeKeeper.hpp"
-#include "Utils/MathAdvanced.hpp"
+#include "Utils/Math/MathAdvanced.hpp"
 #include "Utils/Data/ColorConstants.hpp"
-#include "UnitTests.hpp"
+#include "Tests/UnitTests.hpp"
 
 namespace Rendering
 {
@@ -29,7 +29,11 @@ namespace Rendering
     constexpr bool USE_CACHED_SHAPE_ASSETS = true;
 
     constexpr bool DO_RAYTRACING = true;
+    constexpr RaytraceMode RAYTRACE_MODE = RaytraceMode::CPU;
+    constexpr const char* OUTPUT_RAYTRACE_TEXTURE_PARENT_PATH = CURRENT_SOURCE_DIR "output/raytracer/";
+    constexpr int OUTPUT_RAYTRACE_FRAME = 0;
     constexpr std::uint32_t MAX_RAYTRACE_BOUNCES = 5;
+    constexpr std::uint32_t RAYTRACER_SAMPLES_PER_PIXEL = 1;
 
     constexpr bool DO_VISUALIZE_BVH_BOUNDS = false;
     constexpr float BVH_BOUNDS_LINE_THICKNESS = 1;
@@ -82,7 +86,7 @@ namespace Rendering
 
     static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { 
         "default", "forward_render", "shadow", "texture", 
-        "post_process", "gaussian_blur", "ray_tracer", "skybox", "ui"};
+        "post_process", "gaussian_blur", "raytracer", "skybox", "ui"};
 
     constexpr const char* VIEW_MATRIX_UNIFORM_NAME = "uViewMatrix";
     constexpr const char* PROJ_MATRIX_UNIFORM_NAME = "uProjectionMatrix";
@@ -114,12 +118,21 @@ namespace Rendering
     constexpr const char* HORIZONTAL_FLAG_UNIFORM_NAME = "uIsHorizontal";
     constexpr const char* INPUT_TEXTURE_UNIFORM_NAME = "uTextureInput";
     constexpr const char* OUTPUT_TEXTURE_UNIFORM_NAME = "uTextureOutput";
+    constexpr const char* OUTPUT_TEXTURE_0_UNIFORM_NAME = "uTextureOutput0";
+    constexpr const char* OUTPUT_TEXTURE_1_UNIFORM_NAME = "uTextureOutput1";
     constexpr const char* BLUR_WEIGHTS_UNIFORM_NAME = "uWeights";
 
     constexpr const char* RAY_TRACING_MAX_RAY_BOUNCES_UNIFORM_NAME = "uMaxBounces";
+    constexpr const char* RAY_TRACING_SAMPLES_PER_PIXEL_UNIFORM_NAME = "uSamplesPerPixel";
     constexpr const char* UNMOVING_FRAME_NUMBER_UNIFORM_NAME = "uUnmovingFrameCount";
+    constexpr const char* RAYTRACER_OUTPUT_TEXTURE_COUNT_UNIFORM_NAME = "uOutputTextureCount";
     constexpr const char* EMISSIVE_MATERIAL_COUNT_UNIFORM_NAME = "uEmissiveCount";
     constexpr const char* INSTANCE_COUNT_UNIFORM_NAME = "uInstanceCount";
+
+    bool RenderPassData::UsesDefaultFrameBuffer() const
+    {
+        return m_FrameBuffer != nullptr;
+    }
 
     std::string ToString(const RenderCallType call)
     {
@@ -135,40 +148,8 @@ namespace Rendering
     }
     std::string RenderCallInvocation::ToString() const
     {
-        return std::format("[RenderCallInvocation Type:{} ModelMat:{}]", 
+        return std::format("[RenderCallInvocation Type:{} ModelMat:{}]",
             Rendering::ToString(m_Type), m_ModelMatrix.ToString());
-    }
-
-    PointLightData::PointLightData() : PointLightData({}, {}, 0) {}
-    PointLightData::PointLightData(const WorldPosition3D& pos, const HDRColor& color, const float radius)
-        : m_Pos(pos), m_Color(color), m_Radius(radius), _padding0(0), _padding1{}, m_ShadowMapIndex(-1) {}
-
-    DirectionalLightData::DirectionalLightData() : DirectionalLightData({}, {}) {}
-    DirectionalLightData::DirectionalLightData(const Vec3& dir, const HDRColor& color)
-        : m_Direction(dir), m_Color(color), _padding0(0) {}
-
-    MaterialData::MaterialData() : MaterialData(Material{}, INVALID_TEXTURE_INDEX) {}
-    MaterialData::MaterialData(const Material& material, const int albedoIndx)
-        : m_BaseColor(material.GetBaseColor()), m_Alpha(material.GetAlpha()), m_Metallic(material.GetMatallic()), 
-        m_Roughness(material.GetRoughness()), m_EmissiveColor(material.GetEmissiveColor()), m_AlbedoIndex(albedoIndx) {}
-
-    std::string MaterialData::ToString() const
-    {
-        return std::format("[MaterialData BaseColor:{} Alpha:{} EmissiveColor:{}]", 
-            m_BaseColor.ToString(), m_Alpha, m_EmissiveColor.ToString());
-    }
-
-    WorldPosition3D InstanceBoundsData::GetCenter() const { return m_RootWorldBounds.GetCenter(); }
-    AABB3D InstanceBoundsData::GetAABB() const { return m_RootWorldBounds; }
-    std::string InstanceBoundsData::ToString() const 
-    { 
-        return std::format("[RootWorldBounds:{} InstIdx:{}]", 
-            m_RootWorldBounds.ToString(), m_InstanceIndex); 
-    }
-
-    bool RenderPassData::UsesDefaultFrameBuffer() const
-    {
-        return m_FrameBuffer != nullptr;
     }
 
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
@@ -177,11 +158,11 @@ namespace Rendering
         m_graphicsManager(nullptr), m_frameGeometryMetrics(), m_runtimeMaterialId(),m_cachedMaterials(),
         m_textureController(Backend::CreateTextureController()),
         m_imageController(Backend::CreateImageController()),
-        m_instanceMeshes(), m_emissiveInstanceIndices(), 
+        m_instanceMeshes(), m_emissiveInstanceIndices(), m_raytracer(),
         m_geometryVertexLayout(), m_uiVertexLayout(), m_bufferController(),
         m_geometryUnit(m_geometryVertexLayout), m_uiUnit(m_uiVertexLayout),
-        m_unmovingFrames(0), m_isRenderStalled(false), m_framesSinceStart(0),
-        m_frameBuffer(), m_shadowMaps(), m_hdrColorOutput(), m_hdrDepthRenderBuffer(), m_coreShaders({}),
+        m_unmovingFrames(0), m_isRenderStalled(false), m_framesSinceStart(0), m_cpuBufferTextures(),
+        m_frameBuffer(), m_shadowMaps(), m_hdrColorOutput(), m_texRaytraceAccum0(), m_texRaytraceAccum1(), m_hdrDepthRenderBuffer(), m_coreShaders({}),
         m_currentPass(RenderPassType::None), m_renderPassData({}), m_boundFrameBuffer(nullptr), m_boundShader(nullptr),
         m_viewerUniformBuffer(Backend::CreateUniformBuffer(VIEWER_UNIFORM_BLOCK_NAME)),
         m_lightUniformBuffer(Backend::CreateUniformBuffer(LIGHT_UNIFORM_BLOCK_NAME)),
@@ -202,26 +183,10 @@ namespace Rendering
             RenderPassData& data = m_renderPassData[i];
 
             data.m_PassType = passType;
-            if (passType == RenderPassType::Shadow)
-            {
+            //NOTE: we ALWAYS use our own framebuffer so we have more control
+            if (data.m_PassType == RenderPassType::Shadow || data.m_PassType == RenderPassType::Skybox ||
+                data.m_PassType == RenderPassType::Geometry)
                 data.m_FrameBuffer = &m_frameBuffer;
-            }
-            else if (passType == RenderPassType::Geometry && DO_POST_PROCESS)
-            {
-                data.m_FrameBuffer = &m_frameBuffer;
-            }
-            //NOTE: if we use custom framebuffer for geometry, we must use custom framebuffer for 
-            //skybox to ensure it is drawn in the same texture as geometry (otherwise default frame
-            //buffer will be enabled when Post Process is drawn which covers whole screen with texture)
-            else if (passType == RenderPassType::Skybox && DO_POST_PROCESS)
-            {
-                data.m_FrameBuffer = &m_frameBuffer;
-            }
-            //Similar to skybox, if we do PP, we must output the ui overlay to the same texture that goes to pp
-            else if (passType == RenderPassType::UI && DO_POST_PROCESS)
-            {
-                data.m_FrameBuffer = &m_frameBuffer;
-            }
         }
         UpdatePassRenderState(RenderPassType::None);
     }
@@ -321,17 +286,50 @@ namespace Rendering
                 map = CreateTextureCube(SHADOW_MAP_SIZE, TexelStorageType::Depth24);
         }
 
+        const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
         //If we do post process, the color output does not immediately go into the render buffer
         //and must go through pp pass, which means we need our own color output textures
         if (DO_POST_PROCESS)
         {
             //TODO; right now hdr is tightly couples with PP which should can not be this way
             //because if we want pp but dont want hdr there is no corresponding color/depth output that is not hdr textures
-            const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
-            m_hdrColorOutput = CreateTexture(nullptr, windowSize, TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
-            m_brightnessOutput = CreateTexture(nullptr, windowSize, TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
-            m_ioTexture = CreateTexture(nullptr, windowSize, TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+            
+            m_brightnessOutput = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
+                                                  TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+            m_ioTexture = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
+                                           TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
             m_hdrDepthRenderBuffer = Backend::CreateRenderBuffer(TexelStorageType::Depth24, windowSize);
+        }
+        if (DO_RAYTRACING)
+        {
+            if (RAYTRACE_MODE == RaytraceMode::GPU)
+            {
+                //NOTE: raytracer on GPU must have textures with rgba16f format (rgb16f not allowed) for image uniforms
+                m_texRaytraceAccum0 = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
+                                                       TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+                m_texRaytraceAccum1 = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
+                                                       TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+                m_hdrColorOutput = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
+                                                    TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+            }
+            else if (RAYTRACE_MODE == RaytraceMode::CPU)
+            {
+                //NOTE: we use rgb32f for textures since it is then easier to write to texels on CPU AND
+                //since that is the required format for writing to an image so we do it for convenience
+                m_texRaytraceAccum0 = CreateTexture(nullptr, windowSize, TextureBufferType::CPU,
+                                              TexelStorageType::RGBA32F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+                m_texRaytraceAccum1 = CreateTexture(nullptr, windowSize, TextureBufferType::CPU,
+                                              TexelStorageType::RGBA32F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+                //If we have CPU raytracer since we use multithreading, we want safe reads, so buffer is stored on CPU AND
+                //on GPU since an output texture for the raytracer must be GPU so it can be used for Post Process
+                m_hdrColorOutput = CreateTexture(nullptr, windowSize, TextureBufferType::GPUThreadSafeRead,
+                    TexelStorageType::RGBA32F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
+            }
+        }
+        else
+        {
+            m_hdrColorOutput = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
+                                                TexelStorageType::RGBA32F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
         }
 
         m_graphicsManager->AddShaderGlobalDefine("MAX_POINT_LIGHTS " + std::to_string(MAX_POINT_LIGHTS));
@@ -348,24 +346,6 @@ namespace Rendering
     bool Renderer::WasInit() const
     {
         return m_isInit;
-    }
-
-    void Renderer::WriteGeometryVertexDataToSSBOs()
-    {
-        m_vertexStorageBuffer.WriteData(0, m_geometryUnit.GetVertexCount() *sizeof(Vertex), m_geometryUnit.GetVertexMemPointer());
-        m_indexStorageBuffer.WriteData(0, m_geometryUnit.GetIndexCount() * sizeof(IndexType), m_geometryUnit.GetIndexMemPointer());
-        m_instanceStorageBuffer.WriteData(0, m_geometryUnit.GetInstanceCount() * sizeof(Instance), m_geometryUnit.GetInstanceMemPointer());
-        /*LogWarning(std::format("Instance mesh buffer elements:{} write:{} bytes:{}", m_instanceMeshStorageBuffer.GetAllocatedByteSize() / sizeof(InstanceMesh),
-            m_instanceMeshes.size(), m_instanceMeshes.size() * sizeof(InstanceMesh)));*/
-        m_instanceMeshStorageBuffer.WriteData(0, m_instanceMeshes.size() * sizeof(InstanceMesh), &m_instanceMeshes[0]);
-        const std::uint32_t emissiveMaterialCount = m_emissiveInstanceIndices.size();
-        if (emissiveMaterialCount > 0)
-        {
-            m_emissiveInstanceIndexStorageBuffer.WriteData(0,
-                emissiveMaterialCount * sizeof(std::uint32_t), &m_emissiveInstanceIndices[0]);
-        }
-
-        m_blasTreesStorageBuffer.WriteData(0, sizeof(BVHFlatNode) * m_blasTrees.size(), &m_blasTrees[0]);
     }
 
     void Renderer::InitCoreShaders()
@@ -389,23 +369,15 @@ namespace Rendering
 
         const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
         m_graphicsManager->SetUniform(UniformDataType::IVector2, SCREEN_SIZE_UNIFORM_NAME, &windowSize);
-        m_graphicsManager->SetUniform(UniformDataType::Uint, RAY_TRACING_MAX_RAY_BOUNCES_UNIFORM_NAME, &MAX_RAYTRACE_BOUNCES);
-
-       /* m_viewerUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender));
-        m_lightUniformBuffer.AllocateFromShaderUniformBlock(*GetCoreShader(CoreShader::ForwardRender));*/
-
-        //m_engineState->m_GraphicsContext.m_GraphicsManager->SetUniform(UniformDataType::Bool, SHADOW_TOGGLE_UNIFORM_NAME, &DO_SHADOWS);
-        //const std::string_view defines[] = {"DO_SHADOWS"};
-        //GetCoreShader(CoreShader::ForwardRender)->TryCreateProgram({ defines, 1 });
     }
 
-    std::uint8_t Renderer::GenerateRuntimeMaterialId()
+    std::uint8_t Renderer::GenerateRuntimeMaterialId() { return m_runtimeMaterialId++; }
+    void Renderer::ResetRuntimeMaterialId() { m_runtimeMaterialId = 0; }
+    std::filesystem::path Renderer::CreateRaytraceOutputPath()
     {
-        return m_runtimeMaterialId++;
-    }
-    void Renderer::ResetRuntimeMaterialId()
-    {
-        m_runtimeMaterialId = 0;
+        return std::string(OUTPUT_RAYTRACE_TEXTURE_PARENT_PATH) +
+            (RAYTRACE_MODE == RaytraceMode::CPU ? "cpu" : "gpu") + 
+            "_frame_" + std::to_string(m_framesSinceStart) + ".hdr";
     }
 
     Shader& Renderer::GetCoreShader(const CoreShader shader)
@@ -576,7 +548,7 @@ namespace Rendering
     {
         const Instance& instance = m_geometryUnit.m_CpuInstances[instanceIndex];
         //We get the root node of this instance's mesh blas tree (NODE: first index of interval is ROOT)
-        const BVHFlatNode& blasTreeRootNode = m_blasTrees[m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval.m_StartIndex];
+        const BVHNodeStd430& blasTreeRootNode = m_blasTreesAligned[m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval.m_StartIndex];
         m_instanceBoundsData.push_back(InstanceBoundsData(Utils::ApplyMatrixToAABB(blasTreeRootNode.GetAABB(), instance.m_ModelMatrix), instanceIndex));
     }
     void Renderer::FinishGeometryBatch(RenderBatch& batch, const BVHTriangleTree* blasTree)
@@ -597,21 +569,22 @@ namespace Rendering
         }
         const BVHTriangleTree& batchBLASTree = (blasTree == nullptr) ? constructedTree : *blasTree;
 
-        const size_t blasNodeIndexOffset = m_blasTrees.size();
-        m_blasTrees.reserve(m_blasTrees.size() + batchBLASTree.Size());
-        for (const auto& node : batchBLASTree.GetNodes())
+        const size_t blasNodeIndexOffset = m_blasTreesAligned.size();
+        m_blasTreesAligned.reserve(m_blasTreesAligned.size() + batchBLASTree.Size());
+        for (size_t i=0; i< batchBLASTree.Size(); i++)
         {
-            m_blasTrees.push_back(node);
+            const BVHNode& node = batchBLASTree.GetNodes()[i];
+            m_blasTreesAligned.push_back(ConvertAlignment<BVHNode::GetAlignment(), BVHNodeStd430::GetAlignment()>(node));
             //NOTE: since the blas tree nodes used LOCAL INDICES
             //into a given index array segment, and it thus needs to be adapted into the global index array by
             //getting an offset of BATCH START INDEX / 3 (because blas object node indices are TRIANGLE INDICES not any indices)
-            if (m_blasTrees.back().IsLeaf()) m_blasTrees.back().m_ObjectStartIndex += batch.m_IndicesStartIndex / 3;
+            if (m_blasTreesAligned.back().IsLeaf()) m_blasTreesAligned.back().m_ObjectStartIndex += batch.m_IndicesStartIndex / 3;
             //NOTE: since the indices are local in terms of the root node of the tree, we add the root nodes
             //distance from the start of the tree to all nodes to adjust it
             else
             {
-                m_blasTrees.back().m_IndexChild0 += blasNodeIndexOffset;
-                m_blasTrees.back().m_IndexChild1 += blasNodeIndexOffset;
+                m_blasTreesAligned.back().m_IndexChild0 += blasNodeIndexOffset;
+                m_blasTreesAligned.back().m_IndexChild1 += blasNodeIndexOffset;
             }
         }
 
@@ -677,13 +650,13 @@ namespace Rendering
         Rendering::ConstructBVHFromIndices(tree, &m_geometryUnit.m_CpuIndices[indexStart],
             indexSize, m_geometryUnit.GetVertexMemPointer());
     }
-    void Renderer::ConstructTLASTree()
+    void Renderer::ConstructTLASTree(const bool writeToTlasSSBO)
     {
         if (m_instanceBoundsData.empty())
             return;
 
         //LogWarning(std::format("ALL instance bounds data: {}", Utils::ToStringIterable(m_instanceBoundsData)));
-        m_tlasTree.Construct(&m_instanceBoundsData[0], m_instanceBoundsData.size(), true, 1, 
+        m_tlasTreeAligned.Construct(&m_instanceBoundsData[0], m_instanceBoundsData.size(), true, 1, 
             BVHSplitAlgorithm::Midpoint, &InstanceBoundsData::GetAABB, &InstanceBoundsData::GetCenter, 
             [](const InstanceBoundsData* boundsPtr, const std::uint32_t* objectIndicesArr, const size_t boundsSize, int intendedStartIndex,
                 int& outStartIndex, std::uint32_t& outObjectCount) -> void
@@ -693,7 +666,7 @@ namespace Rendering
                 outStartIndex = boundsPtr[intendedStartIndex].m_InstanceIndex;
                 outObjectCount = boundsSize;
             });
-        m_tlasTreeStorageBuffer.WriteData(0, sizeof(BVHFlatNode) * m_tlasTree.Size(), &m_tlasTree.GetRoot());
+        if (writeToTlasSSBO) m_tlasTreeStorageBuffer.WriteData(0, decltype(m_tlasTreeAligned)::GetNodeByteSize() * m_tlasTreeAligned.Size(), &m_tlasTreeAligned.GetRoot());
 
         /*LogWarning(std::format("ALL instance bounds data: {}", Utils::ToStringIterable(m_instanceBoundsData)));
         LogWarning(std::format("ALL render calls: {}", ToStringMetrics()));
@@ -707,29 +680,29 @@ namespace Rendering
     int Renderer::GetEnqueuedTextureIndex(Texture* texture)
     {
         if (texture == nullptr)
-        {
             return INVALID_TEXTURE_INDEX;
-        }
 
-        for (std::uint8_t i = 0; i < m_bindQueuedTextures.size(); i++)
+        const size_t currTexCount = m_renderTextures.size();
+        for (std::uint8_t i = 0; i < currTexCount; i++)
         {
-            if (m_bindQueuedTextures[i] == texture)
+            if (m_renderTextures[i] == texture)
                 return i;
         }
+        
+        ENGINE_ASSERT(currTexCount < TEXTURE_MAX_COUNT,
+            "Attempted to enqueue texture for bind but reached max texture count: {}/{}",
+            currTexCount, TEXTURE_MAX_COUNT);
 
-        if (m_bindQueuedTextures.size() >= TEXTURE_MAX_COUNT)
+        if (DO_RAYTRACING && RAYTRACE_MODE == RaytraceMode::CPU)
         {
-            LogError(std::format("Attempted to enqueue texture for bind but reached max texture count: {}/{}",
-                m_bindQueuedTextures.size(), TEXTURE_MAX_COUNT));
-            return INVALID_TEXTURE_INDEX;
+            m_cpuBufferTextures.emplace_back();
+            m_cpuBufferTextures.back().CopyTexture(*texture, TextureBufferType::GPUThreadSafeRead);
         }
+        //NOTE: even if we need gpu thread safe texture, we STILL add texture in default state
+        //so it can be searched for its texture index via its unmutated version
 
-        m_bindQueuedTextures.push_back(texture);
-        return m_bindQueuedTextures.size() - 1;
-    }
-    void Renderer::ClearQueuedTextures()
-    {
-        m_bindQueuedTextures.clear();
+        m_renderTextures.push_back(texture);
+        return m_renderTextures.size() - 1;
     }
 
     MaterialData* Renderer::CreateRuntimeMaterial(const Material& material)
@@ -835,10 +808,10 @@ namespace Rendering
         };
 
         //The size is in x, y, z axis 
-        const Vec2 textureSize = material.m_Albedo->GetInfo().m_texelSize.AsFloat();
+        const Vec2 textureSize = material.m_Albedo->GetInfo().m_TexelSize.AsFloat();
         //The size in texture pixel coords based on its world size
         const Vec3Int pixelSize = CalculateFaceSizeForTexture(Utils::ExtractScaleFromMatrix(modelMatrix),
-            material.m_Albedo->GetInfo().m_texelSize);
+            material.m_Albedo->GetInfo().m_TexelSize);
 
         const Vec2 frontBackFaceSize = Vec2(pixelSize.m_X, pixelSize.m_Y) / textureSize;
         const Vec2 leftRightFaceSize = Vec2(pixelSize.m_Z, pixelSize.m_Y) / textureSize;
@@ -1265,24 +1238,24 @@ namespace Rendering
     }
     void Renderer::AddBVHTreeBoundsWireframe()
     {
-        for (const auto& node : m_tlasTree.GetNodes())
+        for (const auto& node : m_tlasTreeAligned.GetNodes())
         {
             AddCallAABBWifreframe(node.GetAABB(), Quat::Identity(), 
                 node.IsLeaf()? BVH_BOUNDS_LEAF_COLOR : BVH_BOUNDS_COLOR, BVH_BOUNDS_LINE_THICKNESS);
         }
     }
-    bool Renderer::IntersectsBVH(const WorldPosition3D& rayWorldOrigin, Vec3 rayWorldDir, const Vertex* outHitVertex)
+    bool Renderer::IntersectsBVH(Ray3D rayWorld, const Vertex* outHitVertex)
     {
-        rayWorldDir = rayWorldDir.GetNormalized();
+        rayWorld.m_Dir.Normalize();
 
-        Triangle* trianglePtr = reinterpret_cast<Triangle*>(&m_geometryUnit.m_CpuIndices[0]);
-        return m_tlasTree.Intersects<Instance>(rayWorldOrigin, rayWorldDir, &m_geometryUnit.m_CpuInstances[0], nullptr, nullptr,
-            [this, trianglePtr](const BVHFlatNode& node, const Instance& instance, 
-                const WorldPosition3D& rayWorldOrigin, const Vec3& rayWorldDir, float* outTopHitDistance) -> bool
+        IndexTriangle* trianglePtr = reinterpret_cast<IndexTriangle*>(&m_geometryUnit.m_CpuIndices[0]);
+        return m_tlasTreeAligned.Intersects<Instance>(rayWorld, &m_geometryUnit.m_CpuInstances[0], nullptr, nullptr,
+            [this, trianglePtr](const BVHNodeStd430& node, const Instance& instance,
+                const Ray3D& rayWorld, float* outTopHitDistance) -> bool
             {
                 const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
-                const WorldPosition3D rayLocalOrigin = (instance.m_InverseModelMatrix * Vec4(rayWorldOrigin, 1)).GetXYZ();
-                const WorldPosition3D rayLocalDir = (instance.m_InverseModelMatrix * Vec4(rayWorldDir, 0)).GetXYZ().GetNormalized();
+                const WorldPosition3D rayLocalOrigin = (instance.m_InverseModelMatrix * Vec4(rayWorld.m_Origin, 1)).GetXYZ();
+                const WorldPosition3D rayLocalDir = (instance.m_InverseModelMatrix * Vec4(rayWorld.m_Dir, 0)).GetXYZ().GetNormalized();
                 /*
                 LogWarning(std::format("Inverse mat:{} rayO {}->{} rayDir {}->{}", instance.m_InverseModelMatrix.ToString(), 
                     rayOrigin.ToString(), rayLocalOrigin.ToString(), rayDir.ToString(), rayLocalDir.ToString()));
@@ -1291,10 +1264,10 @@ namespace Rendering
                     Utils::ApplyMatrixToAABB(node.GetAABB(), instance.m_InverseModelMatrix).ToString(), 
                     Utils::RayIntersectsSphere(Vec3(), 0.2, rayLocalOrigin, rayLocalDir, nullptr)));
                     */
-                return ::IntersectsBVH<Triangle>(rayLocalOrigin, rayLocalDir, &m_blasTrees[treeInterval.m_StartIndex],
+                return ::IntersectsBVH<IndexTriangle, STD_430_ALIGN>(Ray3D{ rayLocalOrigin, rayLocalDir }, &m_blasTreesAligned[treeInterval.m_StartIndex],
                     treeInterval.m_Size, trianglePtr, nullptr, nullptr, nullptr,
-                    [this, outTopHitDistance, &instance, rayWorldOrigin](const BVHFlatNode& node, const Triangle& triangle, const WorldPosition3D& rayLocalOrigin,
-                        const Vec3& rayLocalDir, float* outBottomHitDistance) -> bool
+                    [this, outTopHitDistance, &instance, rayWorld](const BVHNodeStd430& node, const IndexTriangle& triangle,
+                        const Ray3D& rayLocal, float* outBottomHitDistance) -> bool
                     {
                         /*
                         LogWarning(std::format("Ray {} -> {} reached vertex level with triangle: {} {} {}", rayLocalOrigin.ToString(), rayLocalDir.ToString(),
@@ -1303,12 +1276,11 @@ namespace Rendering
                         */
 
                         float outTEnter = 0;
-                        const bool intersectsTriangle = Utils::RayIntersectsTriangle(m_geometryUnit.m_CpuVertices[triangle.m_VertexIndex0].m_LocalPos,
-                            m_geometryUnit.m_CpuVertices[triangle.m_VertexIndex1].m_LocalPos, m_geometryUnit.m_CpuVertices[triangle.m_VertexIndex2].m_LocalPos,
-                            rayLocalOrigin, rayLocalDir, &outTEnter);
-                        *outBottomHitDistance = (rayLocalDir * outTEnter).GetMagnitude();
-                        const Vec3 worldHitPos = (instance.m_ModelMatrix * Vec4(rayLocalOrigin + rayLocalDir * outTEnter, 1)).GetXYZ();
-                        *outTopHitDistance = (worldHitPos - rayWorldOrigin).GetMagnitude();
+                        const bool intersectsTriangle = Utils::RayIntersectsTriangle(m_geometryUnit.m_CpuVertices[triangle.m_0].m_LocalPos,
+                            m_geometryUnit.m_CpuVertices[triangle.m_1].m_LocalPos, m_geometryUnit.m_CpuVertices[triangle.m_2].m_LocalPos, rayLocal, &outTEnter);
+                        *outBottomHitDistance = (rayLocal.m_Dir * outTEnter).GetMagnitude();
+                        const Vec3 worldHitPos = (instance.m_ModelMatrix * Vec4(rayLocal.m_Origin + rayLocal.m_Dir * outTEnter, 1)).GetXYZ();
+                        *outTopHitDistance = (worldHitPos - rayWorld.m_Origin).GetMagnitude();
                         return intersectsTriangle;
                     });
             });
@@ -1316,8 +1288,8 @@ namespace Rendering
     bool Renderer::IsValidBVH()
     {
         //NOTE: this should ONLY be called after TLAS tree has been constructed and some blas nodes are added
-        Triangle* trianglePtr = reinterpret_cast<Triangle*>(&m_geometryUnit.m_CpuIndices[0]);
-        return m_tlasTree.IsValid<Instance>(&m_geometryUnit.m_CpuInstances[0],
+        IndexTriangle* trianglePtr = reinterpret_cast<IndexTriangle*>(&m_geometryUnit.m_CpuIndices[0]);
+        return m_tlasTreeAligned.IsValid<Instance>(&m_geometryUnit.m_CpuInstances[0],
             //Override getBounds of BLAS leaf node primitives (InstanceType)
             [this](const Instance& instance) -> AABB3D
             {
@@ -1325,16 +1297,17 @@ namespace Rendering
                 //and since each leaf in the TLAS has only 1 INSTANCE, we can just get the roots BLAS tree aabb
                 //which should be the same as the object aabb
                 const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
-                return Utils::ApplyMatrixToAABB(m_blasTrees[treeInterval.m_StartIndex].GetAABB(), instance.m_ModelMatrix);
+                return Utils::ApplyMatrixToAABB<STD_430_ALIGN, AABB3D::GetAlignment()>(
+                    m_blasTreesAligned[treeInterval.m_StartIndex].m_Bounds, instance.m_ModelMatrix);
             },
             //TLAS leaf successor is valid function
-            [this, trianglePtr](const BVHFlatNode& leafNode) -> bool
+            [this, trianglePtr](const BVHNodeStd430& leafNode) -> bool
             {
                 //NOTE: the object indices of TLAS tree are indices into instances
                 const Instance& instance = m_geometryUnit.m_CpuInstances[leafNode.m_ObjectStartIndex];
                 const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
-                return ::IsValidBVH<Triangle>(&m_blasTrees[treeInterval.m_StartIndex], m_geometryUnit.m_CpuIndices.size() / 3, trianglePtr, nullptr,
-                    [this](const Triangle& triangle) -> AABB3D
+                return ::IsValidBVH<IndexTriangle, STD_430_ALIGN>(&m_blasTreesAligned[treeInterval.m_StartIndex], m_geometryUnit.m_CpuIndices.size() / 3, trianglePtr, nullptr,
+                    [this](const IndexTriangle& triangle) -> AABB3D
                     {
                         //NOTE: this ONLY WORKS IF WE APPLIED OBEJCT LEAF NODE INDEX OFFSET TO BLAS TREES
                         //SO THEY INDEX INTO GLOBAL INDEX ARRAY AND NOT JUST LOCAL MESH ARRAY
@@ -1343,7 +1316,7 @@ namespace Rendering
             }, true);
     }
 
-    void Renderer::SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix)
+    void Renderer::SetViewUniformBuffer(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix)
     {
         m_viewerUniformBuffer.TryWriteField("worldPos", sizeof(Vec3), worldPos.GetMemPointer());
         //Mat4 viewTransposed = viewMatrix.Transpose();
@@ -1371,10 +1344,10 @@ namespace Rendering
         //m_viewerUniformBuffer.Get
         
     }
-    void Renderer::SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix,
+    void Renderer::SetViewUniformBuffer(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix,
         const Vec3& forwardDir, const Vec3& rightDir, const Vec3& upDir, const float yFov)
     {
-        SetViewerData(worldPos, viewMatrix, projMatrix);
+        SetViewUniformBuffer(worldPos, viewMatrix, projMatrix);
         if (!m_viewerUniformBuffer.TryWriteField("forwardDir", sizeof(Vec3), forwardDir.GetMemPointer()))
         {
             LogError(std::format("Attempted to write forwardDir to viewer uniform buffer but failed"));
@@ -1396,21 +1369,35 @@ namespace Rendering
             return;
         }
     }
-    void Renderer::UpdateUniformBuffers()
+    void Renderer::UpdateLightAndViewerBlock(const bool updateUniformBuffers)
     {
         if (m_uniformData.m_LightBufferNeedsUpdate)
         {
-            m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
+            if (updateUniformBuffers) m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
             m_uniformData.m_LightBufferNeedsUpdate = false;
         }
         //TODO: right now camera data is always written FIX THIS
         const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
         const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
-        Vec3 worldFoward, worldUp, worldRight;
-        camera.GetTransform().CalculateWorldDirections(&worldFoward, &worldUp, &worldRight);
-        SetViewerData(camera.GetTransform().GetWorldPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix,
-            worldFoward, worldRight, worldUp, camera.GetSettings().m_FieldOfViewYRadians);
+        camera.GetTransform().CalculateWorldDirections(&m_uniformData.m_ViewerBlock.m_FowardDir, 
+            &m_uniformData.m_ViewerBlock.m_UpDir, &m_uniformData.m_ViewerBlock.m_RightDir);
 
+        m_uniformData.m_ViewerBlock.m_WorldPos = camera.GetTransform().GetWorldPos();
+        m_uniformData.m_ViewerBlock.m_ViewMatrix = cameraData.m_ViewMatrix;
+        m_uniformData.m_ViewerBlock.m_ProjectionMatrix = cameraData.m_PlatformProjectionMatrix;
+        m_uniformData.m_ViewerBlock.m_FovY = camera.GetSettings().m_FieldOfViewYRadians;
+
+        const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
+        m_uniformData.m_ViewerBlock.m_ScreenSize = windowSize;
+
+        if (updateUniformBuffers)
+        {
+            SetViewUniformBuffer(m_uniformData.m_ViewerBlock.m_WorldPos, m_uniformData.m_ViewerBlock.m_ViewMatrix,
+                m_uniformData.m_ViewerBlock.m_ProjectionMatrix, m_uniformData.m_ViewerBlock.m_FowardDir,
+                m_uniformData.m_ViewerBlock.m_RightDir, m_uniformData.m_ViewerBlock.m_UpDir,
+                m_uniformData.m_ViewerBlock.m_FovY);
+        }
+        
         if (Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix))
         {
             m_unmovingFrames = 0;
@@ -1427,13 +1414,11 @@ namespace Rendering
             batch.m_IndicesCount, batch.m_InstanceStartIndex, batch.m_InstanceCount);
     }
 
-    void Renderer::ExecuteSkyboxPass(std::uint8_t* outDrawnAttachmentsMask)
+    void Renderer::ExecuteSkyboxPass(Texture& outputTexture, std::uint8_t* outDrawnAttachmentsMask)
     {
         UpdatePassRenderState(RenderPassType::Skybox);
-        if (m_boundFrameBuffer != nullptr)
-        {
-            m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &m_hdrColorOutput);
-        }
+        m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &outputTexture);
+
         //NOTE: we only need to clear the background color and not depth since we ignore depth
         Backend::ClearBackground(0b1);
         if (outDrawnAttachmentsMask != nullptr)
@@ -1453,7 +1438,7 @@ namespace Rendering
         Mat4 noTranslationViewMatrix = Utils::CalculateModelMatrix(nullptr, Vec3::Zero(), Vec3::One(), 
             Utils::CalculateRotationMatrix(forwardDir, ENGINE_UP_DIR, rightDir));
         //SetViewerData(camera.GetTransform().GetWorldPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix);
-        SetViewerData(camera.GetTransform().GetWorldPos(), noTranslationViewMatrix, cameraData.m_PlatformProjectionMatrix);
+        SetViewUniformBuffer(camera.GetTransform().GetWorldPos(), noTranslationViewMatrix, cameraData.m_PlatformProjectionMatrix);
 
         Backend::SetDepthTesting(false);
         Backend::SetDepthWriting(false);
@@ -1483,7 +1468,7 @@ namespace Rendering
             auto& otherLightData = m_uniformData.m_ExtraPointLightData[i];
 
             CalculateCubeMapMatrices(light.m_Pos, SHADOW_NEAR_DISTANCE, light.m_Radius, lightViewMatrices, lightProjMatrix);
-            Backend::SetViewport(m_shadowMaps[i].GetData().m_texelSize.m_X, m_shadowMaps[i].GetData().m_texelSize.m_Y);
+            Backend::SetViewport(m_shadowMaps[i].GetData().m_TexelSize.m_X, m_shadowMaps[i].GetData().m_TexelSize.m_Y);
 
             //For every single face on cube, we redraw scene from light perspective
             for (size_t j = 0; j < 6; j++)
@@ -1491,7 +1476,7 @@ namespace Rendering
                 m_frameBuffer.SetOutputTextureCube(FrameBufferAttachmentType::Depth, &m_shadowMaps[i], static_cast<TextureCubeFace>(j));
                 Backend::ClearBufferBit(BufferBitType::Depth);
 
-                SetViewerData(light.m_Pos, lightViewMatrices[j], lightProjMatrix);
+                SetViewUniformBuffer(light.m_Pos, lightViewMatrices[j], lightProjMatrix);
 
                 for (size_t k = 0; k < m_geometryUnit.m_Batches.size(); k++)
                 {
@@ -1508,15 +1493,13 @@ namespace Rendering
         //This forces the viewport to be set back to rendering for the window
         m_engineState->m_GraphicsContext.m_Window->ForceSizeUpdate();
     }
-    void Renderer::ExecuteLightingAndGeometryPass(const SlotIndex* shadowCubeMapSlots, const std::uint8_t previousDrawnColorAttachmentsMask)
+    void Renderer::ExecuteLightingAndGeometryPass(Texture& outputTexture, const SlotIndex* shadowCubeMapSlots, const std::uint8_t previousDrawnColorAttachmentsMask)
     {
         UpdatePassRenderState(RenderPassType::Geometry);
-        if (m_boundFrameBuffer != nullptr)
-        {
-            m_boundFrameBuffer->SetOutputRenderBuffer(FrameBufferAttachmentType::Depth, &m_hdrDepthRenderBuffer);
-            m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &m_hdrColorOutput);
-            m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color1, &m_brightnessOutput);
-        }
+        m_boundFrameBuffer->SetOutputRenderBuffer(FrameBufferAttachmentType::Depth, &m_hdrDepthRenderBuffer);
+        m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &outputTexture);
+        m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color1, &m_brightnessOutput);
+
         //If we did not draw to color attachments before this, we clear the two colors attachments we will need, color0 and color1
         //to ensure we do not have previous frame color data here
         const std::uint8_t clearBitmask = 0b11;
@@ -1525,7 +1508,7 @@ namespace Rendering
         //(so 0 bit in clear makes any bit 0 even if previousMask is 0 or 1 AND any 1 bit in clear stays 1 unless previous is also 1
         //so we only clear necessary slots that we need right now, but only if they were not previouslt drawn to)
         else Backend::ClearBackground(~(~clearBitmask | previousDrawnColorAttachmentsMask));
-        UpdateUniformBuffers();
+        UpdateLightAndViewerBlock(true);
 
         const Texture* lastBatchTexture = nullptr;
         const auto removeLastBatchTexture = [this, &lastBatchTexture]() -> void
@@ -1594,11 +1577,12 @@ namespace Rendering
         //LogError(std::format("HDR color texture: {}", Utils::ToStringMemory(writePtr, byteSize)));
     } 
 
-    void Renderer::ExecuteForwardRendering()
+    Texture& Renderer::ExecuteForwardRendering()
     {
         const bool hasSkybox = m_skybox != nullptr;
         std::uint8_t previousDrawnAttachmentsMask = 0;
-        if (hasSkybox) ExecuteSkyboxPass(&previousDrawnAttachmentsMask);
+        Texture& colorOutputTex = m_hdrColorOutput;
+        if (hasSkybox) ExecuteSkyboxPass(colorOutputTex, &previousDrawnAttachmentsMask);
 
         //NOTE: we do this to ensure that we only add any data as long as all 3 buffers have enough space
         const auto& freeVertexSeg = m_geometryUnit.m_VertexBufferHandle.TryGetFreeSegment(m_geometryUnit.GetVertexCount());
@@ -1611,7 +1595,7 @@ namespace Rendering
                 freeVertexSeg == std::nullopt, freeIndexSeg == std::nullopt, freeIndexSeg == std::nullopt);
             if (STALL_LOG_TYPE == LogType::Warning) LogWarning(message);
             else if (STALL_LOG_TYPE == LogType::Error) LogError(message);
-            return;
+            return colorOutputTex;
         }
 
         FencedBufferSegment& vertexFenceSeg = m_geometryUnit.m_VertexBufferHandle.WriteDataFenced(
@@ -1632,16 +1616,12 @@ namespace Rendering
 
             const size_t totalPointLights = m_uniformData.m_LightBlock.m_PointLightsCount;
             shadowCubeMapSlots = m_textureController.TryBindToFreeSlots<TextureCube>(m_shadowMaps, totalPointLights);
-
-            if (shadowCubeMapSlots.empty() || shadowCubeMapSlots.size() != totalPointLights)
-            {
-                LogError(std::format("Attempted to add shadow map textures to available slots but failed."
-                    "Reserved slots:{} expected size:{}", shadowCubeMapSlots.size(), totalPointLights));
-                return;
-            }
+            ENGINE_ASSERT(!shadowCubeMapSlots.empty() && shadowCubeMapSlots.size() == totalPointLights, 
+                "Attempted to add shadow map textures to available slots but failed."
+                "Reserved slots:{} expected size:{}", shadowCubeMapSlots.size(), totalPointLights);
         }
 
-        ExecuteLightingAndGeometryPass(DO_SHADOWS ? &shadowCubeMapSlots[0] : nullptr, previousDrawnAttachmentsMask);
+        ExecuteLightingAndGeometryPass(colorOutputTex, DO_SHADOWS ? &shadowCubeMapSlots[0] : nullptr, previousDrawnAttachmentsMask);
         if (DO_SHADOWS) m_textureController.RemoveFromSlots(shadowCubeMapSlots);
         else
         {
@@ -1649,53 +1629,10 @@ namespace Rendering
             indexFenceSeg.m_Fence.Insert();
             instanceFenceSeg.m_Fence.Insert();
         }
+        return colorOutputTex;
     }
 
-    void Renderer::ExecutePostProcessPass()
-    {
-        UpdatePassRenderState(RenderPassType::PostProcess);
-
-        if (DO_BLOOM)
-        {
-            ApplyBlurInPlace(m_brightnessOutput, m_ioTexture, 2);
-        }
-
-        /*LogError(std::format("Bound fraembuffer: {} size: {}", Backend::GetRenderObjectId(RenderObjectQueryType::BoundFrameBuffer),
-            Backend::GetViewportSize().ToString()));*/
-
-        Shader& ppShader = GetCoreShader(CoreShader::PostProcess);
-        BindShader(ppShader);
-
-        SlotIndex bloomSlotIndex = INVALID_SLOT_INDEX;
-        if (DO_BLOOM)
-        {
-            bloomSlotIndex = m_textureController.TryBindToFreeSlot<Texture>(m_brightnessOutput);
-            ppShader.TrySetUniform(UniformDataType::Sampler2D, BRIGHTNESS_TEXTURE_UNIFORM_NAME, &bloomSlotIndex);
-        }
-
-        //TODO: this is inneficient to bind the output texture to slot when we had to bind it during blur in place
-        //so we should either FORCE bind before blur in place, or return texture slot after blur in place
-        const SlotIndex hdrOutputIndex = m_textureController.TryBindToFreeSlot<Texture>(m_hdrColorOutput);
-        ppShader.TrySetUniform(UniformDataType::Sampler2D, HDR_TEXTURE_UNIFORM_NAME, &hdrOutputIndex);
-
-        //NOTE: we disable depth testing since we only draw one full screen triangle ( + its faster) and
-        //since hdr draws geometry to custom frame buffer, the depth in DEFAULT fbo would be 0, thus all 
-        //fragments would fail test -> result in full screen black even if backbuffer color is right
-        Backend::SetDepthTesting(false);
-        Backend::SetSrgbConversionStatus(true);
-        
-        //We just draw 3 vertices -> note we do not need vertex buffer since we use vertices defined in vertex shader
-        Backend::DrawVertices(3);
-
-        //NOTE: always unbind shader before switching shader settings like depth or srgb conversion status
-        UnbindActiveShader();
-        Backend::SetDepthTesting(true);
-        Backend::SetSrgbConversionStatus(false);
-
-        m_textureController.TryRemoveFromSlot(hdrOutputIndex);
-        if (bloomSlotIndex != INVALID_SLOT_INDEX) m_textureController.TryRemoveFromSlot(bloomSlotIndex);
-    }
-    void Renderer::ExecuteUIPass()
+    void Renderer::ExecuteUIPass(Texture& textureInputOutput)
     {
         UpdatePassRenderState(RenderPassType::UI);
 
@@ -1727,12 +1664,9 @@ namespace Rendering
         FencedBufferSegment& instanceFenceSeg = m_uiUnit.m_InstanceBufferHandle.WriteDataFenced(
             m_uiUnit.GetInstanceMemPointer(), freeInstanceSeg.value());
 
-        //If we have a custom frame buffer, it means we are doing PP so we must attach the same
-        //output that was used for geometry to override the colors on top
-        if (m_boundFrameBuffer != nullptr)
-        {
-            m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &m_hdrColorOutput);
-        }
+        //The texture that is input is the one that has UI drawn over
+        m_boundFrameBuffer->SetOutputTexture(FrameBufferAttachmentType::Color0, &textureInputOutput);
+
         //Here we clear the depth ONLY since we do not want old depth but we still need it for ui draw layers
         //NOTE: we are guaranteed to have written to color0 either via raytracer or forward renderer
         //so we do not clear it, but we still use it to override the colors on top
@@ -1768,6 +1702,50 @@ namespace Rendering
 
         if (lastBatchShader != nullptr) unbindLastBatchShader();
     }
+    void Renderer::ExecutePostProcessPass(Texture& noPPColorOutputTex)
+    {
+        UpdatePassRenderState(RenderPassType::PostProcess);
+
+        if (DO_BLOOM)
+        {
+            ApplyBlurInPlace(m_brightnessOutput, m_ioTexture, 2);
+        }
+
+        /*LogError(std::format("Bound fraembuffer: {} size: {}", Backend::GetRenderObjectId(RenderObjectQueryType::BoundFrameBuffer),
+            Backend::GetViewportSize().ToString()));*/
+
+        Shader& ppShader = GetCoreShader(CoreShader::PostProcess);
+        BindShader(ppShader);
+
+        SlotIndex bloomSlotIndex = INVALID_SLOT_INDEX;
+        if (DO_BLOOM)
+        {
+            bloomSlotIndex = m_textureController.TryBindToFreeSlot<Texture>(m_brightnessOutput);
+            ppShader.TrySetUniform(UniformDataType::Sampler2D, BRIGHTNESS_TEXTURE_UNIFORM_NAME, &bloomSlotIndex);
+        }
+
+        //TODO: this is inneficient to bind the output texture to slot when we had to bind it during blur in place
+        //so we should either FORCE bind before blur in place, or return texture slot after blur in place
+        const SlotIndex hdrOutputIndex = m_textureController.TryBindToFreeSlot<Texture>(noPPColorOutputTex);
+        ppShader.TrySetUniform(UniformDataType::Sampler2D, HDR_TEXTURE_UNIFORM_NAME, &hdrOutputIndex);
+
+        //NOTE: we disable depth testing since we only draw one full screen triangle ( + its faster) and
+        //since hdr draws geometry to custom frame buffer, the depth in DEFAULT fbo would be 0, thus all 
+        //fragments would fail test -> result in full screen black even if backbuffer color is right
+        Backend::SetDepthTesting(false);
+        Backend::SetSrgbConversionStatus(true);
+
+        //We just draw 3 vertices -> note we do not need vertex buffer since we use vertices defined in vertex shader
+        Backend::DrawVertices(3);
+
+        //NOTE: always unbind shader before switching shader settings like depth or srgb conversion status
+        UnbindActiveShader();
+        Backend::SetDepthTesting(true);
+        Backend::SetSrgbConversionStatus(false);
+
+        m_textureController.TryRemoveFromSlot(hdrOutputIndex);
+        if (bloomSlotIndex != INVALID_SLOT_INDEX) m_textureController.TryRemoveFromSlot(bloomSlotIndex);
+    }
 
     void Renderer::ApplyBlurInPlace(Texture& inputTexture, Texture& tempTexture, const float blurStrength)
     {
@@ -1789,13 +1767,13 @@ namespace Rendering
         for (int i = 0; i <= RADIUS; i++)
             weights[i] /= sum;
 
-        if (inputTexture.GetInfo().m_texelSize != tempTexture.GetInfo().m_texelSize)
+        if (inputTexture.GetInfo().m_TexelSize != tempTexture.GetInfo().m_TexelSize)
         {
             LogError(std::format("Attempted to apply blur for texture:{} to output:{} "
                 "but they have different texel sizes", inputTexture.ToString(), tempTexture.ToString()));
             return;
         }
-        if (tempTexture.GetInfo().m_internalStorage != TexelStorageType::RGBA16F)
+        if (tempTexture.GetInfo().m_InternalStorage != TexelStorageType::RGBA16F)
         {
             LogError(std::format("Attempted to apply blur for texture:{} to output:{} "
                 "but output texture does not have required rgba16 storage format", 
@@ -1821,7 +1799,7 @@ namespace Rendering
 
         //Dispatch one thread per pixel where each group size is defined in shader 
         //NOTE: since we do division, we may lose some texels, so we increase it to ensure we account for remainderc
-        const Vec3Int computeGroups = Vec3Int(inputTexture.GetInfo().m_texelSize, 1);
+        const Vec3Int computeGroups = Vec3Int(inputTexture.GetInfo().m_TexelSize, 1);
         blurShader.DispatchComputeShaderGroups(computeGroups);
         //We must invoke memory sync to ensure image operation applied to OUTPUT texture go through before
         //using it for sampling as INPUT texture for vertical pass
@@ -1856,32 +1834,80 @@ namespace Rendering
         Backend::InvokeImageMemorySync(ImageOperationBarrierType::FrameBuffer);
     }
 
-    void Renderer::ExecuteRayTracing()
+    Texture& Renderer::ExecuteRayTracing(Texture* overrideOutputTexture)
     {
         UpdatePassRenderState(RenderPassType::RayTrace);
+
+        //NOTE: since gpu stalls dont occur due to raytracer, we should always have even/odd alternating frames
+        //since then with ping-ponging still get accumulation logic without needing to write back output to input texture
+        Texture& inputTexture = (m_framesSinceStart & 1) ? m_texRaytraceAccum0 : m_texRaytraceAccum1;
+        Texture& outputTexture = (m_framesSinceStart & 1) ? m_texRaytraceAccum1 : m_texRaytraceAccum0;
+        //If we do not have any instances, the raytracers would do pointless extra work
+        if (m_geometryUnit.m_CpuInstances.size() != 0)
+        {
+            Texture* resultTex = nullptr;
+            if (RAYTRACE_MODE == RaytraceMode::GPU)
+                resultTex = &ExecuteRayTracingGPU(inputTexture, outputTexture, overrideOutputTexture);
+            else
+                resultTex= &ExecuteRayTracingCPU(inputTexture, outputTexture, overrideOutputTexture);
+
+            ENGINE_ASSERT(resultTex != nullptr, "Executed raytracing but texture result is NULL");
+            if (OUTPUT_RAYTRACE_FRAME >= 0 && m_framesSinceStart == OUTPUT_RAYTRACE_FRAME)
+                WriteTextureToFile(CreateRaytraceOutputPath(), *resultTex);
+
+            return *resultTex;
+        }
+
+        return overrideOutputTexture != nullptr ? *overrideOutputTexture : outputTexture;
+    }
+    Texture& Renderer::ExecuteRayTracingGPU(Texture& inputTex, Texture& outputTex, Texture* overrideOutputTexture)
+    {
         Shader& rayTraceShader = GetCoreShader(CoreShader::RayTrace);
         rayTraceShader.BindActive();
-        //LogWarning("BOUND RAY TRACE");
 
+        //TODO: this should get updated to include the first raytrace invocations because due to 0 instances, or stalling, it may not be
+        //the first frame and none of this stuff would get called
+        if (m_framesSinceStart == 0)
+        {
+            rayTraceShader.TrySetUniform(UniformDataType::Uint, RAY_TRACING_MAX_RAY_BOUNCES_UNIFORM_NAME, &MAX_RAYTRACE_BOUNCES);
+            rayTraceShader.TrySetUniform(UniformDataType::Uint, RAY_TRACING_SAMPLES_PER_PIXEL_UNIFORM_NAME, &RAYTRACER_SAMPLES_PER_PIXEL);
+
+            constexpr std::uint32_t RAYTRACER_OUTPUT_TEXTURE_COUNT = DRAW_UI ? 2 : 1;
+            rayTraceShader.TrySetUniform(UniformDataType::Uint, RAYTRACER_OUTPUT_TEXTURE_COUNT_UNIFORM_NAME, &RAYTRACER_OUTPUT_TEXTURE_COUNT);
+        }
         //If we dont do static goemetry we write every frame, otherwise
         //we only write during the first geometry init
-        if (!DO_STATIC_GEOMETRY || (DO_STATIC_GEOMETRY && m_framesSinceStart == 0)) 
-            WriteGeometryVertexDataToSSBOs();
-
-        //TODO: get propert emissive material count
         const std::uint32_t emissiveMaterialCount = m_emissiveInstanceIndices.size();
+        if (!DO_STATIC_GEOMETRY || (DO_STATIC_GEOMETRY && m_framesSinceStart == 0))
+        {
+            m_vertexStorageBuffer.WriteData(0, m_geometryUnit.GetVertexCount() * sizeof(Vertex), m_geometryUnit.GetVertexMemPointer());
+            m_indexStorageBuffer.WriteData(0, m_geometryUnit.GetIndexCount() * sizeof(IndexType), m_geometryUnit.GetIndexMemPointer());
+            m_instanceStorageBuffer.WriteData(0, m_geometryUnit.GetInstanceCount() * sizeof(Instance), m_geometryUnit.GetInstanceMemPointer());
+            m_materialStorageBuffer.WriteData(0, m_materialData.size() * sizeof(MaterialData), &m_materialData[0]);
+            /*LogWarning(std::format("Instance mesh buffer elements:{} write:{} bytes:{}", m_instanceMeshStorageBuffer.GetAllocatedByteSize() / sizeof(InstanceMesh),
+                m_instanceMeshes.size(), m_instanceMeshes.size() * sizeof(InstanceMesh)));*/
+            m_instanceMeshStorageBuffer.WriteData(0, m_instanceMeshes.size() * sizeof(InstanceMesh), &m_instanceMeshes[0]);
+            if (emissiveMaterialCount > 0)
+            {
+                m_emissiveInstanceIndexStorageBuffer.WriteData(0,
+                    emissiveMaterialCount * sizeof(std::uint32_t), &m_emissiveInstanceIndices[0]);
+            }
+
+            m_blasTreesStorageBuffer.WriteData(0, sizeof(decltype(m_blasTreesAligned[0])) * m_blasTreesAligned.size(), &m_blasTreesAligned[0]);
+        }
         rayTraceShader.TrySetUniform(UniformDataType::Uint, EMISSIVE_MATERIAL_COUNT_UNIFORM_NAME, &emissiveMaterialCount);
 
-        ENGINE_ASSERT(m_geometryUnit.m_CpuInstances.size() != 0, "Attempted to execute ray tracing but there are no instances");
-
-        const SlotIndex inputTextureSlot = m_imageController.TryBindToFreeSlot<Texture>(m_hdrColorOutput, AccessPermissions::ReadWrite);
-        const SlotIndex outputTextureSlot = m_imageController.TryBindToFreeSlot<Texture>(m_ioTexture, AccessPermissions::Write);
+        const SlotIndex inputTextureSlot = m_imageController.TryBindToFreeSlot<Texture>(inputTex, AccessPermissions::Read);
+        const SlotIndex outputTextureSlot = m_imageController.TryBindToFreeSlot<Texture>(outputTex, AccessPermissions::Write);
         rayTraceShader.TrySetUniform(UniformDataType::Image2D, INPUT_TEXTURE_UNIFORM_NAME, &inputTextureSlot);
-        rayTraceShader.TrySetUniform(UniformDataType::Image2D, OUTPUT_TEXTURE_UNIFORM_NAME, &outputTextureSlot);
+        rayTraceShader.TrySetUniform(UniformDataType::Image2D, OUTPUT_TEXTURE_0_UNIFORM_NAME, &outputTextureSlot);
 
-        rayTraceShader.TrySetUniform(UniformDataType::Uint, UNMOVING_FRAME_NUMBER_UNIFORM_NAME, &m_unmovingFrames);
-        m_lightUniformBuffer.WriteData(0, sizeof(LightBlockData), &m_uniformData.m_LightBlock);
-
+        SlotIndex overrideOutputTextureSlot = INVALID_SLOT_INDEX;
+        if (overrideOutputTexture != nullptr)
+        {
+            overrideOutputTextureSlot = m_imageController.TryBindToFreeSlot<Texture>(*overrideOutputTexture, AccessPermissions::Write);
+            rayTraceShader.TrySetUniform(UniformDataType::Image2D, OUTPUT_TEXTURE_1_UNIFORM_NAME, &overrideOutputTextureSlot);
+        }
         SlotIndex bloomSlot = INVALID_SLOT_INDEX;
         if (DO_BLOOM)
         {
@@ -1897,28 +1923,25 @@ namespace Rendering
             skyboxSlot = m_textureController.TryBindToFreeSlot<Texture>(*m_skybox);
             rayTraceShader.TrySetUniform(UniformDataType::Sampler2D, SKYBOX_UNIFORM_NAME, &skyboxSlot);
         }
-        
+
         int* textureSampleSlots = nullptr;
-        if (!m_bindQueuedTextures.empty())
-        {            
-            textureSampleSlots = (int*)alloca(sizeof(int) * m_bindQueuedTextures.size());
-            for (std::uint8_t i = 0; i < m_bindQueuedTextures.size(); i++)
+        if (!m_renderTextures.empty())
+        {
+            textureSampleSlots = (int*)alloca(sizeof(int) * m_renderTextures.size());
+            for (std::uint8_t i = 0; i < m_renderTextures.size(); i++)
             {
-                SlotIndex slotIndex = m_textureController.TryBindToFreeSlot<Texture>(*m_bindQueuedTextures[i]);
-                if (slotIndex == INVALID_SLOT_INDEX)
-                {
-                    LogError("Attempted to bind a texture for raytracing but failed");
-                    return;
-                }
+                SlotIndex slotIndex = m_textureController.TryBindToFreeSlot<Texture>(*m_renderTextures[i]);
+                ENGINE_ASSERT(slotIndex != INVALID_SLOT_INDEX, "Failed to bind slot index");
                 textureSampleSlots[i] = slotIndex;
             }
 
             rayTraceShader.TrySetUniformArray(UniformDataType::Sampler2D,
-                TEXTURES_UNIFORM_NAME, textureSampleSlots, m_bindQueuedTextures.size());
+                TEXTURES_UNIFORM_NAME, textureSampleSlots, m_renderTextures.size());
         }
 
-        UpdateUniformBuffers();
-        
+        UpdateLightAndViewerBlock(true);
+        rayTraceShader.TrySetUniform(UniformDataType::Uint, UNMOVING_FRAME_NUMBER_UNIFORM_NAME, &m_unmovingFrames);
+
         const Vec2Int windowSize = m_engineState->m_GraphicsContext.m_Window->GetSize();
         rayTraceShader.DispatchComputeShaderGroups(Vec3Int(windowSize, 1));
 
@@ -1928,14 +1951,68 @@ namespace Rendering
         rayTraceShader.UnbindActive();
 
         m_imageController.TryRemoveFromSlot(inputTextureSlot);
-        m_imageController.TryRemoveFromSlot(outputTextureSlot);
+        if (outputTextureSlot != inputTextureSlot) m_imageController.TryRemoveFromSlot(outputTextureSlot);
         if (bloomSlot != INVALID_SLOT_INDEX) m_imageController.TryRemoveFromSlot(bloomSlot);
         if (skyboxSlot != INVALID_SLOT_INDEX) m_textureController.TryRemoveFromSlot(skyboxSlot);
 
-        for (std::uint8_t i = 0; i < m_bindQueuedTextures.size(); i++)
+        for (std::uint8_t i = 0; i < m_renderTextures.size(); i++)
         {
             m_textureController.TryRemoveFromSlot(textureSampleSlots[i]);
         }
+        return overrideOutputTexture != nullptr ? *overrideOutputTexture : outputTex;
+    }
+    Texture& Renderer::ExecuteRayTracingCPU(Texture& inputTex, Texture& outputTex, Texture* overrideOutputTexture)
+    {
+        //TODO: this should get updated to include the first raytrace invocations because due to 0 instances, or stalling, it may not be
+        //the first frame and none of this stuff would get called
+        if (m_framesSinceStart == 0)
+        {
+            m_raytracer.m_Settings.m_MaxBounces = MAX_RAYTRACE_BOUNCES;
+            m_raytracer.m_Settings.m_SamplesPerPixel = RAYTRACER_SAMPLES_PER_PIXEL;
+            m_raytracer.m_Settings.m_BloomThreshold = BLOOM_THRESHOLD;
+
+            //Since we use references for block, we dont need to update them every frame since only the data inside the block updates
+            m_raytracer.m_LightBlock = &m_uniformData.m_LightBlock;
+            m_raytracer.m_ViewBlock = &m_uniformData.m_ViewerBlock;
+        }
+        if (!DO_STATIC_GEOMETRY || (DO_STATIC_GEOMETRY && m_framesSinceStart == 0))
+        {
+            m_raytracer.m_Vertices = m_geometryUnit.GetVertexMemPointer();
+            m_raytracer.m_Indices = m_geometryUnit.GetIndexMemPointer();
+            m_raytracer.m_Instances = m_geometryUnit.GetInstanceMemPointer();
+            m_raytracer.m_Meshes = &m_instanceMeshes[0];
+            m_raytracer.m_Materials = &m_materialData[0];
+            m_raytracer.m_Textures = &m_cpuBufferTextures[0];
+            //Since raytrace does NOT get invoked with 0 isntaces -> we have at least 1 node in tlas and blas trees
+            //and since they get updated BEFORE the raytracer, these should be guaranteed non-null
+            m_raytracer.m_BlasNodes = &m_blasTreesAligned[0];
+            m_raytracer.m_TlasNodes = &m_tlasTreeAligned.GetNodes()[0];
+
+            const std::uint32_t emissiveMaterialCount = m_emissiveInstanceIndices.size();
+            m_raytracer.m_Settings.m_EmissiveCount = emissiveMaterialCount;
+            if (emissiveMaterialCount > 0) m_raytracer.m_EmissiveInstanceIndices = &m_emissiveInstanceIndices[0];
+        }
+
+        m_raytracer.m_InputTex = &inputTex;
+        m_raytracer.m_OutputTex0 = &outputTex;
+        if (overrideOutputTexture != nullptr)
+            m_raytracer.m_OutputTex1 = overrideOutputTexture;
+
+        if (DO_BLOOM)
+            m_raytracer.m_BrightnessTex = &m_brightnessOutput;
+        if (m_skybox != nullptr)
+            m_raytracer.m_SkyboxTex = m_skybox;
+
+        UpdateLightAndViewerBlock(false);
+        m_raytracer.m_Settings.m_UnmovingFrameCount = m_unmovingFrames;
+
+        m_raytracer.Run();
+        //NOTE: since the output texture in the raytracer is then used for Post Process, the output texture must be 
+        //a gpu texture (which the accum0, accum1 ARE NOT) so we write the output from CPU textures to a GPU texture
+        m_hdrColorOutput.CopyBytes(outputTex);
+        //LogWarning(std::format("hdr tex Color outpit:{}", m_hdrColorOutput.ToStringBytes(false)));
+        //LogError(std::format("is emtpy copy:{}", m_hdrColorOutput.HasEmptyData()));
+        return m_hdrColorOutput;
     }
 
     void Renderer::FlushBatches()
@@ -1947,25 +2024,45 @@ namespace Rendering
             return;
         }
         
+        //TODO: if we add more instances and have non0static geometry, tlas tree needs to get updated too
+        //Or if objects move
         if (m_framesSinceStart == 0)
         {
-            ConstructTLASTree();
-            m_materialStorageBuffer.WriteData(0, m_materialData.size() * sizeof(MaterialData), &m_materialData[0]);
+            //We only write to SSBBO if we are raytracing for the GPU
+            ConstructTLASTree(DO_RAYTRACING && RAYTRACE_MODE == RaytraceMode::GPU);
         }
         //TestBVHIntersectionSphere(*this);
 
+        /*
         std::function<bool(Vec3, Vec3)> testFunc =
             [this](Vec3 rayWorldOrigin, Vec3 rayDir) -> bool
             {
                 return IntersectsBVH(rayWorldOrigin, rayDir, nullptr);
             };
+        */
             
-        if (DO_RAYTRACING) ExecuteRayTracing();
-        else ExecuteForwardRendering();
+        Texture* texOutput = nullptr;
+        if (DO_RAYTRACING) 
+        {
+            //If we draw UI with raytracer, we can NOT just use accumulation frame output to then
+            //get overdrawn by UI and then used in the subsequent frame so in that case we use a custom
+            //ui output texture
+            if (DRAW_UI)
+            {
+                ExecuteRayTracing(&m_texUIOutput);
+                texOutput = &m_texUIOutput;
+            }
+            else texOutput = &ExecuteRayTracing(nullptr);
+        }
+        //Forward rendering does not reuse previous textures like raytracer so 
+        //overdrawing on the same output texture for UI does not matter 
+        else texOutput= &ExecuteForwardRendering();
 
-        if (DRAW_UI) ExecuteUIPass();
-        //TODO: you should be able to do pp without hdr too
-        if (DO_POST_PROCESS) ExecutePostProcessPass();
+        //NOTE: UI PASS DOES mutate the input texture with the UI drawn on top of it
+        if (DRAW_UI) ExecuteUIPass(*texOutput);
+        //The texture that is then used for post process is NOT mutated by PP because it is only used for sampling
+        //and outputitting to the default framebuffer which renders to screen
+        if (DO_POST_PROCESS) ExecutePostProcessPass(*texOutput);
     }
 
     void Renderer::RenderBuffer()
@@ -2010,9 +2107,9 @@ namespace Rendering
 
     std::string Renderer::ToStringBVH() const
     {
-        return "TO STRING BVH: \n" + m_tlasTree.ToString(BVHToStringType::NodeBounds, nullptr,
+        return "TO STRING BVH: \n" + m_tlasTreeAligned.ToString(BVHToStringType::NodeBounds, nullptr,
             //TLAS leaf node to string function 
-            [this](const BVHFlatNode& tlasLeafNode) -> std::string
+            [this](const BVHNodeStd430& tlasLeafNode) -> std::string
             {
                 const Instance& instance = m_geometryUnit.m_CpuInstances[tlasLeafNode.m_ObjectStartIndex];
                 const InstanceMesh& mesh = m_instanceMeshes[instance.m_MeshIndex];
@@ -2025,7 +2122,7 @@ namespace Rendering
                 //world root node bounds of the blas tree is wrong (the tlas leaf node bounds > blas root node bounds)
                 std::string invalidBoundsPrefix = "";
                 std::string invalidBoundsSuffix = "";
-                const BVHFlatNode& blasRootNode = m_blasTrees[interval.m_StartIndex];
+                const BVHNodeStd430& blasRootNode = m_blasTreesAligned[interval.m_StartIndex];
                 AABB3D rootNodeWorldBounds = Utils::ApplyMatrixToAABB(blasRootNode.GetAABB(), instance.m_ModelMatrix);
                 AABB3D parentBounds = tlasLeafNode.GetAABB();
                 if (parentBounds.GetSize().AnyAxisLessThan(rootNodeWorldBounds.GetSize()) || 
@@ -2037,10 +2134,10 @@ namespace Rendering
                 }
 
                 //LogWarning(std::format("Interval is: {} mesh index: {} instance index:{}", interval.m_Size, m_instances[node.m_ObjectStartIndex].m_MeshIndex));
-                const Triangle* trianglePtr = reinterpret_cast<const Triangle*>(m_geometryUnit.m_CpuIndices[0]);
-                return invalidBoundsPrefix + ToStringBVHNodes<Triangle>(&m_blasTrees[0], interval.m_StartIndex,
+                const IndexTriangle* trianglePtr = reinterpret_cast<const IndexTriangle*>(m_geometryUnit.m_CpuIndices[0]);
+                return invalidBoundsPrefix + ToStringBVHNodes<IndexTriangle, STD_430_ALIGN>(&m_blasTreesAligned[0], interval.m_StartIndex,
                     interval.m_Size, trianglePtr, nullptr, BVHToStringType::NodeBounds,
-                    [instance, &tlasLeafNode](const BVHFlatNode& blasNode, const BVHFlatNode* parentNode) -> std::string
+                    [instance, &tlasLeafNode](const BVHNodeStd430& blasNode, const BVHNodeStd430* parentNode) -> std::string
                     {
                         const Vec3 aabbSize = blasNode.GetAABB().GetSize();
                         if (Utils::ApproximateEqualsF(aabbSize.m_X, 0) || Utils::ApproximateEqualsF(aabbSize.m_Y, 0)
@@ -2053,7 +2150,7 @@ namespace Rendering
                             Utils::ApplyMatrixToAABB(blasNode.GetAABB(), instance.m_ModelMatrix).ToString());
                     },
                     //BLAS Leaf node to string function -> get vertices
-                    [this, &instance, &mesh, &blasRootNode](const BVHFlatNode& blasLeafNode) -> std::string
+                    [this, &instance, &mesh, &blasRootNode](const BVHNodeStd430& blasLeafNode) -> std::string
                     {
                         //The object indices for blas leaves are TRIANGLE INDICES
                         const size_t indexStartIndex = blasLeafNode.m_ObjectStartIndex * 3;
@@ -2113,8 +2210,8 @@ namespace Rendering
             {
                 const Instance& instance = m_geometryUnit.m_CpuInstances[batch.m_InstanceStartIndex + i];
                 const ArrayInterval interval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
-                const Triangle* trianglePtr = reinterpret_cast<const Triangle*>(&m_geometryUnit.m_CpuIndices[0]);
-                std::string blasTreeString = ToStringBVHNodes<Triangle>(&m_blasTrees[0], interval.m_StartIndex,
+                const IndexTriangle* trianglePtr = reinterpret_cast<const IndexTriangle*>(&m_geometryUnit.m_CpuIndices[0]);
+                std::string blasTreeString = ToStringBVHNodes<IndexTriangle>(&m_blasTreesAligned[0], interval.m_StartIndex,
                     interval.m_Size, trianglePtr, nullptr, BVHToStringType::NodeBounds);
 
                 std::vector<Vec3> vertexPositions = {};

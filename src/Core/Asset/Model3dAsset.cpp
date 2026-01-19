@@ -132,7 +132,7 @@ Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, fals
 
 	m_model.m_Objects.reserve(modelScene->mNumMeshes);
 	ProcessSceneNode(m_model, modelScene, modelScene->mRootNode, nullptr);
-	if (path.stem() == "plane") LogWarning(std::format("created model: {}", m_model.ToString()));
+	//if (path.stem() == "plane") LogError(std::format("created model tree: {}", m_model.m_Objects[0].m_Mesh.m_BLASTree.ToString(BVHToStringType::NodeBounds)));
 
 	//If we write any format to vtx, then after the first import from a non-vtx format we write as compressed
 	if (WRITE_ANY_FORMAT_TO_CUSTOM && fileExtension != VTXConverter::MODEL_3D_FILE_EXTENSION)

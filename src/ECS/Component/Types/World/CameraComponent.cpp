@@ -4,9 +4,9 @@
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Core/PositionConversions.hpp"
 #include "StaticGlobals.hpp"
-#include "Utils/Data/Vec4Type.hpp"
+#include "Utils/Math/Vec4Type.hpp"
 #include "Math/PlatformMath.hpp"
-#include "Utils/MathAdvanced.hpp"
+#include "Utils/Math/MathAdvanced.hpp"
 
 std::string CameraPrecalculatedData::ToString() const
 {

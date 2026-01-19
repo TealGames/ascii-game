@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 
 namespace Rendering
 {

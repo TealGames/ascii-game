@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/Asset/Asset.hpp"
 #include "Core/Rendering/Texture.hpp"
-//#include "raylib.h"
 
 class TextureAsset : public Asset
 {
@@ -24,4 +23,7 @@ public:
 
 bool HasTextureExtension(const std::string& extension);
 bool IsHdrTextureExtension(const std::string& extension);
+
+void WriteTextureFromFile(const std::filesystem::path& path, Rendering::Texture& tex);
+void WriteTextureToFile(const std::filesystem::path& path, const Rendering::Texture& tex);
 

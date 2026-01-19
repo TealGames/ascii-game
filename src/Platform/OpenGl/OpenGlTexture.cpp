@@ -52,30 +52,29 @@ namespace Rendering
 			return 0;
 		}
 
-		static GLenum GetInputFormat(const ChannelFormat channelFormat)
+		static GLenum GetInputFormat(const TexelChannelFormat channelFormat)
 		{
-			if (channelFormat == ChannelFormat::Single) return GL_RED;
-			else if (channelFormat == ChannelFormat::RGB) return GL_RGB;
-			else if (channelFormat == ChannelFormat::RGBA) return GL_RGBA;
-			else if (channelFormat == ChannelFormat::Depth) return GL_DEPTH;
-			else if (channelFormat == ChannelFormat::Depth_Stencil) return GL_DEPTH_STENCIL;
+			if (channelFormat == TexelChannelFormat::Single) return GL_RED;
+			else if (channelFormat == TexelChannelFormat::RGB) return GL_RGB;
+			else if (channelFormat == TexelChannelFormat::RGBA) return GL_RGBA;
+			else if (channelFormat == TexelChannelFormat::Depth) return GL_DEPTH;
+			else if (channelFormat == TexelChannelFormat::Depth_Stencil) return GL_DEPTH_STENCIL;
 
 			LogError(std::format("[OPENGL]: Attempted to convert channel format but texture channel format has no actions"));
 			return 0;
 		}
 
-		static GLenum GetTexelStorageType(const TexelStorageType storage)
+		static GLenum GetChannelDataType(const TexelChannelDataType colorChannelType)
 		{
-			if (storage == TexelStorageType::R8 || storage == TexelStorageType::RGB8 ||
-				storage == TexelStorageType::RGBA8)
+			if (colorChannelType == TexelChannelDataType::Byte)
 				return GL_UNSIGNED_BYTE;
-			//NOTE: technically, this needs to be GL_HALF_FLOAT
-			//but since c++ does not have native 16 bit float we use 32
-			else if (storage == TexelStorageType::RGBA16F || storage == TexelStorageType::RGB16F)
+			else if (colorChannelType == TexelChannelDataType::Float16)
+				return GL_HALF_FLOAT;
+			else if (colorChannelType == TexelChannelDataType::Float32)
 				return GL_FLOAT;
-			else if (storage == TexelStorageType::Depth24)
+			else if (colorChannelType == TexelChannelDataType::UInt32)
 				return GL_UNSIGNED_INT;
-			else if (storage == TexelStorageType::Depth24_Stencil8)
+			else if (colorChannelType == TexelChannelDataType::UInt24_8)
 				return GL_UNSIGNED_INT_24_8;
 
 			LogError(std::format("[OPENGL]: Attempted to convert internal storage to texel storage type"));
@@ -121,17 +120,28 @@ namespace Rendering
 		{
 			RenderObjectId textureId;
 			GL_CALL(glCreateTextures(GL_TEXTURE_2D, 1, &textureId));
-			GL_CALL(glTextureStorage2D(textureId, 1, OpenGlUtils::GetStorage(data.m_internalStorage), data.m_texelSize.m_X, data.m_texelSize.m_Y));
+			GL_CALL(glTextureStorage2D(textureId, 1, OpenGlUtils::GetStorage(data.m_InternalStorage), data.m_TexelSize.m_X, data.m_TexelSize.m_Y));
 
+			const std::uint8_t channelCount = GetChannelCount(data.m_InternalStorage);
 			//If the texels are stored in a singular byte channel (NOTE: one channel always gets stored in RED)
 			//it means the texture is most likely grayscale, so we apply red channel data to all channels
-			if (data.m_internalStorage == TexelStorageType::R8)
+			if (channelCount == 1)
 			{
 				const GLint swizzleMask[4] = {GL_RED, GL_RED, GL_RED, GL_ONE};
 				SetSwizzleMask(textureId, &swizzleMask);
 			}
+			else if (channelCount == 2)
+			{
+				const GLint swizzleMask[4] = { GL_RED, GL_GREEN, GL_ZERO, GL_ONE };
+				SetSwizzleMask(textureId, &swizzleMask);
+			}
+			else if (channelCount == 3)
+			{
+				const GLint swizzleMask[4] = { GL_RED, GL_GREEN, GL_BLUE, GL_ONE };
+				SetSwizzleMask(textureId, &swizzleMask);
+			}
 
-			SetTextureSettings(textureId, data.m_wrapBehavior, data.m_minFilter, data.m_magFilter);
+			SetTextureSettings(textureId, data.m_WrapBehavior, data.m_MinFilter, data.m_MagFilter);
 			return textureId;
 		}
 
@@ -140,45 +150,50 @@ namespace Rendering
 			GL_CALL(glDeleteTextures(1, &id));
 		}
 
-		static void SetData(const RenderObjectId id, const Vec2Int size, const TexelStorageType storage, const std::byte* data) 
+		//NOTE: `texelOffset` is from the BOTTOM LEFT in [X,Y] (WIDTH, HEIGHT) and `texelSize` is in [WIDTH, HEIGHT]
+		static void WriteBytes(const RenderObjectId id, const Vec2Int texelOffset, const Vec2Int texelSize, 
+			const TexelChannelFormat sourceFormat, const TexelChannelDataType sourceType, const std::byte* readPtr)
 		{
-			const GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
-			const GLenum texelStorage = GetTexelStorageType(storage);
-			GL_CALL(glTextureSubImage2D(id, 0, 0, 0, size.m_X, size.m_Y, format, texelStorage, data));
+			const GLenum channelFormat = GetInputFormat(sourceFormat);
+			const GLenum channelDataType = GetChannelDataType(sourceType);
+			//NOTE: OpenGL uses bottom left as (0,0) for offset
+			GL_CALL(glTextureSubImage2D(id, 0, texelOffset.m_X, texelOffset.m_Y, texelSize.m_X, texelSize.m_Y, channelFormat, channelDataType, readPtr));
 		}
-		static void CopyData(const RenderObjectId id, const Vec2Int size, const Texture& otherTexture)
+		//`texelSize` is in [WIDTH, HEIGHT]
+		static void CopyBytes(const RenderObjectId id, const Vec2Int texelSize, const Texture& otherTexture)
 		{
-			//Params: source id, source type, source mip map level, 
+			//Params: source id, source type, source mip map level, source offset X,Y,Z 
+			// destination id, destination type, destination mip map level, destination offset, x,y,z destination size x,y,z
 			// and last 3 are xyz start coords on texture to start copy from
 			GL_CALL(glCopyImageSubData(otherTexture.GetId(), GL_TEXTURE_2D, 0, 0, 0, 0,
-				id, GL_TEXTURE_2D, 0, 0, 0, 0, size.m_X, size.m_Y, 1));
+				id, GL_TEXTURE_2D, 0, 0, 0, 0, texelSize.m_X, texelSize.m_Y, 1));
 		}
 
-		static void GetData(const RenderObjectId id, const Vec2Int offset, const Vec2Int size,
-			const TexelStorageType storage, std::byte* writePtr, const size_t bufferSize)
+		//NOTE: `texelOffset` is from the BOTTOM LEFT in [X,Y] (WIDTH, HEIGHT) and `texelSize` is in [WIDTH, HEIGHT]
+		static void ReadBytes(const RenderObjectId id, const Vec2Int texelOffset, const Vec2Int texelSize,
+			const TexelChannelFormat sourceFormat, const TexelChannelDataType sourceType, std::byte* writePtr, const size_t bufferSize)
 		{
-			const GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
-			const GLenum texelStorage = GetTexelStorageType(storage);
-			const Vec2Int bottomLeftCenteredOffset = Conversions::TryToNewFixedAreaPos<int>(size, 
-				CoordinateOriginType::TopLeft, offset + Vec2Int(0, size.m_Y), CoordinateOriginType::BottomLeft).value();
-
-			//LogError(std::format("Get data offset:{} converted:{}", offset.ToString(), bottomLeftCenteredOffset.ToString()));
-			GL_CALL(glGetTextureSubImage(id, 0, bottomLeftCenteredOffset.m_X, bottomLeftCenteredOffset.m_Y, 0, 
-				size.m_X, size.m_Y, 1, format, texelStorage, bufferSize, writePtr));
+			const GLenum channelFormat = GetInputFormat(sourceFormat);
+			const GLenum channelDataType = GetChannelDataType(sourceType);
+			/*(GLuint texture, GLint level, GLint xoffset, GLint yoffset, 
+				GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, GLsizei bufSize, void* pixels);*/
+			//NOTE: OpenGL uses bottom left as (0,0) for offset
+			GL_CALL(glGetTextureSubImage(id, 0, texelOffset.m_X, texelOffset.m_Y, 0,
+				texelSize.m_X, texelSize.m_Y, 1, channelFormat, channelDataType, bufferSize, writePtr));
 		}
 
-		Texture CreateTexture(const std::byte* data, const Vec2Int& size, const TexelStorageType storage,
+		Texture CreateTexture(const std::byte* data, const Vec2Int& size, const TextureBufferType type, const TexelStorageType storage,
 			const AxesWrapBehavior wrap, const MinFilter min, const MagFilter mag)
 		{
-			return Texture(data, size, storage, wrap, min, mag, TextureCallbacks
+			return Texture(data, size, type, storage, wrap, min, mag, TextureCallbacks
 				{
 					AllocateTexture,
-					SetData,
+					WriteBytes,
 					SetWrapBehavior,
 					SetMinFilter,
 					SetMagFilter,
-					CopyData,
-					GetData,
+					CopyBytes,
+					ReadBytes,
 					DeallocateTexture,
 				});
 		}
@@ -188,15 +203,15 @@ namespace Rendering
 			RenderObjectId cubeId;
 			GL_CALL(glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &cubeId));
 			//GL_CALL(glTextureStorage2D(GL_TEXTURE_2, 0, format, size.m_X, size.m_Y, 0, format, GL_UNSIGNED_BYTE, data));
-			GL_CALL(glTextureStorage2D(cubeId, 1, OpenGlUtils::GetStorage(data.m_internalStorage), data.m_texelSize.m_X, data.m_texelSize.m_Y));
+			GL_CALL(glTextureStorage2D(cubeId, 1, OpenGlUtils::GetStorage(data.m_InternalStorage), data.m_TexelSize.m_X, data.m_TexelSize.m_Y));
 
-			SetTextureSettings(cubeId, data.m_wrapBehavior, data.m_minFilter, data.m_magFilter);
+			SetTextureSettings(cubeId, data.m_WrapBehavior, data.m_MinFilter, data.m_MagFilter);
 			return cubeId;
 		}
 		static void SetDataCube(const TextureCubeFace face, const RenderObjectId id, const Vec2Int size, const TexelStorageType storage, const std::byte* data)
 		{
 			GLenum format = GetInputFormat(GetChannelFormatFromStorage(storage));
-			GLenum texelStorage = GetTexelStorageType(storage);
+			GLenum texelStorage = GetChannelDataType(GetChannelDataTypeFromStorage(storage));
 			GL_CALL(glTextureSubImage3D(id, 0, 0, 0, OpenGlUtils::GetTextureCubeFaceIndex(face), size.m_X, size.m_Y, 1, format, texelStorage, data));
 		}
 

@@ -3,7 +3,9 @@
 #include <array>
 #include <string>
 #include "Core/Rendering/RenderObject.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
+#include "Utils/Data/Color.hpp"
+#include "Utils/Debug.hpp"
 
 namespace Rendering
 {
@@ -12,40 +14,60 @@ namespace Rendering
 	/// By default red is used for single channel.
 	/// Used when updating a texture to determine how the cpu data is set up
 	/// </summary>
-	using ChannelFormatIntegralType = std::uint8_t;
-	enum class ChannelFormat : ChannelFormatIntegralType
+	using TexelChannelFormatIntegralType = std::uint8_t;
+	enum class TexelChannelFormat : TexelChannelFormatIntegralType
 	{
 		Single				= 0,
-		RGB					= 1,
-		RGBA				= 2,
-		Depth				= 3,
-		Depth_Stencil		= 4,
+		Double				= 1,
+		RGB					= 2,
+		RGBA				= 3,
+		Depth				= 4,
+		Depth_Stencil		= 5,
 	};
+	std::uint8_t GetChannelCount(const TexelChannelFormat);
+
+	enum class TexelChannelDataType : std::uint8_t
+	{
+		Byte		= 0,
+		Float16		= 1,
+		Float32		= 2,
+		UInt32		= 3,
+		UInt24_8	= 4
+	};
+	std::uint16_t GetChannelByteSize(const TexelChannelDataType);
 
 	/// <summary>
 	/// The storage types and space used for storage
-	/// upon creating the texture
+	/// upon creating the texture. Ex. RGB16F -> 3 Channels (RGB) with 16F (2 bytes) for each
 	/// </summary>
-	using InternalStorageIntegralType = std::uint8_t;
+	using TexelStorageIntegralType = std::uint8_t;
 	inline constexpr std::uint8_t INTERNAL_STORAGE_PER_FORMAT = 5;
-	enum class TexelStorageType : InternalStorageIntegralType
+	enum class TexelStorageType : TexelStorageIntegralType
 	{
+		//---------------- R CHANNEL ------------------------------
 		R8					= 0,
-		RGB8				= INTERNAL_STORAGE_PER_FORMAT,
-		RGB16F				= INTERNAL_STORAGE_PER_FORMAT +1,
-		/// <summary>
-		/// RGBA each channel with 1 byte integer precision
-		/// </summary>
-		RGBA8				= INTERNAL_STORAGE_PER_FORMAT*2,
-		/// <summary>
-		/// RGBA each channel 2 byte/16 bit float precision 
-		/// </summary>
-		RGBA16F				= INTERNAL_STORAGE_PER_FORMAT*2 + 1,
-		Depth24				= INTERNAL_STORAGE_PER_FORMAT*3,
-		Depth24_Stencil8	= INTERNAL_STORAGE_PER_FORMAT*4
+		//---------------- RG CHANNEL -----------------------------
+		RG8					= INTERNAL_STORAGE_PER_FORMAT,
+		//---------------- RGB CHANNEL ----------------------------
+		RGB8				= INTERNAL_STORAGE_PER_FORMAT * 2,
+		RGB16F				= INTERNAL_STORAGE_PER_FORMAT * 2 + 1,
+		RGB32F				= INTERNAL_STORAGE_PER_FORMAT * 2 + 2,
+		//---------------- RGBA CHANNEL ---------------------------
+		RGBA8				= INTERNAL_STORAGE_PER_FORMAT * 3,
+		RGBA16F				= INTERNAL_STORAGE_PER_FORMAT * 3 + 1,
+		RGBA32F				= INTERNAL_STORAGE_PER_FORMAT * 3 + 2,
+		//---------------- DEPTH CHANNEL --------------------------
+		Depth24				= INTERNAL_STORAGE_PER_FORMAT * 4,
+		//------------ DEPTH + STENCIL CHANNEL --------------------
+		Depth24_Stencil8	= INTERNAL_STORAGE_PER_FORMAT * 5
 	};
-	ChannelFormat GetChannelFormatFromStorage(const TexelStorageType storage);
+	std::string ToString(const TexelStorageType storage);
+	TexelChannelFormat GetChannelFormatFromStorage(const TexelStorageType storage);
+	std::uint8_t GetChannelCount(const TexelStorageType storage);
+	std::uint16_t GetChannelByteSize(const TexelStorageType storage);
+	TexelChannelDataType GetChannelDataTypeFromStorage(const TexelStorageType storage);
 	std::uint16_t GetStorageByteSize(const TexelStorageType storage);
+	bool IsHDRStorage(const TexelStorageType storage);
 
 	/// <summary>
 	/// The type texture behavior when a texture is scaled down (minification)
@@ -139,32 +161,62 @@ namespace Rendering
 		BestFit			= 2
 	};
 
+	enum class TextureBufferType : std::uint8_t
+	{
+		/// <summary>
+		/// Will store the texture entirely on the CPU 
+		/// READ: thread safe on simultaneous texel access as long as writePtr differs on separate threads
+		/// WRITE: thread unsafe on simultanous texel access
+		/// </summary>
+		CPU = 0,
+		/// <summary>
+		/// Will store the texture entirely on the GPU
+		/// READ: inherently thread unsafe/undefined on simultanous texel access
+		/// WRITE: inherently thread unsafe/undefined on simultanous texel access
+		/// </summary>
+		GPU = 1,
+		/// <summary>
+		/// Will store the texture BOTH on the CPU AND GPU to allow for thread safe read
+		/// by keeping a copy buffer that is written to alongside the GPU in order to use for reads
+		/// rather than retrieving from GPU
+		/// READ: thread safe on simultaneous access as long as writePtr differs on separate threads
+		/// WRITE: inherently thread unsafe/undefined on simultanous texel access
+		/// </summary>
+		GPUThreadSafeRead = 2
+	};
+
 	struct TextureInfo
 	{
-		RenderObjectId m_id;
+		RenderObjectId m_Id = INVALID_OBJ_ID;
+		TextureBufferType m_BufferType;
 
-		Vec2Int m_texelSize;
-		TexelStorageType m_internalStorage;
-		AxesWrapBehavior m_wrapBehavior;
-		MinFilter m_minFilter;
-		MagFilter m_magFilter;
+		/// <summary>
+		/// Total texture size in texture pixels (texels) in (WIDTH, HEIGHT)
+		/// </summary>
+		Vec2Int m_TexelSize = {};
+		TexelStorageType m_InternalStorage;
+		AxesWrapBehavior m_WrapBehavior;
+		MinFilter m_MinFilter;
+		MagFilter m_MagFilter;
 
 		std::string ToString() const;
-		TextureInfo& operator=(TextureInfo&&) noexcept;
 	};
 
 	class Texture;
 	struct TextureCallbacks
 	{
 		RenderObjectId(*m_AllocateFunc)(const TextureInfo& data);
-		void(*m_SetData)(const RenderObjectId, const Vec2Int size, const TexelStorageType storage, const std::byte*);
+		void(*m_WriteBytes)(const RenderObjectId, const Vec2Int offset, const Vec2Int size, 
+			const TexelChannelFormat sourceFormat, const TexelChannelDataType sourceType, const std::byte*);
 		void(*m_SetWrapBehavior)(const RenderObjectId, const AxesWrapBehavior);
 		void (*m_SetMinFilter)(const RenderObjectId id, const MinFilter filter);
 		void (*m_SetMagFilter)(const RenderObjectId id, const MagFilter filter);
 		void(*m_CopyData)(const RenderObjectId, const Vec2Int size, const Texture& otherTexture);
-		void(*m_GetData)(const RenderObjectId, const Vec2Int offset, const Vec2Int size, const TexelStorageType storage, 
-			std::byte* writePtr, const size_t bufferSize);
+		void(*m_ReadBytes)(const RenderObjectId, const Vec2Int offset, const Vec2Int size,
+			const TexelChannelFormat sourceFormat, const TexelChannelDataType sourceType, std::byte* writePtr, const size_t bufferSize);
 		void(*m_DeallocateFunc)(const RenderObjectId);
+
+		bool IsValid() const;
 	};
 
 	constexpr TexelStorageType DEFAULT_INTERNAL_STORAGE = TexelStorageType::RGBA8;
@@ -181,77 +233,159 @@ namespace Rendering
 	class Texture
 	{
 	private:
-		TextureCallbacks m_callbacks;
+		TextureCallbacks m_gpuCallbacks;
 		TextureInfo m_info;
+		std::byte* m_cpuPtr;
 	public:
 
 	private:
+		size_t CalculateTexelByteOffset(const Vec2Int texel) const;
+
+		void AllocateUnsafeToCPU();
+		void AllocateUnsafeToGPU();
 		void Allocate();
+
+		void DeallocateUnsafeFromCPU();
+		void DeallocateUnsafeFromGPU();
 		void Deallocate();
 
-		size_t GetTotalByteSize(const Vec2Int texels) const;
+		void WriteBytesUnsafeToCPU(const Vec2Int texelOffset, const Vec2Int texelSize, 
+			const std::byte* readLocationPointer, const std::optional<TexelChannelDataType>& overrideSourceDataType = std::nullopt);
+		void WriteBytesUnsafeToGPU(const Vec2Int texelOffset, const Vec2Int texelSize, 
+			const std::byte* readLocationPointer, const std::optional<TexelChannelDataType>& overrideSourceDataType = std::nullopt);
+		void WriteBytesUnsafe(const Vec2Int texelOffset, const Vec2Int texelSize, 
+			const std::byte* readLocationPointer, const std::optional<TexelChannelDataType>& overrideSourceDataType = std::nullopt);
+
+		void ReadBytesUnsafeFromCPU(const Vec2Int texelOffset, const Vec2Int texelSize, 
+			std::byte* writeLocationPointer, const std::optional<TexelChannelDataType>& overrideSourceDataType = std::nullopt) const;
+		void ReadBytesUnsafeFromGPU(const Vec2Int texelOffset, const Vec2Int texelSize, 
+			std::byte* writeLocationPointer, const std::optional<TexelChannelDataType>& overrideSourceDataType = std::nullopt) const;
+		void ReadBytesUnsafe(const Vec2Int texelOffset, const Vec2Int texelSize, 
+			std::byte* writeLocationPointer, const std::optional<TexelChannelDataType>& overrideSourceDataType = std::nullopt) const;
+
 	public:
 		Texture();
-		Texture(const std::byte* data, const Vec2Int& size, const TexelStorageType storage= DEFAULT_INTERNAL_STORAGE,
+		Texture(const std::byte* data, const Vec2Int& texelSize, const TextureBufferType textureStorage, const TexelStorageType storage= DEFAULT_INTERNAL_STORAGE,
 			const AxesWrapBehavior wrap= DEFAULT_AXES_WRAP, const MinFilter min= DEFAULT_MIN_FILTER,  
 			const MagFilter mag = DEFAULT_MAG_FILTER, const TextureCallbacks& callbacks = {});
 		Texture(const Texture&) = delete;
-		Texture(Texture&&) noexcept = delete;
+		Texture(Texture&&) noexcept;
 		~Texture();
 
 		const TextureInfo& GetInfo() const;
 		RenderObjectId GetId() const;
 		TexelStorageType GetStorageType() const;
 
+		bool IsValid() const;
+		bool HasEmptyData() const;
+		bool IsHDRTexture() const;
+		bool HasCPUBuffer() const;
+		bool HasGPUBuffer() const;
+
+		size_t GetTexelByteSize(const TexelChannelFormat format, const TexelChannelDataType dataType) const;
+		size_t GetTexelByteSize(const TexelStorageType storage) const;
+		size_t GetTexelByteSize() const;
+		std::uint32_t CalculateTotalTexels() const;
+		size_t CalculateTotalByteSize(const Vec2Int texels) const;
+		size_t CalculateTotalByteSize(const Vec2Int texels, const TexelChannelFormat format, const TexelChannelDataType dataType) const;
+		size_t CalculateTotalByteSize() const;
+
+		template<typename T>
+		requires (!std::is_same_v<T, std::byte>)
+		const T* GetCPUMemPtr() const
+		{
+			ENGINE_ASSERT(HasCPUBuffer(), "Attempted to Get CPU memory pointer for non-CPU texture");
+			return reinterpret_cast<const T*>(m_cpuPtr);
+		}
+		const std::byte* GetCPUMemPtr() const;
+
+		void OverrideBufferType(const TextureBufferType type);
 		void SetWrapBehavior(const AxesWrapBehavior behavior);
 		void SetMinFilter(const MinFilter filter);
 		void SetMagFilter(const MagFilter filter);
 
 		/// <summary>
-		/// Will get the byte data of the texture using the TOP LEFT CORNER as the origin (0, 0)
+		/// Reads texels at texel offset (where (0,0) is BOTTOM LEFT) 
+		/// in [X,Y] and size [WIDTH, HEIGHT] and write to the data pointer
 		/// </summary>
-		/// <param name="textureOffset"></param>
-		/// <param name="size"></param>
+		/// <param name="texelOffset"></param>
+		/// <param name="texelSize"></param>
 		/// <param name="writeLocationPointer"></param>
-		void GetByteData(const Vec2Int textureOffset, const Vec2Int size, std::byte* writeLocationPointer) const;
+		void ReadBytes(const Vec2Int texelOffset, const Vec2Int texelSize, std::byte* writeLocationPointer, 
+			const std::optional<TexelChannelDataType>& overrideSourceDataType = std::nullopt) const;
 		/// <summary>
-		/// Will get byte data using (0,0) offset and full size
+		/// Reads texels at offset (0,0) and full texture size and write to data pointer
 		/// </summary>
 		/// <param name="writeLocationPointer"></param>
-		void GetByteData(std::byte* writeLocationPointer) const;
+		void ReadBytes(std::byte* writeLocationPointer) const;
 
-		void SetByteData(const std::byte* data);
-		void SetByteData(const Texture& texture);
+		/// <summary>
+		/// Samples a singular texel at the texel where (0,0) is BOTTOM LEFT
+		/// </summary>
+		/// <param name="texel"></param>
+		/// <returns></returns>
+		Color SampleAtTexel(const Vec2Int& texel) const;
+		HDRColor SampleHDRAtTexel(const Vec2Int& texel) const;
+		/// <summary>
+		/// Samples a singular texel at the UV coordiante where (0,0) is 
+		/// BOTTOM LEFT of the texture and (1,1) is the TOP RIGHT
+		/// </summary>
+		/// <param name="uv"></param>
+		/// <returns></returns>
+		Color SampleAtUV(const Vec2& uv) const;
+		HDRColor SampleHDRAtUV(const Vec2& uv) const;
+
+		/// <summary>
+		/// Reads bytes from data pointer and write to texel at offset (where (0,0) is BOTTOM LEFT)
+		/// in [X,Y] and size [WIDTH, HEIGHT]
+		/// </summary>
+		/// <param name="texelOffset">Offset from (0,0) in texels from BOTTOM LEFT CORNER</param>
+		/// <param name="texelSize">Total texel size to write from offset</param>
+		/// <param name="readLocationPointer">The data pointer from which bytes are read to be written to texture</param>
+		/// <param name="overrideSourceDataType">The override data type for each channel of the read location pointer</param>
+		void WriteBytes(const Vec2Int texelOffset, const Vec2Int texelSize, const std::byte* readLocationPointer, 
+			const std::optional<TexelChannelDataType>& overrideSourceDataType = std::nullopt);
+		void WriteBytes(const std::byte* readLocationPointer);
+		void WriteTexel(const Vec2Int& texel, const std::byte* readLocationPointer, 
+			const std::optional<TexelChannelDataType>& overrideSourceDataType = std::nullopt);
+		
+		/// <summary>
+		/// Copies bytes from texture argument into this texture
+		/// AND ASSUMES BOTH TEXTURES HAVE SAME TEXTURE SETTINGS/MEMORY LAYOUT AND THIS TEXTURE IS VALID
+		/// **This Copy() version should be used if this texture is valid and shares same format as other texture**
+		/// </summary>
+		/// <param name="tex"></param>
+		void CopyBytes(const Texture& tex);
+		/// <summary>
+		/// Allocates bytes from new texture using its buffer type (if override is nullopt) or the override type
+		/// into this texture regardless if this texture is empty, valid, invalid or shares memory layout
+		/// **This Copy() version should be used if this texture state does not match copying texture state
+		///   because unlike CopyBytes() this version deallocates existing bytes which may be expensive**
+		/// </summary>
+		/// <param name="tex"></param>
+		/// <param name="overrideType"></param>
+		void CopyTexture(const Texture& tex, const std::optional<TextureBufferType>& overrideType = std::nullopt);
+
 		/// <summary>
 		/// Will set all byte data in texture to 0.
 		/// NOTE: this is expensive due to requiring a heap allocation 
 		/// and should rarely be used. If you want to clear texture data efficiently
 		/// preferably clear buffer bit when bdinging texture to frame buffer
 		/// </summary>
-		void ClearByteData();
-
-		bool IsValid() const;
-		/// <summary>
-		/// Will return the texture pixel width * height
-		/// </summary>
-		/// <returns></returns>
-		std::uint32_t GetTotalTexels() const;
-		size_t GetTotalByteSize() const;
-
-		//void BindToSlot(const TextureSlotIndex slotIndex);
-		//void UnbindFromSlot();
-		//bool IsBoundToSlot() const;
+		void ClearBytes();
 
 		Texture& operator=(const Texture&) = delete;
 		Texture& operator=(Texture&&) noexcept;
 
 		std::string ToString() const;
+		std::string ToStringBytes(const bool asHex = true) const;
 	};
 
-	Texture CreateTexture(const std::byte* data, const Vec2Int& size,
+	bool IsEmptyTexture(const std::byte* dataPtr, const size_t totalByteSize);
+	Texture CreateTexture(const std::byte* data, const Vec2Int& size, const TextureBufferType type,
 		const TexelStorageType storage= DEFAULT_INTERNAL_STORAGE, const AxesWrapBehavior wrap= DEFAULT_AXES_WRAP,
 		const MinFilter min= DEFAULT_MIN_FILTER, const MagFilter mag= DEFAULT_MAG_FILTER);
-
+	
 	using TextureCubeFaceIntegralType = std::uint8_t;
 	enum class TextureCubeFace : TextureCubeFaceIntegralType
 	{

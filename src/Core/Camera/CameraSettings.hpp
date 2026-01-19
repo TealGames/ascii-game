@@ -1,9 +1,9 @@
 #pragma once
 #include <cmath>
-#include "Utils/Math.hpp"
-#include "Utils/Data/WorldPosition.hpp"
-#include "Utils/Data/ScreenPosition.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Math.hpp"
+#include "Utils/Math/WorldPosition.hpp"
+#include "Utils/Math/ScreenPosition.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 
 class EntityData;
 

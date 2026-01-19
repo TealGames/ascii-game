@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Data/Vec4Type.hpp"
+#include "Utils/Math/Vec4Type.hpp"
 
 /// <summary>
 /// Represents a 2d plane comprised of a min and max pos

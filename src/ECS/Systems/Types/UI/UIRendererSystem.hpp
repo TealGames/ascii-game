@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
-#include "Utils/Data/Matrix.hpp"
+#include "Utils/Math/Matrix.hpp"
 #include "Utils/Data/Event.hpp"
 
 namespace Rendering { class Renderer; }

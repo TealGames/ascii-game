@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Utils/Data/Vec3Type.hpp"
+#include "Utils/Math/Vec3Type.hpp"
 
 namespace Input
 {

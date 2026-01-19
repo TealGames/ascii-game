@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "Utils/Data/AABB.hpp"
+#include "Utils/Math/AABB.hpp"
 #include "ECS/Component/Component.hpp"
 #include "Core/IValidateable.hpp"
 #include <unordered_map>

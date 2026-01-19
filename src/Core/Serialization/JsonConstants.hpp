@@ -2,7 +2,7 @@
 #include <optional>
 #include <string>
 //#include "raylib.h"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "Utils/Data/Color.hpp"
 #include "Core/Rendering/Font.hpp"
 

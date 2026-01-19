@@ -1,11 +1,10 @@
 #pragma once
 #include "Core/Rendering/RenderUnit.hpp"
 #include "Core/Rendering/TextureController.hpp"
-#include "Utils/Data/Matrix.hpp"
-#include "Core/Rendering/Material.hpp"
 #include "ECS/Component/Types/World/PointLight3DComponent.hpp"
-#include "Utils/Data/Quaternion.hpp"
+#include "Utils/Math/Quaternion.hpp"
 #include "Core/Rendering/Model3d.hpp"
+#include "Core/Rendering/Raytracer.hpp"
 #include <cstdint>
 
 class EngineState;
@@ -17,106 +16,24 @@ class CameraPrecalculatedData;
 
 namespace Rendering
 {
-    enum class RenderCallType : std::uint8_t
+    enum class RaytraceMode : std::uint8_t
     {
-        Sphere3d            = 0,
-        Box3d               = 1,
-        Plane3d             = 2,
-        PointLight3d        = 3,
-        DirectionLight3d    = 4,
-        Model3d             = 5,
+        CPU     = 0,
+        GPU     = 1,
     };
-    std::string ToString(const RenderCallType call);
-
-    struct RenderCallInvocation
-    {
-        RenderCallType m_Type = RenderCallType::Model3d;
-        Mat4 m_ModelMatrix = {};
-
-        std::string ToString() const;
-    };
-
-    struct PointLightData
-    {
-        WorldPosition3D m_Pos;
-        //This is padding for vec3 since we can only have 2 or 4 floats
-        float _padding0;
-        HDRColor m_Color;
-        float m_Radius;
-        uint32_t m_ShadowMapIndex;
-        //This is padding to round data to 16 byte alignment
-        float _padding1[2];
-
-        PointLightData();
-        PointLightData(const WorldPosition3D& pos, const HDRColor& color, const float radius);
-    };
-    struct DirectionalLightData
-    {
-        Vec3 m_Direction = {};
-        float _padding0 = 0;
-        HDRColor m_Color = {};
-
-        DirectionalLightData();
-        DirectionalLightData(const Vec3& dir, const HDRColor& color);
-    };
-    constexpr size_t MAX_POINT_LIGHTS = 2;
-    struct LightBlockData
-    {
-        DirectionalLightData m_DirLight = {};
-        int m_PointLightsCount = 0;
-        float _padding[3];
-        PointLightData m_PointLights[MAX_POINT_LIGHTS] = {};
-    };
-
-    //NOTE: must be aligned to std::430 (members and struct at 16 byte alignment)
-    constexpr int INVALID_TEXTURE_INDEX = -1;
-    struct MaterialData
-    {
-        HDRColor m_BaseColor;
-        HDRColor m_EmissiveColor;
-        float m_Alpha;
-        float m_Metallic;
-        float m_Roughness;
-        int m_AlbedoIndex;
-        //float _padding;
-
-        MaterialData();
-        MaterialData(const Material& material, const int albedoIndx);
-
-        std::string ToString() const;
-    };
-
-   /* struct StaticFrameRenderData
-    {
-        bool m_UpdatedDataThisFrame = false;
-        const CameraPrecalculatedData* m_CameraData = {};
-    };*/
 
     struct ExtraPointLightData
     {
         Quat m_GlobalRot = {};
     };
-    
-    struct UniformBufferData
+
+    struct BlockData
     {
         bool m_ViewBufferNeedsUpdate = false;
         bool m_LightBufferNeedsUpdate = false;
         ExtraPointLightData m_ExtraPointLightData[MAX_POINT_LIGHTS] = { };
         LightBlockData m_LightBlock = {};
-    };
-
-    struct InstanceBoundsData
-    {
-        AABB3D m_RootWorldBounds;
-        /// <summary>
-        /// The instance index into the renderer instance buffer
-        /// which contains the mesh index and model matrices
-        /// </summary>
-        std::uint32_t m_InstanceIndex;
-
-        WorldPosition3D GetCenter() const;
-        AABB3D GetAABB() const;
-        std::string ToString() const;
+        ViewerBlockData m_ViewerBlock;
     };
     
     using CoreShaderIntegralType = std::uint8_t;
@@ -157,6 +74,25 @@ namespace Rendering
         bool UsesDefaultFrameBuffer() const;
     };
 
+    enum class RenderCallType : std::uint8_t
+    {
+        Sphere3d = 0,
+        Box3d = 1,
+        Plane3d = 2,
+        PointLight3d = 3,
+        DirectionLight3d = 4,
+        Model3d = 5,
+    };
+    std::string ToString(const RenderCallType call);
+
+    struct RenderCallInvocation
+    {
+        RenderCallType m_Type = RenderCallType::Model3d;
+        Mat4 m_ModelMatrix = {};
+
+        std::string ToString() const;
+    };
+
     struct GeometryMetrics
     {
         std::uint32_t m_TotalVertices = 0;
@@ -167,7 +103,8 @@ namespace Rendering
     };
    
     using BVHIndexTree = StaticBVHTree<IndexType>;
-    using BVHTriangleTree = StaticBVHTree<Triangle>;
+    using BVHTriangleTree = StaticBVHTree<IndexTriangle>;
+    using BVHInstanceBoundsTreeStd430 = StaticBVHTree<InstanceBoundsData, STD_430_ALIGN>;
     using BVHInstanceBoundsTree = StaticBVHTree<InstanceBoundsData>;
 
     class GraphicsManager;
@@ -187,16 +124,18 @@ namespace Rendering
         GraphicsManager* m_graphicsManager;
         std::array<Shader*, CORE_SHADER_COUNT> m_coreShaders;
 
-        BVHInstanceBoundsTree m_tlasTree;
+        Raytracer m_raytracer;
+        BVHInstanceBoundsTreeStd430 m_tlasTreeAligned;
         //The per-instance bounds data which contains that instance's
         //mesh data transformed into world bounds to be used to create tlas tree
         //and is temporary/not submitted to the shader
         std::vector<InstanceBoundsData> m_instanceBoundsData;
-        std::vector<BVHFlatNode> m_blasTrees;
+        std::vector<BVHNodeStd430> m_blasTreesAligned;
 
         std::vector<InstanceMesh> m_instanceMeshes;
         std::vector<MaterialData> m_materialData;
-        std::vector<Texture*> m_bindQueuedTextures;
+        std::vector<Texture*> m_renderTextures;
+        std::vector<Texture> m_cpuBufferTextures;
         std::vector<std::uint32_t> m_emissiveInstanceIndices;
         //std::unordered_map<BatchHash, size_t> m_hashToBatchIndex;
         std::unordered_map<String16, std::uint32_t> m_cachedMaterials;
@@ -217,6 +156,9 @@ namespace Rendering
         Texture m_ioTexture;
         Texture m_hdrColorOutput;
         Texture m_brightnessOutput;
+        Texture m_texRaytraceAccum0;
+        Texture m_texRaytraceAccum1;
+        Texture m_texUIOutput;
         RenderBuffer m_hdrDepthRenderBuffer;
 
         VertexLayout m_geometryVertexLayout;
@@ -237,14 +179,13 @@ namespace Rendering
         ShaderStorageBuffer m_tlasTreeStorageBuffer;
         ShaderStorageBuffer m_blasTreesStorageBuffer;
 
-        UniformBufferData m_uniformData;
+        BlockData m_uniformData;
     public:
        
     private:
         std::uint8_t GenerateRuntimeMaterialId();
         void ResetRuntimeMaterialId();
-
-        void WriteGeometryVertexDataToSSBOs();
+        std::filesystem::path CreateRaytraceOutputPath();
 
         RenderBatch& CreateGeometryBatch(Shader& shader, Material& material, const Vertex* vertexArray, const size_t vertexSize,
             const IndexType* indexArray, const size_t indexSize, const Mat4& modelMatrix, const BVHTriangleTree* blasTree);
@@ -261,25 +202,26 @@ namespace Rendering
 
         MaterialData* CreateRuntimeMaterial(const Material& material);
         void ConstructBLASTree(BVHTriangleTree& tree, const size_t indexStart, const size_t indexSize);
-        void ConstructTLASTree();
+        void ConstructTLASTree(const bool writeToTlasSSBO);
         int GetEnqueuedTextureIndex(Texture* texture);
-        void ClearQueuedTextures();
 
         void FlushBatches();
         void DrawIndexedInstancedBatch(RenderBatch& batch, VertexLayout& bindLayout);
-        void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix);
-        void SetViewerData(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix, 
+        void SetViewUniformBuffer(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix);
+        void SetViewUniformBuffer(const WorldPosition3D& worldPos, const Mat4& viewMatrix, const Mat4& projMatrix, 
             const Vec3& forwardDir, const Vec3& rightDir, const Vec3& upDir, const float yFov);
-        void UpdateUniformBuffers();
+        void UpdateLightAndViewerBlock(const bool updateUniformBuffers);
 
-        void ExecuteSkyboxPass(std::uint8_t* outDrawnAttachmentsMask);
+        void ExecuteSkyboxPass(Texture& outputTexture, std::uint8_t* outDrawnAttachmentsMask);
         void ExecuteShadowPass();
-        void ExecuteLightingAndGeometryPass(const SlotIndex* indices, 
+        void ExecuteLightingAndGeometryPass(Texture& outputTexture, const SlotIndex* indices, 
             const std::uint8_t previousDrawnColorAttachmentsMask);
-        void ExecuteRayTracing();
-        void ExecuteForwardRendering();
-        void ExecutePostProcessPass();
-        void ExecuteUIPass();
+        Texture& ExecuteRayTracing(Texture* overrideOutputTexture);
+        Texture& ExecuteRayTracingGPU(Texture& inputTex, Texture& outputTex, Texture* overrideOutputTexture);
+        Texture& ExecuteRayTracingCPU(Texture& inputTex, Texture& outputTex, Texture* overrideOutputTexture);
+        Texture& ExecuteForwardRendering();
+        void ExecuteUIPass(Texture& textureInputOutput);
+        void ExecutePostProcessPass(Texture& noPPColorOutputTex);
 
         /// <summary>
         /// Applies blur to the input texture DIRECTLY where output texture is only an intermediary
@@ -348,7 +290,7 @@ namespace Rendering
         void InitCoreShaders();
         
         void SetSkybox(Texture* texture);
-        bool IntersectsBVH(const WorldPosition3D& rayWorldOrigin, Vec3 rayDir, const Vertex* outHitVertex);
+        bool IntersectsBVH(Ray3D ray, const Vertex* outHitVertex);
         bool IsValidBVH();
         void AddBVHTreeBoundsWireframe();
 

@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
-#include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Math/ScreenPosition.hpp"
 //#include "Utils/RaylibUtils.hpp"
 #include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"

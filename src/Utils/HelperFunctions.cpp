@@ -8,8 +8,8 @@
 #include <fstream>
 #include <filesystem>
 #include "Utils/HelperFunctions.hpp"
-#include "AnsiCodes.hpp"
-#include "Utils/Math.hpp"
+#include "Utils/AnsiCodes.hpp"
+#include "Utils/Math/Math.hpp"
 
 #if _HAS_CXX23
 #include <stacktrace>

@@ -2,7 +2,7 @@
 #include <string_view>
 #include "Utils/ToStringFunctions.hpp"
 #include <Utils/StringUtil.hpp>
-#include "Utils/Math.hpp"
+#include "Utils/Math/Math.hpp"
 
 namespace Utils
 {
@@ -56,7 +56,7 @@ namespace Utils
 		return (b == 0) ? "false" : "true";
 	}
 
-	std::string ToStringMemory(const std::byte* bytePtr, const std::size_t byteSize)
+	std::string ToStringMemory(const std::byte* bytePtr, const std::size_t byteSize, const bool asHex)
 	{
 		std::string result = "";
 		result.reserve(byteSize * 2);
@@ -65,8 +65,12 @@ namespace Utils
 		for (size_t i = 0; i < byteSize; i++)
 		{
 			number = std::to_integer<unsigned char>(bytePtr[i]);
-			result.push_back(HEX_VALUES[number >> 4]);
-			result.push_back(HEX_VALUES[number & 0xF]);
+			if (asHex)
+			{
+				result.push_back(HEX_VALUES[number >> 4]);
+				result.push_back(HEX_VALUES[number & 0xF]);
+			}
+			else result += std::to_string(number);
 		}
 		return result;
 	}

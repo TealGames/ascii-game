@@ -1,6 +1,6 @@
 #include "Core/Rendering/RenderingBackend.hpp"
 #include "StaticGlobals.hpp"
-#include "EngineLog.hpp"
+#include "Core/EngineLog.hpp"
 #include <ostream>
 
 #ifdef OPENGL

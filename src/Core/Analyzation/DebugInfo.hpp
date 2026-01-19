@@ -2,9 +2,9 @@
 #include <string>
 #include <array>
 #include <optional>
-#include "Utils/Data/WorldPosition.hpp"
-#include "Utils/Data/ScreenPosition.hpp"
-#include "Math/Ray.hpp"
+#include "Utils/Math/WorldPosition.hpp"
+#include "Utils/Math/ScreenPosition.hpp"
+#include "Utils/Math/Ray.hpp"
 #include "Core/Input/InputKey.hpp"
 //#include "raylib.h"
 

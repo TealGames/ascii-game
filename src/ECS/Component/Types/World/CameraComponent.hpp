@@ -1,11 +1,11 @@
 #pragma once
 #include "Core/Camera/CameraSettings.hpp"
 #include "ECS/Component/Component.hpp"
-#include "Utils/Data/WorldPosition.hpp"
-#include "Math/Ray.hpp"
+#include "Utils/Math/WorldPosition.hpp"
+#include "Utils/Math/Ray.hpp"
 #include "Math/Plane.hpp"
-#include "Utils/Data/Matrix.hpp"
-#include "Utils/Data/Quaternion.hpp"
+#include "Utils/Math/Matrix.hpp"
+#include "Utils/Math/Quaternion.hpp"
 #include "Utils/HelperMacros.hpp"
 
 enum class ProjectionMatrixType : std::uint8_t

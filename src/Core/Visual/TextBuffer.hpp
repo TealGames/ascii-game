@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Math/WorldPosition.hpp"
 #include "Core/Visual/TextArray.hpp"
 #include "Core/Rendering/FontData.hpp"
 

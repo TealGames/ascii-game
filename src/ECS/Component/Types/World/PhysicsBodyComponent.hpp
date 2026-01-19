@@ -2,10 +2,10 @@
 #include <vector>
 #include <string>
 #include "ECS/Component/Component.hpp"
-#include "Utils/Data/Vec2Type.hpp"
-//#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Math/Vec2Type.hpp"
+//#include "Utils/Math/WorldPosition.hpp"
 //#include "Utils/Data/Direction.hpp"
-//#include "Utils/Data/NormalizedPosition.hpp"
+//#include "Utils/Math/NormalizedPosition.hpp"
 #include "Core/Physics/PhysicsProfile.hpp"
 #include "ECS/Component/Types/World/CollisionBoxComponent.hpp"
 

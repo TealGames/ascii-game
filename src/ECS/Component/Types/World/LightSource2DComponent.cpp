@@ -5,7 +5,7 @@
 
 LightMapChar::LightMapChar() : m_RelativePos(), m_ColorFactor() {}
 LightMapChar::LightMapChar(const Vec2Int& relativePos,
-	const Utils::Point3D& fractionalFilterColor, const float& colorFactor) :
+	const Vec3& fractionalFilterColor, const float& colorFactor) :
 	m_RelativePos(relativePos), m_FractionalFilterColor(fractionalFilterColor), m_ColorFactor(colorFactor) {}
 
 std::string LightMapChar::ToString() const

@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Editor/Entity/EntityEditorUI.hpp"
 #include "StaticGlobals.hpp"
-#include "Utils/Data/NormalizedPosition.hpp"
+#include "Utils/Math/NormalizedPosition.hpp"
 #include "Core/PositionConversions.hpp"
 #include "Core/Camera/CameraController.hpp"
 #include "Core/UI/UIHierarchy.hpp"

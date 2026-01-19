@@ -3,8 +3,8 @@
 #include "Core/Visual/TextBuffer.hpp"
 #include <vector>
 #include <cstdint>
-#include "Utils/Data/WorldPosition.hpp"
-#include "Utils/Data/FloatRange.hpp"
+#include "Utils/Math/WorldPosition.hpp"
+#include "Utils/Math/FloatRange.hpp"
 #include "Core/Rendering/RenderLayer.hpp"
 #include "Utils/Data/ColorGradient.hpp"
 #include "Utils/DataStructure/ObjectPool.hpp"

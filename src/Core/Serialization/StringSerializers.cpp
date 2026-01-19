@@ -1,7 +1,7 @@
 #include "Core/Serialization/StringSerializers.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/ToStringFunctions.hpp"
-#include "Utils/Math.hpp"
+#include "Utils/Math/Math.hpp"
 
 namespace StringSerializers
 {

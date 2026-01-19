@@ -4,7 +4,7 @@
 #include "pch.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include <limits>
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 
 namespace RaylibUtils
 {

@@ -2,7 +2,7 @@
 #include "Core/Engine.hpp"
 #include "Core/Scene/SceneManager.hpp"
 #include "StaticGlobals.hpp"
-#include "EngineLog.hpp"
+#include "Core/EngineLog.hpp"
 #include "Core/Rendering/Renderer3D.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
 #include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
@@ -20,7 +20,7 @@
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "ECS/Component/Types/World/PointLight3DComponent.hpp"
 #include "Utils/Data/ColorConstants.hpp"
-#include "Utils/MathAdvanced.hpp"
+#include "Utils/Math/MathAdvanced.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Asset/Model3dAsset.hpp"
 
@@ -180,6 +180,16 @@ namespace Core
 	//and instances will be different so we want to optimize for that
 	//TODO; the vtx 3d model custom engine format takes up more space than fbx which defeats the whole point of a custom format. 
 	//Optimize it more like removing unneeded uv storage AND ALSO SUPPORT FOR MATERIALS
+	//TODO: right now we have some places where we do alloca when we want runtime sizes for arrays, instead to avoid using heap allocations we should make an arena
+	//that allocates a lot of space upfront on the stack, and then we use it whenever we want that runtime size array and place it in there and we still get benefit 
+	//of non-fragmented memory, pointers and runtime sizes
+	//TODO; rihgt now in rendering we use window size for screen size which is not good because we support constrainted window sizes and keeping aspect ratios of the 
+	//viewport area which differs from the actual window size. We now need to make it so the viewport area/aspect ratio constraint is based on the active camera settings
+	//and as a result, the "screen size" value used in rendering should be based on the active camera viewport area NOT window size
+	//TODO; right now for texture asset read/write to/from file we auto flip vertically since most file formats have different memory layout for textures
+	//compared to OpenGL. the choice is to either match OpenGL is CPU texture buffers, which makes it simple to convert, but forces up to check if we need to flip
+	//and may be problematic for other render APIs in the future which may not need flipping automatically if they store the texture differently. OR we could 
+	//store like file formats and make it future proof, but also means we need to flip when going between GPU and CPU buffers which may become annoying and slow
 	//TODO: REwrite render system:
 	// 1) Make vertex layout (we call vertex layout, opengl calls it VertexArrayObject) have a separate Bind function
 	//	  so that we can bind different layouts before draw so we can use different vertex/index/instance buffer pairs for different draw calls
@@ -313,6 +323,14 @@ namespace Core
 
 		//Rendering::Texture& skybox = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/skybox.hdr")->GetTextureMutable();
 		Rendering::Texture& skybox = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/skybox_stylized_night.png")->GetTextureMutable();
+		/*Color colors[4] = {Color(255,0,0,255), Color(0,255,0,255), Color(0,0,255,255), Color(255,255,0,255)};
+		Rendering::Texture test = Rendering::CreateTexture((std::byte*)(colors), Vec2Int(2, 2), Rendering::TextureBufferType::GPUThreadSafeRead);
+		LogWarning(std::format("Texture before:{}", test.ToStringBytes(false)));
+		Color newColor = Color(255, 255, 255, 255);
+		test.WriteTexel(Vec2Int(0, 1), (std::byte*)(&newColor));
+		LogError(std::format("Texture after:{}", test.ToStringBytes(false)));*/
+		//Color skyboxColor = skybox.SampleAtTexel(Vec2Int(325, 500));
+		//LogError(std::format("Color:{} Is etmpy:{}", skyboxColor.ToString(), skybox.HasEmptyData()));
 		//m_renderer.SetSkybox(&skybox);
 
 		//TODO: find a way to do this more procedurally
@@ -373,7 +391,7 @@ namespace Core
 		m_timeKeeper.UpdateTimeStart();
 		const float scaledDeltaTime = m_timeKeeper.GetLastScaledDeltaTime();
 		const float unscaledDeltaTime = m_timeKeeper.GetLastIndependentDeltaTime();
-		//LogWarning(std::format("FPS:{}", 1 / unscaledDeltaTime));
+		LogWarning(std::format("FPS:{}", 1 / unscaledDeltaTime));
 		/*LogWarning(std::format("Update scaled dt:{} unscaled:{} scale:{} FPS (raylib):{} FPS(engine):{}", 
 			scaledDeltaTime, unscaledDeltaTime, m_timeKeeper.GetTimeScale(), GetFPS(), 1/unscaledDeltaTime));*/
 

@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "Editor/Entity/ColorPopupUI.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include <limits>
 #include "Editor/EditorStyles.hpp"

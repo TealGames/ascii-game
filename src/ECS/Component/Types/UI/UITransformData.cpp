@@ -2,7 +2,7 @@
 #include "ECS/Component/Types/UI/UITransformData.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
-#include "Utils/MathAdvanced.hpp"
+#include "Utils/Math/MathAdvanced.hpp"
 
 UITransformData::UITransformData() : UITransformData(UIRect()) {}
 UITransformData::UITransformData(const NormalizedPos& size) : UITransformData(UIRect(size)) {}

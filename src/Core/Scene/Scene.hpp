@@ -9,14 +9,11 @@
 #include <fstream>
 #include <tuple>
 #include "ECS/Entity/EntityRegistry.hpp"
-#include "Utils/Data/Point2DInt.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Core/Rendering/RenderLayer.hpp"
 #include "ECS/Entity/Entity.hpp"
 #include "Core/Serialization/IJsonSerializable.hpp"
 #include "Core/Scene/GlobalEntityManager.hpp"
-//#include "Unused/EntityMapper.hpp"
-//#include "ECS/Component/Types/World/CameraComponent.hpp"
 #include "ECS/Component/Types/World/TransformComponent.hpp"
 
 //using EntityCollection = std::unordered_map<ECS::EntityID, ECS::Entity*>;

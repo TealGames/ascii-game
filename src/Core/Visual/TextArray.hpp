@@ -3,7 +3,7 @@
 #include <string>
 //#include <array>
 #include "Utils/Data/Array2DPosition.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "Core/Rendering/FontData.hpp"
 #include "Utils/Data/Color.hpp"
 

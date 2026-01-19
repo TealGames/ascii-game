@@ -9,7 +9,7 @@
 #include "Core/Rendering/Texture.hpp"
 #include "Core/Rendering/Shader/Shader.hpp"
 #include "Core/Rendering/Vertex.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "Core/Rendering/GpuFence.hpp"
 #include "Utils/Debug.hpp"
 
@@ -291,7 +291,7 @@ namespace Rendering
 
 	private:
 	protected:
-		virtual void WriteDataUnsafeBytes(const size_t offsetBytes, const T* arr, const size_t& writeByteSize) = 0;
+		virtual void WriteBytesUnsafe(const size_t offsetBytes, const T* arr, const size_t& writeByteSize) = 0;
 
 	public:
 		FencedBufferBase() : FencedBufferBase(nullptr, 0) {}
@@ -306,7 +306,7 @@ namespace Rendering
 		/// <param name="elementCount"></param>
 		void WriteDataUnsafe(const size_t& elementOffset, const T* array, const size_t& elementCount)
 		{
-			WriteDataUnsafeBytes(elementOffset * GetElementSize(), array, elementCount * GetElementSize());
+			WriteBytesUnsafe(elementOffset * GetElementSize(), array, elementCount * GetElementSize());
 		}
 
 		FencedBufferSegment* TryReserveFence(const size_t& elementCount)
@@ -344,7 +344,7 @@ namespace Rendering
 			LogWarning(std::format("Writing fenced buffer base  at offset:{} size:{} alloc:{} fence:{}",
 				segment->m_ByteOffset, segment->m_ByteSize, m_fence.GetFixedAllocatedByteSize(), m_fence.ToString()));
 #endif
-			WriteDataUnsafeBytes(segment->m_ByteOffset, arr, segment->m_ByteSize);
+			WriteBytesUnsafe(segment->m_ByteOffset, arr, segment->m_ByteSize);
 
 			if (outSeg != nullptr) *outSeg = segment;
 			return true;
@@ -352,7 +352,7 @@ namespace Rendering
 		FencedBufferSegment& WriteDataFenced(const T* arr, const BufferSegment& segment)
 		{
 			FencedBufferSegment& fencedSegment = ReserveFence(segment);
-			WriteDataUnsafeBytes(fencedSegment.m_ByteOffset, arr, fencedSegment.m_ByteSize);
+			WriteBytesUnsafe(fencedSegment.m_ByteOffset, arr, fencedSegment.m_ByteSize);
 
 			return fencedSegment;
 		}
@@ -388,7 +388,7 @@ namespace Rendering
 		VertexAttributeAdvance m_AdvanceType;
 
 	private:
-		void WriteDataUnsafeBytes(const size_t offsetBytes, const void* vertexArray, const size_t& writeByteSize) override;
+		void WriteBytesUnsafe(const size_t offsetBytes, const void* vertexArray, const size_t& writeByteSize) override;
 		void Deallocate();
 		void DefaultUninitValues();
 	public:
@@ -455,7 +455,7 @@ namespace Rendering
 	public:
 
 	private:
-		void WriteDataUnsafeBytes(const size_t offsetBytes, const IndexType* indexArray, const size_t& writeByteSize) override;
+		void WriteBytesUnsafe(const size_t offsetBytes, const IndexType* indexArray, const size_t& writeByteSize) override;
 		void Deallocate();
 	public:
 		IndexBuffer();

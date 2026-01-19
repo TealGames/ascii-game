@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <cstdint>
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 
 //TODO: this might have to become a txt or json file
 inline const char* WINDOW_NAME = "game";

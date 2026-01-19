@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Rendering/Vertex.hpp"
 #include "Core/Rendering/Material.hpp"
-#include "Utils/Data/Matrix.hpp"
+#include "Utils/Math/Matrix.hpp"
 #include "Utils/DataStructure/BVH.hpp"
 
 namespace Rendering
@@ -12,9 +12,9 @@ namespace Rendering
 	{
 		std::vector<Vertex> m_Vertices = {};
 		std::vector<IndexType> m_Indices = {};
-		StaticBVHTree<Triangle> m_BLASTree = {};
+		StaticBVHTree<IndexTriangle> m_BLASTree = {};
 
-		const std::vector<BVHFlatNode>& ConstructBLASTree(const size_t leafCount);
+		const std::vector<BVHNode>& ConstructBLASTree(const size_t leafCount);
 		AABB3D CalculateTightBounds() const;
 
 		std::string ToString() const;
@@ -28,9 +28,9 @@ namespace Rendering
 		std::string ToString() const;
 	};
 
-	const std::vector<BVHFlatNode>& ConstructBVHFromTriangles(StaticBVHTree<Triangle>& tree,
-		Triangle* triangleArray, const size_t triangleSize, const Vertex* vertexArray);
-	const std::vector<BVHFlatNode>& ConstructBVHFromIndices(StaticBVHTree<Triangle>& tree,
+	const std::vector<BVHNode>& ConstructBVHFromTriangles(StaticBVHTree<IndexTriangle>& tree,
+		IndexTriangle* triangleArray, const size_t triangleSize, const Vertex* vertexArray);
+	const std::vector<BVHNode>& ConstructBVHFromIndices(StaticBVHTree<IndexTriangle>& tree,
 		IndexType* indices, const size_t indexSize, const Vertex* vertexArray);
 
 	struct ModelObjectGroup

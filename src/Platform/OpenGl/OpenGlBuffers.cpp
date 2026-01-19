@@ -84,12 +84,12 @@ namespace Rendering
 			if (target.m_TargetType == FrameBufferOutputType::Texture)
 			{
 				const FrameBufferTextureTarget& textureTarget = std::get<FrameBufferTextureTarget>(target.m_Targets);
-				GL_CALL(glNamedFramebufferTexture(id, attachmentType, textureTarget.m_Texture->GetInfo().m_id, 0));
+				GL_CALL(glNamedFramebufferTexture(id, attachmentType, textureTarget.m_Texture->GetInfo().m_Id, 0));
 			}
 			else if (target.m_TargetType== FrameBufferOutputType::TextureCube)
 			{
 				const FrameBufferTextureCubeTarget& textureCubeTarget = std::get<FrameBufferTextureCubeTarget>(target.m_Targets);
-				GL_CALL(glNamedFramebufferTextureLayer(id, attachmentType, textureCubeTarget.m_CubeTexture->GetData().m_id, 0, 
+				GL_CALL(glNamedFramebufferTextureLayer(id, attachmentType, textureCubeTarget.m_CubeTexture->GetData().m_Id, 0, 
 					OpenGlUtils::GetTextureCubeFaceIndex(textureCubeTarget.m_Face)));
 			}
 			else if (target.m_TargetType == FrameBufferOutputType::RenderBuffer)
@@ -325,6 +325,7 @@ namespace Rendering
 		}
 		static void DeallocateShaderStorageBuffer(const RenderObjectId id)
 		{
+			LogWarning(std::format("Is buffer:{}", glIsBuffer(id) == GL_TRUE));
 			GL_CALL(glDeleteBuffers(1, &id));
 		}
 		ShaderStorageBuffer CreateShaderStorageBuffer(const char* blockName)

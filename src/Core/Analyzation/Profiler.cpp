@@ -2,13 +2,13 @@
 #include "Core/Analyzation/Profiler.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/ToStringFunctions.hpp"
-#include "Utils/Math.hpp"
+#include "Utils/Math/Math.hpp"
 #include <filesystem>
 #include <fstream>
 //#include "plplot/plstream.h"
 //#include "plplot/plplot.h"
 #include "Utils/Debug.hpp"
-#include "AnsiCodes.hpp"
+#include "Utils/AnsiCodes.hpp"
 
 static constexpr bool WRITE_TO_FILE = true;
 static constexpr bool DISPLAY_ALL_ROUTINE_GRAPHS = false;

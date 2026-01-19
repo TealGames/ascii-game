@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
-#include "Utils/Data/NormalizedPosition.hpp"
-#include "Utils/Data/ScreenPosition.hpp"
-#include "Utils/MathAdvanced.hpp"
+#include "Utils/Math/NormalizedPosition.hpp"
+#include "Utils/Math/ScreenPosition.hpp"
+#include "Utils/Math/MathAdvanced.hpp"
 
 inline const NormalizedPos UI_RECT_BOTTOM_LEFT = NormalizedPos(NormalizedValue::MIN, NormalizedValue::MIN);
 inline const NormalizedPos UI_RECT_TOP_LEFT = NormalizedPos(NormalizedValue::MIN, NormalizedValue::MAX);

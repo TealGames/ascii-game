@@ -1,6 +1,6 @@
 #pragma once
 //#include "raylib.h"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 
 class FontAsset;
 

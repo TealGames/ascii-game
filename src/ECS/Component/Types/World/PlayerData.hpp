@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
 #include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 
 namespace ECS { class PlayerSystem; }
 class PlayerData : public Component

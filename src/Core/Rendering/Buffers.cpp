@@ -394,7 +394,7 @@ namespace Rendering
 		}
 	}
 
-	void VertexBuffer::WriteDataUnsafeBytes(const size_t offsetBytes, const void* vertexArray, const size_t& writeByteSize) 
+	void VertexBuffer::WriteBytesUnsafe(const size_t offsetBytes, const void* vertexArray, const size_t& writeByteSize) 
 	{
 		if (offsetBytes + writeByteSize > GetAllocatedByteSize())
 		{
@@ -448,7 +448,7 @@ namespace Rendering
 	{
 		Deallocate();
 	}
-	void IndexBuffer::WriteDataUnsafeBytes(const size_t offsetBytes, const IndexType* indexArray, const size_t& writeByteSize)
+	void IndexBuffer::WriteBytesUnsafe(const size_t offsetBytes, const IndexType* indexArray, const size_t& writeByteSize)
 	{
 		if (offsetBytes + writeByteSize > GetAllocatedByteSize())
 		{
@@ -769,6 +769,7 @@ namespace Rendering
 			m_members.emplace(member.m_Name, member);
 		}
 		m_id = m_platformCallbacks.m_AllocateFunc(fullSize);
+		ENGINE_ASSERT(m_id != INVALID_OBJ_ID, "Created uniform buffer with invalid ID");
 		m_allocatedByteSize = fullSize;
 
 		if (m_bindIndex != INVALID_BUFFER_BIND_INDEX)
@@ -797,6 +798,8 @@ namespace Rendering
 			m_members.emplace(member.m_Name, member);
 		}
 		m_id = m_platformCallbacks.m_AllocateFunc(fullSize);
+		ENGINE_ASSERT(m_id != INVALID_OBJ_ID, "Created shader storage buffer with invalid ID");
+
 		m_allocatedByteSize = fullSize;
 
 		if (m_bindIndex != INVALID_BUFFER_BIND_INDEX)

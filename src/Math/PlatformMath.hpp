@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
-#include "Utils/Data/Matrix.hpp"
-#include "Utils/Data/Vec3Type.hpp"
+#include "Utils/Math/Matrix.hpp"
+#include "Utils/Math/Vec3Type.hpp"
 
 //Note: THE NDC AND Z FORWARD CAN NOT BE CHANGED BECAUSE PlatformMath FUNCTIONS 
 // USE THIS TO CONVERT INTO RESPECTIVE RENDER FRAMEWORK PROJECTION MATRICES

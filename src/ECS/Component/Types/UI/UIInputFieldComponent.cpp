@@ -4,7 +4,7 @@
 #include "Utils/Debug.hpp"
 #include "Utils/StringUtil.hpp"
 #include "StaticGlobals.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "ECS/Component/Types/UI/UIInputFieldComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UIPanelComponent.hpp"

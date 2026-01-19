@@ -4,7 +4,7 @@
 #include "Core/Asset/AssetManager.hpp"
 #include "Core/Rendering/GraphicsManager.hpp"
 #include "Core/Rendering/Material.hpp"
-#include "Utils/MathAdvanced.hpp"
+#include "Utils/Math/MathAdvanced.hpp"
 #include "ECS/Component/Types/World/Mesh3DComponent.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Asset/Model3dAsset.hpp"
@@ -26,6 +26,7 @@ namespace SceneCreator
 																		("textures/checkerboard.jpg")->GetTextureMutable();
 		Rendering::Material* floorMaterial = state.m_GraphicsContext.m_GraphicsManager->TryCreateRuntimeMaterial(Rendering::Material("Checkerboard",
 			&checkerboardTexture, HDRColor(0.2f, 0.2f, 0.2f, 1.0f), 1, HDRColor(0.0f, 0.0f, 0.0f, 0.0f), 0.1, 0));
+
 		Rendering::Model3d* planeModel = state.m_GraphicsContext.m_GraphicsManager->TryGetBasicMeshMutable(Rendering::BasicMeshType::Plane);
 
 		floor.AddComponent<Mesh3DComponent>(Mesh3DComponent(*planeModel, 0, floorMaterial));

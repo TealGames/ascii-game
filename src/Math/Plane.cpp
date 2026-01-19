@@ -1,5 +1,5 @@
 #include "Plane.hpp"
-#include "Utils/Math.hpp"
+#include "Utils/Math/Math.hpp"
 
 Vec2 Plane2D::GetSize() const
 {

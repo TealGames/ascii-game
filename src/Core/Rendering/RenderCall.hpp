@@ -1,6 +1,6 @@
 #pragma once
 #include <variant>
-#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Math/WorldPosition.hpp"
 #include "Utils/Data/Color.hpp"
 #include "Core/Rendering/Texture.hpp"
 #include "Core/Rendering/Font.hpp"

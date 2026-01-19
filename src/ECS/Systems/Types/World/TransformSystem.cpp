@@ -1,6 +1,5 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
-#include "Utils/Data/Point2DInt.hpp"
 #include "ECS/Component/Types/World/TransformComponent.hpp"
 
 #ifdef ENABLE_PROFILER

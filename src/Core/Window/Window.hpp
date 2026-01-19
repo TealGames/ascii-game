@@ -2,10 +2,10 @@
 #include <functional>
 #include <type_traits>
 #include <utility>
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "Utils/Data/Event.hpp"
 #include "Core/Input/InputKey.hpp"
-#include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Math/ScreenPosition.hpp"
 
 namespace Core
 {

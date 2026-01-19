@@ -16,7 +16,7 @@ static constexpr bool THROW_ON_UNKNWON_ASSET = false;
 
 namespace AssetManagement
 {
-	std::filesystem::path AssetManager::ASSET_PATH = ASSET_PARENT_PATH "assets";
+	std::filesystem::path AssetManager::ASSET_PATH = CURRENT_SOURCE_DIR "assets";
 	std::unordered_set<std::string> AssetManager::m_hiddenAssetPaths = {};
 
 	AssetManager::AssetManager() : m_assets(), m_runtimeAssets(), m_allFiles() 

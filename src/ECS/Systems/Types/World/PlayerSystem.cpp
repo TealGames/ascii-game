@@ -2,7 +2,7 @@
 #include "ECS/Systems/Types/World/PlayerSystem.hpp"
 #include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "ECS/Component/Types/World/CameraComponent.hpp"
-#include "Utils/Data/Vec2Type.hpp"
+#include "Utils/Math/Vec2Type.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "StaticGlobals.hpp"

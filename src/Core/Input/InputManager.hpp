@@ -5,11 +5,9 @@
 #include <optional>
 #include <filesystem>
 #include "Utils/Data/Direction.hpp"
-//#include "raylib.h"
-#include "Utils/Data/Point2DInt.hpp"
 #include "Core/Input/CompoundInput.hpp"
 #include "Core/Input/InputKey.hpp"
-#include "Utils/Data/ScreenPosition.hpp"
+#include "Utils/Math/ScreenPosition.hpp"
 #include "Core/Asset/InputProfileAsset.hpp"
 
 //TODO: predefined data like compounds should be mutated and set up to work with file loading

@@ -1,9 +1,8 @@
 #pragma once
-#include "Utils/Data/WorldPosition.hpp"
-#include "Utils/Data/Matrix.hpp"
+#include "Utils/Math/WorldPosition.hpp"
 #include "Utils/Data/Color.hpp"
-#include "Utils/Data/AABB.hpp"
 #include "Utils/Data/MemoryInterval.hpp"
+#include "Utils/Math/MathAdvanced.hpp"
 
 namespace Rendering
 {
@@ -55,33 +54,45 @@ namespace Rendering
     template<typename T>
     struct TriangleBase
     {
-        T m_VertexIndex0;
-        T m_VertexIndex1;
-        T m_VertexIndex2;
+        T m_0;
+        T m_1;
+        T m_2;
 
         TriangleBase() : TriangleBase(0, 0, 0) {}
-        TriangleBase(const T index0, const T index1, const T index2)
-            : m_VertexIndex0(index0), m_VertexIndex1(index1), m_VertexIndex2(index2) {}
-        TriangleBase(const T indexOffset, const T* arr)
-            : m_VertexIndex0(indexOffset + *arr), m_VertexIndex1(indexOffset + *(arr + 1)), m_VertexIndex2(indexOffset + *(arr + 2)) {}
-        TriangleBase(const T indexOffset, const std::array<T, 3>& triangle)
-            : m_VertexIndex0(indexOffset + triangle[0]), m_VertexIndex1(indexOffset + triangle[1]), m_VertexIndex2(indexOffset + triangle[2]) {}
-        TriangleBase(const T indexOffset, const TriangleBase<T>& other)
-            : m_VertexIndex0(indexOffset + other.m_VertexIndex0), 
-              m_VertexIndex1(indexOffset + other.m_VertexIndex1),
-              m_VertexIndex2(indexOffset + other.m_VertexIndex2) {}
+        TriangleBase(const T first, const T second, const T third)
+            : m_0(first), m_1(second), m_2(third) {}
+        TriangleBase(const T offset, const T* arr)
+            : m_0(offset + *arr), m_1(offset + *(arr + 1)), m_2(offset + *(arr + 2)) {}
+        TriangleBase(const T offset, const std::array<T, 3>& triangle)
+            : m_0(offset + triangle[0]), m_1(offset + triangle[1]), m_2(offset + triangle[2]) {}
+        TriangleBase(const T offset, const TriangleBase<T>& other)
+            : m_0(offset + other.m_0), m_1(offset + other.m_1), m_2(offset + other.m_2) {}
 
         std::string ToString() const
         {
-            return std::format("[Triangle 0:{} 1:{} 2:{}]", m_VertexIndex0, m_VertexIndex1, m_VertexIndex2);
+            return std::format("[Triangle 0:{} 1:{} 2:{}]", m_0, m_1, m_2);
         }
     };
-    using Triangle = TriangleBase<IndexType>;
+    using IndexTriangle = TriangleBase<IndexType>;
+    using Vec3Triangle = TriangleBase<Vec3>;
 
-    AABB3D CalculateTriangleAABB(const Triangle& triangle, const Vertex* vertexArray);
-    WorldPosition3D CalculateTriangleCenter(const Triangle& triangle, const Vertex* vertexArray);
+    template<size_t ALIGN = 0>
+    AABB3DBase<ALIGN> CalculateTriangleAABB(const IndexTriangle& triangle, const Vertex* vertexArray)
+    {
+        const WorldPosition3D world0 = vertexArray[triangle.m_0].m_LocalPos;
+        const WorldPosition3D world1 = vertexArray[triangle.m_1].m_LocalPos;
+        const WorldPosition3D world2 = vertexArray[triangle.m_2].m_LocalPos;
+        const AABB3DBase<ALIGN> aabb = AABB3D(Min(world0, world1, world2), Max(world0, world1, world2));
 
-    using Std430Mat3 = MatrixType<float, 3, 3, MatrixMajorOrder::Column, sizeof(float) * 4>;
+        ENGINE_ASSERT(Utils::IsWithinBounds(aabb, world0) && Utils::IsWithinBounds(aabb, world1) && Utils::IsWithinBounds(aabb, world2),
+            "Attempted to calculate triangle AABB3d givne vertices: {}, {}, {} but some did not fit within bounds formed: {}",
+            world0.ToString(), world1.ToString(), world2.ToString(), aabb.ToString());
+
+        return aabb;
+    }
+    WorldPosition3D CalculateTriangleCenter(const IndexTriangle& triangle, const Vertex* vertexArray);
+
+    using Mat3Std430 = MatrixType<float, 3, 3, MatrixMajorOrder::Column, sizeof(float) * 4>;
     struct Instance
     {
         //Color m_Color;
@@ -93,7 +104,7 @@ namespace Rendering
         //NOTE: we use a mat4x3 (4 rows, 3 cols) because we use COLUMN MAJOR STORAGE
         //(to not need transpose on OpenGL matrix upload) and since the NormalModelMatrix is 3x3
         //and OpenGL expects std::430 rules (flaot vec3 needs 4 byte padding), we add padding
-        Std430Mat3 m_NormalModelMatrix;
+        Mat3Std430 m_NormalModelMatrix;
 
         Instance();
         Instance(const std::uint32_t materialIndex, const std::uint32_t meshIndex, 

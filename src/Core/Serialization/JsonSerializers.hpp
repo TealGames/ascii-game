@@ -1,6 +1,6 @@
 #pragma once
 #include "nlohmann/json.hpp"
-#include "Utils/Data/Vec3Type.hpp"
+#include "Utils/Math/Vec3Type.hpp"
 #include "Math/Vec2.hpp"
 #include "Math/Vec3.hpp"
 #include "Math/Vec2Int.hpp"
@@ -17,13 +17,13 @@
 #include "Core/Serialization/SerializableField.hpp"
 #include "Utils/Data/ColorGradient.hpp"
 #include "Core/Serialization/JsonUtils.hpp"
-#include "Utils/Data/AABB.hpp"
+#include "Utils/Math/AABB.hpp"
 #include <functional>
 #include <type_traits>
 #include <cstdint>
 #include <vector>
 #include <optional>
-#include "Utils/Data/FloatRange.hpp"
+#include "Utils/Math/FloatRange.hpp"
 #include "Core/Asset/Asset.hpp"
 #include "Utils/ToStringFunctions.hpp"
 

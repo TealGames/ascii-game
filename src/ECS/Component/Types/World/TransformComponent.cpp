@@ -5,7 +5,7 @@
 #include "ECS/Component/Types/World/EntityComponent.hpp"
 #include "Core/Serialization/JsonSerializers.hpp"
 #include "Math/PlatformMath.hpp"
-#include "Utils/MathAdvanced.hpp"
+#include "Utils/Math/MathAdvanced.hpp"
 //#include "glm/gtc/matrix_transform.hpp"
 
 TransformComponent::TransformComponent(const Json& json) : TransformComponent()

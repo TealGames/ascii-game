@@ -2,9 +2,9 @@
 #include <vector>
 #include "Core/Visual/TextArray.hpp"
 #include "Core/Visual/TextBuffer.hpp"
-#include "Utils/Data/Vec2Type.hpp"
-#include "Utils/Data/NormalizedPosition.hpp" 
-#include "Utils/Data/WorldPosition.hpp"
+#include "Utils/Math/Vec2Type.hpp"
+#include "Utils/Math/NormalizedPosition.hpp" 
+#include "Utils/Math/WorldPosition.hpp"
 
 inline const NormalizedPos SPRITE_BOTTOM_LEFT = NormalizedPos(NormalizedValue::MIN, NormalizedValue::MIN);
 inline const NormalizedPos SPRITE_TOP_LEFT = NormalizedPos(NormalizedValue::MIN, NormalizedValue::MAX);

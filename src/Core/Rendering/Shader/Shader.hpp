@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include "Utils/Data/FixedString.hpp"
 #include "Core/Rendering/RenderObject.hpp"
-#include "Utils/Data/Vec3Type.hpp"
+#include "Utils/Math/Vec3Type.hpp"
 
 namespace Rendering
 {

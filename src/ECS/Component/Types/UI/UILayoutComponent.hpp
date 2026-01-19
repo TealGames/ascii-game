@@ -1,6 +1,6 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
-#include "Utils/Data/NormalizedPosition.hpp"
+#include "Utils/Math/NormalizedPosition.hpp"
 
 enum class LayoutType
 {
