@@ -318,7 +318,7 @@ public:
 	}
 	Vec operator/(const float scalar) const
 	{
-		ENGINE_ASSERT(!Utils::ApproximateEqualsF(scalar, 0), "Tried to divide a vec3: {} by a 0 value float scalar", ToString());
+		//ENGINE_ASSERT(!Utils::ApproximateEqualsF(scalar, 0), "Tried to divide a vec3: {} by a 0 value float scalar", ToString());
 		return Vec(m_X / scalar, m_Y / scalar, m_Z / scalar);
 	}
 	constexpr Vec operator/(const int scalar) const

@@ -41,6 +41,7 @@ namespace Rendering
 		std::unordered_map<std::string_view, std::vector<Shader*>> m_singleUniformShaderMap;
 
 		TextureAsset* m_defaultAlbedo;
+		TextureAsset* m_skybox;
 		MaterialAsset* m_defaultMaterial;
 	public:
 
@@ -53,6 +54,10 @@ namespace Rendering
 		Texture* GetDefaultAlbedoMutable();
 		const Material* GetDefaultMaterial() const;
 		Material* GetDefaultMaterialMutable();
+
+		bool TrySetSkybox(const std::filesystem::path& assetPath);
+		const Texture* GetSkybox() const;
+		Texture* GetSkyboxMutable();
 
 		const Shader* TryGetShader(const std::string& name) const;
 		Shader* TryGetShaderMutable(const std::string& name);

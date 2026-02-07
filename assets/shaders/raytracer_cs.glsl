@@ -130,10 +130,6 @@ layout(rgba16f) uniform writeonly image2D uTextureOutput0;
 layout(rgba16f) uniform writeonly image2D uTextureOutput1;
 
 const float EPSILON = 1e-8;
-const float EPSILON_DET = EPSILON;
-const float EPSILON_BARY = 1e-6;
-const float EPSILON_T = 1e-5;
-
 const float PI = 3.14159265359;
 const uint MAX_STACK_SIZE = 128;
 
@@ -263,41 +259,18 @@ float PDF_CosineHemisphere(float NdotL)
     return NdotL / PI;
 }
 
-// Evaluate Cook-Torrance microfacet BRDF (returns f and outputs specular)
-vec3 EvaluateMicrofacetBRDF(vec3 N, vec3 V, vec3 L, vec3 albedo, float metallic, float roughness, out vec3 outSpec, out float outPdf) {
-    vec3 H = normalize(V + L);
-    float NdotL = max(dot(N, L), 0.0);
-    float NdotV = max(dot(N, V), 0.0);
-    float NdotH = max(dot(N, H), 0.0);
-    float VdotH = max(dot(V, H), 0.0);
-
-    float alpha = roughness * roughness;
-    vec3 F0 = mix(vec3(0.04), albedo, metallic);
-
-    float D = NormalDistributionGGX(NdotH, alpha);
-    float k = (alpha + 1.0) * (alpha + 1.0) / 8.0; // UE4-style remap for G
-    float G = GeometrySmith(NdotV, NdotL, k);
-    vec3 F = FresnelSchlickReflectance(VdotH, F0);
-
-    vec3 numerator = D * G * F;
-    //NOTE: we use max to prevent division by 0
-    float denominator = 4.0 * max(EPSILON, NdotV * NdotL);
-    vec3 specular = numerator / denominator;
-
-    // Energy-conserving diffuse (Lambert) factor only for non-metals
-    vec3 kD = (vec3(1.0) - F) * (1.0 - metallic);
-    vec3 diffuse = kD * albedo / PI;
-
-    outSpec = specular;
-
-    // PDF mix is computed where sampling is performed; here return placeholder 0
-    outPdf = 0.0;
-    return diffuse + specular;
+ float CalculateSpecularWeight(float metallic)
+ { 
+    return mix(0.25, 0.75, metallic);
+}
+float CalculateMixedPDF(const float metallic, const float specularPdf, const float diffusePdf)
+{
+    return mix(diffusePdf, specularPdf, CalculateSpecularWeight(metallic));
 }
 
-void EvaluateBSDF(vec3 normal, vec3 V, vec3 lightDir, vec3 albedo, float metallic, float roughness, out vec3 f, 
-    out float diffusePdf, out float specularPdf, out float mixedPdf) {
-    f = vec3(0.0);
+void EvaluateBSDF(vec3 normal, vec3 V, vec3 lightDir, vec3 albedo, float metallic, float roughness,
+    out vec3 diffuse, out float diffusePdf, out vec3 specular, out float specularPdf) 
+{ 
     diffusePdf = 0.0;
     specularPdf = 0.0;
 
@@ -318,25 +291,21 @@ void EvaluateBSDF(vec3 normal, vec3 V, vec3 lightDir, vec3 albedo, float metalli
     float G = GeometrySmith(NdotV, NdotL, k);
     vec3 F = FresnelSchlickReflectance(VdotH, F0);
 
-    vec3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, EPSILON);
+    specular = (D * G * F) / max(4.0 * NdotV * NdotL, EPSILON);
 
     vec3 kd = (1.0 - F) * (1.0 - metallic);
-    vec3 diffuse = kd * albedo / PI;
+    diffuse = kd * albedo / PI;
 
-    f = diffuse + specular;
     diffusePdf = NdotL / PI;
     specularPdf = PDF_GGX(NdotH, alpha, VdotH);
-
-    float specularWeight = clamp(max(F0.r, max(F0.g, F0.b)), 0.05, 0.95);
-    mixedPdf= specularWeight * specularPdf + (1.0 - specularWeight) * diffusePdf;
 }
 
-void SampleBSDF(inout uint seed, vec3 normal, vec3 V, vec3 albedo, float metallic, float roughness, out vec3 L, out vec3 f, out float pdf) 
+void SampleBSDFSingleLobe(inout uint seed, vec3 normal, vec3 V, vec3 albedo, float metallic, float roughness, out vec3 L, out vec3 f, out float pdf) 
 {
     float alpha = roughness * roughness;
 
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
-    float specularWeight = clamp(max(F0.r, max(F0.g, F0.b)), 0.05, 0.95);
+    float specularWeight = mix(0.25, 0.75, metallic);
     bool chooseSpecular =  GenerateRandomNum(seed) < specularWeight;
 
     //Essentially we determine here if the point that we want to sample is going to be SPECULAR (bounce back at same as incoming angle)
@@ -344,7 +313,7 @@ void SampleBSDF(inout uint seed, vec3 normal, vec3 V, vec3 albedo, float metalli
     if (chooseSpecular) 
     {
         vec3 H = ImportanceSampleGGX(GenerateRandomNum(seed), 
-                 GenerateRandomNum(seed), normal, roughness * roughness);
+                 GenerateRandomNum(seed), normal, alpha);
         L = reflect(-V, H);
     } 
     else 
@@ -352,11 +321,20 @@ void SampleBSDF(inout uint seed, vec3 normal, vec3 V, vec3 albedo, float metalli
         L = CosineSampleHemisphere(GenerateRandomNum(seed), GenerateRandomNum(seed), normal);
     }
 
-    float specularPdf = 0;
-    float diffusePdf = 0;
-    float mixedPdf = 0;
-    EvaluateBSDF(normal, V, L, albedo, metallic, roughness, f, diffusePdf, specularPdf, mixedPdf);
-    pdf = mixedPdf;
+    float specularPdf = 0, diffusePdf = 0;
+    vec3 specular = vec3(0), diffuse = vec3(0);
+    EvaluateBSDF(normal, V, L, albedo, metallic, roughness, diffuse, diffusePdf, specular, specularPdf);
+
+    if (chooseSpecular)
+    {
+        pdf = specularPdf * specularWeight;
+        f = specular;
+    }
+    else
+    {
+        pdf = diffusePdf * (1-specularWeight);
+        f = diffuse;
+    }
 }
 
 /* Moller–Trumbore ray–triangle intersection
@@ -364,50 +342,33 @@ void SampleBSDF(inout uint seed, vec3 normal, vec3 V, vec3 albedo, float metalli
  * where hitDistance is the scalar distance from ray origin along ray dir to the intersection point of the triangle
  * and triangle normal is the normal of the triangle
  */
-bool DoesIntersectTriangle(vec3 rayOrigin, vec3 rayDir, vec3 v0, vec3 v1, vec3 v2, out float tEnter, out vec3 triangleNormal, out int flag)
+bool DoesIntersectTriangle(vec3 rayOrigin, vec3 rayDir, vec3 v0, vec3 v1, vec3 v2, out float tEnter, out vec3 triangleNormal)
 {
-    vec3 rayDirNormalized = normalize(rayDir);
-
     vec3 edge1 = v1 - v0;
     vec3 edge2 = v2 - v0;
-    //triangleNormal = normalize(cross(e1, e2));
-    triangleNormal = normalize(cross(edge1, edge2));
 
-    vec3 rayCrossE2 = cross(rayDirNormalized, edge2);
+    vec3 rayCrossE2 = cross(rayDir, edge2);
     float det = dot(edge1, rayCrossE2);
     //The ray is parallel to the triangle
-    if (abs(det) < EPSILON_DET) 
-    {
-        flag = 1;
+    if (abs(det) < EPSILON) 
         return false;
-    }
 
     float invDet = 1.0 / det;
     vec3 s = rayOrigin - v0;
     float u = dot(s, rayCrossE2) * invDet;
-    if (u < -EPSILON_BARY || u > 1.0 + EPSILON_BARY)
-    {
-        flag = 2;
+    if (u < 0.0 || u > 1.0)
         return false;
-    }
 
     vec3 sCrossE1 = cross(s, edge1);
-    float v = dot(rayDirNormalized, sCrossE1) * invDet;
-    if (v < -EPSILON_BARY || u + v > 1.0 + EPSILON_BARY)
-    {
-        flag = 3;
+    float v = dot(rayDir, sCrossE1) * invDet;
+    if (v < 0.0 || u + v > 1.0)
         return false;
-    }
 
     tEnter = dot(edge2, sCrossE1) * invDet;
-    if (tEnter < EPSILON_T) 
-    {
-        flag = 4;
+    if (tEnter < EPSILON) 
         return false;
-    }
 
     tEnter /= length(rayDir);
-    flag = 0;
     return true;
 }
 
@@ -554,9 +515,9 @@ vec3 SampleEquirectangular(vec3 dir, sampler2D hdrMap)
     float phi   = asin(dir.y); 
 
     // Map theta from [-pi, pi] to [0,1]
-    float u = (theta + 3.14159265) / (2.0 * 3.14159265);
+    float u = (theta + PI) / (2.0 * PI);
     // Map phi from [-pi/2, pi/2] to [0,1]
-    float v = (phi + 1.57079633) / 3.14159265;
+    float v = (phi + PI/2) / PI;
 
     return texture(hdrMap, vec2(u, v)).rgb;
 }
@@ -792,9 +753,8 @@ bool DoesIntersectSceneWorldNaive(vec3 rayOriginWorld, vec3 rayDirWorld, out vec
                 normalize(mat3(instance.normalModelMatrix) * normal2),
                 hitDistance, triangleNormal))
 #else
-            float dummyFlag = 0;
             if (DoesIntersectTriangle(rayOriginWorld, rayDirWorld, vertexWorld0, 
-                                      vertexWorld1, vertexWorld2, hitDistance, triangleNormal, dummyFlag))
+                                      vertexWorld1, vertexWorld2, hitDistance, triangleNormal))
 #endif
             {
                 if (dot(rayDirWorld, triangleNormal) > 0.0)
@@ -902,7 +862,7 @@ void main()
             if (!DoesIntersectSceneWorld(rayOriginWorld, rayDirWorld, hitPos, hitNormalWorld, hitMaterial, seed, 
                 hitIndexV0, hitIndexV1, hitIndexV2, hitWorldV0, hitWorldV1, hitWorldV2)) 
             {
-                vec3 sky = vec3(0);
+                vec3 sky = vec3(0.0);
                 if (uHasSkybox)
                 {
                     sky = SampleEquirectangular(rayDirWorld, uSkybox);
@@ -968,6 +928,7 @@ void main()
                 Material shadowHitMaterial;
                 uint dummyIndex0, dummyIndex1, dummyIndex2;
                 vec3 dummyV0, dummyV1, dummyV2;
+                vec3 lightSpecular = vec3(0), lightDiffuse = vec3(0), lightMixedF = vec3(0);
                 if (NdotL > EPSILON && NlDot > EPSILON)
                 {
                     bool occluded = DoesIntersectSceneWorld(rayOriginWorld, lightDir, shadowHitPos, shadowHitNormal, shadowHitMaterial, seed, 
@@ -975,21 +936,21 @@ void main()
                                     && length(shadowHitPos - rayOriginWorld) < hitDistanceToLight - EPSILON;
                     if (!occluded)
                     {
-                        float lightTrianglePdfArea = 1.0 / (lightTriangleArea * float(uEmissiveCount));
+                        float lightTrianglePdfArea = 1.0 / (lightTriangleArea * lightMeshInstance.numIndices/3 * float(uEmissiveCount));
                         float lightPdf = lightTrianglePdfArea * hitDistanceToLight * hitDistanceToLight / max(NlDot, EPSILON);
 
-                        vec3 thisF = vec3(0);
-                        float pdfDiffuse = 0;
-                        float pdfSpecular = 0;
-                        float mixedBsdfPdf =0;
-                        EvaluateBSDF(hitNormalWorld, normalize(-rayDirWorld), lightDir, albedo, metallic, roughness, thisF, pdfDiffuse, pdfSpecular, mixedBsdfPdf);
-
+                        float pdfDiffuse = 0, pdfSpecular = 0;
+                        EvaluateBSDF(hitNormalWorld, normalize(-rayDirWorld), lightDir, albedo, metallic, roughness, 
+                                     lightDiffuse, pdfDiffuse, lightSpecular, pdfSpecular);
+                        
                         // MIS power heuristic (more stable that balance heuristic)
-                        float w = (lightPdf * lightPdf) / (lightPdf * lightPdf + mixedBsdfPdf * mixedBsdfPdf);
+                        float mixedPdf = CalculateMixedPDF(metallic, pdfSpecular, pdfDiffuse);
+                        float w = (lightPdf * lightPdf) / (lightPdf * lightPdf + mixedPdf * mixedPdf);
                         vec4 materialEmission = materials[lightInstance.materialIndex].emission;
                         vec3 lightRadiance = materialEmission.rgb * materialEmission.a;
 
-                        radiance += throughput * thisF * lightRadiance * NdotL * w / lightPdf;
+                        lightMixedF = lightSpecular + lightDiffuse;
+                        radiance += throughput * lightMixedF * lightRadiance * NdotL * w / lightPdf;
                     }
                 }
 
@@ -1017,13 +978,15 @@ void main()
                         if (length(lightIntensity) < 1e-5)
                             continue;
 
-                        vec3 pointLightF = vec3(0);
-                        float dummy0, dummy1, dummy2;
-                        EvaluateBSDF(hitNormalWorld, normalize(-rayDirWorld), lightDir, albedo, metallic, roughness, pointLightF, dummy0, dummy1, dummy2);
+                        
+                        float dummy0, dummy1;
+                        EvaluateBSDF(hitNormalWorld, normalize(-rayDirWorld), lightDir, albedo, metallic, roughness, 
+                                     lightDiffuse, dummy0, lightSpecular, dummy1);
 
                         //Since point lights are single points with infinite directions 
                         //we do not use pdf and only the f value for lighting the surface
-                        radiance += throughput * pointLightF * lightIntensity * NdotL;
+                        lightMixedF = lightDiffuse + lightSpecular;
+                        radiance += throughput * lightMixedF * lightIntensity * NdotL;
                     }
                 }
             }
@@ -1031,15 +994,15 @@ void main()
             //-----------------------------------------------------------------------------------------
             //                                     INDIRECT LIGHTING   
             //-----------------------------------------------------------------------------------------
-            vec3 f= vec3(0);
+            vec3 lobeF= vec3(0);
             vec3 l = vec3(0);
-            float pdf= 0;
-            SampleBSDF(seed, hitNormalWorld, reflectedRayDirWorld, albedo, metallic, roughness, l, f, pdf);
-            if (pdf < EPSILON)
+            float lobePdf= 0;
+            SampleBSDFSingleLobe(seed, hitNormalWorld, reflectedRayDirWorld, albedo, metallic, roughness, l, lobeF, lobePdf);
+            if (lobePdf < EPSILON)
                 break;
 
             float NdotL = max(dot(hitNormalWorld, l), 0.0);
-            throughput *= f * NdotL / pdf;
+            throughput *= lobeF * NdotL / lobePdf;
 
             if (bounce > 3) 
             {
@@ -1067,10 +1030,7 @@ void main()
     uint maxHistory = 64u;
     float history = float(min(uUnmovingFrameCount, maxHistory));
 
-    vec3 blended =
-    (previousColor.rgb * history + averageRadiance)
-    / (history + 1.0);
-
+    vec3 blended = (previousColor.rgb * history + averageRadiance) / (history + 1.0);
     vec4 fragColor = vec4(blended, 1);
 
     //imageStore(uTextureOutput, pixel, vec4(1.0, 0, 0, 1.0));

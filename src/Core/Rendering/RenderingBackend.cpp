@@ -107,7 +107,7 @@ namespace Rendering
 #endif
 
 			BackendLoaded = true;
-			Core::EngineLog("LOADED RENDER BACKEND:{}", GetBackendVersion());
+			Core::EngineLog("LOADED GRAPHICS BACKEND:{}", GetBackendVersion());
 		}
 		bool IsBackendLoaded()
 		{

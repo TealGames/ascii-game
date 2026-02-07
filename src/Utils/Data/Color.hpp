@@ -55,7 +55,7 @@ public:
 
 	// ---------------------------------------- UINT8 ONLY CONSTRUCTORS -------------------------------------
 	constexpr Col() requires std::is_same_v<T, std::uint8_t>
-		: m_R(MAX_CHANNEL_VALUE), m_G(MAX_CHANNEL_VALUE), m_B(MAX_CHANNEL_VALUE), m_A(MAX_CHANNEL_VALUE) {}
+		: m_R(0), m_G(0), m_B(0), m_A(MAX_CHANNEL_VALUE) {}
 
 	constexpr Col(std::uint8_t r, std::uint8_t g, std::uint8_t b) requires std::is_same_v<T, std::uint8_t>
 		: m_R(r), m_G(g), m_B(b), m_A(MAX_CHANNEL_VALUE) {}
@@ -66,7 +66,7 @@ public:
 
 	// ------------------------------------ FLOATING POINT ONLY CONSTRUCTORS --------------------------------
 	constexpr Col() requires std::is_floating_point_v<T>
-		: m_R(1.0f), m_G(1.0f),m_B(1.0f), m_A(1.0f) {}
+		: m_R(0.0f), m_G(0.0f),m_B(0.0f), m_A(1.0f) {}
 
 	constexpr Col(const T r, const T g, const T b) 
 		requires std::is_floating_point_v<T>

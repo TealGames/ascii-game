@@ -14,7 +14,7 @@ namespace SceneCreator
 {
 	//Occurs when a scene is first loaded (only once on init)
 	void OnSceneLoad(Scene& scene, EngineState& state)
-	{
+	{		
 		EntityData& monkey = scene.CreateEntity("Monkey", TransformComponent(Vec3(0, 0.1, 0), Vec3(0.2, 0.2, 0.2), Quat::Identity()));
 		Model3dAsset* model = state.m_AssetManager->TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey" BASIC_MESH_EXTENSION);
 		model->GetModelMutable().m_Objects[0].m_Material.SetSurface(1, 0, nullptr);
@@ -67,6 +67,9 @@ namespace SceneCreator
 	//Occurs whenever a new scene becomes active
 	void OnSceneStart(Scene& scene, EngineState& state)
 	{
-
+		/*if (!state.m_GraphicsContext.m_GraphicsManager->TrySetSkybox("textures/skybox_stylized_night.png"))
+		{
+			LogError(std::format("Failed to set scene:{} skybox", scene.GetName()));
+		}*/
 	}
 }

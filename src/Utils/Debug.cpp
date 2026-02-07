@@ -91,26 +91,26 @@ void LogMessage(const LogType& logType, const CallerLogDetails logDetails, const
 
 	std::string logTypeMessage;
 	std::string timeFormatted = "";
-	if (logTime) timeFormatted = ' ' + FormatCurrentTime() + ' ';
+	if (logTime) timeFormatted = FormatCurrentTime();
 
 	const char* mainTextAnsiColor = nullptr;
 	switch (logType)
 	{
 	case LogType::Error:
 		mainTextAnsiColor = overrideANSIColor != nullptr ? overrideANSIColor : ANSI_COLOR_RED;
-		logTypeMessage = std::format("{}[{}!{}]{}{}ERROR:", ANSI_COLOR_WHITE,
+		logTypeMessage = std::format("{}[{}!{}]{} {}ERROR:", ANSI_COLOR_WHITE,
 			mainTextAnsiColor, ANSI_COLOR_WHITE, timeFormatted, mainTextAnsiColor);
 		break;
 
 	case LogType::Warning:
 		mainTextAnsiColor = overrideANSIColor != nullptr ? overrideANSIColor : ANSI_COLOR_YELLOW;
-		logTypeMessage = std::format("{}[{}!{}]{}{}WARNING:", ANSI_COLOR_WHITE,
+		logTypeMessage = std::format("{}[{}!{}]{} {}WARNING:", ANSI_COLOR_WHITE,
 			mainTextAnsiColor, ANSI_COLOR_WHITE, timeFormatted, mainTextAnsiColor);
 		break;
 
 	case LogType::Log:
 		mainTextAnsiColor = overrideANSIColor != nullptr ? overrideANSIColor : ANSI_COLOR_WHITE;
-		logTypeMessage = std::format("{}{}LOG:", timeFormatted, mainTextAnsiColor);
+		logTypeMessage = std::format("{} {}LOG:", timeFormatted, mainTextAnsiColor);
 		break;
 
 	case LogType::None:

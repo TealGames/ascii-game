@@ -19,7 +19,7 @@ namespace Rendering
 
 	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager)
 		: m_assetManager(&assetManager), m_defaultAlbedo(nullptr), m_defaultMaterial(nullptr), m_shaders(), m_materials(), m_basicMeshes(),
-		m_shaderBlockBuffers(), m_shaderGlobalDefines({}), m_singleUniformShaderMap() {}
+		m_skybox(), m_shaderBlockBuffers(), m_shaderGlobalDefines({}), m_singleUniformShaderMap() {}
 
 	void GraphicsManager::InitGraphicResources()
 	{
@@ -155,6 +155,25 @@ namespace Rendering
 	{
 		return &(m_defaultMaterial->GetMaterialMutable());
 	}
+
+	bool GraphicsManager::TrySetSkybox(const std::filesystem::path& assetPath)
+	{
+		m_skybox = m_assetManager->TryGetTypeAssetFromPathMutable<TextureAsset>(assetPath);
+		return m_skybox != nullptr;
+	}
+	const Texture* GraphicsManager::GetSkybox() const
+	{
+		if (m_skybox == nullptr)
+			return nullptr;
+		return &(m_skybox->GetTexture());
+	}
+	Texture* GraphicsManager::GetSkyboxMutable()
+	{
+		if (m_skybox == nullptr)
+			return nullptr;
+		return &(m_skybox->GetTextureMutable());
+	}
+
 	const Shader* GraphicsManager::TryGetShader(const std::string& name) const
 	{
 		auto it = m_shaders.find(name.c_str());

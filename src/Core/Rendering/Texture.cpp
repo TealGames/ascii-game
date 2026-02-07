@@ -298,8 +298,13 @@ namespace Rendering
 		Deallocate();
 			
 		m_info = texture.m_info;
+		//NOTE: we ALWAYS want to have invalid ID since that is either required for CPU only buffer OR
+		//it should be reassigned a new ID after allocate
+		m_info.m_Id = INVALID_OBJ_ID;
 		m_info.m_BufferType = overrideType.value_or(texture.m_info.m_BufferType);
 		m_gpuCallbacks = texture.m_gpuCallbacks;
+		ENGINE_ASSERT(m_gpuCallbacks.IsValid(), "Attempted to copy texture with invalid callbacks:{} to this texture:{} which is not allowed. "
+			"All textures, including only CPU textures must have GPU callbacks in case the buffer type is changed", texture.ToString(), ToString());
 
 		Allocate();
 		CopyBytes(texture);

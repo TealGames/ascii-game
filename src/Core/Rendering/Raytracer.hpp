@@ -30,7 +30,9 @@ namespace Rendering
 
     struct BSDFEvaluationInfo
     {
-        Vec3 m_F;
+        Vec3 m_Specular;
+        Vec3 m_Diffuse;
+
         /// <summary>
         /// The Probability Density Function (PDF) for DIFFUSE term
         /// Some directions have higher liklihood of getting selected, so for proper
@@ -40,7 +42,6 @@ namespace Rendering
         /// <summary>
         /// The Probability Density Function (PDF) for SPECULAR term
         float m_SpecularPDF = 0.0f;
-        float m_MixedPDF = 0.0f;
     };
     struct BSDFSampleInfo
     {
@@ -85,5 +86,4 @@ namespace Rendering
         HDRColor RunPixel(const Vec2Int pixel);
         void Run();
     };
-
 }

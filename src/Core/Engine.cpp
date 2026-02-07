@@ -322,7 +322,6 @@ namespace Core
 		m_sceneManager.LoadAllScenes();
 
 		//Rendering::Texture& skybox = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/skybox.hdr")->GetTextureMutable();
-		Rendering::Texture& skybox = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/skybox_stylized_night.png")->GetTextureMutable();
 		/*Color colors[4] = {Color(255,0,0,255), Color(0,255,0,255), Color(0,0,255,255), Color(255,255,0,255)};
 		Rendering::Texture test = Rendering::CreateTexture((std::byte*)(colors), Vec2Int(2, 2), Rendering::TextureBufferType::GPUThreadSafeRead);
 		LogWarning(std::format("Texture before:{}", test.ToStringBytes(false)));

@@ -29,7 +29,8 @@ namespace Rendering
     */
     Vec3 FresnelSchlickReflectance(float cosTheta, const Vec3& F0)
     {
-        return F0 + (1.0f - F0) * powf(1.0f - cosTheta, 5.0f);
+        const float base = 1.0f - cosTheta;
+        return F0 + (1.0f - F0) * (base * base * base * base * base);
     }
 
     /* Computes the GGX normal distribution function for Cook-Torrance BRDF equation
@@ -133,6 +134,12 @@ namespace Rendering
     // PDF for cosine hemisphere sample
     float PDF_CosineHemisphere(float NdotL) { return NdotL / PI; }
 
+    float CalculateSpecularWeight(float metallic) { return std::lerp(0.25, 0.75, metallic); }
+    float CalculateMixedPDF(const float metallic, const float specularPdf, const float diffusePdf)
+    {
+        return std::lerp(diffusePdf, specularPdf, CalculateSpecularWeight(metallic));
+    }
+
     //The Bidrectional Scattering Distribution Function -> similar to Bidirectional Reflectance (BRDF)
     //but also including Bidrectional Transmission (BRDF) as BSDF = BRDF + BTDF
     //Simply, BRDF allows surface reflections, but BSDF also allows for light scattering as well (glass, water, subsurface scattering)
@@ -157,17 +164,13 @@ namespace Rendering
         float G = GeometrySmith(NdotV, NdotL, k);
         Vec3 F = FresnelSchlickReflectance(VdotH, F0);
 
-        Vec3 specular = (D * G * F) / std::max(4.0f * NdotV * NdotL, Utils::EPSILON_F);
+        result.m_Specular = (D * G * F) / std::max(4.0f * NdotV * NdotL, Utils::EPSILON_F);
 
         Vec3 kd = (1.0f - F) * (1.0f - metallic);
-        Vec3 diffuse = kd * albedo / PI;
+        result.m_Diffuse = kd * albedo / PI;
 
-        result.m_F = diffuse + specular;
         result.m_DiffusePDF = PDF_CosineHemisphere(NdotL);
         result.m_SpecularPDF = PDF_GGX(NdotH, alpha, VdotH);
-
-        float specularWeight = std::clamp(MaxVal(F0), 0.05f, 0.95f);
-        result.m_MixedPDF = std::lerp(result.m_DiffusePDF, result.m_SpecularPDF, specularWeight);
         return result;
     }
 
@@ -176,15 +179,14 @@ namespace Rendering
         float alpha = roughness * roughness;
         BSDFSampleInfo result;
 
-        Vec3 F0 = Lerp(Vec3(0.04f), albedo, metallic);
-        float specularWeight = std::clamp(MaxVal(F0), 0.05f, 0.95f);
+        float specularWeight = CalculateSpecularWeight(metallic);
         bool chooseSpecular = Utils::FastRandom(rngSeed) < specularWeight;
 
         //Essentially we determine here if the point that we want to sample is going to be SPECULAR (bounce back at same as incoming angle)
         //OR diffuse (bounce in random direction) based on the probabiluty we choose before
         if (chooseSpecular)
         {
-            Vec3 H = ImportanceSampleGGX(Utils::FastRandom(rngSeed), Utils::FastRandom(rngSeed), normal, roughness * roughness);
+            Vec3 H = ImportanceSampleGGX(Utils::FastRandom(rngSeed), Utils::FastRandom(rngSeed), normal, alpha);
             result.m_L = Utils::ReflectAcrossNormal(-V, H);
         }
         else
@@ -193,14 +195,23 @@ namespace Rendering
         }
 
         BSDFEvaluationInfo bsdfInfo = EvaluateBSDF(normal, V, result.m_L, albedo, metallic, roughness);
-        result.m_F = bsdfInfo.m_F;
-        result.m_PDF = bsdfInfo.m_MixedPDF;
+        if (chooseSpecular)
+        {
+            result.m_PDF = bsdfInfo.m_SpecularPDF * specularWeight;
+            result.m_F = bsdfInfo.m_Specular;
+        }
+        else
+        {
+            result.m_PDF = bsdfInfo.m_DiffusePDF * (1.0f - specularWeight);
+            result.m_F = bsdfInfo.m_Diffuse;
+        }
         return result;
     }
 
+
     HDRColor SampleEquirectangular(const Vec3 dir, const Texture& hdrMap)
     {
-        float theta = std::atanf(dir.m_Z / dir.m_X);
+        float theta = std::atan2f(dir.m_Z, dir.m_X);
         float phi = std::asinf(dir.m_Y);
 
         // Map theta from [-pi, pi] to [0,1]
@@ -420,7 +431,7 @@ namespace Rendering
         //Radiance is the total color that gets accumulated for this ray
         Vec3 radiance;
         Vec3 averageRadiance;
-        RaytraceHitInfo hitInfo;
+        RaytraceHitInfo hitInfo, shadowHitInfo;
         BSDFEvaluationInfo bsdfEvalInfo;
         BSDFSampleInfo bsdfSampleInfo;
         Ray3D worldRay;
@@ -454,7 +465,7 @@ namespace Rendering
                 hitInfo = TraceRay(worldRay);
                 if (!hitInfo.m_DidHit)
                 {
-                    HDRColor skyColor;
+                    HDRColor skyColor = HDRColor(0.0f, 0.0f, 0.0f, 0.0f);
                     if (m_SkyboxTex != nullptr)
                     {
                         skyColor = SampleEquirectangular(worldRay.m_Dir, *m_SkyboxTex);
@@ -492,7 +503,7 @@ namespace Rendering
                 //                                  DIRECT LIGHTING (NEXT EVENT ESTIMATION)
                 //--------------------------------------------------------------------------------------------------
                 {
-                    Vec3 lightVec, lightDir, shadowHitPos;
+                    Vec3 lightVec, lightDir, lightTotalF;
                     float hitDistanceToLight = 0.0f;
                     if (m_Settings.m_EmissiveCount > 0)
                     {
@@ -526,21 +537,24 @@ namespace Rendering
 
                         if (NdotL > Utils::EPSILON_F && NlDot > Utils::EPSILON_F)
                         {
-                            hitInfo = TraceRay(Ray3D{ worldRay.m_Origin, lightDir });
-                            bool occluded = hitInfo.m_DidHit && (shadowHitPos - worldRay.m_Origin).GetMagnitude() < hitDistanceToLight - Utils::EPSILON_F;
+                            shadowHitInfo = TraceRay(Ray3D{ worldRay.m_Origin, lightDir });
+                            bool occluded = shadowHitInfo.m_DidHit && (shadowHitInfo.m_HitPos - worldRay.m_Origin).GetMagnitude() 
+                                            < hitDistanceToLight - Utils::EPSILON_F;
                             if (!occluded)
                             {
-                                float lightTrianglePdfArea = 1.0 / (lightTriangleArea * float(m_Settings.m_EmissiveCount));
+                                float lightTrianglePdfArea = 1.0 / (lightTriangleArea * lightMeshInstance.m_NumIndices / 3 * float(m_Settings.m_EmissiveCount));
                                 float lightPdf = lightTrianglePdfArea * hitDistanceToLight * hitDistanceToLight / std::max(NlDot, Utils::EPSILON_F);
 
                                 bsdfEvalInfo = EvaluateBSDF(hitInfo.m_HitNormal, (-worldRay.m_Dir).Normalize(), lightDir, albedo, metallic, roughness);
 
                                 // MIS power heuristic (more stable that balance heuristic)
-                                float w = (lightPdf * lightPdf) / (lightPdf * lightPdf + bsdfEvalInfo.m_MixedPDF * bsdfEvalInfo.m_MixedPDF);
+                                float mixedPdf = CalculateMixedPDF(metallic, bsdfEvalInfo.m_SpecularPDF, bsdfEvalInfo.m_DiffusePDF);
+                                float w = (lightPdf * lightPdf) / (lightPdf * lightPdf + mixedPdf * mixedPdf);
                                 HDRColor materialEmission = m_Materials[lightInstance.m_MaterialIndex].m_EmissiveColor;
                                 Vec3 lightRadiance = materialEmission.GetRGB() * materialEmission.m_A;
 
-                                radiance += throughput * bsdfEvalInfo.m_F * lightRadiance * NdotL * w / lightPdf;
+                                lightTotalF = bsdfEvalInfo.m_Diffuse + bsdfEvalInfo.m_Specular;
+                                radiance += throughput * lightTotalF * lightRadiance * NdotL * w / lightPdf;
                             }
                         }
 
@@ -561,8 +575,8 @@ namespace Rendering
                         if (NdotL <= Utils::EPSILON_F)
                             continue;
 
-                        hitInfo = TraceRay(Ray3D{ worldRay.m_Origin, lightDir });
-                        bool occluded = hitInfo.m_DidHit && (shadowHitPos - worldRay.m_Origin).GetMagnitude() < hitDistanceToLight - Utils::EPSILON_F;
+                        shadowHitInfo = TraceRay(Ray3D{ worldRay.m_Origin, lightDir });
+                        bool occluded = shadowHitInfo.m_DidHit && (shadowHitInfo.m_HitPos - worldRay.m_Origin).GetMagnitude() < hitDistanceToLight - Utils::EPSILON_F;
                         if (!occluded)
                         {
                             Vec3 lightIntensity = light.m_Color.GetRGB() * light.m_Color.m_A * std::clamp(1.0f - (hitDistanceToLight / light.m_Radius), 0.0f, 1.0f);
@@ -572,7 +586,8 @@ namespace Rendering
                             bsdfEvalInfo = EvaluateBSDF(hitInfo.m_HitNormal, (-worldRay.m_Dir).Normalize(), lightDir, albedo, metallic, roughness);
                             //Since point lights are single points with infinite directions 
                             //we do not use pdf and only the f value for lighting the surface
-                            radiance += throughput * bsdfEvalInfo.m_F * lightIntensity * NdotL;
+                            lightTotalF = bsdfEvalInfo.m_Specular + bsdfEvalInfo.m_Diffuse;
+                            radiance += throughput * lightTotalF * lightIntensity * NdotL;
                         }
                     }
                 }
@@ -637,26 +652,62 @@ namespace Rendering
 
     void Raytracer::Run()
     {
+        ENGINE_ASSERT(m_TlasNodes != nullptr, "Attempted to run CPU raytracer but TLAS nodes are NULL");
+        ENGINE_ASSERT(m_BlasNodes != nullptr, "Attempted to run CPU raytracer but BLAS nodes are NULL");
+        ENGINE_ASSERT(m_Vertices != nullptr, "Attempted to run CPU raytracer but vertices are NULL");
+        ENGINE_ASSERT(m_Indices != nullptr, "Attempted to run CPU raytracer but indices are NULL");
+        ENGINE_ASSERT(m_Instances != nullptr, "Attempted to run CPU raytracer but instances are NULL");
+        ENGINE_ASSERT(m_Materials != nullptr, "Attempted to run CPU raytracer but materials are NULL");
+        ENGINE_ASSERT(m_Meshes != nullptr, "Attempted to run CPU raytracer but meshes are NULL");
+        if (m_Settings.m_EmissiveCount > 0) ENGINE_ASSERT(m_EmissiveInstanceIndices != nullptr, "Attempted to run CPU raytracer but emissive indices are NULL");
+        //NOTE: textures MAY be null if all materials has no albedo texture
+
+        ENGINE_ASSERT(m_LightBlock != nullptr, "Attempted to run CPU raytracer but light block is NULL");
+        ENGINE_ASSERT(m_ViewBlock != nullptr, "Attempted to run CPU raytracer but view block is NULL");
+
+        ENGINE_ASSERT(m_InputTex != nullptr, "Attempted to run CPU raytracer with NULL input texture");
         ENGINE_ASSERT(m_OutputTex0 != nullptr, "Attempted to run CPU raytracer but primary output texture is NULL");
 
         const Vec2Int primaryTexOutputSize = m_OutputTex0->GetInfo().m_TexelSize;
         ENGINE_ASSERT(primaryTexOutputSize == m_ViewBlock->m_ScreenSize, 
-            "Attempted to run CPU raytracer but primary texture has size:{} that does not match screen size:{}", 
+            "Attempted to run CPU raytracer but primary output texture has size:{} that does not match screen size:{}", 
             primaryTexOutputSize.ToString(), m_ViewBlock->m_ScreenSize.ToString());
+        ENGINE_ASSERT(m_InputTex->GetInfo().m_TexelSize == primaryTexOutputSize, "Attempted to run CPU raytracer with input texture size:{} "
+            "that does not match output texture size:{}", m_InputTex->GetInfo().m_TexelSize.ToString(), primaryTexOutputSize.ToString());
+
+        ENGINE_ASSERT(m_OutputTex0->HasCPUBuffer(), "Attempted to run CPU raytracer but primary output texture "
+            "does not have CPU buffer which is required for CPU raytracer");
+        ENGINE_ASSERT(m_InputTex->HasCPUBuffer(), "Attempted to run CPU raytracer but input texture "
+            "does not have CPU buffer which is required for CPU raytracer");
 
         if (m_OutputTex1 != nullptr)
         {
-            ENGINE_ASSERT(m_OutputTex0->GetInfo().m_TexelSize == m_OutputTex1->GetInfo().m_TexelSize, 
-                "Attempted to run CPU raytracer but non-NULL secondary output texture does not have same output size as primary one");
+            ENGINE_ASSERT(m_OutputTex1->GetInfo().m_TexelSize == primaryTexOutputSize,
+                "Attempted to run CPU raytracer but non-NULL secondary output texture(size:{}) does not have same output size as primary one:{}", 
+                m_OutputTex1->GetInfo().m_TexelSize.ToString(), primaryTexOutputSize.ToString());
+            ENGINE_ASSERT(m_OutputTex1->HasCPUBuffer(), "Attempted to run CPU raytracer but non-NULL secondary output texture "
+                "does not have CPU buffer which is required for CPU raytracer");
+        }
+        if (m_SkyboxTex != nullptr)
+        {
+            ENGINE_ASSERT(m_SkyboxTex->HasCPUBuffer(), "Attempted to run CPU raytracer but non-NULL skybox texture "
+                "does not have CPU buffer which is required for CPU raytracer");
+        }
+        if (m_BrightnessTex != nullptr)
+        {
+            ENGINE_ASSERT(m_BrightnessTex->GetInfo().m_TexelSize == primaryTexOutputSize,  "Attempted to run CPU raytracer with brighness texture size:{} "
+                "that does not match output texture size:{}", m_BrightnessTex->GetInfo().m_TexelSize.ToString(), primaryTexOutputSize.ToString());
+            ENGINE_ASSERT(m_BrightnessTex->HasCPUBuffer(), "Attempted to run CPU raytracer but non-NULL brightness output texture "
+                "does not have CPU buffer which is required for CPU raytracer");
         }
 
-        const HDRColor* inputTexMemPtr = m_OutputTex0->GetCPUMemPtr<HDRColor>();
+        const HDRColor* outputTexMemPtr = m_OutputTex0->GetCPUMemPtr<HDRColor>();
         const Vec2Int textureSize = primaryTexOutputSize;
         const size_t totalTexels = m_InputTex->CalculateTotalTexels();
-        std::for_each(std::execution::par, inputTexMemPtr, inputTexMemPtr + totalTexels,
-            [this, textureSize, inputTexMemPtr, totalTexels](const HDRColor& color) -> void
+        std::for_each(std::execution::par, outputTexMemPtr, outputTexMemPtr + totalTexels,
+            [this, textureSize, outputTexMemPtr, totalTexels](const HDRColor& color) -> void
             {
-                const size_t texel = &color - inputTexMemPtr;
+                const size_t texel = &color - outputTexMemPtr;
                 HDRColor outputColor = RunPixel(Vec2Int(texel % textureSize.m_X, texel / textureSize.m_X));
                 //LogWarning(std::format("Finsihed: {}", float(texel) / totalTexels));
                 LogWarning(std::format("color:{} Finsihed: {} at texel:{}/{} (pos: {})",outputColor.ToString(), float(texel) / totalTexels, texel, totalTexels, 

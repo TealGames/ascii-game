@@ -212,6 +212,7 @@ namespace Rendering
             const Vec3& forwardDir, const Vec3& rightDir, const Vec3& upDir, const float yFov);
         void UpdateLightAndViewerBlock(const bool updateUniformBuffers);
 
+        void SetSkybox(Texture* texture);
         void ExecuteSkyboxPass(Texture& outputTexture, std::uint8_t* outDrawnAttachmentsMask);
         void ExecuteShadowPass();
         void ExecuteLightingAndGeometryPass(Texture& outputTexture, const SlotIndex* indices, 
@@ -289,7 +290,6 @@ namespace Rendering
 
         void InitCoreShaders();
         
-        void SetSkybox(Texture* texture);
         bool IntersectsBVH(Ray3D ray, const Vertex* outHitVertex);
         bool IsValidBVH();
         void AddBVHTreeBoundsWireframe();

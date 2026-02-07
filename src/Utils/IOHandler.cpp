@@ -14,19 +14,13 @@ namespace IO
 
 	bool DoesPathExist(const std::filesystem::path& path)
 	{
-		if (!std::filesystem::exists(path))
-		{
-			std::string err = std::format("File path {} does not exist", path.string());
-			std::cout << err << std::endl;
-			return false;
-		}
-		return true;
+		return std::filesystem::exists(path);
 	}
 
 	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::filesystem::path& extension)
 	{
 		//if (!std::filesystem::exists(path)) return false;
-		LogError(std::format("Comaping extension:{} and {}", path.extension().string(), extension.extension().string()));
+		//LogError(std::format("Comaping extension:{} and {}", path.extension().string(), extension.extension().string()));
 		return path.extension() == extension.extension();
 	}
 

@@ -695,8 +695,11 @@ namespace Rendering
 
         if (DO_RAYTRACING && RAYTRACE_MODE == RaytraceMode::CPU)
         {
+            //TODO: what happens if the texture is already a CPU texture? its a waste to copy it again
+            ENGINE_ASSERT(m_cpuBufferTextures.size() == m_renderTextures.size(), "Attempted to add texture to CPU buffer textures due to CPU raytracing "
+                "but CPU buffer texture size:{} does not match original texture ptr buffer size:{}", m_cpuBufferTextures.size(), m_renderTextures.size());
             m_cpuBufferTextures.emplace_back();
-            m_cpuBufferTextures.back().CopyTexture(*texture, TextureBufferType::GPUThreadSafeRead);
+            m_cpuBufferTextures.back().CopyTexture(*texture, TextureBufferType::CPU);
         }
         //NOTE: even if we need gpu thread safe texture, we STILL add texture in default state
         //so it can be searched for its texture index via its unmutated version
@@ -1232,10 +1235,6 @@ namespace Rendering
         AddCallAABBWifreframe(Utils::CalculateModelMatrix(nullptr, aabb.GetCenter(), aabb.GetSize(), rotation), color, lineThickness);
     }
 
-    void Renderer::SetSkybox(Texture* texture)
-    {
-        m_skybox = texture;
-    }
     void Renderer::AddBVHTreeBoundsWireframe()
     {
         for (const auto& node : m_tlasTreeAligned.GetNodes())
@@ -1412,6 +1411,21 @@ namespace Rendering
         Backend::DrawUploadedIndexBufferInstanced(0,
             batch.m_VertexStartIndex * sizeof(IndexType),
             batch.m_IndicesCount, batch.m_InstanceStartIndex, batch.m_InstanceCount);
+    }
+    void Renderer::SetSkybox(Texture* texture)
+    {
+        //NOTE: if we have CPU raytracer we need to ensure the skybox pointer
+        //refers to one with a CPU buffer
+       
+        //TODO: this is very messy and bad we could instead force texture enqueue even if the xkybox
+        //is for non raytrace or CPU raytrace and then just use index into texture buffer like we do 
+        //with materials for texture when invoking shaders
+        if (texture != nullptr && DO_RAYTRACING && RAYTRACE_MODE == RaytraceMode::CPU)
+        {
+            int skyboxTexIndex = GetEnqueuedTextureIndex(texture);
+            m_skybox = &m_cpuBufferTextures[skyboxTexIndex];
+        }
+        else m_skybox = texture;
     }
 
     void Renderer::ExecuteSkyboxPass(Texture& outputTexture, std::uint8_t* outDrawnAttachmentsMask)
@@ -1982,7 +1996,7 @@ namespace Rendering
             m_raytracer.m_Instances = m_geometryUnit.GetInstanceMemPointer();
             m_raytracer.m_Meshes = &m_instanceMeshes[0];
             m_raytracer.m_Materials = &m_materialData[0];
-            m_raytracer.m_Textures = &m_cpuBufferTextures[0];
+            if (m_cpuBufferTextures.size() > 0) m_raytracer.m_Textures = &m_cpuBufferTextures[0];
             //Since raytrace does NOT get invoked with 0 isntaces -> we have at least 1 node in tlas and blas trees
             //and since they get updated BEFORE the raytracer, these should be guaranteed non-null
             m_raytracer.m_BlasNodes = &m_blasTreesAligned[0];
@@ -2031,15 +2045,7 @@ namespace Rendering
             //We only write to SSBBO if we are raytracing for the GPU
             ConstructTLASTree(DO_RAYTRACING && RAYTRACE_MODE == RaytraceMode::GPU);
         }
-        //TestBVHIntersectionSphere(*this);
-
-        /*
-        std::function<bool(Vec3, Vec3)> testFunc =
-            [this](Vec3 rayWorldOrigin, Vec3 rayDir) -> bool
-            {
-                return IntersectsBVH(rayWorldOrigin, rayDir, nullptr);
-            };
-        */
+        SetSkybox(m_graphicsManager->GetSkyboxMutable());
             
         Texture* texOutput = nullptr;
         if (DO_RAYTRACING) 
