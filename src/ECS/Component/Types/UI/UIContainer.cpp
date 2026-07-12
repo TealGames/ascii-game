@@ -1,25 +1,24 @@
 #include "pch.hpp"
 #include "ECS/Component/Types/UI/UIContainer.hpp"
+#include "Core/Serialization/Serializer.hpp"
 
-UIContainer::UIContainer() : Component() {}
-
-void UIContainer::InitFields()
+namespace Engine::UI
 {
-	m_Fields = {};
+	UIContainer::UIContainer() : Component() {}
+
+	void UIContainer::InitFields()
+	{
+		m_Fields = {};
+	}
+	void UIContainer::Serialize(Serialization::Serializer& serializer) const
+	{
+	}
+	void UIContainer::Deserialize(Serialization::Deserializer& deserializer)
+	{
+	}
+	std::string UIContainer::ToString() const
+	{
+		return std::format("[ContainerGUI]");
+	}
 }
 
-std::string UIContainer::ToString() const
-{
-	return std::format("[ContainerGUI]");
-}
-
-void UIContainer::Deserialize(const Json& json)
-{
-	//TODO: implement
-	return;
-}
-Json UIContainer::Serialize()
-{
-	//TODO: implement
-	return {};
-}

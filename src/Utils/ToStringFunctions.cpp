@@ -2,7 +2,7 @@
 #include <string_view>
 #include "Utils/ToStringFunctions.hpp"
 #include <Utils/StringUtil.hpp>
-#include "Utils/Math/Math.hpp"
+#include "Utils/Math.hpp"
 
 namespace Utils
 {

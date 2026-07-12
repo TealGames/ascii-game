@@ -2,63 +2,60 @@
 #include <string>
 #include <array>
 #include <optional>
-#include "Utils/Math/WorldPosition.hpp"
-#include "Utils/Math/ScreenPosition.hpp"
-#include "Utils/Math/Ray.hpp"
+#include "Core/Primitives/WorldPosition.hpp"
+#include "Core/Primitives/ScreenPosition.hpp"
+#include "Math/Ray.hpp"
 #include "Core/Input/InputKey.hpp"
 //#include "raylib.h"
 
-class Scene;
-namespace Input
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Input { class InputManager; }
+namespace Engine::Camera { class CameraComponent; }
+namespace Engine::UI 
 {
-	class InputManager;
+	class UIHierarchy;
+	class UITransformComponent;
+	class UITextComponent;
+	class UILayoutComponent;
 }
-class CameraComponent;
-class UIHierarchy;
-class UITransformData;
-class UITextComponent;
-class UILayoutComponent;
-
-struct DebugMousePosition
+namespace Engine::Editor::Debug
 {
-	Ray3D m_MouseClickedRay = {};
-	ScreenPosition m_MouseTextScreenPos = {};
-};
+	struct DebugMousePosition
+	{
+		Math::Ray3D m_MouseClickedRay = {};
+		ScreenPosition m_MouseTextScreenPos = {};
+	};
 
-constexpr int DEBUG_PROPERTIES_COUNT = 10;
-class DebugInfo //: public IBasicRenderable
-{
-private:
-	UILayoutComponent* m_containerLayout;
-	std::array<UITextComponent*, DEBUG_PROPERTIES_COUNT> m_textGuis;
-	size_t m_nextIndex;
-	//std::vector<std::size_t> m_highlightedIndices;
+	namespace MainUI = Engine::UI;
 
-	std::optional<DebugMousePosition> m_mouseDebugData;
+	constexpr int DEBUG_PROPERTIES_COUNT = 10;
+	class DebugInfo //: public IBasicRenderable
+	{
+	private:
+		MainUI::UILayoutComponent* m_containerLayout;
+		std::array<MainUI::UITextComponent*, DEBUG_PROPERTIES_COUNT> m_textGuis;
+		size_t m_nextIndex;
+		//std::vector<std::size_t> m_highlightedIndices;
 
-	bool m_isEnabled;
-public:
-	static constexpr Input::KeyCode TOGGLE_DEBUG_INFO_KEY = Input::KeyCode::Tab;
+		std::optional<DebugMousePosition> m_mouseDebugData;
 
-private:
-public:
-	DebugInfo();
+		bool m_isEnabled;
+	public:
+		static constexpr Input::KeyCode TOGGLE_DEBUG_INFO_KEY = Input::KeyCode::Tab;
 
-	void CreateUI(UIHierarchy& hierarchy);
+	private:
+	public:
+		DebugInfo();
 
-	//void ClearProperties();
-	void Update(const float& deltaTime, const float& timeStep, Scene& activeScene, const Input::InputManager& input, const CameraComponent& mainCamera);
-	//bool TryRender() override;
+		void CreateUI(MainUI::UIHierarchy& hierarchy);
 
-	void SetProperty(const std::string& name, const std::string& value);
-	//const std::vector<std::string>& GetText() const;
+		void Update(const float& deltaTime, const float& timeStep, Scenes::Scene& activeScene, const Input::InputManager& input, 
+			const Camera::CameraComponent& mainCamera);
 
-	/*bool TryAddHighlightedIndex(const size_t& index);
-	void RemoveHighlightedIndex(const size_t& index);
-	void ClearHighlightedIndices();
-	const std::vector<std::size_t>& GetHighlightedIndicesSorted() const;*/
+		void SetProperty(const std::string& name, const std::string& value);
 
-	const std::optional<DebugMousePosition>& GetMouseDebugData() const;
-	void SetMouseDebugData(const DebugMousePosition&);
-};
+		const std::optional<DebugMousePosition>& GetMouseDebugData() const;
+		void SetMouseDebugData(const DebugMousePosition&);
+	};
+}
 

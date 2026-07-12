@@ -6,20 +6,18 @@
 #include <string>
 #include "Core/Asset/SceneAsset.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "Game/SceneCreator.hpp"
 #include "Core/Scene/GlobalEntityManager.hpp"
 #include "Utils/Data/Event.hpp"
 
-class EngineState;
-namespace SceneManagement
+namespace Engine::Assets { class AssetManager; }
+namespace Engine::Scenes
 {
 	class SceneManager
 	{
 	private:
 		static const std::filesystem::path SCENES_FOLDER;
 
-		EngineState* m_engineState;
-
+		Assets::AssetManager* m_assetManager;
 		SceneAsset* m_activeSceneAsset;
 		//TODO: sicne we may reach a poitner with many scenes, maybe we should make this a map with scene names
 		std::vector<SceneAsset*> m_allScenes;
@@ -32,8 +30,8 @@ namespace SceneManagement
 	public:
 		GlobalEntityManager m_GlobalEntityManager;
 
-		Event<void, Scene*> m_OnLoad;
-		Event<void, Scene*> m_OnSceneChange;
+		Event<void, Scene*> m_OnSceneAssetLoad;
+		Event<void, Scene*> m_OnActiveSceneChange;
 
 	private:
 		SceneAsset* TryGetSceneAssetMutable(const std::string& sceneName);
@@ -42,7 +40,7 @@ namespace SceneManagement
 		void SetActiveScene(SceneAsset& activeScene);
 
 	public:
-		SceneManager(EngineState& state);
+		SceneManager(Assets::AssetManager& assetManager);
 		~SceneManager();
 
 		/// <summary>
@@ -50,7 +48,7 @@ namespace SceneManagement
 		/// we may need to have it initialized with data after raylib window
 		/// such as fonts
 		/// </summary>
-		void LoadAllScenes();
+		void LoadAllSceneAssets();
 		void SaveCurrentScene();
 
 		int GetSceneCount() const;
@@ -65,8 +63,8 @@ namespace SceneManagement
 		const Scene* TryGetScene(const std::string& sceneName) const;
 		Scene* TryGetSceneMutable(const size_t& sceneIndex);
 
-		const EntityData* TryGetEntity(const std::string& sceneName, const std::string& entityName) const;
-		EntityData* TryGetEntityMutable(const std::string& sceneName, const std::string& entityName);
+		const ECS::EntityData* TryGetEntity(const std::string& sceneName, const std::string& entityName) const;
+		ECS::EntityData* TryGetEntityMutable(const std::string& sceneName, const std::string& entityName);
 
 		bool ValidateAllScenes();
 	};

@@ -1,17 +1,17 @@
 #include <execution>
 #include "Core/Rendering/Raytracer.hpp"
-#include "Utils/Math/MathAdvanced.hpp"
+#include "Math/Math3d.hpp"
 #include "Core/Rendering/Texture.hpp"
 
-static constexpr size_t MAX_STACK_SIZE = 100;
-
-namespace Rendering
+namespace Engine::Rendering
 {
+    static constexpr size_t MAX_STACK_SIZE = 100;
+
     Vec3 SampleRandomTrianglePoint(const Vec3& v0, const Vec3& v1, const Vec3& v2, std::uint32_t& seed)
     {
         //TODO: sqrt is slow
-        float u = std::sqrt(Utils::FastRandom(seed));
-        float v = Utils::FastRandom(seed);
+        float u = std::sqrt(::Math::FastRandom(seed));
+        float v = ::Math::FastRandom(seed);
         return (1.0f - u) * v0 + u * (1.0f - v) * v1 + u * v * v2;
     }
 
@@ -30,7 +30,7 @@ namespace Rendering
     Vec3 FresnelSchlickReflectance(float cosTheta, const Vec3& F0)
     {
         const float base = 1.0f - cosTheta;
-        return F0 + (1.0f - F0) * (base * base * base * base * base);
+        return F0 + (Vec3(1.0f) - F0) * (base * base * base * base * base);
     }
 
     /* Computes the GGX normal distribution function for Cook-Torrance BRDF equation
@@ -49,8 +49,8 @@ namespace Rendering
     {
         float a2 = alpha * alpha;
         float denom = (NdotH * NdotH) * (a2 - 1.0f) + 1.0f;
-        denom = PI * denom * denom;
-        return a2 / std::max(Utils::EPSILON_F, denom);
+        denom = ::Math::PI * denom * denom;
+        return a2 / std::max(::Math::EPSILON_F, denom);
     }
 
     /*
@@ -60,7 +60,7 @@ namespace Rendering
     */
     float GeometrySchlickGGX(float NdotV, float k)
     {
-        return std::max(NdotV, Utils::EPSILON_F) / (NdotV * (1.0f - k) + k);
+        return std::max(NdotV, ::Math::EPSILON_F) / (NdotV * (1.0f - k) + k);
     }
     /* Computes the geometry term in the Cook-Torrance BRDF equation
        G_smith(l,v) = G1(v) * G1(l)
@@ -92,7 +92,7 @@ namespace Rendering
     Vec3 ImportanceSampleGGX(float Xi1, float Xi2, const Vec3& N, float alpha)
     {
         //NOTE: alpha = roughness^2
-        float phi = 2.0 * PI * Xi1;
+        float phi = 2.0 * ::Math::PI * Xi1;
         float cosTheta = std::sqrtf((1.0f - Xi2) / (1.0f + (alpha * alpha - 1.0f) * Xi2));
         float sinTheta = std::sqrt(std::max(0.0f, 1.0f - cosTheta * cosTheta));
 
@@ -110,7 +110,7 @@ namespace Rendering
     Vec3 CosineSampleHemisphere(float Xi1, float Xi2, const Vec3& N)
     {
         float r = std::sqrt(Xi1);
-        float theta = 2.0f * PI * Xi2;
+        float theta = 2.0f * ::Math::PI * Xi2;
         float x = r * std::cos(theta);
         float y = r * std::sin(theta);
         float z = std::sqrt(std::max(0.0f, 1.0f - x * x - y * y));
@@ -128,11 +128,11 @@ namespace Rendering
         float D = NormalDistributionGGX(NdotH, alpha);
         // pdf for sampling H: D * NdotH
         // conversion to pdf over sample direction L (when reflecting V about H): pdfL = (D * NdotH) / (4 * VdotH)
-        return D * NdotH / std::max(Utils::EPSILON_F, 4.0f * VdotH);
+        return D * NdotH / std::max(::Math::EPSILON_F, 4.0f * VdotH);
     }
 
     // PDF for cosine hemisphere sample
-    float PDF_CosineHemisphere(float NdotL) { return NdotL / PI; }
+    float PDF_CosineHemisphere(float NdotL) { return NdotL / ::Math::PI; }
 
     float CalculateSpecularWeight(float metallic) { return std::lerp(0.25, 0.75, metallic); }
     float CalculateMixedPDF(const float metallic, const float specularPdf, const float diffusePdf)
@@ -147,27 +147,27 @@ namespace Rendering
     {
         BSDFEvaluationInfo result;
 
-        float NdotL = std::max(DotProduct(normal, lightDir), 0.0f);
-        float NdotV = std::max(DotProduct(normal, V), 0.0f);
+        float NdotL = std::max(Math::DotProduct(normal, lightDir), 0.0f);
+        float NdotV = std::max(Math::DotProduct(normal, V), 0.0f);
         if (NdotL <= 0.0f || NdotV <= 0.0f)
             return result;
 
         Vec3 H = (V + lightDir).Normalize();
-        float NdotH = std::max(DotProduct(normal, H), 0.0f);
-        float VdotH = std::max(DotProduct(V, H), 0.0f);
+        float NdotH = std::max(Math::DotProduct(normal, H), 0.0f);
+        float VdotH = std::max(Math::DotProduct(V, H), 0.0f);
 
         float alpha = roughness * roughness;
-        Vec3 F0 = Lerp(Vec3(0.04f), albedo, metallic);
+        Vec3 F0 = Math::Lerp(Vec3(0.04f), albedo, metallic);
 
         float D = NormalDistributionGGX(NdotH, alpha);
         float k = (alpha + 1.0f) * (alpha + 1.0f) / 8.0f;
         float G = GeometrySmith(NdotV, NdotL, k);
         Vec3 F = FresnelSchlickReflectance(VdotH, F0);
 
-        result.m_Specular = (D * G * F) / std::max(4.0f * NdotV * NdotL, Utils::EPSILON_F);
+        result.m_Specular = (D * G * F) / std::max(4.0f * NdotV * NdotL, ::Math::EPSILON_F);
 
-        Vec3 kd = (1.0f - F) * (1.0f - metallic);
-        result.m_Diffuse = kd * albedo / PI;
+        Vec3 kd = (Vec3(1.0f) - F) * (1.0f - metallic);
+        result.m_Diffuse = kd * albedo / ::Math::PI;
 
         result.m_DiffusePDF = PDF_CosineHemisphere(NdotL);
         result.m_SpecularPDF = PDF_GGX(NdotH, alpha, VdotH);
@@ -180,18 +180,18 @@ namespace Rendering
         BSDFSampleInfo result;
 
         float specularWeight = CalculateSpecularWeight(metallic);
-        bool chooseSpecular = Utils::FastRandom(rngSeed) < specularWeight;
+        bool chooseSpecular = ::Math::FastRandom(rngSeed) < specularWeight;
 
         //Essentially we determine here if the point that we want to sample is going to be SPECULAR (bounce back at same as incoming angle)
         //OR diffuse (bounce in random direction) based on the probabiluty we choose before
         if (chooseSpecular)
         {
-            Vec3 H = ImportanceSampleGGX(Utils::FastRandom(rngSeed), Utils::FastRandom(rngSeed), normal, alpha);
-            result.m_L = Utils::ReflectAcrossNormal(-V, H);
+            Vec3 H = ImportanceSampleGGX(::Math::FastRandom(rngSeed), ::Math::FastRandom(rngSeed), normal, alpha);
+            result.m_L = Math::ReflectAcrossNormal(-V, H);
         }
         else
         {
-            result.m_L = CosineSampleHemisphere(Utils::FastRandom(rngSeed), Utils::FastRandom(rngSeed), normal);
+            result.m_L = CosineSampleHemisphere(::Math::FastRandom(rngSeed), ::Math::FastRandom(rngSeed), normal);
         }
 
         BSDFEvaluationInfo bsdfInfo = EvaluateBSDF(normal, V, result.m_L, albedo, metallic, roughness);
@@ -209,19 +209,19 @@ namespace Rendering
     }
 
 
-    HDRColor SampleEquirectangular(const Vec3 dir, const Texture& hdrMap)
+    ColHDR4 SampleEquirectangular(const Vec3 dir, const Texture& hdrMap)
     {
         float theta = std::atan2f(dir.m_Z, dir.m_X);
         float phi = std::asinf(dir.m_Y);
 
         // Map theta from [-pi, pi] to [0,1]
         // Map phi from [-pi/2, pi/2] to [0,1]
-        const Vec2 uv = Vec2((theta + PI) / (2.0 * PI), (phi + 1.57079633) / PI);
+        const Vec2 uv = Vec2((theta + ::Math::PI) / (2.0 * ::Math::PI), (phi + 1.57079633) / ::Math::PI);
 
         return hdrMap.SampleHDRAtUV(uv);
     }
 
-    RaytraceHitInfo Raytracer::TraceRayLocal(const Ray3D& localRay, const Instance& instance)
+    RaytraceHitInfo Raytracer::TraceRayLocal(const Math::Ray3D& localRay, const Instance& instance)
     {
         int stack[MAX_STACK_SIZE];
         int stackPtr = 0;
@@ -243,7 +243,7 @@ namespace Rendering
         while (stackPtr > 0)
         {
             node = &m_BlasNodes[stack[--stackPtr]];
-            if (!Utils::RayIntersectsBounds(node->m_Bounds, localRay, &tEnter, &tExit))
+            if (!Math::RayIntersectsBounds(node->m_Bounds, localRay, &tEnter, &tExit))
                 continue;
 
             if (tEnter > localMinTEnter)
@@ -261,17 +261,17 @@ namespace Rendering
 
                     Vec3 triangleNormal;
 
-                    if (Utils::RayIntersectsTriangleInterpolated(
+                    if (Math::RayIntersectsTriangleInterpolated(
                         m_Vertices[indexV0].m_LocalPos, m_Vertices[indexV1].m_LocalPos, m_Vertices[indexV2].m_LocalPos,
                         m_Vertices[indexV0].m_Normal, m_Vertices[indexV1].m_Normal, m_Vertices[indexV2].m_Normal,
                         localRay, &leafTEnter, triangleNormal))
                     {
                         //If the dir and normal > 0 -> same dir and thus 
                         //it means triangle is a backface and should be ignored
-                        if (DotProduct(localRay.m_Dir, triangleNormal) > 0.0)
+                        if (Math::DotProduct(localRay.m_Dir, triangleNormal) > 0.0)
                             continue;
 
-                        if (leafTEnter > Utils::EPSILON && leafTEnter < localMinTEnter)
+                        if (leafTEnter > ::Math::EPSILON && leafTEnter < localMinTEnter)
                         {
                             localMinTEnter = leafTEnter;
 
@@ -292,9 +292,9 @@ namespace Rendering
             }
             else
             {
-                bool minHitChild0 = Utils::RayIntersectsBounds(m_BlasNodes[node->m_IndexChild0].m_Bounds, localRay,
+                bool minHitChild0 = Math::RayIntersectsBounds(m_BlasNodes[node->m_IndexChild0].m_Bounds, localRay,
                     &tEnterChild0, &tExitChild0) && tEnterChild0 <= localMinTEnter;
-                bool minHitChild1 = Utils::RayIntersectsBounds(m_BlasNodes[node->m_IndexChild1].m_Bounds, localRay,
+                bool minHitChild1 = Math::RayIntersectsBounds(m_BlasNodes[node->m_IndexChild1].m_Bounds, localRay,
                     &tEnterChild1, &tExitChild1) && tEnterChild1 <= localMinTEnter;
 
                 if (minHitChild0 && minHitChild1)
@@ -317,21 +317,10 @@ namespace Rendering
             }
         }
 
-        /*
-        if (closestHit.m_DidHit)
-        {
-            closestHit.m_HitTrianglePos = Vec3Triangle(
-                (instance.m_ModelMatrix * Vec4(m_Vertices[closestHit.m_HitTriangleIndices.m_0].m_LocalPos, 1.0)).GetXYZ(),
-                (instance.m_ModelMatrix * Vec4(m_Vertices[closestHit.m_HitTriangleIndices.m_1].m_LocalPos, 1.0)).GetXYZ(),
-                (instance.m_ModelMatrix * Vec4(m_Vertices[closestHit.m_HitTriangleIndices.m_2].m_LocalPos, 1.0)).GetXYZ());
-            closestHit.m_HitNormal = (instance.m_NormalModelMatrix * closestHit.m_HitNormal).GetNormalized();
-            closestHit.m_HitPos = (instance.m_ModelMatrix * Vec4(localRay.m_Origin + localRay.m_Dir * localMinTEnter, 1)).GetXYZ();
-        }
-        */
         return closestHit;
     }
 
-    RaytraceHitInfo Raytracer::TraceRayWorld(const Ray3D& worldRay)
+    RaytraceHitInfo Raytracer::TraceRayWorld(const Math::Ray3D& worldRay)
     {
         //Vec3 inverseWorldRayDir = 1.0 / Max(Abs(worldRay.m_Dir), Vec3(1e-8)) * GetSign(worldRay.m_Dir);
         //ivec3 worldRayDirSign = ivec3(lessThan(inverseWorldRayDir, vec3(0.0)));
@@ -345,12 +334,12 @@ namespace Rendering
         float tEnterChild0 = 0.0f, tExitChild0 = 0.0f, tEnterChild1 = 0.0f, tExitChild1 = 0.0f;
         RaytraceHitInfo closestHit;
         closestHit.m_HitDistance = MAX_HIT_DISTANCE;
-        Ray3D rayLocal;
+        Math::Ray3D rayLocal;
 
         while (stackPtr > 0)
         {
             node = &m_TlasNodes[stack[--stackPtr]];
-            if (!Utils::RayIntersectsBounds(node->GetAABB(), worldRay, &tEnter, &tExit))
+            if (!Math::RayIntersectsBounds(node->GetAABB(), worldRay, &tEnter, &tExit))
                 continue;
 
             //TODO: check all occurences of DoesIntersectSceneWorld and if thye all use normalized ray dir, 
@@ -391,9 +380,9 @@ namespace Rendering
             }
             else
             {
-                bool minHitChild0 = Utils::RayIntersectsBounds(m_TlasNodes[node->m_IndexChild0].m_Bounds, worldRay,
+                bool minHitChild0 = Math::RayIntersectsBounds(m_TlasNodes[node->m_IndexChild0].m_Bounds, worldRay,
                     &tEnterChild0, &tExitChild0) && (worldRay.m_Dir * tEnterChild0).GetMagnitude() <= closestHit.m_HitDistance;
-                bool minHitChild1 = Utils::RayIntersectsBounds(m_TlasNodes[node->m_IndexChild1].m_Bounds, worldRay,
+                bool minHitChild1 = Math::RayIntersectsBounds(m_TlasNodes[node->m_IndexChild1].m_Bounds, worldRay,
                     &tEnterChild1, &tExitChild1) && (worldRay.m_Dir * tEnterChild1).GetMagnitude() <= closestHit.m_HitDistance;
 
                 if (minHitChild0 && minHitChild1)
@@ -418,12 +407,12 @@ namespace Rendering
         return closestHit;
     }
 
-    RaytraceHitInfo Raytracer::TraceRay(const Ray3D& worldRay)
+    RaytraceHitInfo Raytracer::TraceRay(const Math::Ray3D& worldRay)
     {
         return TraceRayWorld(worldRay);
     }
 
-    HDRColor Raytracer::RunPixel(const Vec2Int pixel)
+    ColHDR4 Raytracer::RunPixel(const Vec2Int pixel)
     {
         float aspectRatio = float(m_ViewBlock->m_ScreenSize.m_X) / float(m_ViewBlock->m_ScreenSize.m_Y);
         float scale = std::tan(m_ViewBlock->m_FovY * 0.5f);
@@ -434,7 +423,7 @@ namespace Rendering
         RaytraceHitInfo hitInfo, shadowHitInfo;
         BSDFEvaluationInfo bsdfEvalInfo;
         BSDFSampleInfo bsdfSampleInfo;
-        Ray3D worldRay;
+        Math::Ray3D worldRay;
         for (int s = 0; s < m_Settings.m_SamplesPerPixel; s++)
         {
             radiance = Vec3(0.0f);
@@ -448,8 +437,8 @@ namespace Rendering
             //The following apply a small <1 jitter to the pixel coordinate in order to prevent aliasing (jagged edges)
             //If we always used the center of the pixel it would not appear smooth, so by doing this combined with accumulation
             //we get a nicer more-filled and less jagged look to edges
-            float normalizedPixelX = (float(pixel.m_X) + Utils::FastRandom(seed)) / float(m_ViewBlock->m_ScreenSize.m_X);
-            float normalizedPixelY = (float(pixel.m_Y) + Utils::FastRandom(seed)) / float(m_ViewBlock->m_ScreenSize.m_Y);
+            float normalizedPixelX = (float(pixel.m_X) + ::Math::FastRandom(seed)) / float(m_ViewBlock->m_ScreenSize.m_X);
+            float normalizedPixelY = (float(pixel.m_Y) + ::Math::FastRandom(seed)) / float(m_ViewBlock->m_ScreenSize.m_Y);
 
             //This is the jittered pixel coord in normalized device coordinate pos [-1, 1] 
             //(horizontal and vertical offset from center of screen)
@@ -465,17 +454,17 @@ namespace Rendering
                 hitInfo = TraceRay(worldRay);
                 if (!hitInfo.m_DidHit)
                 {
-                    HDRColor skyColor = HDRColor(0.0f, 0.0f, 0.0f, 0.0f);
+                    ColHDR4 skyColor = ColHDR4(0.0f, 0.0f, 0.0f, 0.0f);
                     if (m_SkyboxTex != nullptr)
                     {
                         skyColor = SampleEquirectangular(worldRay.m_Dir, *m_SkyboxTex);
                     }
 
-                    radiance += throughput * skyColor.GetRGB();
+                    radiance += throughput * ReinterpretAsVec(skyColor.GetRGB());
                     break;
                 }
                 
-                Vec3 albedo = hitInfo.m_HitMaterial->m_BaseColor.GetRGB() * hitInfo.m_HitMaterial->m_BaseColor.m_A;
+                Vec3 albedo = ReinterpretAsVec(hitInfo.m_HitMaterial->m_BaseColor.GetRGB()) * hitInfo.m_HitMaterial->m_BaseColor.m_A;
                 if (hitInfo.m_HitMaterial->m_AlbedoIndex >= 0)
                 {
                     Vec2 uvEdge0 = m_Vertices[hitInfo.m_HitTriangleIndices.m_0].m_UVPos;
@@ -484,19 +473,19 @@ namespace Rendering
 
                     //We compute barycentric weights of the hit triangle for uv coords in (u, v, w) so
                     //we get accurate texture coords at the hit point
-                    Vec3 baryWeights = Utils::CalculateBarycentricWeight(hitInfo.m_HitPos, 
+                    Vec3 baryWeights = Math::CalculateBarycentricWeight(hitInfo.m_HitPos,
                         hitInfo.m_HitTrianglePos.m_0, hitInfo.m_HitTrianglePos.m_1, hitInfo.m_HitTrianglePos.m_2);
                     Vec2 uv = uvEdge0 * baryWeights.m_X + uvEdge1 * baryWeights.m_Y + uvEdge2 * baryWeights.m_Z;
 
                     const Texture& albedoTex = m_Textures[hitInfo.m_HitMaterial->m_AlbedoIndex];
-                    HDRColor texColor = albedoTex.SampleHDRAtUV(uv);
-                    albedo *= texColor.GetRGB();
+                    ColHDR4 texColor = albedoTex.SampleHDRAtUV(uv);
+                    albedo *= ReinterpretAsVec(texColor.GetRGB());
                 }
                
                 float metallic = std::clamp(hitInfo.m_HitMaterial->m_Metallic, 0.0f, 1.0f);
                 float roughness = std::clamp(hitInfo.m_HitMaterial->m_Roughness, 0.02f, 1.0f);
 
-                worldRay.m_Origin = hitInfo.m_HitPos + hitInfo.m_HitNormal * Utils::EPSILON_F;
+                worldRay.m_Origin = hitInfo.m_HitPos + hitInfo.m_HitNormal * ::Math::EPSILON_F;
                 Vec3 reflectedRayDirWorld = -worldRay.m_Dir;
 
                 //--------------------------------------------------------------------------------------------------
@@ -511,10 +500,10 @@ namespace Rendering
                         // Here we pick a random triangle on the light to see if hit object gets affected by this light
                         // NOTE: because we assume every 3 is a triangle, we have to divide by 3 to find the triangle index
                         // and we multiple by 3 to convert the triangle index to a vertex index
-                        uint32_t randomLightInstanceIndex = m_EmissiveInstanceIndices[uint32_t(Utils::FastRandom(seed) * float(m_Settings.m_EmissiveCount))];
+                        uint32_t randomLightInstanceIndex = m_EmissiveInstanceIndices[uint32_t(::Math::FastRandom(seed) * float(m_Settings.m_EmissiveCount))];
                         const Instance& lightInstance = m_Instances[randomLightInstanceIndex];
                         const InstanceMesh& lightMeshInstance = m_Meshes[randomLightInstanceIndex];
-                        uint32_t randomTriangle = uint32_t(Utils::FastRandom(seed) * float(lightMeshInstance.m_NumIndices / 3));
+                        uint32_t randomTriangle = uint32_t(::Math::FastRandom(seed) * float(lightMeshInstance.m_NumIndices / 3));
                         uint32_t baseIndex = lightMeshInstance.m_IndexOffset + randomTriangle * 3u;
                         IndexType lightIndexV0 = m_Indices[baseIndex + 0];
                         IndexType lightIndexV1 = m_Indices[baseIndex + 1];
@@ -525,33 +514,33 @@ namespace Rendering
                         Vec3 lightVertex2 = (lightInstance.m_ModelMatrix * Vec4(m_Vertices[lightIndexV2].m_LocalPos, 1.0f)).GetXYZ();
                         // Here we find the sample of the light using the random triangle we choose above
                         Vec3 randomLightTriangleWorldPoint = SampleRandomTrianglePoint(lightVertex0, lightVertex1, lightVertex2, seed);
-                        float lightTriangleArea = Utils::CalculateTriangleArea(lightVertex0, lightVertex1, lightVertex2);
-                        Vec3 lightNormalWorld = CrossProduct(lightVertex1 - lightVertex0, lightVertex2 - lightVertex0).Normalize();
+                        float lightTriangleArea = Math::CalculateTriangleArea(lightVertex0, lightVertex1, lightVertex2);
+                        Vec3 lightNormalWorld = Math::CrossProduct(lightVertex1 - lightVertex0, lightVertex2 - lightVertex0).Normalize();
 
                         lightVec = randomLightTriangleWorldPoint - hitInfo.m_HitPos;
                         hitDistanceToLight = lightVec.GetMagnitude();
                         lightDir = lightVec / hitDistanceToLight;
 
-                        float NdotL = std::max(0.0f, DotProduct(hitInfo.m_HitNormal, lightDir));
-                        float NlDot = std::max(0.0f, DotProduct(lightNormalWorld, -lightDir));
+                        float NdotL = std::max(0.0f, Math::DotProduct(hitInfo.m_HitNormal, lightDir));
+                        float NlDot = std::max(0.0f, Math::DotProduct(lightNormalWorld, -lightDir));
 
-                        if (NdotL > Utils::EPSILON_F && NlDot > Utils::EPSILON_F)
+                        if (NdotL > ::Math::EPSILON_F && NlDot > ::Math::EPSILON_F)
                         {
-                            shadowHitInfo = TraceRay(Ray3D{ worldRay.m_Origin, lightDir });
+                            shadowHitInfo = TraceRay(Math::Ray3D{ worldRay.m_Origin, lightDir });
                             bool occluded = shadowHitInfo.m_DidHit && (shadowHitInfo.m_HitPos - worldRay.m_Origin).GetMagnitude() 
-                                            < hitDistanceToLight - Utils::EPSILON_F;
+                                            < hitDistanceToLight - ::Math::EPSILON_F;
                             if (!occluded)
                             {
                                 float lightTrianglePdfArea = 1.0 / (lightTriangleArea * lightMeshInstance.m_NumIndices / 3 * float(m_Settings.m_EmissiveCount));
-                                float lightPdf = lightTrianglePdfArea * hitDistanceToLight * hitDistanceToLight / std::max(NlDot, Utils::EPSILON_F);
+                                float lightPdf = lightTrianglePdfArea * hitDistanceToLight * hitDistanceToLight / std::max(NlDot, ::Math::EPSILON_F);
 
                                 bsdfEvalInfo = EvaluateBSDF(hitInfo.m_HitNormal, (-worldRay.m_Dir).Normalize(), lightDir, albedo, metallic, roughness);
 
                                 // MIS power heuristic (more stable that balance heuristic)
                                 float mixedPdf = CalculateMixedPDF(metallic, bsdfEvalInfo.m_SpecularPDF, bsdfEvalInfo.m_DiffusePDF);
                                 float w = (lightPdf * lightPdf) / (lightPdf * lightPdf + mixedPdf * mixedPdf);
-                                HDRColor materialEmission = m_Materials[lightInstance.m_MaterialIndex].m_EmissiveColor;
-                                Vec3 lightRadiance = materialEmission.GetRGB() * materialEmission.m_A;
+                                ColHDR4 materialEmission = m_Materials[lightInstance.m_MaterialIndex].m_EmissiveColor;
+                                Vec3 lightRadiance = ReinterpretAsVec(materialEmission.GetRGB()) * materialEmission.m_A;
 
                                 lightTotalF = bsdfEvalInfo.m_Diffuse + bsdfEvalInfo.m_Specular;
                                 radiance += throughput * lightTotalF * lightRadiance * NdotL * w / lightPdf;
@@ -570,16 +559,17 @@ namespace Rendering
                         lightVec = light.m_Pos - hitInfo.m_HitPos;
                         hitDistanceToLight = lightVec.GetMagnitude();
                         lightDir = lightVec / hitDistanceToLight;
-                        float NdotL = std::max(0.0f, DotProduct(hitInfo.m_HitNormal, lightDir));
+                        float NdotL = std::max(0.0f, Math::DotProduct(hitInfo.m_HitNormal, lightDir));
 
-                        if (NdotL <= Utils::EPSILON_F)
+                        if (NdotL <= ::Math::EPSILON_F)
                             continue;
 
-                        shadowHitInfo = TraceRay(Ray3D{ worldRay.m_Origin, lightDir });
-                        bool occluded = shadowHitInfo.m_DidHit && (shadowHitInfo.m_HitPos - worldRay.m_Origin).GetMagnitude() < hitDistanceToLight - Utils::EPSILON_F;
+                        shadowHitInfo = TraceRay(Math::Ray3D{ worldRay.m_Origin, lightDir });
+                        bool occluded = shadowHitInfo.m_DidHit && (shadowHitInfo.m_HitPos - worldRay.m_Origin).GetMagnitude() < hitDistanceToLight - ::Math::EPSILON_F;
                         if (!occluded)
                         {
-                            Vec3 lightIntensity = light.m_Color.GetRGB() * light.m_Color.m_A * std::clamp(1.0f - (hitDistanceToLight / light.m_Radius), 0.0f, 1.0f);
+                            Vec3 lightIntensity = ReinterpretAsVec(light.m_Color.GetRGB()) * light.m_Color.m_A * 
+                                std::clamp(1.0f - (hitDistanceToLight / light.m_Radius), 0.0f, 1.0f);
                             if (lightIntensity.GetMagnitude() < 1e-5)
                                 continue;
 
@@ -596,16 +586,16 @@ namespace Rendering
                 //                                     INDIRECT LIGHTING   
                 //-----------------------------------------------------------------------------------------
                 bsdfSampleInfo = SampleBSDF(seed, hitInfo.m_HitNormal, reflectedRayDirWorld, albedo, metallic, roughness);
-                if (bsdfSampleInfo.m_PDF < Utils::EPSILON_F)
+                if (bsdfSampleInfo.m_PDF < ::Math::EPSILON_F)
                     break;
 
-                float NdotL = std::max(DotProduct(hitInfo.m_HitNormal, bsdfSampleInfo.m_L), 0.0f);
+                float NdotL = std::max(Math::DotProduct(hitInfo.m_HitNormal, bsdfSampleInfo.m_L), 0.0f);
                 throughput *= bsdfSampleInfo.m_F * NdotL / bsdfSampleInfo.m_PDF;
 
                 if (bounce > 3)
                 {
-                    float p = std::clamp(MaxVal(throughput), 0.05f, 0.95f);
-                    if (Utils::FastRandom(seed) > p)
+                    float p = std::clamp(Math::MaxVal(throughput), 0.05f, 0.95f);
+                    if (::Math::FastRandom(seed) > p)
                         break;
                     throughput /= p;
                 }
@@ -617,7 +607,7 @@ namespace Rendering
         averageRadiance /= m_Settings.m_SamplesPerPixel;
 
         //Progressive temporal accumulation using texture input
-        HDRColor previousColor;
+        ColHDR4 previousColor;
         if (m_Settings.m_UnmovingFrameCount != 0)
         {
             //NOTE: this only works because the textures we sample are FLOATS 
@@ -632,7 +622,7 @@ namespace Rendering
         size_t maxHistory = 64u;
         float history = float(std::min(m_Settings.m_UnmovingFrameCount, maxHistory));
 
-        Vec3 blended = (previousColor.GetRGB() * history + averageRadiance) / (history + 1.0f);
+        Vec3 blended = (ReinterpretAsVec(previousColor.GetRGB()) * history + averageRadiance) / (history + 1.0f);
         Vec4 fragColor = Vec4(blended, 1);
 
         //imageStore(uTextureOutput, pixel, vec4(1.0, 0, 0, 1.0));
@@ -642,8 +632,8 @@ namespace Rendering
 
         if (m_BrightnessTex != nullptr)
         {
-            float luminance = DotProduct(fragColor, Vec4(0.2126f, 0.7152f, 0.0722f, 1.0f));
-            HDRColor brightnessColor = luminance >= m_Settings.m_BloomThreshold ? fragColor : Vec4::Zero();
+            float luminance = Math::DotProduct(fragColor, Vec4(0.2126f, 0.7152f, 0.0722f, 1.0f));
+            ColHDR4 brightnessColor = luminance >= m_Settings.m_BloomThreshold ? fragColor : Vec4::Zero();
             m_BrightnessTex->WriteTexel(pixel, reinterpret_cast<std::byte*>(&brightnessColor));
         }
         return fragColor;
@@ -701,14 +691,14 @@ namespace Rendering
                 "does not have CPU buffer which is required for CPU raytracer");
         }
 
-        const HDRColor* outputTexMemPtr = m_OutputTex0->GetCPUMemPtr<HDRColor>();
+        const ColHDR4* outputTexMemPtr = m_OutputTex0->GetCPUMemPtr<ColHDR4>();
         const Vec2Int textureSize = primaryTexOutputSize;
         const size_t totalTexels = m_InputTex->CalculateTotalTexels();
         std::for_each(std::execution::par, outputTexMemPtr, outputTexMemPtr + totalTexels,
-            [this, textureSize, outputTexMemPtr, totalTexels](const HDRColor& color) -> void
+            [this, textureSize, outputTexMemPtr, totalTexels](const ColHDR4& color) -> void
             {
                 const size_t texel = &color - outputTexMemPtr;
-                HDRColor outputColor = RunPixel(Vec2Int(texel % textureSize.m_X, texel / textureSize.m_X));
+                ColHDR4 outputColor = RunPixel(Vec2Int(texel % textureSize.m_X, texel / textureSize.m_X));
                 //LogWarning(std::format("Finsihed: {}", float(texel) / totalTexels));
                 LogWarning(std::format("color:{} Finsihed: {} at texel:{}/{} (pos: {})",outputColor.ToString(), float(texel) / totalTexels, texel, totalTexels, 
                     Vec2Int(texel % textureSize.m_X, texel / textureSize.m_X).ToString()));

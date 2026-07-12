@@ -1,20 +1,19 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/CollisionBoxSystem.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "Core/PositionConversions.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-namespace ECS
+namespace Engine::Physics
 {
 	//static constexpr bool RENDER_COLLIDER_OUTLINES = true;
 
 	CollisionBoxSystem::CollisionBoxSystem(CollisionRegistry& registry) : m_collisionRegistry(registry) {}
 
-	void CollisionBoxSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+	void CollisionBoxSystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("CollisionBoxSystem::SystemUpdate");
@@ -29,8 +28,8 @@ namespace ECS
 		int collisionsAdded = 0;
 
 		m_collisionRegistry.ClearAll();
-		std::vector<CollisionBoxData*> boxes = {};
-		scene.GetComponentsMutable<CollisionBoxData>(ALL_ACTIVE_ENABLED_FLAG, boxes);
+		std::vector<CollisionBoxComponent*> boxes = {};
+		scene.GetComponentsMutable<CollisionBoxComponent>(ECS::ALL_ACTIVE_ENABLED_FLAG, boxes);
 		if (boxes.empty()) 
 			return;
 
@@ -70,8 +69,8 @@ namespace ECS
 					//Assert(false, std::format("Checking collision"));
 				if (collision.m_DoIntersect)
 				{
-					if (std::abs(collision.m_Depth.m_X) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_X = 0;
-					if (std::abs(collision.m_Depth.m_Y) <= CollisionBoxData::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_Y = 0;
+					if (std::abs(collision.m_Depth.m_X) <= CollisionBoxComponent::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_X = 0;
+					if (std::abs(collision.m_Depth.m_Y) <= CollisionBoxComponent::MAX_DISTANCE_FOR_COLLISION) collision.m_Depth.m_Y = 0;
 
 					if (!Assert(TryAddCollisionToRegistry(*boxA, *boxB, collision), "Tried to add collision:{} to "
 						"registry but something went wrong", collision.ToString()))
@@ -93,11 +92,11 @@ namespace ECS
 			}
 		}
 
-		/*LogError(std::format("All colliders:{} ------ COLLISIONS:{} REGISTRY:{}", Utils::ToStringIterable<std::vector<std::string>, std::string>(bounds),
+		/*LogError(std::format("All colliders:{} ------ COLLISIONS:{} REGISTRY:{}", ::Utils::ToStringIterable<std::vector<std::string>, std::string>(bounds),
 			std::to_string(collisionsAdded), m_collisionRegistry.ToStringCollidingBodies()));*/
 	}
 
-	bool CollisionBoxSystem::TryAddCollisionToRegistry(CollisionBoxData& boxA, CollisionBoxData& boxB, const AABBIntersectionData& intersection)
+	bool CollisionBoxSystem::TryAddCollisionToRegistry(CollisionBoxComponent& boxA, CollisionBoxComponent& boxB, const AABBIntersectionData& intersection)
 	{
 		const Vec2 collidingDir = intersection.IsTouchingIntersection()? boxB.GetAABBDirection(boxA) : intersection.m_Depth.GetNormalized();
 		
@@ -121,22 +120,22 @@ namespace ECS
 	}
 
 
-	const ColliderOutlineBuffer& CollisionBoxSystem::GetColliderBuffer() const
+	const Rendering::ColliderOutlineBuffer& CollisionBoxSystem::GetColliderBuffer() const
 	{
 		return m_colliderOutlineBuffer;
 	}
 
-	ColliderOutlineBuffer& CollisionBoxSystem::GetColliderBufferMutable()
+	Rendering::ColliderOutlineBuffer& CollisionBoxSystem::GetColliderBufferMutable()
 	{
 		return m_colliderOutlineBuffer;
 	}
 
-	std::vector<CollisionBoxData*> CollisionBoxSystem::FindBodiesContainingPos(Scene& scene, const WorldPosition2D& worldPos) const
+	std::vector<CollisionBoxComponent*> CollisionBoxSystem::FindBodiesContainingPos(Scenes::Scene& scene, const WorldPosition2D& worldPos) const
 	{
-		std::vector<CollisionBoxData*> bodiesFound = {};
+		std::vector<CollisionBoxComponent*> bodiesFound = {};
 
-		scene.OperateOnActiveComponents<CollisionBoxData>(
-			[&bodiesFound, &worldPos](CollisionBoxData& box) -> void
+		scene.OperateOnActiveComponents<CollisionBoxComponent>(
+			[&bodiesFound, &worldPos](CollisionBoxComponent& box) -> void
 			{
 				if (box.DoIntersect(worldPos))
 				{

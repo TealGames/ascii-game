@@ -147,6 +147,27 @@ namespace Utils
 		return static_cast<TEnum>(static_cast<std::underlying_type_t<TEnum>>(~0));
 	}
 
+	template<typename TEnum>
+	requires (std::is_enum_v<TEnum>&&
+			 std::is_integral_v<std::underlying_type_t<TEnum>>&& HasBitwiseAnd<TEnum> &&
+			 //NOTE: since max unsigned number in C++20 is uint64 max is 64 bits => 64 flags
+			 sizeof(std::underlying_type_t<TEnum>) <= sizeof(std::uint64_t))
+	constexpr size_t GetSetFlagCount(const TEnum& e)
+	{
+		//NOTE: this is the fastest bit counting algorithm in O(k) time where k is the number of set bits
+		size_t count = 0;
+		std::uint64_t bits = static_cast<uint64_t>(e);
+		while (bits)
+		{
+			++count;
+			//Every iteration we decrease the value of the bitfield by 1 (so most sigfig 1 bit gets removed)
+			// then we apply and which the bits not in both numbers are removed thus decreasing 1 set value each iteration
+			bits &= bits - 1;
+		}
+
+		return count;
+	}
+
 	template <typename Variant>
 	auto GetVariantValue(const Variant& variant) 
 	{

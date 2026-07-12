@@ -1,19 +1,22 @@
 #include "pch.hpp"
-#include "ECS/Systems/Types/World/SpriteAnimatorSystem.hpp"
+#include "Core/Visual/VisualData.hpp"
+#include "Core/Scene/Scene.hpp"
 #include "Utils/HelperFunctions.hpp"
+#include "ECS/Systems/Types/World/SpriteAnimatorSystem.hpp"
+#include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 #include "ECS/Component/Types/World/EntityRenderer2DComponent.hpp"
+#include "ECS/Component/Types/World/SpriteAnimatorComponent.hpp"
 #include "Core/Visual/SpriteAnimation.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
-namespace ECS
+namespace Engine::Animation
 {
-	SpriteAnimatorSystem::SpriteAnimatorSystem(EntityRenderer2DSystem& entityRenderer) 
+	SpriteAnimatorSystem::SpriteAnimatorSystem(Rendering::EntityRenderer2DSystem& entityRenderer) 
 		: m_EntityRenderer(entityRenderer) {}
 
-	void SpriteAnimatorSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+	void SpriteAnimatorSystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("SpriteAnimatorSystem::SystemUpdate");
@@ -21,8 +24,8 @@ namespace ECS
 
 		if (deltaTime <= 0) return;
 
-		scene.OperateOnActiveComponents<SpriteAnimatorData>(
-			[this, &scene, deltaTime](SpriteAnimatorData& data)-> void
+		scene.OperateOnActiveComponents<SpriteAnimatorComponent>(
+			[this, &scene, deltaTime](SpriteAnimatorComponent& data)-> void
 			{
 				if (!data.IsPlayingAnimation()) 
 					return;
@@ -53,15 +56,15 @@ namespace ECS
 			});
 	}
 
-	void SpriteAnimatorSystem::SetVisual(EntityData& entity, const SpriteAnimation& animation) const
+	void SpriteAnimatorSystem::SetVisual(ECS::EntityData& entity, const SpriteAnimation& animation) const
 	{
 		//TODO: this should maybe be included as dependency for the animator?
-		EntityRenderer2DComponent* renderer = entity.TryGetComponentMutable<EntityRenderer2DComponent>();
+		Rendering::EntityRenderer2DComponent* renderer = entity.TryGetComponentMutable<Rendering::EntityRenderer2DComponent>();
 		if (!Assert(renderer != nullptr, "Tried to set the visual on sprite animator for entity: {} "
 			"but it does not have entity renderer component", entity.m_Name)) 
 			return;
 
-		const VisualData* currAnimVisual = animation.TryGetCurrentVisualData();
+		const Rendering::VisualData* currAnimVisual = animation.TryGetCurrentVisualData();
 		if (!Assert(currAnimVisual != nullptr, "Tried to set the animation visual for entity:{} "
 			"but failed to retrieve current animation visual. FrameIndex:{}", entity.m_Name, std::to_string(animation.m_FrameIndex)))
 			return;

@@ -2,16 +2,16 @@
 #include "ECS/Systems/Types/World/PlayerSystem.hpp"
 #include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "ECS/Component/Types/World/CameraComponent.hpp"
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 #include "StaticGlobals.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-namespace ECS
+namespace Engine::Player
 {
 	static constexpr bool CHEATS_ENABLED_DEFAULT = false;
 	//If true, will jump immediately when landing and the up key is pressed
@@ -20,17 +20,18 @@ namespace ECS
 	PlayerSystem::PlayerSystem(Input::InputManager& input) : 
 		m_inputManager(input), m_cheatsEnabled(CHEATS_ENABLED_DEFAULT), m_lastFrameGrounded(false)
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(PlayerData), 
-			ComponentInfo(CreateComponentTypes<PhysicsBodyComponent>(), CreateRequiredComponentFunction(PhysicsBodyComponent()),
-			[](EntityData& entity)-> void
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(PlayerComponent), 
+			Engine::ECS::ComponentInfo(Engine::ECS::CreateComponentTypes<Physics::PhysicsBodyComponent>(), 
+				CreateRequiredComponentFunction(Physics::PhysicsBodyComponent()),
+			[](Engine::ECS::EntityData& entity)-> void
 			{
-				PlayerData& player = *(entity.TryGetComponentMutable<PlayerData>());
-				if (player.m_body != nullptr) player.m_body = entity.TryGetComponentMutable<PhysicsBodyComponent>();
+				PlayerComponent& player = *(entity.TryGetComponentMutable<PlayerComponent>());
+				if (player.m_body != nullptr) player.m_body = entity.TryGetComponentMutable<Physics::PhysicsBodyComponent>();
 				//fieldComponent.m_background = entity.TryGetComponentMutable<UIPanel>();
 			}));
 	}
 
-	void PlayerSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+	void PlayerSystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("PlayerSystem::SystemUpdate");
@@ -43,8 +44,8 @@ namespace ECS
 		}
 		
 		int playerCount = 0;
-		scene.OperateOnActiveComponents<PlayerData>(
-			[this, &scene, deltaTime, &mainCamera, &playerCount](PlayerData& player)-> void
+		scene.OperateOnActiveComponents<PlayerComponent>(
+			[this, &scene, deltaTime, &mainCamera, &playerCount](PlayerComponent& player)-> void
 			{
 				playerCount++;
 #ifdef ALLOW_PLAYER_CHEATS

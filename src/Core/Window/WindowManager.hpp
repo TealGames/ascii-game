@@ -3,7 +3,7 @@
 #include <map>
 #include "Utils/Data/Event.hpp"
 
-namespace Core
+namespace Engine::Core
 {
 	class WindowManager
 	{

@@ -3,16 +3,15 @@
 #include <unordered_map>
 #include "StaticGlobals.hpp"
 #include "Core/Visual/VisualData.hpp"
-#include "Utils/Data/ColorConstants.hpp"
 
-namespace JsonConstants
+namespace Engine::Serialization
 {
-	static const std::unordered_map<std::string, HDRColor> COLOR_CONSTANTS = { {"White", COLOR_WHITE} };
+	static const std::unordered_map<std::string, ColHDR4> COLOR_CONSTANTS = { {"White", COLOR_WHITE} };
 	static const std::unordered_map<std::string, Vec2> PIVOT_CONSTANTS = 
-		{ {"BottomCenter",VisualData::PIVOT_BOTTOM_CENTER}, {"BottomLeft",VisualData::PIVOT_BOTTOM_LEFT}, 
-		  {"BottomRight",VisualData::PIVOT_BOTTOM_RIGHT},
-		  {"Center",VisualData::PIVOT_CENTER}, {"TopCenter",VisualData::PIVOT_TOP_CENTER}, 
-		  {"TopLeft",VisualData::PIVOT_TOP_LEFT}, {"TopRight",VisualData::PIVOT_TOP_RIGHT} };
+		{ {"BottomCenter",Rendering::VisualData::PIVOT_BOTTOM_CENTER}, {"BottomLeft",Rendering::VisualData::PIVOT_BOTTOM_LEFT}, 
+		  {"BottomRight",Rendering::VisualData::PIVOT_BOTTOM_RIGHT},
+		  {"Center",Rendering::VisualData::PIVOT_CENTER}, {"TopCenter",Rendering::VisualData::PIVOT_TOP_CENTER}, 
+		  {"TopLeft",Rendering::VisualData::PIVOT_TOP_LEFT}, {"TopRight",Rendering::VisualData::PIVOT_TOP_RIGHT} };
 
 	/*static const std::unordered_map<std::string, Vec2> DIR_CONSTANTS = { {"N", Vec2::NORTH}, { "NE", Vec2::NORTHEAST}, { "E", Vec2::EAST}, { "SE", Vec2::SOUTHEAST}, 
 																   { "S", Vec2::SOUTH}, {"SW", Vec2::SOUTHWEST}, {"W", Vec2::WEST}, {"NW", Vec2::NORTHWEST}};*/
@@ -57,25 +56,15 @@ namespace JsonConstants
 			[](const Vec2& vec1, const Vec2& vec2)-> bool { return vec1 == vec2; });
 	}
 
-	/*std::optional<Vec2> TryGetConstantDir(const std::string& constant)
+	std::optional<ColHDR4> TryGetConstantColor(const std::string& constant)
 	{
-		return TryGetConstantValue<Vec2>(DIR_CONSTANTS, constant);
-	}
-	std::optional<std::string> TryGetDirConstant(const Vec2& vec)
-	{
-		return TryGetValueConstant<Vec2>(DIR_CONSTANTS, vec,
-			[](const Vec2& vec1, const Vec2& vec2)-> bool { return vec1 == vec2; });
-	}*/
-
-	std::optional<HDRColor> TryGetConstantColor(const std::string& constant)
-	{
-		return TryGetConstantValue<HDRColor>(COLOR_CONSTANTS, constant);
+		return TryGetConstantValue<ColHDR4>(COLOR_CONSTANTS, constant);
 	}
 
-	std::optional<std::string> TryGetColorConstant(const HDRColor& targetColor)
+	std::optional<std::string> TryGetColorConstant(const ColHDR4& targetColor)
 	{
-		return TryGetValueConstant<HDRColor>(COLOR_CONSTANTS, targetColor, 
-			[](const HDRColor& color1, const HDRColor& color2)-> bool { return color1==color2; });
+		return TryGetValueConstant<ColHDR4>(COLOR_CONSTANTS, targetColor, 
+			[](const ColHDR4& color1, const ColHDR4& color2)-> bool { return color1==color2; });
 	}
 
 	std::optional<Rendering::Font> TryGetConstantFont(const std::string& constant)

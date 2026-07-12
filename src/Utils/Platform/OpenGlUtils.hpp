@@ -43,9 +43,9 @@ namespace OpenGlUtils
 		return true;
 	}
 
-	int GetTextureCubeFaceIndex(const Rendering::TextureCubeFace face);
-	GLenum GetStorage(const Rendering::TexelStorageType storage);
-	GLenum GetAccessPermission(const Rendering::AccessPermissions permissions);
+	int GetTextureCubeFaceIndex(const Engine::Rendering::TextureCubeFace face);
+	GLenum GetStorage(const Engine::Rendering::TexelStorageType storage);
+	GLenum GetAccessPermission(const Engine::Rendering::AccessPermissions permissions);
 }
 
 #define ASSERT(x) if (!(x)) __debugbreak();

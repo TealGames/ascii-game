@@ -4,7 +4,7 @@
 #include "StaticGlobals.hpp"
 #include "Utils/AnsiCodes.hpp"
 
-namespace Core
+namespace Engine::Core
 {
 	template<typename... Args>
 	void EngineLog(const char* message, Args&&... args)

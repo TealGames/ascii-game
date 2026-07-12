@@ -3,17 +3,21 @@
 #include "Core/Time/TimerBase.hpp"
 #include <string>
 
-class ProfilerTimer : protected TimerBase
+namespace Engine
 {
-private:
-	std::string m_processName;
-	
-public:
-	static Profiler m_Profiler;
+	class ProfilerTimer : protected Core::TimerBase
+	{
+	private:
+		std::string m_processName;
 
-private:
-public:
-	ProfilerTimer(const std::string& processName);
-	~ProfilerTimer();
-};
+	public:
+		static Profiler m_Profiler;
+
+	private:
+	public:
+		ProfilerTimer(const std::string& processName);
+		~ProfilerTimer();
+	};
+}
+
 

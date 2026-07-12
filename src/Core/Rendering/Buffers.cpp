@@ -3,7 +3,7 @@
 #include "Utils/ToStringFunctions.hpp"
 #include "Utils/HelperFunctions.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	RenderBuffer::RenderBuffer() : RenderBuffer(DEFAULT_RENDER_BUFFER_STORAGE, {}, {}) {}
 	RenderBuffer::RenderBuffer(const TexelStorageType storage, const Vec2Int size, const RenderBufferPlatformCallbacks& callbacks)
@@ -354,7 +354,7 @@ namespace Rendering
 	std::string RingBufferAllocator::ToString() const
 	{
 		return std::format("[BufferFence segments({}):{} head:{} tail:{} allocatedSize:{} used:{}]", 
-			m_segments.size(), Utils::ToStringIterable(m_segments), m_head, m_tail, m_fixedByteSize, m_usedSize);
+			m_segments.size(), ::Utils::ToStringIterable(m_segments), m_head, m_tail, m_fixedByteSize, m_usedSize);
 	}
 
 	
@@ -405,8 +405,8 @@ namespace Rendering
 
 		if (m_writePtr != nullptr)
 		{
-			/*LogError(std::format("og addr:{} offset:{} newptr:{}", Utils::ToStringPointerAddress(m_writePtr), 
-				offsetBytes, Utils::ToStringPointerAddress(m_writePtr + offsetBytes)));*/
+			/*LogError(std::format("og addr:{} offset:{} newptr:{}", ::Utils::ToStringPointerAddress(m_writePtr), 
+				offsetBytes, ::Utils::ToStringPointerAddress(m_writePtr + offsetBytes)));*/
 			memcpy(m_writePtr + offsetBytes, vertexArray, writeByteSize);
 			return;
 		}
@@ -750,7 +750,7 @@ namespace Rendering
 	std::string ShaderBuffer::ToString() const
 	{
 		return std::format("[UniformBuffer members:{}]", 
-			Utils::ToStringIterable(Utils::GetValuesFromMap<std::string, ShaderBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
+			Utils::ToStringIterable(::Utils::GetValuesFromMap<std::string, ShaderBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
 	}
 
 
@@ -777,7 +777,7 @@ namespace Rendering
 	}
 	std::string UniformBuffer::ToString() const
 	{
-		return std::format("[UniformBuffer members:{}]", Utils::ToStringIterable(
+		return std::format("[UniformBuffer members:{}]", ::Utils::ToStringIterable(
 			Utils::GetValuesFromMap<std::string, ShaderBlockMemberMemoryInfo>(m_members.cbegin(), m_members.cend())));
 	}
 

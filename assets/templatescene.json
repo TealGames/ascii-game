@@ -88,7 +88,7 @@
 					}
 				},
 				{
-					"Type": "PlayerData",
+					"Type": "PlayerComponent",
 					"MoveSpeed": 5,
 					"JumpHeight": 2,
 					"Body": {
@@ -118,7 +118,7 @@
 					}
 				},
 				{
-					"Type": "AnimatorData",
+					"Type": "AnimatorComponent",
 					"Loop": true,
 					"Speed": 1,
 					"Time": 3.5,

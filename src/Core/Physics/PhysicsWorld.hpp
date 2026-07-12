@@ -2,20 +2,20 @@
 #include <vector>
 #include <unordered_set>
 #include <cstdint>
-#include "Utils/Math/Vec2Type.hpp"
-#include "Utils/Math/WorldPosition.hpp"
+#include "Core/Primitives/Vector.hpp"
+#include "Core/Primitives/WorldPosition.hpp"
 #include "Core/Collision/CollisionRegistry.hpp"
 #include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "Utils/Data/Event.hpp"
-#include "Utils/Math/Ray.hpp"
+#include "Math/Ray.hpp"
 
-class CollisionBoxData;
+class CollisionBoxComponent;
 namespace ECS
 {
 	class Entity;
 }
 
-namespace Physics
+namespace Engine::Physics
 {
 	enum class EntityType : std::uint8_t
 	{
@@ -34,6 +34,7 @@ namespace Physics
 	};
 
 	using PhysicsBodyCollection = std::vector<PhysicsBodyComponent*>;
+	using EntityData = Engine::ECS::EntityData;
 	class PhysicsWorld
 	{
 	private:
@@ -88,7 +89,7 @@ namespace Physics
 		void ResolveCollision(CollisionPair& collision, PhysicsBodyComponent* bodyA, PhysicsBodyComponent* bodyB);
 
 		void KinematicUpdate(const float& deltaTime, EntityData& entity,
-			PhysicsBodyComponent& body, const CollisionBoxData& collider);
+			PhysicsBodyComponent& body, const CollisionBoxComponent& collider);
 
 		/// <summary>
 		/// The basic type of collision resolution that will push the moved body out or the one which is not

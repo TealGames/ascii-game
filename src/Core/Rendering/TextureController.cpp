@@ -1,6 +1,6 @@
 #include "Core/Rendering/TextureController.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	TextureSlotData::TextureSlotData() 
 		: m_Type(TextureType::Texture), m_ResourcePtr(nullptr), m_ResourceId(INVALID_OBJ_ID) {}

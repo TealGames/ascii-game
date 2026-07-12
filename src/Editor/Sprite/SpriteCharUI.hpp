@@ -2,23 +2,27 @@
 #include "Core/Visual/TextBuffer.hpp"
 #include "ECS/Component/Types/UI/UIInputFieldComponent.hpp"
 
-class UIInteractionManager;
-namespace Input { class InputManager; }
-
-class SpriteCharUI //: public IRenderable
+namespace Engine::UI { class UIInteractionManager; }
+namespace Engine::Input { class InputManager; }
+namespace Engine::Editor::UI
 {
-private:	
-	UIInputFieldComponent m_charField;
+	namespace MainUI = Engine::UI;
+	class SpriteCharUI
+	{
+	private:
+		MainUI::UIInputFieldComponent m_charField;
 
-public:
+	public:
 
-private:
-public:
-	SpriteCharUI(Input::InputManager& inputManager);
+	private:
+	public:
+		SpriteCharUI(Input::InputManager& inputManager);
 
-	void Update();
-	//RenderInfo Render(const RenderInfo& renderInfo) override;
+		void Update();
+		//RenderInfo Render(const RenderInfo& renderInfo) override;
 
-	TextBufferCharPosition2D GetAsTextBufferChar() const;
-};
+		Rendering::TextBufferCharPosition2D GetAsTextBufferChar() const;
+	};
+}
+
 

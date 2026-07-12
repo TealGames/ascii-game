@@ -1,27 +1,28 @@
 #include "pch.hpp"
+#include "Core/Rendering/RenderLayer.hpp"
 #include "ECS/Systems/Types/World/ParticleEmitterSystem.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/CameraComponent.hpp"
-#include "ECS/Component/Types/World/ParticleEmitterData.hpp"
+#include "ECS/Component/Types/World/ParticleEmitterComponent.hpp"
+#include "Utils/HelperFunctions.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-
-namespace ECS
+namespace Engine::ParticleSystem
 {
 	ParticleEmitterSystem::ParticleEmitterSystem() {}
 
-	void ParticleEmitterSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+	void ParticleEmitterSystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("AnimatorSystem::SystemUpdate");
 #endif 
 		//Note: we should NOT opyimize be having a deltaTime <=0 early return because we still need to render 
 		//particles even thoguh they do not change across time
-		scene.OperateOnActiveComponents<ParticleEmitterData>(
-			[this, &scene, &deltaTime](ParticleEmitterData& data)-> void
+		scene.OperateOnActiveComponents<ParticleEmitterComponent>(
+			[this, &scene, &deltaTime](ParticleEmitterComponent& data)-> void
 			{
 				auto renderLayers = scene.GetLayersMutable(data.m_renderLayers);
 
@@ -73,14 +74,14 @@ namespace ECS
 
 				Vec3 randomVel = {};
 				float randomLifeTime = 0;
-				const HDRColor initialColor = data.m_lifetimeColor.GetFirstColor(true);
+				const ColHDR4 initialColor = data.m_lifetimeColor.GetFirstColor(true);
 				for (int i = 0; i < wholeParticlesToSpawn; i++)
 				{
 					//TODO: right not we only support generating random particles in x and y dir, not z
-					randomVel = Vec3(GenerateRandomDir() * data.m_speedRange.GetRandom(), 0);
-					randomLifeTime = data.m_lifetimeRange.GetRandom();
+					randomVel = Vec3(GenerateRandomDir() * ::Utils::GenerateRandomFloat(data.m_speedRange.m_X, data.m_speedRange.m_Y), 0);
+					randomLifeTime = ::Utils::GenerateRandomFloat(data.m_lifetimeRange.m_X, data.m_lifetimeRange.m_Y);
 
-					Particle* particlePtr = data.m_particles.TryAdd(Particle(TextChar(initialColor, data.m_Char), data.m_FontData.m_RectSize,
+					Particle* particlePtr = data.m_particles.TryAdd(Particle(Rendering::TextChar(initialColor, data.m_Char), data.m_FontData.m_RectSize,
 						data.GetOriginWorldPos(), randomVel, randomLifeTime));
 					if (particlePtr == nullptr)
 					{
@@ -96,18 +97,18 @@ namespace ECS
 			});
 	}
 
-	void ParticleEmitterSystem::AddParticleToLayers(const ParticleEmitterData& data, 
-		const Particle& particle, std::vector<RenderLayer*>& renderLayers)
+	void ParticleEmitterSystem::AddParticleToLayers(const ParticleEmitterComponent& data, 
+		const Particle& particle, std::vector<Rendering::RenderLayer*>& renderLayers)
 	{
 		for (auto& layer : renderLayers)
 		{
-			layer->AddText(TextBufferCharPosition2D(particle.m_Pos.GetXY(),
+			layer->AddText(Rendering::TextBufferCharPosition2D(particle.m_Pos.GetXY(),
 				particle.m_TextChar, data.m_FontData));
 		}
 	}
 
 	Vec2 ParticleEmitterSystem::GenerateRandomDir() const
 	{
-		return GetDirVector(Utils::GenerateRandomDouble(0, 2 * std::numbers::pi));
+		return Math::GetDirVector(::Utils::GenerateRandomDouble(0, 2 * std::numbers::pi));
 	}
 }

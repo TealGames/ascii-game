@@ -3,11 +3,8 @@
 #ifdef OPENGL
 #include "Core/Rendering/Shader/Shader.hpp"
 
-namespace Rendering
+namespace Engine::Rendering::OpenGl
 {
-	namespace OpenGl
-	{
-		Shader CreateShader(const std::string& vertexShader, const std::string& fragmentSahder);
-	}
+	Shader CreateShader(const std::string& vertexShader, const std::string& fragmentSahder);
 }
 #endif

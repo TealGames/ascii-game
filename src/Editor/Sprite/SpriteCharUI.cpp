@@ -2,25 +2,28 @@
 #include "Editor/Sprite/SpriteCharUI.hpp"
 #include "Editor/EditorStyles.hpp"
 
-SpriteCharUI::SpriteCharUI(Input::InputManager& inputManager) 
-	: m_charField(inputManager, InputFieldType::String, InputFieldFlag::None, EditorStyles::GetInputFieldStyle(TextAlignment::Center))
+namespace Engine::Editor::UI
 {
-}
+	SpriteCharUI::SpriteCharUI(Input::InputManager& inputManager)
+		: m_charField(MainUI::InputFieldType::String, MainUI::InputFieldFlag::None, Styles::GetInputFieldStyle(MainUI::TextAlignment::Center))
+	{
+	}
 
-void SpriteCharUI::Update()
-{
-	//m_charField.Update();
-}
+	void SpriteCharUI::Update()
+	{
+		//m_charField.Update();
+	}
 
-/*
-RenderInfo SpriteCharGUI::Render(const RenderInfo& renderInfo)
-{
-	//TODO: implement
-	return {};
-}
-*/
+	/*
+	RenderInfo SpriteCharGUI::Render(const RenderInfo& renderInfo)
+	{
+		//TODO: implement
+		return {};
+	}
+	*/
 
-TextBufferCharPosition2D SpriteCharUI::GetAsTextBufferChar() const
-{
-	return TextBufferCharPosition2D();
+	Rendering::TextBufferCharPosition2D SpriteCharUI::GetAsTextBufferChar() const
+	{
+		return {};
+	}
 }

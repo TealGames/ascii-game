@@ -1,28 +1,27 @@
 #pragma once
-#include "Core/Rendering/RenderLayer.hpp"
 
-class ParticleEmitterData;
-class Particle;
-class Scene;
-class CameraComponent;
-
-namespace ECS
+namespace Engine::Rendering { class RenderLayer; }
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Camera { class CameraComponent; }
+namespace Engine::ParticleSystem
 {
+	class Particle;
+	class ParticleEmitterComponent;
 	class ParticleEmitterSystem
 	{
 	private:
 	public:
 
 	private:
-		void AddParticleToLayers(const ParticleEmitterData& data, 
-			const Particle& particle, std::vector<RenderLayer*>& renderLayers);
+		void AddParticleToLayers(const ParticleEmitterComponent& data, 
+			const Particle& particle, std::vector<Rendering::RenderLayer*>& renderLayers);
 
 		Vec2 GenerateRandomDir() const;
 
 	public:
 		ParticleEmitterSystem();
 
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
+		void SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime);
 	};
 
 }

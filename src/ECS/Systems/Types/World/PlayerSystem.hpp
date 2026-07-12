@@ -1,12 +1,12 @@
 #pragma once
-#include "ECS/Component/Types/World/PlayerData.hpp"
+#include "ECS/Component/Types/World/PlayerComponent.hpp"
 #include "Core/Input/InputManager.hpp"
 
 #define ALLOW_PLAYER_CHEATS
 
-class Scene;
-class CameraComponent;
-namespace ECS
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Camera { class CameraComponent; }
+namespace Engine::Player
 {
 	class PlayerSystem
 	{
@@ -22,7 +22,7 @@ namespace ECS
 	public:
 		PlayerSystem(Input::InputManager& input);
 
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
+		void SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime);
 		void SetCheatStatus(const bool& enableCheats);
 	};
 }

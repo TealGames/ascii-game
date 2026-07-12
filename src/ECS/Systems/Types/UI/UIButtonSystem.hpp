@@ -1,8 +1,7 @@
 #pragma once
-#include "ECS/Component/Types/UI/UIButtonComponent.hpp"	
 
-class GlobalEntityManager;
-namespace ECS
+namespace Engine::Scenes { class GlobalEntityManager; }
+namespace Engine::UI
 {
 	class UIButtonSystem
 	{
@@ -13,7 +12,7 @@ namespace ECS
 	public:
 		UIButtonSystem();
 		void Init();
-		void SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime);
+		void SystemUpdate(Scenes::GlobalEntityManager& globalEntityManager, const float& deltaTime);
 	};
 }
 

@@ -1,21 +1,22 @@
 #pragma once
-#include "Core/Visual/VisualData.hpp"
-#include "ECS/Component/Types/World/SpriteAnimatorData.hpp"
-#include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 
-class EntityData;
-namespace ECS
+namespace Engine::ECS { class EntityData; }
+namespace Engine::Rendering { class EntityRenderer2DSystem; }
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Camera { class CameraComponent; }
+namespace Engine::Animation
 {
+	class SpriteAnimation;
 	class SpriteAnimatorSystem
 	{
 	private:
-		EntityRenderer2DSystem& m_EntityRenderer;
+		Rendering::EntityRenderer2DSystem& m_EntityRenderer;
 	public:
 
 	private:
-		void SetVisual(EntityData& entity, const SpriteAnimation& animation) const;
+		void SetVisual(ECS::EntityData& entity, const SpriteAnimation& animation) const;
 	public:
-		SpriteAnimatorSystem(EntityRenderer2DSystem& entityRenderer);
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
+		SpriteAnimatorSystem(Rendering::EntityRenderer2DSystem& entityRenderer);
+		void SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime);
 	};
 }

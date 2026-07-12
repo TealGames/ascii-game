@@ -4,9 +4,9 @@
 #include <unordered_map>
 #include "Utils/Data/FixedString.hpp"
 #include "Core/Rendering/RenderObject.hpp"
-#include "Utils/Math/Vec3Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	using ShaderTypeIntegralType = std::uint8_t;
 	enum class ShaderType : ShaderTypeIntegralType

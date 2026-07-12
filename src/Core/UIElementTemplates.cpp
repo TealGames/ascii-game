@@ -1,28 +1,27 @@
 #include "pch.hpp"
 #include "UIElementTemplates.hpp"
 #include "Core/Asset/AssetManager.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
-#include "ECS/Component/Types/UI/UITransformData.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UITransformComponent.hpp"
 #include "ECS/Component/Types/UI/UIToggleComponent.hpp"
 #include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 #include "Editor/EditorStyles.hpp"
 #include "Core/Asset/TextureAsset.hpp"
-#include "ECS/Component/Types/UI/UITextureData.hpp"
+#include "ECS/Component/Types/UI/UITextureComponent.hpp"
 
-static AssetManagement::AssetManager* AssetManager = nullptr;
-
-namespace Templates
+namespace Engine::UI::Templates
 {
-	void Init(AssetManagement::AssetManager& assetManager)
+	static Assets::AssetManager* AssetManager = nullptr;
+	void Init(Assets::AssetManager& assetManager)
 	{
 		AssetManager = &assetManager;
 	}
 
-	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateDropdownToggleTemplate(EntityData& parent, const std::string& name)
+	std::tuple<ECS::EntityData*, UITransformComponent*, UIToggleComponent*> CreateDropdownToggleTemplate(ECS::EntityData& parent, const std::string& name)
 	{
 		auto [toggleEntity, toggleTransform] = parent.CreateChildUI(name);
 		UIPanelComponent& panel = toggleEntity->AddComponent(UIPanelComponent());
-		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle(), nullptr, nullptr, &panel));
+		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, Editor::Styles::GetToggleStyle(), nullptr, nullptr, &panel));
 
 		if (AssetManager == nullptr)
 		{
@@ -31,7 +30,8 @@ namespace Templates
 		}
 
 		auto [onTexEntity, onTexTransform] = toggleEntity->CreateChildUI("OnStateTexture");
-		UITextureData& onTex = onTexEntity->AddComponent(UITextureData(*AssetManager->TryGetTypeAssetFromPathMutable<TextureAsset>("textures/dropdown_icon_toggled.png")));
+		UITextureComponent& onTex = onTexEntity->AddComponent(UITextureComponent(*AssetManager->TryGetTypeAssetFromPathMutable
+			<Rendering::TextureAsset>("textures/dropdown_icon_toggled.png")));
 		toggle.m_OnValueSet.AddListener([onTexEntity](bool isChecked)-> void
 			{
 				onTexEntity->GetTransformMutable().GetLocalScaleMutable().m_Y *= -1;
@@ -40,11 +40,11 @@ namespace Templates
 		return std::make_tuple(toggleEntity, toggleTransform, &toggle);
 	}
 
-	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateCheckboxTemplate(EntityData& parent, const std::string& name)
+	std::tuple<ECS::EntityData*, UITransformComponent*, UIToggleComponent*> CreateCheckboxTemplate(ECS::EntityData& parent, const std::string& name)
 	{
 		auto [toggleEntity, toggleTransform] = parent.CreateChildUI(name);
 		UIPanelComponent& panel = toggleEntity->AddComponent(UIPanelComponent());
-		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, EditorStyles::GetToggleStyle(), nullptr, nullptr, &panel));
+		UIToggleComponent& toggle = toggleEntity->AddComponent(UIToggleComponent(false, Editor::Styles::GetToggleStyle(), nullptr, nullptr, &panel));
 
 		if (AssetManager == nullptr)
 		{
@@ -53,7 +53,8 @@ namespace Templates
 		}
 
 		auto [onTexEntity, onTexTransform] = toggleEntity->CreateChildUI("OnStateTexture");
-		UITextureData& onTex = onTexEntity->AddComponent(UITextureData(*AssetManager->TryGetTypeAssetFromPathMutable<TextureAsset>("textures/x_icon.png")));
+		UITextureComponent& onTex = onTexEntity->AddComponent(UITextureComponent(*AssetManager->
+			TryGetTypeAssetFromPathMutable<Rendering::TextureAsset>("textures/x_icon.png")));
 		toggle.m_OnValueSet.AddListener([onTexEntity](bool isChecked)-> void
 			{
 				onTexEntity->GetTransformMutable().GetLocalScaleMutable().m_Y *= -1;

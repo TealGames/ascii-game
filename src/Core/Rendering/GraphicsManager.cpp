@@ -5,19 +5,19 @@
 #include "Core/Asset/Model3dAsset.hpp"
 #include "RenderingBackend.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	static const std::filesystem::path SHADERS_FOLDER = "shaders";
 	static const std::filesystem::path MATERIALS_FOLDER = "materials";
 
 	static const char* DEFAULT_ALBEDO_PATH = "textures/base_albedo.png";
-	static const char* DEFAULT_MATERIAL_PATH = "materials/default.mater";
+	static const char* DEFAULT_MATERIAL_PATH = "materials/basic/default.mater";
 
 	static const char* BASIC_MESH_PATHS[] = { BASIC_MESH_ASSET_DIR "cube" BASIC_MESH_EXTENSION, 
 											  BASIC_MESH_ASSET_DIR "sphere" BASIC_MESH_EXTENSION,
 											  BASIC_MESH_ASSET_DIR "plane" BASIC_MESH_EXTENSION };
 
-	GraphicsManager::GraphicsManager(AssetManagement::AssetManager& assetManager)
+	GraphicsManager::GraphicsManager(AssetManager& assetManager)
 		: m_assetManager(&assetManager), m_defaultAlbedo(nullptr), m_defaultMaterial(nullptr), m_shaders(), m_materials(), m_basicMeshes(),
 		m_skybox(), m_shaderBlockBuffers(), m_shaderGlobalDefines({}), m_singleUniformShaderMap() {}
 
@@ -30,7 +30,7 @@ namespace Rendering
 		for (auto& shaderAsset : m_assetManager->GetAssetsOfTypeMutable<ShaderAsset>(SHADERS_FOLDER))
 		{
 			Shader& shader = shaderAsset->GetShaderMutable();
-			m_shaders.emplace(std::string_view(shaderAsset->GetName()), &shader);
+			m_shaders.emplace(std::string_view(shaderAsset->GetName()), shaderAsset);
 
 #ifdef SKIP_COMPUTE_SHADER_INIT
 			//TODO: fix error in glLinkProgram part of compute shader creation
@@ -73,9 +73,9 @@ namespace Rendering
 					auto uniformIt = m_singleUniformShaderMap.find(globalVarNameView);
 					if (uniformIt == m_singleUniformShaderMap.end())
 					{
-						m_singleUniformShaderMap.emplace(globalVarNameView, std::vector<Shader*>{ &shader });
+						m_singleUniformShaderMap.emplace(globalVarNameView, std::vector<ShaderAsset*>{ shaderAsset });
 					}
-					else uniformIt->second.emplace_back(&shader);
+					else uniformIt->second.emplace_back(shaderAsset);
 					continue;
 				}
 
@@ -115,11 +115,10 @@ namespace Rendering
 
 		for (auto& materialAsset : m_assetManager->GetAssetsOfTypeMutable<MaterialAsset>(MATERIALS_FOLDER))
 		{
-			Material& material = materialAsset->GetMaterialMutable();
 			//NOTE: this is very important: we have a view into the ASSET'S NAME meaning that 
 			//even if the map reallocates elsewhere, it will copy the char pointer and size which will
 			//NEVER change (since assets are heap allocated and never move)
-			m_materials.emplace(std::string_view(materialAsset->GetName()), &material);
+			m_materials.emplace(std::string_view(materialAsset->GetName()), materialAsset);
 
 			if (m_defaultMaterial == nullptr && materialAsset->AbsolutePathEndsWith(DEFAULT_MATERIAL_PATH))
 				m_defaultMaterial = materialAsset;
@@ -128,7 +127,7 @@ namespace Rendering
 		for (size_t i = 0; i < sizeof(BASIC_MESH_PATHS) / sizeof(char*); i++)
 		{
 			m_basicMeshes.emplace(static_cast<BasicMeshType>(i),
-				&m_assetManager->TryGetTypeAssetFromPathMutable<Model3dAsset>(BASIC_MESH_PATHS[i])->GetModelMutable());
+				m_assetManager->TryGetTypeAssetFromPathMutable<Model3dAsset>(BASIC_MESH_PATHS[i]));
 		}
 
 		m_defaultAlbedo= m_assetManager->TryGetTypeAssetFromPathMutable<TextureAsset>(DEFAULT_ALBEDO_PATH);
@@ -155,6 +154,10 @@ namespace Rendering
 	{
 		return &(m_defaultMaterial->GetMaterialMutable());
 	}
+	MaterialAsset* GraphicsManager::GetDefaultMaterialAssetMutable()
+	{
+		return m_defaultMaterial;
+	}
 
 	bool GraphicsManager::TrySetSkybox(const std::filesystem::path& assetPath)
 	{
@@ -177,23 +180,45 @@ namespace Rendering
 	const Shader* GraphicsManager::TryGetShader(const std::string& name) const
 	{
 		auto it = m_shaders.find(name.c_str());
-		if (it == m_shaders.cend()) return nullptr;
-		return it->second;
+		if (it == m_shaders.cend()) 
+			return nullptr;
+
+		if (it->second == nullptr)
+			return nullptr;
+
+		return &(it->second->GetShader());
 	}
 	Shader* GraphicsManager::TryGetShaderMutable(const std::string& name)
 	{
 		auto it = m_shaders.find(name.c_str());
-		if (it == m_shaders.end()) return nullptr;
-		return it->second;
+		if (it == m_shaders.end()) 
+			return nullptr;
+
+		if (it->second == nullptr)
+			return nullptr;
+
+		return &(it->second->GetShaderMutable());
 	}
 
 	const Model3d* GraphicsManager::TryGetBasicMesh(const BasicMeshType mesh) const
 	{
 		auto it = m_basicMeshes.find(mesh);
-		if (it == m_basicMeshes.end()) return nullptr;
-		return it->second;
+		if (it == m_basicMeshes.end()) 
+			return nullptr;
+
+		if (it->second == nullptr)
+			return nullptr;
+
+		return &(it->second->GetModel());
 	}
 	Model3d* GraphicsManager::TryGetBasicMeshMutable(const BasicMeshType mesh)
+	{
+		Model3dAsset* asset = TryGetBasicMeshAssetMutable(mesh);
+		if (asset == nullptr)
+			return nullptr;
+		return &(asset->GetModelMutable());
+	}
+	Model3dAsset* GraphicsManager::TryGetBasicMeshAssetMutable(const BasicMeshType mesh)
 	{
 		auto it = m_basicMeshes.find(mesh);
 		if (it == m_basicMeshes.end()) return nullptr;
@@ -212,8 +237,8 @@ namespace Rendering
 	const Material* GraphicsManager::TryGetMaterial(const std::string& name) const
 	{
 		auto it = m_materials.find(name.c_str());
-		if (it != m_materials.end())
-			return it->second;
+		if (it != m_materials.end() && it->second != nullptr)
+			return &(it->second->GetMaterial());
 
 		if (m_runtimeMaterials.size() > 0)
 		{
@@ -225,9 +250,9 @@ namespace Rendering
 	}
 	Material* GraphicsManager::TryGetMaterialMutable(const std::string& name)
 	{
-		auto it = m_materials.find(name.c_str());
-		if (it != m_materials.end()) 
-			return it->second;
+		MaterialAsset* materialAsset = TryGetMaterialAssetMutable(name);
+		if (materialAsset != nullptr)
+			return &(materialAsset->GetMaterialMutable());
 
 		if (m_runtimeMaterials.size() > 0)
 		{
@@ -237,15 +262,25 @@ namespace Rendering
 		}
 		return nullptr;
 	}
+	MaterialAsset* GraphicsManager::TryGetMaterialAssetMutable(const std::string& name)
+	{
+		auto it = m_materials.find(name.c_str());
+		if (it != m_materials.end())
+			return it->second;
+		return nullptr;
+	}
 	void GraphicsManager::ExecuteOnAllMaterials(const std::function<void(std::string_view, const Material&)>& action)
 	{
-		for (const auto& material : m_materials)
+		for (const auto& materialAssetPair : m_materials)
 		{
-			action(material.first, *material.second);
+			if (materialAssetPair.second == nullptr)
+				continue;
+
+			action(materialAssetPair.first, materialAssetPair.second->GetMaterial());
 		}
 		for (const auto& material : m_runtimeMaterials)
 		{
-			action(material.second.m_Name.ToStringView(), material.second);
+			action(material.second.m_Name, material.second);
 		}
 	}
 
@@ -273,12 +308,15 @@ namespace Rendering
 		if (uniformIt == m_singleUniformShaderMap.end())
 			return;
 
-		for (auto& shader : uniformIt->second)
+		for (auto& shaderAsset : uniformIt->second)
 		{
-			if (!shader->TrySetUniform(type, name.data(), dataPtr))
+			if (shaderAsset == nullptr)
+				continue;
+
+			if (!shaderAsset->GetShaderMutable().TrySetUniform(type, name.data(), dataPtr))
 			{
 				LogError(std::format("Attempted to set uniform named: {} globally "
-					"for all shaders but failed for shader:{}", name, shader->ToString()));
+					"for all shaders but failed for shader:{}", name, shaderAsset->GetShader().ToString()));
 			}
 		}
 	}
@@ -288,12 +326,16 @@ namespace Rendering
 		if (uniformIt == m_singleUniformShaderMap.end())
 			return;
 
-		for (auto& shader : uniformIt->second)
+		for (auto& shaderAsset : uniformIt->second)
 		{
-			if (!shader->TrySetUniformArray(type, name.data(), dataPtr, elements))
+
+			if (shaderAsset == nullptr)
+				continue;
+
+			if (!shaderAsset->GetShaderMutable().TrySetUniformArray(type, name.data(), dataPtr, elements))
 			{
 				LogError(std::format("Attempted to set uniform array named: {} globally "
-					"for all shaders but failed for shader:{}", name, shader->ToString()));
+					"for all shaders but failed for shader:{}", name, shaderAsset->GetShader().ToString()));
 			}
 		}
 	}

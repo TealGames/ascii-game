@@ -1,98 +1,101 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <optional>
 #include <cstdint>
 #include "Core/Visual/TextBuffer.hpp"
 #include "Utils/HelperMacros.hpp"
 
-using RenderLayerNumericType = std::uint8_t;
-enum class RenderLayerType : RenderLayerNumericType
+namespace Engine::Rendering
 {
-    None= 0,
-    Background= 1<<0,
-    Player= 1 << 1,
-    UI= 1 << 2,
-    All= 0xFF
-};
-std::string ToString(const RenderLayerType& layer);
-std::vector<std::string> GetLayersAsStrings(const RenderLayerType& layers);
-RenderLayerType GetLayersFromStrings(const std::vector<std::string> strings);
+    using RenderLayerNumericType = std::uint8_t;
+    enum class RenderLayerType : RenderLayerNumericType
+    {
+        None = 0,
+        Background = 1 << 0,
+        Player = 1 << 1,
+        UI = 1 << 2,
+        All = 0xFF
+    };
+    std::string ToString(const RenderLayerType& layer);
+    std::vector<std::string> GetLayersAsStrings(const RenderLayerType& layers);
+    RenderLayerType GetLayersFromStrings(const std::vector<std::string> strings);
 
-FLAG_ENUM_OPERATORS(RenderLayerType)
-//RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs);
-//RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs);
-//RenderLayerType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs);
-//RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs);
-//
-//bool operator==(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
-//bool operator!=(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
+    FLAG_ENUM_OPERATORS(RenderLayerType)
+        //RenderLayerType operator|(const RenderLayerType& lhs, const RenderLayerType& rhs);
+        //RenderLayerType& operator|=(RenderLayerType& lhs, const RenderLayerType& rhs);
+        //RenderLayerType operator&(const RenderLayerType& lhs, const RenderLayerType& rhs);
+        //RenderLayerType& operator&=(RenderLayerType& lhs, const RenderLayerType& rhs);
+        //
+        //bool operator==(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
+        //bool operator!=(const RenderLayerType& lhs, const RenderLayerNumericType& rhs);
 
-//using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
-class RenderLayer
-{
-private:
-   /* const int m_fontSize;
-   
-    RawTextBufferBlock m_rawTextBuffer;
-    TextBuffer m_defaultSquaredTextBuffer;*/
-    FragmentedTextBuffer2D m_buffer;
+        //using RawTextBufferBlock = std::vector<std::vector<TextCharPosition>>;
+    class RenderLayer
+    {
+    private:
+        /* const int m_fontSize;
 
-public:
-    //const Utils::Point2DInt m_CharSpacing;
+         RawTextBufferBlock m_rawTextBuffer;
+         TextBuffer m_defaultSquaredTextBuffer;*/
+        FragmentedTextBuffer2D m_buffer;
 
-    //TODO: exposing the whole buffer to be mutated is unsafe there should be a better way to mutate it like maybe with a function
-    //and should be done through the layer so it could valdiate any requests for changing the buffer (when there is not much
-    //posibility for mistake it is fine, but when complexity increases it might become more necccessary)
-    //The text buffer here is organized into a rectangle unlike the raw version
-   /* TextBuffer m_SquaredTextBuffer;*/
+    public:
+        //const ::Utils::Point2DInt m_CharSpacing;
 
-    //Where the text buffer starts relative to the position of the max text buffer
-    //Utils::Point2DInt m_StartPos;
-   
+        //TODO: exposing the whole buffer to be mutated is unsafe there should be a better way to mutate it like maybe with a function
+        //and should be done through the layer so it could valdiate any requests for changing the buffer (when there is not much
+        //posibility for mistake it is fine, but when complexity increases it might become more necccessary)
+        //The text buffer here is organized into a rectangle unlike the raw version
+       /* TextBuffer m_SquaredTextBuffer;*/
 
-private:
-    //std::optional<TextBuffer> CreateSquaredBuffer() const;
+        //Where the text buffer starts relative to the position of the max text buffer
+        //Utils::Point2DInt m_StartPos;
 
-public:
-    RenderLayer();
-    RenderLayer(const FragmentedTextBuffer2D& buffer);
 
-    void AddText(const TextBufferCharPosition2D& bufferPos);
+    private:
+        //std::optional<TextBuffer> CreateSquaredBuffer() const;
 
-    FragmentedTextBuffer2D& GetBufferMutable();
-    const FragmentedTextBuffer2D& GetBuffer() const;
-    /*/// <summary>
-    /// If the buffer is not fully square, you can choose this constructor to 
-    /// shape it into a square shape
-    /// </summary>
-    /// <param name="rawBuffer"></param>
-    /// <param name="fontSize"></param>
-    /// <param name="charSpacing"></param>
-    RenderLayer(const RawTextBufferBlock& rawBuffer, const int& fontSize, 
-        const Utils::Point2DInt& charSpacing);
+    public:
+        RenderLayer();
+        RenderLayer(const FragmentedTextBuffer2D& buffer);
 
-    /// <summary>
-    /// This constructor requires a perfect square buffer
-    /// </summary>
-    /// <param name="squareBuffer"></param>
-    /// <param name="fontSize"></param>
-    /// <param name="charSpacing"></param>
-    RenderLayer(const TextBuffer& squareBuffer, const int& fontSize,
-        const Utils::Point2DInt& charSpacing);*/
+        void AddText(const TextBufferCharPosition2D& bufferPos);
 
-    /// <summary>
-    /// Resets the buffer back to the original
-    /// </summary>
-    void ResetToDefault();
+        FragmentedTextBuffer2D& GetBufferMutable();
+        const FragmentedTextBuffer2D& GetBuffer() const;
+        /*/// <summary>
+        /// If the buffer is not fully square, you can choose this constructor to
+        /// shape it into a square shape
+        /// </summary>
+        /// <param name="rawBuffer"></param>
+        /// <param name="fontSize"></param>
+        /// <param name="charSpacing"></param>
+        RenderLayer(const RawTextBufferBlock& rawBuffer, const int& fontSize,
+            const ::Utils::Point2DInt& charSpacing);
 
-    /*/// <summary>
-    /// Will return the amount of spacing between characters in (WIDTH, HEIGHT)
-    /// </summary>
-    /// <returns></returns>
-    Utils::Point2DInt CalculateCharSpacing() const;*/
+        /// <summary>
+        /// This constructor requires a perfect square buffer
+        /// </summary>
+        /// <param name="squareBuffer"></param>
+        /// <param name="fontSize"></param>
+        /// <param name="charSpacing"></param>
+        RenderLayer(const TextBuffer& squareBuffer, const int& fontSize,
+            const ::Utils::Point2DInt& charSpacing);*/
 
-    //static std::string ToStringRawBuffer(const RawTextBufferBlock& block);
-    std::string ToString() const;
-};
+            /// <summary>
+            /// Resets the buffer back to the original
+            /// </summary>
+        void ResetToDefault();
+
+        /*/// <summary>
+        /// Will return the amount of spacing between characters in (WIDTH, HEIGHT)
+        /// </summary>
+        /// <returns></returns>
+        ::Utils::Point2DInt CalculateCharSpacing() const;*/
+
+        //static std::string ToStringRawBuffer(const RawTextBufferBlock& block);
+        std::string ToString() const;
+    };
+}
+
 

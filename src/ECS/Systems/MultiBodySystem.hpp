@@ -3,12 +3,12 @@
 #include "Utils/TemplateConcepts.hpp"
 #include "ECS/Entity/EntityRegistry.hpp"
 #include "ECS/Component/Types/World/CameraComponent.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
-namespace ECS
+namespace Engine::ECS
 {
 	template<typename T, typename TInvocable>
-	concept IsComponentInvocableType = Utils::IsInvocableType<void, TInvocable, T&>;
+	concept IsComponentInvocableType = ::Utils::IsInvocableType<void, TInvocable, T&>;
 
 	template<typename T, typename TInvocable>
 	requires (std::is_base_of_v<Component, T> && IsComponentInvocableType<T, TInvocable>)
@@ -22,7 +22,7 @@ namespace ECS
 		{
 			T* component = registry.TryGetComponentMutable<T>(entityId);
 			Component* componentBase = static_cast<Component*>(component);
-			if (componentBase == nullptr || !Utils::HasFlagAll(flags, componentBase->GetStateFlags())) 
+			if (componentBase == nullptr || !::Utils::HasFlagAll(flags, componentBase->GetStateFlags())) 
 				continue;
 
 			action(*component);

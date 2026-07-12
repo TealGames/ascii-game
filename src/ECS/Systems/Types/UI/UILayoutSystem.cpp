@@ -1,15 +1,15 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/UI/UILayoutSystem.hpp"
-#include "ECS/Systems/MultiBodySystem.hpp"
+#include "ECS/Component/Types/UI/UILayoutComponent.hpp"
 #include "Core/Scene/GlobalEntityManager.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
 	UILayoutSystem::UILayoutSystem() {}
 
-	void UILayoutSystem::SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime)
+	void UILayoutSystem::SystemUpdate(Scenes::GlobalEntityManager& globalEntityManager, const float& deltaTime)
 	{
-		globalEntityManager.OperateOnComponents<UILayoutComponent>(ALL_ACTIVE_ENABLED_FLAG,
+		globalEntityManager.OperateOnComponents<UILayoutComponent>(ECS::ALL_ACTIVE_ENABLED_FLAG,
 			[&deltaTime](UILayoutComponent& data)-> void
 			{
 				data.Update(deltaTime);

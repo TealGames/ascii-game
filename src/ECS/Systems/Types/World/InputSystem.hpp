@@ -1,9 +1,9 @@
 #pragma once
-#include "ECS/Component/Types/World/InputData.hpp"
+#include "ECS/Component/Types/World/InputComponent.hpp"
 #include "Core/Input/InputManager.hpp"
 
-class Scene;
-namespace ECS
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Input
 {
     class InputSystem
     {
@@ -17,7 +17,7 @@ namespace ECS
         InputSystem(Input::InputManager& inputManager);
         ~InputSystem() = default;
 
-        void SystemUpdate(Scene& scene, InputData& component, const float& deltaTime);
+        void SystemUpdate(Scenes::Scene& scene, InputComponent& component, const float& deltaTime);
     };
 }
 

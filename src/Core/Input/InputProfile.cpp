@@ -6,7 +6,7 @@
 #include "Utils/StringUtil.hpp"
 #include "Core/Input/InputManager.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	InputProfile::InputProfile(InputManager& manager,const std::string& name) :
 		m_name(name), m_actions(), m_compoundInputs(), m_inputManager(&manager)
@@ -44,7 +44,7 @@ namespace Input
 		{
 			if (line.empty()) continue;
 			std::string lineBefore = line;
-			line = Utils::StringUtil(line).RemoveSpaces().ToString();
+			line = ::Utils::StringUtil(line).RemoveSpaces().ToString();
 			LogWarning(std::format("COnverted line: {} -> {}", lineBefore, line));
 
 			if (line == HEADER_CHAR + GENERAL_HEADER)
@@ -222,11 +222,11 @@ namespace Input
 
 		output += std::format("Name: {}", m_name);
 
-		auto onlyActionKeys = Utils::GetValuesFromMap<std::string, InputAction>(m_actions.begin(), m_actions.end());
-		auto onlyCompoundKeys= Utils::GetValuesFromMap<std::string, CompoundInput>(m_compoundInputs.begin(), m_compoundInputs.end());
+		auto onlyActionKeys = ::Utils::GetValuesFromMap<std::string, InputAction>(m_actions.begin(), m_actions.end());
+		auto onlyCompoundKeys= ::Utils::GetValuesFromMap<std::string, CompoundInput>(m_compoundInputs.begin(), m_compoundInputs.end());
 
-		output += std::format(",Actions:{}", Utils::ToStringIterable(onlyActionKeys));
-		output += std::format(",CompooundActions:{}", Utils::ToStringIterable(onlyCompoundKeys));
+		output += std::format(",Actions:{}", ::Utils::ToStringIterable(onlyActionKeys));
+		output += std::format(",CompooundActions:{}", ::Utils::ToStringIterable(onlyCompoundKeys));
 		output += "}";
 		return output;
 	}

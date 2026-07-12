@@ -1,0 +1,11 @@
+#pragma once
+#include "Core/Asset/SpriteAnimationAsset.hpp"
+#include "Core/Asset/InputProfileAsset.hpp"
+#include "Core/Asset/FontAsset.hpp"
+#include "Core/Asset/MaterialAsset.hpp"
+#include "Core/Asset/Model3dAsset.hpp"
+#include "Core/Asset/ShaderAsset.hpp"
+#include "Core/Asset/SpriteAsset.hpp"
+#include "Core/Asset/TextureAsset.hpp"
+#include "Core/Asset/SceneAsset.hpp"
+#include "Core/Asset/TestAsset.hpp"

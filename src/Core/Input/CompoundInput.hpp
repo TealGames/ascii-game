@@ -7,8 +7,7 @@
 #include "Core/Input/InputAction.hpp"
 #include "Core/Input/InputDirection.hpp"
 
-
-namespace Input
+namespace Engine::Input
 {
 	using CompoundDirectionCollection = std::unordered_map<InputDirection, InputAction>;
 	class CompoundInput

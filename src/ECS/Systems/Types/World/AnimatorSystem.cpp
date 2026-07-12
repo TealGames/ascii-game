@@ -2,36 +2,36 @@
 #include <variant>
 #include <type_traits>
 #include "ECS/Systems/Types/World/AnimatorSystem.hpp"
-#include "ECS/Component/Types/World/AnimatorData.hpp"
+#include "ECS/Component/Types/World/AnimatorComponent.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-namespace ECS
+namespace Engine::Animation
 {
 	AnimatorSystem::AnimatorSystem() {}
 
-	void AnimatorSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+	void AnimatorSystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("AnimatorSystem::SystemUpdate");
 #endif 
 		if (deltaTime <= 0) return;
 
-		scene.OperateOnActiveComponents<AnimatorData>(
-			[this, &scene, &deltaTime](AnimatorData& data)-> void
+		scene.OperateOnActiveComponents<AnimatorComponent>(
+			[this, &scene, &deltaTime](AnimatorComponent& data)-> void
 			{
-				if (data.m_NormalizedTime >= data.GetTimeLength() && !data.GetDoLoop())
+				if (data.m_NormalizedTime >= data.GetDefaultTimeLength() && !data.GetDoLoop())
 					return;
 
 				data.m_NormalizedTime += deltaTime;
-				if (data.m_NormalizedTime >= data.GetTimeLength() && data.GetDoLoop())
+				if (data.m_NormalizedTime >= data.GetDefaultTimeLength() && data.GetDoLoop())
 				{
-					data.m_NormalizedTime -= data.GetTimeLength() * static_cast<int>(data.m_NormalizedTime / data.GetTimeLength());
+					data.m_NormalizedTime -= data.GetDefaultTimeLength() * static_cast<int>(data.m_NormalizedTime / data.GetDefaultTimeLength());
 				}
 
 				for (auto& property : data.m_Properties)
@@ -58,7 +58,7 @@ namespace ECS
 								std::optional<size_t> newIndex = TryGetKeyFrameAtTime<ExtractedType>(data, *maybeProperty, data.m_NormalizedTime);
 								if (!Assert(newIndex.has_value(), "Tried to get new key frame index with time: {} "
 									"and end time: {} on entity: {} but failed!", std::to_string(data.m_NormalizedTime),
-									std::to_string(data.GetTimeLength()), data.GetEntity().m_Name))
+									std::to_string(data.GetDefaultTimeLength()), data.GetEntity().m_Name))
 									return;
 
 								maybeProperty->m_KeyframeIndex = newIndex.value();

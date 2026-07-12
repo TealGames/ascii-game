@@ -2,8 +2,6 @@
 #include "ECS/Systems/Types/World/PhysicsBodySystem.hpp"
 #include "ECS/Component/Types/World/PhysicsBodyComponent.hpp"
 #include "Core/Physics/PhysicsWorld.hpp"
-#include "Core/PositionConversions.hpp"
-#include "Utils/HelperFunctions.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 
@@ -11,28 +9,28 @@
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-namespace ECS
+namespace Engine::Physics
 {
 	static constexpr bool DRAW_BODY_VELOCITY_VECTORS = true;
 
 	PhysicsBodySystem::PhysicsBodySystem(Physics::PhysicsManager& physicsManager) 
 		: m_physicsManager(physicsManager) //m_lineBuffer(),
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(PhysicsBodyComponent), 
-			ComponentInfo(CreateComponentTypes<CollisionBoxData>(), CreateRequiredComponentFunction(CollisionBoxData()),
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(PhysicsBodyComponent), 
+			ECS::ComponentInfo(ECS::CreateComponentTypes<CollisionBoxComponent>(), CreateRequiredComponentFunction(CollisionBoxComponent()),
 				[](EntityData& entity)-> void
 				{
 					PhysicsBodyComponent& body = *(entity.TryGetComponentMutable<PhysicsBodyComponent>());
 					//Note: since we allow assigning collider from physics body, we only set it if it was not set from constructor
 					if (body.m_collider == nullptr)
 					{
-						body.m_collider = entity.TryGetComponent<CollisionBoxData>();
+						body.m_collider = entity.TryGetComponent<CollisionBoxComponent>();
 						if (entity.m_Name == "player") LogError(std::format("Set player collider:{}", body.m_collider->ToString()));
 					}
 				}));
 	}
 
-	void PhysicsBodySystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+	void PhysicsBodySystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("PhysicsBodySystem::SystemUpdate");
@@ -53,7 +51,7 @@ namespace ECS
 			entity = &(body->GetEntityMutable());
 
 			float velocityMagnitude = body->GetVelocity().GetMagnitude();
-			/*if (DRAW_BODY_VELOCITY_VECTORS && !Utils::ApproximateEqualsF(velocityMagnitude, 0))
+			/*if (DRAW_BODY_VELOCITY_VECTORS && !::Math::ApproximateEqualsF(velocityMagnitude, 0))
 			{
 				m_lineBuffer.emplace_back(entity->GetTransformMutable().GetGlobalPos(),
 					GetVectorEndPoint(entity->GetTransformMutable().GetGlobalPos(), body->GetVelocity()));

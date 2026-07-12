@@ -4,215 +4,219 @@
 #include "Utils/Debug.hpp"
 #include "Utils/ToStringFunctions.hpp"
 
-template<typename T>
-using PoolCollection = std::vector<T>;
-
-/// <summary>
-/// Implements an object pool model where a contiguous pool of space is initialized and can not change after creation
-/// and can only update the active/used objects within that reserved space, maintaining compactness from index 0 to last used index
-/// where an object's place in the pool MAY change thus indices are not stable and can not be used consistently
-/// 
-/// INTERFACE:
-/// -> RESERVE: reserve the total capacity on initialization: capacity can NOT change after creation, all initial space is marked as UNUSED
-/// -> ADD O(1): add element to USED area at end as long as USED area < reserved space
-/// -> *REMOVE O(1): removes index from USED area and marks it as UNUSED where if index == m_usedEndIndex, then decrements used area
-///				     but if the index < m_usedEndIndex THEN SWAPPING OCCURS BETWEEN LAST USED INDEX OBJECT AND REMOVED OBJECT INDEX
-///					 to ensure compactness and O(1) add/remove operations
-///					 NOTE: objects are not destroyed and only counter is used to denote USED contiugous space
-/// -> ACCESS O(1): any element by index within area marked as "USED"
-/// 
-/// PRO:
-/// -> no extra allocations/no objects destroyed/objects reused
-/// -> contiguouity/compactness from index 0/easy linear iteration
-/// -> O(1) add, remove, access time complexity
-/// CON:
-/// -> no dynamic re-sizing
-/// -> object's index/position within pool may change to ensure compactness
-/// </summary>
-/// <typeparam name="T"></typeparam>
-template<typename T>
-class ObjectPool
+namespace Utils
 {
-private:
-	//TODO: this could probably be optimized (maybe with array since we know max size)?
-	PoolCollection<T> m_pool;
-	/// <summary>
-	/// Stores the index of the last USABLE element. -1 if there are no used elements 
-	/// (either because all are unused or there are no elements in the first place)
-	/// </summary>
-	size_t m_usedEndIndex;
-
-public:
-
-private:
-	T& GetAtUnsafe(const size_t& index)
-	{
-		return m_pool[index];
-	}
-
-public:
-	ObjectPool(const size_t& maxSize) : m_pool(), m_usedEndIndex(-1)
-	{ 
-		m_pool.reserve(maxSize);
-		//LogWarning(std::format("Pool at:{} had size reserved;{}", Utils::ToStringPointerAddress(this), m_pool.capacity()));
-	}
-	ObjectPool(const ObjectPool<T>& pool)
-	{
-		m_pool = pool.m_pool;
-		m_usedEndIndex = pool.m_usedEndIndex;
-		//Note: some implmenentations of vector copy may not update capacity which would
-		//ruin pool behavior
-		if (m_pool.capacity() != pool.m_pool.capacity())
-			m_pool.reserve(pool.m_pool.capacity());
-	}
-
-	bool TryReserveNewSize(const size_t& newSize)
-	{
-		if (!m_pool.empty())
-		{
-			LogError(std::format("Tried to reserve a new size for object pool:{} after initial construction "
-				"of size:{} but elements are already added so no new size can be set", std::to_string(newSize), 
-				std::to_string(GetMaxCapacity())));
-			return false;
-		}
-			
-		m_pool.reserve(newSize);
-		return true;
-	}
-
-	T* TryAdd(const T& element)
-	{
-		if (IsAtCapacity())
-		{
-			LogError(std::format("Tried to add a new object of type:{} to pool but pool at addr:{} "
-				"max capacity:{} has been reached", Utils::ToStringTypeName<T>(),
-				Utils::ToStringPointerAddress(this), std::to_string(GetMaxCapacity())));
-			return nullptr;
-		}
-			
-
-		T* result = nullptr;
-		if (HasUnusedAvailable())
-		{
-			//Since index is last USED, +1 is the next available
-			m_pool[m_usedEndIndex + 1] = element;
-			result = &(m_pool[m_usedEndIndex + 1]);
-		}
-		else
-		{
-			result = &(m_pool.emplace_back(element));
-		}
-		m_usedEndIndex++;
-		
-		return result;
-	}
-
-	T& GetAt(const size_t& index)
-	{
-		if (index > m_usedEndIndex)
-		{
-			LogError(std::format("Tried to get object at index:{} of pool but it is out of bounds of used space:[0,{}]",
-				std::to_string(index), std::to_string(m_usedEndIndex)));
-			throw std::invalid_argument("Invalid pool index");
-		}
-			
-		return GetAtUnsafe(index);
-	}
-
-	void SetUnused(const size_t& index)
-	{
-		if (m_usedEndIndex == -1 || 0 > index || index > m_usedEndIndex)
-		{
-			LogError(std::format("Tried to set object at index:{} of pool to unused "
-				"but it is out of bounds of used space:[0,{}]", std::to_string(index), std::to_string(m_usedEndIndex)));
-			throw std::invalid_argument("Invalid pool index");
-		}
-			
-		//If we want to set the last usavble index to unusable we do not need to swap
-		if (index != m_usedEndIndex)
-		{
-			T currentBackElement = m_pool[m_usedEndIndex];
-			m_pool[m_usedEndIndex] = m_pool[index];
-			m_pool[index] = currentBackElement;
-		}
-		
-		m_usedEndIndex--;
-	}
-
-	bool IsEmpty() const
-	{
-		return m_pool.empty();
-	}
+	template<typename T>
+	using PoolCollection = std::vector<T>;
 
 	/// <summary>
-	/// Gets the total amount of elements that can be stored. 
-	/// Set by the value during pool construction
+	/// Implements an object pool model where a contiguous pool of space is initialized and can not change after creation
+	/// and can only update the active/used objects within that reserved space, maintaining compactness from index 0 to last used index
+	/// where an object's place in the pool MAY change thus indices are not stable and can not be used consistently
+	/// 
+	/// INTERFACE:
+	/// -> RESERVE: reserve the total capacity on initialization: capacity can NOT change after creation, all initial space is marked as UNUSED
+	/// -> ADD O(1): add element to USED area at end as long as USED area < reserved space
+	/// -> *REMOVE O(1): removes index from USED area and marks it as UNUSED where if index == m_usedEndIndex, then decrements used area
+	///				     but if the index < m_usedEndIndex THEN SWAPPING OCCURS BETWEEN LAST USED INDEX OBJECT AND REMOVED OBJECT INDEX
+	///					 to ensure compactness and O(1) add/remove operations
+	///					 NOTE: objects are not destroyed and only counter is used to denote USED contiugous space
+	/// -> ACCESS O(1): any element by index within area marked as "USED"
+	/// 
+	/// PRO:
+	/// -> no extra allocations/no objects destroyed/objects reused
+	/// -> contiguouity/compactness from index 0/easy linear iteration
+	/// -> O(1) add, remove, access time complexity
+	/// CON:
+	/// -> no dynamic re-sizing
+	/// -> object's index/position within pool may change to ensure compactness
 	/// </summary>
-	/// <returns></returns>
-	size_t GetMaxCapacity() const
+	/// <typeparam name="T"></typeparam>
+	template<typename T>
+	class ObjectPool
 	{
-		return m_pool.capacity();
-	}
-	bool IsAtCapacity() const
-	{
-		return GetMaxCapacity() == m_pool.size();
-	}
-	/// <summary>
-	/// Gets ONLY THE SIZE FOR USED OBJECTS
-	/// This does not include objects that might have been added but have been marked 
-	/// as unused
-	/// </summary>
-	/// <returns></returns>
-	size_t GetUsedSize() const
-	{
-		if (m_usedEndIndex == -1) return 0;
-		return m_usedEndIndex + 1;
-	}
-	/// <summary>
-	/// Gets the total objects stored (both in use and those reserved if more added)
-	/// </summary>
-	/// <returns></returns>
-	size_t GetObjectsStored() const
-	{
-		return m_pool.size();
-	}
+	private:
+		//TODO: this could probably be optimized (maybe with array since we know max size)?
+		PoolCollection<T> m_pool;
+		/// <summary>
+		/// Stores the index of the last USABLE element. -1 if there are no used elements 
+		/// (either because all are unused or there are no elements in the first place)
+		/// </summary>
+		size_t m_usedEndIndex;
 
-	/// <summary>
-	/// Return true if there are any elements not being used that can be set
-	/// </summary>
-	/// <returns></returns>
-	bool HasUnusedAvailable() const
-	{
-		if (m_usedEndIndex == -1) return m_pool.size() > 0;
-		return m_usedEndIndex < m_pool.size() - 1;
-	}
+	public:
 
-	/// <summary>
-	/// Gets the index of the last usable element in the pool.
-	/// All unused objects are stored at the end, so 
-	/// total objects stored - unused objects -1 = this value
-	/// </summary>
-	/// <returns></returns>
-	size_t GetLastUsableIndex() const
-	{
-		return m_usedEndIndex;
-	}
-
-	void ExecuteOnAvailable(const std::function<void(T& element, const size_t& index)>& func)
-	{
-		//If none of the elements are availabe we return
-		//Assert(false, std::format("Unused index:{} max:{}", std::to_string(m_usedEndIndex), std::to_string(size_t(-1))));
-		if (m_usedEndIndex == -1) return;
-
-		size_t i = m_usedEndIndex;
-		const size_t maxSize = -1;
-		//Assert(false, std::format("Excecute with i:{} size:{}", std::to_string(i), std::to_string(m_pool.size())));
-		while (i >= 0 && i!=maxSize)
+	private:
+		T& GetAtUnsafe(const size_t& index)
 		{
-			//LogError(std::format("I is:{}", std::to_string(i)));
-			func(GetAtUnsafe(i), i);
-			i--;
+			return m_pool[index];
 		}
-	}
-};
+
+	public:
+		ObjectPool(const size_t& maxSize) : m_pool(), m_usedEndIndex(-1)
+		{
+			m_pool.reserve(maxSize);
+			//LogWarning(std::format("Pool at:{} had size reserved;{}", ::Utils::ToStringPointerAddress(this), m_pool.capacity()));
+		}
+		ObjectPool(const ObjectPool<T>& pool)
+		{
+			m_pool = pool.m_pool;
+			m_usedEndIndex = pool.m_usedEndIndex;
+			//Note: some implmenentations of vector copy may not update capacity which would
+			//ruin pool behavior
+			if (m_pool.capacity() != pool.m_pool.capacity())
+				m_pool.reserve(pool.m_pool.capacity());
+		}
+
+		bool TryReserveNewSize(const size_t& newSize)
+		{
+			if (!m_pool.empty())
+			{
+				LogError(std::format("Tried to reserve a new size for object pool:{} after initial construction "
+					"of size:{} but elements are already added so no new size can be set", std::to_string(newSize),
+					std::to_string(GetMaxCapacity())));
+				return false;
+			}
+
+			m_pool.reserve(newSize);
+			return true;
+		}
+
+		T* TryAdd(const T& element)
+		{
+			if (IsAtCapacity())
+			{
+				LogError(std::format("Tried to add a new object of type:{} to pool but pool at addr:{} "
+					"max capacity:{} has been reached", ::Utils::ToStringTypeName<T>(),
+					Utils::ToStringPointerAddress(this), std::to_string(GetMaxCapacity())));
+				return nullptr;
+			}
+
+
+			T* result = nullptr;
+			if (HasUnusedAvailable())
+			{
+				//Since index is last USED, +1 is the next available
+				m_pool[m_usedEndIndex + 1] = element;
+				result = &(m_pool[m_usedEndIndex + 1]);
+			}
+			else
+			{
+				result = &(m_pool.emplace_back(element));
+			}
+			m_usedEndIndex++;
+
+			return result;
+		}
+
+		T& GetAt(const size_t& index)
+		{
+			if (index > m_usedEndIndex)
+			{
+				LogError(std::format("Tried to get object at index:{} of pool but it is out of bounds of used space:[0,{}]",
+					std::to_string(index), std::to_string(m_usedEndIndex)));
+				throw std::invalid_argument("Invalid pool index");
+			}
+
+			return GetAtUnsafe(index);
+		}
+
+		void SetUnused(const size_t& index)
+		{
+			if (m_usedEndIndex == -1 || 0 > index || index > m_usedEndIndex)
+			{
+				LogError(std::format("Tried to set object at index:{} of pool to unused "
+					"but it is out of bounds of used space:[0,{}]", std::to_string(index), std::to_string(m_usedEndIndex)));
+				throw std::invalid_argument("Invalid pool index");
+			}
+
+			//If we want to set the last usavble index to unusable we do not need to swap
+			if (index != m_usedEndIndex)
+			{
+				T currentBackElement = m_pool[m_usedEndIndex];
+				m_pool[m_usedEndIndex] = m_pool[index];
+				m_pool[index] = currentBackElement;
+			}
+
+			m_usedEndIndex--;
+		}
+
+		bool IsEmpty() const
+		{
+			return m_pool.empty();
+		}
+
+		/// <summary>
+		/// Gets the total amount of elements that can be stored. 
+		/// Set by the value during pool construction
+		/// </summary>
+		/// <returns></returns>
+		size_t GetMaxCapacity() const
+		{
+			return m_pool.capacity();
+		}
+		bool IsAtCapacity() const
+		{
+			return GetMaxCapacity() == m_pool.size();
+		}
+		/// <summary>
+		/// Gets ONLY THE SIZE FOR USED OBJECTS
+		/// This does not include objects that might have been added but have been marked 
+		/// as unused
+		/// </summary>
+		/// <returns></returns>
+		size_t GetUsedSize() const
+		{
+			if (m_usedEndIndex == -1) return 0;
+			return m_usedEndIndex + 1;
+		}
+		/// <summary>
+		/// Gets the total objects stored (both in use and those reserved if more added)
+		/// </summary>
+		/// <returns></returns>
+		size_t GetObjectsStored() const
+		{
+			return m_pool.size();
+		}
+
+		/// <summary>
+		/// Return true if there are any elements not being used that can be set
+		/// </summary>
+		/// <returns></returns>
+		bool HasUnusedAvailable() const
+		{
+			if (m_usedEndIndex == -1) return m_pool.size() > 0;
+			return m_usedEndIndex < m_pool.size() - 1;
+		}
+
+		/// <summary>
+		/// Gets the index of the last usable element in the pool.
+		/// All unused objects are stored at the end, so 
+		/// total objects stored - unused objects -1 = this value
+		/// </summary>
+		/// <returns></returns>
+		size_t GetLastUsableIndex() const
+		{
+			return m_usedEndIndex;
+		}
+
+		void ExecuteOnAvailable(const std::function<void(T& element, const size_t& index)>& func)
+		{
+			//If none of the elements are availabe we return
+			//Assert(false, std::format("Unused index:{} max:{}", std::to_string(m_usedEndIndex), std::to_string(size_t(-1))));
+			if (m_usedEndIndex == -1) return;
+
+			size_t i = m_usedEndIndex;
+			const size_t maxSize = -1;
+			//Assert(false, std::format("Excecute with i:{} size:{}", std::to_string(i), std::to_string(m_pool.size())));
+			while (i >= 0 && i != maxSize)
+			{
+				//LogError(std::format("I is:{}", std::to_string(i)));
+				func(GetAtUnsafe(i), i);
+				i--;
+			}
+		}
+	};
+}
+
 

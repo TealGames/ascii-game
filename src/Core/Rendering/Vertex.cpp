@@ -1,6 +1,6 @@
 #include "Core/Rendering/Vertex.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
     Vertex::Vertex() : Vertex({}, {}, {}) {}
     Vertex::Vertex(const WorldPosition3D& localPos, const UV& uvPos, const Vec3& normal) :
@@ -23,7 +23,7 @@ namespace Rendering
     Instance::Instance(const std::uint32_t materialIndex, const std::uint32_t meshIndex, const Mat4& modelMatrix, const Mat3& normalMatrix)
         : m_MaterialIndex(materialIndex), m_MeshIndex(meshIndex), m_ModelMatrix(modelMatrix), 
           //NOTE: we use the utility function rather than Inverse() directly on Matrix since it is optimized for model matrices
-          m_InverseModelMatrix(Utils::CalculateInverseModelMatrix(m_ModelMatrix)),
+          m_InverseModelMatrix(Math::CalculateInverseModelMatrix(m_ModelMatrix)),
           m_NormalModelMatrix(normalMatrix), _padding{} {}
 
     std::string Instance::ToString() const
@@ -42,7 +42,7 @@ namespace Rendering
         m_LocalRectPos(pos), m_UVPos(uv) {}
 
     InstanceUI::InstanceUI() : InstanceUI(COLOR_WHITE, -1, 0, {}) {}
-    InstanceUI::InstanceUI(const HDRColor& color, int textureIndex, const float depth, const Mat3& modelMatrix)
+    InstanceUI::InstanceUI(const ColHDR4& color, int textureIndex, const float depth, const Mat3& modelMatrix)
         : m_Color(color), m_TextureIndex(textureIndex), m_Depth(depth), m_ModelMatrix(modelMatrix) {}
     std::string InstanceUI::ToString() const
     {

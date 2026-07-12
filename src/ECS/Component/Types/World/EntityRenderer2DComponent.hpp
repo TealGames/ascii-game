@@ -1,38 +1,38 @@
 #pragma once
 #include <vector>
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include "Core/Rendering/RenderLayer.hpp"
 #include "ECS/Component/Component.hpp"
 #include "Core/Visual/VisualData.hpp"
 
-class EntityRenderer2DComponent : public Component
+namespace Engine::Rendering
 {
-private:
-	//Stores every entity's visual from top row to bottom row
-	//TODO: the enttiy render data should store the layer it should render at, but not the buffer itself
-	RenderLayerType m_renderLayers;
+	class EntityRenderer2DComponent : public ECS::Component
+	{
+	private:
+		//Stores every entity's visual from top row to bottom row
+		//TODO: the enttiy render data should store the layer it should render at, but not the buffer itself
+		RenderLayerType m_renderLayers;
 
-public:
-	VisualData m_VisualData;
-	//std::vector<TextCharArrayPosition> m_LastFrameVisualData;
-	
-public:
-	EntityRenderer2DComponent();
-	EntityRenderer2DComponent(const Json& json);
-	EntityRenderer2DComponent(const VisualData& visualData, const RenderLayerType& renderLayers);
+	public:
+		VisualData m_VisualData;
+		//std::vector<TextCharArrayPosition> m_LastFrameVisualData;
 
-	RenderLayerType GetRenderLayers() const;
-	//Vec2Int GetVisualSize() const;
-	const VisualData& GetVisualData() const;
+	public:
+		EntityRenderer2DComponent();
+		EntityRenderer2DComponent(const VisualData& visualData, const RenderLayerType& renderLayers);
 
-	//void SetVisualDataDeltas(const VisualDataPositions& positions);
-	void OverrideVisualData(const VisualData& newVisual);
+		RenderLayerType GetRenderLayers() const;
+		//Vec2Int GetVisualSize() const;
+		const VisualData& GetVisualData() const;
 
-	//std::vector<std::string> GetDependencyFlags() const override;
-	void InitFields() override;
+		//void SetVisualDataDeltas(const VisualDataPositions& positions);
+		void OverrideVisualData(const VisualData& newVisual);
 
-	std::string ToString() const override;
-
-	void Deserialize(const Json& json) override;
-	Json Serialize() override;
-};
+		//std::vector<std::string> GetDependencyFlags() const override;
+		void InitFields() override;
+		void Serialize(Serialization::Serializer& serializer) const override;
+		void Deserialize(Serialization::Deserializer& deserializer) override;
+		std::string ToString() const override;
+	};
+}

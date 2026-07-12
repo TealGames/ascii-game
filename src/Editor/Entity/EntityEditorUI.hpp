@@ -3,43 +3,44 @@
 #include "Editor/Entity/EntityUI.hpp"
 #include "Core/Input/InputManager.hpp"
 
-class UIHierarchy;
-class CameraComponent;
-class CameraController;
-class PopupUIManager;
-namespace AssetManagement { class AssetManager; };
 
-//using EntityGUICollection = std::unordered_map<std::string, EntityGUI>;
-class EntityEditorUI
+namespace Engine::UI { class PopupUIManager; class UIHierarchy;}
+namespace Engine::Camera { class CameraComponent; class CameraController; }
+namespace Engine::Assets { class AssetManager; };
+namespace Engine::Editor::UI
 {
-private:
-	const Input::InputManager* m_inputManager;
-	AssetManagement::AssetManager* m_assetManager;
-	PopupUIManager* m_popupManager;
-	UIHierarchy* m_guiTree;
+	namespace MainUI = Engine::UI;
+	class EntityEditorUI
+	{
+	private:
+		const Input::InputManager* m_inputManager;
+		Assets::AssetManager* m_assetManager;
+		MainUI::PopupUIManager* m_popupManager;
+		MainUI::UIHierarchy* m_guiTree;
 
-	/*EntityGUICollection m_entityGUIs;
-	EntityGUICollection::iterator m_selectedEntity;*/
-	EntityUI m_selectedEntityUI;
+		/*EntityGUICollection m_entityGUIs;
+		EntityGUICollection::iterator m_selectedEntity;*/
+		EntityUI m_selectedEntityUI;
+	public:
 
-public:
+	private:
+		const Input::InputManager& GetInputManagerSafe() const;
+		
+	public:
+		EntityEditorUI(const Input::InputManager& input, const Camera::CameraController& cameraController,
+			MainUI::UIHierarchy& hierarchy, MainUI::PopupUIManager& popupManager, Assets::AssetManager& assetManager);
+		~EntityEditorUI();
 
-private:
-	const Input::InputManager& GetInputManagerSafe() const;
+		void Init(ECS::EntityData& parent);
 
-public:
-	EntityEditorUI(const Input::InputManager& input, const CameraController& cameraController, 
-		UIHierarchy& hierarchy, PopupUIManager& popupManager, AssetManagement::AssetManager& assetManager);
-	~EntityEditorUI();
+		void SetEntityUI(ECS::EntityData& entity);
+		bool HasEntitySelected() const;
+		void CloseCurrentEntityGUI();
 
-	void Init(EntityData& parent);
+		void Update();
+		//void TryRender();
+		//RenderInfo Render(const RenderInfo& renderInfo) override;
+	};
+}
 
-	void SetEntityUI(EntityData& entity);
-	bool HasEntitySelected() const;
-	void CloseCurrentEntityGUI();
-
-	void Update();
-	//void TryRender();
-	//RenderInfo Render(const RenderInfo& renderInfo) override;
-};
 

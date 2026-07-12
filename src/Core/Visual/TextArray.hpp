@@ -2,127 +2,131 @@
 #include <vector>
 #include <string>
 //#include <array>
-#include "Utils/Data/Array2DPosition.hpp"
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Array2DPosition.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include "Core/Rendering/FontData.hpp"
-#include "Utils/Data/Color.hpp"
+#include "Core/Primitives/Color.hpp"
 
-//The character used for empty spaces and will NOT be rendered
-constexpr char EMPTY_CHAR_PLACEHOLDER = ' ';
-
-//TODO: optimization could be to group together similar colors
-//into one batch that contains the positions, different chars and color
-struct TextChar
+namespace Engine::Rendering
 {
-	HDRColor m_Color;
-	char m_Char[2];
+	//The character used for empty spaces and will NOT be rendered
+	constexpr char EMPTY_CHAR_PLACEHOLDER = ' ';
 
-	TextChar();
-	TextChar(const HDRColor& color, const char& textChar= EMPTY_CHAR_PLACEHOLDER);
-	TextChar(const TextChar&) = default;
+	//TODO: optimization could be to group together similar colors
+	//into one batch that contains the positions, different chars and color
+	struct TextChar
+	{
+		ColHDR4 m_Color;
+		char m_Char[2];
 
-	bool IsEmpty() const;
-	Vec2 GetWorldSize(const WorldFontProperties& font) const;
+		TextChar();
+		TextChar(const ColHDR4& color, const char& textChar = EMPTY_CHAR_PLACEHOLDER);
+		TextChar(const TextChar&) = default;
 
-	char GetChar() const;
-	void SetChar(const char& c);
+		bool IsEmpty() const;
+		Vec2 GetWorldSize(const WorldFontProperties& font) const;
 
-	bool operator==(const TextChar& other) const;
-	std::string ToString() const;
-};
+		char GetChar() const;
+		void SetChar(const char& c);
 
-std::string ToString(const std::vector<std::vector<TextChar>>& textChars);
+		bool operator==(const TextChar& other) const;
+		std::string ToString() const;
+	};
 
-struct TextCharArrayPosition
-{
-	Array2DPosition m_RowColPos;
-	TextChar m_Text;
+	std::string ToString(const std::vector<std::vector<TextChar>>& textChars);
 
-	TextCharArrayPosition();
-	TextCharArrayPosition(const Array2DPosition& pos, const TextChar& textChar);
-	TextCharArrayPosition(const TextCharArrayPosition&) = default;
+	struct TextCharArrayPosition
+	{
+		Array2DPosition m_RowColPos;
+		TextChar m_Text;
 
-	bool operator==(const TextCharArrayPosition& other) const;
-	TextCharArrayPosition& operator=(const TextCharArrayPosition& other);
-	std::string ToString() const;
-};
+		TextCharArrayPosition();
+		TextCharArrayPosition(const Array2DPosition& pos, const TextChar& textChar);
+		TextCharArrayPosition(const TextCharArrayPosition&) = default;
 
-struct ColorPosition
-{
-	Array2DPosition m_RowColPos;
-	HDRColor m_Color;
+		bool operator==(const TextCharArrayPosition& other) const;
+		TextCharArrayPosition& operator=(const TextCharArrayPosition& other);
+		std::string ToString() const;
+	};
 
-	bool operator==(const ColorPosition& other) const = default;
-	std::string ToString() const;
+	struct ColorPosition
+	{
+		Array2DPosition m_RowColPos;
+		ColHDR4 m_Color;
 
-	ColorPosition(const Array2DPosition& pos, const HDRColor& color);
-};
+		bool operator==(const ColorPosition& other) const = default;
+		std::string ToString() const;
 
-using TextArrayCollectionType = std::vector<std::vector<TextChar>>;
-class TextArray
-{
-private:
-	//TODO: since we have set width and height it should probably be 2d array to avoid
-	//unnecessarat heap allocations
-	TextArrayCollectionType m_TextArray;
-	int m_width;
-	int m_height;
+		ColorPosition(const Array2DPosition& pos, const ColHDR4& color);
+	};
 
-public:
+	using TextArrayCollectionType = std::vector<std::vector<TextChar>>;
+	class TextArray
+	{
+	private:
+		//TODO: since we have set width and height it should probably be 2d array to avoid
+		//unnecessarat heap allocations
+		TextArrayCollectionType m_TextArray;
+		int m_width;
+		int m_height;
 
-private:
-	std::vector<std::vector<TextChar>> CreateBufferOfChar(const int& width,
-		const int& height, const TextChar& duplicateBufferChar) const;
+	public:
 
-	std::vector<std::vector<TextChar>> CreateBufferOfChar(const HDRColor& color,
-		const std::vector<std::vector<char>>& chars) const;
+	private:
+		std::vector<std::vector<TextChar>> CreateBufferOfChar(const int& width,
+			const int& height, const TextChar& duplicateBufferChar) const;
 
-public:
-	TextArray();
-	TextArray(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars);
-	TextArray(const int& width, const int& height, const TextChar& duplicateBufferChar);
-	TextArray(const int& width, const int& height, const HDRColor& color, const std::vector<std::vector<char>>& chars);
-	TextArray(const TextArray& other);
-	TextArray(TextArray&& other) noexcept;
+		std::vector<std::vector<TextChar>> CreateBufferOfChar(const ColHDR4& color,
+			const std::vector<std::vector<char>>& chars) const;
 
-	int GetWidth() const;
-	int GetHeight() const;
-	Vec2Int GetSize() const;
+	public:
+		TextArray();
+		TextArray(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars);
+		TextArray(const int& width, const int& height, const TextChar& duplicateBufferChar);
+		TextArray(const int& width, const int& height, const ColHDR4& color, const std::vector<std::vector<char>>& chars);
+		TextArray(const TextArray& other);
+		TextArray(TextArray&& other) noexcept;
 
-	bool IsValidRow(const int& rowPos) const;
-	bool IsValidCol(const int& colPos) const;
-	bool IsValidPos(const Array2DPosition& rowColPos) const;
+		int GetWidth() const;
+		int GetHeight() const;
+		Vec2Int GetSize() const;
 
-	void SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar);
-	void SetAt(const Array2DPosition& rowColPos, const char& newChar);
-	void SetAt(const Array2DPosition& rowColPos, const HDRColor& newColor);
+		bool IsValidRow(const int& rowPos) const;
+		bool IsValidCol(const int& colPos) const;
+		bool IsValidPos(const Array2DPosition& rowColPos) const;
 
-	void SetAt(const std::vector<Array2DPosition>& rowColPos, const TextChar& newBufferChar);
-	void SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos);
-	void SetAt(const std::vector<ColorPosition>& updateColorsAtPos);
+		void SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar);
+		void SetAt(const Array2DPosition& rowColPos, const char& newChar);
+		void SetAt(const Array2DPosition& rowColPos, const ColHDR4& newColor);
 
-	/// <summary>
-	/// Will set the region from row col start pos with size [WIDTH, HEIGHT]
-	/// </summary>
-	/// <param name="rowColStartPos"></param>
-	/// <param name="size"></param>
-	/// <param name="chars"></param>
-	/// <returns></returns>
-	bool TrySetRegion(const Array2DPosition& rowColStartPos, const Vec2Int& size,
-		const std::vector<std::vector<TextChar>>& chars);
+		void SetAt(const std::vector<Array2DPosition>& rowColPos, const TextChar& newBufferChar);
+		void SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos);
+		void SetAt(const std::vector<ColorPosition>& updateColorsAtPos);
 
-	const TextChar* GetAt(const Array2DPosition& rowColPos) const;
-	const TextChar& GetAtUnsafe(const Array2DPosition& rowColPos) const;
-	const std::vector<TextChar>& GetAt(const int& rowPos) const;
-	std::string GetStringAt(const int& rowColPos) const;
+		/// <summary>
+		/// Will set the region from row col start pos with size [WIDTH, HEIGHT]
+		/// </summary>
+		/// <param name="rowColStartPos"></param>
+		/// <param name="size"></param>
+		/// <param name="chars"></param>
+		/// <returns></returns>
+		bool TrySetRegion(const Array2DPosition& rowColStartPos, const Vec2Int& size,
+			const std::vector<std::vector<TextChar>>& chars);
 
-	const TextArrayCollectionType& GetFull() const;
+		const TextChar* GetAt(const Array2DPosition& rowColPos) const;
+		const TextChar& GetAtUnsafe(const Array2DPosition& rowColPos) const;
+		const std::vector<TextChar>& GetAt(const int& rowPos) const;
+		std::string GetStringAt(const int& rowColPos) const;
 
-	static std::string ToString(const std::vector<std::vector<TextChar>>& buffer,
-		const bool convertChars = true);
-	std::string ToString(const bool convertChars = true) const;
+		const TextArrayCollectionType& GetFull() const;
 
-	TextArray& operator=(const TextArray& other);
-	TextArray& operator=(TextArray&& other) noexcept;
-};
+		static std::string ToString(const std::vector<std::vector<TextChar>>& buffer,
+			const bool convertChars = true);
+		std::string ToString(const bool convertChars = true) const;
+
+		TextArray& operator=(const TextArray& other);
+		TextArray& operator=(TextArray&& other) noexcept;
+	};
+}
+
 

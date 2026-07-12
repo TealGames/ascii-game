@@ -2,7 +2,7 @@
 #include <string>
 #include <cstdint>
 
-namespace Input
+namespace Engine::Input
 {
 	enum class KeyState : std::uint8_t
 	{

@@ -6,7 +6,7 @@
 #include "Platform/OpenGl/OpenGlShader.hpp"
 #endif
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	static constexpr const std::string_view VERSION_PREFIX = "#version";
 	static constexpr const std::string_view VERSION_HEADER = "#version 430 core\n";
@@ -434,7 +434,7 @@ namespace Rendering
 	std::string Shader::ToString() const
 	{
 		return std::format("[Shader Id:{} Source1:\n{}\nSource2:{}\nUnboundUniforms:{}\nUniformData:{}]", 
-			m_id, m_sourceCode[0], m_sourceCode[1], m_unboundBuffers, Utils::ToStringIterable(m_globalVarData));
+			m_id, m_sourceCode[0], m_sourceCode[1], m_unboundBuffers, ::Utils::ToStringIterable(m_globalVarData));
 	}
 
 	Shader& Shader::operator=(Shader&& other) noexcept

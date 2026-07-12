@@ -2,59 +2,67 @@
 #include <string>
 #include <string_view>
 #include <filesystem>
-#include "Core/Serialization/IJsonSerializable.hpp"
+#include "Core/ID.hpp"
 
-class Asset
+namespace Engine::Core { class EngineState; }
+namespace Engine::Assets
 {
-private:
-	std::string m_name;
-	std::filesystem::path m_absolutePath;
-	bool m_dependenciesSet;
+#define ASSET_EXTENSION_CHECK \
+ENGINE_ASSERT(::Utils::IO::DoesPathHaveExtension(path, EXTENSIONS), \
+	"Tried to create an asset from path:{} (extension:{})" \
+	"but it does not have required extensions:'{}'", path.string(), path.extension().string(), \
+	::Utils::ToStringArray(EXTENSIONS)); \
 
-public:
-	static constexpr char WORD_SEPARATOR = '_';
+	class Asset
+	{
+	private:
+		std::string m_name;
+		std::filesystem::path m_absolutePath;
 
-private:
-protected:
-	void MarkDependenciesSet();
-	/// <summary>
-	/// Overrides the default assetname generated from the asset file name to a custom one.
-	/// Note: this should rarely be used as it can mess with looking up asset by name.
-	/// </summary>
-	/// <param name="name"></param>
-	void OverrideAssetName(const std::string& name);
-	void OverrideAssetName(const std::string_view& name);
+	public:
+		static constexpr char WORD_SEPARATOR = '_';
 
-public:
-	Asset(const std::filesystem::path& path, const bool hasDependencies);
-	~Asset() = default;
+	private:
+	protected:
+		/// <summary>
+		/// Overrides the default assetname generated from the asset file name to a custom one.
+		/// Note: this should rarely be used as it can mess with looking up asset by name.
+		/// </summary>
+		/// <param name="name"></param>
+		void OverrideAssetName(const std::string& name);
+		void OverrideAssetName(const std::string_view& name);
 
-	static std::string ExtractNameFromFile(const std::filesystem::path& path);
+	public:
+		Asset(const std::filesystem::path& path);
+		~Asset() = default;
 
-	const std::string& GetName() const;
+		static std::string ExtractNameFromFile(const std::filesystem::path& path);
 
-	std::filesystem::path GetAbsolutePathCopy() const;
-	const std::filesystem::path& GetAbsolutePath() const;
-	bool AbsolutePathEndsWith(const std::filesystem::path& subPath);
-	bool AreDependenciesSet() const;
+		const std::string& GetName() const;
 
-	/// <summary>
-	/// Will update the asset contents to match the data found in the asset's corresponding file
-	/// </summary>
-	virtual void UpdateAssetFromFile() = 0;
+		std::filesystem::path GetAbsolutePathCopy() const;
+		const std::filesystem::path& GetAbsolutePath() const;
+		bool AbsolutePathEndsWith(const std::filesystem::path& subPath);
 
-	/// <summary>
-	/// Will write the data found in the asset to the corresponding file at the path
-	/// Note: by default this has no implementation because not all assets may be able
-	/// to be modified from the asset since some may just be wrappers
-	/// </summary>
-	/// <param name="path"></param>
-	virtual void SaveToPath(const std::filesystem::path& path);
-	void SaveToSelf();
+		virtual void SetDependencies(Core::EngineState& state);
 
-	virtual std::string ToString() const;
-};
+		/// <summary>
+		/// Will update the asset contents to match the data found in the asset's corresponding file
+		/// </summary>
+		virtual void UpdateAssetFromFile() = 0;
 
-template<typename T>
-concept IsAssetType = std::is_base_of_v<Asset, T>;
+		/// <summary>
+		/// Will write the data found in the asset to the corresponding file at the path
+		/// Note: by default this has no implementation because not all assets may be able
+		/// to be modified from the asset since some may just be wrappers
+		/// </summary>
+		/// <param name="path"></param>
+		virtual void SaveToPath(const std::filesystem::path& path);
+		void SaveToSelf();
 
+		virtual std::string ToString() const;
+	};
+
+	template<typename T>
+	concept IsAssetType = std::is_base_of_v<Asset, T>;
+}

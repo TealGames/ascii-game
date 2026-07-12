@@ -4,64 +4,67 @@
 #include "Utils/Debug.hpp"
 #include "Utils/ToStringFunctions.hpp"
 
-TimerResult::TimerResult() : TimerResult({}, {}, 0) {}
-
-TimerResult::TimerResult(const TimePointLowRes& startTime, const TimePointLowRes& endTime, const float& duration) :
-	m_StartLocalTime(startTime), m_EndLocalTime(endTime), m_Duration(duration)
+namespace Engine::Core
 {
-}
+	TimerResult::TimerResult() : TimerResult({}, {}, 0) {}
 
-std::string TimerResult::ToString() const
-{
-	return std::format("[Start:{} -> End:{} Duration: {}]", 
-		::ToString(m_StartLocalTime), 
-		::ToString(m_EndLocalTime), std::to_string(m_Duration));
-}
+	TimerResult::TimerResult(const TimePointLowRes& startTime, const TimePointLowRes& endTime, const float& duration) :
+		m_StartLocalTime(startTime), m_EndLocalTime(endTime), m_Duration(duration)
+	{
+	}
 
-std::string ToString(const LocalTime& time)
-{
-	return Utils::ToStringTime(time);
-	//return std::string(std::put_time(std::localtime(&time)));
+	std::string TimerResult::ToString() const
+	{
+		return std::format("[Start:{} -> End:{} Duration: {}]",
+			Core::ToString(m_StartLocalTime),
+			Core::ToString(m_EndLocalTime), std::to_string(m_Duration));
+	}
 
-	/*std::tm* now = std::localtime_s(&time);
-	std::cout << (now->tm_year + 1900) << '-'
-		<< (now->tm_mon + 1) << '-'
-		<< now->tm_mday
-		<< "\n";*/
-}
+	std::string ToString(const LocalTime& time)
+	{
+		return ::Utils::ToStringTime(time);
+		//return std::string(std::put_time(std::localtime(&time)));
 
-std::string ToString(const TimePointLowRes& time)
-{
-	return ::ToString(Utils::GetLocalTime(time));
-}
+		/*std::tm* now = std::localtime_s(&time);
+		std::cout << (now->tm_year + 1900) << '-'
+			<< (now->tm_mon + 1) << '-'
+			<< now->tm_mday
+			<< "\n";*/
+	}
 
-TimerBase::TimerBase() : m_isRunning(false), m_systemStartTime(), 
-m_systemEndTime(), m_startTimeHighRes(), m_endTimeHighRes() {}
+	std::string ToString(const TimePointLowRes& time)
+	{
+		return ToString(::Utils::GetLocalTime(time));
+	}
 
-TimerBase::~TimerBase()
-{
-	if (m_isRunning) Stop();
-}
+	TimerBase::TimerBase() : m_isRunning(false), m_systemStartTime(),
+		m_systemEndTime(), m_startTimeHighRes(), m_endTimeHighRes() {}
 
-void TimerBase::Start()
-{
-	if (!Assert(!m_isRunning, "Tried to START a timer while it is already running!")) 
-		return;
+	TimerBase::~TimerBase()
+	{
+		if (m_isRunning) Stop();
+	}
 
-	m_isRunning = true;
-	m_systemStartTime = std::chrono::system_clock::now();
-	m_startTimeHighRes = std::chrono::high_resolution_clock().now();
-}
+	void TimerBase::Start()
+	{
+		if (!Assert(!m_isRunning, "Tried to START a timer while it is already running!"))
+			return;
 
-TimerResult TimerBase::Stop()
-{
-	if (!Assert(m_isRunning, "Tried to STOP a timer while it is not running!"))
-		return {};
+		m_isRunning = true;
+		m_systemStartTime = std::chrono::system_clock::now();
+		m_startTimeHighRes = std::chrono::high_resolution_clock().now();
+	}
 
-	m_endTimeHighRes = std::chrono::high_resolution_clock().now();
-	m_systemEndTime= std::chrono::system_clock::now();
-	float duration = std::chrono::duration_cast<std::chrono::microseconds>(m_endTimeHighRes - m_startTimeHighRes).count();
+	TimerResult TimerBase::Stop()
+	{
+		if (!Assert(m_isRunning, "Tried to STOP a timer while it is not running!"))
+			return {};
 
-	m_isRunning = false;
-	return TimerResult{ m_systemStartTime, m_systemEndTime, duration };
+		m_endTimeHighRes = std::chrono::high_resolution_clock().now();
+		m_systemEndTime = std::chrono::system_clock::now();
+		float duration = std::chrono::duration_cast<std::chrono::microseconds>(m_endTimeHighRes - m_startTimeHighRes).count();
+
+		m_isRunning = false;
+		return TimerResult{ m_systemStartTime, m_systemEndTime, duration };
+	}
 }

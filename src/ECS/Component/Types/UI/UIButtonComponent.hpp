@@ -5,52 +5,51 @@
 #include "Utils/Data/CooldownEvent.hpp"
 #include "ECS/Component/Component.hpp"
 
-class UIButtonComponent;
-class UITextComponent;
-class UISelectableData;
-using ButtonAction = std::function<void(const UIButtonComponent&)>;
-namespace ECS { class UIButtonSystem; }
-
-class UIButtonComponent : public Component
+namespace Engine::UI
 {
-private:
-	//ButtonAction m_clickAction;
-	UIStyle m_settings;
-	UITextComponent* m_textGUI;
-	UISelectableData* m_selectable;
-public:
-	friend class ECS::UIButtonSystem;
+	class UIButtonComponent;
+	class UITextComponent;
+	class UISelectableComponent;
+	class UIButtonSystem;
 
-	static const char* DEFAULT_TEXT;
-	static constexpr float DEFAULT_COOLDOWN = 0;
+	using ButtonAction = std::function<void(const UIButtonComponent&)>;
+	class UIButtonComponent : public ECS::Component
+	{
+	private:
+		//ButtonAction m_clickAction;
+		UIStyle m_settings;
+		UITextComponent* m_textGUI;
+		UISelectableComponent* m_selectable;
+	public:
+		friend class UIButtonSystem;
 
-private:
-	UIButtonComponent(UISelectableData* selectable, UITextComponent* textComponent, 
-		const UIStyle& settings, const std::string& text, float cooldown);
-public:
-	UIButtonComponent();
-	UIButtonComponent(const UIStyle& settings);
-	UIButtonComponent(UISelectableData& selectable, UITextComponent& textComponent, 
-		const UIStyle& settings, const std::string& text= "", float clickCooldown = DEFAULT_COOLDOWN);
+		static const char* DEFAULT_TEXT;
+		static constexpr float DEFAULT_COOLDOWN = 0;
 
-	void AddClickAction(const ButtonAction& action);
-	void SetSettings(const UIStyle& settings);
+	private:
+		UIButtonComponent(UISelectableComponent* selectable, UITextComponent* textComponent,
+			const UIStyle& settings, const std::string& text, float cooldown);
+	public:
+		UIButtonComponent();
+		UIButtonComponent(const UIStyle& settings);
+		UIButtonComponent(UISelectableComponent& selectable, UITextComponent& textComponent,
+			const UIStyle& settings, const std::string& text = "", float clickCooldown = DEFAULT_COOLDOWN);
 
-	void SetText(const std::string& text);
-	const UITextComponent* GetTextUI() const;
+		void AddClickAction(const ButtonAction& action);
+		void SetSettings(const UIStyle& settings);
 
-	bool HasCooldown() const;
-	bool IsInCooldown() const;
-	void SetCooldownTime(float time);
+		void SetText(const std::string& text);
+		const UITextComponent* GetTextUI() const;
 
-	void Update(const float deltaTime);
+		bool HasCooldown() const;
+		bool IsInCooldown() const;
+		void SetCooldownTime(float time);
 
-	void InitFields() override;
-	std::string ToString() const override;
+		void Update(const float deltaTime);
 
-	void Deserialize(const Json& json) override;
-	Json Serialize() override;
-
-	//RenderInfo ElementRender(const RenderInfo& renderInfo) override;
-};
-
+		void InitFields() override;
+		void Serialize(Serialization::Serializer& serializer) const override;
+		void Deserialize(Serialization::Deserializer& deserializer) override;
+		std::string ToString() const override;
+	};
+}

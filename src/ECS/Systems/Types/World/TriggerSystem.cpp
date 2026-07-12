@@ -1,6 +1,6 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/TriggerSystem.hpp"
-#include "ECS/Component/Types/World/TriggerData.hpp"
+#include "ECS/Component/Types/World/TriggerComponent.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 
@@ -8,28 +8,28 @@
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-namespace ECS
+namespace Engine::World
 {
 	TriggerSystem::TriggerSystem() 
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(TriggerData),
-			ComponentInfo(CreateComponentTypes<CollisionBoxData>(), CreateRequiredComponentFunction(CollisionBoxData()),
-				[](EntityData& entity)-> void
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(TriggerComponent),
+			ECS::ComponentInfo(ECS::CreateComponentTypes<CollisionBoxComponent>(), CreateRequiredComponentFunction(CollisionBoxComponent()),
+				[](ECS::EntityData& entity)-> void
 				{
-					TriggerData& trigger = *(entity.TryGetComponentMutable<TriggerData>());
-					if (trigger.m_collider != nullptr) trigger.m_collider = entity.TryGetComponent<CollisionBoxData>();
+					TriggerComponent& trigger = *(entity.TryGetComponentMutable<TriggerComponent>());
+					if (trigger.m_collider != nullptr) trigger.m_collider = entity.TryGetComponent<CollisionBoxComponent>();
 					//fieldComponent.m_background = entity.TryGetComponentMutable<UIPanel>();
 				}));
 	}
 
-	void TriggerSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+	void TriggerSystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("TriggerSystem::SystemUpdate");
 #endif 
 
-		scene.OperateOnActiveComponents<TriggerData>(
-			[this, &scene, &deltaTime](TriggerData& data)-> void
+		scene.OperateOnActiveComponents<TriggerComponent>(
+			[this, &scene, &deltaTime](TriggerComponent& data)-> void
 			{
 				const auto& onEnterBodies = data.GetCollisionBox().GetCollisionEnterBoxes();
 				//LogError(std::format("Found enter bodies: {}", std::to_string(data.GetCollisionBox().GetAllCollisionBoxes().size())));

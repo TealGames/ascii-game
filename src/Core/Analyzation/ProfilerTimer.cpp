@@ -4,16 +4,20 @@
 #include "Core/Time/TimerBase.hpp"
 #include <string>
 
-Profiler ProfilerTimer::m_Profiler = Profiler();
-
-ProfilerTimer::ProfilerTimer(const std::string& processName) 
-	: m_processName(processName) 
+namespace Engine
 {
-	Start();
+	Profiler ProfilerTimer::m_Profiler = Profiler();
+
+	ProfilerTimer::ProfilerTimer(const std::string& processName)
+		: m_processName(processName)
+	{
+		Start();
+	}
+
+	ProfilerTimer::~ProfilerTimer()
+	{
+		Core::TimerResult result = Stop();
+		m_Profiler.SetCompletedProcess(m_processName, result.m_Duration);
+	}
 }
 
-ProfilerTimer::~ProfilerTimer()
-{
-	TimerResult result = Stop();
-	m_Profiler.SetCompletedProcess(m_processName, result.m_Duration);
-}

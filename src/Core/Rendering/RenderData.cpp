@@ -1,13 +1,13 @@
 #include "Core/Rendering/RenderData.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
     PointLightData::PointLightData() : PointLightData({}, {}, 0) {}
-    PointLightData::PointLightData(const WorldPosition3D& pos, const HDRColor& color, const float radius)
+    PointLightData::PointLightData(const WorldPosition3D& pos, const ColHDR4& color, const float radius)
         : m_Pos(pos), m_Color(color), m_Radius(radius), _padding0(0), _padding1{}, m_ShadowMapIndex(-1) {}
 
     DirectionalLightData::DirectionalLightData() : DirectionalLightData({}, {}) {}
-    DirectionalLightData::DirectionalLightData(const Vec3& dir, const HDRColor& color)
+    DirectionalLightData::DirectionalLightData(const Vec3& dir, const ColHDR4& color)
         : m_Direction(dir), m_Color(color), _padding0(0) {}
 
     MaterialData::MaterialData() : MaterialData(Material{}, INVALID_TEXTURE_INDEX) {}

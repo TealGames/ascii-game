@@ -3,7 +3,7 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Input/InputManager.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	CompoundInput::CompoundInput() : CompoundInput("") {}
 

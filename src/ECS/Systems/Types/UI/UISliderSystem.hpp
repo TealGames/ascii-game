@@ -1,16 +1,17 @@
 #pragma once
-#include "ECS/Component/Types/UI/UISliderComponent.hpp"
 
-namespace ECS
+namespace Engine::Input { class InputManager; }
+namespace Engine::UI
 {
 	class UISliderSystem
 	{
 	private:
+		const Input::InputManager* m_inputManager;
 	public:
 
 	private:
 	public:
-		UISliderSystem();
+		UISliderSystem(const Input::InputManager& inputManager);
 		void Init();
 	};
 }

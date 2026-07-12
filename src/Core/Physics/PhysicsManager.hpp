@@ -1,26 +1,24 @@
 #pragma once
 #include "Core/Physics/PhysicsWorld.hpp"
 
-namespace SceneManagement
+namespace Engine::Scenes { class SceneManager; }
+namespace Engine::Physics
 {
-	class SceneManager;
-};
-class CollisionRegistry;
+	using SceneManager = Engine::Scenes::SceneManager;
 
-namespace Physics
-{
+	class CollisionRegistry;
 	class PhysicsManager
 	{
 	private:
-		SceneManagement::SceneManager& m_sceneManager;
-		Physics::PhysicsWorld m_physics;
+		SceneManager& m_sceneManager;
+		PhysicsWorld m_physics;
 	public:
 
 	private:
 	public:
-		PhysicsManager(SceneManagement::SceneManager& sceneManager, CollisionRegistry& collisionRegistry);
+		PhysicsManager(SceneManager& sceneManager, CollisionRegistry& collisionRegistry);
 
-		const Physics::PhysicsWorld& GetPhysicsWorld() const;
-		Physics::PhysicsWorld& GetPhysicsWorldMutable();
+		const PhysicsWorld& GetPhysicsWorld() const;
+		PhysicsWorld& GetPhysicsWorldMutable();
 	};
 }

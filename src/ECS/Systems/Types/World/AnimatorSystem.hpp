@@ -1,12 +1,13 @@
 #pragma once
 #include <optional>
 #include <type_traits>
-#include "ECS/Component/Types/World/AnimatorData.hpp"
+#include "ECS/Component/Types/World/AnimatorComponent.hpp"
 #include "Utils/Debug.hpp"
 
-class Scene;
-class CameraComponent;
-namespace ECS
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Camera { class CameraComponent; }
+
+namespace Engine::Animation
 {
 	class AnimatorSystem
 	{
@@ -22,7 +23,7 @@ namespace ECS
 		}
 
 		template<typename T>
-		std::optional<size_t> TryGetKeyFrameAtTime(const AnimatorData& data, const AnimationProperty<T>& property, const float& time) const
+		std::optional<size_t> TryGetKeyFrameAtTime(const AnimatorComponent& data, const AnimationProperty<T>& property, const float& time) const
 		{
 			if (property.m_Keyframes.empty()) return std::nullopt;
 			if (property.m_Keyframes.size() == 1)
@@ -32,10 +33,10 @@ namespace ECS
 			}
 			float firstTime = property.m_Keyframes.front().GetTime();
 			if (time < firstTime) return std::nullopt;
-			if (Utils::ApproximateEqualsF(time, firstTime)) return 0;
+			if (::Math::ApproximateEqualsF(time, firstTime)) return 0;
 
-			if (time > data.GetTimeLength()) return std::nullopt;
-			if (Utils::ApproximateEqualsF(data.GetTimeLength(), firstTime)) return property.m_Keyframes.size() - 1;
+			if (time > data.GetDefaultTimeLength()) return std::nullopt;
+			if (::Math::ApproximateEqualsF(data.GetDefaultTimeLength(), firstTime)) return property.m_Keyframes.size() - 1;
 
 			int left = 1;
 			int right = property.m_Keyframes.size() - 1;
@@ -43,7 +44,7 @@ namespace ECS
 			while (left <= right && left >= 1 && right < property.m_Keyframes.size())
 			{
 				middle = (right - left) / 2 + left;
-				if (Utils::ApproximateEqualsF(property.m_Keyframes[middle].GetTime(), time))
+				if (::Math::ApproximateEqualsF(property.m_Keyframes[middle].GetTime(), time))
 					return middle;
 
 				if (middle != 0 && property.m_Keyframes[middle - 1].GetTime() <= time &&
@@ -81,7 +82,7 @@ namespace ECS
 
 	public:
 		AnimatorSystem();
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
+		void SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime);
 	};
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 #include <optional>
 #include <vector>
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include "ECS/Entity/Entity.hpp"
 #include "ECS/Component/Component.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
@@ -9,22 +9,20 @@
 #include "Core/Scene/SceneManager.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "ECS/Component/Types/World/CameraComponent.hpp"
-#include "Utils/Math/WorldPosition.hpp"
-#include "Utils/Math/ScreenPosition.hpp"
+#include "Core/Primitives/WorldPosition.hpp"
+#include "Core/Primitives/ScreenPosition.hpp"
 #include "Core/Visual/TextBuffer.hpp"
 #include "Core/Collision/ColliderOutlineBuffer.hpp"
 #include "Core/Rendering/LineBuffer.hpp"
 
-namespace Rendering { class Renderer; }
-namespace ECS
+namespace Engine::Rendering { class Renderer; }
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Camera
 {
 	class CameraSystem
 	{
 	private:
 		Rendering::Renderer* m_renderer;
-		//FragmentedTextBuffer m_currentFrameBuffer;
-		//ColliderOutlineBuffer* m_colliderOutlineBuffer;
-		//LineBuffer* m_lineBuffer;
 
 	public:
 
@@ -43,14 +41,8 @@ namespace ECS
 		/// <param name="followTarget">The object that that camera attempts to follow</param>
 		/// <param name="viewportSize">THe amount of text vewied in WIDTH, HEIGHT</param>
 		CameraSystem(Rendering::Renderer& renderer);
-		//Camera(Transform& transform, const Vec2Int& viewportSize);
 
 		void UpdateCameraPosition(CameraComponent& cameraData);
-
-		void SystemUpdate(Scene& scene, CameraComponent& component, const float& deltaTime);
-
-		/*const FragmentedTextBuffer& GetCurrentFrameBuffer() const;
-		const ColliderOutlineBuffer* GetCurrentColliderOutlineBuffer() const;
-		const LineBuffer* GetCurrentLineBuffer() const;*/
+		void SystemUpdate(Scenes::Scene& scene, CameraComponent& component, const float& deltaTime);
 	};
 }

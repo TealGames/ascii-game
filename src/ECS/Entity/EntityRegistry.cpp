@@ -1,9 +1,9 @@
 #include "pch.hpp"
 #include "ECS/Entity/EntityRegistry.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/World/TransformComponent.hpp"
 
-namespace ECS
+namespace Engine::ECS
 {
 	EntityRegistry::EntityRegistry() : m_registry() {}
 

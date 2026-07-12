@@ -5,31 +5,29 @@
 #include "Core/Rendering/RenderingBackend.hpp"
 #include "Utils/Debug.hpp"
 
-namespace Core
+namespace Engine::Core::Glfw
 {
-	namespace Glfw
+	inline static bool m_GlfwInit = false;
+
+	static void WindowSizeCallback(GLFWwindow* glfwWindow, int w, int h)
 	{
-		inline static bool m_GlfwInit = false;
+		//glViewport(0, 0, w, h);
+		Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
+		WindowViewportRect viewportRect = window->CalculateViewportRect(w, h);
+		Rendering::Backend::SetViewport(viewportRect.m_StartPos.m_X, viewportRect.m_StartPos.m_Y, viewportRect.m_Size.m_X, viewportRect.m_Size.m_Y);
+	}
 
-		static void WindowSizeCallback(GLFWwindow* glfwWindow, int w, int h)
-		{
-			//glViewport(0, 0, w, h);
-			Window* window = static_cast<Window*>(glfwGetWindowUserPointer(glfwWindow));
-			WindowViewportRect viewportRect = window->CalculateViewportRect(w, h);
-			Rendering::Backend::SetViewport(viewportRect.m_StartPos.m_X, viewportRect.m_StartPos.m_Y, viewportRect.m_Size.m_X, viewportRect.m_Size.m_Y);
-		}
-
-		Window CreateWindow (const WindowId id, const int width, const int height, const Vec2Int aspectRatioCosntraint, const char* windowName,
-			const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback, const CloseCallback& closeCallback)
-		{
-			return Window(id, width, height, aspectRatioCosntraint, windowName, WindowPlatformCallbacks
+	Window CreateWindow(const WindowId id, const int width, const int height, const Vec2Int aspectRatioCosntraint, const char* windowName,
+		const UpdateCallbackType updateCallback, const InputEventCallbackType& inputCallback, const CloseCallback& closeCallback)
+	{
+		return Window(id, width, height, aspectRatioCosntraint, windowName, WindowPlatformCallbacks
+			{
+				//Init
+				[](Window& window, const int width, const int height, const char* windowName) -> bool
 				{
-					//Init
-					[](Window& window, const int width, const int height, const char* windowName) -> bool
-					{
-						glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-						glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-						glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+					glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+					glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+					glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #ifdef _DEBUG
 						glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
 #endif
@@ -107,7 +105,7 @@ namespace Core
 									return;
 
 								Input::KeyCode code = static_cast<Input::KeyCode>(key);
-								
+
 								//65 to 90 are the letter keys for glfw
 								/*if (key >= GLFW_KEY_A && key <= GLFW_KEY_Z) key += (int)Input::KeyCode::A - GLFW_KEY_A;
 								else if (key >= GLFW_KEY_F1 && key <= GLFW_KEY_F25) key += (int)Input::KeyCode::F1 - GLFW_KEY_F1;
@@ -128,86 +126,85 @@ namespace Core
 
 						return true;
 					},
-				//Update func
-				[](Window& window) -> void
-				{
-					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
-					glfwSwapBuffers(glfwWindow);
-					glfwPollEvents();
-				},
-				//Resize func
-				[](Window& window, const int width, const int height) -> void
-				{
-					GLFWwindow* glfwWIndow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
-					if (window.GetSize() == Vec2Int(width, height)) WindowSizeCallback(glfwWIndow, width, height);
-					else glfwSetWindowSize(glfwWIndow, width, height);
-				},
-				//Set vsync func
-				[](Window& window, const bool vsyncEnabled) -> void
-				{
-					if (vsyncEnabled) glfwSwapInterval(1);
-					else glfwSwapInterval(0);
-				},
-				//Set cursor mdoe func
-				[](Window& window, const WindowCursorMode mode) -> void
-				{
-					int cursorMode = 0;
-					if (mode == WindowCursorMode::Normal) cursorMode = GLFW_CURSOR_NORMAL;
-					else if (mode == WindowCursorMode::Hidden) cursorMode = GLFW_CURSOR_HIDDEN;
-					else if (mode == WindowCursorMode::Disabled) cursorMode = GLFW_CURSOR_DISABLED;
+			//Update func
+			[](Window& window) -> void
+			{
+				GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+				glfwSwapBuffers(glfwWindow);
+				glfwPollEvents();
+			},
+			//Resize func
+			[](Window& window, const int width, const int height) -> void
+			{
+				GLFWwindow* glfwWIndow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+				if (window.GetSize() == Vec2Int(width, height)) WindowSizeCallback(glfwWIndow, width, height);
+				else glfwSetWindowSize(glfwWIndow, width, height);
+			},
+			//Set vsync func
+			[](Window& window, const bool vsyncEnabled) -> void
+			{
+				if (vsyncEnabled) glfwSwapInterval(1);
+				else glfwSwapInterval(0);
+			},
+			//Set cursor mdoe func
+			[](Window& window, const WindowCursorMode mode) -> void
+			{
+				int cursorMode = 0;
+				if (mode == WindowCursorMode::Normal) cursorMode = GLFW_CURSOR_NORMAL;
+				else if (mode == WindowCursorMode::Hidden) cursorMode = GLFW_CURSOR_HIDDEN;
+				else if (mode == WindowCursorMode::Disabled) cursorMode = GLFW_CURSOR_DISABLED;
 
-					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
-					glfwSetInputMode(glfwWindow, GLFW_CURSOR, cursorMode);
-				},
-				//IsActive
-				[](Window& window)-> bool
+				GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+				glfwSetInputMode(glfwWindow, GLFW_CURSOR, cursorMode);
+			},
+			//IsActive
+			[](Window& window)-> bool
+			{
+				GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+				return !glfwWindowShouldClose(glfwWindow);
+			},
+			//Has attribute
+			[](Window& window, const WindowAttribute attribute)-> bool
+			{
+				GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+				int attributeValue = 0;
+				if (attribute == WindowAttribute::Focused) attributeValue = GLFW_FOCUSED;
+				else if (attribute == WindowAttribute::Minimized) attributeValue = GLFW_ICONIFIED;
+				else if (attribute == WindowAttribute::Maximized) attributeValue = GLFW_MAXIMIZED;
+				else if (attribute == WindowAttribute::Visible) attributeValue = GLFW_VISIBLE;
+				else if (attribute == WindowAttribute::Hovered) attributeValue = GLFW_HOVERED;
+				else if (attribute == WindowAttribute::Floating) attributeValue = GLFW_FLOATING;
+				else if (attribute == WindowAttribute::Resizable) attributeValue = GLFW_RESIZABLE;
+				else
 				{
-					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
-					return !glfwWindowShouldClose(glfwWindow);
-				},
-				//Has attribute
-				[](Window& window, const WindowAttribute attribute)-> bool
-				{
-					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
-					int attributeValue = 0;
-					if (attribute == WindowAttribute::Focused) attributeValue = GLFW_FOCUSED;
-					else if (attribute==WindowAttribute::Minimized) attributeValue = GLFW_ICONIFIED;
-					else if (attribute==WindowAttribute::Maximized) attributeValue = GLFW_MAXIMIZED;
-					else if (attribute==WindowAttribute::Visible) attributeValue = GLFW_VISIBLE;
-					else if (attribute==WindowAttribute::Hovered) attributeValue = GLFW_HOVERED;
-					else if (attribute==WindowAttribute::Floating) attributeValue = GLFW_FLOATING;
-					else if (attribute==WindowAttribute::Resizable) attributeValue = GLFW_RESIZABLE;
-					else
-					{
-						LogError(std::format("Attempted to check window attribute but it has no actions"));
-						return false;
-					}
-
-					return glfwGetWindowAttrib(glfwWindow, attributeValue);
-				},
-				
-				//Shutdown
-				[](Window& window, const bool isLastWindow)-> void
-				{
-					GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
-					if (glfwWindow != nullptr)
-					{
-						glfwDestroyWindow(glfwWindow);
-						window.SetNativeState(nullptr);
-					}
-					if (isLastWindow) glfwTerminate();
+					LogError(std::format("Attempted to check window attribute but it has no actions"));
+					return false;
 				}
-				}, updateCallback, inputCallback, closeCallback);
-		}
 
-		void SetCurrentContextWindow(Window& window)
-		{
-			GLFWwindow* targetGlfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
-			if (glfwGetCurrentContext() == targetGlfwWindow)
-				return;
+				return glfwGetWindowAttrib(glfwWindow, attributeValue);
+			},
 
-			glfwMakeContextCurrent(targetGlfwWindow);
-		}
+			//Shutdown
+			[](Window& window, const bool isLastWindow)-> void
+			{
+				GLFWwindow* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+				if (glfwWindow != nullptr)
+				{
+					glfwDestroyWindow(glfwWindow);
+					window.SetNativeState(nullptr);
+				}
+				if (isLastWindow) glfwTerminate();
+			}
+			}, updateCallback, inputCallback, closeCallback);
+	}
+
+	void SetCurrentContextWindow(Window& window)
+	{
+		GLFWwindow* targetGlfwWindow = static_cast<GLFWwindow*>(window.GetNativeStateMutable());
+		if (glfwGetCurrentContext() == targetGlfwWindow)
+			return;
+
+		glfwMakeContextCurrent(targetGlfwWindow);
 	}
 }
 #endif

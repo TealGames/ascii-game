@@ -6,7 +6,7 @@
 #include "Core/Scene/Scene.hpp"
 #include "Utils/HelperFunctions.hpp"
 
-namespace SceneManagement
+namespace Engine::Scenes
 {
 	const std::filesystem::path SceneManager::SCENES_FOLDER = "scenes";
 
@@ -23,9 +23,9 @@ namespace SceneManagement
 	//which can be helpful for testing
 	static const std::filesystem::path SCENE_DIFFERENT_SAVE_PATH = "";
 
-	SceneManager::SceneManager(EngineState& state) :
-		m_engineState(&state), m_allScenes{}, m_activeSceneAsset(nullptr), m_GlobalEntityManager(),
-		m_OnLoad(), m_OnSceneChange()
+	SceneManager::SceneManager(Assets::AssetManager& assetManager) :
+		m_assetManager(&assetManager), m_allScenes{}, m_activeSceneAsset(nullptr), m_GlobalEntityManager(),
+		m_OnSceneAssetLoad(), m_OnActiveSceneChange()
 		/*m_globalEntities{}, m_globalEntitiesLookup{}, m_globalEntityMapper()*/
 	{
 		
@@ -37,21 +37,23 @@ namespace SceneManagement
 
 	void SceneManager::SaveCurrentScene()
 	{
-		if (m_activeSceneAsset == nullptr || !DO_SCENE_SAVING) return;
+		if (m_activeSceneAsset == nullptr || !DO_SCENE_SAVING) 
+			return;
 
 		if (!SCENE_DIFFERENT_SAVE_PATH.empty())
 			m_activeSceneAsset->SaveToPath(SCENE_DIFFERENT_SAVE_PATH);
-		else if (IO::IsFileEmpty(m_activeSceneAsset->GetAbsolutePath()))
+		else if (::Utils::IO::IsFileEmpty(m_activeSceneAsset->GetAbsolutePath()))
 			m_activeSceneAsset->SaveToSelf();
 		else
 			m_activeSceneAsset->SaveToPath(m_activeSceneAsset->GetAbsolutePathCopy()+=" COPY");
 	}
 
-	void SceneManager::LoadAllScenes()
+	void SceneManager::LoadAllSceneAssets()
 	{
-		if (!LOAD_SCENES_FROM_ASSETS) return;
+		if (!LOAD_SCENES_FROM_ASSETS) 
+			return;
 
-		auto sceneAssets = m_engineState->m_AssetManager->GetAssetsOfTypeMutable<SceneAsset>(SCENES_FOLDER);
+		auto sceneAssets = m_assetManager->GetAssetsOfTypeMutable<SceneAsset>(SCENES_FOLDER);
 		if (sceneAssets.size() <= 0)
 		{
 			LogError(std::format("Tried to load all scenes in scene manager "
@@ -62,12 +64,6 @@ namespace SceneManagement
 		//Note: by this point the asset should be valid and can be used in any way that we like
 		for (auto& sceneAsset : sceneAssets)
 		{
-			//fileName = file.path().filename().string();
-			//if (!file.is_regular_file() || fileName.size() < Scene::SCENE_FILE_PREFIX.size()) continue;
-			//if (fileName.substr(0, Scene::SCENE_FILE_PREFIX.size()) != Scene::SCENE_FILE_PREFIX) continue;
-
-			//const Scene scene = Scene();
-
 			m_allScenes.push_back(sceneAsset);
 		}
 
@@ -76,46 +72,9 @@ namespace SceneManagement
 		for (auto& scene : m_allScenes)
 		{
 			scene->UpdateAssetFromFile();
-			m_OnLoad.Invoke(&(scene->GetSceneMutable()));
-			SceneCreator::OnSceneLoad(scene->GetSceneMutable(), *m_engineState);
+			m_OnSceneAssetLoad.Invoke(&(scene->GetSceneMutable()));
 			//Log(std::format("Loaded scene: {}", scene->GetName()));
 		}
-		//LogError("Finsihed scene manager");
-
-		/*		std::string fileName = "";
-		try
-		{
-			for (const auto& file : std::filesystem::directory_iterator(m_allScenePath))
-			{
-				fileName = file.path().filename().string();
-				if (!file.is_regular_file() || fileName.size() < Scene::SCENE_FILE_PREFIX.size()) continue;
-				if (fileName.substr(0, Scene::SCENE_FILE_PREFIX.size()) != Scene::SCENE_FILE_PREFIX) continue;
-
-				//const Scene scene = Scene();
-				
-				m_allScenes.emplace_back(file.path());
-				m_allScenes.back()->GetSceneMutable().SetGlobalEntityManager(m_GlobalEntityManager);
-				//LogError(std::format("Added scene:{}", m_allScenes.back().GetName()));
-				//Log(std::format("Adding scene to scene manager constricutor: {}", scene.ToStringLayers()));
-			}
-
-			//We first want to make sure all scenes are found, then we load the data from the json at their respective path
-			//NOTE: this is mainly to ensure that we can access all scenes when we are loading any scene (even if it has no data)
-			//since there may be some scenes that have dependencies
-		
-			for (auto& scene : m_allScenes)
-			{
-				scene->Load();
-				m_OnLoad.Invoke(&(scene.GetSceneMutable()));
-				Log(std::format("Loaded scene: {}", scene.GetName()));
-			}
-		}
-		catch (const std::exception& e)
-		{
-			Assert(false, std::format("Tried to get all scenes at path: {} "
-				"but ran into error: {}", m_allScenePath.string(), e.what()));
-		}
-		*/
 	}
 
 	int SceneManager::GetSceneCount() const
@@ -168,6 +127,9 @@ namespace SceneManagement
 
 	void SceneManager::SetActiveScene(SceneAsset& activeSceneAsset)
 	{
+		if (m_activeSceneAsset == &activeSceneAsset)
+			return;
+
 		//TODO: this should unload the old active scene and then load the new one
 		//to allow for better memory usage and not having all of scenes loaded at once
 		//if (m_activeScene != nullptr) m_activeScene->Unload();
@@ -177,10 +139,9 @@ namespace SceneManagement
 		m_activeSceneAsset = &activeSceneAsset;
 		Scene& activeScene = m_activeSceneAsset->GetSceneMutable();
 
-		m_OnSceneChange.Invoke(&activeScene);
+		m_OnActiveSceneChange.Invoke(&activeScene);
 
 		activeScene.Start();
-		SceneCreator::OnSceneStart(activeScene, *m_engineState);
 		//Log(std::format("Set active scene to; {}", activeScene->ToStringLayers()));
 	}
 
@@ -236,14 +197,14 @@ namespace SceneManagement
 		return &(m_activeSceneAsset->GetSceneMutable());
 	}
 
-	const EntityData* SceneManager::TryGetEntity(const std::string& sceneName, const std::string& entityName) const
+	const ECS::EntityData* SceneManager::TryGetEntity(const std::string& sceneName, const std::string& entityName) const
 	{
 		const Scene* maybeScene = TryGetScene(sceneName);
 		if (maybeScene == nullptr) return nullptr;
 
 		return maybeScene->TryGetEntity(entityName);
 	}
-	EntityData* SceneManager::TryGetEntityMutable(const std::string& sceneName, const std::string& entityName)
+	ECS::EntityData* SceneManager::TryGetEntityMutable(const std::string& sceneName, const std::string& entityName)
 	{
 		Scene* maybeScene = TryGetSceneMutable(sceneName);
 		if (maybeScene == nullptr) return nullptr;

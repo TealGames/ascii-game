@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ECS
+namespace Engine::ECS
 {
 	class EntitySystem
 	{

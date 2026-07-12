@@ -1,8 +1,8 @@
 #pragma once
 
-class Scene;
-class CameraComponent;
-namespace ECS
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Camera { class CameraComponent; }
+namespace Engine::World
 {
 	class TriggerSystem
 	{
@@ -13,7 +13,7 @@ namespace ECS
 	public:
 		TriggerSystem();
 
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
+		void SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime);
 	};
 }
 

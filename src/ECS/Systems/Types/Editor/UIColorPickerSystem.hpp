@@ -1,18 +1,19 @@
 #pragma once
-#include "ECS/Component/Types/Editor/UIColorPicker.hpp"
 
-class PopupUIManager;
-namespace ECS
+namespace Engine::UI { class PopupUIManager; }
+namespace Engine::Editor::UI
 {
+	namespace UI = Engine::UI;
+
 	class UIColorPickerSystem
 	{
 	private:
-		PopupUIManager* m_popupManager;
+		UI::PopupUIManager* m_popupManager;
 	public:
 
 	private:
 	public:
-		UIColorPickerSystem(PopupUIManager& popupManager);
+		UIColorPickerSystem(UI::PopupUIManager& popupManager);
 		void Init();
 	};
 }

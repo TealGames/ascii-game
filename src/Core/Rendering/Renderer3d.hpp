@@ -2,19 +2,13 @@
 #include "Core/Rendering/RenderUnit.hpp"
 #include "Core/Rendering/TextureController.hpp"
 #include "ECS/Component/Types/World/PointLight3DComponent.hpp"
-#include "Utils/Math/Quaternion.hpp"
+#include "Math/Quaternion.hpp"
 #include "Core/Rendering/Model3d.hpp"
 #include "Core/Rendering/Raytracer.hpp"
 #include <cstdint>
 
-class EngineState;
-class UIHierarchy;
-class DebugInfo;
-class CommandConsole;
-class EntityEditorUI;
-class CameraPrecalculatedData;
-
-namespace Rendering
+namespace Engine::Core { class EngineState; }
+namespace Engine::Rendering
 {
     enum class RaytraceMode : std::uint8_t
     {
@@ -24,7 +18,7 @@ namespace Rendering
 
     struct ExtraPointLightData
     {
-        Quat m_GlobalRot = {};
+        Math::Quat m_GlobalRot = {};
     };
 
     struct BlockData
@@ -120,7 +114,7 @@ namespace Rendering
         std::array<RenderPassData, TOTAL_PASS_TYPES> m_renderPassData;
         RenderPassType m_currentPass;
 
-        const EngineState* m_engineState;
+        const Core::EngineState* m_engineState;
         GraphicsManager* m_graphicsManager;
         std::array<Shader*, CORE_SHADER_COUNT> m_coreShaders;
 
@@ -154,7 +148,7 @@ namespace Rendering
         //The io texture is used for scenarios when we need a secondary texture
         //for input and/or output to prevent writing/reading of same texture
         Texture m_ioTexture;
-        Texture m_hdrColorOutput;
+        Texture m_ColHDR4Output;
         Texture m_brightnessOutput;
         Texture m_texRaytraceAccum0;
         Texture m_texRaytraceAccum1;
@@ -192,12 +186,12 @@ namespace Rendering
         void FinishGeometryBatch(RenderBatch& batch, const BVHTriangleTree* blasTree);
         RenderBatch* TryGetSameGeometryDrawBatch(const Shader& shader, const Material& material, std::uint32_t vertexCount);
         void AddGeometryCompleteInstanceToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
-        Instance& AddGeometryInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
+        Instance* TryAddGeometryInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material);
         void AddGeometryInstanceMeshBoundsData(const std::uint32_t& instanceIndex);
 
         RenderBatch& CreateUIBatch(Shader& shader, Texture* texture, const VertexUI* vertexArray, const size_t vertexSize,
-            const IndexType* indexArray, const size_t indexSize, const HDRColor& color, const float depth, const Mat3& modelMatrix);
-        InstanceUI& AddUIInstanceDataToBatch(RenderBatch& batch, const HDRColor& color, Texture* texture, const float depth, const Mat3& modelMatrix);
+            const IndexType* indexArray, const size_t indexSize, const ColHDR4& color, const float depth, const Mat3& modelMatrix);
+        InstanceUI* TryAddUIInstanceDataToBatch(RenderBatch& batch, const ColHDR4& color, Texture* texture, const float depth, const Mat3& modelMatrix);
         RenderBatch* TryGetSameUIDrawBatch(const Shader& shader, const Texture* texture, std::uint32_t vertexCount);
 
         MaterialData* CreateRuntimeMaterial(const Material& material);
@@ -284,25 +278,25 @@ namespace Rendering
             std::array<Mat4, 6>& outViewMatrices, Mat4& outProjMatrix);
 
     public:
-        Renderer(const EngineState& engineState);
+        Renderer(const Core::EngineState & engineState);
         void Init();
         bool WasInit() const;
 
         void InitCoreShaders();
         
-        bool IntersectsBVH(Ray3D ray, const Vertex* outHitVertex);
+        bool IntersectsBVH(Math::Ray3D ray, const Vertex* outHitVertex);
         bool IsValidBVH();
         void AddBVHTreeBoundsWireframe();
 
         void AddCallBox3D(Material* material, const Mat4& modelMatrix);
         void AddCallSphere3D(Material* material, const Mat4& modelMatrix);
-        void AddCallSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation);
+        void AddCallSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Math::Quat& rotation);
         void AddCallTextureSphere3D(Material* material, const Mat4& modelMatrix);
-        void AddCallTextureSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation);
+        void AddCallTextureSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Math::Quat& rotation);
 
         void AddCallTextureBox3D(Material* material, const Mat4& modelMatrix);
         void AddCallPlane3D(Material* material, const Mat4& modelMatrix, const Vec2& textureRepeats = Vec2::One());
-        void AddCallRect2D(const HDRColor& color, Texture* texture, const float depth, const Mat3& modelMatrix);
+        void AddCallRect2D(const ColHDR4& color, Texture* texture, const float depth, const Mat3& modelMatrix);
         //void AddCallText(const WorldPosition3D& topLeftPos, const Font& font, const char* text, const float size, const float spacing, const Color color);
 
         void AddCallModel(Model3d& model, const Mat4& modelMatrix);
@@ -311,13 +305,13 @@ namespace Rendering
         //void AddLineCall(const WorldPosition3D& startPos, const float thickness, const Vec2& length, const Color color);
         //void AddRectangleLineCall(const WorldPosition3D& topLeftPos, const float thickness, const Vec2& size, const Color color);
 
-        void AddCallPointLight(const WorldPosition3D& worldPos, const Quat& rotation, const float radius, const HDRColor& color);
-        void SetDirectionalLight(const Vec3& dir, const HDRColor& color);
+        void AddCallPointLight(const WorldPosition3D& worldPos, const Math::Quat& rotation, const float radius, const ColHDR4& color);
+        void SetDirectionalLight(const Vec3& dir, const ColHDR4& color);
         void ClearDirectionalLight();
 
         //void AddCallPoints(PrimitiveType primitiveType, const WorldPosition3D* positions, const size_t& size);
-        void AddCallAABBWifreframe(const Mat4& modelMatrix, const HDRColor& color, const float lineThickness);
-        void AddCallAABBWifreframe(const AABB3D& aabb, const Quat& rotation, const HDRColor& color, const float lineThickness);
+        void AddCallAABBWifreframe(const Mat4& modelMatrix, const ColHDR4& color, const float lineThickness);
+        void AddCallAABBWifreframe(const AABB3D& aabb, const Math::Quat& rotation, const ColHDR4& color, const float lineThickness);
 
         void RenderBuffer();
 

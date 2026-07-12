@@ -2,7 +2,7 @@
 #include "Core/Input/InputKey.hpp"
 #include "Utils/Debug.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	std::string ToString(const DeviceType& device)
 	{

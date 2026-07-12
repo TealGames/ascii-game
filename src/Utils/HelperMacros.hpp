@@ -129,3 +129,5 @@ template<typename T>                                                            
 concept NAME = requires(T t) {                                                                          \
     { std::invoke(t __VA_OPT__(, std::declval<__VA_ARGS__>())) } -> std::convertible_to<RETURN_TYPE>;   \
 };
+
+#define ARR_SIZE(ARR_NAME) sizeof(ARR_NAME) / sizeof(ARR_NAME[0])

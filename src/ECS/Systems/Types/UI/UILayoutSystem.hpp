@@ -1,8 +1,7 @@
 #pragma once
-#include "ECS/Component/Types/UI/UILayoutComponent.hpp"
 
-class GlobalEntityManager;
-namespace ECS
+namespace Engine::Scenes { class GlobalEntityManager; }
+namespace Engine::UI
 {
 	class UILayoutSystem
 	{
@@ -12,7 +11,7 @@ namespace ECS
 	private:
 	public:
 		UILayoutSystem();
-		void SystemUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime);
+		void SystemUpdate(Scenes::GlobalEntityManager& globalEntityManager, const float& deltaTime);
 	};
 }
 

@@ -3,7 +3,7 @@
 #include "Utils/Debug.hpp"
 #include "StringUtil.hpp"
 
-namespace IO
+namespace Utils::IO
 {
 	std::filesystem::path CleanPath(const std::filesystem::path& path)
 	{
@@ -22,6 +22,16 @@ namespace IO
 		//if (!std::filesystem::exists(path)) return false;
 		//LogError(std::format("Comaping extension:{} and {}", path.extension().string(), extension.extension().string()));
 		return path.extension() == extension.extension();
+	}
+	bool DoesPathHaveExtension(const std::filesystem::path& path, const std::string_view extensions[], const size_t extensionCount)
+	{
+		const std::filesystem::path pathExtension = path.extension();
+		for (int i=0; i< extensionCount; i++)
+		{
+			if (pathExtension == extensions[i])
+				return true;
+		}
+		return false;
 	}
 
 	bool DoesDirectoryContainDirectory(const std::filesystem::path& parent, const std::filesystem::path& child)

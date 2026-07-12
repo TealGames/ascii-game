@@ -9,11 +9,11 @@
 #include "Core/Rendering/Texture.hpp"
 #include "Core/Rendering/Shader/Shader.hpp"
 #include "Core/Rendering/Vertex.hpp"
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include "Core/Rendering/GpuFence.hpp"
 #include "Utils/Debug.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	struct RenderBufferPlatformCallbacks
 	{

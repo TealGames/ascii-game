@@ -1,8 +1,8 @@
 #pragma once
 #include <string>
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	class Font
 	{

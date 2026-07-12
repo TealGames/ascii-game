@@ -25,7 +25,7 @@ inline bool check_testsuite_downloaded()
 
 TEST_CASE("check test suite is downloaded")
 {
-    REQUIRE_MESSAGE(utils::check_testsuite_downloaded(), "Test data not found in '" TEST_DATA_DIRECTORY "'. Please execute target 'download_test_data' before running this test suite. See <https://github.com/nlohmann/json#execute-unit-tests> for more information.");
+    REQUIRE_MESSAGE(::Utils::check_testsuite_downloaded(), "Test data not found in '" TEST_DATA_DIRECTORY "'. Please execute target 'download_test_data' before running this test suite. See <https://github.com/nlohmann/json#execute-unit-tests> for more information.");
 }
 
 }  // namespace utils

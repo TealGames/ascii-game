@@ -5,28 +5,32 @@
 #include <cstdint>
 #include <limits>
 
-using PriorityType = std::uint8_t;
-class CameraController : public IValidateable
+namespace Engine::Camera
 {
-private:
-	std::multimap<PriorityType, CameraComponent*> m_priorityCameras;
-public:
-	static constexpr PriorityType MIN_PRIORITY = 0;
-	static constexpr PriorityType MAX_PRIORITY = std::numeric_limits<PriorityType>::max();
+	using PriorityType = std::uint8_t;
+	class CameraController : public IValidateable
+	{
+	private:
+		std::multimap<PriorityType, CameraComponent*> m_priorityCameras;
+	public:
+		static constexpr PriorityType MIN_PRIORITY = 0;
+		static constexpr PriorityType MAX_PRIORITY = std::numeric_limits<PriorityType>::max();
 
-private:
-public:
-	CameraController();
+	private:
+	public:
+		CameraController();
 
-	bool Validate() override;
+		bool Validate() override;
 
-	bool TryRegisterCamera(CameraComponent& camera, const PriorityType& priority= MIN_PRIORITY);
-	void UpdateActiveCamera();
+		bool TryRegisterCamera(CameraComponent& camera, const PriorityType& priority = MIN_PRIORITY);
+		void UpdateActiveCamera();
 
-	CameraComponent& GetActiveCameraMutable();
-	const CameraComponent& GetActiveCamera() const;
+		CameraComponent& GetActiveCameraMutable();
+		const CameraComponent& GetActiveCamera() const;
 
-	bool TrySetCameraPriority(const CameraComponent& camera, const PriorityType& priority);
-	bool TrySetCurrentCamera(const CameraComponent& camera);
-};
+		bool TrySetCameraPriority(const CameraComponent& camera, const PriorityType& priority);
+		bool TrySetCurrentCamera(const CameraComponent& camera);
+	};
+}
+
 

@@ -1,12 +1,6 @@
-//NOT USED
 #include "pch.hpp"
 
 #include "Core/Engine.hpp"
-//#include "raylib.h"
-#include "Utils/ToStringFunctions.hpp"
-#include "Utils/TemplateConcepts.hpp"
-#include "Utils/Debug.hpp"
-#include "Utils/DataStructure/BVH.hpp"
 
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
 #define _CRTDBG_MAP_ALLOC
@@ -16,64 +10,10 @@
 
 int main() 
 {
-
 #ifdef ENABLE_MEMORY_LEAK_DETECTION
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
-    //std::optional<float> maybeFloat = TryConvertPromptArgToType<float>("0");
-    //Log(std::format("Maybe float val: {}", std::to_string(maybeFloat.value() + 1)));
-    //throw std::invalid_argument("");
 
-  /* PreservedMap<std::string, bool> map = {};
-    auto p1= map.Insert("fart", true);
-    LogError(std::format("P1:{}", p1.first.ToString()));
-    auto p2= map.Insert("shit", false);
-    LogError(std::format("P2:{}", p2.first.ToString()));
-    auto p3= map.Insert("piss", true);
-    LogError(std::format("P3:{}", p3.first.ToString()));
-    auto p4= map.Insert("poop", false);
-    LogError(std::format("P4:{}", p4.first.ToString()));
-    map.Insert("yeah", true);
-    map.Insert("hi", true);
-    map.Insert("tide", true);
-    map.Insert("dick", true);
-    map.Insert("sack", true);
-    LogError(std::format("Values:{}", map.ToString()));
-    LogError(std::format("Hello: {}", std::to_string(map.FindMutable("shit").GetValue())));
-    return 0;*/
-
-    /*
-    std::unordered_map<std::string, bool> map2 = {};
-    map2.emplace("fart", true);
-    map2.emplace("shit", false);
-    map2.emplace("piss", true);
-    map2.emplace("poop", false);
-    map2.emplace("yeah", true);
-    map2.emplace("hi", true);
-    map2.emplace("tide", true);
-    map2.emplace("dick", true);
-    map2.emplace("sack", true);
-    for (auto it = map2.begin(); it != map2.end(); it++)
-    {
-        LogError(std::format("Found:{}", it->first));
-    }
-    */
-
-    /*std::unordered_map<char, int> test0 = { {'c', 5}, {'b', 2}, {'d', 8}};
-    std::vector<int> test1 = { 1, 2, 3};
-    std::unordered_map<char, std::vector<bool>> test2 = { {'a', {true, false, true}}, {'b', {false, false}}, {'c', {true, true}} };
-    LogError(std::format("ALL:{} {} {}", Utils::ToStringIterable(test0), Utils::ToStringIterable(test1), Utils::ToStringIterable(test2)));*/
-
-    /*std::vector<BVHFlatNode> nodes = {};
-    nodes.resize(3);
-    LogError(std::format("STRING: {}", Utils::ToStringIterable(nodes, true)));*/
-
-    /*using Info = Utils::ContainerTypeInfo<std::unordered_map<char, int>>;
-    LogWarning(std::format("Is hash:{}", Utils::IsHashType<int>));
-    LogError(std::format("Key:{} Value:{}", typeid(Info::ContainerTemplateType).name(), typeid(Info::ElementType).name()));*/
-    /*InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_NAME);
-        SetTargetFPS(TARGET_FPS);*/
-
-    Core::Engine engine;
+    Engine::Core::Engine engine;
     engine.BeginUpdateLoop();
 }

@@ -1,100 +1,103 @@
 #include "pch.hpp"
 #include "Core/UI/PopupUIManager.hpp"
-#include "Core/PositionConversions.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UITransformComponent.hpp"
 
-PopupGUIInfo::PopupGUIInfo(PopupUI& gui)
-	: m_UI(&gui) {}
-
-bool PopupGUIInfo::IsEnabled() const
+namespace Engine::UI
 {
-	return m_UI->m_Container->GetEntityMutable().IsEntityActive();
-}
-void PopupGUIInfo::Enable()
-{
-	m_UI->m_Container->GetEntityMutable().TryActivateEntity();
-}
-void PopupGUIInfo::Disable()
-{
-	m_UI->m_Container->GetEntityMutable().DeactivateEntity();
-}
+	PopupGUIInfo::PopupGUIInfo(PopupUI& gui)
+		: m_UI(&gui) {}
 
-PopupUIManager::PopupUIManager(UIHierarchy& hierarchy)
-	: m_popupContainer(nullptr), m_hierarchy(&hierarchy), m_popups(), m_OnPopupOpened(), m_OnPopupClosed()
-{
-	
-}
-
-void PopupUIManager::Init()
-{
-	//m_rootSize = hierarchy.GetRootSize();
-	m_popupContainer = std::get<0>(m_hierarchy->CreateAtRoot(TOP_LAYER, "PopupContainer"));
-	//LogWarning(std::format("After adding popup gui manager:{}", m_hierarchy->ToStringTree()));
-}
-
-PopupUIManager::~PopupUIManager()
-{
-	//Assert(false, "DESTROUY");
-	if (m_popups.empty()) return;
-	for (auto& popup : m_popups)
-		delete popup.m_UI;
-
-	m_popups = {};
-}
-
-PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const NormalizedPos& topLeftPos)
-{
-	popupInfo.m_UI->m_Container->SetLocalTopLeftPos(topLeftPos);
-	popupInfo.Enable();
-
-	m_OnPopupOpened.Invoke(Utils::FormatTypeName(typeid(*popupInfo.m_UI).name()), popupInfo.m_UI);
-	return popupInfo.m_UI;
-}
-PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const UIRect& rect, const PopupPositionFlags flags)
-{
-	NormalizedPos topLeftPos = UI_RECT_TOP_LEFT;
-	if (Utils::HasFlagAny(flags, PopupPositionFlags::BelowRect))
-		topLeftPos = topLeftPos + NormalizedPos(0, rect.GetSize().m_Y);
-
-	//Then we get the x so it is centered to the rect's center
-	if (Utils::HasFlagAny(flags, PopupPositionFlags::CenteredXToRect))
+	bool PopupGUIInfo::IsEnabled() const
 	{
-		std::optional<UIRect> maybeRect = m_hierarchy->TryCalculateRenderRect(*(popupInfo.m_UI->m_Container));
-		if (maybeRect == std::nullopt)
-		{
-			LogError(std::format("Attemtped to open popup at (simple) but could not find its rect"));
-			return nullptr;
-		}
-
-		const NormalizedValue popupWidth = maybeRect.value().GetSize().m_X;
-		topLeftPos.m_X -= (popupWidth - rect.GetSize().m_X) / 2;
+		return m_UI->m_Container->GetEntityMutable().IsEntityActive();
 	}
-	return OpenPopupAtSimple(popupInfo, topLeftPos);
-}
-
-bool PopupUIManager::TryClosePopup(PopupGUIInfo& popupInfo)
-{
-	if (!popupInfo.IsEnabled()) return false;
-	popupInfo.Disable();
-	m_OnPopupClosed.Invoke(Utils::FormatTypeName(typeid(*popupInfo.m_UI).name()), popupInfo.m_UI);
-	return true;
-}
-
-//TODO: since we init after adding popup order creation matters so priority from popups can be removed
-void PopupUIManager::AddPopup(PopupUI* popup)
-{
-	PopupGUIInfo& info= m_popups.emplace_back(PopupGUIInfo(*popup));
-	auto [containerEntity, containerTransform] = m_popupContainer->CreateChildUI(std::format("{}Container", Utils::FormatTypeName(typeid(*popup).name())));
-	info.m_UI->CreatePopup(*containerTransform);
-	info.Disable();
-	//emplaced.first->second.m_GUI->Init();
-}
- 
-void PopupUIManager::CloseAllPopups()
-{
-	for (auto& popupInfo : m_popups)
+	void PopupGUIInfo::Enable()
 	{
-		if (popupInfo.IsEnabled())
-			TryClosePopup(popupInfo);
+		m_UI->m_Container->GetEntityMutable().TryActivateEntity();
+	}
+	void PopupGUIInfo::Disable()
+	{
+		m_UI->m_Container->GetEntityMutable().DeactivateEntity();
+	}
+
+	PopupUIManager::PopupUIManager(UIHierarchy& hierarchy)
+		: m_popupContainer(nullptr), m_hierarchy(&hierarchy), m_popups(), m_OnPopupOpened(), m_OnPopupClosed()
+	{
+
+	}
+
+	void PopupUIManager::Init()
+	{
+		//m_rootSize = hierarchy.GetRootSize();
+		m_popupContainer = std::get<0>(m_hierarchy->CreateAtRoot(TOP_LAYER, "PopupContainer"));
+		//LogWarning(std::format("After adding popup gui manager:{}", m_hierarchy->ToStringTree()));
+	}
+
+	PopupUIManager::~PopupUIManager()
+	{
+		//Assert(false, "DESTROUY");
+		if (m_popups.empty()) return;
+		for (auto& popup : m_popups)
+			delete popup.m_UI;
+
+		m_popups = {};
+	}
+
+	PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const NormalizedVec2& topLeftPos)
+	{
+		popupInfo.m_UI->m_Container->SetLocalTopLeftPos(topLeftPos);
+		popupInfo.Enable();
+
+		m_OnPopupOpened.Invoke(::Utils::FormatTypeName(typeid(*popupInfo.m_UI).name()), popupInfo.m_UI);
+		return popupInfo.m_UI;
+	}
+	PopupUI* PopupUIManager::OpenPopupAtSimple(PopupGUIInfo& popupInfo, const UIRect& rect, const PopupPositionFlags flags)
+	{
+		NormalizedVec2 topLeftPos = UI_RECT_TOP_LEFT;
+		if (::Utils::HasFlagAny(flags, PopupPositionFlags::BelowRect))
+			topLeftPos = topLeftPos + NormalizedVec2(0, rect.GetSize().m_Y);
+
+		//Then we get the x so it is centered to the rect's center
+		if (::Utils::HasFlagAny(flags, PopupPositionFlags::CenteredXToRect))
+		{
+			std::optional<UIRect> maybeRect = m_hierarchy->TryCalculateRenderRect(*(popupInfo.m_UI->m_Container));
+			if (maybeRect == std::nullopt)
+			{
+				LogError(std::format("Attemtped to open popup at (simple) but could not find its rect"));
+				return nullptr;
+			}
+
+			const NormalizedValue popupWidth = maybeRect.value().GetSize().m_X;
+			topLeftPos.m_X -= (popupWidth - rect.GetSize().m_X) / 2;
+		}
+		return OpenPopupAtSimple(popupInfo, topLeftPos);
+	}
+
+	bool PopupUIManager::TryClosePopup(PopupGUIInfo& popupInfo)
+	{
+		if (!popupInfo.IsEnabled()) return false;
+		popupInfo.Disable();
+		m_OnPopupClosed.Invoke(::Utils::FormatTypeName(typeid(*popupInfo.m_UI).name()), popupInfo.m_UI);
+		return true;
+	}
+
+	//TODO: since we init after adding popup order creation matters so priority from popups can be removed
+	void PopupUIManager::AddPopup(PopupUI* popup)
+	{
+		PopupGUIInfo& info = m_popups.emplace_back(PopupGUIInfo(*popup));
+		auto [containerEntity, containerTransform] = m_popupContainer->CreateChildUI(std::format("{}Container", ::Utils::FormatTypeName(typeid(*popup).name())));
+		info.m_UI->CreatePopup(*containerTransform);
+		info.Disable();
+		//emplaced.first->second.m_GUI->Init();
+	}
+
+	void PopupUIManager::CloseAllPopups()
+	{
+		for (auto& popupInfo : m_popups)
+		{
+			if (popupInfo.IsEnabled())
+				TryClosePopup(popupInfo);
+		}
 	}
 }

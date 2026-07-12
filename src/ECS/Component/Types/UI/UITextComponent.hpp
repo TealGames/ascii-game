@@ -3,134 +3,136 @@
 #include <string>
 #include "Core/Rendering/FontData.hpp"
 //#include "raylib.h"
-#include "Utils/Math/ScreenPosition.hpp"
+#include "Core/Primitives/ScreenPosition.hpp"
 #include "Core/UI/UIRect.hpp"
 #include "Core/UI/UITextStyle.hpp"
 
-class UIRendererData;
-class TextUIStyle;
-namespace ECS { class UITextSystem; }
-
-class UITextComponent : public Component
+namespace Engine::UI
 {
-private:
-	UIRendererData* m_renderer;
+	class UIRendererComponent;
+	class TextUIStyle;
+	class UITextSystem;
 
-	std::string m_text;
-	ScreenFontProperties m_fontData;
-	HDRColor m_color;
+	class UITextComponent : public ECS::Component
+	{
+	private:
+		UIRendererComponent* m_renderer;
 
-	/// <summary>
-	/// When is not -1, sets the font of this text 
-	/// based off of this factor and an area (the parent) provided
-	/// </summary>
-	float m_fontSizeFactor;
+		std::string m_text;
+		Rendering::ScreenFontProperties m_fontData;
+		ColHDR4 m_color;
 
-	/// <summary>
-	/// If true, will shrink font size to max possible within an area when font size is too big
-	/// to fit all of the text inside the given area during render update. 
-	/// Note: font size factors CAN be overriden if this is true
-	/// </summary>
-	bool m_fitToArea;
+		/// <summary>
+		/// When is not -1, sets the font of this text 
+		/// based off of this factor and an area (the parent) provided
+		/// </summary>
+		float m_fontSizeFactor;
 
-	/// <summary>
-	/// The alignment of the text within its render area given by render update
-	/// Note: since text takes up max space possible, we can easily then align
-	/// the text within that area since it usually will not take up max space
-	/// If it equals the max space, it will effectively not consider alignment
-	/// </summary>
-	TextAlignment m_alignment;
+		/// <summary>
+		/// If true, will shrink font size to max possible within an area when font size is too big
+		/// to fit all of the text inside the given area during render update. 
+		/// Note: font size factors CAN be overriden if this is true
+		/// </summary>
+		bool m_fitToArea;
 
-	UIPadding m_padding;
+		/// <summary>
+		/// The alignment of the text within its render area given by render update
+		/// Note: since text takes up max space possible, we can easily then align
+		/// the text within that area since it usually will not take up max space
+		/// If it equals the max space, it will effectively not consider alignment
+		/// </summary>
+		TextAlignment m_alignment;
 
-public:
-	friend class ECS::UITextSystem;
+		UIPadding m_padding;
 
-private:
-	/// <summary>
-	/// Will approximate the best font based on the area given. 
-	/// Note: giving a text size greatly improves the accuracy of the estimation
-	/// </summary>
-	/// <param name="parentArea"></param>
-	/// <param name="textSize"></param>
-	/// <returns></returns>
-	float GetFontSizeFromArea(const Vec2& parentArea, const int textSize= -1) const;
-	/// <summary>
-	/// Will find the best font size using the spacing and space requirements.
-	/// Note: sicne this is an iterative and slow process, starting sizes greatly help in reducing iterations
-	/// </summary>
-	/// <param name="space"></param>
-	/// <param name="spacing"></param>
-	/// <param name="startingSize"></param>
-	/// <returns></returns>
-	float CalculateMaxFontSizeForSpace(const Vec2& space, const float spacing, const float startingSize=0) const;
-	Vec2 CalculateSpaceUsed(const float& fontSize, const float& spacing) const;
+	public:
+		friend class UITextSystem;
 
-	/// <summary>
-	/// Calculates the top left pos based on the text area reserved and the alignment and padding values
-	/// </summary>
-	/// <param name="renderInfo"></param>
-	/// <param name="textRectArea"></param>
-	/// <returns></returns>
-	ScreenPosition CalculateTopLeftPos(const UIRect& renderInfo, const Vec2& fullTextArea) const;
+	private:
+		/// <summary>
+		/// Will approximate the best font based on the area given. 
+		/// Note: giving a text size greatly improves the accuracy of the estimation
+		/// </summary>
+		/// <param name="parentArea"></param>
+		/// <param name="textSize"></param>
+		/// <returns></returns>
+		float GetFontSizeFromArea(const Vec2& parentArea, const int textSize = -1) const;
+		/// <summary>
+		/// Will find the best font size using the spacing and space requirements.
+		/// Note: sicne this is an iterative and slow process, starting sizes greatly help in reducing iterations
+		/// </summary>
+		/// <param name="space"></param>
+		/// <param name="spacing"></param>
+		/// <param name="startingSize"></param>
+		/// <returns></returns>
+		float CalculateMaxFontSizeForSpace(const Vec2& space, const float spacing, const float startingSize = 0) const;
+		Vec2 CalculateSpaceUsed(const float& fontSize, const float& spacing) const;
 
-private:
-	UITextComponent(const std::string text, const ScreenFontProperties& font, const UIPadding& padding,
-		const TextAlignment& alignment, const HDRColor& color, const float& factor, const bool& fitToArea);
+		/// <summary>
+		/// Calculates the top left pos based on the text area reserved and the alignment and padding values
+		/// </summary>
+		/// <param name="renderInfo"></param>
+		/// <param name="textRectArea"></param>
+		/// <returns></returns>
+		ScreenPosition CalculateTopLeftPos(const UIRect& renderInfo, const Vec2& fullTextArea) const;
 
-public:
-	UITextComponent();
-	UITextComponent(const std::string text, const ScreenFontProperties& font, const HDRColor& color);
-	UITextComponent(const std::string& text, const TextUIStyle& settings);
+	private:
+		UITextComponent(const std::string text, const Rendering::ScreenFontProperties& font, const UIPadding& padding,
+			const TextAlignment& alignment, const ColHDR4& color, const float& factor, const bool& fitToArea);
 
-	void SetSettings(const TextUIStyle& settings);
+	public:
+		UITextComponent();
+		UITextComponent(const std::string text, const Rendering::ScreenFontProperties& font, const ColHDR4& color);
+		UITextComponent(const std::string& text, const TextUIStyle& settings);
 
-	void SetText(const std::string& text);
-	const std::string& GetText() const;
+		void SetSettings(const TextUIStyle& settings);
 
-	void SetFontSize(const float& size);
-	void SetTextColor(const HDRColor color);
-	/// <summary>
-	/// Sets the factor of the text relative to the parent area. 
-	/// Note: value is clamped to be positive
-	/// Note: if this is set at least once before render update, 
-	/// this behavior WILL override default font size behavior (even if that value was set)
-	/// </summary>
-	/// <param name="factor"></param>
-	void SetFontFactorSize(const float& factor);
-	/// <summary>
-	/// Removes any set font size factors set, allowing for default font size
-	/// behavior to occur instead of font size factor
-	/// </summary>
-	void ClearFontSizeFactor();
-	bool HasFontSizeFactor() const;
+		void SetText(const std::string& text);
+		const std::string& GetText() const;
 
-	/// <summary>
-	/// Returns the font size of the last render update of this text object
-	/// </summary>
-	/// <returns></returns>
-	float GetFontSize() const;
-	HDRColor GetFontColor() const;
+		void SetFontSize(const float& size);
+		void SetTextColor(const ColHDR4 color);
+		/// <summary>
+		/// Sets the factor of the text relative to the parent area. 
+		/// Note: value is clamped to be positive
+		/// Note: if this is set at least once before render update, 
+		/// this behavior WILL override default font size behavior (even if that value was set)
+		/// </summary>
+		/// <param name="factor"></param>
+		void SetFontFactorSize(const float& factor);
+		/// <summary>
+		/// Removes any set font size factors set, allowing for default font size
+		/// behavior to occur instead of font size factor
+		/// </summary>
+		void ClearFontSizeFactor();
+		bool HasFontSizeFactor() const;
 
-	bool DoFitToArea() const;
-	void SetFitToArea(const bool& fit);
+		/// <summary>
+		/// Returns the font size of the last render update of this text object
+		/// </summary>
+		/// <returns></returns>
+		float GetFontSize() const;
+		ColHDR4 GetFontColor() const;
 
-	void SetAlignment(const TextAlignment& alignment);
-	TextAlignment GetAlignment() const;
+		bool DoFitToArea() const;
+		void SetFitToArea(const bool& fit);
 
-	void SetPaddingTop(const float& padding);
-	void SetPaddingBottom(const float& padding);
-	void SetPaddingRight(const float& padding);
-	void SetPaddingLeft(const float& padding);
-	void SetPadding(const UIPadding& padding);
+		void SetAlignment(const TextAlignment& alignment);
+		TextAlignment GetAlignment() const;
 
-	//RenderInfo Render(const RenderInfo& renderInfo) override;
-	UIRect Render(const UIRect& rect);
+		void SetPaddingTop(const float& padding);
+		void SetPaddingBottom(const float& padding);
+		void SetPaddingRight(const float& padding);
+		void SetPaddingLeft(const float& padding);
+		void SetPadding(const UIPadding& padding);
 
-	void InitFields() override;
-	std::string ToString() const override;
+		//RenderInfo Render(const RenderInfo& renderInfo) override;
+		UIRect Render(const UIRect& rect);
 
-	void Deserialize(const Json& json) override;
-	Json Serialize() override;
-};
+		void InitFields() override;
+		void Serialize(Serialization::Serializer& serializer) const override;
+		void Deserialize(Serialization::Deserializer& deserializer) override;
+		std::string ToString() const override;
+	};
+}
 

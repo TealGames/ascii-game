@@ -2,12 +2,9 @@
 #include "Core/Rendering/GpuFence.hpp"
 #ifdef OPENGL
 
-namespace Rendering
+namespace Engine::Rendering::OpenGl
 {
-	namespace OpenGl
-	{
-		GpuFence CreateGpuFence(const bool insertFence);
-	}
+	GpuFence CreateGpuFence(const bool insertFence);
 }
 
 #endif

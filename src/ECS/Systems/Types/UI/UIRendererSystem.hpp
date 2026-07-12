@@ -1,33 +1,32 @@
 #pragma once
-#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
-#include "Utils/Math/Matrix.hpp"
+#include "Core/Primitives/Matrix.hpp"
 #include "Utils/Data/Event.hpp"
 
-namespace Rendering { class Renderer; }
-class Scene;
-class UIHierarchy;
-class EngineState;
-
-namespace ECS
+namespace Engine::Rendering { class Renderer; }
+namespace Engine::Core { class EngineState; }
+namespace Engine::UI
 {
+	class UIHierarchy;
+	class UIRendererComponent;
+	class UIRect;
 	class UIRenderSystem
 	{
 	private:
 		UIHierarchy* m_uiHierarchy;
 		Rendering::Renderer* m_renderer;
-		const EngineState* m_engineState;
-		//std::vector<UIRendererData*> m_uiRenderersHierarchyOrder;
+		const Core::EngineState* m_engineState;
+		//std::vector<UIRendererComponent*> m_uiRenderersHierarchyOrder;
 		//bool m_hasGuiTreeUpdated;
 	public:
-		Event<void, const UIRendererData*, UIRect*> m_OnElementProcessed;
+		Event<void, const UIRendererComponent*, UIRect*> m_OnElementProcessed;
 
 	private:
 
 		//void CreateRenderTree();
-		void RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const float depth, const Mat3& globalModelMatrix);
+		void RenderSingle(const UIHierarchy& hierarchy, UIRendererComponent& renderer, const float depth, const Mat3& globalModelMatrix);
 		void RenderAll();
 	public:
-		UIRenderSystem(const EngineState& engineState, Rendering::Renderer& renderer, UIHierarchy& hierarchy);
+		UIRenderSystem(const Core::EngineState& engineState, Rendering::Renderer& renderer, UIHierarchy& hierarchy);
 		void Init();
 		void SystemUpdate();
 	};

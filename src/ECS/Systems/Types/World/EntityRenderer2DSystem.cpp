@@ -1,13 +1,12 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 #include "Core/Visual/TextBuffer.hpp"
-#include "Utils/Data/Array2DPosition.hpp"
+#include "Core/Primitives/Array2DPosition.hpp"
 #include "ECS/Component/Component.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Core/PositionConversions.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 #include "Core/Rendering/Renderer3d.hpp"
 #include "Core/Asset/FontAsset.hpp"
 
@@ -15,7 +14,7 @@
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-namespace ECS
+namespace Engine::Rendering
 {
 	//TODO: cache last buffer is not implemneted (but should maybe be removed since there 
 	//is now way to know what texture is for what entity so we cant change it)
@@ -26,7 +25,7 @@ namespace ECS
 		
 	}
 
-	void EntityRenderer2DSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+	void EntityRenderer2DSystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER
 		ProfilerTimer timer("EntityRendererSystem::SystemUpdate");
@@ -43,7 +42,7 @@ namespace ECS
 
 				//for (const auto& renderLayerTuple : allLayerBuffers)
 				//{
-				//	if (!Utils::HasFlagAll(data.GetRenderLayers(), std::get<0>(renderLayerTuple)))
+				//	if (!::Utils::HasFlagAll(data.GetRenderLayers(), std::get<0>(renderLayerTuple)))
 				//		continue;
 
 				//	currLayerBuffer = std::get<1>(renderLayerTuple);
@@ -66,7 +65,7 @@ namespace ECS
 		return data.GetVisualData().ToString();
 	}
 
-	void EntityRenderer2DSystem::AddTextToRenderer(EntityRenderer2DComponent& data, const CameraComponent& mainCamera)
+	void EntityRenderer2DSystem::AddTextToRenderer(EntityRenderer2DComponent& data, const Camera::CameraComponent& mainCamera)
 	{
 		const float zPos = data.GetTransform().GetWorldPos().m_Z;
 		const VisualData& visual = data.GetVisualData();

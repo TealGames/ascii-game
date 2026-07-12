@@ -2,22 +2,24 @@
 #include "Core/Asset/Asset.hpp"
 #include "Core/Rendering/Shader/Shader.hpp"
 
-class ShaderAsset : public Asset
+namespace Engine::Rendering
 {
-private:
-	Rendering::Shader m_shader;
-public:
-	//TODO: this is not a very cross-platform approach, should be changed
-	//to maybe read any file with a custom .shd extension
-	static constexpr char const* EXTENSION = ".glsl";
+	class ShaderAsset : public Assets::Asset
+	{
+	private:
+		Rendering::Shader m_shader;
+	public:
+		static const std::array<std::string_view,1> EXTENSIONS;
 
-private:
-	void ReadShaderFromSingleFile(const Rendering::ShaderProgramType programType);
-	void WriteToShaderFromFiles();
-public:
-	ShaderAsset(const std::filesystem::path& path);
+	private:
+		void ReadShaderFromSingleFile(const Rendering::ShaderProgramType programType);
+		void WriteToShaderFromFiles();
+	public:
+		ShaderAsset(const std::filesystem::path& path);
 
-	const Rendering::Shader& GetShader() const;
-	Rendering::Shader& GetShaderMutable();
-	void UpdateAssetFromFile() override;
-};
+		const Rendering::Shader& GetShader() const;
+		Rendering::Shader& GetShaderMutable();
+		void UpdateAssetFromFile() override;
+	};
+}
+

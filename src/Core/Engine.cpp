@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "Core/Engine.hpp"
 #include "Core/Scene/SceneManager.hpp"
+#include "Game/SceneCreator.hpp"
 #include "StaticGlobals.hpp"
 #include "Core/EngineLog.hpp"
 #include "Core/Rendering/Renderer3D.hpp"
@@ -14,18 +15,17 @@
 #include "Core/UIElementTemplates.hpp"
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #include "Core/Asset/InputProfileAsset.hpp"
-#include "Core/Serialization/JsonSerializers.hpp"
+#include "Core/Serialization/SerializationUtils.hpp"
 #include "Game/GlobalCreator.hpp"
 #include "Core/Asset/GlobalColorCodes.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/World/PointLight3DComponent.hpp"
-#include "Utils/Data/ColorConstants.hpp"
-#include "Utils/Math/MathAdvanced.hpp"
+#include "Math/Math3d.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Asset/Model3dAsset.hpp"
 
 
-namespace Core
+namespace Engine::Core
 {
 	//-------------------------------------------------------------------
 	// GLOBAL TODO CHECKLIST
@@ -220,14 +220,8 @@ namespace Core
 	//If true, even if the current output from camera is null, will render default data.
 	//This is useful for testing the render loop and finding out FPS (since fps depends on drawing loop)
 	constexpr bool ALWAYS_RENDER = true;
-
-	//TODO: maybe default camera render data should just be a preset texture so we dont need to do the same actions every frame
-	/*const TextBuffer DEFAULT_RENDER_DATA = TextBuffer(FontData(GLOBAL_FONT_SIZE, GLOBAL_FONT), 
-		
-		TextBuffer(22, 1, WHITE, {
-		{'N', 'O', EMPTY_CHAR_PLACEHOLDER, 'C', 'A', 'M', 'E', 'R', 'A',
-		EMPTY_CHAR_PLACEHOLDER, 'O','U', 'T', 'P', 'U', 'T', EMPTY_CHAR_PLACEHOLDER,
-		'F', 'O', 'U', 'N', 'D'} });*/
+	//If true, will log all output from command contrller when executing commands
+	constexpr bool DEBUG_LOG_COMMAND_OUTPUT = true;
 
 	void Engine::Destroy()
 	{
@@ -235,51 +229,41 @@ namespace Core
 	}
 
 	Engine::Engine() :
-		m_windowManager(),
-		m_engineState(),
-		m_assetManager(),
-		m_globalInitializer(m_assetManager),
-		m_collisionRegistry(),
-		m_sceneManager(m_engineState),
+		m_timeKeeper(TERMINATE_AFTTER_FRAMES),
+		m_windowManager(), m_assetManager(), m_cameraController(),
+		m_sceneManager(m_assetManager), m_graphicsManager(m_assetManager),
 		m_inputManager(m_assetManager, m_windowManager),
-		m_cameraController(),
-		m_physicsManager(m_sceneManager, m_collisionRegistry),
-		m_UIInteractionManager(m_inputManager, m_uiHierarchy),
-		m_uiHierarchy(m_sceneManager.m_GlobalEntityManager),
+		m_engineState(m_graphicsManager, m_assetManager, m_cameraController, m_inputManager, m_sceneManager, m_timeKeeper),
+		m_collisionRegistry(), m_physicsManager(m_sceneManager, m_collisionRegistry),
+		m_UIInteractionManager(m_inputManager, m_uiHierarchy), m_uiHierarchy(m_sceneManager.m_GlobalEntityManager),
 		m_popupManager(m_uiHierarchy),
 		m_renderer(m_engineState),
-		m_graphicsManager(m_assetManager),
 		m_transformSystem(),
 		m_entityRendererSystem(m_renderer),
 		m_lightSystem(m_entityRendererSystem),
 		//m_inputSystem(m_inputManager),
-		m_spriteAnimatorSystem(m_entityRendererSystem),
-		m_animatorSystem(),
+		m_spriteAnimatorSystem(m_entityRendererSystem), m_animatorSystem(),
 		m_meshSystem(m_renderer, m_engineState),
-		m_collisionBoxSystem(m_collisionRegistry),
-		m_physicsBodySystem(m_physicsManager),
+		m_collisionBoxSystem(m_collisionRegistry), m_physicsBodySystem(m_physicsManager),
 		m_playerSystem(m_inputManager),
 		m_cameraSystem(m_renderer),
 		m_particleEmitterSystem(),
 		m_triggerSystem(),
 		m_uiSystemExecutor(m_engineState, m_renderer, m_uiHierarchy, m_popupManager),
 		m_gizmosOverlay(m_uiSystemExecutor.m_UiRenderSystem, m_physicsManager, m_cameraController),
+		m_commandController(DEBUG_LOG_COMMAND_OUTPUT),
 		//m_playerInfo(std::nullopt),
 		//m_mainCameraInfo(std::nullopt),
-		m_timeKeeper(TERMINATE_AFTTER_FRAMES),
-		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_assetManager,
-			m_sceneManager, m_cameraController, m_UIInteractionManager, m_uiHierarchy, m_popupManager, m_collisionBoxSystem, m_gizmosOverlay),
+		m_editor(m_timeKeeper, m_inputManager, m_physicsManager, m_assetManager, m_sceneManager, m_cameraController, 
+			m_UIInteractionManager, m_uiHierarchy, m_popupManager, m_collisionBoxSystem, m_commandController, m_gizmosOverlay),
 		m_gameManager(m_uiHierarchy)
-
 	{
-		m_engineState.m_CameraController = &m_cameraController;
-		m_engineState.m_TimeKeeper = &m_timeKeeper;
-		m_engineState.m_AssetManager = &m_assetManager;
 		EngineLog("FINISHED SYSTEM CONSTRUCTORS");
+		Serialization::InitSerializationUtils(m_sceneManager, m_assetManager);
 
 		m_windowManager.m_OnWindowCreated.AddListener([this](Window* window)-> void 
 			{
-				m_engineState.m_GraphicsContext= Rendering::GraphicsContext{ window, &m_graphicsManager }; 
+				m_engineState.m_GraphicsContext.m_Window = window;
 				if (!m_renderer.WasInit()) m_renderer.Init();
 			});
 		m_windowManager.m_OnWindowUpdated.AddListener([this](Window* window)-> void 
@@ -298,51 +282,35 @@ namespace Core
 
 		//Note: input relies on assets, and 
 		//asset manager needs to setup assets AFTER static global asset ref is set
-		m_assetManager.Init();
+		std::filesystem::path assetPath = ASSET_DIR;
+		m_assetManager.Init(m_engineState, assetPath);
 
 		m_inputManager.Init();
 		m_inputManager.SetInputCooldown(0.3);
-
-		InitJsonSerializationDependencies(m_sceneManager, m_assetManager);
-		m_assetManager.InitDependencies<SceneAsset, GlobalEntityManager, AssetManagement::AssetManager>(m_sceneManager.m_GlobalEntityManager, m_assetManager);
-		m_assetManager.InitDependencies<InputProfileAsset, Input::InputManager>(m_inputManager);
-
+	
 		//TODO: glocal color codes should not reside in engine init but should be a second-class/hierarchy call
 		GlobalColorCodes::InitCodes(m_assetManager);
-		Templates::Init(m_assetManager);
+		UI::Templates::Init(m_assetManager);
 		
 		m_uiHierarchy.Init();
 		m_popupManager.Init();
 		m_uiSystemExecutor.Init();
-		GlobalEntityCreator::OnGlobalsInit(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
+		Scenes::GlobalEntityCreator::OnGlobalsInit(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
 
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
 		//if it is necessary for them (and to prevent misses and potential problems down the line)
 		m_graphicsManager.InitGraphicResources();
-		m_sceneManager.LoadAllScenes();
-
-		//Rendering::Texture& skybox = m_assetManager.TryGetTypeAssetFromPathMutable<TextureAsset>("textures/skybox.hdr")->GetTextureMutable();
-		/*Color colors[4] = {Color(255,0,0,255), Color(0,255,0,255), Color(0,0,255,255), Color(255,255,0,255)};
-		Rendering::Texture test = Rendering::CreateTexture((std::byte*)(colors), Vec2Int(2, 2), Rendering::TextureBufferType::GPUThreadSafeRead);
-		LogWarning(std::format("Texture before:{}", test.ToStringBytes(false)));
-		Color newColor = Color(255, 255, 255, 255);
-		test.WriteTexel(Vec2Int(0, 1), (std::byte*)(&newColor));
-		LogError(std::format("Texture after:{}", test.ToStringBytes(false)));*/
-		//Color skyboxColor = skybox.SampleAtTexel(Vec2Int(325, 500));
-		//LogError(std::format("Color:{} Is etmpy:{}", skyboxColor.ToString(), skybox.HasEmptyData()));
-		//m_renderer.SetSkybox(&skybox);
+		Scenes::SceneCreator::Init(m_engineState);
+		m_sceneManager.LoadAllSceneAssets();
 
 		//TODO: find a way to do this more procedurally
-		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* scene) -> void {SystemStart(*scene); });
+		m_sceneManager.m_OnActiveSceneChange.AddListener([this](Scenes::Scene* scene) -> void {SystemStart(*scene); });
 		EngineLog("LOADED ALL SCENES");
 
 		if (!Assert(m_sceneManager.TrySetActiveScene(0), "Tried to set the active scene to the first one, but failed!"))
 			return;
 
 		EngineLog("SET FIRST SCENE:{}", m_sceneManager.GetActiveScene()->ToString());
-		//m_sceneManager.GetActiveSceneMutable()->InitScene();
-		//m_sceneManager.GetActiveSceneMutable()->SetMainCamera(mainCameraEntity);
-		//LogError(std::format("Scene active: {}", m_sceneManager.GetActiveScene()->ToString()));
 		EngineLog("SET FIRST SCENE CAMERA");
 
 		m_editor.Init(m_playerSystem);
@@ -370,7 +338,7 @@ namespace Core
 		m_gameManager.GameValidate();
 		EngineLog("FINISHED VALIDATION");
 	}
-	void Engine::SystemStart(Scene& scene)
+	void Engine::SystemStart(Scenes::Scene& scene)
 	{
 		m_meshSystem.SystemStart(scene);
 	}
@@ -396,8 +364,8 @@ namespace Core
 
 		m_inputManager.Update(unscaledDeltaTime);
 
-		const FragmentedTextBuffer2D* frameBuffer = nullptr;
-		Scene* activeScene = nullptr;
+		const Rendering::FragmentedTextBuffer2D* frameBuffer = nullptr;
+		Scenes::Scene* activeScene = nullptr;
 		if (m_editor.IsInGameView())
 		{
 			activeScene = m_sceneManager.GetActiveSceneMutable();
@@ -416,10 +384,10 @@ namespace Core
 			}
 
 			m_cameraController.UpdateActiveCamera();
-			CameraComponent& mainCamera = m_cameraController.GetActiveCameraMutable();
+			Camera::CameraComponent& mainCamera = m_cameraController.GetActiveCameraMutable();
 
 			std::string cameraSceneName = mainCamera.GetEntity().m_SceneName;
-			if (!Assert(cameraSceneName == EntityData::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
+			if (!Assert(cameraSceneName == ECS::EntityData::GLOBAL_SCENE_NAME || cameraSceneName == activeScene->GetName(),
 				"Tried to get active camera:{} during update loop, "
 					"but that camera is not in the active scene OR global storage (main camera scene:{}, active scene:{})", mainCamera.ToString(),
 					cameraSceneName, activeScene->GetName()))

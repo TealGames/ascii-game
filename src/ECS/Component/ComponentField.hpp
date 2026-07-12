@@ -1,99 +1,90 @@
 #pragma once
 #include <string>
 #include <variant>
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include <type_traits>
 #include <typeinfo>
 #include <functional>
 #include <optional>
 #include <cstdint>
-#include "Utils/Data/Color.hpp"
+#include "Core/Primitives/Color.hpp"
 #include "Utils/Debug.hpp"
 
-//enum class ComponentFieldType
-//{
-//	String,
-//	Integer,
-//	Float,
-//	Vector2
-//};
-
-//template class Vec<float, 2>;
-//template class Vec<int, 2>;
-
-//TODO: ideally we would not use a direct value but rather a function to set those values to add some abstraction
-//and allow some clamping or other import actions to be taken if neccessary
-using ComponentFieldVariant = std::variant<std::string*, int*, float*, std::uint8_t*, bool*, Vec2*, Vec2Int*, HDRColor*>;
-using ComponentFieldSetAction = std::variant<std::function<void(std::string)>, std::function<void(int)>, std::function<void(float)>, 
-	std::function<void(std::uint8_t)>, std::function<void(bool)>, std::function<void(Vec2)>, std::function<void(Vec2Int)>, std::function<void(HDRColor)>>;
-
-class ComponentField
+namespace Engine::ECS
 {
-private:
-	bool m_isReadonly;
+	//TODO: ideally we would not use a direct value but rather a function to set those values to add some abstraction
+	//and allow some clamping or other import actions to be taken if neccessary
+	using ComponentFieldVariant = std::variant<std::string*, int*, float*, std::uint8_t*, bool*, Vec2*, Vec2Int*, ColHDR4*>;
+	using ComponentFieldSetAction = std::variant<std::function<void(std::string)>, std::function<void(int)>, std::function<void(float)>,
+		std::function<void(std::uint8_t)>, std::function<void(bool)>, std::function<void(Vec2)>, std::function<void(Vec2Int)>, std::function<void(ColHDR4)>>;
 
-public:
-	const char* m_FieldName;
-	ComponentFieldVariant m_Value;
-	std::optional<ComponentFieldSetAction> m_MaybeSetFunction;
-
-	//ComponentFieldType m_Type;
-private:
-public:
-	ComponentField(const char* name, const ComponentFieldVariant& value, const bool isWritable=true);
-	ComponentField(const char* name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value);
-
-	const std::type_info& GetCurrentType() const;
-	std::string ToString() const;
-
-	bool IsReadonly() const;
-	bool HasSetFunction() const;
-
-	template<typename T>
-	requires (!std::is_pointer_v<T>)
-	bool IsSetFunctionofType() const
+	class ComponentField
 	{
-		if (!HasSetFunction()) return false;
-		return std::holds_alternative<std::function<void(T)>>(m_MaybeSetFunction.value());
-	}
+	private:
+		bool m_isReadonly;
 
-	template<typename T>
-	requires (!std::is_pointer_v<T>)
-	bool IsCurrentType() const
-	{
-		return std::holds_alternative<T*>(m_Value);
-	}
+	public:
+		const char* m_FieldName;
+		ComponentFieldVariant m_Value;
+		std::optional<ComponentFieldSetAction> m_MaybeSetFunction;
 
-	template<typename T>
-	requires (!std::is_pointer_v<T>)
-	const T* TryGetValue() const
-	{
-		if (IsCurrentType<T>()) return std::get<T*>(m_Value);
-		return nullptr;
-	}
+		//ComponentFieldType m_Type;
+	private:
+	public:
+		ComponentField(const char* name, const ComponentFieldVariant& value, const bool isWritable = true);
+		ComponentField(const char* name, const ComponentFieldSetAction& setAction, const ComponentFieldVariant& value);
 
-	template<typename T>
-	requires (!std::is_pointer_v<T>)
-	bool TrySetValue(const T value)
-	{
-		if (IsCurrentType<T>())
+		const std::type_info& GetCurrentType() const;
+		std::string ToString() const;
+
+		bool IsReadonly() const;
+		bool HasSetFunction() const;
+
+		template<typename T>
+			requires (!std::is_pointer_v<T>)
+		bool IsSetFunctionofType() const
 		{
-			if (HasSetFunction())
-			{
-				if (!IsSetFunctionofType<T>())
-				{
-					LogError(std::format("Tried to set value of field: '{}' of type: {} "
-						"with a set function but set function does not match that type", m_FieldName, GetCurrentType().name()));
-					throw std::invalid_argument("Invalid set function type");
-				}
-
-				std::get<std::function<void(T)>>(m_MaybeSetFunction.value())(value);
-			}
-			else *(std::get<T*>(m_Value)) = value;
-			
-			return true;
+			if (!HasSetFunction()) return false;
+			return std::holds_alternative<std::function<void(T)>>(m_MaybeSetFunction.value());
 		}
-		return false;
-	}
-};
 
+		template<typename T>
+			requires (!std::is_pointer_v<T>)
+		bool IsCurrentType() const
+		{
+			return std::holds_alternative<T*>(m_Value);
+		}
+
+		template<typename T>
+			requires (!std::is_pointer_v<T>)
+		const T* TryGetValue() const
+		{
+			if (IsCurrentType<T>()) return std::get<T*>(m_Value);
+			return nullptr;
+		}
+
+		template<typename T>
+			requires (!std::is_pointer_v<T>)
+		bool TrySetValue(const T value)
+		{
+			if (IsCurrentType<T>())
+			{
+				if (HasSetFunction())
+				{
+					if (!IsSetFunctionofType<T>())
+					{
+						LogError(std::format("Tried to set value of field: '{}' of type: {} "
+							"with a set function but set function does not match that type", m_FieldName, GetCurrentType().name()));
+						throw std::invalid_argument("Invalid set function type");
+					}
+
+					std::get<std::function<void(T)>>(m_MaybeSetFunction.value())(value);
+				}
+				else *(std::get<T*>(m_Value)) = value;
+
+				return true;
+			}
+			return false;
+		}
+	};
+}

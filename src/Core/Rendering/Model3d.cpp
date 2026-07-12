@@ -1,7 +1,7 @@
 #include "Core/Rendering/Model3d.hpp"
 #include "Utils/ToStringFunctions.hpp"
 
-namespace Rendering 
+namespace Engine::Rendering 
 {
 	const std::vector<BVHNode>& ConstructBVHFromTriangles(StaticBVHTree<IndexTriangle>& tree,
 		IndexTriangle* triangleArray, const size_t triangleSize, const Vertex* vertexArray)
@@ -41,8 +41,8 @@ namespace Rendering
 		WorldPosition3D maxVertex = Vec3::Min();
 		for (const auto& vertex : m_Vertices)
 		{
-			minVertex = Min(minVertex, vertex.m_LocalPos);
-			maxVertex = Max(maxVertex, vertex.m_LocalPos);
+			minVertex = Math::Min(minVertex, vertex.m_LocalPos);
+			maxVertex = Math::Max(maxVertex, vertex.m_LocalPos);
 		}
 		return AABB3D(maxVertex - minVertex);
 	}
@@ -56,7 +56,8 @@ namespace Rendering
 
 	std::string ModelObject::ToString() const
 	{
-		return std::format("[MOdelObject Mesh:{} Material:{}]", m_Mesh.ToString(), m_Material.ToString());
+		return std::format("[MOdelObject Mesh:{} Material:{}]", 
+			m_Mesh.ToString(), m_MaterialAsset->GetMaterial().ToString());
 	}
 
 	std::string Model3d::ToString() const

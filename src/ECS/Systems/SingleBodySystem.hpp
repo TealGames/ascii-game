@@ -2,7 +2,9 @@
 #include "Unused/EntityMapper.hpp"
 #include "Core/Scene/Scene.hpp"
 
-namespace ECS
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Camera { class CameraComponent; }
+namespace Engine::ECS
 {
 	template<typename T>
 	class SingleBodySystem
@@ -12,6 +14,6 @@ namespace ECS
 
 	private:
 	public:
-		virtual void SystemUpdate(Scene& scene, T& component, const float& deltaTime) = 0;
+		virtual void SystemUpdate(Scenes::Scene& scene, T& component, const float& deltaTime) = 0;
 	};
 }

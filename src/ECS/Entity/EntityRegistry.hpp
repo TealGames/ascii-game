@@ -5,11 +5,11 @@
 #include "ECS/Component/Component.hpp"
 #include <format>
 
-class EntityData;
-class TransformComponent;
 
-namespace ECS
+namespace Engine { class TransformComponent; }
+namespace Engine::ECS
 {
+	class EntityData;
 	class EntityRegistry
 	{
 	private:

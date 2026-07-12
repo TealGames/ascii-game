@@ -7,24 +7,24 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/Data/Point4D.hpp"
 #include "Utils/Data/Point3D.hpp"
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include "Core/PositionConversions.hpp"
 #include <optional>
-#include "Utils/Data/Color.hpp"
+#include "Core/Primitives/Color.hpp"
 
 namespace RaylibUtils
 {
 	std::string ToString(const Color& color);
-	Color MultiplyColorsRGBA(const Color& color, const Utils::Point4D& factor);
-	Color MultiplyColorsRGB(const Color& color, const Utils::Point3D& factor);
+	Color MultiplyColorsRGBA(const Color& color, const ::Utils::Point4D& factor);
+	Color MultiplyColorsRGB(const Color& color, const ::Utils::Point3D& factor);
 	Utils::Point4D DivideColorRGBA(const Color& divided, const Color& divisor);
 	Utils::Point3D DivideColorRGB(const Color& divided, const Color& divisor);
 
 	Utils::Point4D GetFractionalColorRGBA(const Color& color, const float& multiplier);
 	Utils::Point3D GetFractionalColorRGB(const Color& color, const float& multiplier);
 
-	Color GetColorFromPoint(const Utils::Point4D& rgba);
-	Color GetColorFromPoint(const Utils::Point3D& rgb);
+	Color GetColorFromPoint(const ::Utils::Point4D& rgba);
+	Color GetColorFromPoint(const ::Utils::Point3D& rgb);
 
 	Color GetColorFromHex(const std::uint32_t& hexNumber);
 	Color ToRaylibColor(const Color color);

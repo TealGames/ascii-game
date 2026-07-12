@@ -2,6 +2,10 @@
 #include "Core/Visual/VisualData.hpp"
 #include "Fig/Fig.hpp"
 
-VisualData ParseDefaultVisualData(const std::vector<std::string>& lines);
-VisualData ParseDefaultVisualData(const FigProperty& property);
+namespace Engine::Rendering
+{
+	VisualData ParseDefaultVisualData(const std::vector<std::string>& lines);
+	VisualData ParseDefaultVisualData(const FigFormat::FigProperty& property);
+}
+
 

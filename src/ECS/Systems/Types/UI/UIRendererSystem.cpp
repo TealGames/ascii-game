@@ -3,42 +3,42 @@
 #include "ECS/Systems/Types/UI/UIRendererSystem.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
-
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 #include "ECS/Component/Types/UI/UIPanelComponent.hpp"
-#include "ECS/Component/Types/UI/UITextureData.hpp"
-#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "ECS/Component/Types/UI/UITextureComponent.hpp"
+#include "ECS/Component/Types/UI/UISelectableComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 #include "Core/EngineState.hpp"
 
-static constexpr float DEPTH_INCREMENT = 0.001;
-static constexpr float TOPMOST_DEPTH = 0.0f;
-static constexpr float BOTTOMMOST_DEPTH = 1.0f;
-
-namespace ECS
+namespace Engine::UI
 {
-	UIRenderSystem::UIRenderSystem(const EngineState& engineState, Rendering::Renderer& renderer, UIHierarchy& hierarchy)
+	static constexpr float DEPTH_INCREMENT = 0.001;
+	static constexpr float TOPMOST_DEPTH = 0.0f;
+	static constexpr float BOTTOMMOST_DEPTH = 1.0f;
+
+	UIRenderSystem::UIRenderSystem(const Core::EngineState& engineState, Rendering::Renderer& renderer, UIHierarchy& hierarchy)
 		: m_engineState(&engineState), m_renderer(&renderer), m_uiHierarchy(&hierarchy), m_OnElementProcessed() {}
 		//, m_uiRenderersHierarchyOrder(), m_hasGuiTreeUpdated(true) {}
 
 	void UIRenderSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UIRendererData),
-			ComponentInfo([this](EntityData& entity)-> void
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UIRendererComponent),
+			ECS::ComponentInfo([this](ECS::EntityData& entity)-> void
 				{
-					entity.TryGetComponentMutable<UIRendererData>()->m_renderer = m_renderer;
+					entity.TryGetComponentMutable<UIRendererComponent>()->m_renderer = m_renderer;
 				}));
 	}
-	void UIRenderSystem::RenderSingle(const UIHierarchy& hierarchy, UIRendererData& renderer, const float depth, const Mat3& globalModelMatrix)
+	void UIRenderSystem::RenderSingle(const UIHierarchy& hierarchy, UIRendererComponent& renderer, const float depth, const Mat3& globalModelMatrix)
 	{
-		EntityData& entity = renderer.GetEntityMutable();
+		ECS::EntityData& entity = renderer.GetEntityMutable();
 		if (UIPanelComponent* panel = entity.TryGetComponentMutable<UIPanelComponent>(false))
 		{
 			panel->Render(depth, globalModelMatrix);
 			//if (renderer.GetEntity().m_Name == "EntityHeader") LogError(std::format("Rendered panel at pos:{}", rect.ToString()));
 		}
-		if (UITextureData* texture = entity.TryGetComponentMutable<UITextureData>(false))
+		if (UITextureComponent* texture = entity.TryGetComponentMutable<UITextureComponent>(false))
 		{
 			//texture->Render(rect);
 			/*if (entity.GetParent() != nullptr && entity.GetParent()->m_Name == "EntityActiveToggle")
@@ -50,7 +50,7 @@ namespace ECS
 			//if (entity.m_Name == "EntityNameText") LogError(std::format("text reder rect:{}", rect.ToString(), renderedArea.ToString()));
 		}
 
-		if (UISelectableData* selectable = entity.TryGetComponentMutable<UISelectableData>(false))
+		if (UISelectableComponent* selectable = entity.TryGetComponentMutable<UISelectableComponent>(false))
 		{
 			//selectable->RenderOverlay();
 		}
@@ -62,15 +62,15 @@ namespace ECS
 		UIRect parentRect = {};
 		UIRect currentRect = {};
 
-		std::stack<UITransformData*, std::vector<UITransformData*>> elementStack = {};
-		UITransformData* currentTransform = nullptr;
-		EntityData* entity = nullptr;
-		UIRendererData* renderer = nullptr;
+		std::stack<UITransformComponent*, std::vector<UITransformComponent*>> elementStack = {};
+		UITransformComponent* currentTransform = nullptr;
+		ECS::EntityData* entity = nullptr;
+		UIRendererComponent* renderer = nullptr;
 
 		//TODO: depth should probably be scaled depending on how mnay objects we have to ensure they all fit
 		float depth = TOPMOST_DEPTH;
 
-		m_uiHierarchy->LayerTraversal([&, this](UILayer layer, UITransformData& rootTransform)-> void
+		m_uiHierarchy->LayerTraversal([&, this](UILayer layer, UITransformComponent& rootTransform)-> void
 			{
 				while (!rectsStack.empty()) rectsStack.pop();
 				rectsStack.push(m_uiHierarchy->GetRootRect());
@@ -88,7 +88,7 @@ namespace ECS
 					rectsStack.pop();
 					currentRect = currentTransform->CalculateWorldRect(parentRect);
 
-					UIRendererData* renderer = entity->TryGetComponentMutable<UIRendererData>(false);
+					UIRendererComponent* renderer = entity->TryGetComponentMutable<UIRendererComponent>(false);
 					if (entity->IsEntityActive() && renderer != nullptr)
 					{
 						//if (entity->m_Name== "DebugInfoContainer") LogError(std::format("Enttiy is active and rendered"));
@@ -106,7 +106,7 @@ namespace ECS
 					for (int i = entity->GetChildCount() - 1; i >= 0; i--)
 					{
 						UIRect availableChildRect = currentTransform->CalculateChildParentRect(currentRect);
-						currentTransform = entity->TryGetChildComponentAtMutable<UITransformData>(i);
+						currentTransform = entity->TryGetChildComponentAtMutable<UITransformComponent>(i);
 						if (currentTransform == nullptr)
 						{
 							LogError(std::format("Tried to get child ui transform at index:{} for entity:{} "

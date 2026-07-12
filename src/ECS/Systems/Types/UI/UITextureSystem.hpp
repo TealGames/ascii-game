@@ -1,7 +1,6 @@
 #pragma once
-#include "ECS/Component/Types/UI/UITextureData.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
 	class UITextureSystem
 	{

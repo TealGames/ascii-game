@@ -1609,7 +1609,7 @@ TEST_CASE("single MessagePack roundtrip")
         const json j1 = json::parse(f_json);
 
         // parse MessagePack file
-        auto packed = utils::read_binary_file(filename + ".msgpack");
+        auto packed = ::Utils::read_binary_file(filename + ".msgpack");
         json j2;
         CHECK_NOTHROW(j2 = json::from_msgpack(packed));
 
@@ -1820,7 +1820,7 @@ TEST_CASE("MessagePack roundtrips" * doctest::skip())
                 const json j1 = json::parse(f_json);
 
                 // parse MessagePack file
-                auto packed = utils::read_binary_file(filename + ".msgpack");
+                auto packed = ::Utils::read_binary_file(filename + ".msgpack");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_msgpack(packed));
 
@@ -1850,7 +1850,7 @@ TEST_CASE("MessagePack roundtrips" * doctest::skip())
                 const json j1 = json::parse(f_json);
 
                 // parse MessagePack file
-                auto packed = utils::read_binary_file(filename + ".msgpack");
+                auto packed = ::Utils::read_binary_file(filename + ".msgpack");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_msgpack({packed.data(), packed.size()}));
 
@@ -1865,7 +1865,7 @@ TEST_CASE("MessagePack roundtrips" * doctest::skip())
                 json const j1 = json::parse(f_json);
 
                 // parse MessagePack file
-                auto packed = utils::read_binary_file(filename + ".msgpack");
+                auto packed = ::Utils::read_binary_file(filename + ".msgpack");
 
                 if (exclude_packed.count(filename) == 0u)
                 {

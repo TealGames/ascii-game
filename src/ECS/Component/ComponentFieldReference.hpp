@@ -1,25 +1,29 @@
 #pragma once
-#include "ECS/Component/Types/World/EntityComponent.hpp"
-#include "Core/Serialization/ComponentReference.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/ComponentReference.hpp"
 
-struct ComponentFieldReference
+namespace Engine::ECS
 {
-	//ECS::Entity* m_Entity;
-	ComponentReference m_ComponentRef;
-	//TODO: should component data be stored here?
-	//size_t m_ComponentIndex;
-	ComponentField* m_FieldRef;
+	struct ComponentFieldReference
+	{
+		//ECS::Entity* m_Entity;
+		ComponentReference m_ComponentRef;
+		//TODO: should component data be stored here?
+		//size_t m_ComponentIndex;
+		ComponentField* m_FieldRef;
 
-	ComponentFieldReference();
-	ComponentFieldReference(Component* componentData, const std::string& fieldName);
-	ComponentFieldReference(EntityData& entity, const std::string& componentName, const std::string& fieldName);
+		ComponentFieldReference();
+		ComponentFieldReference(Component* componentData, const std::string& fieldName);
+		ComponentFieldReference(EntityData& entity, const std::string& componentName, const std::string& fieldName);
 
-	const EntityData& GetEntitySafe() const;
-	const ComponentField& GetComponentFieldSafe() const;
+		const EntityData& GetEntitySafe() const;
+		const ComponentField& GetComponentFieldSafe() const;
 
-	ComponentField& GetComponentFieldSafeMutable();
-	Component* GetComponentDataMutable();
+		ComponentField& GetComponentFieldSafeMutable();
+		Component* GetComponentDataMutable();
 
-	std::string GetFieldName() const;
-};
+		std::string GetFieldName() const;
+	};
+}
+
 

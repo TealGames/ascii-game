@@ -1,20 +1,21 @@
 #include "pch.hpp"
 #include "UIToggleSystem.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
-#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "ECS/Component/Types/UI/UISelectableComponent.hpp"
+#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
 #include "ECS/Systems/MultiBodySystem.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
 	UIToggleSystem::UIToggleSystem() {}
 	void UIToggleSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UIToggleComponent),
-			ComponentInfo(CreateComponentTypes<UISelectableData>(), CreateRequiredComponentFunction(UISelectableData()),
-				[](EntityData& entity)-> void
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UIToggleComponent),
+			ECS::ComponentInfo(ECS::CreateComponentTypes<UISelectableComponent>(), CreateRequiredComponentFunction(UISelectableComponent()),
+				[](ECS::EntityData& entity)-> void
 				{
 					UIToggleComponent& toggle = *(entity.TryGetComponentMutable<UIToggleComponent>());
-					toggle.m_selectable = entity.TryGetComponentMutable<UISelectableData>();
+					toggle.m_selectable = entity.TryGetComponentMutable<UISelectableComponent>();
 					toggle.Init();
 				}));
 	}

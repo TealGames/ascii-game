@@ -1,7 +1,7 @@
 #include "EngineLog.hpp"
 
 
-namespace Core
+namespace Engine::Core
 {
 	
 }

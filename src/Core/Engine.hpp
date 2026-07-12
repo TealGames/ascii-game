@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdint>
 #include "Core/Scene/SceneManager.hpp"
+#include "Core/UI/PopupUIManager.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
 #include "ECS/Systems/Types/World/EntityRenderer2DSystem.hpp"
 #include "ECS/Systems/Types/World/CameraSystem.hpp"
@@ -25,71 +26,71 @@
 #include "Core/Collision/CollisionRegistry.hpp"
 #include "Core/Time/TimeKeeper.hpp"
 #include "Game/GameManager.hpp"
-//#include "Core/Input/InputManager.hpp"
 #include "Core/UI/UIHierarchy.hpp"
 #include "Core/UI/UIInteractionManager.hpp"
 #include "Editor/EngineEditor.hpp"
 #include "Core/Rendering/Renderer3d.hpp"
-#include "GlobalInitializer.hpp"
 #include "Core/EngineState.hpp"
-#include "Core/GizmoOverlay.hpp"
+#include "Editor/GizmoOverlay.hpp"
+#include "Core/Debug/CommandController.hpp"
 #include "Core/Window/WindowManager.hpp"
 #include "Core/Rendering/GraphicsManager.hpp"
 
-namespace Core
+namespace Engine::Core
 {
 	class Engine
 	{
 	private:
+		//NOTE: the order below until engine state is based on dependencies and 
+		//they must all come before engine state since eninge state is constructed with them
+		TimeKeeper m_timeKeeper;
 		WindowManager m_windowManager;
-		EngineState m_engineState;
-
-		AssetManagement::AssetManager m_assetManager;
-		GlobalInitializer m_globalInitializer;
-		
-		CollisionRegistry m_collisionRegistry;
-		SceneManagement::SceneManager m_sceneManager;
-		Physics::PhysicsManager m_physicsManager;
-		CameraController m_cameraController;
+		Assets::AssetManager m_assetManager;
+		Camera::CameraController m_cameraController;
+		Scenes::SceneManager m_sceneManager;
 		Input::InputManager m_inputManager;
-		UIInteractionManager m_UIInteractionManager;
-		UIHierarchy m_uiHierarchy;
-		PopupUIManager m_popupManager;
-		Rendering::Renderer m_renderer;
 		Rendering::GraphicsManager m_graphicsManager;
 
+		EngineState m_engineState;
+
+		Physics::CollisionRegistry m_collisionRegistry;
+		Physics::PhysicsManager m_physicsManager;
+		UI::UIInteractionManager m_UIInteractionManager;
+		UI::UIHierarchy m_uiHierarchy;
+		UI::PopupUIManager m_popupManager;
+		Rendering::Renderer m_renderer;
+
 		//TODO: there has to be a way that does not involve us writing every possible system
-		ECS::TransformSystem m_transformSystem;
-		ECS::CameraSystem m_cameraSystem;
-		ECS::LightSource2DSystem m_lightSystem;
-		//ECS::InputSystem m_inputSystem;
-		ECS::EntityRenderer2DSystem m_entityRendererSystem;
-		ECS::AnimatorSystem m_animatorSystem;
-		ECS::SpriteAnimatorSystem m_spriteAnimatorSystem;
-		ECS::Mesh3DSystem m_meshSystem;
-		ECS::CollisionBoxSystem m_collisionBoxSystem;
-		ECS::PhysicsBodySystem m_physicsBodySystem;
-		ECS::PlayerSystem m_playerSystem;
-		ECS::ParticleEmitterSystem m_particleEmitterSystem;
-		ECS::TriggerSystem m_triggerSystem;
+		TransformSystem m_transformSystem;
+		Camera::CameraSystem m_cameraSystem;
+		Lighting2D::LightSource2DSystem m_lightSystem;
+		Rendering::EntityRenderer2DSystem m_entityRendererSystem;
+		Rendering::Mesh3DSystem m_meshSystem;
+		Animation::AnimatorSystem m_animatorSystem;
+		Animation::SpriteAnimatorSystem m_spriteAnimatorSystem;
+		Physics::CollisionBoxSystem m_collisionBoxSystem;
+		Physics::PhysicsBodySystem m_physicsBodySystem;
+		Player::PlayerSystem m_playerSystem;
+		ParticleSystem::ParticleEmitterSystem m_particleEmitterSystem;
+		World::TriggerSystem m_triggerSystem;
 
-		UISystemExecutor m_uiSystemExecutor;
-		GizmoOverlay m_gizmosOverlay;
+		UI::UISystemExecutor m_uiSystemExecutor;
+		Debug::CommandController m_commandController;
+		Editor::Debug::GizmoOverlay m_gizmosOverlay;
 
-		//std::optional<ECS::EntityComponents<PlayerData, PhysicsBodyData>> m_playerInfo;
-		//std::optional<ECS::EntityComponentPair<CameraData>> m_mainCameraInfo;
-		//std::optional<ECS::EntityComponentPair<PhysicsBodyData>> m_obstacleInfo;
+		//std::optional<ECS::EntityDatas<PlayerComponent, PhysicsBodyData>> m_playerInfo;
+		//std::optional<ECS::EntityDataPair<CameraData>> m_mainCameraInfo;
+		//std::optional<ECS::EntityDataPair<PhysicsBodyData>> m_obstacleInfo;
 
 		//std::uint8_t m_currentFrameCounter = 0;
 
-		TimeKeeper m_timeKeeper;
-		EngineEditor m_editor;
+		Editor::EngineEditor m_editor;
 		GameManager m_gameManager;
 	public:
 
 	private:
 		void SystemValidate();
-		void SystemStart(Scene& scene);
+		void SystemStart(Scenes::Scene& scene);
 		void Destroy();
 
 		/// <summary>

@@ -9,7 +9,7 @@
 #include <filesystem>
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/AnsiCodes.hpp"
-#include "Utils/Math/Math.hpp"
+#include "Utils/Math.hpp"
 
 #if _HAS_CXX23
 #include <stacktrace>
@@ -114,7 +114,7 @@ namespace Utils
 		std::string result = "";
 		for (const auto& c : input)
 		{
-			//std::cout << "DOING C:" << Utils::ToString(c);
+			//std::cout << "DOING C:" << ::Utils::ToString(c);
 			if (!std::isdigit(c))
 			{
 				result += c;
@@ -189,12 +189,6 @@ namespace Utils
 	float GenerateRandomFloat(float minInclusive, float maxExclusive)
 	{
 		return GenerateRandomRealNum<float>(minInclusive, maxExclusive);
-	}
-
-	float MinAbs(const float& num1, const float& num2)
-	{
-		if (std::abs(num1) < std::abs(num2)) return num1;
-		return num2;
 	}
 
 	bool HasFlag(unsigned int fullFlag, unsigned int hasFlag)

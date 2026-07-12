@@ -2,19 +2,17 @@
 //#include "raylib.h"
 #include <optional>
 #include "Fig/Fig.hpp"
-#include "Utils/Data/Color.hpp"
+#include "Core/Primitives/Color.hpp"
 
-namespace AssetManagement
-{
-	class AssetManager;
-};
+namespace Engine::Assets { class AssetManager; }
 
-namespace GlobalColorCodes
+namespace Engine::GlobalColorCodes
 {
-	void InitCodes(const AssetManagement::AssetManager& assetManager);
-	bool TryRegisterColor(const FigProperty& property);
+	using AssetManager = Engine::Assets::AssetManager;
+	void InitCodes(const AssetManager& assetManager);
+	bool TryRegisterColor(const FigFormat::FigProperty& property);
 
 	bool HasColor(const std::string& colorName);
-	std::optional<HDRColor> TryGetColorFromCode(const std::string& code);
+	std::optional<ColHDR4> TryGetColorFromCode(const std::string& code);
 }
 

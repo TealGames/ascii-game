@@ -3,11 +3,11 @@
 #include <array>
 #include <string>
 #include "Core/Rendering/RenderObject.hpp"
-#include "Utils/Math/Vec2Type.hpp"
-#include "Utils/Data/Color.hpp"
+#include "Core/Primitives/Vector.hpp"
+#include "Core/Primitives/Color.hpp"
 #include "Utils/Debug.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	/// <summary>
 	/// The format of the uploaded pixel data for a texture
@@ -324,16 +324,16 @@ namespace Rendering
 		/// </summary>
 		/// <param name="texel"></param>
 		/// <returns></returns>
-		Color SampleAtTexel(const Vec2Int& texel) const;
-		HDRColor SampleHDRAtTexel(const Vec2Int& texel) const;
+		Col4 SampleAtTexel(const Vec2Int& texel) const;
+		ColHDR4 SampleHDRAtTexel(const Vec2Int& texel) const;
 		/// <summary>
 		/// Samples a singular texel at the UV coordiante where (0,0) is 
 		/// BOTTOM LEFT of the texture and (1,1) is the TOP RIGHT
 		/// </summary>
 		/// <param name="uv"></param>
 		/// <returns></returns>
-		Color SampleAtUV(const Vec2& uv) const;
-		HDRColor SampleHDRAtUV(const Vec2& uv) const;
+		Col4 SampleAtUV(const Vec2& uv) const;
+		ColHDR4 SampleHDRAtUV(const Vec2& uv) const;
 
 		/// <summary>
 		/// Reads bytes from data pointer and write to texel at offset (where (0,0) is BOTTOM LEFT)

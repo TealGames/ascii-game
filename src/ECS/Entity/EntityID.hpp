@@ -1,7 +1,7 @@
 #pragma once
 #include <entt/entt.hpp>
 
-namespace ECS
+namespace Engine::ECS
 {
 	using EntityID = entt::entity;
 	constexpr EntityID INVALID_ID = entt::null;

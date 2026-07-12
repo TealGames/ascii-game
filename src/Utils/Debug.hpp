@@ -15,7 +15,7 @@ enum class LogType : LogTypeIntegralType
 	Error = 1 << 0,
 	Warning = 1 << 1,
 	Log = 1 << 2,
-	All= 0xFF
+	All = 0xFF
 };
 
 FLAG_ENUM_OPERATORS(LogType)
@@ -30,7 +30,7 @@ enum class CallerLogDetails : std::uint8_t
 	FunctionName = 1 << 1,
 	LineNumber = 1 << 2,
 	ColumnNumber = 1 << 3,
-	All= 0xFF
+	All = 0xFF
 };
 FLAG_ENUM_OPERATORS(CallerLogDetails)
 
@@ -38,7 +38,7 @@ constexpr bool DEFAULT_LOG_TIME = true;
 constexpr bool DEFAULT_MESSAGE_EVENT_FLAG = true;
 constexpr bool DEFAULT_SHOW_STACK_TRACE = false;
 
-enum class ErroneousBehavior: std::uint8_t
+enum class ErroneousBehavior : std::uint8_t
 {
 	None = 0,
 	/// <summary>
@@ -68,7 +68,7 @@ namespace DebugProperties
 
 	void SetLogMessages(const bool doLog);
 	void SetCallerLogDetails(CallerLogDetails logDetails);
-		
+
 	void SetLogMessageFilter(const std::string& message);
 	void ClearLogMessageFilter();
 	void SetLogTypeFilter(LogType logType);
@@ -106,7 +106,7 @@ void LogMessage(const LogType& logType, const CallerLogDetails callerDetails, co
 /// <param name="objPtr"></param>
 /// <param name="str"></param>
 /// <param name="logTime"></param>
-void Log(const std::string& message, const bool logTime = DEFAULT_LOG_TIME, 
+void Log(const std::string& message, const bool logTime = DEFAULT_LOG_TIME,
 	const char* overrideAnsiColor = nullptr, const bool setEventFlag = DEFAULT_MESSAGE_EVENT_FLAG, const std::source_location& loc = std::source_location::current());
 
 template<typename ...Args>
@@ -154,12 +154,33 @@ bool Assert(const bool condition, const char* message, Args&&... args)
 	return condition;
 }
 
+constexpr void ConstexprAssert(bool condition)
+{
+	if (!condition)
+		throw "Constexpr Assert failed";
+}
+
+//#define DO_COMPILE_TIME_FRIENDLY_ENGINE_DEBUG
+
 #if defined(ENGINE_DEBUG)
-	//NOTE: the benefits of this version of the assert is that
-	//the args into ENIGNE_ASSERT are not evaluated if the condition is false which
-	//can helps performancej
-	#define ENGINE_ASSERT(condition, ...) \
-        ((condition) ? true : Assert(false, ##__VA_ARGS__))
+#if defined(DO_COMPILE_TIME_FRIENDLY_ENGINE_DEBUG)
+//NOTE: by doing condition and only invoking Assert if condition fails avoided
+//expensive Assert call
+//NOTE: technically `##__VA_ARGS__` which removes comma if there are no args is
+//only for MSVC and GCC so is not really portable so `__VA_OPT__(,) __VA_ARGS__` would be better
+//but it causes compilation errors
+#define ENGINE_ASSERT(condition, ...) \
+do {															\
+       if (!std::is_constant_evaluated())                       \
+	   {                                                        \
+			(condition)? true : Assert(false,  ##__VA_ARGS__);	\
+	   }														\
+    } while (0)
 #else
-	#define ENGINE_ASSERT(condition, ...) ((void)0);
+#define ENGINE_ASSERT(condition, ...) \
+(condition) ? true : Assert(false, ##__VA_ARGS__)
+#endif
+
+#else
+#define ENGINE_ASSERT(condition, ...) ((void)0)
 #endif

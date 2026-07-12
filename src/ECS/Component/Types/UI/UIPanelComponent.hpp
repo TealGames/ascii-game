@@ -1,33 +1,36 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
-#include "Utils/Data/Color.hpp"
-#include "Utils/Math/Matrix.hpp"
+#include "Core/Primitives/Color.hpp"
+#include "Core/Primitives/Matrix.hpp"
 //#include "raylib.h"
 #include "Core/UI/UIRect.hpp"
 
-class UIRendererData;
-namespace ECS { class UIPanelSystem; }
-class UIPanelComponent : public Component
+namespace Engine::UI
 {
-private:
-	HDRColor m_color;
-	UIRendererData* m_renderer;
-public:
-	friend class ECS::UIPanelSystem;
+	class UIRendererComponent;
+	class UIPanelSystem;
+	class UIPanelComponent : public ECS::Component
+	{
+	private:
+		ColHDR4 m_color;
+		UIRendererComponent* m_renderer;
+	public:
+		friend class UIPanelSystem;
 
-private:
-public:
-	UIPanelComponent();
-	UIPanelComponent(const HDRColor color);
+	private:
+	public:
+		UIPanelComponent();
+		UIPanelComponent(const ColHDR4 color);
 
-	void SetColor(const HDRColor color);
+		void SetColor(const ColHDR4 color);
 
-	void Render(const float depth, const Mat3& globalModelMatrix);
+		void Render(const float depth, const Mat3& globalModelMatrix);
 
-	void InitFields() override;
-	std::string ToString() const override;
+		void InitFields() override;
+		void Serialize(Serialization::Serializer& serializer) const override;
+		void Deserialize(Serialization::Deserializer& deserializer) override;
+		std::string ToString() const override;
+	};
+}
 
-	void Deserialize(const Json& json) override;
-	Json Serialize() override;
-};
 

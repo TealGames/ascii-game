@@ -82,7 +82,7 @@ namespace Utils
 		//Arithmetic checks for ints and floats -> which are available with to_string
 		if constexpr (std::is_same_v<T, std::string>)
 			return obj;
-		if constexpr (std::is_same_v<T, char> || std::is_same_v<T, bool> || Utils::IsExceptionType<T>)
+		if constexpr (std::is_same_v<T, char> || std::is_same_v<T, bool> || ::Utils::IsExceptionType<T>)
 			return ToString(obj);
 		if constexpr (std::is_arithmetic_v<T>)
 			return std::to_string(obj);
@@ -111,6 +111,29 @@ namespace Utils
 	std::string ToStringForced(const T& obj, const TStringFuncArgs&... funcArgs)
 	{
 		return TryToString(obj, funcArgs...).value_or("[Stringify Failed]");
+	}
+
+	template<typename T>
+	std::string ToStringArray(const T arr[], const size_t& size)
+	{
+		std::string result = "";
+		for (int i = 0; i < size; i++)
+		{
+			if (i != 0) result += ',';
+			result += ToStringForced(arr[i]);
+		}
+		return result;
+	}
+	template<typename T, size_t N>
+	std::string ToStringArray(const std::array<T, N>& arr)
+	{
+		std::string result = "";
+		for (int i = 0; i < N; i++)
+		{
+			if (i != 0) result += ',';
+			result += ToStringForced(arr[i]);
+		}
+		return result;
 	}
 
 	template<typename... TArgs>
@@ -148,7 +171,7 @@ namespace Utils
 		int index = 0;
 		for (const auto& element : collection)
 		{
-			elementStr = Utils::TryToString(element, toStringArgs...);
+			elementStr = ::Utils::TryToString(element, toStringArgs...);
 
 			if (!elementStr.has_value())
 				return "[Stringify FAILED]";
@@ -172,11 +195,11 @@ namespace Utils
 	{
 		std::string keyStr = "";
 		if constexpr (IsIterable<TKey>) keyStr = ToStringIterable(pair.first, toStringArgs...);
-		else keyStr = Utils::TryToString(pair.first, toStringArgs...).value_or("");
+		else keyStr = ::Utils::TryToString(pair.first, toStringArgs...).value_or("");
 
 		std::string valueStr = "";
 		if constexpr (IsIterable<TValue>) valueStr = ToStringIterable(pair.second, toStringArgs...);
-		else valueStr = Utils::TryToString(pair.second, toStringArgs...).value_or("");
+		else valueStr = ::Utils::TryToString(pair.second, toStringArgs...).value_or("");
 
 		return std::format("[{},{}]", keyStr, valueStr);
 	}
@@ -193,8 +216,8 @@ namespace Utils
 	template<typename TKey, typename TValue>
 	std::string ToStringKeyValue(const TKey& key, const TValue& value)
 	{
-		return std::format("[{},{}]", Utils::TryToString<TKey>(key).value_or("KEY STRINGIFY FAILED"), 
-									  Utils::TryToString<TValue>(value).value_or("VAL STRINGIFY FAILED"));
+		return std::format("[{},{}]", ::Utils::TryToString<TKey>(key).value_or("KEY STRINGIFY FAILED"), 
+									  ::Utils::TryToString<TValue>(value).value_or("VAL STRINGIFY FAILED"));
 	}
 
 	template<typename TNode, typename... TStringFuncArgs>
@@ -213,8 +236,8 @@ namespace Utils
 		while (currentNode != nullptr)
 		{
 			//LogWarning(std::format("Doing indices of next node: {} {} ", currentNode->m_IndexChild0, currentNode->m_IndexChild1));
-			resultStr += "\n" + prefixStr + (isLastChild ? Utils::TREE_BRANCH_END_STR : Utils::TREE_BRANCH_STR) +
-				ToStringTreeHelper(*currentNode, &node, prefixStr + (isLastChild ? "  " : Utils::TREE_VERTICAL_STR), 
+			resultStr += "\n" + prefixStr + (isLastChild ? ::Utils::TREE_BRANCH_END_STR : ::Utils::TREE_BRANCH_STR) +
+				ToStringTreeHelper(*currentNode, &node, prefixStr + (isLastChild ? "  " : ::Utils::TREE_VERTICAL_STR), 
 					getChildFunc, overrideToStringFunc, toStringArgs...);
 			if (isLastChild) break;
 

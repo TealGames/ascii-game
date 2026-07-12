@@ -16,11 +16,10 @@
 #include "Math/PlatformMath.hpp"
 #include "Core/Window/WindowManager.hpp"
 #include "Core/Time/TimeKeeper.hpp"
-#include "Utils/Math/MathAdvanced.hpp"
-#include "Utils/Data/ColorConstants.hpp"
+#include "Math/Math3d.hpp"
 #include "Tests/UnitTests.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
     /// <summary>
     /// If true, all verticies must be present at the start before first frame update
@@ -29,7 +28,7 @@ namespace Rendering
     constexpr bool USE_CACHED_SHAPE_ASSETS = true;
 
     constexpr bool DO_RAYTRACING = true;
-    constexpr RaytraceMode RAYTRACE_MODE = RaytraceMode::CPU;
+    constexpr RaytraceMode RAYTRACE_MODE = RaytraceMode::GPU;
     constexpr const char* OUTPUT_RAYTRACE_TEXTURE_PARENT_PATH = CURRENT_SOURCE_DIR "output/raytracer/";
     constexpr int OUTPUT_RAYTRACE_FRAME = 0;
     constexpr std::uint32_t MAX_RAYTRACE_BOUNCES = 5;
@@ -37,13 +36,13 @@ namespace Rendering
 
     constexpr bool DO_VISUALIZE_BVH_BOUNDS = false;
     constexpr float BVH_BOUNDS_LINE_THICKNESS = 1;
-    constexpr HDRColor BVH_BOUNDS_COLOR = COLOR_GREEN;
-    constexpr HDRColor BVH_BOUNDS_LEAF_COLOR = COLOR_RED;
+    constexpr ColHDR4 BVH_BOUNDS_COLOR = COLOR_GREEN;
+    constexpr ColHDR4 BVH_BOUNDS_LEAF_COLOR = COLOR_RED;
 
     constexpr bool DO_LIGHTING = true;
     constexpr bool DRAW_LIGHT_AREAS = false;
     constexpr bool USE_LIGHT_COLOR_FOR_RANGE = true;
-    constexpr HDRColor LIGHT_AREA_COLOR = {255, 255, 255, 255};
+    constexpr ColHDR4 LIGHT_AREA_COLOR = {255, 255, 255, 255};
     
     constexpr bool DO_SHADOWS = false;
     constexpr Vec2Int SHADOW_MAP_SIZE = {256, 256};
@@ -70,18 +69,19 @@ namespace Rendering
     constexpr size_t NO_RENDER_FRAME_COUNT_LIMIT = 0;
     constexpr size_t RENDER_FRAMES_COUNT = NO_RENDER_FRAME_COUNT_LIMIT;
     constexpr LogType STALL_LOG_TYPE = LogType::Warning;
-
+       
+    constexpr RenderLimitBehavior RENDER_LIMIT_BEHAVIOR = RenderLimitBehavior::Warn;
     constexpr size_t INSTANCE_MAX_COUNT = 16;
-    constexpr size_t INDEX_MAX_COUNT = 20000;
-    constexpr size_t VERTEX_MAX_COUNT = 10000;
+    constexpr size_t INDEX_MAX_COUNT = 200'000;
+    constexpr size_t VERTEX_MAX_COUNT = 100'000;
     constexpr size_t UI_INSTANCE_MAX_COUNT = 50;
-    constexpr size_t UI_INDEX_MAX_COUNT = 20000;
-    constexpr size_t UI_VERTEX_MAX_COUNT = 10000;
+    constexpr size_t UI_INDEX_MAX_COUNT = 20'000;
+    constexpr size_t UI_VERTEX_MAX_COUNT = 10'000;
 
     constexpr size_t MATERIAL_MAX_COUNT = 10;
     constexpr size_t TEXTURE_MAX_COUNT = 5;
-    constexpr size_t BLAS_NODE_MAX_COUNT = 8000;
-    constexpr size_t TLAS_NODE_MAX_COUNT = 8000;
+    constexpr size_t BLAS_NODE_MAX_COUNT = 50'000;
+    constexpr size_t TLAS_NODE_MAX_COUNT = 100;
     constexpr size_t CIRCLE_SIDE_COUNT = 12;
 
     static const char* CORE_SHADER_NAMES[CORE_SHADER_COUNT] = { 
@@ -153,7 +153,7 @@ namespace Rendering
     }
 
     //TODO: since rendering needs to be fast, optmize render calls with void* instead of variants
-    Renderer::Renderer(const EngineState& engineState)
+    Renderer::Renderer(const Core::EngineState& engineState)
         : m_isInit(false), m_engineState(&engineState), m_uniformData(), m_skybox(),//m_staticRenderData(),
         m_graphicsManager(nullptr), m_frameGeometryMetrics(), m_runtimeMaterialId(),m_cachedMaterials(),
         m_textureController(Backend::CreateTextureController()),
@@ -162,7 +162,7 @@ namespace Rendering
         m_geometryVertexLayout(), m_uiVertexLayout(), m_bufferController(),
         m_geometryUnit(m_geometryVertexLayout), m_uiUnit(m_uiVertexLayout),
         m_unmovingFrames(0), m_isRenderStalled(false), m_framesSinceStart(0), m_cpuBufferTextures(),
-        m_frameBuffer(), m_shadowMaps(), m_hdrColorOutput(), m_texRaytraceAccum0(), m_texRaytraceAccum1(), m_hdrDepthRenderBuffer(), m_coreShaders({}),
+        m_frameBuffer(), m_shadowMaps(), m_ColHDR4Output(), m_texRaytraceAccum0(), m_texRaytraceAccum1(), m_hdrDepthRenderBuffer(), m_coreShaders({}),
         m_currentPass(RenderPassType::None), m_renderPassData({}), m_boundFrameBuffer(nullptr), m_boundShader(nullptr),
         m_viewerUniformBuffer(Backend::CreateUniformBuffer(VIEWER_UNIFORM_BLOCK_NAME)),
         m_lightUniformBuffer(Backend::CreateUniformBuffer(LIGHT_UNIFORM_BLOCK_NAME)),
@@ -199,7 +199,7 @@ namespace Rendering
         //m_batches.reserve(1);
         m_geometryVertexLayout = Backend::CreateVertexLayout();
         m_geometryVertexLayout.BindActive();
-        m_geometryUnit.Init(VERTEX_MAX_COUNT, INDEX_MAX_COUNT, INSTANCE_MAX_COUNT);
+        m_geometryUnit.Init(VERTEX_MAX_COUNT, INDEX_MAX_COUNT, INSTANCE_MAX_COUNT, RENDER_LIMIT_BEHAVIOR);
 
         const VertexLayoutBindIndex vertexBindIndex = m_bufferController.AddVertexBuffer(&m_geometryVertexLayout, 
             &m_geometryUnit.m_VertexBufferHandle, &m_geometryUnit.m_IndexBufferHandle);
@@ -227,7 +227,7 @@ namespace Rendering
 
         m_uiVertexLayout = Backend::CreateVertexLayout();
         m_uiVertexLayout.BindActive();
-        m_uiUnit.Init(UI_VERTEX_MAX_COUNT, UI_INDEX_MAX_COUNT, UI_INSTANCE_MAX_COUNT);
+        m_uiUnit.Init(UI_VERTEX_MAX_COUNT, UI_INDEX_MAX_COUNT, UI_INSTANCE_MAX_COUNT, RENDER_LIMIT_BEHAVIOR);
         const VertexLayoutBindIndex uiVertexBindIndex = m_bufferController.AddVertexBuffer(&m_uiVertexLayout,
             &m_uiUnit.m_VertexBufferHandle, &m_uiUnit.m_IndexBufferHandle);
         vertexAttributes =
@@ -309,7 +309,7 @@ namespace Rendering
                                                        TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
                 m_texRaytraceAccum1 = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
                                                        TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
-                m_hdrColorOutput = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
+                m_ColHDR4Output = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
                                                     TexelStorageType::RGBA16F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
             }
             else if (RAYTRACE_MODE == RaytraceMode::CPU)
@@ -322,13 +322,13 @@ namespace Rendering
                                               TexelStorageType::RGBA32F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
                 //If we have CPU raytracer since we use multithreading, we want safe reads, so buffer is stored on CPU AND
                 //on GPU since an output texture for the raytracer must be GPU so it can be used for Post Process
-                m_hdrColorOutput = CreateTexture(nullptr, windowSize, TextureBufferType::GPUThreadSafeRead,
+                m_ColHDR4Output = CreateTexture(nullptr, windowSize, TextureBufferType::GPUThreadSafeRead,
                     TexelStorageType::RGBA32F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
             }
         }
         else
         {
-            m_hdrColorOutput = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
+            m_ColHDR4Output = CreateTexture(nullptr, windowSize, TextureBufferType::GPU, 
                                                 TexelStorageType::RGBA32F, CreateXYZWrapBehavior(WrapBehavior::ClampEdge));
         }
 
@@ -458,7 +458,7 @@ namespace Rendering
     RenderBatch* Renderer::TryGetSameGeometryDrawBatch(const Shader& shader, const Material& material, std::uint32_t vertexCount)
     {
         //TODO: also consider alpha of texture and then return nullptr if it has alpha != 255
-        if (!Utils::ApproximateEqualsF(material.GetAlpha(), MAX_FLOAT_COLOR_CHANNEL))
+        if (!::Math::ApproximateEqualsF(material.GetAlpha(), MAX_FLOAT_COLOR_CHANNEL))
             return nullptr;
 
         if (material.m_Albedo == nullptr)
@@ -510,19 +510,19 @@ namespace Rendering
         RenderBatch& batch = m_geometryUnit.CreateBatch(shader, material.m_Albedo);
         if (vertexSize > 0 && vertexArray != nullptr)
         {
-            m_geometryUnit.AddVerticesToBatch(batch, vertexArray, vertexSize);
+            m_geometryUnit.TryAddVerticesToBatch(batch, vertexArray, vertexSize);
         }
         if (indicesSize > 0 && indexArray != nullptr)
         {
-            m_geometryUnit.AddIndicesToBatch(batch, indexArray, indicesSize);
+            m_geometryUnit.TryAddIndicesToBatch(batch, indexArray, indicesSize);
         }
         
-        AddGeometryInstanceDataToBatch(batch, modelMatrix, material);
+        TryAddGeometryInstanceDataToBatch(batch, modelMatrix, material);
         //NOTE: we wait until we have vertices and indices to be able to finish batch
         if (vertexArray != nullptr && indexArray != nullptr) FinishGeometryBatch(batch, blasTree);
         return batch;
     }
-    Instance& Renderer::AddGeometryInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material)
+    Instance* Renderer::TryAddGeometryInstanceDataToBatch(RenderBatch& batch, const Mat4& modelMatrix, const Material& material)
     {
         Mat3 normalMatrix = modelMatrix.GetSlice<3, 3>();
         ENGINE_ASSERT(normalMatrix.Inverse(), "Attempted to add instance data to batch with model matrix:{} "
@@ -534,7 +534,7 @@ namespace Rendering
             m_materialData.emplace_back(MaterialData(material, GetEnqueuedTextureIndex(material.m_Albedo)));
             cachedMaterialIt = m_cachedMaterials.emplace(material.m_Name, m_materialData.size() - 1).first;
         }
-        Instance& createdInstance = m_geometryUnit.AddInstanceDataToBatch(batch, 
+        Instance* createdInstance = m_geometryUnit.TryAddInstanceDataToBatch(batch, 
             cachedMaterialIt->second, 0, modelMatrix, normalMatrix.Transpose()); 
 
         if (DO_RAYTRACING)
@@ -549,7 +549,7 @@ namespace Rendering
         const Instance& instance = m_geometryUnit.m_CpuInstances[instanceIndex];
         //We get the root node of this instance's mesh blas tree (NODE: first index of interval is ROOT)
         const BVHNodeStd430& blasTreeRootNode = m_blasTreesAligned[m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval.m_StartIndex];
-        m_instanceBoundsData.push_back(InstanceBoundsData(Utils::ApplyMatrixToAABB(blasTreeRootNode.GetAABB(), instance.m_ModelMatrix), instanceIndex));
+        m_instanceBoundsData.push_back(InstanceBoundsData(Math::ApplyMatrixToAABB(blasTreeRootNode.GetAABB(), instance.m_ModelMatrix), instanceIndex));
     }
     void Renderer::FinishGeometryBatch(RenderBatch& batch, const BVHTriangleTree* blasTree)
     {
@@ -611,34 +611,39 @@ namespace Rendering
 
         //NOTE: we do NOT add separate mesh instance on creation since those should only be done
         //on the first isntance created for a batch because all instances in a batch share same mesh
-        Instance& createdInstance = AddGeometryInstanceDataToBatch(batch, modelMatrix, material);
+        Instance* createdInstance = TryAddGeometryInstanceDataToBatch(batch, modelMatrix, material);
+        if (createdInstance == nullptr)
+        {
+            LogWarning("Attempted to add complete geometry instance to batch, but created instance was null");
+            return;
+        }
         //If this is NOT the first instance to this batch it means the mesh for this batch must exist (NOTE: the
         //mesh for a whole batch is the same) and we can set it to a previous set instance OTHERWSIE we
         //will have to set the mesh index separately when the batch is fully finished
-        createdInstance.m_MeshIndex = m_geometryUnit.m_CpuInstances[batch.m_InstanceStartIndex].m_MeshIndex;
+        createdInstance->m_MeshIndex = m_geometryUnit.m_CpuInstances[batch.m_InstanceStartIndex].m_MeshIndex;
         //The most recent added instance data is the one create world mesh bounds
         AddGeometryInstanceMeshBoundsData(batch.m_InstanceStartIndex + batch.m_InstanceCount);
     }
 
     RenderBatch& Renderer::CreateUIBatch(Shader& shader, Texture* texture, const VertexUI* vertexArray, const size_t vertexSize,
-        const IndexType* indexArray, const size_t indicesSize, const HDRColor& color, const float depth, const Mat3& modelMatrix)
+        const IndexType* indexArray, const size_t indicesSize, const ColHDR4& color, const float depth, const Mat3& modelMatrix)
     {
         ENGINE_ASSERT(vertexArray != nullptr && vertexSize > 0 && indexArray != nullptr && indicesSize > 0,
             "Attempted to create create a UI batch with no vertices and/or indices");
 
         RenderBatch& batch = m_uiUnit.CreateBatch(shader, texture);
-        m_uiUnit.AddVerticesToBatch(batch, vertexArray, vertexSize);
-        m_uiUnit.AddIndicesToBatch(batch, indexArray, indicesSize);
+        m_uiUnit.TryAddVerticesToBatch(batch, vertexArray, vertexSize);
+        m_uiUnit.TryAddIndicesToBatch(batch, indexArray, indicesSize);
 
-        AddUIInstanceDataToBatch(batch, color, texture, depth, modelMatrix);
+        TryAddUIInstanceDataToBatch(batch, color, texture, depth, modelMatrix);
         m_uiUnit.FinishBatch(batch);
         return batch;
     }
-    InstanceUI& Renderer::AddUIInstanceDataToBatch(RenderBatch& batch, const HDRColor& color, Texture* texture, 
+    InstanceUI* Renderer::TryAddUIInstanceDataToBatch(RenderBatch& batch, const ColHDR4& color, Texture* texture, 
         const float depth, const Mat3& modelMatrix)
     {
         //TODO: add support for textures
-        return m_uiUnit.AddInstanceDataToBatch(batch, color, -1, depth, modelMatrix);
+        return m_uiUnit.TryAddInstanceDataToBatch(batch, color, -1, depth, modelMatrix);
     }
     RenderBatch* Renderer::TryGetSameUIDrawBatch(const Shader& shader, const Texture* texture, std::uint32_t vertexCount)
     {
@@ -655,7 +660,7 @@ namespace Rendering
         if (m_instanceBoundsData.empty())
             return;
 
-        //LogWarning(std::format("ALL instance bounds data: {}", Utils::ToStringIterable(m_instanceBoundsData)));
+        //LogWarning(std::format("ALL instance bounds data: {}", ::Utils::ToStringIterable(m_instanceBoundsData)));
         m_tlasTreeAligned.Construct(&m_instanceBoundsData[0], m_instanceBoundsData.size(), true, 1, 
             BVHSplitAlgorithm::Midpoint, &InstanceBoundsData::GetAABB, &InstanceBoundsData::GetCenter, 
             [](const InstanceBoundsData* boundsPtr, const std::uint32_t* objectIndicesArr, const size_t boundsSize, int intendedStartIndex,
@@ -668,7 +673,7 @@ namespace Rendering
             });
         if (writeToTlasSSBO) m_tlasTreeStorageBuffer.WriteData(0, decltype(m_tlasTreeAligned)::GetNodeByteSize() * m_tlasTreeAligned.Size(), &m_tlasTreeAligned.GetRoot());
 
-        /*LogWarning(std::format("ALL instance bounds data: {}", Utils::ToStringIterable(m_instanceBoundsData)));
+        /*LogWarning(std::format("ALL instance bounds data: {}", ::Utils::ToStringIterable(m_instanceBoundsData)));
         LogWarning(std::format("ALL render calls: {}", ToStringMetrics()));
         LogWarning(std::format("ALL INSTANCES:{}", ToStringInstances()));
         LogWarning(std::format("TLAS TREE {}\n", m_tlasTree.ToString(BVHToStringType::NodeBounds)));
@@ -732,14 +737,14 @@ namespace Rendering
     {
         outViewMatrices =
         {
-            CalculateViewMatrix(pos, ENGINE_RIGHT_DIR,      -ENGINE_UP_DIR),
-            CalculateViewMatrix(pos, -ENGINE_RIGHT_DIR,     -ENGINE_UP_DIR),
-            CalculateViewMatrix(pos, ENGINE_UP_DIR,         ENGINE_FORWARD_DIR),
-            CalculateViewMatrix(pos, -ENGINE_UP_DIR,        -ENGINE_FORWARD_DIR),
-            CalculateViewMatrix(pos, ENGINE_FORWARD_DIR,    -ENGINE_UP_DIR),
-            CalculateViewMatrix(pos, -ENGINE_FORWARD_DIR,   -ENGINE_UP_DIR)
+            Camera::CalculateViewMatrix(pos, ENGINE_RIGHT_DIR,      -ENGINE_UP_DIR),
+            Camera::CalculateViewMatrix(pos, -ENGINE_RIGHT_DIR,     -ENGINE_UP_DIR),
+            Camera::CalculateViewMatrix(pos, ENGINE_UP_DIR,         ENGINE_FORWARD_DIR),
+            Camera::CalculateViewMatrix(pos, -ENGINE_UP_DIR,        -ENGINE_FORWARD_DIR),
+            Camera::CalculateViewMatrix(pos, ENGINE_FORWARD_DIR,    -ENGINE_UP_DIR),
+            Camera::CalculateViewMatrix(pos, -ENGINE_FORWARD_DIR,   -ENGINE_UP_DIR)
         };
-        outProjMatrix = PlatformMath::CalculatePlatformPerspectiveProjMatrix(Utils::ToRadians(90), 1, nearDistance, farDistance);
+        outProjMatrix = Math::Platforms::CalculatePlatformPerspectiveProjMatrix(::Math::RAD_90, 1, nearDistance, farDistance);
     }
 
     void Renderer::AddExistingMeshCall(Model3d& model, Shader& shader, Material& material, const Mat4& modelMatrix)
@@ -813,7 +818,7 @@ namespace Rendering
         //The size is in x, y, z axis 
         const Vec2 textureSize = material.m_Albedo->GetInfo().m_TexelSize.AsFloat();
         //The size in texture pixel coords based on its world size
-        const Vec3Int pixelSize = CalculateFaceSizeForTexture(Utils::ExtractScaleFromMatrix(modelMatrix),
+        const Vec3Int pixelSize = CalculateFaceSizeForTexture(Math::ExtractScaleFromMatrix(modelMatrix),
             material.m_Albedo->GetInfo().m_TexelSize);
 
         const Vec2 frontBackFaceSize = Vec2(pixelSize.m_X, pixelSize.m_Y) / textureSize;
@@ -989,8 +994,8 @@ namespace Rendering
                 cIndex = (hi + 1) * (VERTICAL_LINE_COUNT)+vi;
                 dIndex = (hi + 1) * (VERTICAL_LINE_COUNT)+nextV;
 
-                m_geometryUnit.AddIndicesToBatch(batch, { aIndex, cIndex, bIndex });
-                m_geometryUnit.AddIndicesToBatch(batch, { bIndex, cIndex, dIndex });
+                m_geometryUnit.TryAddIndicesToBatch(batch, { aIndex, cIndex, bIndex });
+                m_geometryUnit.TryAddIndicesToBatch(batch, { bIndex, cIndex, dIndex });
             }
         }
 
@@ -1002,7 +1007,7 @@ namespace Rendering
         {
             aIndex = vi;
             bIndex = (aIndex + 1) % VERTICAL_LINE_COUNT;
-            m_geometryUnit.AddIndicesToBatch(batch, { aIndex, poleIndex, bIndex });
+            m_geometryUnit.TryAddIndicesToBatch(batch, { aIndex, poleIndex, bIndex });
         }
 
         //Finally, we connect all the bottom latitude/row verticies to the south pole vertex
@@ -1015,7 +1020,7 @@ namespace Rendering
             aIndex = bottomStartIndex + vi;
             if (vi < VERTICAL_LINE_COUNT - 1) bIndex = aIndex + 1;
             else bIndex = bottomStartIndex;
-            m_geometryUnit.AddIndicesToBatch(batch, { aIndex, poleIndex, bIndex });
+            m_geometryUnit.TryAddIndicesToBatch(batch, { aIndex, poleIndex, bIndex });
         }
 
         FinishGeometryBatch(batch, nullptr);
@@ -1083,20 +1088,20 @@ namespace Rendering
     {
         AddCallSphere3DMulti(GetBaseShader(), GetMaterialOrDefault(material), modelMatrix);
     }
-    void Renderer::AddCallSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation)
+    void Renderer::AddCallSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Math::Quat& rotation)
     {
         AddCallSphere3DMulti(GetBaseShader(), GetMaterialOrDefault(material), 
             //NOTE: since sphere by default has diameter 1 (radius 0.5), ITS SCALE will ultiamtely be 2 * radius (or diameter)
-            Utils::CalculateModelMatrix(nullptr, worldPos, Vec3(radius*2), rotation));
+            Math::CalculateModelMatrix(nullptr, worldPos, Vec3(radius*2), rotation));
     }
     void Renderer::AddCallTextureSphere3D(Material* material, const Mat4& modelMatrix)
     {
         AddCallSphere3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), modelMatrix);
     }
-    void Renderer::AddCallTextureSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Quat& rotation)
+    void Renderer::AddCallTextureSphere3D(Material* material, const WorldPosition3D& worldPos, const float radius, const Math::Quat& rotation)
     {
         AddCallSphere3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), 
-            Utils::CalculateModelMatrix(nullptr, worldPos, Vec3(radius), rotation));
+            Math::CalculateModelMatrix(nullptr, worldPos, Vec3(radius), rotation));
     }
 
     void Renderer::AddCallTextureBox3D(Material* material, const Mat4& modelMatrix)
@@ -1104,7 +1109,7 @@ namespace Rendering
         AddCallBox3DMulti(GetBaseTextureShader(), GetMaterialOrDefault(material), modelMatrix);
     }
 
-    void Renderer::AddCallRect2D(const HDRColor& color, Texture* texture, const float depth, const Mat3& modelMatrix)
+    void Renderer::AddCallRect2D(const ColHDR4& color, Texture* texture, const float depth, const Mat3& modelMatrix)
     {
         constexpr size_t TOTAL_INDEX_COUNT = 6;
         constexpr size_t TOTAL_VERTEX_COUNT = 4;
@@ -1113,7 +1118,7 @@ namespace Rendering
         RenderBatch* sameStatebatch = TryGetSameUIDrawBatch(uiShader, texture, TOTAL_VERTEX_COUNT);
         if (sameStatebatch != nullptr)
         {
-            AddUIInstanceDataToBatch(*sameStatebatch, color, texture, depth, modelMatrix);
+            TryAddUIInstanceDataToBatch(*sameStatebatch, color, texture, depth, modelMatrix);
             return;
         }
 
@@ -1129,7 +1134,7 @@ namespace Rendering
         CreateUIBatch(uiShader, texture, vertices, TOTAL_VERTEX_COUNT, indices, TOTAL_INDEX_COUNT, color, depth, modelMatrix);
     }
 
-    void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Quat& worldRot, const float radius, const HDRColor& color)
+    void Renderer::AddCallPointLight(const WorldPosition3D& worldPos, const Math::Quat& worldRot, const float radius, const ColHDR4& color)
     {
         //LogWarning(std::format("Invoked light call with: {}", m_uniformData.m_LightBlock.m_PointLightsCount));
         if (m_uniformData.m_LightBlock.m_PointLightsCount >= MAX_POINT_LIGHTS)
@@ -1156,10 +1161,10 @@ namespace Rendering
                 USE_LIGHT_COLOR_FOR_RANGE ? color : LIGHT_AREA_COLOR);
 
             AddCallSphere3DMulti(GetCoreShader(CoreShader::Texture), lightMaterial,
-                Utils::CalculateModelMatrix(nullptr, worldPos, std::min(0.1f * radius, 1.0f), Quat::Identity()));
+                Math::CalculateModelMatrix(nullptr, worldPos, std::min(0.1f * radius, 1.0f), Math::Quat::Identity()));
         }
     }
-    void Renderer::SetDirectionalLight(const Vec3& dir, const HDRColor& color)
+    void Renderer::SetDirectionalLight(const Vec3& dir, const ColHDR4& color)
     {
         m_frameGeometryMetrics.m_RenderCallInvocations.emplace_back(RenderCallType::DirectionLight3d, Mat4{});
 
@@ -1185,7 +1190,7 @@ namespace Rendering
             {
                 obj = &(model.m_Objects[meshIndex]);
 
-                AddCallMesh(obj->m_Mesh, obj->m_Material, modelMatrix * meshGroup.m_GlobalTransform);
+                AddCallMesh(obj->m_Mesh, obj->m_MaterialAsset->GetMaterialMutable(), modelMatrix * meshGroup.m_GlobalTransform);
             }
         }
     }
@@ -1196,7 +1201,7 @@ namespace Rendering
             &(mesh.m_Indices[0]), mesh.m_Indices.size(), modelMatrix, &mesh.m_BLASTree);
     }
 
-    void Renderer::AddCallAABBWifreframe(const Mat4& modelMatrix, const HDRColor& color, const float lineThickness)
+    void Renderer::AddCallAABBWifreframe(const Mat4& modelMatrix, const ColHDR4& color, const float lineThickness)
     {
         constexpr size_t TOTAL_INDEX_COUNT = 36 * 4;
         constexpr size_t TOTAL_VERTEX_COUNT = 36 * 4;
@@ -1211,7 +1216,7 @@ namespace Rendering
         }
         RenderBatch& batch = CreateGeometryBatch(baseShader, baseMaterial, nullptr, TOTAL_VERTEX_COUNT, nullptr, TOTAL_INDEX_COUNT, modelMatrix, nullptr);
 
-        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
+        const Camera::CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
         const WorldPosition3D cameraPos = camera.GetTransform().GetWorldPos();
         Vec3 cameraDir = {};
         Vec3 cameraLineOrthogonal = {};
@@ -1224,33 +1229,33 @@ namespace Rendering
             vertex0 = cubeMesh.m_Vertices[cubeMesh.m_Indices[i - 1]].m_LocalPos;
             vertex1 = cubeMesh.m_Vertices[cubeMesh.m_Indices[i]].m_LocalPos;
             cameraDir = (cameraPos - (vertex0 + vertex1) / 2).GetNormalized();
-            cameraLineOrthogonal = CrossProduct(cameraDir, (vertex1 - vertex0).GetNormalized()).GetNormalized();
+            cameraLineOrthogonal = Math::CrossProduct(cameraDir, (vertex1 - vertex0).GetNormalized()).GetNormalized();
 
             //TODO: FINISH
         }
         FinishGeometryBatch(batch, nullptr);
     }
-    void Renderer::AddCallAABBWifreframe(const AABB3D& aabb, const Quat& rotation, const HDRColor& color, const float lineThickness)
+    void Renderer::AddCallAABBWifreframe(const AABB3D& aabb, const Math::Quat& rotation, const ColHDR4& color, const float lineThickness)
     {
-        AddCallAABBWifreframe(Utils::CalculateModelMatrix(nullptr, aabb.GetCenter(), aabb.GetSize(), rotation), color, lineThickness);
+        AddCallAABBWifreframe(Math::CalculateModelMatrix(nullptr, aabb.GetCenter(), aabb.GetSize(), rotation), color, lineThickness);
     }
 
     void Renderer::AddBVHTreeBoundsWireframe()
     {
         for (const auto& node : m_tlasTreeAligned.GetNodes())
         {
-            AddCallAABBWifreframe(node.GetAABB(), Quat::Identity(), 
+            AddCallAABBWifreframe(node.GetAABB(), Math::Quat::Identity(),
                 node.IsLeaf()? BVH_BOUNDS_LEAF_COLOR : BVH_BOUNDS_COLOR, BVH_BOUNDS_LINE_THICKNESS);
         }
     }
-    bool Renderer::IntersectsBVH(Ray3D rayWorld, const Vertex* outHitVertex)
+    bool Renderer::IntersectsBVH(Math::Ray3D rayWorld, const Vertex* outHitVertex)
     {
         rayWorld.m_Dir.Normalize();
 
         IndexTriangle* trianglePtr = reinterpret_cast<IndexTriangle*>(&m_geometryUnit.m_CpuIndices[0]);
         return m_tlasTreeAligned.Intersects<Instance>(rayWorld, &m_geometryUnit.m_CpuInstances[0], nullptr, nullptr,
             [this, trianglePtr](const BVHNodeStd430& node, const Instance& instance,
-                const Ray3D& rayWorld, float* outTopHitDistance) -> bool
+                const Math::Ray3D& rayWorld, float* outTopHitDistance) -> bool
             {
                 const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
                 const WorldPosition3D rayLocalOrigin = (instance.m_InverseModelMatrix * Vec4(rayWorld.m_Origin, 1)).GetXYZ();
@@ -1260,13 +1265,14 @@ namespace Rendering
                     rayOrigin.ToString(), rayLocalOrigin.ToString(), rayDir.ToString(), rayLocalDir.ToString()));
                 LogWarning(std::format("Ray (LOCAL) {} -> {} reached blas level (LOCAL) area: {} SHOULD INTERSECT:{}", 
                     rayLocalOrigin.ToString(), rayLocalDir.ToString(),
-                    Utils::ApplyMatrixToAABB(node.GetAABB(), instance.m_InverseModelMatrix).ToString(), 
-                    Utils::RayIntersectsSphere(Vec3(), 0.2, rayLocalOrigin, rayLocalDir, nullptr)));
+                    ::Utils::ApplyMatrixToAABB(node.GetAABB(), instance.m_InverseModelMatrix).ToString(), 
+                    ::Utils::RayIntersectsSphere(Vec3(), 0.2, rayLocalOrigin, rayLocalDir, nullptr)));
                     */
-                return ::IntersectsBVH<IndexTriangle, STD_430_ALIGN>(Ray3D{ rayLocalOrigin, rayLocalDir }, &m_blasTreesAligned[treeInterval.m_StartIndex],
+                return Engine::IntersectsBVH<IndexTriangle, STD_430_ALIGN>(Math::Ray3D{ rayLocalOrigin, rayLocalDir }, 
+                    &m_blasTreesAligned[treeInterval.m_StartIndex],
                     treeInterval.m_Size, trianglePtr, nullptr, nullptr, nullptr,
                     [this, outTopHitDistance, &instance, rayWorld](const BVHNodeStd430& node, const IndexTriangle& triangle,
-                        const Ray3D& rayLocal, float* outBottomHitDistance) -> bool
+                        const Math::Ray3D& rayLocal, float* outBottomHitDistance) -> bool
                     {
                         /*
                         LogWarning(std::format("Ray {} -> {} reached vertex level with triangle: {} {} {}", rayLocalOrigin.ToString(), rayLocalDir.ToString(),
@@ -1275,7 +1281,7 @@ namespace Rendering
                         */
 
                         float outTEnter = 0;
-                        const bool intersectsTriangle = Utils::RayIntersectsTriangle(m_geometryUnit.m_CpuVertices[triangle.m_0].m_LocalPos,
+                        const bool intersectsTriangle = Math::RayIntersectsTriangle(m_geometryUnit.m_CpuVertices[triangle.m_0].m_LocalPos,
                             m_geometryUnit.m_CpuVertices[triangle.m_1].m_LocalPos, m_geometryUnit.m_CpuVertices[triangle.m_2].m_LocalPos, rayLocal, &outTEnter);
                         *outBottomHitDistance = (rayLocal.m_Dir * outTEnter).GetMagnitude();
                         const Vec3 worldHitPos = (instance.m_ModelMatrix * Vec4(rayLocal.m_Origin + rayLocal.m_Dir * outTEnter, 1)).GetXYZ();
@@ -1296,7 +1302,7 @@ namespace Rendering
                 //and since each leaf in the TLAS has only 1 INSTANCE, we can just get the roots BLAS tree aabb
                 //which should be the same as the object aabb
                 const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
-                return Utils::ApplyMatrixToAABB<STD_430_ALIGN, AABB3D::GetAlignment()>(
+                return Math::ApplyMatrixToAABB<STD_430_ALIGN, AABB3D::GetAlignment()>(
                     m_blasTreesAligned[treeInterval.m_StartIndex].m_Bounds, instance.m_ModelMatrix);
             },
             //TLAS leaf successor is valid function
@@ -1305,7 +1311,7 @@ namespace Rendering
                 //NOTE: the object indices of TLAS tree are indices into instances
                 const Instance& instance = m_geometryUnit.m_CpuInstances[leafNode.m_ObjectStartIndex];
                 const ArrayInterval treeInterval = m_instanceMeshes[instance.m_MeshIndex].m_BLASTreesInterval;
-                return ::IsValidBVH<IndexTriangle, STD_430_ALIGN>(&m_blasTreesAligned[treeInterval.m_StartIndex], m_geometryUnit.m_CpuIndices.size() / 3, trianglePtr, nullptr,
+                return Engine::IsValidBVH<IndexTriangle, STD_430_ALIGN>(&m_blasTreesAligned[treeInterval.m_StartIndex], m_geometryUnit.m_CpuIndices.size() / 3, trianglePtr, nullptr,
                     [this](const IndexTriangle& triangle) -> AABB3D
                     {
                         //NOTE: this ONLY WORKS IF WE APPLIED OBEJCT LEAF NODE INDEX OFFSET TO BLAS TREES
@@ -1376,8 +1382,8 @@ namespace Rendering
             m_uniformData.m_LightBufferNeedsUpdate = false;
         }
         //TODO: right now camera data is always written FIX THIS
-        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
-        const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
+        const Camera::CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
+        const Camera::CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
         camera.GetTransform().CalculateWorldDirections(&m_uniformData.m_ViewerBlock.m_FowardDir, 
             &m_uniformData.m_ViewerBlock.m_UpDir, &m_uniformData.m_ViewerBlock.m_RightDir);
 
@@ -1397,7 +1403,7 @@ namespace Rendering
                 m_uniformData.m_ViewerBlock.m_FovY);
         }
         
-        if (Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, CameraPrecalculatedDataUpdate::ViewMatrix))
+        if (::Utils::HasFlagAny(cameraData.m_UpdatedThisFrame, Camera::CameraPrecalculatedDataUpdate::ViewMatrix))
         {
             m_unmovingFrames = 0;
         }
@@ -1444,13 +1450,13 @@ namespace Rendering
         SlotIndex slot = m_textureController.TryBindToFreeSlot<Texture>(*m_skybox);
         skyboxShader.TrySetUniform(UniformDataType::Sampler2D, SKYBOX_UNIFORM_NAME, &slot);
 
-        const CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
-        const CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
-        Quat cameraRotation = camera.GetTransform().GetWorldRotation();
+        const Camera::CameraComponent& camera = m_engineState->m_CameraController->GetActiveCamera();
+        const Camera::CameraPrecalculatedData& cameraData = camera.GetLastUpdateData();
+        Math::Quat cameraRotation = camera.GetTransform().GetWorldRotation();
         const Vec3 forwardDir = cameraRotation.ApplyRotationToDir(ENGINE_FORWARD_DIR);
-        const Vec3 rightDir = CrossProduct(ENGINE_UP_DIR, forwardDir).GetNormalized();
-        Mat4 noTranslationViewMatrix = Utils::CalculateModelMatrix(nullptr, Vec3::Zero(), Vec3::One(), 
-            Utils::CalculateRotationMatrix(forwardDir, ENGINE_UP_DIR, rightDir));
+        const Vec3 rightDir = Math::CrossProduct(ENGINE_UP_DIR, forwardDir).GetNormalized();
+        Mat4 noTranslationViewMatrix = Math::CalculateModelMatrix(nullptr, Vec3::Zero(), Vec3::One(),
+            Math::CalculateRotationMatrix(forwardDir, ENGINE_UP_DIR, rightDir));
         //SetViewerData(camera.GetTransform().GetWorldPos(), cameraData.m_ViewMatrix, cameraData.m_PlatformProjectionMatrix);
         SetViewUniformBuffer(camera.GetTransform().GetWorldPos(), noTranslationViewMatrix, cameraData.m_PlatformProjectionMatrix);
 
@@ -1588,14 +1594,14 @@ namespace Rendering
         if (lastBatchTexture != nullptr) removeLastBatchTexture();
 
         //LogWarning(std::format("LIGHT PASS Texture controler after pass: {}", m_textureController.ToString()));
-        //LogError(std::format("HDR color texture: {}", Utils::ToStringMemory(writePtr, byteSize)));
+        //LogError(std::format("HDR color texture: {}", ::Utils::ToStringMemory(writePtr, byteSize)));
     } 
 
     Texture& Renderer::ExecuteForwardRendering()
     {
         const bool hasSkybox = m_skybox != nullptr;
         std::uint8_t previousDrawnAttachmentsMask = 0;
-        Texture& colorOutputTex = m_hdrColorOutput;
+        Texture& colorOutputTex = m_ColHDR4Output;
         if (hasSkybox) ExecuteSkyboxPass(colorOutputTex, &previousDrawnAttachmentsMask);
 
         //NOTE: we do this to ensure that we only add any data as long as all 3 buffers have enough space
@@ -1702,7 +1708,7 @@ namespace Rendering
             ENGINE_ASSERT(batch.m_Shader != nullptr, "Tried to flush UI batch in renderer, but batch shader was null");
             std::vector<InstanceUI> instances = {};
             m_uiUnit.m_InstanceBufferHandle.ReadDataAs<InstanceUI>(instances, true);
-            //LogError(std::format("UI instances: {}", Utils::ToStringIterable(instances)));
+            //LogError(std::format("UI instances: {}", ::Utils::ToStringIterable(instances)));
             //LogWarning(std::format("Has indices:{}", batch.m_IndicesCount));
 
             if (lastBatchShader != nullptr && batch.m_Shader == nullptr) unbindLastBatchShader();
@@ -1724,9 +1730,6 @@ namespace Rendering
         {
             ApplyBlurInPlace(m_brightnessOutput, m_ioTexture, 2);
         }
-
-        /*LogError(std::format("Bound fraembuffer: {} size: {}", Backend::GetRenderObjectId(RenderObjectQueryType::BoundFrameBuffer),
-            Backend::GetViewportSize().ToString()));*/
 
         Shader& ppShader = GetCoreShader(CoreShader::PostProcess);
         BindShader(ppShader);
@@ -2023,10 +2026,10 @@ namespace Rendering
         m_raytracer.Run();
         //NOTE: since the output texture in the raytracer is then used for Post Process, the output texture must be 
         //a gpu texture (which the accum0, accum1 ARE NOT) so we write the output from CPU textures to a GPU texture
-        m_hdrColorOutput.CopyBytes(outputTex);
-        //LogWarning(std::format("hdr tex Color outpit:{}", m_hdrColorOutput.ToStringBytes(false)));
-        //LogError(std::format("is emtpy copy:{}", m_hdrColorOutput.HasEmptyData()));
-        return m_hdrColorOutput;
+        m_ColHDR4Output.CopyBytes(outputTex);
+        //LogWarning(std::format("hdr tex Color outpit:{}", m_ColHDR4Output.ToStringBytes(false)));
+        //LogError(std::format("is emtpy copy:{}", m_ColHDR4Output.HasEmptyData()));
+        return m_ColHDR4Output;
     }
 
     void Renderer::FlushBatches()
@@ -2121,7 +2124,7 @@ namespace Rendering
                 const InstanceMesh& mesh = m_instanceMeshes[instance.m_MeshIndex];
                 const ArrayInterval interval = mesh.m_BLASTreesInterval;
                 const Vec3 aabbSize = tlasLeafNode.GetAABB().GetSize();
-                if (Utils::ApproximateEqualsF(aabbSize.m_X, 0) || Utils::ApproximateEqualsF(aabbSize.m_Y, 0) || Utils::ApproximateEqualsF(aabbSize.m_Z, 0))
+                if (::Math::ApproximateEqualsF(aabbSize.m_X, 0) || ::Math::ApproximateEqualsF(aabbSize.m_Y, 0) || ::Math::ApproximateEqualsF(aabbSize.m_Z, 0))
                     LogWarning(std::format("[BVH]: Found INVALID 0-value TLAS tree node: {}", tlasLeafNode.ToString()));
 
                 //Here we add a red prefix if the split between the leaf node of the tlas tree and the transformed 
@@ -2129,7 +2132,7 @@ namespace Rendering
                 std::string invalidBoundsPrefix = "";
                 std::string invalidBoundsSuffix = "";
                 const BVHNodeStd430& blasRootNode = m_blasTreesAligned[interval.m_StartIndex];
-                AABB3D rootNodeWorldBounds = Utils::ApplyMatrixToAABB(blasRootNode.GetAABB(), instance.m_ModelMatrix);
+                AABB3D rootNodeWorldBounds = Math::ApplyMatrixToAABB(blasRootNode.GetAABB(), instance.m_ModelMatrix);
                 AABB3D parentBounds = tlasLeafNode.GetAABB();
                 if (parentBounds.GetSize().AnyAxisLessThan(rootNodeWorldBounds.GetSize()) || 
                     parentBounds.m_MinPos.AnyAxisGreaterThan(rootNodeWorldBounds.m_MinPos) ||
@@ -2146,14 +2149,14 @@ namespace Rendering
                     [instance, &tlasLeafNode](const BVHNodeStd430& blasNode, const BVHNodeStd430* parentNode) -> std::string
                     {
                         const Vec3 aabbSize = blasNode.GetAABB().GetSize();
-                        if (Utils::ApproximateEqualsF(aabbSize.m_X, 0) || Utils::ApproximateEqualsF(aabbSize.m_Y, 0)
-                            || Utils::ApproximateEqualsF(aabbSize.m_Z, 0))
+                        if (::Math::ApproximateEqualsF(aabbSize.m_X, 0) || ::Math::ApproximateEqualsF(aabbSize.m_Y, 0)
+                            || ::Math::ApproximateEqualsF(aabbSize.m_Z, 0))
                         {
                             LogWarning(std::format("[BVH]: Found INVALID 0-value bounds for BLAS tree node: {}", blasNode.ToString()));
                         }
 
                         return std::format("[BLASNode Bounds:{}]",
-                            Utils::ApplyMatrixToAABB(blasNode.GetAABB(), instance.m_ModelMatrix).ToString());
+                            Math::ApplyMatrixToAABB(blasNode.GetAABB(), instance.m_ModelMatrix).ToString());
                     },
                     //BLAS Leaf node to string function -> get vertices
                     [this, &instance, &mesh, &blasRootNode](const BVHNodeStd430& blasLeafNode) -> std::string
@@ -2181,14 +2184,14 @@ namespace Rendering
                                 (instance.m_ModelMatrix * Vec4(v1, 1)).GetXYZ().ToString(),
                                 (instance.m_ModelMatrix * Vec4(v2, 1)).GetXYZ().ToString());
 
-                            if (!Utils::IsWithinBounds(blasLeafNode.GetAABB(), v0) || !Utils::IsWithinBounds(blasLeafNode.GetAABB(), v1) ||
-                                !Utils::IsWithinBounds(blasLeafNode.GetAABB(), v2))
+                            if (!Math::IsWithinBounds(blasLeafNode.GetAABB(), v0) || !Math::IsWithinBounds(blasLeafNode.GetAABB(), v1) ||
+                                !Math::IsWithinBounds(blasLeafNode.GetAABB(), v2))
                             {
                                 //LogError(std::format("[BVH]"));
                                 verticesStr += ANSI_COLOR_RED + triangleStr + ANSI_COLOR_CLEAR;
                             }
-                            if (Utils::IsFullyOutsideBounds(blasLeafNode.GetAABB(), v0) || Utils::IsFullyOutsideBounds(blasLeafNode.GetAABB(), v1) ||
-                                Utils::IsFullyOutsideBounds(blasLeafNode.GetAABB(), v2))
+                            if (Math::IsFullyOutsideBounds(blasLeafNode.GetAABB(), v0) || Math::IsFullyOutsideBounds(blasLeafNode.GetAABB(), v1) ||
+                                Math::IsFullyOutsideBounds(blasLeafNode.GetAABB(), v2))
                             {
                                 //LogError(std::format("[BVH]"));
                                 static int count = 0;
@@ -2229,7 +2232,7 @@ namespace Rendering
 
                 result += std::format("\n[Instance]: Material(Idx:{}):{} Model:{} Vertices:{} \nMesh BLAS TREE(MeshIndex:{} IntervalStart:{} IntervalSize:{}):{}", 
                     instance.m_MaterialIndex, m_materialData[instance.m_MaterialIndex].ToString(), instance.m_ModelMatrix.ToString(),
-                    Utils::ToStringIterable(vertexPositions), instance.m_MeshIndex, interval.m_StartIndex, interval.m_Size, blasTreeString);
+                    ::Utils::ToStringIterable(vertexPositions), instance.m_MeshIndex, interval.m_StartIndex, interval.m_Size, blasTreeString);
             }
         }
         return result;
@@ -2237,7 +2240,7 @@ namespace Rendering
     std::string Renderer::ToStringMetrics() const
     {
         std::string result = std::format("Metrics:\n Render calls:{}", 
-            Utils::ToStringIterable(m_frameGeometryMetrics.m_RenderCallInvocations));
+            ::Utils::ToStringIterable(m_frameGeometryMetrics.m_RenderCallInvocations));
         //TODO: count how many sphere counts, etc
         return result;
     }
@@ -2245,9 +2248,9 @@ namespace Rendering
     {
         return std::format("DUMPING RENDERER DATA:\nCameraState:{}\nGEOMETRY DATA:\nVertex({}):{}\nIndex({}):{}\nInstances({}):{}\nBatches:{}", 
             m_engineState->m_CameraController->GetActiveCamera().ToString(),
-            m_geometryUnit.m_CpuVertices.size(), Utils::ToStringIterable(m_geometryUnit.m_CpuVertices),
-            m_geometryUnit.m_CpuIndices.size(), Utils::ToStringIterable(m_geometryUnit.m_CpuIndices),
-            m_geometryUnit.m_CpuInstances.size(), Utils::ToStringIterable(m_geometryUnit.m_CpuInstances),
+            m_geometryUnit.m_CpuVertices.size(), ::Utils::ToStringIterable(m_geometryUnit.m_CpuVertices),
+            m_geometryUnit.m_CpuIndices.size(), ::Utils::ToStringIterable(m_geometryUnit.m_CpuIndices),
+            m_geometryUnit.m_CpuInstances.size(), ::Utils::ToStringIterable(m_geometryUnit.m_CpuInstances),
             m_geometryUnit.ToStringBatches());
     }
 }

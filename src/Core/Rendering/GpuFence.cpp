@@ -5,7 +5,7 @@
 #include "Platform/OpenGl/OpenGlGpuFence.hpp"
 #endif
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	std::string ToString(const GpuFenceStatus status)
 	{

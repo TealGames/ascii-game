@@ -3792,7 +3792,7 @@ TEST_CASE("BJData roundtrips" * doctest::skip())
                 const json j1 = json::parse(f_json);
 
                 // parse BJData file
-                auto packed = utils::read_binary_file(filename + ".bjdata");
+                auto packed = ::Utils::read_binary_file(filename + ".bjdata");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_bjdata(packed));
 
@@ -3822,7 +3822,7 @@ TEST_CASE("BJData roundtrips" * doctest::skip())
                 json const j1 = json::parse(f_json);
 
                 // parse BJData file
-                auto packed = utils::read_binary_file(filename + ".bjdata");
+                auto packed = ::Utils::read_binary_file(filename + ".bjdata");
 
                 {
                     INFO_WITH_TEMP(filename + ": output adapters: std::vector<uint8_t>");

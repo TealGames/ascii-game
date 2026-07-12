@@ -1,36 +1,17 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
-#include "ECS/Component/Types/World/TransformComponent.hpp"
 
 #ifdef ENABLE_PROFILER
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-namespace ECS
+namespace Engine
 {
-	void TransformSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime) 
-	{
-		/*scene.OperateOnComponents<TransformComponent>(
-			[](TransformComponent& transform)->void
-			{
-				transform.m_lastUpdateData.m_UpdatedThisFrame = false;
-			});*/
-	}
-
-	/*void TransformSystem::UpdateLastFramePos(Scene& scene)
+	void TransformSystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime) 
 	{
 #ifdef ENABLE_PROFILER
-		ProfilerTimer timer("TransformSystem::UpdateLastFramePos");
+		ProfilerTimer timer("TransformSystem::SystemUpdate");
 #endif 
-
-		scene.OperateOnComponents<TransformData>(
-			[](TransformData& transform)->void
-			{
-				transform.SetLocalPosLastFrame(transform.GetLocalPos());
-			});
-	}*/
-
-	//TODO: do scene bound checking
-
+	}
 }
 

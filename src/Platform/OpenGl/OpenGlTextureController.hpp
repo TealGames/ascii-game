@@ -4,12 +4,9 @@
 #ifdef OPENGL
 #include "Core/Rendering/Buffers.hpp"
 
-namespace Rendering
+namespace Engine::Rendering::OpenGl
 {
-	namespace OpenGl
-	{
-		TextureSlotController CreateTextureController();
-		ImageSlotController CreateImageController();
-	}
+	TextureSlotController CreateTextureController();
+	ImageSlotController CreateImageController();
 }
 #endif

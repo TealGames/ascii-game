@@ -2,27 +2,30 @@
 #include "ECS/Component/Component.hpp"
 #include "Core/UI/UIRect.hpp"
 
-namespace Rendering { class Renderer; }
-namespace ECS { class UIRenderSystem; }
-class UIRendererData : public Component
+namespace Engine::Rendering { class Renderer; }
+namespace Engine::UI
 {
-private:
-	Rendering::Renderer* m_renderer;
-	UIRect m_lastRenderArea;
-public:
-	friend class ECS::UIRenderSystem;
+	class UIRenderSystem;
+	class UIRendererComponent : public ECS::Component
+	{
+	private:
+		Rendering::Renderer* m_renderer;
+		UIRect m_lastRenderArea;
+	public:
+		friend class UIRenderSystem;
 
-private:
-public:
-	UIRendererData();
+	private:
+	public:
+		UIRendererComponent();
 
-	const UIRect& GetLastRenderRect() const;
-	Rendering::Renderer& GetRendererMutable();
+		const UIRect& GetLastRenderRect() const;
+		Rendering::Renderer& GetRendererMutable();
 
-	void InitFields() override;
-	std::string ToString() const override;
+		void InitFields() override;
+		void Serialize(Serialization::Serializer& serializer) const override;
+		void Deserialize(Serialization::Deserializer& deserializer) override;
+		std::string ToString() const override;
+	};
+}
 
-	void Deserialize(const Json& json) override;
-	Json Serialize() override;
-};
 

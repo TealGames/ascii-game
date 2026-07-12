@@ -1,37 +1,37 @@
 #pragma once
 #include <cstdint>
 #include <string>
-#include "Utils/Data/Color.hpp"
-#include "Utils/Math/Matrix.hpp"
-#include "Utils/Math/WorldPosition.hpp"
-#include "Utils/DataStructure/BVH.hpp"
-#include "Utils/Math/AABB.hpp"
+#include "Core/Primitives/Color.hpp"
+#include "Core/Primitives/Matrix.hpp"
+#include "Core/Primitives/WorldPosition.hpp"
+#include "Core/Collision/BVH.hpp"
+#include "Core/Primitives/AABB.hpp"
 #include "Core/Rendering/Material.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
     struct PointLightData
     {
         WorldPosition3D m_Pos;
         //This is padding for vec3 since we can only have 2 or 4 floats
         float _padding0;
-        HDRColor m_Color;
+        ColHDR4 m_Color;
         float m_Radius;
         uint32_t m_ShadowMapIndex;
         //This is padding to round data to 16 byte alignment
         float _padding1[2];
 
         PointLightData();
-        PointLightData(const WorldPosition3D& pos, const HDRColor& color, const float radius);
+        PointLightData(const WorldPosition3D& pos, const ColHDR4& color, const float radius);
     };
     struct DirectionalLightData
     {
         Vec3 m_Direction = {};
         float _padding0 = 0;
-        HDRColor m_Color = {};
+        ColHDR4 m_Color = {};
 
         DirectionalLightData();
-        DirectionalLightData(const Vec3& dir, const HDRColor& color);
+        DirectionalLightData(const Vec3& dir, const ColHDR4& color);
     };
     constexpr size_t MAX_POINT_LIGHTS = 2;
     struct LightBlockData
@@ -46,8 +46,8 @@ namespace Rendering
     constexpr int INVALID_TEXTURE_INDEX = -1;
     struct MaterialData
     {
-        HDRColor m_BaseColor;
-        HDRColor m_EmissiveColor;
+        ColHDR4 m_BaseColor;
+        ColHDR4 m_EmissiveColor;
         float m_Alpha;
         float m_Metallic;
         float m_Roughness;

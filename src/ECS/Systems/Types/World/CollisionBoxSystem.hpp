@@ -2,30 +2,30 @@
 #include "Core/Collision/CollisionRegistry.hpp"
 #include "Core/Collision/ColliderOutlineBuffer.hpp"
 
-class Scene;
-class CameraComponent;
-namespace ECS
+namespace Engine::Scenes { class Scene; }
+namespace Engine::Camera { class CameraComponent; }
+namespace Engine::Physics
 {
 	class CollisionBoxSystem 
 	{
 	private:
 		CollisionRegistry& m_collisionRegistry;
-		ColliderOutlineBuffer m_colliderOutlineBuffer;
+		Rendering::ColliderOutlineBuffer m_colliderOutlineBuffer;
 
 	public:
 
 	private:
-		bool TryAddCollisionToRegistry(CollisionBoxData& boxA, 
-			CollisionBoxData& boxB, const AABBIntersectionData& intersection);
+		bool TryAddCollisionToRegistry(CollisionBoxComponent& boxA, 
+			CollisionBoxComponent& boxB, const AABBIntersectionData& intersection);
 
 	public:
 		CollisionBoxSystem(CollisionRegistry& registry);
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
+		void SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime);
 
-		const ColliderOutlineBuffer& GetColliderBuffer() const;
-		ColliderOutlineBuffer& GetColliderBufferMutable();
+		const Rendering::ColliderOutlineBuffer& GetColliderBuffer() const;
+		Rendering::ColliderOutlineBuffer& GetColliderBufferMutable();
 
-		std::vector<CollisionBoxData*> FindBodiesContainingPos(Scene& scene, const WorldPosition2D& worldPos) const;
+		std::vector<CollisionBoxComponent*> FindBodiesContainingPos(Scenes::Scene& scene, const WorldPosition2D& worldPos) const;
 	};
 }
 

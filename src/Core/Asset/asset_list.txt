@@ -1,0 +1,10 @@
+Engine::Animation::SpriteAnimationAsset
+Engine::Input::InputProfileAsset
+Engine::Rendering::FontAsset
+Engine::Rendering::MaterialAsset
+Engine::Rendering::Model3dAsset
+Engine::Rendering::ShaderAsset
+Engine::Rendering::SpriteAsset
+Engine::Rendering::TextureAsset
+Engine::Scenes::SceneAsset
+Engine::TestAsset

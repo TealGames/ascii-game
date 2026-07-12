@@ -9,17 +9,17 @@
 #include "ECS/Systems/Types/World/TransformSystem.hpp"
 #include "ECS/Systems/Types/World/LightSource2DSystem.hpp"
 #include "Core/Visual/TextBuffer.hpp"
-#include "Utils/Data/ColorGradient.hpp"
+#include "Core/Primitives/ColorGradient.hpp"
 #include "ECS/Component/Types/World/LightSource2DComponent.hpp"
 #include "Core/Scene/Scene.hpp"
 
-class EntityData;
-namespace ECS
+namespace Engine::ECS { class EntityData; }
+namespace Engine::Lighting2D
 {
 	constexpr std::uint8_t MIN_LIGHT_LEVEL = std::numeric_limits< std::uint8_t>::min();
 	constexpr std::uint8_t MAX_LIGHT_LEVEL = std::numeric_limits< std::uint8_t>::max();
 
-	enum class LightShape
+	enum class LightShape : std::uint8_t
 	{
 		Circle,
 	};
@@ -27,10 +27,8 @@ namespace ECS
 	class LightSource2DSystem
 	{
 	private:
-		const EntityRenderer2DSystem& m_rendererSystem;
-
+		const Rendering::EntityRenderer2DSystem& m_rendererSystem;
 	public:
-
 
 	private:
 		/// <summary>
@@ -40,14 +38,14 @@ namespace ECS
 		/// <param name="filterColor"></param>
 		/// <param name="multiplier"></param>
 		/// <returns></returns>
-		HDRColor GetColorFromMultiplier(const HDRColor& originalColor, const HDRColor& filterColor, const float& multiplier) const;
+		ColHDR4 GetColorFromMultiplier(const ColHDR4& originalColor, const ColHDR4& filterColor, const float& multiplier) const;
 
 		void CreateLightingForPoint(LightSource2DComponent& data, const WorldPosition3D& centerPos,
-			FragmentedTextBuffer2D& buffer, bool displayLightLevels);
+			Rendering::FragmentedTextBuffer2D& buffer, bool displayLightLevels);
 
-		void RenderLight(LightSource2DComponent& data, std::vector<FragmentedTextBuffer2D*>& buffers, bool displayLightLevels = false);
+		void RenderLight(LightSource2DComponent& data, std::vector<Rendering::FragmentedTextBuffer2D*>& buffers, bool displayLightLevels = false);
 		std::uint8_t CalculateLightLevelFromDistance(const LightSource2DComponent& data, const float& distance) const;
-		HDRColor CalculateNewColor(LightSource2DComponent& data, const TextBufferCharPosition2D& bufferPos, const float& distance, 
+		ColHDR4 CalculateNewColor(LightSource2DComponent& data, const Rendering::TextBufferCharPosition2D& bufferPos, const float& distance,
 			std::uint8_t* outLightLevel = nullptr, LightMapChar* lightMapChar=nullptr) const;
 
 	public:
@@ -62,9 +60,9 @@ namespace ECS
 		/// <param name="initialLightLevel">The light level that is present at the object's center/transform position</param>
 		/// <param name="falloffValue">THe rate that the light will fade away where <1 creates more logarithmic curves, 
 		//=1 creates linear and >1 creates exponential decay</param>
-		LightSource2DSystem(const EntityRenderer2DSystem& renderer);
+		LightSource2DSystem(const Rendering::EntityRenderer2DSystem& renderer);
 
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
+		void SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime);
 	};
 
 }

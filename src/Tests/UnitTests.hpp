@@ -3,6 +3,10 @@
 
 #ifdef ENGINE_DEBUG
 
-namespace Rendering { class Renderer; }
-bool TestBVHIntersectionSphere(Rendering::Renderer& renderer);
+namespace Engine::Rendering { class Renderer; }
+namespace Engine::UnitTests
+{
+	bool TestBVHIntersectionSphere(Rendering::Renderer& renderer);
+}
+
 #endif

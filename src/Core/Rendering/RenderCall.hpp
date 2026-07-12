@@ -1,12 +1,12 @@
 #pragma once
 #include <variant>
-#include "Utils/Math/WorldPosition.hpp"
-#include "Utils/Data/Color.hpp"
+#include "Core/Primitives/WorldPosition.hpp"
+#include "Core/Primitives/Color.hpp"
 #include "Core/Rendering/Texture.hpp"
 #include "Core/Rendering/Font.hpp"
 //#include "raylib.h"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	enum class RenderShape : std::uint8_t
 	{
@@ -23,13 +23,13 @@ namespace Rendering
 	{
 		WorldPosition3D m_Pos;
 		float m_Radius;
-		HDRColor m_Color;
+		ColHDR4 m_Color;
 	};
 	struct RectCall
 	{
 		WorldPosition3D m_Pos;
 		Vec2 m_Size;
-		HDRColor m_Color;
+		ColHDR4 m_Color;
 	};
 
 	using TextureID = std::uint16_t;
@@ -37,7 +37,7 @@ namespace Rendering
 	{
 		TextureID m_Id;
 		WorldPosition3D m_Pos;
-		HDRColor m_Color;
+		ColHDR4 m_Color;
 	};
 	struct TextureCallData
 	{
@@ -50,7 +50,7 @@ namespace Rendering
 	{
 		TextID m_Id;
 		WorldPosition3D m_Pos;
-		HDRColor m_Color;
+		ColHDR4 m_Color;
 	};
 	struct TextCallData
 	{
@@ -65,14 +65,14 @@ namespace Rendering
 		WorldPosition3D m_Pos;
 		float m_Thickness;
 		Vec2 m_Length;
-		HDRColor m_Color;
+		ColHDR4 m_Color;
 	};
 	struct RectLineCall
 	{
 		WorldPosition3D m_Pos;
 		float m_Thickness;
 		Vec2 m_Size;
-		HDRColor m_Color;
+		ColHDR4 m_Color;
 	};
 
 	using RenderCall = std::variant<CircleCall, RectCall, TextureCall, TextCall, LineCall, RectLineCall>;

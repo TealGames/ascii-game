@@ -12,33 +12,37 @@
 #include "ECS/Systems/Types/UI/UIToggleSystem.hpp"
 #include "ECS/Systems/Types/UI/UITextureSystem.hpp"
 
-namespace Rendering { class Renderer; }
-class UIHierarhcy;
-class GlobalEntityManager;
-class EngineState;
-
-class UISystemExecutor
+namespace Engine::Rendering { class Renderer; }
+namespace Engine::UI { class UIHierarhcy; }
+namespace Engine::Scenes { class GlobalEntityManager; }
+namespace Engine::Core { class EngineState; }
+namespace Engine::UI
 {
-private:
-public:
-	ECS::UIRenderSystem m_UiRenderSystem;
+	class UISystemExecutor
+	{
+	private:
+	public:
+		//TODO: is it really a good idea that an editor UI is grouped with other UI types??
+		Editor::UI::UIColorPickerSystem m_ColorPickerSystem;
 
-	ECS::UIColorPickerSystem m_ColorPickerSystem;
-	ECS::UISelectableSystem m_UiSelectableSystem;
-	ECS::UITransformSystem m_UiTransformSystem;
-	ECS::UIButtonSystem m_UiButtonSystem;
-	ECS::UIInputFieldSystem m_UiInputFieldSystem;
-	ECS::UILayoutSystem m_UiLayoutSystem;
-	ECS::UIPanelSystem m_UiPanelSystem;
-	ECS::UISliderSystem m_UiSliderSystem;
-	ECS::UITextSystem m_UiTextSystem;
-	ECS::UITextureSystem m_UiTextureSystem;
-	ECS::UIToggleSystem m_UiToggleSystem;
+		UIRenderSystem m_UiRenderSystem;
+		UISelectableSystem m_UiSelectableSystem;
+		UITransformSystem m_UiTransformSystem;
+		UIButtonSystem m_UiButtonSystem;
+		UIInputFieldSystem m_UiInputFieldSystem;
+		UILayoutSystem m_UiLayoutSystem;
+		UIPanelSystem m_UiPanelSystem;
+		UISliderSystem m_UiSliderSystem;
+		UITextSystem m_UiTextSystem;
+		UITextureSystem m_UiTextureSystem;
+		UIToggleSystem m_UiToggleSystem;
 
-private:
-public:
-	UISystemExecutor(const EngineState& state, Rendering::Renderer& renderer, UIHierarchy& hierarchy, PopupUIManager& popupManager);
-	void Init();
-	void SystemsUpdate(GlobalEntityManager& globalEntityManager, const float& deltaTime);
-};
+	private:
+	public:
+		UISystemExecutor(const Core::EngineState& state, Rendering::Renderer& renderer, UIHierarchy& hierarchy, PopupUIManager& popupManager);
+		void Init();
+		void SystemsUpdate(Scenes::GlobalEntityManager& globalEntityManager, const float& deltaTime);
+	};
+}
+
 

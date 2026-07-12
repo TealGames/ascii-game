@@ -7,7 +7,7 @@
 enum class ResultState : std::uint8_t
 {
 	Value = 0,
-	Error=	1
+	Error = 1
 };
 template<typename ResultT, typename ErrorT>
 class Result
@@ -43,7 +43,7 @@ public:
 	Result(const ResultT& result) : m_result(result), m_state(ResultState::Value) {}
 	Result(const ErrorT& error) : m_result(error), m_state(ResultState::Error) {}
 
-	Result(const Result& other) : m_result(), m_state(other.m_state) 
+	Result(const Result& other) : m_result(), m_state(other.m_state)
 	{
 		if (m_state == ResultState::Value)
 			new (&m_result.m_Value) ResultT(other.m_result.m_Value);
@@ -51,7 +51,7 @@ public:
 			new (&m_result.m_Error) ErrorT(other.m_result.m_Error);
 	}
 
-	Result(Result&& other) noexcept : m_state(other.m_state) 
+	Result(Result&& other) noexcept : m_state(other.m_state)
 	{
 		if (m_state == ResultState::Value)
 			new (&m_result.m_Value) ResultT(std::move(other.m_result.m_Value));
@@ -132,7 +132,7 @@ public:
 			{
 				new (&m_result.m_Value) ResultT(std::move(other.m_result.m_Value));
 			}
-			else if (m_result== ResultState::Error)
+			else if (m_result == ResultState::Error)
 			{
 				new (&m_result.m_Error) ErrorT(std::move(other.m_result.m_Error));
 			}

@@ -5,7 +5,7 @@
 #include "Core/Input/InputAction.hpp"
 #include "Core/Input/CompoundInput.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	class InputManager;
 

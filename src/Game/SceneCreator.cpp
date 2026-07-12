@@ -1,71 +1,96 @@
 #include "Game/SceneCreator.hpp"
+#include "StaticGlobals.hpp"
 #include "Core/Scene/Scene.hpp"
 #include "Core/EngineState.hpp"
+#include "Core/Asset/SceneAsset.hpp"
 #include "Core/Asset/AssetManager.hpp"
+#include "Core/Scene/SceneManager.hpp"
 #include "Core/Rendering/GraphicsManager.hpp"
 #include "Core/Rendering/Material.hpp"
-#include "Utils/Math/MathAdvanced.hpp"
+#include "Math/Math3d.hpp"
 #include "ECS/Component/Types/World/Mesh3DComponent.hpp"
 #include "Core/Asset/TextureAsset.hpp"
 #include "Core/Asset/Model3dAsset.hpp"
-#include "Core/Rendering/GraphicsManager.hpp"
+#include "ECS/Component/Types/World/PointLight3DComponent.hpp"
 
-namespace SceneCreator
+namespace Engine::Scenes::SceneCreator
 {
+	static Core::EngineState* EngineState = nullptr;
+
+	void Init(Core::EngineState& state)
+	{
+		EngineState = &state;
+		EngineState->m_SceneManager->m_OnSceneAssetLoad.AddListener(OnSceneAssetLoad);
+		EngineState->m_SceneManager->m_OnActiveSceneChange.AddListener(OnActiveSceneChange);
+	}
+
 	//Occurs when a scene is first loaded (only once on init)
-	void OnSceneLoad(Scene& scene, EngineState& state)
-	{		
-		EntityData& monkey = scene.CreateEntity("Monkey", TransformComponent(Vec3(0, 0.1, 0), Vec3(0.2, 0.2, 0.2), Quat::Identity()));
-		Model3dAsset* model = state.m_AssetManager->TryGetTypeAssetFromPathMutable<Model3dAsset>("models/monkey" BASIC_MESH_EXTENSION);
-		model->GetModelMutable().m_Objects[0].m_Material.SetSurface(1, 0, nullptr);
-		monkey.AddComponent<Mesh3DComponent>(Mesh3DComponent(model->GetModelMutable(), 0));
+	void OnSceneAssetLoad(Scene* scene)
+	{	
+		/*
+		EntityData& town = scene.CreateEntity("Town", TransformComponent(Vec3(0, 0, 0), Vec3(1, 1, 1), Quat::Identity()));
+		Model3dAsset* townModel = state.m_AssetManager->TryGetTypeAssetFromPathMutable<Model3dAsset>("models/japantown" BASIC_MESH_EXTENSION);
+		if (townModel != nullptr)
+		{
+			LogError(std::format("Town model: {}", townModel->GetModel().ToString()));
+		}
+		//model->GetModelMutable().m_Objects[0].m_Material.SetSurface(1, 0, nullptr);
+		town.AddComponent<Model3>(Mesh3DComponent(townModel->GetModelMutable(), 0));
+		town.m_IsImmovable = true;
+
+		EntityData& globalLight = scene.CreateEntity("Sun", TransformComponent(Vec3(0, 10, 0), Vec3(1,1,1), Quat::Identity()));
+		globalLight.AddComponent<PointLight3DComponent>();
+		globalLight.m_IsImmovable = true;
+		*/
+
+		ECS::EntityData& monkey = scene->CreateEntity("Monkey", TransformComponent(Vec3(0, 0.1, 0), Vec3(0.2, 0.2, 0.2), Math::Quat::Identity()));
+		Rendering::Model3dAsset* modelAsset = EngineState->m_AssetManager->TryGetTypeAssetFromPathMutable<Rendering::Model3dAsset>(
+			"models/monkey" BASIC_MESH_EXTENSION);
+		modelAsset->GetModelMutable().m_Objects[0].m_MaterialAsset->GetMaterialMutable().SetSurface(1, 0, nullptr);
+		monkey.AddComponent(Rendering::Mesh3DComponent(*modelAsset, 0));
 		monkey.m_IsImmovable = true;
 
-		EntityData& floor = scene.CreateEntity("CheckerboardFloor", TransformComponent(Vec3(0, 0, 0), Vec3::One(), Quat::Identity()));
-		Rendering::Texture& checkerboardTexture = state.m_AssetManager->TryGetTypeAssetFromPathMutable<TextureAsset>
-																		("textures/checkerboard.jpg")->GetTextureMutable();
-		Rendering::Material* floorMaterial = state.m_GraphicsContext.m_GraphicsManager->TryCreateRuntimeMaterial(Rendering::Material("Checkerboard",
-			&checkerboardTexture, HDRColor(0.2f, 0.2f, 0.2f, 1.0f), 1, HDRColor(0.0f, 0.0f, 0.0f, 0.0f), 0.1, 0));
+		ECS::EntityData& floor = scene->CreateEntity("CheckerboardFloor", TransformComponent(Vec3(0, 0, 0), Vec3::One(), Math::Quat::Identity()));
+		Rendering::MaterialAsset* checkerboardMaterialAsset = EngineState->m_GraphicsContext.m_GraphicsManager->TryGetMaterialAssetMutable("checkerboard");
+		Rendering::Model3dAsset* planeAsset = EngineState->m_GraphicsContext.m_GraphicsManager->TryGetBasicMeshAssetMutable(Rendering::BasicMeshType::Plane);
 
-		Rendering::Model3d* planeModel = state.m_GraphicsContext.m_GraphicsManager->TryGetBasicMeshMutable(Rendering::BasicMeshType::Plane);
-
-		floor.AddComponent<Mesh3DComponent>(Mesh3DComponent(*planeModel, 0, floorMaterial));
+		floor.AddComponent(Rendering::Mesh3DComponent(*planeAsset, 0, checkerboardMaterialAsset));
 		floor.m_IsImmovable = true;
 
 		constexpr float planeSize = 1;
 
-		EntityData& wallLeft = scene.CreateEntity("WallLeft", TransformComponent(Vec3(-planeSize / 2, planeSize / 2, 0),
-													Vec3::One(), ToQuaternion(Vec3(0, 0, RAD_90))));
-		Rendering::Material* wallLeftMaterial = state.m_GraphicsContext.m_GraphicsManager->TryCreateRuntimeMaterial(
-			Rendering::Material("WallLeft", nullptr, COLOR_RED, 1));
-		Mesh3DComponent& wallleftMesh = wallLeft.AddComponent<Mesh3DComponent>(Mesh3DComponent(*planeModel, 0, wallLeftMaterial));
+		ECS::EntityData& wallLeft = scene->CreateEntity("WallLeft", TransformComponent(Vec3(-planeSize / 2, planeSize / 2, 0),
+													Vec3::One(), Math::ToQuaternion(Vec3(0, 0, ::Math::RAD_90))));
+		Rendering::MaterialAsset* redMaterialAsset = EngineState->m_GraphicsContext.m_GraphicsManager->TryGetMaterialAssetMutable("red");
+		Rendering::Mesh3DComponent& wallleftMesh = wallLeft.AddComponent(Rendering::Mesh3DComponent(*planeAsset, 0, redMaterialAsset));
 		wallLeft.m_IsImmovable = true;
 
-		EntityData& wallRight = scene.CreateEntity("WallRight", TransformComponent(Vec3(planeSize/2, planeSize/2, 0),
-													Vec3::One(), ToQuaternion(Vec3(0, 0, RAD_270))));
-		Rendering::Material* wallRightMaterial = state.m_GraphicsContext.m_GraphicsManager->TryCreateRuntimeMaterial(
-			Rendering::Material("WallRight", nullptr, COLOR_GREEN, 1));
-		wallRight.AddComponent<Mesh3DComponent>(Mesh3DComponent(*planeModel, 0, wallRightMaterial));
+		ECS::EntityData& wallRight = scene->CreateEntity("WallRight", TransformComponent(Vec3(planeSize/2, planeSize/2, 0),
+													Vec3::One(), Math::ToQuaternion(Vec3(0, 0, ::Math::RAD_270))));
+		Rendering::MaterialAsset* greenMaterialAsset = EngineState->m_GraphicsContext.m_GraphicsManager->TryGetMaterialAssetMutable("green");
+		wallRight.AddComponent(Rendering::Mesh3DComponent(*planeAsset, 0, greenMaterialAsset));
 		wallRight.m_IsImmovable = true;
 
 		
-		EntityData& wallBack = scene.CreateEntity("WallBack", TransformComponent(Vec3(0, planeSize/2, -planeSize/2),
-													Vec3::One(), ToQuaternion(Vec3(RAD_270, 0, 0))));
-		Rendering::Material* wallBackMaterial = state.m_GraphicsContext.m_GraphicsManager->TryCreateRuntimeMaterial(
-			Rendering::Material("WallBack", nullptr, COLOR_WHITE, 1));
-		wallBack.AddComponent<Mesh3DComponent>(Mesh3DComponent(*planeModel, 0, wallBackMaterial));
+		ECS::EntityData& wallBack = scene->CreateEntity("WallBack", TransformComponent(Vec3(0, planeSize/2, -planeSize/2),
+													Vec3::One(), Math::ToQuaternion(Vec3(::Math::RAD_270, 0, 0))));
+		Rendering::MaterialAsset* whiteMaterialAsset = EngineState->m_GraphicsContext.m_GraphicsManager->TryGetMaterialAssetMutable("white");
+		wallBack.AddComponent(Rendering::Mesh3DComponent(*planeAsset, 0, whiteMaterialAsset));
 		wallBack.m_IsImmovable = true;
 
-		EntityData& roof = scene.CreateEntity("Roof", TransformComponent(Vec3(0, planeSize/2, 0), Vec3::One(),
-														ToQuaternion(Vec3(RAD_180, 0, 0))));
-		Rendering::Material* roofMaterial = state.m_GraphicsContext.m_GraphicsManager->TryCreateRuntimeMaterial(
-			Rendering::Material("Roof", nullptr, COLOR_WHITE, 1, HDRColor(5.0f, 5.0f, 5.0f, 1.0f)));
-		roof.AddComponent<Mesh3DComponent>(Mesh3DComponent(*planeModel, 0, roofMaterial));
+		ECS::EntityData& roof = scene->CreateEntity("Roof", TransformComponent(Vec3(0, planeSize/2, 0), Vec3::One(),
+														Math::ToQuaternion(Vec3(::Math::RAD_180, 0, 0))));
+		Rendering::MaterialAsset* whiteLitMaterialAsset = EngineState->m_GraphicsContext.m_GraphicsManager->TryGetMaterialAssetMutable("white_lit");
+		roof.AddComponent(Rendering::Mesh3DComponent(*planeAsset, 0, whiteLitMaterialAsset));
 		roof.m_IsImmovable = true;
+
+		const std::filesystem::path path = SCENE_ASSET_DIR "scene1.json";
+		SaveSceneToPath(*scene, path);
+		LogError("SAVED");
 	}
 
 	//Occurs whenever a new scene becomes active
-	void OnSceneStart(Scene& scene, EngineState& state)
+	void OnActiveSceneChange(Scene* scene)
 	{
 		/*if (!state.m_GraphicsContext.m_GraphicsManager->TrySetSkybox("textures/skybox_stylized_night.png"))
 		{

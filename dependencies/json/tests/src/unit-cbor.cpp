@@ -1869,7 +1869,7 @@ TEST_CASE("single CBOR roundtrip")
         const json j1 = json::parse(f_json);
 
         // parse CBOR file
-        auto packed = utils::read_binary_file(filename + ".cbor");
+        auto packed = ::Utils::read_binary_file(filename + ".cbor");
         json j2;
         CHECK_NOTHROW(j2 = json::from_cbor(packed));
 
@@ -1941,7 +1941,7 @@ TEST_CASE("CBOR regressions")
             try
             {
                 // parse CBOR file
-                auto vec1 = utils::read_binary_file(filename);
+                auto vec1 = ::Utils::read_binary_file(filename);
                 const json j1 = json::from_cbor(vec1);
 
                 try
@@ -2146,7 +2146,7 @@ TEST_CASE("CBOR roundtrips" * doctest::skip())
                 const json j1 = json::parse(f_json);
 
                 // parse CBOR file
-                const auto packed = utils::read_binary_file(filename + ".cbor");
+                const auto packed = ::Utils::read_binary_file(filename + ".cbor");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_cbor(packed));
 
@@ -2176,7 +2176,7 @@ TEST_CASE("CBOR roundtrips" * doctest::skip())
                 const json j1 = json::parse(f_json);
 
                 // parse CBOR file
-                const auto packed = utils::read_binary_file(filename + ".cbor");
+                const auto packed = ::Utils::read_binary_file(filename + ".cbor");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_cbor({packed.data(), packed.size()}));
 
@@ -2191,7 +2191,7 @@ TEST_CASE("CBOR roundtrips" * doctest::skip())
                 json const j1 = json::parse(f_json);
 
                 // parse CBOR file
-                const auto packed = utils::read_binary_file(filename + ".cbor");
+                const auto packed = ::Utils::read_binary_file(filename + ".cbor");
 
                 if (exclude_packed.count(filename) == 0u)
                 {
@@ -2426,11 +2426,11 @@ TEST_CASE("examples from RFC 7049 Appendix A")
 
     SECTION("byte arrays")
     {
-        const auto packed = utils::read_binary_file(TEST_DATA_DIRECTORY "/binary_data/cbor_binary.cbor");
+        const auto packed = ::Utils::read_binary_file(TEST_DATA_DIRECTORY "/binary_data/cbor_binary.cbor");
         json j;
         CHECK_NOTHROW(j = json::from_cbor(packed));
 
-        const auto expected = utils::read_binary_file(TEST_DATA_DIRECTORY "/binary_data/cbor_binary.out");
+        const auto expected = ::Utils::read_binary_file(TEST_DATA_DIRECTORY "/binary_data/cbor_binary.out");
         CHECK(j == json::binary(expected));
 
         // 0xd8

@@ -1,19 +1,16 @@
 #pragma once
 
-class GlobalEntityManager;
-class CameraController;
-namespace SceneManagement
+namespace Engine::Scenes
 {
 	class SceneManager;
+	class GlobalEntityManager;
 }
-namespace AssetManagement
-{
-	class AssetManager;
-}
+namespace Engine::Camera { class CameraController; }
+namespace Engine::Assets { class AssetManager; }
 
-namespace GlobalEntityCreator
+namespace Engine::Scenes::GlobalEntityCreator
 {
-	void OnGlobalsInit(GlobalEntityManager& manager, SceneManagement::SceneManager& sceneManager, 
-		CameraController& cameraController, AssetManagement::AssetManager& assetManager);
+	void OnGlobalsInit(GlobalEntityManager& manager, Scenes::SceneManager& sceneManager, 
+		Camera::CameraController& cameraController, Assets::AssetManager& assetManager);
 }
 

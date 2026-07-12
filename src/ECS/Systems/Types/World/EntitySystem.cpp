@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/World/EntitySystem.hpp"
 
-namespace ECS
+namespace Engine::ECS
 {
 	EntitySystem::EntitySystem() {}
 }

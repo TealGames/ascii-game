@@ -2,12 +2,12 @@
 #include <functional>
 #include <type_traits>
 #include <utility>
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include "Utils/Data/Event.hpp"
 #include "Core/Input/InputKey.hpp"
-#include "Utils/Math/ScreenPosition.hpp"
+#include "Core/Primitives/ScreenPosition.hpp"
 
-namespace Core
+namespace Engine::Core
 {
 	enum class WindowCursorMode : std::uint8_t
 	{
@@ -164,25 +164,6 @@ namespace Core
 
 		void SetNativeState(void* state);
 		void* GetNativeStateMutable();
-		/*template<typename T, typename...Args>
-		T& CreateNativeWindowState(Args&& ...args)
-		{
-			m_nativeState = static_cast<void*>(new T(std::forward<Args>(args)...));
-			return *(GetNativeStateMutable<T>());
-		}
-
-		template<typename T>
-		T* GetNativeStateMutable()
-		{
-			if (m_nativeState == nullptr) return nullptr;
-			return static_cast<T*>(m_nativeState);
-		}
-		template<typename T>
-		const T* GetNativeState() const
-		{
-			if (m_nativeState == nullptr) return nullptr;
-			return static_cast<const T*>(m_nativeState);
-		}*/
 
 		void SetSize(const int width, const int height);
 		/// <summary>

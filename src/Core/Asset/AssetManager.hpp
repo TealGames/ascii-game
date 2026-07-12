@@ -1,18 +1,18 @@
 #pragma once
-#include "Core/Asset/Asset.hpp"
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
 #include <type_traits>
 #include <functional>
 #include "Utils/HelperFunctions.hpp"
-#include "Core/Asset/IDependableAsset.hpp"
-#include "Core/IValidateable.hpp"
+#include "Core/Asset/Asset.hpp"
 #include "Utils/Debug.hpp"
 #include "Utils/IOHandler.hpp"
 #include "Utils/ToStringFunctions.hpp"
+#include "Core/IValidateable.hpp"
 
-namespace AssetManagement
+namespace Engine::Core { class EngineState; }
+namespace Engine::Assets
 {
 	enum class AssetCreationResult : std::uint8_t
 	{
@@ -21,13 +21,10 @@ namespace AssetManagement
 		FailedToFindType	= 2
 	};
 
+	using AssetCreationFunction = std::function<Asset*(const std::filesystem::path&)>;
 	class AssetManager : public IValidateable
 	{
 	private:
-		/// <summary>
-		/// The asset parent folder relative to the location of the executable file
-		/// </summary>
-		static std::filesystem::path ASSET_PATH;
 		static constexpr bool PREVENT_HIDDEN_ASSET_LOOKUP = true;
 
 		//TODO: asset manager should probably get optimized to have faster lookups maybe with 
@@ -38,22 +35,22 @@ namespace AssetManagement
 		// Note: this is heap allocated
 		/// </summary>
 		std::unordered_map<std::string, Asset*> m_assets;
-		/// <summary>
-		// This stores all the runtime assets (assets created during runtime -> aka no file path) 
-		// that have been identified with [asset name, asset]
-		// Note: this is heap allocated
-		/// </summary>
-		std::unordered_map<std::string, Asset*> m_runtimeAssets;
+		std::unordered_map<ObjectID, Asset*> m_assetIds;
 		/// <summary>
 		/// This stores all of the asset extensions, and each of the respective asset paths
 		/// [ASSET EXTENSION, ASSET PATH (relative to parent asset path)]
 		/// </summary>
 		std::unordered_map<std::string, std::unordered_set<std::string>> m_allFiles;
+		std::unordered_map<std::string_view, AssetCreationFunction> m_extensionAssetCreators;
+
+		static std::filesystem::path m_assetPath;
 		/// <summary>
 		/// The assets that are hidden and cannot be retrieved from asset lookup functions
 		/// and if set while registering assets, will be skipped when creating asset wrappers
 		/// </summary>
 		static std::unordered_set<std::string> m_hiddenAssetPaths;
+
+		Core::EngineState* m_engineState;
 	public:
 
 	private:
@@ -77,7 +74,7 @@ namespace AssetManagement
 				emplaceSuccess = allFileIt->second.emplace(path.string()).second;
 			}
 
-			Assert(emplaceSuccess, "Attempted to register asset with argument path:{} (asset path:{})"
+			ENGINE_ASSERT(emplaceSuccess, "Attempted to register asset with argument path:{} (asset path:{})"
 				"to all files storage, but it failed to be emplaced", path.string(), path.string());
 		}
 
@@ -99,9 +96,13 @@ namespace AssetManagement
 			//Note: since we need to do io operations on assets, we must use global path (or relative to directory)
 			//but global path is easier
 			T* assetAsT = new T(GetAbsoluteAssetPath(assetRelPath));
-			//LogWarning(std::format("Created asset of type: {} stringed:{}", typeid(T).name(), assetAsT->ToString()));
-			auto emplaceResult = m_assets.emplace(assetRelPath.string(), assetAsT);
+			Asset* assetBase = static_cast<Asset*>(assetAsT);
 
+			auto emplaceResult = m_assets.emplace(assetRelPath.string(), assetAsT);
+			ENGINE_ASSERT(m_engineState != nullptr, "Tried to create asset from file at path: {} in asset manager but engine state is null. "
+				"This means an asset was attempted to be created before asset manager was init", assetRelPath.string());
+
+			assetBase->SetDependencies(*m_engineState);
 			RegisterAssetToAllFiles(assetRelPath);
 			return assetAsT;
 		}
@@ -130,11 +131,11 @@ namespace AssetManagement
 			if (asset == nullptr) 
 				return nullptr;
 
-			if (Utils::ToStringTypeName<T>() != Utils::FormatTypeName(typeid(*(asset)).name()))
+			if (::Utils::ToStringTypeName<T>() != ::Utils::FormatTypeName(typeid(*(asset)).name()))
 			{
 				LogError(std::format("Tried to get asset of type:'{}' name:'{}' Mutable "
 					"but an asset by that name could not be converted to that type. Real Type:'{}'",
-					Utils::ToStringTypeName<T>(), asset->GetName(), Utils::FormatTypeName(typeid(*(asset)).name())));
+					::Utils::ToStringTypeName<T>(), asset->GetName(), ::Utils::FormatTypeName(typeid(*(asset)).name())));
 				return nullptr;
 			}
 
@@ -156,7 +157,7 @@ namespace AssetManagement
 			{
 				LogError(std::format("Tried to get asset of type:{} by name:{} IMMUTABLE "
 					"but an asset by that name could not be converted to the type:{}. Error:{}",
-					Utils::ToStringTypeName<T>(), Utils::FormatTypeName(typeid(*(asset)).name()),
+					::Utils::ToStringTypeName<T>(), ::Utils::FormatTypeName(typeid(*(asset)).name()),
 					asset->GetName(), e.what()));
 			}
 			return nullptr;
@@ -166,7 +167,7 @@ namespace AssetManagement
 		AssetManager();
 		~AssetManager();
 
-		void Init();
+		void Init(Core::EngineState& state, const std::filesystem::path& assetPath);
 		
 		/// <summary>
 		/// Note: the path has to be an asset parent directory path
@@ -191,14 +192,14 @@ namespace AssetManagement
 		requires IsAssetType<T>
 		void RegisterAssets(std::vector<T*>* outTypeAssetsCreated)
 		{
-			if (!Assert(IO::DoesPathExist(ASSET_PATH), "Tried to add all assets at path:{} "
-				"but path is invalid", ASSET_PATH.string()))
+			if (!Assert(::Utils::IO::DoesPathExist(m_assetPath), "Tried to add all assets at path:{} "
+				"but path is invalid", m_assetPath.string()))
 				return;
 
 			std::string assetRelPath = "";
 			AssetCreationResult creationResult = AssetCreationResult::FailedToCreate;
 			Asset* createdAsset = nullptr;
-			for (const auto& file : std::filesystem::recursive_directory_iterator(ASSET_PATH))
+			for (const auto& file : std::filesystem::recursive_directory_iterator(m_assetPath))
 			{
 				if (!std::filesystem::is_regular_file(file)) continue;
 
@@ -212,13 +213,14 @@ namespace AssetManagement
 					LogWarning(std::format("Skipping hidden asset at path:{}", assetRelPath));
 					continue;
 				}
-
+				
+				//If this asset already is registered (if an asset ), skip
 				if (!m_assets.empty() && m_assets.find(assetRelPath) != m_assets.end())
 					continue;
 
 				//Note: for asset creation, we want the full direct path, but for lookup, we want relative path
 				//LogWarning(std::format("registering asset at:{}", assetRelPath));
-				createdAsset = TryCreateAssetFromExtension(assetRelPath, & creationResult);
+				createdAsset = TryCreateAssetFromExtension(assetRelPath, &creationResult);
 
 				if (createdAsset == nullptr)
 				{
@@ -233,7 +235,7 @@ namespace AssetManagement
 				{
 					if (outTypeAssetsCreated != nullptr && typeid(T) == typeid(*createdAsset)) 
 						outTypeAssetsCreated->emplace_back(TryConvertAssetToTypeMutable<T>(createdAsset));
-					//Log(std::format("Created Asset({}):{}", Utils::FormatTypeName(typeid(*createdAsset).name()), createdAsset->ToString()));
+					//Log(std::format("Created Asset({}):{}", ::Utils::FormatTypeName(typeid(*createdAsset).name()), createdAsset->ToString()));
 				}
 			}
 		}
@@ -247,38 +249,22 @@ namespace AssetManagement
 		/// <returns></returns>
 		template<typename T>
 		requires IsAssetType<T>
-		T* TryCreateEmptyAsset(const std::filesystem::path& assetPath)
+		T* TryCreateOrGetAsset(const std::filesystem::path& assetPath, bool* outHadAssetFile = nullptr)
 		{
-			if (!Assert(IsValidAssetPath(assetPath), std::format("Attempted to create an empty asset of type:{} at path:{} "
-				"but it is not a valid asset path", Utils::ToStringTypeName<T>(), assetPath.string())))
-				return false;
-
+			//NOTE: we use the get existing variant of asset retrieval so if asset is NOT
+			//found then it is not created automatically 
 			T* maybeExistingAsset= TryGetExistingAsset<T>(assetPath);
 			if (maybeExistingAsset != nullptr)
+			{
+				if (outHadAssetFile != nullptr) *outHadAssetFile = true;
 				return maybeExistingAsset;
+			}
 
-			IO::CreatePathIfNotFound(GetAbsoluteAssetPath(assetPath));
+			bool createdAssetFile = ::Utils::IO::CreatePathIfNotFound(GetAbsoluteAssetPath(assetPath));
+			if (outHadAssetFile != nullptr) *outHadAssetFile = !createdAssetFile;
+
 			T* assetPtr = CreateAssetFromFile<T>(assetPath);
-			//If we have dependencies, we cannot automatically set the data to the file
-			if (!static_cast<Asset*>(assetPtr)->AreDependenciesSet()) 
-				return assetPtr;
-
-			assetPtr.SaveToSelf();
-			return assetPtr;
-		}
-
-		/// <summary>
-		/// Will copy the asset into asset maanger storage during runtime rather than looking for
-		/// the existing file at a certain path to create a wrapper.
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="asset"></param>
-		template<typename T>
-		requires IsAssetType<T> && std::is_copy_constructible_v<T>
-		T* CreateRuntimeAsset(const std::string& name, const T& asset)
-		{
-			T* assetPtr = new T(asset);
-			m_runtimeAssets.emplace(name, assetPtr);
+			assetPtr->SaveToSelf();
 			return assetPtr;
 		}
 
@@ -293,9 +279,10 @@ namespace AssetManagement
 		static bool IsValidAssetPath(const std::filesystem::path& relativeAssetPath);
 		std::filesystem::path TryCreateAssetPath(const std::string& fileName, const std::string& extension) const;
 
-		bool TryExecuteOnAssetFile(const std::filesystem::path& fullPath, const IO::FileLineAction& action) const;
+		bool TryExecuteOnAssetFile(const std::filesystem::path& fullPath, const ::Utils::IO::FileLineAction& action) const;
 
 		Asset* TryGetAssetFromPathMutable(const std::filesystem::path& path);
+		Asset* TryGetAssetFromIdMutable(ObjectID id);
 
 		/// <summary>
 		/// Note: this function is slow since it requires iteration through all assets to find one that matches name.
@@ -314,7 +301,7 @@ namespace AssetManagement
 					strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size())));*/
 
 				if (strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size()) != 0 || 
-					Utils::ToStringTypeName<T>() != Utils::FormatTypeName(typeid(*asset.second).name()))
+					::Utils::ToStringTypeName<T>() != ::Utils::FormatTypeName(typeid(*asset.second).name()))
 					continue;
 
 				if (PREVENT_HIDDEN_ASSET_LOOKUP)
@@ -344,21 +331,12 @@ namespace AssetManagement
 		}
 		template<typename T>
 		requires IsAssetType<T>
-		T* TryGetRuntimeTypeAssetMutable(const std::string& name)
+		T* TryGetTypeAssetFromIdMutable(ObjectID id)
 		{
-			for (const auto& asset : m_runtimeAssets)
-			{
-				/*LogWarning(std::format("checking asset:'{}' for target:'{}' comp:{}", asset.second->GetName(), name,
-					strncmp(asset.second->GetName().c_str(), name, asset.second->GetName().size())));*/
+			Asset* maybeAsset = TryGetAssetFromIdMutable(id);
+			if (maybeAsset == nullptr) return nullptr;
 
-				if (asset.second->GetName()!= name || 
-					Utils::ToStringTypeName<T>() != Utils::FormatTypeName(typeid(*asset.second).name()))
-					continue;
-
-				//LogWarning(std::format("Returning shader:{}", asset.second->ToString()));
-				return TryConvertAssetToTypeMutable<T>(asset.second);
-			}
-			return nullptr;
+			return TryConvertAssetToTypeMutable<T>(maybeAsset);
 		}
 
 
@@ -368,8 +346,8 @@ namespace AssetManagement
 		{
 			if (asset == nullptr) return false;
 
-			const std::string tTypeName = Utils::ToStringTypeName<T>();
-			return tTypeName == Utils::FormatTypeName(typeid(*asset).name());
+			const std::string tTypeName = ::Utils::ToStringTypeName<T>();
+			return tTypeName == ::Utils::FormatTypeName(typeid(*asset).name());
 		}
 
 		template<typename T>
@@ -377,13 +355,13 @@ namespace AssetManagement
 		std::vector<T*> GetAssetsOfTypeMutable(const std::function<bool(const Asset&)>& assetPredicate = nullptr)
 		{
 			std::vector<T*> assets = {};
-			const std::string tTypeName = Utils::ToStringTypeName<T>();
+			const std::string tTypeName = ::Utils::ToStringTypeName<T>();
 			std::string assetTypeName = "";
 
 			for (auto& asset : m_assets)
 			{
 				if (asset.second == nullptr) continue;
-				assetTypeName = Utils::FormatTypeName(typeid(*(asset.second)).name());
+				assetTypeName = ::Utils::FormatTypeName(typeid(*(asset.second)).name());
 
 				//LogError(std::format("Checking asset:{} ttype:{} current:{}", asset.second->ToString(), tTypeName, assetTypeName));
 				if (tTypeName == assetTypeName && (assetPredicate == nullptr || assetPredicate(*(asset.second))))
@@ -408,7 +386,7 @@ namespace AssetManagement
 		std::vector<T*> GetAssetsOfTypeMutable(const std::filesystem::path& assetDirectory)
 		{
 			if (!Assert(IsValidAssetPath(assetDirectory), "Attempted to get assets of type:{} from path:{} MUTABLE"
-				"but it is not a valid asset path", Utils::ToStringTypeName<T>(), assetDirectory.string()))
+				"but it is not a valid asset path", ::Utils::ToStringTypeName<T>(), assetDirectory.string()))
 				return {};
 
 			const std::string targetAssetPath = GetAbsoluteAssetPath(assetDirectory).string();
@@ -421,11 +399,12 @@ namespace AssetManagement
 				});
 		}
 
+		/*
 		template<typename T, typename ...Args>
-		requires IsAssetType<T>&& std::is_base_of_v<IDependableAsset<Args...>, T>
+		requires IsAssetType<T> && std::is_base_of_v<IDependableAsset<Args...>, T>
 		void InitDependencies(std::add_lvalue_reference_t<Args>... args)
 		{
-			const std::string tTypeName = Utils::ToStringTypeName<T>();
+			const std::string tTypeName = ::Utils::ToStringTypeName<T>();
 			std::vector<T*> assets = GetAssetsOfTypeMutable<T>();
 			if (!Assert(!assets.empty(), "Tried to init dependencies for type:{} "
 				"but no assets of that type were found", tTypeName))
@@ -436,6 +415,7 @@ namespace AssetManagement
 				static_cast<IDependableAsset<Args...>*>(asset)->SetDependencies(args...);
 			}
 		}
+		*/
 	};
 }
 

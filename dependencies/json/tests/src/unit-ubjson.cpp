@@ -2488,7 +2488,7 @@ TEST_CASE("UBJSON roundtrips" * doctest::skip())
                 json const j1 = json::parse(f_json);
 
                 // parse UBJSON file
-                auto const packed = utils::read_binary_file(filename + ".ubjson");
+                auto const packed = ::Utils::read_binary_file(filename + ".ubjson");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_ubjson(packed));
 
@@ -2518,7 +2518,7 @@ TEST_CASE("UBJSON roundtrips" * doctest::skip())
                 const json j1 = json::parse(f_json);
 
                 // parse UBJSON file
-                auto const packed = utils::read_binary_file(filename + ".ubjson");
+                auto const packed = ::Utils::read_binary_file(filename + ".ubjson");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_ubjson({packed.data(), packed.size()}));
 
@@ -2533,7 +2533,7 @@ TEST_CASE("UBJSON roundtrips" * doctest::skip())
                 json const j1 = json::parse(f_json);
 
                 // parse UBJSON file
-                auto const packed = utils::read_binary_file(filename + ".ubjson");
+                auto const packed = ::Utils::read_binary_file(filename + ".ubjson");
 
                 {
                     INFO_WITH_TEMP(filename + ": output adapters: std::vector<uint8_t>");

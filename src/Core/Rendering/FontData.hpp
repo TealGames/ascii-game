@@ -1,53 +1,56 @@
 #pragma once
 //#include "raylib.h"
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 
-class FontAsset;
-
-/// <summary>
-/// The font properties for screen rendering use 
-/// (since font size is based on screen pixel size relative to window)
-/// </summary>
-class ScreenFontProperties
+namespace Engine::Rendering
 {
-private:
-public:
-	float m_Size;
+	class FontAsset;
+
 	/// <summary>
-	/// The horizontal space that is between all characters
+	/// The font properties for screen rendering use 
+	/// (since font size is based on screen pixel size relative to window)
 	/// </summary>
-	float m_Tracking;
-	const FontAsset* m_FontAsset;
+	class ScreenFontProperties
+	{
+	private:
+	public:
+		float m_Size;
+		/// <summary>
+		/// The horizontal space that is between all characters
+		/// </summary>
+		float m_Tracking;
+		const FontAsset* m_FontAsset;
 
-private:
-	ScreenFontProperties(const float fontSize, const float spacing, const FontAsset* font);
-public:
-	ScreenFontProperties();
-	ScreenFontProperties(const float fontSize, const float spacing, const FontAsset& font);
+	private:
+		ScreenFontProperties(const float fontSize, const float spacing, const FontAsset* font);
+	public:
+		ScreenFontProperties();
+		ScreenFontProperties(const float fontSize, const float spacing, const FontAsset& font);
 
-	bool HasValidFont() const;
-};
+		bool HasValidFont() const;
+	};
 
-class WorldFontProperties
-{
-private:
-public:
-	/// <summary>
-	/// The area that the text should fit in
-	/// </summary>
-	Vec2 m_RectSize;
-	/// <summary>
-	/// 
-	/// The horizontal space that is between all characters
-	/// </summary>
-	float m_Tracking;
-	const FontAsset* m_FontAsset;
+	class WorldFontProperties
+	{
+	private:
+	public:
+		/// <summary>
+		/// The area that the text should fit in
+		/// </summary>
+		Vec2 m_RectSize;
+		/// <summary>
+		/// 
+		/// The horizontal space that is between all characters
+		/// </summary>
+		float m_Tracking;
+		const FontAsset* m_FontAsset;
 
-private:
-	WorldFontProperties(const Vec2& rectArea, const float spacing, const FontAsset* font);
-public:
-	WorldFontProperties();
-	WorldFontProperties(const Vec2& rectArea, const float spacing, const FontAsset& font);
+	private:
+		WorldFontProperties(const Vec2& rectArea, const float spacing, const FontAsset* font);
+	public:
+		WorldFontProperties();
+		WorldFontProperties(const Vec2& rectArea, const float spacing, const FontAsset& font);
 
-	bool HasValidFont() const;
-};
+		bool HasValidFont() const;
+	};
+}

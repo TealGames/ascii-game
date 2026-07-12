@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Rendering/RenderingBackend.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	struct RenderBatch
 	{
@@ -29,12 +29,42 @@ namespace Rendering
 		std::uint32_t m_VertexCount;
 	};
 
+	/// <summary>
+	/// The type of behavior when a render limit is reached 
+	/// for instances, indices, vertices, etc.
+	/// </summary>
+	enum class RenderLimitBehavior : std::uint8_t
+	{
+		None = 0,
+		/// <summary>
+		/// Will display error and terminate the program
+		/// </summary>
+		Crash	= 1,
+		/// <summary>
+		/// Will warn for every write occurence which reaches limit
+		/// </summary>
+		Warn	= 2,
+		/// <summary>
+		/// Will fit as much as possible within bounds
+		/// </summary>
+		Fit	= 3,
+		All = 0xFF
+	};
+	FLAG_ENUM_OPERATORS(RenderLimitBehavior)
+	inline constexpr RenderLimitBehavior DEFAULT_LIMIT_BEHAVIOR = RenderLimitBehavior::Crash;
+
 	template<typename TVertex, typename TInstance>
 	class RenderUnit
 	{
 	private:
+		RenderLimitBehavior m_limitBehavior;
+		size_t m_maxVertices;
+		size_t m_maxIndices;
+		size_t m_maxInstances;
+
 		VertexLayout* m_layout;
 		std::unordered_map<BatchHash, size_t> m_hashToBatchIndex;
+
 	public:
 		std::vector<RenderBatch> m_Batches;
 
@@ -61,14 +91,21 @@ namespace Rendering
 
 	public:
 		RenderUnit(VertexLayout& layout)
-			: m_Batches(), m_layout(&layout), m_CpuVertices(), m_CpuIndices(), m_CpuInstances(),
+			: m_Batches(), m_layout(&layout), m_CpuVertices(), m_CpuIndices(), m_CpuInstances(), m_limitBehavior(),
+			m_maxIndices(), m_maxVertices(), m_maxInstances(),
 			m_IndexBufferHandle(), m_VertexBufferHandle(), m_InstanceBufferHandle()
 		{
 
 		}
 
-		void Init(const size_t vertexCount, const int indexMaxCount, const int instanceMaxCount)
+		void Init(const size_t vertexCount, const size_t indexMaxCount, const size_t instanceMaxCount, 
+			RenderLimitBehavior limitBehavior = DEFAULT_LIMIT_BEHAVIOR)
 		{
+			m_maxVertices = vertexCount;
+			m_maxIndices = indexMaxCount;
+			m_maxInstances = instanceMaxCount;
+
+			m_limitBehavior = limitBehavior;
             m_CpuVertices.reserve(vertexCount);
 			m_VertexBufferHandle = Backend::CreateVertexBuffer(nullptr, sizeof(TVertex), vertexCount, VertexAttributeAdvance::Vertex);
 			if (indexMaxCount > 0)
@@ -104,39 +141,60 @@ namespace Rendering
 			return &(m_Batches[it->second]);
 		}
 
-        void AddVertexToBatch(RenderBatch& batch, const TVertex& vertex)
-        {
-            m_CpuVertices.emplace_back(vertex);
-            if (batch.m_VertexCount == 0)
-                batch.m_VertexStartIndex = m_CpuVertices.size() - 1;
+		void CheckRenderLimit(const char* type, size_t& writeSize, const size_t currentSize, const size_t& maxSize)
+		{
+			if (currentSize + writeSize <= maxSize)
+				return;
 
-            batch.m_VertexCount++;
-        }
-        void AddVerticesToBatch(RenderBatch& batch, const TVertex* vertexArray, const size_t vertexSize)
+			if ((m_limitBehavior & RenderLimitBehavior::Crash) != 0)
+			{
+				LogError(std::format("Attempted to write {} {} to render unit which surpasses max:{}",
+					writeSize, type, maxSize));
+			}
+			const bool doFit = (m_limitBehavior & RenderLimitBehavior::Fit) != 0;
+			const size_t initialWriteSize = writeSize;
+			if (doFit)
+			{
+				writeSize = maxSize - currentSize;
+			}
+			if ((m_limitBehavior & RenderLimitBehavior::Warn) != 0)
+			{
+				LogWarning(std::format("Attempted to write {}{} to render unit with current size: {} surpasses max:{}{}",
+					type, initialWriteSize, currentSize, maxSize, doFit ? std::format(", so only writting size: {}", writeSize) : ""));
+			}
+		}
+
+        void TryAddVerticesToBatch(RenderBatch& batch, const TVertex* vertexArray, size_t vertexSize)
         {
-            //NOTE: we do this before the insertion since start index is index greater than current last index
+			const size_t bufferVertices = GetVertexCount();
+			CheckRenderLimit("vertices", vertexSize, bufferVertices, m_maxVertices);
+			if (vertexSize == 0)
+				return;
+			
+            //NOTE: if this is the first insertion into vertex array for this batch, we must set the 
+			//start index for the vertices in the batch to the element offset
 			if (batch.m_VertexCount == 0)
-				batch.m_VertexStartIndex = m_CpuVertices.size();
+				batch.m_VertexStartIndex = bufferVertices;
 
             m_CpuVertices.insert(m_CpuVertices.end(), vertexArray, vertexArray + vertexSize);
             batch.m_VertexCount += vertexSize;
         }
-
-		void AddIndicesToBatch(RenderBatch& batch, const std::array<IndexType, 3>& arr)
+		void AddVertexToBatch(RenderBatch& batch, const TVertex& vertex)
 		{
-			if (batch.m_IndicesCount == 0)
-				batch.m_IndicesStartIndex = GetIndexCount();
-
-			m_CpuIndices.push_back(batch.m_VertexStartIndex + arr[0]);
-			m_CpuIndices.push_back(batch.m_VertexStartIndex + arr[1]);
-			m_CpuIndices.push_back(batch.m_VertexStartIndex + arr[2]);
-
-			batch.m_IndicesCount += arr.size();
+			TryAddVerticesToBatch(batch, &vertex, 1);
 		}
-		void AddIndicesToBatch(RenderBatch& batch, const IndexType* indexArray, const size_t indicesSize)
+
+		void TryAddIndicesToBatch(RenderBatch& batch, const IndexType* indexArray, size_t indicesSize)
 		{
+			const size_t bufferIndices = GetIndexCount();
+			CheckRenderLimit("indices", indicesSize, bufferIndices, m_maxIndices);
+			if (indicesSize == 0)
+				return;
+
+			//NOTE: if this is the first insertion into index array for this batch, we must set the 
+			//start index for the indices in the batch to the element offset
 			if (batch.m_IndicesCount == 0)
-				batch.m_IndicesStartIndex = m_CpuIndices.size();
+				batch.m_IndicesStartIndex = bufferIndices;
 
 			for (int i = 0; i < indicesSize; i++)
 			{
@@ -145,16 +203,26 @@ namespace Rendering
 
 			batch.m_IndicesCount += indicesSize;
 		}
+		void TryAddIndicesToBatch(RenderBatch& batch, const std::array<IndexType, 3>& arr)
+		{
+			TryAddIndicesToBatch(batch, &arr[0], 3);
+		}
 
         template<typename... TArgs>
-        TInstance& AddInstanceDataToBatch(RenderBatch& batch, TArgs&&... args)
+        TInstance* TryAddInstanceDataToBatch(RenderBatch& batch, TArgs&&... args)
         {
+			const size_t bufferInstances = GetInstanceCount();
+			size_t instanceWriteSize = 1;
+			CheckRenderLimit("instances", instanceWriteSize, bufferInstances, m_maxInstances);
+			if (instanceWriteSize == 0)
+				return nullptr;
+
 			TInstance& createdInstance = m_CpuInstances.emplace_back(std::forward<TArgs>(args)...);
-            if (batch.m_InstanceCount == 0)
-                batch.m_InstanceStartIndex = m_CpuInstances.size() - 1;
+			if (batch.m_InstanceCount == 0)
+				batch.m_InstanceStartIndex = bufferInstances;
 
             batch.m_InstanceCount++;
-            return createdInstance;
+            return &createdInstance;
         }
 		void FinishBatch(RenderBatch& batch)
 		{

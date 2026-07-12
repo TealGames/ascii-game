@@ -1,19 +1,20 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/UI/UITextSystem.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
 	UITextSystem::UITextSystem() {}
 	void UITextSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UITextComponent),
-			ComponentInfo(CreateComponentTypes<UIRendererData>(), CreateRequiredComponentFunction(UIRendererData()),
-				[](EntityData& entity)-> void
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UITextComponent),
+			ECS::ComponentInfo(ECS::CreateComponentTypes<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
+				[](ECS::EntityData& entity)-> void
 				{
-					entity.TryGetComponentMutable<UITextComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>();
+					entity.TryGetComponentMutable<UITextComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererComponent>();
 				}));
 	}
 }

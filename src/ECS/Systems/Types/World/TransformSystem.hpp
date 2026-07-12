@@ -1,11 +1,9 @@
 #pragma once
-#include <vector>
-#include "ECS/Component/Component.hpp"
-#include "ECS/Component/Types/World/TransformComponent.hpp"
-#include "Core/Scene/Scene.hpp"
 
-namespace ECS
+namespace Engine
 {
+	namespace Scenes { class Scene; }
+	namespace Camera { class CameraComponent; }
 	class TransformSystem
 	{
 	private:
@@ -16,8 +14,7 @@ namespace ECS
 		TransformSystem() = default;
 		~TransformSystem() = default;
 
-		void SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime);
-		//void UpdateLastFramePos(Scene& scene);
+		void SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime);
 	};
 }
 

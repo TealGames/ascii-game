@@ -2,28 +2,30 @@
 #include "Core/Asset/Asset.hpp"
 #include <optional>
 #include "Core/Input/InputProfile.hpp"
-#include "Core/Asset/IDependableAsset.hpp"
-#include "Core/Serialization/IJsonSerializable.hpp"
 
-class InputProfileAsset : public Asset, public IDependableAsset<Input::InputManager>
+namespace Engine::Input
 {
-private:
-	Input::InputManager* m_inputManager;
-	std::optional<Input::InputProfile> m_profile;
-public:
-	static const std::string EXTENSION;
+	class InputProfileAsset : public Assets::Asset
+	{
+	private:
+		Input::InputManager* m_inputManager;
+		std::optional<Input::InputProfile> m_profile;
+	public:
+		static const std::array<std::string_view,1> EXTENSIONS;
 
-private:
-	Input::InputManager& GetInputManager();
-public:
-	InputProfileAsset(const std::filesystem::path& path);
+	private:
+		Input::InputManager& GetInputManager();
+	public:
+		InputProfileAsset(const std::filesystem::path& path);
 
-	Input::InputProfile& GetProfileMutable();
-	const Input::InputProfile& GetProfile() const;
+		Input::InputProfile& GetProfileMutable();
+		const Input::InputProfile& GetProfile() const;
 
-	void SetDependencies(Input::InputManager& input) override;
+		void SetDependencies(Core::EngineState& state) override;
 
-	void UpdateAssetFromFile() override;
-	void SaveToPath(const std::filesystem::path& path) override;
-};
+		void UpdateAssetFromFile() override;
+		void SaveToPath(const std::filesystem::path& path) override;
+	};
+}
+
 

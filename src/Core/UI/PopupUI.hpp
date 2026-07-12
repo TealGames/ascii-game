@@ -1,21 +1,17 @@
 #pragma once
-//#include "Unused/GUIElement.hpp"
 
-class EntityData;
-class UITransformData;
-struct PopupUI //: public GUIElement
+namespace Engine::ECS { class EntityData; }
+namespace Engine::UI
 {
-	UITransformData* m_Container;
+	class UITransformComponent;
+	struct PopupUI
+	{
+		UITransformComponent* m_Container;
 
-	PopupUI();
+		PopupUI();
 
-	void CreatePopup(UITransformData& parent);
-	virtual void AddPopupElements() = 0;
-	virtual ~PopupUI() = default;
-
-	/*RenderInfo Render(const RenderInfo& parentInfo) override;
-	virtual void InsideRender(const RenderInfo& parentInfo) = 0;
-
-	virtual void Update(const float deltaTime) = 0;*/
-};
-
+		void CreatePopup(UITransformComponent& parent);
+		virtual void AddPopupElements() = 0;
+		virtual ~PopupUI() = default;
+	};
+}

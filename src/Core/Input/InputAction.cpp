@@ -3,7 +3,7 @@
 #include "Core/Input/InputManager.hpp"
 #include "Utils/HelperFunctions.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	InputAction::InputAction(const std::string& name, const std::vector<const InputKeyState*>& keys) :
 		m_Name(name), m_Keys(keys) {}

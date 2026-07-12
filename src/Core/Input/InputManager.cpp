@@ -6,7 +6,7 @@
 
 //If the mouse pos delta magnitude is greater than this value, the mouse pos delta will be ignored
 static constexpr int SINGLE_FRAME_MAX_MOUS_DELTA = 500;
-namespace Input
+namespace Engine::Input
 {
 	const std::filesystem::path InputManager::INPUT_PROFILES_FOLDER = "input";
 	//const std::string InputManager::PROFILE_PREFIX = "profile_";
@@ -16,7 +16,7 @@ namespace Input
 		return m_keyStates.emplace(code, InputKeyState(code, InputState()));
 	}
 
-	InputManager::InputManager(AssetManagement::AssetManager& assetManager, Core::WindowManager& windowManager)
+	InputManager::InputManager(AssetManager& assetManager, Core::WindowManager& windowManager)
 		: m_assetManager(assetManager), m_keyStates(), m_profiles{}, m_mousePos(INVALID_SCREEN_POS), m_lastFrameMousePos(INVALID_SCREEN_POS)
 	{
 		windowManager.m_OnInput.AddListener([this](Core::Window*, const Core::WindowInputEventInfo event) -> void
@@ -49,13 +49,6 @@ namespace Input
 
 	void InputManager::Init()
 	{
-		//for (const auto& key : GetAllKeyboardKeys())
-		//{
-		//	m_keyStates.emplace(key, InputKeyState(key, InputState()));
-		//}
-
-		//if (allInputProfilePath.empty()) return;
-		//LogWarning(std::format("Does input path exist:{}", std::to_string(m_assetManager.IsValidAssetPath(INPUT_PROFILES_FOLDER))));
 		auto profiles = m_assetManager.GetAssetsOfTypeMutable<InputProfileAsset>(INPUT_PROFILES_FOLDER);
 		if (!Assert(profiles.size() > 0, "Tried to load all input profiles in input manager "
 			"but could not find any input profile at path: '{}'", INPUT_PROFILES_FOLDER.string()))
@@ -66,26 +59,6 @@ namespace Input
 			if (profile == nullptr) continue;
 			m_profiles.emplace(profile->GetName(), profile);
 		}
-		//LogError("Finished input manager");
-
-		//std::string fileName = "";
-		//try
-		//{
-		//	for (const auto& file : std::filesystem::directory_iterator(allInputProfilePath))
-		//	{
-		//		fileName = file.path().stem().string();
-		//		if (!file.is_regular_file() || fileName.size() < PROFILE_PREFIX.size()) continue;
-		//		if (fileName.substr(0, PROFILE_PREFIX.size()) != PROFILE_PREFIX) continue;
-
-		//		//NOTE: we use the segment of the profile file after prefix for profile name
-		//		AddProfile(fileName.substr(PROFILE_PREFIX.size()), file.path());
-		//	}
-		//}
-		//catch (const std::exception& e)
-		//{
-		//	LogError(std::format("Tried to add all profiles at path: {} "
-		//		"but ran into error: {}", allInputProfilePath.string(), e.what()));
-		//}
 	}
 	void InputManager::ForceAddMissingKeys() const
 	{
@@ -173,7 +146,7 @@ namespace Input
 		{
 			UpdateState(inputState.second.GetStateMutable(), deltaTime);
 		}
-		//LogWarning(std::format("Keys pressed:{}", Utils::ToStringIterable(GetAllKeysWithStateAsString(KeyState::Pressed))));
+		//LogWarning(std::format("Keys pressed:{}", ::Utils::ToStringIterable(GetAllKeysWithStateAsString(KeyState::Pressed))));
 		m_charKeysPressed.clear();
 		
 		char keyChar = 0;
@@ -197,11 +170,6 @@ namespace Input
 		m_lastFrameMousePos = m_mousePos;
 	}
 
-	/*void InputManager::AddProfile(const std::string& name, const std::filesystem::path& profilePath)
-	{
-		m_profiles.emplace(name, InputProfile(*this, name, profilePath));
-	}*/
-
 	const InputProfile* InputManager::TryGetProfile(const std::string& name) const
 	{
 		auto it = m_profiles.find(name);
@@ -210,14 +178,6 @@ namespace Input
 		return &(it->second->GetProfile());
 	}
 
-	/*CompoundInputCollection::iterator TryGetCompoundIteratorMutable(const std::string& name)
-	{
-		return CompoundInput.find(name);
-	}
-	CompoundInputCollection::const_iterator TryGetCompoundIterator(const std::string& name)
-	{
-		return CompoundInput.find(name);
-	}*/
 
 	bool InputManager::IsKeyState(const KeyCode& key, const KeyState& state) const
 	{
@@ -329,7 +289,7 @@ namespace Input
 		{
 			statesStr.push_back(state.second.ToString());
 		}
-		return Utils::ToStringIterable(statesStr);
+		return ::Utils::ToStringIterable(statesStr);
 	}
 
 	/*bool TryAddCompoundInput(const std::string& name, const CompoundDirectionCollection& keys)

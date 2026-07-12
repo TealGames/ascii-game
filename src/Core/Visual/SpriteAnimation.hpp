@@ -1,66 +1,77 @@
 #pragma once
 #include "Core/Visual/VisualData.hpp"
 
-/// <summary>
-/// Stores the whole entire visual frame. This is meant for the user interface for 
-/// supplying the frames to the sprite aniamtor
-/// </summary>
-struct SpriteAnimationFrame
+namespace Engine::Animation
 {
-	float m_Time;
-	VisualData m_VisualFrame;
-
-	SpriteAnimationFrame();
-	SpriteAnimationFrame(const float& time, const VisualData& frame);
-
-	std::string ToString() const;
-};
-
-/// <summary>
-/// Stores a delta from the past frame. This is meant for internal storage of the 
-/// frames and provides optimization
-/// </summary>
-struct SpriteAnimationDelta
-{
-	float m_Time;
-	VisualDataPositions m_VisualDelta;
-	Vec2Int m_VisualSize;
-
-	SpriteAnimationDelta();
-	SpriteAnimationDelta(const float& time, const VisualDataPositions& data, const Vec2Int& visualSize);
-
-	std::string ToString() const;
-};
-
-class SpriteAnimation
-{
-private:
-public:
-	std::string m_Name;
-	std::vector<SpriteAnimationFrame> m_Frames;
-	size_t m_FrameIndex;
 	/// <summary>
-	/// The duration in seconds of a single animation loop
+	/// Stores the whole entire visual frame. This is meant for the user interface for 
+	/// supplying the frames to the sprite aniamtor
 	/// </summary>
-	float m_SingleLoopLength;
+	class SpriteAnimationFrame
+	{
+	private:
+	public:
+		float m_Time;
+		Rendering::VisualData m_VisualFrame;
+
+	private:
+	public:
+		SpriteAnimationFrame();
+		SpriteAnimationFrame(const float& time, const Rendering::VisualData& frame);
+
+		std::string ToString() const;
+	};
+
 	/// <summary>
-	/// The current time of the animation relative to its beginning
+	/// Stores a delta from the past frame. This is meant for internal storage of the 
+	/// frames and provides optimization
 	/// </summary>
-	float m_NormalizedTime;
-	float m_AnimationSpeed;
-	bool m_Loop;
+	class SpriteAnimationDelta
+	{
+	private:
+	public:
+		float m_Time;
+		Rendering::VisualDataPositions m_VisualDelta;
+		Vec2Int m_VisualSize;
 
-private:
-public:
-	SpriteAnimation();
-	SpriteAnimation(const std::string& name, const std::vector<SpriteAnimationFrame>& frames,
-		const float& animationSpeed, const float& loopTime, const bool& loop);
+	private:
+	public:
+		SpriteAnimationDelta();
+		SpriteAnimationDelta(const float& time, const Rendering::VisualDataPositions& data, const Vec2Int& visualSize);
 
-	//void SetVisualsFromFrames(const std::vector<SpriteAnimationFrame>& frames);
+		std::string ToString() const;
+	};
 
-	const VisualData& GetVisualDataForFrame(const size_t index) const;
-	const VisualData* TryGetCurrentVisualData() const;
+	class SpriteAnimation
+	{
+	private:
+	public:
+		std::string m_Name;
+		std::vector<SpriteAnimationFrame> m_Frames;
+		size_t m_FrameIndex;
+		/// <summary>
+		/// The duration in seconds of a single animation loop
+		/// </summary>
+		float m_SingleLoopLength;
+		/// <summary>
+		/// The current time of the animation relative to its beginning
+		/// </summary>
+		float m_NormalizedTime;
+		float m_AnimationSpeed;
+		bool m_Loop;
 
-	std::string ToString() const;
-};
+	private:
+	public:
+		SpriteAnimation();
+		SpriteAnimation(const std::string& name, const std::vector<SpriteAnimationFrame>& frames,
+			const float& animationSpeed, const float& loopTime, const bool& loop);
+
+		//void SetVisualsFromFrames(const std::vector<SpriteAnimationFrame>& frames);
+
+		const Rendering::VisualData& GetVisualDataForFrame(const size_t index) const;
+		const Rendering::VisualData* TryGetCurrentVisualData() const;
+
+		std::string ToString() const;
+	};
+}
 

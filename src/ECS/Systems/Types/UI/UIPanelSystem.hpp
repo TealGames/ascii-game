@@ -1,7 +1,6 @@
 #pragma once
-#include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
 	class UIPanelSystem
 	{

@@ -1,19 +1,20 @@
 #pragma once
 #include "ECS/Component/Component.hpp"
 
-class UIContainer : public Component
+namespace Engine::UI
 {
-private:
-public:
+	class UIContainer : public ECS::Component
+	{
+	private:
+	public:
 
-private:
-public:
-	UIContainer();
+	private:
+	public:
+		UIContainer();
 
-	void InitFields() override;
-
-	std::string ToString() const override;
-
-	void Deserialize(const Json& json) override;
-	Json Serialize() override;
-};
+		void InitFields() override;
+		void Serialize(Serialization::Serializer& serializer) const override;
+		void Deserialize(Serialization::Deserializer& deserializer) override;
+		std::string ToString() const override;
+	};
+}

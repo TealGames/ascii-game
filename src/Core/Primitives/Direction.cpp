@@ -1,0 +1,78 @@
+#include "pch.hpp"
+#include "Core/Primitives/Direction.hpp"
+#include "Utils/Debug.hpp"
+#include "Utils/StringUtil.hpp"
+
+namespace Engine
+{
+	bool IsAngledDirection(const MoveDirection& dir)
+	{
+		return dir == MoveDirection::Northeast || dir == MoveDirection::Northwest ||
+			dir == MoveDirection::Southeast || dir == MoveDirection::Southwest;
+	}
+
+	Vec2 GetVectorFromDirection(const MoveDirection& dir)
+	{
+		if (dir == MoveDirection::North) return Vec2(0, 1);
+		else if (dir == MoveDirection::South) return Vec2(0, -1);
+		else if (dir == MoveDirection::East) return Vec2(1, 0);
+		else if (dir == MoveDirection::West) return Vec2(-1, 0);
+		else if (dir == MoveDirection::Northeast) return Vec2(0.5f, 0.5f);
+		else if (dir == MoveDirection::Northwest) return Vec2(-0.5f, 0.5f);
+		else if (dir == MoveDirection::Southeast) return Vec2(0.5f, -0.5f);
+		else if (dir == MoveDirection::Southwest) return Vec2(-0.5f, -0.5f);
+
+		LogError(std::format("Tried to get vector from direction but no actions could be found"));
+		return {};
+	}
+
+	std::string ToString(const MoveDirection& dir)
+	{
+		if (dir == MoveDirection::North) return "North";
+		else if (dir == MoveDirection::South) return "South";
+		else if (dir == MoveDirection::East) return "East";
+		else if (dir == MoveDirection::West) return "West";
+		else if (dir == MoveDirection::Northeast) return "NorthEast";
+		else if (dir == MoveDirection::Northwest) return "NorthWest";
+		else if (dir == MoveDirection::Southeast) return "SouthEast";
+		else if (dir == MoveDirection::Southwest) return "SouthWest";
+
+		LogError(std::format("Tried to convert direction to string but no actions could be found"));
+		return "";
+	}
+	std::optional<MoveDirection> TryConvertStringToDirection(const std::string& str, const bool& ignoreAngledDirs)
+	{
+		std::string formattedStr = ::Utils::StringUtil(str).ToLowerCase().ToString();
+		if (formattedStr == "north") return MoveDirection::North;
+		else if (formattedStr == "south") return MoveDirection::South;
+		else if (formattedStr == "east") return MoveDirection::East;
+		else if (formattedStr == "west") return MoveDirection::West;
+
+		if (ignoreAngledDirs) return std::nullopt;
+
+		else if (formattedStr == "northeast") return MoveDirection::Northeast;
+		else if (formattedStr == "northwest") return MoveDirection::Northwest;
+		else if (formattedStr == "southeast") return MoveDirection::Southeast;
+		else if (formattedStr == "southwest") return MoveDirection::Southwest;
+
+		return std::nullopt;
+	}
+
+	std::optional<MoveDirection> TryConvertVectorToDirection(const Vec2& vec, const bool& ignoreAngledDirs)
+	{
+		if (::Math::ApproximateEqualsF(vec.m_Y, 1)) return MoveDirection::North;
+		else if (::Math::ApproximateEqualsF(vec.m_Y, -1)) return MoveDirection::South;
+		else if (::Math::ApproximateEqualsF(vec.m_X, 1)) return MoveDirection::East;
+		else if (::Math::ApproximateEqualsF(vec.m_X, -1)) return MoveDirection::West;
+
+		if (ignoreAngledDirs) return std::nullopt;
+
+		const float dirAsAngle = Math::GetAngle(vec, AngleMode::Degrees);
+		if (0 < dirAsAngle && dirAsAngle < 90) return MoveDirection::Northeast;
+		else if (90 < dirAsAngle && dirAsAngle < 180) return MoveDirection::Northwest;
+		else if (180 < dirAsAngle && dirAsAngle < 270) return MoveDirection::Southwest;
+		else if (270 < dirAsAngle && dirAsAngle < 360) return MoveDirection::Southeast;
+
+		return std::nullopt;
+	}
+}

@@ -7,7 +7,7 @@
 #include <array>
 #include "Core/Input/InputState.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	enum class DeviceType : std::uint8_t
 	{

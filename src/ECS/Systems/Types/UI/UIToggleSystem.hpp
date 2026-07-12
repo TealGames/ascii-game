@@ -1,7 +1,6 @@
 #pragma once
-#include "ECS/Component/Types/UI/UIToggleComponent.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
 	class UIToggleSystem
 	{

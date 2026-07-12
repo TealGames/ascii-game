@@ -3,430 +3,430 @@
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/Debug.hpp"
 #include "ECS/Component/Types/World/TransformComponent.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
-#include "Core/Serialization/JsonSerializers.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "Core/Serialization/Serializer.hpp"
 
-AABBIntersectionData::AABBIntersectionData() :
-	AABBIntersectionData(false, Vec2::Zero()) {}
-
-AABBIntersectionData::AABBIntersectionData(const bool& intersect, const Vec2& depth) :
-	m_DoIntersect(intersect), m_Depth(depth) {}
-
-bool AABBIntersectionData::IsTouchingIntersection() const
+namespace ThisNamespace = Engine::Physics;
+namespace Engine::Physics
 {
-	return m_DoIntersect && m_Depth.m_X == 0 && m_Depth.m_Y == 0;
-}
+	AABBIntersectionData::AABBIntersectionData() :
+		AABBIntersectionData(false, Vec2::Zero()) {}
 
-std::string AABBIntersectionData::ToString() const
-{
-	return std::format("[Intersect:{} Depth:{}]", std::to_string(m_DoIntersect), m_Depth.ToString());
-}
+	AABBIntersectionData::AABBIntersectionData(const bool& intersect, const Vec2& depth) :
+		m_DoIntersect(intersect), m_Depth(depth) {}
 
-std::string ToString(const CollisionFlag flag)
-{
-	if (flag == CollisionFlag::None) return "None";
-	else if (flag == CollisionFlag::AddedThisFrame) return "AddedThisFrame";
-	else if (flag == CollisionFlag::RemovedThisFrame) return "RemovedThisFrame";
-
-	Assert(false, "Tried to convert collision flag to string but no actions found");
-	return "";
-}
-
-CollidingBoxInfo::CollidingBoxInfo(const CollisionBoxData& box, const CollisionFlag& flag) : m_Box(&box), m_Flag(flag) {}
-
-CollisionBoxData::CollisionBoxData(const Vec2& worldSize, const WorldPosition2D& transformOffset) :
-	Component(), m_aabb(worldSize), m_transformOffset(transformOffset), m_collidingBoxes() {}
-
-CollisionBoxData::CollisionBoxData() :
-	CollisionBoxData({}, {}) {}
-
-CollisionBoxData::CollisionBoxData(const Json& json) : CollisionBoxData()
-{
-	Deserialize(json);
-}
-
-CollidingInfoCollection::iterator CollisionBoxData::TryGetCollidingBoxIt(const CollisionBoxData& otherBox)
-{
-	for (auto it= m_collidingBoxes.begin(); it!=m_collidingBoxes.end(); it++)
+	bool AABBIntersectionData::IsTouchingIntersection() const
 	{
-		if (it->m_Box == &otherBox)
-			return it;
+		return m_DoIntersect && m_Depth.m_X == 0 && m_Depth.m_Y == 0;
 	}
-	return m_collidingBoxes.end();
-}
 
-bool CollisionBoxData::TryAddCollidingBox(const CollisionBoxData& otherBox)
-{
-	if (IsCollidingWithBox(otherBox)) 
-		return false;
-
-	m_collidingBoxes.emplace_back(otherBox, CollisionFlag::AddedThisFrame);
-	return true;
-}
-
-bool CollisionBoxData::TryRemoveCollidingBox(const CollisionBoxData& otherBox)
-{
-	auto boxIt = TryGetCollidingBoxIt(otherBox);
-	if (boxIt == m_collidingBoxes.end()) 
-		return false;
-
-	//We do not immediately remove it so it stays for one frame by being in the removed state
-	//so any other places can check this before it get removed next frame
-	boxIt->m_Flag = CollisionFlag::RemovedThisFrame;
-	return true;
-}
-
-bool CollisionBoxData::IsCollidingWithBox(const CollisionBoxData& otherBox) const
-{
-	if (m_collidingBoxes.empty()) return false;
-
-	//TODO: this should be optimized especially if done every frame
-	//so potential fix is to use a unordered map instead
-	for (const auto& colliding : m_collidingBoxes)
+	std::string AABBIntersectionData::ToString() const
 	{
-		if (colliding.m_Box == &otherBox) 
-			return true;
+		return std::format("[Intersect:{} Depth:{}]", std::to_string(m_DoIntersect), m_Depth.ToString());
 	}
-	return false;
-}
 
-std::vector<const CollisionBoxData*> CollisionBoxData::GetCollisionEnterBoxes() const
-{
-	if (m_collidingBoxes.empty()) return {};
-
-	std::vector<const CollisionBoxData*> resultBoxes = {};
-	for (const auto& box : m_collidingBoxes)
+	std::string ToString(const CollisionFlag flag)
 	{
-		if (box.m_Flag == CollisionFlag::AddedThisFrame && box.m_Box != nullptr)
-			resultBoxes.emplace_back(box.m_Box);
+		if (flag == CollisionFlag::None) return "None";
+		else if (flag == CollisionFlag::AddedThisFrame) return "AddedThisFrame";
+		else if (flag == CollisionFlag::RemovedThisFrame) return "RemovedThisFrame";
+
+		Assert(false, "Tried to convert collision flag to string but no actions found");
+		return "";
 	}
-	return resultBoxes;
-}
-std::vector<const CollisionBoxData*> CollisionBoxData::GetCollisionExitBoxes() const
-{
-	if (m_collidingBoxes.empty()) return {};
 
-	std::vector<const CollisionBoxData*> resultBoxes = {};
-	for (const auto& box : m_collidingBoxes)
-	{
-		if (box.m_Flag == CollisionFlag::RemovedThisFrame && box.m_Box!=nullptr)
-			resultBoxes.emplace_back(box.m_Box);
-	}
-	return resultBoxes;
-}
-std::vector<const CollisionBoxData*> CollisionBoxData::GetAllCollisionBoxes() const
-{
-	if (m_collidingBoxes.empty()) return {};
+	CollidingBoxInfo::CollidingBoxInfo(const CollisionBoxComponent& box, const CollisionFlag& flag) : m_Box(&box), m_Flag(flag) {}
 
-	std::vector<const CollisionBoxData*> resultBoxes = {};
-	for (const auto& box : m_collidingBoxes)
-	{
-		if (box.m_Box!=nullptr) resultBoxes.emplace_back(box.m_Box);
-	}
-	//if (m_collidingBoxes[0].m_Flag == CollisionFlag::RemovedThisFrame) Assert(false, std::format("POOP FART"));
-	LogError(std::format("Collisions found:{} first:{}", std::to_string(resultBoxes.size()), ::ToString(m_collidingBoxes[0].m_Flag)));
-	return resultBoxes;
-}
+	CollisionBoxComponent::CollisionBoxComponent(const Vec2& worldSize, const WorldPosition2D& transformOffset) :
+		Component(), m_aabb(worldSize), m_aabbOffset(transformOffset), m_collidingBoxes() {}
 
-void CollisionBoxData::UpdateCollisionStates()
-{
-	for (int i = m_collidingBoxes.size() - 1; i >= 0; i--)
+	CollisionBoxComponent::CollisionBoxComponent() :
+		CollisionBoxComponent({}, {}) {}
+
+	CollidingInfoCollection::iterator CollisionBoxComponent::TryGetCollidingBoxIt(const CollisionBoxComponent& otherBox)
 	{
-		if (m_collidingBoxes[i].m_Flag == CollisionFlag::AddedThisFrame)
+		for (auto it = m_collidingBoxes.begin(); it != m_collidingBoxes.end(); it++)
 		{
-			m_collidingBoxes[i].m_Flag = CollisionFlag::None;
+			if (it->m_Box == &otherBox)
+				return it;
 		}
-		else if (m_collidingBoxes[i].m_Flag == CollisionFlag::RemovedThisFrame)
+		return m_collidingBoxes.end();
+	}
+
+	bool CollisionBoxComponent::TryAddCollidingBox(const CollisionBoxComponent& otherBox)
+	{
+		if (IsCollidingWithBox(otherBox))
+			return false;
+
+		m_collidingBoxes.emplace_back(otherBox, CollisionFlag::AddedThisFrame);
+		return true;
+	}
+
+	bool CollisionBoxComponent::TryRemoveCollidingBox(const CollisionBoxComponent& otherBox)
+	{
+		auto boxIt = TryGetCollidingBoxIt(otherBox);
+		if (boxIt == m_collidingBoxes.end())
+			return false;
+
+		//We do not immediately remove it so it stays for one frame by being in the removed state
+		//so any other places can check this before it get removed next frame
+		boxIt->m_Flag = CollisionFlag::RemovedThisFrame;
+		return true;
+	}
+
+	bool CollisionBoxComponent::IsCollidingWithBox(const CollisionBoxComponent& otherBox) const
+	{
+		if (m_collidingBoxes.empty()) return false;
+
+		//TODO: this should be optimized especially if done every frame
+		//so potential fix is to use a unordered map instead
+		for (const auto& colliding : m_collidingBoxes)
 		{
-			m_collidingBoxes.erase(m_collidingBoxes.begin() + i);
+			if (colliding.m_Box == &otherBox)
+				return true;
+		}
+		return false;
+	}
+
+	std::vector<const CollisionBoxComponent*> CollisionBoxComponent::GetCollisionEnterBoxes() const
+	{
+		if (m_collidingBoxes.empty()) return {};
+
+		std::vector<const CollisionBoxComponent*> resultBoxes = {};
+		for (const auto& box : m_collidingBoxes)
+		{
+			if (box.m_Flag == CollisionFlag::AddedThisFrame && box.m_Box != nullptr)
+				resultBoxes.emplace_back(box.m_Box);
+		}
+		return resultBoxes;
+	}
+	std::vector<const CollisionBoxComponent*> CollisionBoxComponent::GetCollisionExitBoxes() const
+	{
+		if (m_collidingBoxes.empty()) return {};
+
+		std::vector<const CollisionBoxComponent*> resultBoxes = {};
+		for (const auto& box : m_collidingBoxes)
+		{
+			if (box.m_Flag == CollisionFlag::RemovedThisFrame && box.m_Box != nullptr)
+				resultBoxes.emplace_back(box.m_Box);
+		}
+		return resultBoxes;
+	}
+	std::vector<const CollisionBoxComponent*> CollisionBoxComponent::GetAllCollisionBoxes() const
+	{
+		if (m_collidingBoxes.empty()) return {};
+
+		std::vector<const CollisionBoxComponent*> resultBoxes = {};
+		for (const auto& box : m_collidingBoxes)
+		{
+			if (box.m_Box != nullptr) resultBoxes.emplace_back(box.m_Box);
+		}
+		//if (m_collidingBoxes[0].m_Flag == CollisionFlag::RemovedThisFrame) Assert(false, std::format("POOP FART"));
+		LogError(std::format("Collisions found:{} first:{}", std::to_string(resultBoxes.size()), 
+			ThisNamespace::ToString(m_collidingBoxes[0].m_Flag)));
+		return resultBoxes;
+	}
+
+	void CollisionBoxComponent::UpdateCollisionStates()
+	{
+		for (int i = m_collidingBoxes.size() - 1; i >= 0; i--)
+		{
+			if (m_collidingBoxes[i].m_Flag == CollisionFlag::AddedThisFrame)
+			{
+				m_collidingBoxes[i].m_Flag = CollisionFlag::None;
+			}
+			else if (m_collidingBoxes[i].m_Flag == CollisionFlag::RemovedThisFrame)
+			{
+				m_collidingBoxes.erase(m_collidingBoxes.begin() + i);
+			}
 		}
 	}
-}
 
-bool CollisionBoxData::operator==(const CollisionBoxData& other) const
-{
-	return GetEntity() == other.GetEntity();
-}
+	bool CollisionBoxComponent::operator==(const CollisionBoxComponent& other) const
+	{
+		return GetEntity() == other.GetEntity();
+	}
 
-//std::vector<std::string> CollisionBoxData::GetDependencyFlags() const
-//{
-//	return {Utils::GetTypeName<TransformData>()};
-//}
-void CollisionBoxData::InitFields()
-{
-	m_Fields = {ComponentField("Offset", &m_transformOffset)};
-}
+	//std::vector<std::string> CollisionBoxComponent::GetDependencyFlags() const
+	//{
+	//	return {Utils::GetTypeName<TransformData>()};
+	//}
+	void CollisionBoxComponent::InitFields()
+	{
+		m_Fields = { ECS::ComponentField("Offset", &m_aabbOffset) };
+	}
+	void CollisionBoxComponent::Serialize(Serialization::Serializer& serializer) const
+	{
+		serializer.AddProperty("AABB", m_aabb);
+		serializer.AddProperty("Offset", m_aabbOffset);
+	}
+	void CollisionBoxComponent::Deserialize(Serialization::Deserializer& deserializer)
+	{
+		deserializer.GetProperty("AABB", &m_aabb);
+		deserializer.GetProperty("Offset", &m_aabbOffset);
+	}
 
-bool CollisionBoxData::Validate()
-{
-	const Vec2 size = GetAABB().GetSize();
-	if (!Assert(size.m_X != 0 && size.m_Y != 0,
-		"Tried to create a Collision box but the AABB cannot have 0 x or y size: {}. "
+	bool CollisionBoxComponent::Validate()
+	{
+		const Vec2 size = GetAABB().GetSize();
+		if (!Assert(size.m_X != 0 && size.m_Y != 0,
+			"Tried to create a Collision box but the AABB cannot have 0 x or y size: {}. "
 			"This could be due to bad bounding size or offset!", size.ToString()))
-		return false;
+			return false;
 
-	return true;
-}
-
-WorldPosition2D CollisionBoxData::GetOffset() const
-{
-	return m_transformOffset;
-}
-WorldPosition2D CollisionBoxData::GetCenterGlobalPos() const
-{
-	return GetEntity().GetTransform().GetWorldPos().GetXY();
-}
-WorldPosition2D CollisionBoxData::GetGlobalMin() const
-{
-	return m_aabb.GetGlobalMin(GetAABBCenterWorldPos());
-}
-WorldPosition2D CollisionBoxData::GetGlobalMax() const
-{
-	return m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
-}
-
-const AABB2D& CollisionBoxData::GetAABB() const
-{
-	return m_aabb;
-}
-WorldPosition2D CollisionBoxData::GetAABBCenterWorldPos() const
-{
-	return GetCenterGlobalPos() + m_transformOffset;
-}
-WorldPosition2D CollisionBoxData::GetAABBWorldPos(const NormalizedPos& relativePos) const
-{
-	return m_aabb.GetWorldPos(GetAABBCenterWorldPos(), relativePos);
-}
-
-WorldPosition2D CollisionBoxData::GetAABBTopLeftWorldPos() const
-{
-	return GetAABBWorldPos(Vec2{ 0, 1 });
-}
-
-bool CollisionBoxData::DoIntersect(const WorldPosition2D& pos) const
-{
-	WorldPosition2D minPos = m_aabb.GetGlobalMin(GetAABBCenterWorldPos());
-	WorldPosition2D maxPos = m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
-
-	return minPos.m_X <= pos.m_X && pos.m_X <= maxPos.m_X &&
-		minPos.m_Y <= pos.m_Y && pos.m_Y <= maxPos.m_Y;
-}
-
-bool CollisionBoxData::DoIntersect(const CollisionBoxData& otherBox) const
-{
-	return GetCollisionIntersectionData(otherBox).m_DoIntersect;
-}
-
-AABBIntersectionData CollisionBoxData::GetCollisionIntersectionData(const CollisionBoxData& otherBox) const
-{
-	const WorldPosition2D thisMinGlobal = GetGlobalMin();
-	const WorldPosition2D thisMaxGlobal = GetGlobalMax();
-	const WorldPosition2D otherMinGlobal = otherBox.GetGlobalMin();
-	const WorldPosition2D otherMaxGlobal = otherBox.GetGlobalMax();
-
-	
-	AABBIntersectionData result = {};
-
-	//Inttituition is that a collision occurs when the max of one is greater than the min of the other for both X and Y axes
-	//Note: this covers any type of collision, including ones that are perfectly contained within a bigger volume
-	result.m_DoIntersect = thisMinGlobal.m_X <= otherMaxGlobal.m_X && thisMaxGlobal.m_X >= otherMinGlobal.m_X &&
-		thisMinGlobal.m_Y <= otherMaxGlobal.m_Y && thisMaxGlobal.m_Y >= otherMinGlobal.m_Y;
-
-	//Note: for depth we consider how much THIS BODY is penetrating OTHER BODY in both axes
-	//and find the minimum direction ignoring the signs since rightDepthX is - and leftDepthX +
-	//(similar for y) so we can easily reverse the depth to get the vector to leave the intersection
-	if (result.m_DoIntersect)
-	{
-		const Vec2 cumulativeSize = GetAABB().GetSize() + otherBox.GetAABB().GetSize();
-
-		const float rightDepthX = otherMinGlobal.m_X - thisMaxGlobal.m_X;
-		const float leftDepthX = otherMaxGlobal.m_X - thisMinGlobal.m_X;
-	
-		//If OTHER body is between the min and max X of THIS body then we know there is only Y depth 
-		if (thisMinGlobal.m_X <= otherMinGlobal.m_X && otherMinGlobal.m_X <= thisMaxGlobal.m_X &&
-			thisMinGlobal.m_X <= otherMaxGlobal.m_X && otherMaxGlobal.m_X <= thisMaxGlobal.m_X)
-		{
-			result.m_Depth.m_X = 0;
-		}
-		else
-		{
-			result.m_Depth.m_X = Utils::MinAbs(rightDepthX, leftDepthX);
-		}
-
-		const float topDepthY = otherMinGlobal.m_Y - thisMaxGlobal.m_Y;
-		const float bottomDepthY = otherMaxGlobal.m_Y - thisMinGlobal.m_Y;
-		
-		//If OTHER body is between the min and max Y of THIS body then we know there is only X depth 
-		if (thisMinGlobal.m_Y <= otherMinGlobal.m_Y && otherMinGlobal.m_Y <= thisMaxGlobal.m_Y &&
-			thisMinGlobal.m_Y <= otherMaxGlobal.m_Y && otherMaxGlobal.m_Y <= thisMaxGlobal.m_Y)
-		{
-			result.m_Depth.m_Y = 0;
-		}
-		else
-		{
-			result.m_Depth.m_Y = Utils::MinAbs(topDepthY, bottomDepthY);
-			/*Assert(false, std::format("Collision A:{} B:{} top depth:{} bottom depth:{} depth:{}", 
-				GetEntitySafe().GetName(), otherBox.GetEntitySafe().GetName(), std::to_string(topDepthY), std::to_string(bottomDepthY), std::to_string(result.m_Depth.m_Y)));*/
-		}
-
-		/*
-		if (std::abs(rightDepthX) + std::abs(leftDepthX) == cumulativeSize.m_X || 
-			std::abs(topDepthY) + std::abs(bottomDepthY) == cumulativeSize.m_Y)
-		{
-			//Assert(false, std::format("Touching collision"));
-			result.m_Depth = Vec2::ZERO;
-		}
-		*/
+		return true;
 	}
-	return result;
 
-	/*if ((GetEntitySafe().GetName()=="player" || otherBox.GetEntitySafe().GetName()=="player") && 
-		(GetEntitySafe().GetName() == "Background" || otherBox.GetEntitySafe().GetName() == "Background"))
-		Assert(false, std::format("Checking intersect:{}({}) and {}({}) PLAYER:{}, THIS MIN:{} THIS MAX:{} OTHER MIN:{} OTHER MAX:{} X1:{} X2:{} Y1:{} y2:{}",
-		ToString(), GetEntitySafe().GetName(), otherBox.ToString(), otherBox.GetEntitySafe().GetName(),
-		GetEntitySafe().GetName() == "player"? "THIS" : "OTHER",
-			thisMinGlobal.ToString(), thisMaxGlobal.ToString(), otherMinGlobal.ToString(), otherMaxGlobal.ToString(),
-		std::to_string(thisMinGlobal.m_X <= otherMaxGlobal.m_X), std::to_string(thisMaxGlobal.m_X >= otherMinGlobal.m_X), 
-		std::to_string(thisMinGlobal.m_Y <= otherMaxGlobal.m_Y), std::to_string(thisMaxGlobal.m_Y >= otherMinGlobal.m_Y)));*/
-
-	//Covers case where body2 is fully inside body1
-	if (result.m_DoIntersect && thisMinGlobal.m_X <= otherMinGlobal.m_X && otherMaxGlobal.m_X <= thisMaxGlobal.m_X &&
-		thisMinGlobal.m_Y <= otherMinGlobal.m_Y && otherMaxGlobal.m_Y <= thisMaxGlobal.m_Y)
+	WorldPosition2D CollisionBoxComponent::GetOffset() const
 	{
-		result.m_Depth.m_X = Utils::MinAbs(otherMinGlobal.m_X - thisMaxGlobal.m_X, otherMaxGlobal.m_X - thisMinGlobal.m_X);
-		result.m_Depth.m_Y = Utils::MinAbs(otherMinGlobal.m_Y - thisMaxGlobal.m_Y, otherMaxGlobal.m_Y - thisMinGlobal.m_Y);
+		return m_aabbOffset;
+	}
+	WorldPosition2D CollisionBoxComponent::GetCenterGlobalPos() const
+	{
+		return GetEntity().GetTransform().GetWorldPos().GetXY();
+	}
+	WorldPosition2D CollisionBoxComponent::GetGlobalMin() const
+	{
+		return m_aabb.GetGlobalMin(GetAABBCenterWorldPos());
+	}
+	WorldPosition2D CollisionBoxComponent::GetGlobalMax() const
+	{
+		return m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
+	}
 
-		/*LogError(std::format("Calculating min abs X of {} and {} is: {} MIN DEPTH Y: {}", std::to_string(otherMinGlobal.m_X - thisMinGlobal.m_X),
-			std::to_string(otherMaxGlobal.m_X - thisMaxGlobal.m_X), std::to_string(result.m_Depth.m_X), std::to_string(result.m_Depth.m_Y)));*/
+	const AABB2D& CollisionBoxComponent::GetAABB() const
+	{
+		return m_aabb;
+	}
+	WorldPosition2D CollisionBoxComponent::GetAABBCenterWorldPos() const
+	{
+		return GetCenterGlobalPos() + m_aabbOffset;
+	}
+	WorldPosition2D CollisionBoxComponent::GetAABBWorldPos(const NormalizedVec2& relativePos) const
+	{
+		return m_aabb.GetWorldPos(GetAABBCenterWorldPos(), relativePos);
+	}
+
+	WorldPosition2D CollisionBoxComponent::GetAABBTopLeftWorldPos() const
+	{
+		return GetAABBWorldPos(Vec2{ 0, 1 });
+	}
+
+	bool CollisionBoxComponent::DoIntersect(const WorldPosition2D& pos) const
+	{
+		WorldPosition2D minPos = m_aabb.GetGlobalMin(GetAABBCenterWorldPos());
+		WorldPosition2D maxPos = m_aabb.GetGlobalMax(GetAABBCenterWorldPos());
+
+		return minPos.m_X <= pos.m_X && pos.m_X <= maxPos.m_X &&
+			minPos.m_Y <= pos.m_Y && pos.m_Y <= maxPos.m_Y;
+	}
+
+	bool CollisionBoxComponent::DoIntersect(const CollisionBoxComponent& otherBox) const
+	{
+		return GetCollisionIntersectionData(otherBox).m_DoIntersect;
+	}
+
+	AABBIntersectionData CollisionBoxComponent::GetCollisionIntersectionData(const CollisionBoxComponent& otherBox) const
+	{
+		const WorldPosition2D thisMinGlobal = GetGlobalMin();
+		const WorldPosition2D thisMaxGlobal = GetGlobalMax();
+		const WorldPosition2D otherMinGlobal = otherBox.GetGlobalMin();
+		const WorldPosition2D otherMaxGlobal = otherBox.GetGlobalMax();
+
+
+		AABBIntersectionData result = {};
+
+		//Inttituition is that a collision occurs when the max of one is greater than the min of the other for both X and Y axes
+		//Note: this covers any type of collision, including ones that are perfectly contained within a bigger volume
+		result.m_DoIntersect = thisMinGlobal.m_X <= otherMaxGlobal.m_X && thisMaxGlobal.m_X >= otherMinGlobal.m_X &&
+			thisMinGlobal.m_Y <= otherMaxGlobal.m_Y && thisMaxGlobal.m_Y >= otherMinGlobal.m_Y;
+
+		//Note: for depth we consider how much THIS BODY is penetrating OTHER BODY in both axes
+		//and find the minimum direction ignoring the signs since rightDepthX is - and leftDepthX +
+		//(similar for y) so we can easily reverse the depth to get the vector to leave the intersection
+		if (result.m_DoIntersect)
+		{
+			const Vec2 cumulativeSize = GetAABB().GetSize() + otherBox.GetAABB().GetSize();
+
+			const float rightDepthX = otherMinGlobal.m_X - thisMaxGlobal.m_X;
+			const float leftDepthX = otherMaxGlobal.m_X - thisMinGlobal.m_X;
+
+			//If OTHER body is between the min and max X of THIS body then we know there is only Y depth 
+			if (thisMinGlobal.m_X <= otherMinGlobal.m_X && otherMinGlobal.m_X <= thisMaxGlobal.m_X &&
+				thisMinGlobal.m_X <= otherMaxGlobal.m_X && otherMaxGlobal.m_X <= thisMaxGlobal.m_X)
+			{
+				result.m_Depth.m_X = 0;
+			}
+			else
+			{
+				result.m_Depth.m_X = ::Math::MinAbs(rightDepthX, leftDepthX);
+			}
+
+			const float topDepthY = otherMinGlobal.m_Y - thisMaxGlobal.m_Y;
+			const float bottomDepthY = otherMaxGlobal.m_Y - thisMinGlobal.m_Y;
+
+			//If OTHER body is between the min and max Y of THIS body then we know there is only X depth 
+			if (thisMinGlobal.m_Y <= otherMinGlobal.m_Y && otherMinGlobal.m_Y <= thisMaxGlobal.m_Y &&
+				thisMinGlobal.m_Y <= otherMaxGlobal.m_Y && otherMaxGlobal.m_Y <= thisMaxGlobal.m_Y)
+			{
+				result.m_Depth.m_Y = 0;
+			}
+			else
+			{
+				result.m_Depth.m_Y = ::Math::MinAbs(topDepthY, bottomDepthY);
+				/*Assert(false, std::format("Collision A:{} B:{} top depth:{} bottom depth:{} depth:{}",
+					GetEntitySafe().GetName(), otherBox.GetEntitySafe().GetName(), std::to_string(topDepthY), std::to_string(bottomDepthY), std::to_string(result.m_Depth.m_Y)));*/
+			}
+
+			/*
+			if (std::abs(rightDepthX) + std::abs(leftDepthX) == cumulativeSize.m_X ||
+				std::abs(topDepthY) + std::abs(bottomDepthY) == cumulativeSize.m_Y)
+			{
+				//Assert(false, std::format("Touching collision"));
+				result.m_Depth = Vec2::ZERO;
+			}
+			*/
+		}
+		return result;
+
+		/*if ((GetEntitySafe().GetName()=="player" || otherBox.GetEntitySafe().GetName()=="player") &&
+			(GetEntitySafe().GetName() == "Background" || otherBox.GetEntitySafe().GetName() == "Background"))
+			Assert(false, std::format("Checking intersect:{}({}) and {}({}) PLAYER:{}, THIS MIN:{} THIS MAX:{} OTHER MIN:{} OTHER MAX:{} X1:{} X2:{} Y1:{} y2:{}",
+			ToString(), GetEntitySafe().GetName(), otherBox.ToString(), otherBox.GetEntitySafe().GetName(),
+			GetEntitySafe().GetName() == "player"? "THIS" : "OTHER",
+				thisMinGlobal.ToString(), thisMaxGlobal.ToString(), otherMinGlobal.ToString(), otherMaxGlobal.ToString(),
+			std::to_string(thisMinGlobal.m_X <= otherMaxGlobal.m_X), std::to_string(thisMaxGlobal.m_X >= otherMinGlobal.m_X),
+			std::to_string(thisMinGlobal.m_Y <= otherMaxGlobal.m_Y), std::to_string(thisMaxGlobal.m_Y >= otherMinGlobal.m_Y)));*/
+
+			//Covers case where body2 is fully inside body1
+		if (result.m_DoIntersect && thisMinGlobal.m_X <= otherMinGlobal.m_X && otherMaxGlobal.m_X <= thisMaxGlobal.m_X &&
+			thisMinGlobal.m_Y <= otherMinGlobal.m_Y && otherMaxGlobal.m_Y <= thisMaxGlobal.m_Y)
+		{
+			result.m_Depth.m_X = ::Math::MinAbs(otherMinGlobal.m_X - thisMaxGlobal.m_X, otherMaxGlobal.m_X - thisMinGlobal.m_X);
+			result.m_Depth.m_Y = ::Math::MinAbs(otherMinGlobal.m_Y - thisMaxGlobal.m_Y, otherMaxGlobal.m_Y - thisMinGlobal.m_Y);
+
+			/*LogError(std::format("Calculating min abs X of {} and {} is: {} MIN DEPTH Y: {}", std::to_string(otherMinGlobal.m_X - thisMinGlobal.m_X),
+				std::to_string(otherMaxGlobal.m_X - thisMaxGlobal.m_X), std::to_string(result.m_Depth.m_X), std::to_string(result.m_Depth.m_Y)));*/
+			return result;
+		}
+
+		//TODO: intersection vector depth might not work if smaller collider is fully inside bigger collider
+		if (result.m_DoIntersect)
+		{
+			//Coming from right side
+			if (otherMaxGlobal.m_X > thisMaxGlobal.m_X)
+			{
+				result.m_Depth.m_X = otherMinGlobal.m_X - thisMaxGlobal.m_X;
+			}
+			//Coming from bottom side
+			else if (otherMinGlobal.m_X < thisMinGlobal.m_X)
+			{
+				result.m_Depth.m_X = otherMaxGlobal.m_X - thisMinGlobal.m_X;
+			}
+
+			//Coming in from top
+			if (otherMaxGlobal.m_Y > thisMaxGlobal.m_Y) result.m_Depth.m_Y = otherMinGlobal.m_Y - thisMaxGlobal.m_Y;
+			//Coming from bottom side
+			else if (otherMinGlobal.m_Y < thisMinGlobal.m_Y) result.m_Depth.m_Y = otherMaxGlobal.m_Y - thisMinGlobal.m_Y;
+		}
 		return result;
 	}
 
-	//TODO: intersection vector depth might not work if smaller collider is fully inside bigger collider
-	if (result.m_DoIntersect)
+	Vec2 CollisionBoxComponent::GetAABBMinDisplacement(const CollisionBoxComponent& otherBox) const
 	{
-		//Coming from right side
-		if (otherMaxGlobal.m_X > thisMaxGlobal.m_X)
+		const WorldPosition2D thisMinGlobal = GetGlobalMin();
+		const WorldPosition2D thisMaxGlobal = GetGlobalMax();
+		const WorldPosition2D otherMinGlobal = otherBox.GetGlobalMin();
+		const WorldPosition2D otherMaxGlobal = otherBox.GetGlobalMax();
+
+		Vec2 displacement = {};
+
+		//body 2 is fully to the RIGHT of body1
+		if (thisMaxGlobal.m_X < otherMaxGlobal.m_X && thisMaxGlobal.m_X < otherMinGlobal.m_X) displacement.m_X = otherMinGlobal.m_X - thisMaxGlobal.m_X;
+		//body2 is fully to the LEFT of body1
+		else if (otherMaxGlobal.m_X < thisMinGlobal.m_X && otherMinGlobal.m_X < thisMinGlobal.m_X) displacement.m_X = otherMaxGlobal.m_X - thisMinGlobal.m_X;
+		//If body2 is touching body1 or is only in vertical dir then displacement is 0
+		else displacement.m_X = 0;
+
+		// body 2 is fully ON TOP of body1
+		if (thisMaxGlobal.m_Y < otherMaxGlobal.m_Y && thisMaxGlobal.m_Y < otherMinGlobal.m_Y) displacement.m_Y = otherMinGlobal.m_Y - thisMaxGlobal.m_Y;
+		// body 2 is fully BELOW body1
+		else if (otherMaxGlobal.m_Y < thisMinGlobal.m_Y && otherMinGlobal.m_Y < thisMinGlobal.m_Y) displacement.m_Y = otherMaxGlobal.m_Y - thisMinGlobal.m_Y;
+		else displacement.m_Y = 0;
+
+		return displacement;
+	}
+
+	Vec2 CollisionBoxComponent::GetAABBDirection(const CollisionBoxComponent& otherBox, const bool& considerCollisions) const
+	{
+		const WorldPosition2D thisMinGlobal = GetGlobalMin();
+		const WorldPosition2D thisMaxGlobal = GetGlobalMax();
+		const WorldPosition2D otherMinGlobal = otherBox.GetGlobalMin();
+		const WorldPosition2D otherMaxGlobal = otherBox.GetGlobalMax();
+
+		return otherBox.GetAABBCenterWorldPos() - GetAABBCenterWorldPos();
+
+		const Vec2 minVec = otherMinGlobal - thisMinGlobal;
+		const Vec2 maxVec = otherMaxGlobal - thisMaxGlobal;
+
+
+
+		Vec2 dir = Vec2::Zero();
+		const WorldPosition2D& thisCenter = GetAABBCenterWorldPos();
+		if (considerCollisions)
 		{
-			result.m_Depth.m_X = otherMinGlobal.m_X - thisMaxGlobal.m_X;
+			//If enttiy 2 is to the right of entity1 center x
+			if (thisCenter.m_X < otherMaxGlobal.m_X && thisCenter.m_X <= otherMinGlobal.m_X) dir.m_X = 1;
+			//Entity 2 is to the left of entity1 center x
+			else if (otherMinGlobal.m_X < GetAABBCenterWorldPos().m_X && otherMaxGlobal.m_X <= thisCenter.m_X) dir.m_X = -1;
+
+			//Entity2 is on top of entity1 center y
+			if (thisCenter.m_Y < otherMaxGlobal.m_Y && thisCenter.m_Y <= otherMinGlobal.m_Y) dir.m_Y = 1;
+			//Entity2 is bottom of entity1 center y
+			else if (otherMinGlobal.m_Y < thisCenter.m_Y && otherMaxGlobal.m_Y <= thisCenter.m_Y) dir.m_Y = -1;
 		}
-		//Coming from bottom side
-		else if (otherMinGlobal.m_X < thisMinGlobal.m_X)
+		else
 		{
-			result.m_Depth.m_X = otherMaxGlobal.m_X - thisMinGlobal.m_X;
+			//If enttiy 2 is to the right FULLY
+			if (thisMaxGlobal.m_X < otherMaxGlobal.m_X && thisMaxGlobal.m_X < otherMinGlobal.m_X) dir.m_X = 1;
+			//Entity 2 is to the left of entity 1 FULLY
+			else if (otherMinGlobal.m_X < thisMinGlobal.m_X && otherMaxGlobal.m_X < thisMinGlobal.m_X) dir.m_X = -1;
+
+			//Entity2 is on top of entity1 FULLY
+			if (thisMaxGlobal.m_Y < otherMaxGlobal.m_Y && thisMaxGlobal.m_Y < otherMinGlobal.m_Y) dir.m_Y = 1;
+			//Entity2 is bottom of entity1 FULLY
+			else if (otherMinGlobal.m_Y < thisMinGlobal.m_Y && otherMaxGlobal.m_Y < thisMinGlobal.m_Y) dir.m_Y = -1;
+		}
+		/*if (thisMaxGlobal.m_X < otherMaxGlobal.m_X && thisMaxGlobal.m_X <= otherMinGlobal.m_X) return Direction::Right;
+		else if (otherMinGlobal.m_X < thisMinGlobal.m_X && otherMaxGlobal.m_X <= thisMinGlobal.m_X) return Direction::Left;
+		else if (thisMaxGlobal.m_Y < otherMaxGlobal.m_Y && thisMaxGlobal.m_Y <= otherMinGlobal.m_Y) return Direction::Up;
+		else if (otherMinGlobal.m_Y < thisMinGlobal.m_Y && otherMaxGlobal.m_Y <= thisMinGlobal.m_Y) return Direction::Down;
+		else
+		{
+			LogError(std::format("Tried to get AABB direction but no directions match any of the criteria! Entity 1:{} Entity2:{}",
+				entity1Bounding.ToString(entity1Pos), entity2Bounding.ToString(entity2Pos)));
+			return std::nullopt;
+		}*/
+
+		if (::Math::ApproximateEqualsF(std::abs(dir.m_X), 1) &&
+			::Math::ApproximateEqualsF(std::abs(dir.m_Y), 1))
+		{
+			dir.m_X = ::Math::GetSign(dir.m_X) * 0.5;
+			dir.m_Y = ::Math::GetSign(dir.m_Y) * 0.5;
 		}
 
-		//Coming in from top
-		if (otherMaxGlobal.m_Y > thisMaxGlobal.m_Y) result.m_Depth.m_Y = otherMinGlobal.m_Y - thisMaxGlobal.m_Y;
-		//Coming from bottom side
-		else if (otherMinGlobal.m_Y < thisMinGlobal.m_Y) result.m_Depth.m_Y = otherMaxGlobal.m_Y - thisMinGlobal.m_Y;
-	}
-	return result;
-}
-
-Vec2 CollisionBoxData::GetAABBMinDisplacement(const CollisionBoxData& otherBox) const
-{
-	const WorldPosition2D thisMinGlobal = GetGlobalMin();
-	const WorldPosition2D thisMaxGlobal = GetGlobalMax();
-	const WorldPosition2D otherMinGlobal = otherBox.GetGlobalMin();
-	const WorldPosition2D otherMaxGlobal = otherBox.GetGlobalMax();
-
-	Vec2 displacement = {};
-
-	//body 2 is fully to the RIGHT of body1
-	if (thisMaxGlobal.m_X < otherMaxGlobal.m_X && thisMaxGlobal.m_X < otherMinGlobal.m_X) displacement.m_X = otherMinGlobal.m_X - thisMaxGlobal.m_X;
-	//body2 is fully to the LEFT of body1
-	else if (otherMaxGlobal.m_X < thisMinGlobal.m_X && otherMinGlobal.m_X < thisMinGlobal.m_X) displacement.m_X = otherMaxGlobal.m_X - thisMinGlobal.m_X;
-	//If body2 is touching body1 or is only in vertical dir then displacement is 0
-	else displacement.m_X = 0;
-
-	// body 2 is fully ON TOP of body1
-	if (thisMaxGlobal.m_Y < otherMaxGlobal.m_Y && thisMaxGlobal.m_Y < otherMinGlobal.m_Y) displacement.m_Y = otherMinGlobal.m_Y - thisMaxGlobal.m_Y;
-	// body 2 is fully BELOW body1
-	else if (otherMaxGlobal.m_Y < thisMinGlobal.m_Y && otherMinGlobal.m_Y < thisMinGlobal.m_Y) displacement.m_Y = otherMaxGlobal.m_Y - thisMinGlobal.m_Y;
-	else displacement.m_Y = 0;
-
-	return displacement;
-}
-
-Vec2 CollisionBoxData::GetAABBDirection(const CollisionBoxData& otherBox, const bool& considerCollisions) const
-{
-	const WorldPosition2D thisMinGlobal = GetGlobalMin();
-	const WorldPosition2D thisMaxGlobal = GetGlobalMax();
-	const WorldPosition2D otherMinGlobal = otherBox.GetGlobalMin();
-	const WorldPosition2D otherMaxGlobal = otherBox.GetGlobalMax();
-
-	return otherBox.GetAABBCenterWorldPos() - GetAABBCenterWorldPos();
-
-	const Vec2 minVec = otherMinGlobal- thisMinGlobal;
-	const Vec2 maxVec = otherMaxGlobal- thisMaxGlobal;
-
-	
-
-	Vec2 dir = Vec2::Zero();
-	const WorldPosition2D& thisCenter = GetAABBCenterWorldPos();
-	if (considerCollisions)
-	{
-		//If enttiy 2 is to the right of entity1 center x
-		if (thisCenter.m_X < otherMaxGlobal.m_X && thisCenter.m_X <= otherMinGlobal.m_X) dir.m_X = 1;
-		//Entity 2 is to the left of entity1 center x
-		else if (otherMinGlobal.m_X < GetAABBCenterWorldPos().m_X && otherMaxGlobal.m_X <= thisCenter.m_X) dir.m_X = -1;
-
-		//Entity2 is on top of entity1 center y
-		if (thisCenter.m_Y < otherMaxGlobal.m_Y && thisCenter.m_Y <= otherMinGlobal.m_Y) dir.m_Y = 1;
-		//Entity2 is bottom of entity1 center y
-		else if (otherMinGlobal.m_Y < thisCenter.m_Y && otherMaxGlobal.m_Y <= thisCenter.m_Y) dir.m_Y = -1;
-	}
-	else
-	{
-		//If enttiy 2 is to the right FULLY
-		if (thisMaxGlobal.m_X < otherMaxGlobal.m_X && thisMaxGlobal.m_X < otherMinGlobal.m_X) dir.m_X = 1;
-		//Entity 2 is to the left of entity 1 FULLY
-		else if (otherMinGlobal.m_X < thisMinGlobal.m_X && otherMaxGlobal.m_X < thisMinGlobal.m_X) dir.m_X = -1;
-
-		//Entity2 is on top of entity1 FULLY
-		if (thisMaxGlobal.m_Y < otherMaxGlobal.m_Y && thisMaxGlobal.m_Y < otherMinGlobal.m_Y) dir.m_Y = 1;
-		//Entity2 is bottom of entity1 FULLY
-		else if (otherMinGlobal.m_Y < thisMinGlobal.m_Y && otherMaxGlobal.m_Y < thisMinGlobal.m_Y) dir.m_Y = -1;
-	}
-	/*if (thisMaxGlobal.m_X < otherMaxGlobal.m_X && thisMaxGlobal.m_X <= otherMinGlobal.m_X) return Direction::Right;
-	else if (otherMinGlobal.m_X < thisMinGlobal.m_X && otherMaxGlobal.m_X <= thisMinGlobal.m_X) return Direction::Left;
-	else if (thisMaxGlobal.m_Y < otherMaxGlobal.m_Y && thisMaxGlobal.m_Y <= otherMinGlobal.m_Y) return Direction::Up;
-	else if (otherMinGlobal.m_Y < thisMinGlobal.m_Y && otherMaxGlobal.m_Y <= thisMinGlobal.m_Y) return Direction::Down;
-	else
-	{
-		LogError(std::format("Tried to get AABB direction but no directions match any of the criteria! Entity 1:{} Entity2:{}",
-			entity1Bounding.ToString(entity1Pos), entity2Bounding.ToString(entity2Pos)));
-		return std::nullopt;
-	}*/
-
-	if (Utils::ApproximateEqualsF(std::abs(dir.m_X), 1) &&
-		Utils::ApproximateEqualsF(std::abs(dir.m_Y), 1))
-	{
-		dir.m_X = Utils::GetSign(dir.m_X) * 0.5;
-		dir.m_Y = Utils::GetSign(dir.m_Y) * 0.5;
+		//Assert(false, std::format("aabb dir: {} normalized: {}", dir.ToString(), dir.GetNormalized().ToString()));
+		return dir;
 	}
 
-	//Assert(false, std::format("aabb dir: {} normalized: {}", dir.ToString(), dir.GetNormalized().ToString()));
-	return dir;
-}
-
-std::string CollisionBoxData::ToString() const
-{
-	return std::format("[CollisionBox AABB:{}, Offset:{}]", m_aabb.ToString(GetAABBCenterWorldPos()), 
-		m_transformOffset.ToString());
-}
-std::string CollisionBoxData::ToStringRelative() const
-{
-	return std::format("[CollisionBox AABB:{}, Offset:{}]", m_aabb.ToString(),
-		m_transformOffset.ToString());
-}
-
-void CollisionBoxData::Deserialize(const Json& json)
-{
-	m_aabb = json.at("AABB").get<AABB2D>();
-	m_transformOffset = json.at("Offset").get<WorldPosition2D>();
-}
-Json CollisionBoxData::Serialize()
-{
-	return Json{ {"AABB", m_aabb}, {"Offset", m_transformOffset}};
+	std::string CollisionBoxComponent::ToString() const
+	{
+		return std::format("[CollisionBox AABB:{}, Offset:{}]", m_aabb.ToString(GetAABBCenterWorldPos()),
+			m_aabbOffset.ToString());
+	}
+	std::string CollisionBoxComponent::ToStringRelative() const
+	{
+		return std::format("[CollisionBox AABB:{}, Offset:{}]", m_aabb.ToString(),
+			m_aabbOffset.ToString());
+	}
 }

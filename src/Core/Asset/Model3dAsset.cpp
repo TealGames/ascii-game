@@ -1,171 +1,322 @@
 #include "Core/Asset/Model3dAsset.hpp"
+#include "Core/Asset/SceneAsset.hpp"
+#include "Core/Asset/AssetManager.hpp"
+#include "ECS/Component/Types/World/PointLight3DComponent.hpp"
+#include "ECS/Component/Types/World/CameraComponent.hpp"
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 #include "Utils/Platform/AssimpUtils.hpp"
 #include "Utils/StringUtil.hpp"
-#include "Math/PlatformMath.hpp"
 #include "Core/Serialization/Model3DFileFormat.hpp"
+#include "Core/EngineState.hpp"
 #include "Utils/Debug.hpp"
+#include "Utils/HelperFunctions.hpp"
+#include "Utils/ToStringFunctions.hpp"
+#include "Utils/IOHandler.hpp"
+#include "StaticGlobals.hpp"
 
-static constexpr bool ADD_GLOBAL_SCALE = true;
-//NOTE: Assimp by default assumes we want to convert m in modeling software
-//coords to cm, so if we provide a global scale factor, that transform scale is ignored.
-//NOTE: the following scale factor is in units RELATIVE to Blender UNITS (Blender is in meters)
-static constexpr float IMPORT_TO_ENGINE_SCALE_FACTOR = 1.0f;
-static constexpr bool BAKE_TRANSFORMS_IN_VERTICES = true;
-//If true, will write all non-vtx formats to vtx to reduce file size
-static constexpr bool WRITE_ANY_FORMAT_TO_CUSTOM = false;
-
-static void ProcessSceneNode(Rendering::Model3d& model, const aiScene* modelScene, aiNode* node, const aiMatrix4x4* parentTransform)
+namespace Engine::Rendering
 {
-	//NOTE: we do NOT need any conversion because Assimp converts models into +x -> right, +y ->up, -z -> forward, which match this engine coordinate system
-	//BUT assimp also applies a scale factor of 100
-	const aiMatrix4x4 globalTransform = parentTransform != nullptr ? *parentTransform * node->mTransformation : node->mTransformation;
-	/*LogWarning(std::format("Found node transform : {}\nglobal transform:{}", 
-		AssimpUtils::ToString(node->mTransformation), AssimpUtils::ToString(globalTransform)));*/
-	/*LogWarning(std::format("Found {} global transform:{} parent:{} local:{}", node->mName.C_Str(), AssimpUtils::ToString(globalTransform),
-		parentTransform == nullptr ? "NULL" : AssimpUtils::ToString(*parentTransform), AssimpUtils::ToString(node->mTransformation)));*/
-	//LogWarning(std::format("For model found parent:{} transform:{}", parentTransform != nullptr? 
-	//	AssimpUtils::ToString(*parentTransform) : "NULL", AssimpUtils::ToString(globalTransform)));
-	if (node->mNumMeshes > 0)
+	const std::array<std::string_view,2> Model3dAsset::EXTENSIONS = { ".fbx", VTXConverter::MODEL_3D_FILE_EXTENSION };
+
+	static constexpr bool ADD_GLOBAL_SCALE = true;
+	//NOTE: Assimp by default assumes we want to convert m in modeling software
+	//coords to cm, so if we provide a global scale factor, that transform scale is ignored.
+	//NOTE: the following scale factor is in units RELATIVE to Blender UNITS (Blender is in meters)
+	static constexpr float IMPORT_TO_ENGINE_SCALE_FACTOR = 1.0f;
+	static constexpr bool BAKE_TRANSFORMS_IN_VERTICES = true;
+	//If true, will write all non-vtx formats to vtx to reduce file size
+	static constexpr bool WRITE_ANY_FORMAT_TO_CUSTOM = false;
+
+	static std::unordered_map<std::string_view, aiLight*> SceneLights = {};
+	static std::unordered_map<std::string_view, aiCamera*> SceneCameras = {};
+
+#define IMPORTED_MATERIAL_DIR MATERIAL_ASSET_DIR "imported/"
+#define IMPORTED_SCENE_DIR SCENE_ASSET_DIR "imported/"
+
+	Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path), m_model(), m_engineState(nullptr)
 	{
-		Rendering::ModelObjectGroup* meshGroup = &(model.m_ObjectGroups.emplace_back(
-			Rendering::ModelObjectGroup{ Mat4(&globalTransform.a1) }));
-		//LogError(std::format("og global trans:{} stored:{}", AssimpUtils::ToString(globalTransform), meshGroup->m_GlobalTransform.ToString()));
+		ASSET_EXTENSION_CHECK
+	}
 
-		const aiMesh* currentImportMesh = nullptr;
-		Rendering::ModelObject* currentEngineObj = nullptr;
+	/// <summary>
+	/// Will process the geometry (meshes) of the scene by traversing through hierarchy
+	/// </summary>
+	/// <param name="model"></param>
+	/// <param name="modelScene"></param>
+	/// <param name="node"></param>
+	/// <param name="parentTransform"></param>
+	static void ProcessMeshNodes(Core::EngineState& engineState, Rendering::Model3d& model, Scenes::Scene* engineScene, ECS::EntityData* parentEntity,
+		const aiScene* modelScene, aiNode* node, const aiMatrix4x4* parentTransform)
+	{
+		//NOTE: we do NOT need any conversion because Assimp converts models into +x -> right, +y ->up, -z -> forward, which match this engine coordinate system
+		//BUT assimp also applies a scale factor of 100
+		const aiMatrix4x4 globalTransform = parentTransform != nullptr ? *parentTransform * node->mTransformation : node->mTransformation;
+		const Mat4* engineGlobalTransform = AssimpUtils::ToMatrix(globalTransform);
+		/*LogWarning(std::format("Found node transform : {}\nglobal transform:{}",
+			AssimpUtils::ToString(node->mTransformation), AssimpUtils::ToString(globalTransform)));*/
+			/*LogWarning(std::format("Found {} global transform:{} parent:{} local:{}", node->mName.C_Str(), AssimpUtils::ToString(globalTransform),
+				parentTransform == nullptr ? "NULL" : AssimpUtils::ToString(*parentTransform), AssimpUtils::ToString(node->mTransformation)));*/
+				//LogWarning(std::format("For model found parent:{} transform:{}", parentTransform != nullptr? 
+				//	AssimpUtils::ToString(*parentTransform) : "NULL", AssimpUtils::ToString(globalTransform)));
 
-		for (size_t i = 0; i < node->mNumMeshes; i++)
+		ECS::EntityData* thisEntity = nullptr;
+		std::string_view nodeNameView = AssimpUtils::ToStringView(node->mName);
+		std::string_view sceneNameView = AssimpUtils::ToStringView(modelScene->mName);
+		if (engineScene != nullptr)
 		{
-			currentImportMesh = modelScene->mMeshes[node->mMeshes[i]];
-			const size_t meshVertexCount = currentImportMesh->mNumVertices;
+			Vec3 position{}, scale{};
+			Math::Quat rotation{};
+			Math::ExtractTransformFromMatrix(*engineGlobalTransform, position, rotation, scale);
+			TransformComponent transformComponent = TransformComponent(position, scale, rotation);
+			if (parentEntity == nullptr) thisEntity = &(engineScene->CreateEntity(std::string(nodeNameView), transformComponent));
+			else thisEntity = &(parentEntity->CreateChild(std::string(nodeNameView), transformComponent));
 
-			currentEngineObj = &(model.m_Objects.emplace_back(Rendering::ModelObject{}));
-			meshGroup->m_ObjectIndices.emplace_back(model.m_Objects.size() - 1);
-			currentEngineObj->m_Mesh.m_Vertices.reserve(meshVertexCount);
-
-			for (size_t j = 0; j < meshVertexCount; j++)
+			auto sceneLightIt = SceneLights.find(nodeNameView);
+			if (sceneLightIt != SceneLights.end())
 			{
-				aiVector3D pos = currentImportMesh->mVertices[j];
-				//TODO: do we really want global transform here or would it be okay if we had just the local?
-				//if (BAKE_TRANSFORMS_IN_VERTICES) pos = globalTransform * pos;
-				const aiVector3D normal = currentImportMesh->HasNormals() ? currentImportMesh->mNormals[j] : aiVector3D(0, 0, 0);
-				const aiVector3D uv = currentImportMesh->HasTextureCoords(0) ? currentImportMesh->mTextureCoords[0][j] : aiVector3D(0, 0, 0);
+				aiLight* light = sceneLightIt->second;
+				//NOTE: technically light has ambient, diffuse and specular colors, but for a PBR renderer
+				//for this engine, ambient and specular do not make sense here since those should be determined
+				//from the lighting setup and not hardcoded into a light property
+				const aiColor3D& lightColor = light->mColorDiffuse;
+				ColHDR3 hdrlightColor = ColHDR3(lightColor.r, lightColor.g, lightColor.b);
 
-				currentEngineObj->m_Mesh.m_Vertices.emplace_back(Rendering::Vertex{ WorldPosition3D(pos.x, pos.y, pos.z),
-					UV(uv.x, uv.y), Vec3(normal.x, normal.y, normal.z) });
-			}
-
-			for (size_t j = 0; j < currentImportMesh->mNumFaces; j++)
-			{
-				const aiFace* face = &currentImportMesh->mFaces[j];
-				if (face->mNumIndices != 3)
+				//TODO: support other light types
+				if (light->mType == aiLightSourceType::aiLightSource_POINT)
 				{
-					LogError(std::format("Attempted to read Assimp importer face with invalid face index count:{}", face->mNumIndices));
-					continue;
+					Lighting3D::PointLight3DComponent& lightComponent = thisEntity->AddComponent<Lighting3D::PointLight3DComponent>();
+					lightComponent.m_Color = hdrlightColor;
+					lightComponent.m_Radius = Lighting3D::InferLightRadiusFromAttenuation
+						(light->mAttenuationConstant, light->mAttenuationLinear, light->mAttenuationQuadratic);
+					lightComponent.m_Intensity = Lighting3D::InferLightIntensityFromAttenuation
+						(light->mAttenuationConstant, light->mAttenuationLinear, light->mAttenuationQuadratic);
+					//TODO: do other light properties
 				}
-				currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[0]);
-				currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[1]);
-				currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[2]);
-			}
-			
-			currentEngineObj->m_Mesh.ConstructBLASTree(Rendering::BLAS_TREE_LEAF_COUNT);
-
-			//TODO: also get roughness, normal map and albedo from the material
-			aiMaterial* modelMaterial = modelScene->mMaterials[currentImportMesh->mMaterialIndex];
-			aiColor4D baseColor;
-			if (modelMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS 
-				|| modelMaterial->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS)
-			{
-				currentEngineObj->m_Material.SetBaseColor(
-					HDRColor(baseColor.r, baseColor.g, baseColor.b, baseColor.a));
 			}
 
-			float metallic = 0;
-			if (modelMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
+			auto sceneCameraIt = SceneCameras.find(nodeNameView);
+			if (sceneCameraIt != SceneCameras.end())
 			{
-				currentEngineObj->m_Material.SetMetallic(metallic);
-			}
-			float roughness = 0;
-			if (modelMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, metallic) == AI_SUCCESS)
-			{
-				currentEngineObj->m_Material.SetRoughness(metallic);
+				aiCamera* camera = sceneCameraIt->second;
+
+				Camera::CameraSettings cameraSettings = {};
+				cameraSettings.m_AspectRatio = camera->mAspect;
+				cameraSettings.m_NearDistance = camera->mClipPlaneNear;
+				cameraSettings.m_FarDistance = camera->mClipPlaneFar;
+				cameraSettings.m_ProjectionType = (camera->mOrthographicWidth > 0.0f) ?
+					Camera::ProjectionType::Orthographic : Camera::ProjectionType::Perspective;
+				//TODO: finish other camera properties
+
+				Camera::CameraComponent& cameraComponent = thisEntity->AddComponent(Camera::CameraComponent(cameraSettings));
 			}
 		}
+
+		if (node->mNumMeshes > 0)
+		{
+			if (thisEntity != nullptr)
+			{
+
+			}
+			Rendering::ModelObjectGroup* meshGroup = &(model.m_ObjectGroups.emplace_back(
+				Rendering::ModelObjectGroup{ Mat4(&globalTransform.a1) }));
+			//LogError(std::format("og global trans:{} stored:{}", AssimpUtils::ToString(globalTransform), meshGroup->m_GlobalTransform.ToString()));
+
+			const aiMesh* currentImportMesh = nullptr;
+			Rendering::ModelObject* currentEngineObj = nullptr;
+
+			for (size_t i = 0; i < node->mNumMeshes; i++)
+			{
+				currentImportMesh = modelScene->mMeshes[node->mMeshes[i]];
+				const size_t meshVertexCount = currentImportMesh->mNumVertices;
+
+				currentEngineObj = &(model.m_Objects.emplace_back(Rendering::ModelObject{}));
+				meshGroup->m_ObjectIndices.emplace_back(model.m_Objects.size() - 1);
+				currentEngineObj->m_Mesh.m_Vertices.reserve(meshVertexCount);
+
+				for (size_t j = 0; j < meshVertexCount; j++)
+				{
+					aiVector3D pos = currentImportMesh->mVertices[j];
+					//TODO: do we really want global transform here or would it be okay if we had just the local?
+					//if (BAKE_TRANSFORMS_IN_VERTICES) pos = globalTransform * pos;
+					const aiVector3D normal = currentImportMesh->HasNormals() ? currentImportMesh->mNormals[j] : aiVector3D(0, 0, 0);
+					const aiVector3D uv = currentImportMesh->HasTextureCoords(0) ? currentImportMesh->mTextureCoords[0][j] : aiVector3D(0, 0, 0);
+
+					currentEngineObj->m_Mesh.m_Vertices.emplace_back(Rendering::Vertex{ WorldPosition3D(pos.x, pos.y, pos.z),
+						UV(uv.x, uv.y), Vec3(normal.x, normal.y, normal.z) });
+				}
+
+				for (size_t j = 0; j < currentImportMesh->mNumFaces; j++)
+				{
+					const aiFace* face = &currentImportMesh->mFaces[j];
+					if (face->mNumIndices != 3)
+					{
+						LogError(std::format("Attempted to read Assimp importer face with invalid face index count:{}", face->mNumIndices));
+						continue;
+					}
+					currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[0]);
+					currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[1]);
+					currentEngineObj->m_Mesh.m_Indices.emplace_back(face->mIndices[2]);
+				}
+
+				currentEngineObj->m_Mesh.ConstructBLASTree(Rendering::BLAS_TREE_LEAF_COUNT);
+
+				//TODO: also get roughness, normal map and albedo from the material
+				aiMaterial* importMaterial = modelScene->mMaterials[currentImportMesh->mMaterialIndex];
+				aiString importMaterialName = importMaterial->GetName();
+				const std::string_view importMaterialNameView = AssimpUtils::ToStringView(importMaterialName);
+				
+				std::filesystem::path materialAssetpath = IMPORTED_MATERIAL_DIR;
+				materialAssetpath += sceneNameView;
+				materialAssetpath /= importMaterialNameView;
+				materialAssetpath += MaterialAsset::EXTENSIONS[0];
+				LogWarning(std::format("Path: {}", materialAssetpath.string()));
+
+				bool hadAssetFile = false;
+				MaterialAsset* materialAsset = engineState.m_AssetManager->TryCreateOrGetAsset<MaterialAsset>(materialAssetpath, &hadAssetFile);
+				currentEngineObj->m_MaterialAsset = materialAsset;
+				//If this material already had a file associated with it, we assume it matches data for the model, 
+				//so we dont update the material
+				if (hadAssetFile)
+					continue;
+
+				aiColor4D baseColor;
+				Material& engineMaterial = materialAsset->GetMaterialMutable();
+				if (importMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, baseColor) == AI_SUCCESS
+					|| importMaterial->Get(AI_MATKEY_BASE_COLOR, baseColor) == AI_SUCCESS)
+				{
+					engineMaterial.SetBaseColor(ColHDR4(baseColor.r, baseColor.g, baseColor.b, baseColor.a));
+				}
+
+				float metallic = 0;
+				if (importMaterial->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
+				{
+					engineMaterial.SetMetallic(metallic);
+				}
+				float roughness = 0;
+				if (importMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, metallic) == AI_SUCCESS)
+				{
+					engineMaterial.SetRoughness(metallic);
+				}
+			}
+		}
+
+		for (size_t i = 0; i < node->mNumChildren; i++)
+		{
+			ProcessMeshNodes(engineState, model, engineScene, thisEntity, modelScene, node->mChildren[i], &globalTransform);
+		}
 	}
-	
-	for (size_t i = 0; i < node->mNumChildren; i++)
+
+	void Model3dAsset::SetDependencies(Core::EngineState& state)
 	{
-		ProcessSceneNode(model, modelScene, node->mChildren[i], &globalTransform);
-	}
-}
+		m_engineState = &state;
+		std::filesystem::path path = GetAbsolutePath();
 
-Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path, false), m_model()
-{
-	const std::string fileExtension = Utils::StringUtil(path.extension().string()).ToLowerCase().ToString();
-	if (path.extension().string() == VTXConverter::MODEL_3D_FILE_EXTENSION)
+		const std::string fileExtension = ::Utils::StringUtil(path.extension().string()).ToLowerCase().ToString();
+		if (path.extension().string() == VTXConverter::MODEL_3D_FILE_EXTENSION)
+		{
+			ReadModelAsCompressedFormat();
+			return;
+		}
+
+		Assimp::Importer importer;
+		if (ADD_GLOBAL_SCALE) importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, IMPORT_TO_ENGINE_SCALE_FACTOR);
+
+		// -> Triangulate:
+		// -> SmoothNormals: will make normals smoothyl transition in neighboring areas
+		// -> GlobalScale: applies the global scale factor property for import
+		// -> FlipWindingOrder: will reverse the indices of vertices for all triangles (index0, index1, index2) -> (index0, index2, index1)
+		std::uint32_t importFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipWindingOrder;
+		if (ADD_GLOBAL_SCALE) importFlags |= aiProcess_GlobalScale;
+		if (BAKE_TRANSFORMS_IN_VERTICES) importFlags |= aiProcess_PreTransformVertices;
+		if (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative) importFlags |= aiProcess_ConvertToLeftHanded;
+
+		const aiScene* modelScene = importer.ReadFile(path.string(), importFlags);
+		if (modelScene == nullptr || !modelScene->HasMeshes())
+		{
+			LogError(std::format("Tried to load 3d model at path: '{}' but could not find any meshes", path.string()));
+			return;
+		}
+		aiString modelSceneName = modelScene->mName;
+		std::string_view modelSceneNameView = AssimpUtils::ToStringView(modelSceneName);
+		Scenes::Scene* engineScene = nullptr;
+
+		const bool sceneHasLights = modelScene->HasLights();
+		if (sceneHasLights)
+		{
+			SceneLights = {};
+			aiLight* light = nullptr;
+			std::string_view lightName = {};
+			for (int i = 0; i < modelScene->mNumLights; i++)
+			{
+				light = modelScene->mLights[i];
+				lightName = AssimpUtils::ToStringView(light->mName);
+				SceneLights.emplace(lightName, light);
+			}
+		}
+
+		const bool sceneHasCameras = modelScene->HasCameras();
+		if (sceneHasCameras)
+		{
+			SceneCameras = {};
+			aiCamera* camera = nullptr;
+			std::string_view cameraName = {};
+			for (int i = 0; i < modelScene->mNumCameras; i++)
+			{
+				camera = modelScene->mCameras[i];
+				cameraName = AssimpUtils::ToStringView(camera->mName);
+				SceneCameras.emplace(cameraName, camera);
+			}
+		}
+		//If the scene has special node types, then we create a scene in addition to the model
+		if (sceneHasLights || sceneHasCameras)
+		{
+			std::filesystem::path sceneAssetPath = IMPORTED_MATERIAL_DIR;
+			sceneAssetPath += modelSceneNameView;
+			sceneAssetPath += Scenes::SceneAsset::EXTENSIONS[0];
+
+			bool hadAssetFile = false;
+			Scenes::SceneAsset* sceneAsset = state.m_AssetManager->TryCreateOrGetAsset<Scenes::SceneAsset>(sceneAssetPath, &hadAssetFile);
+			//NOTE: since whether scene is created is based on if scene asset is not null, if we already had an asset 
+			//file for the scene, it means it must already be created and we dont try to create scene from scratch again
+			if (!hadAssetFile)
+			{
+				engineScene = &(sceneAsset->GetSceneMutable());
+			}
+		}
+		m_model.m_Objects.reserve(modelScene->mNumMeshes);
+		ProcessMeshNodes(*m_engineState, m_model, engineScene, nullptr, modelScene, modelScene->mRootNode, nullptr);
+		//if (path.stem() == "plane") LogError(std::format("created model tree: {}", m_model.m_Objects[0].m_Mesh.m_BLASTree.ToString(BVHToStringType::NodeBounds)));
+
+		//If we write any format to vtx, then after the first import from a non-vtx format we write as compressed
+		if (WRITE_ANY_FORMAT_TO_CUSTOM && fileExtension != VTXConverter::MODEL_3D_FILE_EXTENSION)
+		{
+			WriteModelAsCompressedFormat();
+		}
+	}
+
+	void Model3dAsset::WriteModelAsCompressedFormat() const
 	{
-		ReadModelAsCompressedFormat();
-		return;
+		const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(VTXConverter::MODEL_3D_FILE_EXTENSION);
+		if (!VTXConverter::TryWriteModelToPath(m_model, newPath))
+		{
+			LogError(std::format("Attempted to WRITE model3d asset:{} to vtx format but failed", ToString()));
+		}
 	}
-	
-	Assimp::Importer importer;
-	if (ADD_GLOBAL_SCALE) importer.SetPropertyFloat(AI_CONFIG_GLOBAL_SCALE_FACTOR_KEY, IMPORT_TO_ENGINE_SCALE_FACTOR);
-
-	// -> Triangulate:
-	// -> SmoothNormals: will make normals smoothyl transition in neighboring areas
-	// -> GlobalScale: applies the global scale factor property for import
-	// -> FlipWindingOrder: will reverse the indices of vertices for all triangles (index0, index1, index2) -> (index0, index2, index1)
-	std::uint32_t importFlags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipWindingOrder;
-	if (ADD_GLOBAL_SCALE) importFlags |= aiProcess_GlobalScale;
-	if (BAKE_TRANSFORMS_IN_VERTICES) importFlags |= aiProcess_PreTransformVertices;
-	if (ENGINE_FORWARD_SIGN_Z == ZForwardSign::Negative) importFlags |= aiProcess_ConvertToLeftHanded;
-
-	const aiScene* modelScene = importer.ReadFile(path.string(), importFlags);
-	if (modelScene == nullptr || !modelScene->HasMeshes()) 
+	void Model3dAsset::ReadModelAsCompressedFormat()
 	{
-		LogError(std::format("Tried to load 3d model at path: '{}' but could not find any meshes", path.string()));
-		return;
+		const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(VTXConverter::MODEL_3D_FILE_EXTENSION);
+		if (!VTXConverter::TryReadModelFromPath(m_model, newPath))
+		{
+			LogError(std::format("Attempted to READ model3d asset:{} from vtx format but failed", ToString()));
+		}
 	}
 
-	m_model.m_Objects.reserve(modelScene->mNumMeshes);
-	ProcessSceneNode(m_model, modelScene, modelScene->mRootNode, nullptr);
-	//if (path.stem() == "plane") LogError(std::format("created model tree: {}", m_model.m_Objects[0].m_Mesh.m_BLASTree.ToString(BVHToStringType::NodeBounds)));
-
-	//If we write any format to vtx, then after the first import from a non-vtx format we write as compressed
-	if (WRITE_ANY_FORMAT_TO_CUSTOM && fileExtension != VTXConverter::MODEL_3D_FILE_EXTENSION)
+	const Rendering::Model3d& Model3dAsset::GetModel() const { return m_model; }
+	Rendering::Model3d& Model3dAsset::GetModelMutable() { return m_model; }
+	void Model3dAsset::UpdateAssetFromFile()
 	{
-		WriteModelAsCompressedFormat();
+		//TODO: implement
 	}
-}
-
-void Model3dAsset::WriteModelAsCompressedFormat() const
-{
-	const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(VTXConverter::MODEL_3D_FILE_EXTENSION);
-	if (!VTXConverter::TryWriteModelToPath(m_model, newPath))
-	{
-		LogError(std::format("Attempted to WRITE model3d asset:{} to vtx format but failed", ToString()));
-	}
-}
-void Model3dAsset::ReadModelAsCompressedFormat()
-{
-	const std::filesystem::path newPath = GetAbsolutePathCopy().replace_extension(VTXConverter::MODEL_3D_FILE_EXTENSION);
-	if (!VTXConverter::TryReadModelFromPath(m_model, newPath))
-	{
-		LogError(std::format("Attempted to READ model3d asset:{} from vtx format but failed", ToString()));
-	}
-}
-
-const Rendering::Model3d& Model3dAsset::GetModel() const { return m_model; }
-Rendering::Model3d& Model3dAsset::GetModelMutable() { return m_model; }
-void Model3dAsset::UpdateAssetFromFile()
-{
-	//TODO: implement
-}
-
-bool HasModel3dExtension(const std::string& extension)
-{
-	return extension == ".fbx" || extension == VTXConverter::MODEL_3D_FILE_EXTENSION;
 }

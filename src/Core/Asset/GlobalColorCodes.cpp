@@ -3,19 +3,19 @@
 #include <filesystem>
 #include "Core/Asset/AssetManager.hpp"
 
-static const std::filesystem::path GLOBAL_COLOR_PATH = "global_colors.txt";
-static std::unordered_map<std::string, HDRColor> ColorCodes = {};
-
-namespace GlobalColorCodes
+namespace Engine::GlobalColorCodes
 {
-	void InitCodes(const AssetManagement::AssetManager& assetManager)
+	static const std::filesystem::path GLOBAL_COLOR_PATH = "global_colors.txt";
+	static std::unordered_map<std::string, ColHDR4> ColorCodes = {};
+
+	void InitCodes(const AssetManager& assetManager)
 	{
 		assetManager.TryExecuteOnAssetFile(GLOBAL_COLOR_PATH, 
 			[](const std::string* line)-> void 
 			{
 				if (line == nullptr) return;
 
-				std::optional<FigProperty> maybeFig = Fig::TryGetPropertyFromLine(*line);
+				std::optional<FigFormat::FigProperty> maybeFig = FigFormat::Fig::TryGetPropertyFromLine(*line);
 				if (!Assert(maybeFig.has_value(), "Tried to add global colors "
 					"from file but line : '{}' failed to be parsed into fig", *line))
 					return;
@@ -27,7 +27,7 @@ namespace GlobalColorCodes
 			});
 	}
 
-	bool TryRegisterColor(const FigProperty& property)
+	bool TryRegisterColor(const FigFormat::FigProperty& property)
 	{
 		if (property.m_Value.size() != 1) return false;
 
@@ -38,7 +38,7 @@ namespace GlobalColorCodes
 		if (property.m_Value[0].size() == 8)
 			a = std::stoi(property.m_Value[0].substr(6, 2), nullptr, 16);
 
-		HDRColor color = HDRColor(r, g, b, a);
+		ColHDR4 color = ColHDR4(r, g, b, a);
 		auto emplaceResult= ColorCodes.emplace(property.m_Key, color);
 		return emplaceResult.second;
 	}
@@ -48,7 +48,7 @@ namespace GlobalColorCodes
 		return ColorCodes.find(colorName) != ColorCodes.end();
 	}
 
-	std::optional<HDRColor> TryGetColorFromCode(const std::string& code)
+	std::optional<ColHDR4> TryGetColorFromCode(const std::string& code)
 	{
 		auto colorCodeIt = ColorCodes.find(code);
 		if (colorCodeIt == ColorCodes.end()) return std::nullopt;

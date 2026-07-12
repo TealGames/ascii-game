@@ -1,8 +1,9 @@
 #pragma once
-#include "Utils/Data/Color.hpp"
+#include "Core/ID.hpp"
+#include "Core/Primitives/Color.hpp"
 #include "Utils/Data/FixedString.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	class Texture;
 	struct Material
@@ -13,13 +14,13 @@ namespace Rendering
 		/// NOTE: base color alpha only determines the intensity/blend
 		/// of this color over the albedo
 		/// </summary>
-		HDRColor m_baseColor;
+		ColHDR4 m_baseColor;
 
 		/// <summary>
 		/// The intensity and color of light that the surface emits.
 		/// This makes any object able to emit lights rather than defining them separately
 		/// </summary>
-		HDRColor m_emissiveColor;
+		ColHDR4 m_emissiveColor;
 
 		/// <summary>
 		/// The alpha applied to the whole object
@@ -52,13 +53,13 @@ namespace Rendering
 		static constexpr float MIN_METALLIC = 0.0f;
 		static constexpr float MAX_METALLIC = 1.0f;
 
-		static constexpr HDRColor DEFAULT_BASE_COLOR = COLOR_WHITE;
-		static constexpr HDRColor DEFAULT_EMISSIVE_COLOR = COLOR_BLACK;
+		static constexpr ColHDR4 DEFAULT_BASE_COLOR = COLOR_WHITE;
+		static constexpr ColHDR4 DEFAULT_EMISSIVE_COLOR = COLOR_BLACK;
 		static constexpr float DEFAULT_ALPHA = 1;
 		static constexpr float DEFAULT_ROUGHNESS = MAX_ROUGHNESS;
 		static constexpr float DEFAULT_METALLIC = MIN_METALLIC;
 
-		String16 m_Name;
+		std::string m_Name;
 
 		/// <summary>
 		/// The base color for the object (also known as diffuse base color)
@@ -74,18 +75,18 @@ namespace Rendering
 	private:
 	public:
 		Material();
-		Material(const String16& name, Texture* albedo, const HDRColor& baseColor, const float alpha = DEFAULT_ALPHA,
-			const HDRColor& emissiveColor = DEFAULT_EMISSIVE_COLOR, const float roughness = DEFAULT_ROUGHNESS,
+		Material(const std::string& name, Texture* albedo, const ColHDR4& baseColor, const float alpha = DEFAULT_ALPHA,
+			const ColHDR4& emissiveColor = DEFAULT_EMISSIVE_COLOR, const float roughness = DEFAULT_ROUGHNESS,
 			const float metallic = DEFAULT_METALLIC, Texture* normal = nullptr);
 
 		Material& SetAlpha(const float value);
 		float GetAlpha() const;
 
-		Material& SetBaseColor(const HDRColor& color);
-		const HDRColor& GetBaseColor() const;
+		Material& SetBaseColor(const ColHDR4& color);
+		const ColHDR4& GetBaseColor() const;
 
-		Material& SetEmissiveColor(const HDRColor& color);
-		const HDRColor& GetEmissiveColor() const;
+		Material& SetEmissiveColor(const ColHDR4& color);
+		const ColHDR4& GetEmissiveColor() const;
 
 		Material& SetRoughness(const float value);
 		float GetRoughness() const;

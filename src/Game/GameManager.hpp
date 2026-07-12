@@ -2,18 +2,17 @@
 #include "Game/GameState.hpp"
 #include "Game/GameUIManager.hpp"
 
-class UIHierarchy;
+namespace Engine::UI { class UIHierarchy; }
 class GameManager
 {
 private:
 	GameState m_state;
-	
-	Game::UI::GameUIManager m_uiManager;
+	GameUIManager m_uiManager;
 public:
 
 private:
 public:
-	GameManager(UIHierarchy& hierarhcy);
+	GameManager(Engine::UI::UIHierarchy& hierarhcy);
 
 	void GameValidate();
 	void GameStart();

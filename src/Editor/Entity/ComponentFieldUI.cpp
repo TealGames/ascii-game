@@ -2,335 +2,347 @@
 #include "Editor/Entity/ComponentFieldUI.hpp"
 #include "Utils/Debug.hpp"
 #include "Editor/Entity/ComponentUI.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
-#include "ECS/Component/Types/UI/UITransformData.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UITransformComponent.hpp"
 #include "ECS/Component/Types/UI/UIInputFieldComponent.hpp"
 #include "Core/Input/InputManager.hpp"
 #include "ECS/Component/Types/UI/UIToggleComponent.hpp"
 #include "ECS/Component/Types/UI/UITextComponent.hpp"
 #include "ECS/Component/Types/UI/UILayoutComponent.hpp"
-#include "ECS/Component/Types/Editor/UIColorPicker.hpp"
-#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "ECS/Component/Types/Editor/ColorPickerEditorComponent.hpp"
+#include "ECS/Component/Types/UI/UISelectableComponent.hpp"
 #include "Editor/EditorStyles.hpp"
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 
-constexpr static float TITLE_FONT_SIZE = 10;
-constexpr static float FIELD_TEXT_FONT_FACTOR = 0.8;
-constexpr static float INPUT_FIELD_TEXT_FONT_FACTOR = 0.8;
-
-//constexpr static float FONT_SIZE = 10;
-//constexpr static float FONT_SPACING = 10;
-
-constexpr static float FIELD_IDENT = 0.05;
-constexpr static float FIELD_SPACING_X = 0.05;
-
-constexpr static float FIELD_WIDTH_PER_CHAR = 0.05;
-constexpr static float FIELD_NAME_CHAR_NEW_LINE_THRESHOLD = 0.5;
-
-ComponentFieldUI::ComponentFieldUI(const Input::InputManager& inputManager, PopupUIManager& popupManager,
-	const ComponentUI& componentGUI, UILayoutComponent& parent)
-	: m_inputManager(&inputManager), m_fieldInfo(nullptr), m_fields(), m_componentGUI(&componentGUI), m_fieldNameText(nullptr), m_guiLayout(nullptr)
+namespace Engine::Editor::UI
 {
-	EntityData* layoutEntity = nullptr;
-	std::tie(layoutEntity, m_guiLayout) = parent.CreateLayoutElement("FieldLauout");
+	constexpr static float TITLE_FONT_SIZE = 10;
+	constexpr static float FIELD_TEXT_FONT_FACTOR = 0.8;
+	constexpr static float INPUT_FIELD_TEXT_FONT_FACTOR = 0.8;
 
-	auto [fieldNameTextEntity, fieldNameTextTransform] = layoutEntity->CreateChildUI("FieldNameText");
-	m_fieldNameText = &(fieldNameTextEntity->AddComponent(UITextComponent("", EditorStyles::GetTextStyleFactorSize(TextAlignment::CenterLeft, FIELD_TEXT_FONT_FACTOR))));
-}
+	//constexpr static float FONT_SIZE = 10;
+	//constexpr static float FONT_SPACING = 10;
 
-void ComponentFieldUI::SetupInputFields(UITransformData& fieldNameTextTransform, const bool fieldsStartNewLine)
-{
-	float currentFieldX = fieldsStartNewLine ? FIELD_IDENT : fieldNameTextTransform.GetLocalRect().GetBottomRightPos().GetX();
-	const float fieldSizeX = (NormalizedValue::MAX - currentFieldX - (FIELD_SPACING_X * (m_fields.size() - 1))) / m_fields.size();
+	constexpr static float FIELD_IDENT = 0.05;
+	constexpr static float FIELD_SPACING_X = 0.05;
 
-	UIInputFieldComponent* inputField = nullptr;
-	UITransformData* inputFieldTransform = nullptr;
-	for (auto& field : m_fields)
+	constexpr static float FIELD_WIDTH_PER_CHAR = 0.05;
+	constexpr static float FIELD_NAME_CHAR_NEW_LINE_THRESHOLD = 0.5;
+
+	ComponentFieldUI::ComponentFieldUI(const Input::InputManager& inputManager, MainUI::PopupUIManager& popupManager,
+		const ComponentUI& componentGUI, MainUI::UILayoutComponent& parent)
+		: m_inputManager(&inputManager), m_fieldInfo(nullptr), m_fields(), m_componentGUI(&componentGUI), m_fieldNameText(nullptr), m_guiLayout(nullptr)
 	{
-		inputField = static_cast<UIInputFieldComponent*>(field);
-		inputFieldTransform = inputField->GetEntityMutable().TryGetComponentMutable<UITransformData>();
+		ECS::EntityData* layoutEntity = nullptr;
+		std::tie(layoutEntity, m_guiLayout) = parent.CreateLayoutElement("FieldLauout");
 
-		inputField->SetSubmitAction([this](std::string input) -> void
-			{
-				SetInternalWithInput();
-			});
-
-		inputFieldTransform->SetLocalSize(NormalizedPos(fieldSizeX, fieldsStartNewLine ? 0.5 : 1));
-		inputFieldTransform->SetLocalTopLeftPos({ currentFieldX, fieldsStartNewLine ? 1 - fieldNameTextTransform.GetLocalSize().GetY() : 1 });
-
-		currentFieldX += inputFieldTransform->GetLocalSize().GetX() + FIELD_SPACING_X;
+		auto [fieldNameTextEntity, fieldNameTextTransform] = layoutEntity->CreateChildUI("FieldNameText");
+		m_fieldNameText = &(fieldNameTextEntity->AddComponent(MainUI::UITextComponent("", 
+			Styles::GetTextStyleFactorSize(MainUI::TextAlignment::CenterLeft, FIELD_TEXT_FONT_FACTOR))));
 	}
 
-	//LogWarning(std::format("Field size:{}", std::to_string(FIELD_SPACING_X * (m_fields.size() - 1))));
-}
-
-ComponentFieldUI::~ComponentFieldUI()
-{
-	LogError("Destroyed compoent field GUI");
-}
-
-void ComponentFieldUI::SetField(ComponentField& field)
-{
-	m_fieldInfo = &field;
-
-	m_fieldNameText->SetText(GetFieldInfo().m_FieldName);
-	UITransformData& fieldNameTextTransform = *(m_fieldNameText->GetEntityMutable().TryGetComponentMutable<UITransformData>());
-	EntityData& layoutEntity = m_guiLayout->GetEntityMutable();
-
-	const float textWidthNorm = FIELD_WIDTH_PER_CHAR * m_fieldNameText->GetText().size();
-	const bool fieldsStartNewLine = textWidthNorm >= FIELD_NAME_CHAR_NEW_LINE_THRESHOLD;
-	fieldNameTextTransform.SetLocalSize(NormalizedPos(textWidthNorm, fieldsStartNewLine ? 0.5 : 1.0));
-	fieldNameTextTransform.SetLocalTopLeftPos({ FIELD_IDENT, 1 });
-
-	InputFieldFlag fieldFlags = InputFieldFlag::None;
-	if (GetFieldInfo().IsReadonly()) fieldFlags |= InputFieldFlag::UserUIReadonly;
-
-	/*GUIStyle fieldSettings = GUIStyle(EditorStyles::EDITOR_SECONDARY_COLOR,
-		TextGUIStyle(EditorStyles::EDITOR_TEXT_COLOR, FontProperties(0, EditorStyles::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));*/
-		/*Assert(false, std::format("Creating gui settings for field: {} are: {}",
-			std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
-
-	if (GetFieldInfo().IsCurrentType<int>() || GetFieldInfo().IsCurrentType<std::uint8_t>())
+	void ComponentFieldUI::SetupInputFields(MainUI::UITransformComponent& fieldNameTextTransform, const bool fieldsStartNewLine)
 	{
-		m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("IntField", UIInputFieldComponent(GetInputManager(), InputFieldType::Integer, fieldFlags,
-			EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
-		SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
-	}
-	else if (GetFieldInfo().IsCurrentType<float>())
-	{
-		m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("FloatField", UIInputFieldComponent(GetInputManager(), InputFieldType::Float, fieldFlags,
-			EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
-		SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
-	}
-	else if (GetFieldInfo().IsCurrentType<std::string>())
-	{
-		m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("StringField", UIInputFieldComponent(GetInputManager(), InputFieldType::String, fieldFlags,
-			EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
-		SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
-	}
-	else if (GetFieldInfo().IsCurrentType<Vec2>())
-	{
-		m_fields.reserve(2);
-		for (int i = 0; i < 2; i++)
+		float currentFieldX = fieldsStartNewLine ? FIELD_IDENT : fieldNameTextTransform.GetLocalRect().GetBottomRightPos().GetX();
+		const float fieldSizeX = (NormalizedValue::MAX - currentFieldX - (FIELD_SPACING_X * (m_fields.size() - 1))) / m_fields.size();
+
+		MainUI::UIInputFieldComponent* inputField = nullptr;
+		MainUI::UITransformComponent* inputFieldTransform = nullptr;
+		for (auto& field : m_fields)
 		{
-			m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("FloatField", UIInputFieldComponent(GetInputManager(), InputFieldType::Float, fieldFlags,
-				EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
+			inputField = static_cast<MainUI::UIInputFieldComponent*>(field);
+			inputFieldTransform = inputField->GetEntityMutable().TryGetComponentMutable<MainUI::UITransformComponent>();
+
+			inputField->SetSubmitAction([this](std::string input) -> void
+				{
+					SetInternalWithInput();
+				});
+
+			inputFieldTransform->SetLocalSize(NormalizedVec2(fieldSizeX, fieldsStartNewLine ? 0.5 : 1));
+			inputFieldTransform->SetLocalTopLeftPos({ currentFieldX, fieldsStartNewLine ? 1 - fieldNameTextTransform.GetLocalSize().GetY() : 1 });
+
+			currentFieldX += inputFieldTransform->GetLocalSize().GetX() + FIELD_SPACING_X;
 		}
-		SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
+
+		//LogWarning(std::format("Field size:{}", std::to_string(FIELD_SPACING_X * (m_fields.size() - 1))));
 	}
-	else if (GetFieldInfo().IsCurrentType<Vec2Int>())
+
+	ComponentFieldUI::~ComponentFieldUI()
 	{
-		m_fields.reserve(2);
-		for (int i = 0; i < 2; i++)
+		LogError("Destroyed compoent field GUI");
+	}
+
+	void ComponentFieldUI::SetField(ECS::ComponentField& field)
+	{
+		m_fieldInfo = &field;
+
+		m_fieldNameText->SetText(GetFieldInfo().m_FieldName);
+		MainUI::UITransformComponent& fieldNameTextTransform = *(m_fieldNameText->GetEntityMutable().TryGetComponentMutable<MainUI::UITransformComponent>());
+		ECS::EntityData& layoutEntity = m_guiLayout->GetEntityMutable();
+
+		const float textWidthNorm = FIELD_WIDTH_PER_CHAR * m_fieldNameText->GetText().size();
+		const bool fieldsStartNewLine = textWidthNorm >= FIELD_NAME_CHAR_NEW_LINE_THRESHOLD;
+		fieldNameTextTransform.SetLocalSize(NormalizedVec2(textWidthNorm, fieldsStartNewLine ? 0.5 : 1.0));
+		fieldNameTextTransform.SetLocalTopLeftPos({ FIELD_IDENT, 1 });
+
+		MainUI::InputFieldFlag fieldFlags = MainUI::InputFieldFlag::None;
+		if (GetFieldInfo().IsReadonly()) fieldFlags |= MainUI::InputFieldFlag::UserUIReadonly;
+
+		/*GUIStyle fieldSettings = GUIStyle(EditorStyles::EDITOR_SECONDARY_COLOR,
+			TextGUIStyle(EditorStyles::EDITOR_TEXT_COLOR, FontProperties(0, EditorStyles::EDITOR_CHAR_SPACING.m_X, GetGlobalFont()), TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR));*/
+			/*Assert(false, std::format("Creating gui settings for field: {} are: {}",
+				std::to_string(guiSettings.m_TextSettings.m_FontSizeParentAreaFactor), std::to_string(guiSettings.m_TextSettings.GetFontSize({10, 10}))));*/
+
+		if (GetFieldInfo().IsCurrentType<int>() || GetFieldInfo().IsCurrentType<std::uint8_t>())
 		{
-			m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("IntField", UIInputFieldComponent(GetInputManager(), InputFieldType::Integer, fieldFlags,
-				EditorStyles::GetInputFieldStyle(TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
+			m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("IntField", 
+				MainUI::UIInputFieldComponent(MainUI::InputFieldType::Integer, fieldFlags,
+				Styles::GetInputFieldStyle(MainUI::TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
+			SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
 		}
-		SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
-	}
-	else if (GetFieldInfo().IsCurrentType<bool>())
-	{
-		auto [toggleEntity, toggleTransform, toggle] = layoutEntity.CreateChildUI("BoolField", UIToggleComponent(false, EditorStyles::GetToggleStyle()));
-		toggleTransform->SetLocalSize({ 1, 1 });
-		toggle->m_OnValueSet.AddListener([this](bool isChecked)-> void
-			{
-				//LogError("Fart and shit");
-				SetInternalWithInput();
-			});
-		m_fields.emplace_back(toggle);
-	}
-	else if (GetFieldInfo().IsCurrentType<HDRColor>())
-	{
-		auto [colorPickerEntity, colorPickerTransform, colorPicker] = layoutEntity.CreateChildUI("ColorField", UIColorPickerData(UIStyle()));
-
-		const float fieldTopLeftX = fieldsStartNewLine ? FIELD_IDENT : fieldNameTextTransform.GetLocalRect().GetBottomRightPos().GetX();
-		colorPickerTransform->SetLocalSize(NormalizedPos(NormalizedValue::MAX - fieldTopLeftX, fieldsStartNewLine ? 0.5 : 1));
-		colorPickerTransform->SetLocalTopLeftPos({ fieldTopLeftX, fieldsStartNewLine ? 1 - fieldNameTextTransform.GetLocalSize().GetY() : 1 });
-		colorPicker->SetValueSetAction([this](HDRColor color)-> void
-			{
-				SetInternalWithInput();
-			});
-		m_fields.emplace_back(colorPicker);
-		//m_colorPicker.SetSettings(fieldSettings);
-	}
-	else
-	{
-		LogError(std::format("Tried to construct component field GUI for property: '{}' "
-			"but could not find any actions for its type: {}", GetFieldInfo().m_FieldName, GetFieldInfo().GetCurrentType().name()));
-	}
-
-	//If we have 2 lines, we use the full max space, otherwise we use half
-	if (fieldsStartNewLine) m_guiLayout->SetLocalSize({ 1, 1 });
-	else m_guiLayout->SetLocalSize({ 1, 0.5 });
-
-	for (const auto& field : m_fields)
-	{
-		UISelectableData* selectable = static_cast<Component*>(field)->GetEntityMutable().TryGetComponentMutable<UISelectableData>();
-		if (selectable == nullptr)
+		else if (GetFieldInfo().IsCurrentType<float>())
 		{
-			LogError(std::format("Tried to create component field of field ui:{} "
-				"but field does not have required selectable component", GetFieldInfo().ToString()));
+			m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("FloatField", 
+				MainUI::UIInputFieldComponent(MainUI::InputFieldType::Float, fieldFlags,
+				Styles::GetInputFieldStyle(MainUI::TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
+			SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
+		}
+		else if (GetFieldInfo().IsCurrentType<std::string>())
+		{
+			m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("StringField", 
+				MainUI::UIInputFieldComponent(MainUI::InputFieldType::String, fieldFlags,
+				Styles::GetInputFieldStyle(MainUI::TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
+			SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
+		}
+		else if (GetFieldInfo().IsCurrentType<Vec2>())
+		{
+			m_fields.reserve(2);
+			for (int i = 0; i < 2; i++)
+			{
+				m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("FloatField", 
+					MainUI::UIInputFieldComponent(MainUI::InputFieldType::Float, fieldFlags,
+					Styles::GetInputFieldStyle(MainUI::TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
+			}
+			SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
+		}
+		else if (GetFieldInfo().IsCurrentType<Vec2Int>())
+		{
+			m_fields.reserve(2);
+			for (int i = 0; i < 2; i++)
+			{
+				m_fields.emplace_back(std::get<2>(layoutEntity.CreateChildUI("IntField", 
+					MainUI::UIInputFieldComponent(MainUI::InputFieldType::Integer, fieldFlags,
+					Styles::GetInputFieldStyle(MainUI::TextAlignment::Center, INPUT_FIELD_TEXT_FONT_FACTOR)))));
+			}
+			SetupInputFields(fieldNameTextTransform, fieldsStartNewLine);
+		}
+		else if (GetFieldInfo().IsCurrentType<bool>())
+		{
+			auto [toggleEntity, toggleTransform, toggle] = layoutEntity.CreateChildUI("BoolField", 
+				MainUI::UIToggleComponent(false, Styles::GetToggleStyle()));
+			toggleTransform->SetLocalSize({ 1, 1 });
+			toggle->m_OnValueSet.AddListener([this](bool isChecked)-> void
+				{
+					//LogError("Fart and shit");
+					SetInternalWithInput();
+				});
+			m_fields.emplace_back(toggle);
+		}
+		else if (GetFieldInfo().IsCurrentType<ColHDR4>())
+		{
+			auto [colorPickerEntity, colorPickerTransform, colorPicker] = layoutEntity.CreateChildUI("ColorField", ColorPickerEditorComponent(MainUI::UIStyle()));
+
+			const float fieldTopLeftX = fieldsStartNewLine ? FIELD_IDENT : fieldNameTextTransform.GetLocalRect().GetBottomRightPos().GetX();
+			colorPickerTransform->SetLocalSize(NormalizedVec2(NormalizedValue::MAX - fieldTopLeftX, fieldsStartNewLine ? 0.5 : 1));
+			colorPickerTransform->SetLocalTopLeftPos({ fieldTopLeftX, fieldsStartNewLine ? 1 - fieldNameTextTransform.GetLocalSize().GetY() : 1 });
+			colorPicker->SetValueSetAction([this](ColHDR4 color)-> void
+				{
+					SetInternalWithInput();
+				});
+			m_fields.emplace_back(colorPicker);
+			//m_colorPicker.SetSettings(fieldSettings);
+		}
+		else
+		{
+			LogError(std::format("Tried to construct component field GUI for property: '{}' "
+				"but could not find any actions for its type: {}", GetFieldInfo().m_FieldName, GetFieldInfo().GetCurrentType().name()));
+		}
+
+		//If we have 2 lines, we use the full max space, otherwise we use half
+		if (fieldsStartNewLine) m_guiLayout->SetLocalSize({ 1, 1 });
+		else m_guiLayout->SetLocalSize({ 1, 0.5 });
+
+		for (const auto& field : m_fields)
+		{
+			MainUI::UISelectableComponent* selectable = static_cast<ECS::Component*>(field)->GetEntityMutable().TryGetComponentMutable<MainUI::UISelectableComponent>();
+			if (selectable == nullptr)
+			{
+				LogError(std::format("Tried to create component field of field ui:{} "
+					"but field does not have required selectable component", GetFieldInfo().ToString()));
+				return;
+			}
+			if (GetFieldInfo().IsReadonly()) selectable->SetAllUserInteraction(false);
+		}
+
+		//TODO: this feels like a very gimicky solution to the problem where many fields for a component usually results in the parent layout shrinking their x and y size
+		//thus leading to fields that fit, but are very small in terms of their width. The solution was to fix their horizontal size so layout cannot change it
+		m_guiLayout->SetFixed(true, false);
+
+		SetFieldToInternal();
+	}
+
+	const Input::InputManager& ComponentFieldUI::GetInputManager() const
+	{
+		ENGINE_ASSERT(m_inputManager != nullptr, "Tried to get Input Manager but it is null");
+		return *m_inputManager;
+	}
+	ECS::ComponentField& ComponentFieldUI::GetFieldInfo()
+	{
+		ENGINE_ASSERT(m_fieldInfo != nullptr, "Tried to get field info but it is NULL");
+		return *m_fieldInfo;
+	}
+
+	void ComponentFieldUI::SetFieldToInternal()
+	{
+		//Assert(false, std::format("Type for field is: {}", m_fieldInfo.GetCurrentType().name()));
+		if (GetFieldInfo().IsCurrentType<int>())
+		{
+			static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(*(GetFieldInfo().TryGetValue<int>())));
+		}
+		else if (GetFieldInfo().IsCurrentType<std::uint8_t>())
+		{
+			static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(*(GetFieldInfo().TryGetValue<std::uint8_t>())));
+		}
+		else if (GetFieldInfo().IsCurrentType<float>())
+		{
+			static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(*(GetFieldInfo().TryGetValue<float>())));
+		}
+		else if (GetFieldInfo().IsCurrentType<std::string>())
+		{
+			//Assert(false, "POOP");
+			const std::string* str = GetFieldInfo().TryGetValue<std::string>();
+			//Assert(false, std::format("String FOR COMPOENNT FIELD IS: {}", str == nullptr ? "NULL" : *str));
+			static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->OverrideInput(*str);
+		}
+		else if (GetFieldInfo().IsCurrentType<Vec2>())
+		{
+			const Vec2* point = GetFieldInfo().TryGetValue<Vec2>();
+			//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
+
+			static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(point->m_X));
+			static_cast<MainUI::UIInputFieldComponent*>(m_fields[1])->OverrideInput(std::to_string(point->m_Y));
+
+			//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
+			//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
+		}
+		else if (GetFieldInfo().IsCurrentType<Vec2Int>())
+		{
+			const Vec2Int* point = GetFieldInfo().TryGetValue<Vec2Int>();
+			static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(point->m_X));
+			static_cast<MainUI::UIInputFieldComponent*>(m_fields[1])->OverrideInput(std::to_string(point->m_Y));
+		}
+		else if (GetFieldInfo().IsCurrentType<bool>())
+		{
+			static_cast<MainUI::UIToggleComponent*>(m_fields[0])->SetValue(*(GetFieldInfo().TryGetValue<bool>()));
+		}
+		else if (GetFieldInfo().IsCurrentType<ColHDR4>())
+		{
+			static_cast<ColorPickerEditorComponent*>(m_fields[0])->SetColor(*(GetFieldInfo().TryGetValue<ColHDR4>()));
+		}
+		else
+		{
+			LogError(std::format("Tried to set field to internal value for property: '{}' "
+				"but could not find any actions for its type", GetFieldInfo().m_FieldName));
 			return;
 		}
-		if (GetFieldInfo().IsReadonly()) selectable->SetAllUserInteraction(false);
+	}
+	void ComponentFieldUI::SetInternalWithInput()
+	{
+		if (GetFieldInfo().IsReadonly()) return;
+
+		/*LogError(std::format("Getting internal input and setting it. is point: {} field name: {} is point: {}",
+			m_fieldInfo.GetCurrentType().name(), m_fieldInfo.m_FieldName, std::to_string(m_fieldInfo.IsCurrentType<Vec2>())));*/
+
+		if (GetFieldInfo().IsCurrentType<int>())
+		{
+			//LogError("REAHCED INT");
+			//LogError(std::format("Setting internal value with: {}", std::to_string(m_inputFields[0].GetIntInput())));
+			GetFieldInfo().TrySetValue<int>(static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->GetIntInput());
+		}
+		else if (GetFieldInfo().IsCurrentType<std::uint8_t>())
+		{
+			//LogError("REAHCED UNISGNED INT");
+			//LogError(std::format("Setting internal value with: {}", std::to_string(m_inputFields[0].GetIntInput())));
+			std::uint8_t convertedValue = static_cast<std::uint8_t>(std::abs(static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->GetIntInput()));
+			GetFieldInfo().TrySetValue<std::uint8_t>(convertedValue);
+		}
+		else if (GetFieldInfo().IsCurrentType<float>())
+		{
+			//LogError("REAHCED FLOAT");
+			GetFieldInfo().TrySetValue<float>(static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->GetFloatInput());
+		}
+		else if (GetFieldInfo().IsCurrentType<std::string>())
+		{
+			//LogError("REAHCED STRINGF");
+			GetFieldInfo().TrySetValue<std::string>(static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->GetInput());
+		}
+		else if (GetFieldInfo().IsCurrentType<Vec2>())
+		{
+			//m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput()
+			//LogError("REAHCED POINT");
+			GetFieldInfo().TrySetValue<Vec2>({ static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->GetFloatInput(), 
+				static_cast<MainUI::UIInputFieldComponent*>(m_fields[1])->GetFloatInput() });
+			//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
+
+			//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
+			//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
+		}
+		else if (GetFieldInfo().IsCurrentType<Vec2Int>())
+		{
+			//m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput()
+			//LogError("REAHCED POINT");
+			GetFieldInfo().TrySetValue<Vec2Int>({ static_cast<MainUI::UIInputFieldComponent*>(m_fields[0])->GetIntInput(), 
+				static_cast<MainUI::UIInputFieldComponent*>(m_fields[1])->GetIntInput() });
+			//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
+
+			//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
+			//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
+		}
+		else if (GetFieldInfo().IsCurrentType<bool>())
+		{
+			GetFieldInfo().TrySetValue<bool>(static_cast<MainUI::UIToggleComponent*>(m_fields[0])->IsToggled());
+		}
+		else if (GetFieldInfo().IsCurrentType<ColHDR4>())
+		{
+			GetFieldInfo().TrySetValue<ColHDR4>(static_cast<ColorPickerEditorComponent*>(m_fields[0])->GetColor());
+		}
+		else
+		{
+			//LogError("REAHCED ERROR");
+			LogError(std::format("Tried to set internal value with input for property: '{}' "
+				"but could not find any actions for its type", GetFieldInfo().m_FieldName));
+		}
 	}
 
-	//TODO: this feels like a very gimicky solution to the problem where many fields for a component usually results in the parent layout shrinking their x and y size
-	//thus leading to fields that fit, but are very small in terms of their width. The solution was to fix their horizontal size so layout cannot change it
-	m_guiLayout->SetFixed(true, false);
+	void ComponentFieldUI::Update()
+	{
+		//NOTE: yes this might be bad to set to internal value every update, but
+		//we do not know when the value internally can change, so it must be updated
+		//every frame
+		SetFieldToInternal();
+		//TODO: update the values in the field
+	}
 
-	SetFieldToInternal();
-}
+	const ECS::ComponentField& ComponentFieldUI::GetFieldInfo() const
+	{
+		ENGINE_ASSERT(m_fieldInfo != nullptr, "Tried to get field info from component field GUI but it is NULL");
+		return *m_fieldInfo;
+	}
 
-const Input::InputManager& ComponentFieldUI::GetInputManager() const
-{
-	ENGINE_ASSERT(m_inputManager != nullptr, "Tried to get Input Manager but it is null");
-	return *m_inputManager;
-}
-ComponentField& ComponentFieldUI::GetFieldInfo()
-{
-	ENGINE_ASSERT(m_fieldInfo != nullptr, "Tried to get field info but it is NULL");
-	return *m_fieldInfo;
-}
-
-void ComponentFieldUI::SetFieldToInternal()
-{
-	//Assert(false, std::format("Type for field is: {}", m_fieldInfo.GetCurrentType().name()));
-	if (GetFieldInfo().IsCurrentType<int>())
+	const ComponentUI& ComponentFieldUI::GetComponentGUISafe() const
 	{
-		static_cast<UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(*(GetFieldInfo().TryGetValue<int>())));
+		ENGINE_ASSERT(m_componentGUI != nullptr, "Tried to get component GUI "
+			"from a field named : '{}'", GetFieldInfo().ToString());
+		return *m_componentGUI;
 	}
-	else if (GetFieldInfo().IsCurrentType<std::uint8_t>())
-	{
-		static_cast<UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(*(GetFieldInfo().TryGetValue<std::uint8_t>())));
-	}
-	else if (GetFieldInfo().IsCurrentType<float>())
-	{
-		static_cast<UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(*(GetFieldInfo().TryGetValue<float>())));
-	}
-	else if (GetFieldInfo().IsCurrentType<std::string>())
-	{
-		//Assert(false, "POOP");
-		const std::string* str = GetFieldInfo().TryGetValue<std::string>();
-		//Assert(false, std::format("String FOR COMPOENNT FIELD IS: {}", str == nullptr ? "NULL" : *str));
-		static_cast<UIInputFieldComponent*>(m_fields[0])->OverrideInput(*str);
-	}
-	else if (GetFieldInfo().IsCurrentType<Vec2>())
-	{
-		const Vec2* point = GetFieldInfo().TryGetValue<Vec2>();
-		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
-
-		static_cast<UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(point->m_X));
-		static_cast<UIInputFieldComponent*>(m_fields[1])->OverrideInput(std::to_string(point->m_Y));
-
-		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
-		//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
-	}
-	else if (GetFieldInfo().IsCurrentType<Vec2Int>())
-	{
-		const Vec2Int* point = GetFieldInfo().TryGetValue<Vec2Int>();
-		static_cast<UIInputFieldComponent*>(m_fields[0])->OverrideInput(std::to_string(point->m_X));
-		static_cast<UIInputFieldComponent*>(m_fields[1])->OverrideInput(std::to_string(point->m_Y));
-	}
-	else if (GetFieldInfo().IsCurrentType<bool>())
-	{
-		static_cast<UIToggleComponent*>(m_fields[0])->SetValue(*(GetFieldInfo().TryGetValue<bool>()));
-	}
-	else if (GetFieldInfo().IsCurrentType<HDRColor>())
-	{
-		static_cast<UIColorPickerData*>(m_fields[0])->SetColor(*(GetFieldInfo().TryGetValue<HDRColor>()));
-	}
-	else
-	{
-		LogError(std::format("Tried to set field to internal value for property: '{}' "
-			"but could not find any actions for its type", GetFieldInfo().m_FieldName));
-		return;
-	}
-}
-void ComponentFieldUI::SetInternalWithInput()
-{
-	if (GetFieldInfo().IsReadonly()) return;
-
-	/*LogError(std::format("Getting internal input and setting it. is point: {} field name: {} is point: {}", 
-		m_fieldInfo.GetCurrentType().name(), m_fieldInfo.m_FieldName, std::to_string(m_fieldInfo.IsCurrentType<Vec2>())));*/
-
-	if (GetFieldInfo().IsCurrentType<int>())
-	{
-		//LogError("REAHCED INT");
-		//LogError(std::format("Setting internal value with: {}", std::to_string(m_inputFields[0].GetIntInput())));
-		GetFieldInfo().TrySetValue<int>(static_cast<UIInputFieldComponent*>(m_fields[0])->GetIntInput());
-	}
-	else if (GetFieldInfo().IsCurrentType<std::uint8_t>())
-	{
-		//LogError("REAHCED UNISGNED INT");
-		//LogError(std::format("Setting internal value with: {}", std::to_string(m_inputFields[0].GetIntInput())));
-		std::uint8_t convertedValue = static_cast<std::uint8_t>(std::abs(static_cast<UIInputFieldComponent*>(m_fields[0])->GetIntInput()));
-		GetFieldInfo().TrySetValue<std::uint8_t>(convertedValue);
-	}
-	else if (GetFieldInfo().IsCurrentType<float>())
-	{
-		//LogError("REAHCED FLOAT");
-		GetFieldInfo().TrySetValue<float>(static_cast<UIInputFieldComponent*>(m_fields[0])->GetFloatInput());
-	}
-	else if (GetFieldInfo().IsCurrentType<std::string>())
-	{
-		//LogError("REAHCED STRINGF");
-		GetFieldInfo().TrySetValue<std::string>(static_cast<UIInputFieldComponent*>(m_fields[0])->GetInput());
-	}
-	else if (GetFieldInfo().IsCurrentType<Vec2>())
-	{
-		//m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput()
-		//LogError("REAHCED POINT");
-		GetFieldInfo().TrySetValue<Vec2>({ static_cast<UIInputFieldComponent*>(m_fields[0])->GetFloatInput(), static_cast<UIInputFieldComponent*>(m_fields[1])->GetFloatInput() });
-		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
-
-		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
-		//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
-	}
-	else if (GetFieldInfo().IsCurrentType<Vec2Int>())
-	{
-		//m_inputFields[0].GetFloatInput(), m_inputFields[1].GetFloatInput()
-		//LogError("REAHCED POINT");
-		GetFieldInfo().TrySetValue<Vec2Int>({ static_cast<UIInputFieldComponent*>(m_fields[0])->GetIntInput(), static_cast<UIInputFieldComponent*>(m_fields[1])->GetIntInput() });
-		//Assert(false, std::format("REACHED COMPENZTN FIELD POINT: {}",point == nullptr ? "NULL" : point->ToString()));
-
-		//Assert(false, std::format("HAS PINT: {} Input field input is now: {} should be: {}", std::to_string(point!=nullptr), m_inputFields[0].GetInput(), std::to_string(point->m_X)));
-		//Assert(false, std::format("Input field input is now: {} should be: {}", m_inputFields[1].GetInput(), std::to_string(point->m_Y)));
-	}
-	else if (GetFieldInfo().IsCurrentType<bool>())
-	{
-		GetFieldInfo().TrySetValue<bool>(static_cast<UIToggleComponent*>(m_fields[0])->IsToggled());
-	}
-	else if (GetFieldInfo().IsCurrentType<HDRColor>())
-	{
-		GetFieldInfo().TrySetValue<HDRColor>(static_cast<UIColorPickerData*>(m_fields[0])->GetColor());
-	}
-	else
-	{
-		//LogError("REAHCED ERROR");
-		LogError(std::format("Tried to set internal value with input for property: '{}' "
-			"but could not find any actions for its type", GetFieldInfo().m_FieldName));
-	}
-}
-
-void ComponentFieldUI::Update()
-{
-	//NOTE: yes this might be bad to set to internal value every update, but
-	//we do not know when the value internally can change, so it must be updated
-	//every frame
-	SetFieldToInternal();
-	//TODO: update the values in the field
-}
-
-const ComponentField& ComponentFieldUI::GetFieldInfo() const
-{
-	ENGINE_ASSERT(m_fieldInfo != nullptr, "Tried to get field info from component field GUI but it is NULL");
-	return *m_fieldInfo;
-}
-
-const ComponentUI& ComponentFieldUI::GetComponentGUISafe() const
-{
-	ENGINE_ASSERT(m_componentGUI != nullptr, "Tried to get component GUI "
-		"from a field named : '{}'", GetFieldInfo().ToString());
-	return *m_componentGUI;
 }

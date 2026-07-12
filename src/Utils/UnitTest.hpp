@@ -65,7 +65,7 @@ namespace UnitTest
 	{
 		std::cout << std::format("{} {}[{}{}/{}{}]{} Successfully passed test ({}) -> {}", FormatCurrentTime(), ANSI_COLOR_WHITE, ANSI_COLOR_GRAY, 
 			testNumber, totalTests, ANSI_COLOR_WHITE, TEST_SUCCESS_ANSI_COLOR, 
-			Utils::ToStringTuple(test.m_Input), Utils::ToStringForced(test.m_ExpectedOutput)) << std::endl;
+			Utils::ToStringTuple(test.m_Input), ::Utils::ToStringForced(test.m_ExpectedOutput)) << std::endl;
 	}
 	template<typename TReturn, typename TResult, typename... TArgs>
 	void LogFailedTest(const std::uint16_t testNumber, const std::uint16_t totalTests, 
@@ -73,8 +73,8 @@ namespace UnitTest
 	{
 		std::cout << std::format("{} {}[{}{}/{}{}]{} Failed test ({}) -> {} by getting {}", FormatCurrentTime(), ANSI_COLOR_WHITE, ANSI_COLOR_GRAY,
 			testNumber, totalTests, ANSI_COLOR_WHITE, TEST_ERROR_ANSI_COLOR,
-			Utils::ToStringTuple(test.m_Input), Utils::ToStringForced(test.m_ExpectedOutput), 
-			(Utils::IsExceptionType<TResult>? std::format("{} exception: {}", typeid(TResult).name(), Utils::ToString(receivedOutput))
-				: std::format("output: {}", Utils::ToStringForced(receivedOutput)))) << std::endl;
+			Utils::ToStringTuple(test.m_Input), ::Utils::ToStringForced(test.m_ExpectedOutput), 
+			(::Utils::IsExceptionType<TResult>? std::format("{} exception: {}", typeid(TResult).name(), ::Utils::ToString(receivedOutput))
+				: std::format("output: {}", ::Utils::ToStringForced(receivedOutput)))) << std::endl;
 	}
 }

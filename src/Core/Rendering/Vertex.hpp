@@ -1,10 +1,10 @@
 #pragma once
-#include "Utils/Math/WorldPosition.hpp"
-#include "Utils/Data/Color.hpp"
+#include "Core/Primitives/WorldPosition.hpp"
+#include "Core/Primitives/Color.hpp"
 #include "Utils/Data/MemoryInterval.hpp"
-#include "Utils/Math/MathAdvanced.hpp"
+#include "Math/Math3d.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
     enum class PrimitiveType : std::uint8_t
     {
@@ -76,15 +76,15 @@ namespace Rendering
     using IndexTriangle = TriangleBase<IndexType>;
     using Vec3Triangle = TriangleBase<Vec3>;
 
-    template<size_t ALIGN = 0>
+    template<size_t ALIGN = alignof(float)>
     AABB3DBase<ALIGN> CalculateTriangleAABB(const IndexTriangle& triangle, const Vertex* vertexArray)
     {
         const WorldPosition3D world0 = vertexArray[triangle.m_0].m_LocalPos;
         const WorldPosition3D world1 = vertexArray[triangle.m_1].m_LocalPos;
         const WorldPosition3D world2 = vertexArray[triangle.m_2].m_LocalPos;
-        const AABB3DBase<ALIGN> aabb = AABB3D(Min(world0, world1, world2), Max(world0, world1, world2));
+        const AABB3DBase<ALIGN> aabb = AABB3D(Math::Min(world0, world1, world2), Math::Max(world0, world1, world2));
 
-        ENGINE_ASSERT(Utils::IsWithinBounds(aabb, world0) && Utils::IsWithinBounds(aabb, world1) && Utils::IsWithinBounds(aabb, world2),
+        ENGINE_ASSERT(Math::IsWithinBounds(aabb, world0) && Math::IsWithinBounds(aabb, world1) && Math::IsWithinBounds(aabb, world2),
             "Attempted to calculate triangle AABB3d givne vertices: {}, {}, {} but some did not fit within bounds formed: {}",
             world0.ToString(), world1.ToString(), world2.ToString(), aabb.ToString());
 
@@ -137,13 +137,13 @@ namespace Rendering
     };
     struct InstanceUI
     {
-        HDRColor m_Color;
+        ColHDR4 m_Color;
         int m_TextureIndex;
         float m_Depth;
         Mat3 m_ModelMatrix;
 
         InstanceUI();
-        InstanceUI(const HDRColor& color, int textureIndex, const float depth, const Mat3& modelMatrix);
+        InstanceUI(const ColHDR4& color, int textureIndex, const float depth, const Mat3& modelMatrix);
         std::string ToString() const;
     };
 }

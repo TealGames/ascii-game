@@ -8,7 +8,7 @@
 #include "Utils/DataStructure/ResourceSlotController.hpp"
 #include "Utils/TemplateConcepts.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	DEFINE_TEMPLATE_HAS_FUNCTION(GetId, RenderObjectId);
 	DEFINE_TEMPLATE_HAS_FUNCTION(GetStorageType, TexelStorageType);
@@ -25,7 +25,7 @@ namespace Rendering
 	requires (HasPropertym_ResourcePtr<TSlotData> && 
 			  HasFunctionHasResource<TSlotData> && 
 		      HasVoidFunctionRemoveResource<TSlotData> && 
-		      Utils::HasFunctionToString<TSlotData>)
+		      ::Utils::HasFunctionToString<TSlotData>)
 	class GpuResourceSlotController
 	{
 	private:
@@ -256,7 +256,7 @@ namespace Rendering
 	};
 
 	template<typename TFunc, typename TResource>
-	concept IsImageBindFunc = Utils::IsInvocableType<void, TFunc, RenderObjectId, USlotIndex, bool>;
+	concept IsImageBindFunc = ::Utils::IsInvocableType<void, TFunc, RenderObjectId, USlotIndex, bool>;
 	
 	constexpr USlotIndex MAX_IMAGE_SLOTS = 8;
 	class ImageSlotController

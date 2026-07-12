@@ -1,6 +1,6 @@
 #include "Core/Rendering/Font.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	Font::Font() {}
 

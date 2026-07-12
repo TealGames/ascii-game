@@ -1,9 +1,13 @@
 #pragma once
 
-class Scene;
-class EngineState;
-namespace SceneCreator
+namespace Engine::Core { class EngineState; }
+namespace Engine::Scenes
 {
-	void OnSceneLoad(Scene& scene, EngineState& state);
-	void OnSceneStart(Scene& scene, EngineState& state);
+	class Scene;
+	namespace SceneCreator
+	{
+		void Init(Core::EngineState&);
+		void OnSceneAssetLoad(Scene* scene);
+		void OnActiveSceneChange(Scene* scene);
+	}
 }

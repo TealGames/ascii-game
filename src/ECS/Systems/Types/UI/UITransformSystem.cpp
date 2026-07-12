@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/UI/UITransformSystem.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
 	UITransformSystem::UITransformSystem() {}
 }

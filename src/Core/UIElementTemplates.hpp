@@ -4,28 +4,21 @@
 #include <functional>
 #include <tuple>
 
-namespace AssetManagement { class AssetManager; }
-namespace Templates
+namespace Engine::Assets { class AssetManager; }
+namespace Engine::ECS { class EntityData; }
+namespace Engine::UI
 {
-	class EntityTemplateManager
+	class UITransformComponent;
+	class UIToggleComponent;
+	namespace Templates
 	{
-	private:
-		//std::unordered_map<std::string, std::function<
-	public:
+		void Init(Assets::AssetManager& assetManager);
 
-	private:
-	public:
-		EntityTemplateManager();
-	};
+		std::tuple<ECS::EntityData*, UITransformComponent*, UIToggleComponent*> 
+			CreateDropdownToggleTemplate(ECS::EntityData& parent, const std::string& name);
+
+		std::tuple<ECS::EntityData*, UITransformComponent*, UIToggleComponent*> 
+			CreateCheckboxTemplate(ECS::EntityData& parent, const std::string& name);
+	}
 }
 
-class EntityData;
-class UITransformData;
-class UIToggleComponent;
-namespace Templates
-{
-	void Init(AssetManagement::AssetManager& assetManager);
-
-	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateDropdownToggleTemplate(EntityData& parent, const std::string& name);
-	std::tuple<EntityData*, UITransformData*, UIToggleComponent*> CreateCheckboxTemplate(EntityData& parent, const std::string& name);
-}

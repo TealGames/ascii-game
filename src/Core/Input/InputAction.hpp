@@ -4,7 +4,7 @@
 #include "Core/Input/InputState.hpp"
 #include "Core/Input/InputKey.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	class InputAction
 	{

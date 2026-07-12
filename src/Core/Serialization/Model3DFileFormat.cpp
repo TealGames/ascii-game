@@ -1,13 +1,11 @@
 #include "Core/Serialization/Model3DFileFormat.hpp"
 #include "Core/Serialization/StringSerializers.hpp"
 
-static constexpr char TUPLE_SEPARATOR_CHAR = ',';
-static constexpr char TUPLE_START_CHAR = '[';
-static constexpr char TUPLE_END_CHAR = ']';
-
-
-namespace VTXConverter
+namespace Engine::VTXConverter
 {
+	static constexpr char TUPLE_SEPARATOR_CHAR = ',';
+	static constexpr char TUPLE_START_CHAR = '[';
+	static constexpr char TUPLE_END_CHAR = ']';
 	static constexpr VTXFormatType FORMAT_TYPE = VTXFormatType::Binary;
 
 	std::string VTXHeader::ToString() const
@@ -53,7 +51,7 @@ namespace VTXConverter
 		std::string indicesStr = StringSerializers::Serialize<Rendering::IndexType>(obj.m_Mesh.m_Indices, TUPLE_SEPARATOR_CHAR);
 		fileContents += indicesStr;
 
-		return IO::TryWriteFile(path, fileContents);
+		return ::Utils::IO::TryWriteFile(path, fileContents);
 	}
 	static bool TryWriteAsBinary(const Rendering::Model3d& model, const std::filesystem::path& path)
 	{
@@ -70,7 +68,7 @@ namespace VTXConverter
 		header.m_PosMax[2] = bounds.m_MaxPos[2];
 
 		std::ofstream writeStream;
-		if (!IO::TryCreateWriteFileBinaryStream(path, writeStream))
+		if (!::Utils::IO::TryCreateWriteFileBinaryStream(path, writeStream))
 			return false;
 
 		writeStream.write(reinterpret_cast<char*>(&header), sizeof(VTXHeader));
@@ -89,7 +87,7 @@ namespace VTXConverter
 			packedVertex.m_UV[0] = vertex.m_UVPos.m_X * maxUint16;
 			packedVertex.m_UV[1] = vertex.m_UVPos.m_Y * maxUint16;
 
-			octahedralEncodedNormal = Utils::OctahedralEncodeNormal(vertex.m_Normal);
+			octahedralEncodedNormal = Math::OctahedralEncodeNormal(vertex.m_Normal);
 			packedVertex.m_Normal[0] = octahedralEncodedNormal.m_X * maxUint16;
 			packedVertex.m_Normal[1] = octahedralEncodedNormal.m_Y * maxUint16;
 			writeStream.write(reinterpret_cast<char*>(&packedVertex), sizeof(VTXPackedVertex));
@@ -109,7 +107,7 @@ namespace VTXConverter
 
 	static bool TryReadAsString(Rendering::Model3d& model, const std::filesystem::path& path)
 	{
-		std::string fileContents = IO::TryReadFileFull(path);
+		std::string fileContents = ::Utils::IO::TryReadFileFull(path);
 		if (fileContents.empty())
 		{
 			return false;
@@ -191,7 +189,7 @@ namespace VTXConverter
 		currGroup.m_ObjectIndices.push_back(0);
 
 		std::ifstream readStream;
-		if (!IO::CreateReadFileBinaryStream(path, readStream))
+		if (!::Utils::IO::CreateReadFileBinaryStream(path, readStream))
 			return false;
 
 		VTXHeader header;
@@ -234,7 +232,7 @@ namespace VTXConverter
 			uv = { packedVertex.m_UV[0] / float(maxUint16), packedVertex.m_UV[1] / float(maxUint16) };
 
 			octahedralNormal = {packedVertex.m_Normal[0] / float(maxUint16), packedVertex.m_Normal[1] / float(maxUint16) };
-			normal = Utils::OctahedralDecodeNormal(octahedralNormal);
+			normal = Math::OctahedralDecodeNormal(octahedralNormal);
 
 			currObj.m_Mesh.m_Vertices.emplace_back(localPos, uv, normal);
 		}

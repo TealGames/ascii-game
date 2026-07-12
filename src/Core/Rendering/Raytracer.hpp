@@ -1,11 +1,11 @@
 #pragma once
-#include "Utils/Math/Ray.hpp"
+#include "Math/Ray.hpp"
 #include "Core/Rendering/RenderData.hpp"
 #include "Core/Rendering/Vertex.hpp"
 #include "Core/Rendering/Material.hpp"
 #include "Core/Rendering/Texture.hpp"
 
-namespace Rendering
+namespace Engine::Rendering
 {
     constexpr float MAX_HIT_DISTANCE = 1e20;
     struct RaytraceHitInfo
@@ -78,12 +78,12 @@ namespace Rendering
         const ViewerBlockData* m_ViewBlock;
 
     private:
-        RaytraceHitInfo TraceRayLocal(const Ray3D& localRay, const Instance& instance);
-        RaytraceHitInfo TraceRayWorld(const Ray3D& worldRay);
+        RaytraceHitInfo TraceRayLocal(const Math::Ray3D& localRay, const Instance& instance);
+        RaytraceHitInfo TraceRayWorld(const Math::Ray3D& worldRay);
     public:
-        RaytraceHitInfo TraceRay(const Ray3D& worldRay);
+        RaytraceHitInfo TraceRay(const Math::Ray3D& worldRay);
 
-        HDRColor RunPixel(const Vec2Int pixel);
+        ColHDR4 RunPixel(const Vec2Int pixel);
         void Run();
     };
 }

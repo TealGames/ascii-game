@@ -1,26 +1,30 @@
 #pragma once
 #include <vector>
-#include "Utils/Math/ScreenPosition.hpp"
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/ScreenPosition.hpp"
+#include "Core/Primitives/Vector.hpp"
 
-struct RectangleOutlineData
+namespace Engine::Rendering
 {
-	//Size in [WIDTH, HEIGHT]
-	Vec2 m_Size;
-	ScreenPosition m_Position;
+	struct RectangleOutlineData
+	{
+		//Size in [WIDTH, HEIGHT]
+		Vec2 m_Size;
+		ScreenPosition m_Position;
 
-	RectangleOutlineData(const Vec2& size, const ScreenPosition& pos);
-};
+		RectangleOutlineData(const Vec2& size, const ScreenPosition& pos);
+	};
 
-struct ColliderOutlineBuffer
-{
-	std::vector<RectangleOutlineData> m_RectangleBuffer;
+	struct ColliderOutlineBuffer
+	{
+		std::vector<RectangleOutlineData> m_RectangleBuffer;
 
-	ColliderOutlineBuffer();
+		ColliderOutlineBuffer();
 
-	void ClearAll();
-	void AddRectangle(const RectangleOutlineData& rectangleData);
+		void ClearAll();
+		void AddRectangle(const RectangleOutlineData& rectangleData);
 
-	bool HasData() const;
-};
+		bool HasData() const;
+	};
+}
+
 

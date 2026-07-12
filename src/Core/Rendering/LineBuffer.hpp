@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils/Math/WorldPosition.hpp"
+#include "Core/Primitives/WorldPosition.hpp"
 
 //struct LineData
 //{

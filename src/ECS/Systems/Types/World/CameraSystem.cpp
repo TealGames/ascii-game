@@ -3,10 +3,10 @@
 #include "ECS/Component/Component.hpp"
 #include "StaticGlobals.hpp"
 #include "Core/Scene/SceneManager.hpp"
-#include "Utils/Data/Array2DPosition.hpp"
+#include "Core/Primitives/Array2DPosition.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Core/Scene/Scene.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 #include "Core/Rendering/Renderer3d.hpp"
 #include "Core/Asset/FontAsset.hpp"
@@ -15,7 +15,7 @@
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-namespace ECS
+namespace Engine::Camera
 {
     static constexpr bool CACHE_LAST_BUFFER = true;
     static constexpr bool DO_SIZE_SCALING = true;
@@ -24,18 +24,18 @@ namespace ECS
 	CameraSystem::CameraSystem(Rendering::Renderer& renderer) :
         m_renderer(&renderer)//, m_currentFrameBuffer(), m_colliderOutlineBuffer(colliderBuffer), m_lineBuffer(lineBuffer)
 	{
-        GlobalComponentInfo::AddComponentInfo(typeid(CameraComponent), ComponentInfo(DependencyType::Entity, {}, 
+        ECS::GlobalComponentInfo::AddComponentInfo(typeid(CameraComponent), ECS::ComponentInfo(ECS::DependencyType::Entity, {}, 
             [this](EntityData& entity)-> void
             {
                 CameraComponent* camera = entity.TryGetComponentMutable<CameraComponent>();
-                entity.GetTransformMutable().m_DirtyCallback = [camera](const DirtyFlag) -> void 
+                entity.GetTransformMutable().m_DirtyCallback = [camera](const ECS::DirtyFlag) -> void 
                     {
                         camera->SetDirtyFlag(CameraComponent::VIEW_MATRIX_DIRTY_FLAG);
                     };
             }));
 	}
 
-    void CameraSystem::SystemUpdate(Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
+    void CameraSystem::SystemUpdate(Scenes::Scene& scene, CameraComponent& mainCamera, const float& deltaTime)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("CameraSystem::SystemUpdate");

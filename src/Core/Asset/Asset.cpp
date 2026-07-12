@@ -3,89 +3,87 @@
 #include "Utils/Debug.hpp"
 #include <fstream>
 
-Asset::Asset(const std::filesystem::path& path, const bool hasDependencies) 
-//Note: if we do not have dependencies we can say they are already set
-	: m_name(), m_absolutePath(path), m_dependenciesSet(!hasDependencies)
+namespace Engine::Assets
 {
-	if (path.empty()) return;
-
-	if (!Assert(std::filesystem::exists(m_absolutePath), "Tried to create an asset at path: {} "
-		"but that path does not exist", m_absolutePath.string()))
-		return;
-
-	if (!Assert(m_absolutePath.has_filename(), "Tried to create an asset at path: {} "
-		"but that path does not lead to a file", m_absolutePath.string()))
-		return;
-
-	m_name = ExtractNameFromFile(m_absolutePath);
-}
-
-std::string Asset::ExtractNameFromFile(const std::filesystem::path& path)
-{
-	return path.stem().string();
-}
-
-const std::string& Asset::GetName() const
-{
-	return m_name;
-}
-void Asset::OverrideAssetName(const std::string& name)
-{
-	m_name = name;
-}
-void Asset::OverrideAssetName(const std::string_view& name)
-{
-	m_name = std::string(name);
-}
-
-std::filesystem::path Asset::GetAbsolutePathCopy() const
-{
-	return m_absolutePath;
-}
-const std::filesystem::path& Asset::GetAbsolutePath() const
-{
-	return m_absolutePath;
-}
-bool Asset::AbsolutePathEndsWith(const std::filesystem::path& subPath)
-{
-	auto fullPathBegin = GetAbsolutePath().begin();
-	auto fullIt = GetAbsolutePath().end();
-	auto subIt = subPath.end();
-
-	while (subIt != subPath.begin())
+	Asset::Asset(const std::filesystem::path& path)
+		: m_name(), m_absolutePath(path)
 	{
-		if (fullIt == fullPathBegin)
-			return false;
+		if (path.empty()) return;
 
-		--fullIt;
-		--subIt;
+		if (!Assert(std::filesystem::exists(m_absolutePath), "Tried to create an asset at path: {} "
+			"but that path does not exist", m_absolutePath.string()))
+			return;
 
-		if (*fullIt != *subIt)
-			return false;
+		if (!Assert(m_absolutePath.has_filename(), "Tried to create an asset at path: {} "
+			"but that path does not lead to a file", m_absolutePath.string()))
+			return;
+
+		m_name = ExtractNameFromFile(m_absolutePath);
 	}
 
-	return true;
-}
+	std::string Asset::ExtractNameFromFile(const std::filesystem::path& path)
+	{
+		return path.stem().string();
+	}
 
-bool Asset::AreDependenciesSet() const
-{
-	return m_dependenciesSet;
-}
-void Asset::MarkDependenciesSet()
-{
-	m_dependenciesSet = true;
-}
+	const std::string& Asset::GetName() const
+	{
+		return m_name;
+	}
+	void Asset::OverrideAssetName(const std::string& name)
+	{
+		m_name = name;
+	}
+	void Asset::OverrideAssetName(const std::string_view& name)
+	{
+		m_name = std::string(name);
+	}
 
-void Asset::SaveToSelf()
-{
-	SaveToPath(GetAbsolutePathCopy());
-}
-void Asset::SaveToPath(const std::filesystem::path& path)
-{
-	return;
-}
+	std::filesystem::path Asset::GetAbsolutePathCopy() const
+	{
+		return m_absolutePath;
+	}
+	const std::filesystem::path& Asset::GetAbsolutePath() const
+	{
+		return m_absolutePath;
+	}
+	bool Asset::AbsolutePathEndsWith(const std::filesystem::path& subPath)
+	{
+		auto fullPathBegin = GetAbsolutePath().begin();
+		auto fullIt = GetAbsolutePath().end();
+		auto subIt = subPath.end();
 
-std::string Asset::ToString() const
-{
-	return std::format("[Asset:'{}' @path:{}]", GetName(), GetAbsolutePathCopy().string());
+		while (subIt != subPath.begin())
+		{
+			if (fullIt == fullPathBegin)
+				return false;
+
+			--fullIt;
+			--subIt;
+
+			if (*fullIt != *subIt)
+				return false;
+		}
+
+		return true;
+	}
+
+	void Asset::SetDependencies(Core::EngineState& state)
+	{
+		return;
+	}
+
+	void Asset::SaveToSelf()
+	{
+		SaveToPath(GetAbsolutePathCopy());
+	}
+	void Asset::SaveToPath(const std::filesystem::path& path)
+	{
+		return;
+	}
+
+	std::string Asset::ToString() const
+	{
+		return std::format("[Asset:'{}' @path:{}]", GetName(), GetAbsolutePathCopy().string());
+	}
 }

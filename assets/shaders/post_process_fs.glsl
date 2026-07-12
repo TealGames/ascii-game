@@ -30,19 +30,19 @@ vec3 ReinhardToneMapping(vec3 color)
 void main()
 {
     vec2 uv= gl_FragCoord.xy / uScreenSize;
-    vec3 hdrColor = texture(uHdrTexture, uv).rgb * uExposure;
+    vec3 ColHDR4 = texture(uHdrTexture, uv).rgb * uExposure;
     vec3 bloomColor = uDoBloom? texture(uBrightnessTexture, uv).rgb : vec3(0, 0, 0);
-    //fragColor= vec4(hdrColor, 1);
+    //fragColor= vec4(ColHDR4, 1);
 
-    fragColor = vec4(AcesFilmicToneMapping(hdrColor) + bloomColor, 1);
+    fragColor = vec4(AcesFilmicToneMapping(ColHDR4) + bloomColor, 1);
     
     //fragColor= vec4(0.5, 1, 1, 1);
 
     // Simple Reinhard tone mapping
-    //vec3 mapped = hdrColor / (hdrColor + vec3(1.0));
+    //vec3 mapped = ColHDR4 / (ColHDR4 + vec3(1.0));
 
     // Exposure tone mapping (optional)
-    // vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
+    // vec3 mapped = vec3(1.0) - exp(-ColHDR4 * exposure);
 
     // Gamma correction (assuming sRGB output)
     //mapped = pow(mapped, vec3(1.0/2.2));

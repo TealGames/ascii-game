@@ -2,68 +2,62 @@
 #include "Core/Visual/VisualDataParser.hpp"
 #include "Core/Asset/GlobalColorCodes.hpp"
 #include "Utils/Debug.hpp"
-#include "StaticReferenceGlobals.hpp"
-#include "Utils/Data/ColorConstants.hpp"
 #include "StaticGlobals.hpp"
 
-static constexpr char NEW_ROW_CHAR = '-';
-static constexpr char CHAR_COLOR_ALIAS_START = '[';
-static const std::string CHAR_COLOR_ALIAS_END = "]";
-
-VisualData ParseDefaultVisualData(const std::vector<std::string>& lines)
+namespace Engine::Rendering
 {
-	if (lines.empty()) return {};
+	static constexpr char NEW_ROW_CHAR = '-';
+	static constexpr char CHAR_COLOR_ALIAS_START = '[';
+	static const std::string CHAR_COLOR_ALIAS_END = "]";
 
-	HDRColor currentColor = COLOR_WHITE;
-	std::vector<std::vector<TextChar>> textCharPos = {};
-	WorldFontProperties fontSettings = WorldFontProperties(VisualData::DEFAULT_FONT_SIZE, 0, StaticReferenceGlobals::GetDefaultRaylibFont());
-	for (const auto& line : lines)
+	VisualData ParseDefaultVisualData(const std::vector<std::string>& lines)
 	{
-		for (size_t i = 0; i < line.size(); i++)
+		if (lines.empty()) return {};
+
+		ColHDR4 currentColor = COLOR_WHITE;
+		std::vector<std::vector<TextChar>> textCharPos = {};
+		WorldFontProperties fontSettings = WorldFontProperties(); //WorldFontProperties(VisualData::DEFAULT_FONT_SIZE, 0, StaticReferenceGlobals::GetDefaultRaylibFont());
+		for (const auto& line : lines)
 		{
-			//LogError(std::format("Iteraing on proeprty:{} at:{} value:{} char:{}", figProperties[i].GetKey(), std::to_string(i), value, Utils::ToString(value[j])));
-			if (i==0)
+			for (size_t i = 0; i < line.size(); i++)
 			{
-				//arrPos.IncrementRow(1);
-				//arrPos.SetCol(0);
-				textCharPos.push_back(std::vector<TextChar>{});
-				//continue;
-			}
-
-			if (line[i] == CHAR_COLOR_ALIAS_START && i < line.size() - CHAR_COLOR_ALIAS_END.size() - 1)
-			{
-				size_t colorAliasEndIndex = line.find(CHAR_COLOR_ALIAS_END, i + 1);
-				if (!Assert(colorAliasEndIndex != std::string::npos, "Tried to parse a color alias for visual data line: {} "
-					"but did not find color alias end at color alias start at index: {}",
-					line, std::to_string(i))) 
-					continue;
-
-				const std::string colorCode = line.substr(i + 1, colorAliasEndIndex - (i + 1));
-				std::optional<HDRColor> maybeColor = GlobalColorCodes::TryGetColorFromCode(colorCode);
-				//Only if we do have found a color do we set the new color
-				if (Assert(maybeColor.has_value(), "Tried to parse a color alias for visual data "
-					"at line : {} but color code: {} starting at index:{} has no color data defined that can be found in global color codes",
-					line, colorCode, std::to_string(i + 1)))
+				if (i == 0)
 				{
-					currentColor = maybeColor.value();
-					//Assert(false, std::format("Found color:{}", RaylibUtils::ToString(maybeColor.value())));
+					textCharPos.push_back(std::vector<TextChar>{});
 				}
 
-				i = colorAliasEndIndex;
-				continue;
+				if (line[i] == CHAR_COLOR_ALIAS_START && i < line.size() - CHAR_COLOR_ALIAS_END.size() - 1)
+				{
+					size_t colorAliasEndIndex = line.find(CHAR_COLOR_ALIAS_END, i + 1);
+					if (!Assert(colorAliasEndIndex != std::string::npos, "Tried to parse a color alias for visual data line: {} "
+						"but did not find color alias end at color alias start at index: {}",
+						line, std::to_string(i)))
+						continue;
+
+					const std::string colorCode = line.substr(i + 1, colorAliasEndIndex - (i + 1));
+					std::optional<ColHDR4> maybeColor = GlobalColorCodes::TryGetColorFromCode(colorCode);
+					//Only if we do have found a color do we set the new color
+					if (Assert(maybeColor.has_value(), "Tried to parse a color alias for visual data "
+						"at line : {} but color code: {} starting at index:{} has no color data defined that can be found in global color codes",
+						line, colorCode, std::to_string(i + 1)))
+					{
+						currentColor = maybeColor.value();
+					}
+
+					i = colorAliasEndIndex;
+					continue;
+				}
+
+				//TODO: change the color to use the color assigned in the animator
+				textCharPos.back().push_back(TextChar(currentColor, line[i]));
 			}
-
-			//TODO: change the color to use the color assigned in the animator
-			textCharPos.back().push_back(TextChar(currentColor, line[i]));
-			//arrPos.IncrementCol(1);
 		}
+		return VisualData(textCharPos, GLOBAL_CHAR_AREA, GLOBAL_FONT_CHAR_SPACING, fontSettings, VisualData::DEFAULT_PIVOT);
 	}
-	//LogWarning(std::format("Tried to parse visual data lines:{} and have text char pos:{}", Utils::ToStringIterable(lines), textCharPos.size()));
-	//Assert(false, std::format("Parsed visual data"));
-	return VisualData(textCharPos, GLOBAL_CHAR_AREA, GLOBAL_FONT_CHAR_SPACING, fontSettings, VisualData::DEFAULT_PIVOT);
+
+	VisualData ParseDefaultVisualData(const FigFormat::FigProperty& property)
+	{
+		return ParseDefaultVisualData(property.m_Value);
+	}
 }
 
-VisualData ParseDefaultVisualData(const FigProperty& property)
-{
-	return ParseDefaultVisualData(property.m_Value);
-}

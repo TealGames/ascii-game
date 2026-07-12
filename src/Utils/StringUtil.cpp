@@ -1,5 +1,6 @@
 #include "pch.hpp"
 #include "Utils/StringUtil.hpp"
+#include "Utils/Debug.hpp"
 
 namespace Utils
 {
@@ -30,6 +31,28 @@ namespace Utils
 		return TrimChar('\t');
 	}
 
+	StringUtil& StringUtil::TrimAnySpaceChar()
+	{
+		size_t startIndex = 0;
+		while (startIndex < str.size() && std::isspace(str[startIndex]))
+			startIndex++;
+
+		//If we find no non-space char we exit
+		if (startIndex >= str.size())
+		{
+			str = "";
+			return *this;
+		}
+
+		size_t endIndex = str.size() - 1;
+		//NOTE: since we exited if the string is empty, we are guaranteed to have at least one char
+		while (endIndex > startIndex && std::isspace(str[endIndex]))
+			endIndex--;
+
+		str = str.substr(startIndex, endIndex - startIndex + 1);
+		return *this;
+	}
+
 	StringUtil& StringUtil::ToLowerCase()
 	{
 		std::string result;
@@ -52,7 +75,11 @@ namespace Utils
 		//Note: we could call RemoveChar(' ') however it would NOT work the same because
 		//this erase considers tab spaces, but remove char would only consider single spaces 
 		//and would leave tab spaces
-		str.erase(std::remove_if(str.begin(), str.end(), isspace), str.end());
+		str.erase(std::remove_if(str.begin(), str.end(), [](char c) -> bool
+			{
+				return std::isspace(static_cast<unsigned char>(c));
+			}), str.end());
+
 		return *this;
 	}
 

@@ -2,7 +2,7 @@
 #include <array>
 #include <string>
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	constexpr size_t IMPL_SIZE = 8;
 	using ImplStorage = std::array<std::byte, IMPL_SIZE>;

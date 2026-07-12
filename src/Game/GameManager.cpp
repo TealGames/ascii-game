@@ -1,7 +1,9 @@
 #include "pch.hpp"
 #include "Game/GameManager.hpp"
 
-GameManager::GameManager(UIHierarchy& hierarchy) 
+using namespace Engine;
+
+GameManager::GameManager(UI::UIHierarchy& hierarchy) 
 	: m_state(), m_uiManager(hierarchy, m_state) {}
 
 void GameManager::GameValidate()

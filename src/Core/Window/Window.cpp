@@ -3,11 +3,11 @@
 #include <format>
 #include "Utils/HelperFunctions.hpp"
 
-static constexpr bool DEFAULT_VSYNC_ENABLED = true;
-static Input::KeyCode RESET_CURSOR_KEY = Input::KeyCode::Escape;
-
-namespace Core
+namespace Engine::Core
 {
+	static constexpr bool DEFAULT_VSYNC_ENABLED = true;
+	static Input::KeyCode RESET_CURSOR_KEY = Input::KeyCode::Escape;
+
 	bool WindowPlatformCallbacks::HasAllValidCallbacks()
 	{
 		return m_InitFunc && m_UpdateFunc && m_IsActiveFunc && m_ShutdownFunc;
@@ -192,7 +192,7 @@ namespace Core
 	{
 		const float currRatio = (float)newWidth / newHeight;
 		const float constrainedRatio = (float)m_aspectRatioConstraint.m_X / m_aspectRatioConstraint.m_Y;
-		if (!HasAspectRatioConstraint() || Utils::ApproximateEqualsF(constrainedRatio, currRatio))
+		if (!HasAspectRatioConstraint() || ::Math::ApproximateEqualsF(constrainedRatio, currRatio))
 			return WindowViewportRect{ Vec2Int(0,0), Vec2Int(newWidth, newHeight) };
 
 		Vec2Int offset = Vec2Int(0, 0);

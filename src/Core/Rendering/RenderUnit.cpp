@@ -1,7 +1,6 @@
 #include "Core/Rendering/RenderUnit.hpp"
 
-
-namespace Rendering
+namespace Engine::Rendering
 {
     std::string RenderBatch::ToString() const
     {

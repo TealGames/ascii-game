@@ -1,27 +1,28 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/UI/UISliderSystem.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
+#include "ECS/Component/Types/UI/UISliderComponent.hpp"
 #include "ECS/Component/Types/UI/UIPanelComponent.hpp"
-#include "ECS/Component/Types/UI/UISelectableData.hpp"
+#include "ECS/Component/Types/UI/UISelectableComponent.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
-	UISliderSystem::UISliderSystem() {}
+	UISliderSystem::UISliderSystem(const Input::InputManager& inputManager) : m_inputManager(&inputManager) {}
 	void UISliderSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UISliderComponent),
-			ComponentInfo(CreateComponentTypes<UIRendererData, UIPanelComponent, UISelectableData>(),
-				CreateRequiredComponentFunction(UIRendererData(), UIPanelComponent(), UISelectableData()),
-				[](EntityData& entity)-> void
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UISliderComponent),
+			ECS::ComponentInfo(ECS::CreateComponentTypes<UIRendererComponent, UIPanelComponent, UISelectableComponent>(),
+				CreateRequiredComponentFunction(UIRendererComponent(), UIPanelComponent(), UISelectableComponent()),
+				[this](ECS::EntityData& entity)-> void
 				{
 					UISliderComponent& slider = *(entity.TryGetComponentMutable<UISliderComponent>());
-					slider.m_renderer = entity.TryGetComponentMutable<UIRendererData>();
+					slider.m_renderer = entity.TryGetComponentMutable<UIRendererComponent>();
 					slider.m_backgroundPanel = entity.TryGetComponentMutable<UIPanelComponent>();
-					slider.m_selectable = entity.TryGetComponentMutable<UISelectableData>();
+					slider.m_selectable = entity.TryGetComponentMutable<UISelectableComponent>();
 
-					slider.Init();
+					slider.Init(*m_inputManager);
 				}));
 	}
 }

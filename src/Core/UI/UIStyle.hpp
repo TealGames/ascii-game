@@ -1,16 +1,23 @@
 #pragma once
-//#include "raylib.h"
-#include "Utils/Math/ScreenPosition.hpp"
+#include "Core/Primitives/ScreenPosition.hpp"
 #include "Core/UI/UITextStyle.hpp"
 
-struct UIStyle
+namespace Engine::UI
 {
-	HDRColor m_BackgroundColor;
-	HDRColor m_SecondaryColor;
-	TextUIStyle m_TextSettings;
+	class UIStyle
+	{
+	private:
+	public:
+		ColHDR4 m_BackgroundColor;
+		ColHDR4 m_SecondaryColor;
+		TextUIStyle m_TextSettings;
 
-	UIStyle();
-	UIStyle(const HDRColor& backgroundColor, const TextUIStyle& textSettings);
-	UIStyle(const HDRColor& backgroundColor, const HDRColor& secondaryColor, const TextUIStyle& textSettings);
-};
+	private:
+	public:
+		UIStyle();
+		UIStyle(const ColHDR4& backgroundColor, const TextUIStyle& textSettings);
+		UIStyle(const ColHDR4& backgroundColor, const ColHDR4& secondaryColor, const TextUIStyle& textSettings);
+	};
+}
+
 

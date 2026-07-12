@@ -5,7 +5,7 @@
 #include "Platform/OpenGl/OpenGlTexture.hpp"
 #endif
 
-namespace Rendering
+namespace Engine::Rendering
 {
 	std::uint8_t GetChannelCount(const TexelChannelFormat format)
 	{
@@ -533,7 +533,7 @@ namespace Rendering
 		ReadBytesUnsafe(Vec2Int::Zero(), m_info.m_TexelSize, writeLocationPointer, std::nullopt);
 	}
 
-	Color Texture::SampleAtTexel(const Vec2Int& texel) const
+	Col4 Texture::SampleAtTexel(const Vec2Int& texel) const
 	{
 		ENGINE_ASSERT(m_info.m_InternalStorage != TexelStorageType::RGB16F && m_info.m_InternalStorage != TexelStorageType::RGBA16F,
 			"Attempted to sample texel:{} for texture:{} but internal storage type "
@@ -544,19 +544,19 @@ namespace Rendering
 		ReadBytes(texel, Vec2Int::One(), reinterpret_cast<std::byte*>(&channelBytes));
 
 		if (m_info.m_InternalStorage == TexelStorageType::R8)
-			return Color(channelBytes[0], channelBytes[0], channelBytes[0]);
+			return Col4(channelBytes[0], channelBytes[0], channelBytes[0]);
 
 		else if (m_info.m_InternalStorage == TexelStorageType::RGB8)
-			return Color(channelBytes[0], channelBytes[1], channelBytes[2]);
+			return Col4(channelBytes[0], channelBytes[1], channelBytes[2]);
 
 		else if (m_info.m_InternalStorage == TexelStorageType::RGBA8)
-			return Color(channelBytes[0], channelBytes[1], channelBytes[2], channelBytes[3]);
+			return Col4(channelBytes[0], channelBytes[1], channelBytes[2], channelBytes[3]);
 
 		LogError(std::format("Attempted to sample texel:{} for texture:{} but internal storage type "
 			"does not have any actions for sampling", texel.ToString(), ToString()));
 		return {};
 	}
-	HDRColor Texture::SampleHDRAtTexel(const Vec2Int& texel) const
+	ColHDR4 Texture::SampleHDRAtTexel(const Vec2Int& texel) const
 	{
 		if (IsHDRTexture())
 		{
@@ -565,27 +565,27 @@ namespace Rendering
 			std::array<std::byte, 16> channelBytes = {};
 			ReadBytes(texel, Vec2Int::One(), &channelBytes[0]);
 
-			HDRColor color;
+			ColHDR4 color;
 			//If we have float16 per channel, only up to 8 bytes written
 			//which will be the ones used for converting to color
 			if (GetChannelByteSize(m_info.m_InternalStorage) == 2)
-				color = FromF16BytesToHDRColor(&channelBytes[0]);
-			else color = FromF32BytesToHDRColor(&channelBytes[0]);
+				color = FromF16BytesToColHDR4(&channelBytes[0]);
+			else color = FromF32BytesToColHDR4(&channelBytes[0]);
 
-			if (Utils::ApproximateEqualsF(color.m_A, 0.0f))
+			if (::Math::ApproximateEqualsF(color.m_A, 0.0f))
 				color.m_A = 1.0f;
 			return color;
 		}
 
-		return ToHDRColor(SampleAtTexel(texel));
+		return ToColHDR4(SampleAtTexel(texel));
 	}
 
-	Color Texture::SampleAtUV(const Vec2& uv) const
+	Col4 Texture::SampleAtUV(const Vec2& uv) const
 	{
 		const Vec2Int texelOffset = (m_info.m_TexelSize.AsFloat() * uv).AsInt();
 		return SampleAtTexel(texelOffset);
 	}
-	HDRColor Texture::SampleHDRAtUV(const Vec2& uv) const
+	ColHDR4 Texture::SampleHDRAtUV(const Vec2& uv) const
 	{
 		const Vec2Int texelOffset = (m_info.m_TexelSize.AsFloat() * uv).AsInt();
 		return SampleHDRAtTexel(texelOffset);

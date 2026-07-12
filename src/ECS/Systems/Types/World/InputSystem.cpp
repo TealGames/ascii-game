@@ -6,7 +6,7 @@
 #include "Core/Analyzation/ProfilerTimer.hpp"
 #endif 
 
-namespace ECS
+namespace Engine::Input
 {
     static const std::string MOVE_COMPOUND_NAME = "move";
 
@@ -15,7 +15,7 @@ namespace ECS
     {
     }
 
-    void InputSystem::SystemUpdate(Scene& scene, InputData& data, const float& deltaTime)
+    void InputSystem::SystemUpdate(Scenes::Scene& scene, InputComponent& data, const float& deltaTime)
     {
 #ifdef ENABLE_PROFILER
         ProfilerTimer timer("InputSystem::SystemUpdate");

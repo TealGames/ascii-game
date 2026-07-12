@@ -1,14 +1,14 @@
 #include "pch.hpp"
 #include "Core/Physics/PhysicsManager.hpp"
 #include "Core/Scene/SceneManager.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
-namespace Physics
+namespace Engine::Physics
 {
-	PhysicsManager::PhysicsManager(SceneManagement::SceneManager& sceneManager, CollisionRegistry& collisionRegistry)
+	PhysicsManager::PhysicsManager(SceneManager& sceneManager, CollisionRegistry& collisionRegistry)
 		: m_sceneManager(sceneManager), m_physics(collisionRegistry)
 	{
-		m_sceneManager.m_OnSceneChange.AddListener([this](Scene* newScene) mutable -> void
+		m_sceneManager.m_OnActiveSceneChange.AddListener([this](Engine::Scenes::Scene* newScene) mutable -> void
 			{
 				if (newScene == nullptr) return;
 				//Assert(false, std::format("Scene changed"));

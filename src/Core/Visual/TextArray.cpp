@@ -1,391 +1,394 @@
 #include "pch.hpp"
-//#include "raylib.h"
 #include "Core/Visual/TextArray.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/Data/Array2DPosition.hpp"
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Array2DPosition.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include "Utils/Debug.hpp"
 #include "Core/Asset/FontAsset.hpp"
 
-TextChar::TextChar() :
-	TextChar(HDRColor()) {}
+namespace Engine::Rendering
+{
+	TextChar::TextChar() :
+		TextChar(ColHDR4()) {}
 
-TextChar::TextChar(const HDRColor& color, const char& textChar) :
-	m_Color(color), m_Char{ textChar, '\0'} {}
+	TextChar::TextChar(const ColHDR4& color, const char& textChar) :
+		m_Color(color), m_Char{ textChar, '\0' } {}
 
-bool TextChar::IsEmpty() const
-{
-	return m_Char[0] == EMPTY_CHAR_PLACEHOLDER;
-}
-char TextChar::GetChar() const { return m_Char[0]; }
-void TextChar::SetChar(const char& c)
-{
-	m_Char[0] = c;
-}
-Vec2 TextChar::GetWorldSize(const WorldFontProperties& font) const
-{
-	//const std::string tempStr = m_Char;
-	//const Vector2 size = MeasureTextEx(font.m_FontAsset->GetFont(), tempStr.c_str(), font.m_Size, font.m_Tracking);
-	return font.m_RectSize;
-	// { size.x, size.y };
-}
-
-bool TextChar::operator==(const TextChar& other) const
-{
-	return m_Color== other.m_Color && m_Char == other.m_Char;
-}
-
-std::string TextChar::ToString() const
-{
-	return std::format("[Color: {} C:{}]",
-		m_Color.ToString(), m_Char[0] == EMPTY_CHAR_PLACEHOLDER ? "EMPTY" : Utils::ToString(m_Char[0]));
-}
-
-std::string ToString(const std::vector<std::vector<TextChar>>& textChars)
-{
-	std::string fullStr = "";
-	for (size_t r = 0; r < textChars.size(); r++)
+	bool TextChar::IsEmpty() const
 	{
-		fullStr += "\n";
-		for (size_t c = 0; c < textChars[r].size(); c++)
-		{
-			fullStr += std::format("[{}] ", textChars[r][c].ToString());
-		}
+		return m_Char[0] == EMPTY_CHAR_PLACEHOLDER;
 	}
-	return fullStr;
-}
-
-TextCharArrayPosition::TextCharArrayPosition() : TextCharArrayPosition({}, {}) {}
-TextCharArrayPosition::TextCharArrayPosition(const Array2DPosition& pos, const TextChar& textChar)
-	: m_RowColPos(pos), m_Text(textChar)
-{
-
-}
-
-bool TextCharArrayPosition::operator==(const TextCharArrayPosition& other) const
-{
-	return m_RowColPos == other.m_RowColPos && m_Text == other.m_Text;
-}
-
-TextCharArrayPosition& TextCharArrayPosition::operator=(const TextCharArrayPosition& other)
-{
-	if (*this == other) return *this;
-
-	m_RowColPos = other.m_RowColPos;
-	m_Text = other.m_Text;
-	return *this;
-}
-
-std::string TextCharArrayPosition::ToString() const
-{
-	return std::format("[Pos:{}, Data:{}]",
-		m_RowColPos.ToString(), m_Text.ToString());
-}
-
-ColorPosition::ColorPosition(const Array2DPosition& pos, const HDRColor& color) :
-	m_RowColPos(pos), m_Color(color) {}
-
-std::string ColorPosition::ToString() const
-{
-	return std::format("[Pos:{}, Color:{}]",
-		m_RowColPos.ToString(), m_Color.ToString());
-}
-
-TextArray::TextArray() :
-	TextArray(0, 0, std::vector<std::vector<TextChar>>{ {TextChar(HDRColor(), EMPTY_CHAR_PLACEHOLDER)} }) {}
-
-TextArray::TextArray(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars) :
-	m_width(width), m_height(height), m_TextArray(chars)
-{
-	if (m_height == 0) return;
-	if (!Assert(chars.size() == m_height, "Tried to init a text array with height ({}) "
-		"that does not match character arg ({}): {}!",
-		std::to_string(chars.size()), std::to_string(m_height), ToString(chars, true))) 
-		return;
-
-	for (auto& textRow : m_TextArray)
+	char TextChar::GetChar() const { return m_Char[0]; }
+	void TextChar::SetChar(const char& c)
 	{
-		if (!Assert(textRow.size() == m_width, "Tried to init a text array "
-			"with width ({}) that does not match character arg ({}): {}!",
-			std::to_string(textRow.size()), std::to_string(m_width), ToString(chars, true))) 
+		m_Char[0] = c;
+	}
+	Vec2 TextChar::GetWorldSize(const WorldFontProperties& font) const
+	{
+		//const std::string tempStr = m_Char;
+		//const Vector2 size = MeasureTextEx(font.m_FontAsset->GetFont(), tempStr.c_str(), font.m_Size, font.m_Tracking);
+		return font.m_RectSize;
+		// { size.x, size.y };
+	}
+
+	bool TextChar::operator==(const TextChar& other) const
+	{
+		return m_Color == other.m_Color && m_Char == other.m_Char;
+	}
+
+	std::string TextChar::ToString() const
+	{
+		return std::format("[Color: {} C:{}]",
+			m_Color.ToString(), m_Char[0] == EMPTY_CHAR_PLACEHOLDER ? "EMPTY" : ::Utils::ToString(m_Char[0]));
+	}
+
+	std::string ToString(const std::vector<std::vector<TextChar>>& textChars)
+	{
+		std::string fullStr = "";
+		for (size_t r = 0; r < textChars.size(); r++)
+		{
+			fullStr += "\n";
+			for (size_t c = 0; c < textChars[r].size(); c++)
+			{
+				fullStr += std::format("[{}] ", textChars[r][c].ToString());
+			}
+		}
+		return fullStr;
+	}
+
+	TextCharArrayPosition::TextCharArrayPosition() : TextCharArrayPosition({}, {}) {}
+	TextCharArrayPosition::TextCharArrayPosition(const Array2DPosition& pos, const TextChar& textChar)
+		: m_RowColPos(pos), m_Text(textChar)
+	{
+
+	}
+
+	bool TextCharArrayPosition::operator==(const TextCharArrayPosition& other) const
+	{
+		return m_RowColPos == other.m_RowColPos && m_Text == other.m_Text;
+	}
+
+	TextCharArrayPosition& TextCharArrayPosition::operator=(const TextCharArrayPosition& other)
+	{
+		if (*this == other) return *this;
+
+		m_RowColPos = other.m_RowColPos;
+		m_Text = other.m_Text;
+		return *this;
+	}
+
+	std::string TextCharArrayPosition::ToString() const
+	{
+		return std::format("[Pos:{}, Data:{}]",
+			m_RowColPos.ToString(), m_Text.ToString());
+	}
+
+	ColorPosition::ColorPosition(const Array2DPosition& pos, const ColHDR4& color) :
+		m_RowColPos(pos), m_Color(color) {}
+
+	std::string ColorPosition::ToString() const
+	{
+		return std::format("[Pos:{}, Color:{}]",
+			m_RowColPos.ToString(), m_Color.ToString());
+	}
+
+	TextArray::TextArray() :
+		TextArray(0, 0, std::vector<std::vector<TextChar>>{ {TextChar(ColHDR4(), EMPTY_CHAR_PLACEHOLDER)} }) {}
+
+	TextArray::TextArray(const int& width, const int& height, const std::vector<std::vector<TextChar>>& chars) :
+		m_width(width), m_height(height), m_TextArray(chars)
+	{
+		if (m_height == 0) return;
+		if (!Assert(chars.size() == m_height, "Tried to init a text array with height ({}) "
+			"that does not match character arg ({}): {}!",
+			std::to_string(chars.size()), std::to_string(m_height), ToString(chars, true)))
 			return;
-	}
-}
 
-TextArray::TextArray(const int& width, const int& height, const TextChar& duplicateBufferChar) :
-	m_width(width), m_height(height), m_TextArray(CreateBufferOfChar(width, height, duplicateBufferChar))
-{
-
-}
-
-TextArray::TextArray(const int& width, const int& height,
-	const HDRColor& color, const std::vector<std::vector<char>>& chars) :
-	TextArray(width, height, CreateBufferOfChar(color, chars)) {}
-
-TextArray::TextArray(const TextArray& other) :
-	m_width(other.m_width), m_height(other.m_height),
-	m_TextArray(other.m_TextArray)
-{
-	//Log(std::format("Invoking move constructor on: {} with other: {}", ToString(), other.ToString()));
-}
-
-TextArray::TextArray(TextArray&& other) noexcept :
-	m_width(std::move(other.m_width)), m_height(std::move(other.m_height)),
-	m_TextArray(std::move(other.m_TextArray))
-{
-	/*Log("Invoking copy constructor");*/
-}
-
-std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const int& width,
-	const int& height, const TextChar& duplicateBufferChar) const
-{
-	std::vector<std::vector<TextChar>> chars = {};
-
-	chars.reserve(height);
-	for (int r = 0; r < height; r++)
-	{
-		chars.push_back({});
-		chars[r].reserve(width);
-		for (int c = 0; c < width; c++)
+		for (auto& textRow : m_TextArray)
 		{
-			chars[r].push_back(duplicateBufferChar);
+			if (!Assert(textRow.size() == m_width, "Tried to init a text array "
+				"with width ({}) that does not match character arg ({}): {}!",
+				std::to_string(textRow.size()), std::to_string(m_width), ToString(chars, true)))
+				return;
 		}
 	}
-	return chars;
-}
 
-std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const HDRColor& color,
-	const std::vector<std::vector<char>>& chars) const
-{
-	std::vector<std::vector<TextChar>> result = {};
-
-	result.reserve(chars.size());
-	for (int r = 0; r < chars.size(); r++)
+	TextArray::TextArray(const int& width, const int& height, const TextChar& duplicateBufferChar) :
+		m_width(width), m_height(height), m_TextArray(CreateBufferOfChar(width, height, duplicateBufferChar))
 	{
-		result.push_back({});
-		result[r].reserve(chars[r].size());
-		for (int c = 0; c < chars[r].size(); c++)
+
+	}
+
+	TextArray::TextArray(const int& width, const int& height,
+		const ColHDR4& color, const std::vector<std::vector<char>>& chars) :
+		TextArray(width, height, CreateBufferOfChar(color, chars)) {}
+
+	TextArray::TextArray(const TextArray& other) :
+		m_width(other.m_width), m_height(other.m_height),
+		m_TextArray(other.m_TextArray)
+	{
+		//Log(std::format("Invoking move constructor on: {} with other: {}", ToString(), other.ToString()));
+	}
+
+	TextArray::TextArray(TextArray&& other) noexcept :
+		m_width(std::move(other.m_width)), m_height(std::move(other.m_height)),
+		m_TextArray(std::move(other.m_TextArray))
+	{
+		/*Log("Invoking copy constructor");*/
+	}
+
+	std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const int& width,
+		const int& height, const TextChar& duplicateBufferChar) const
+	{
+		std::vector<std::vector<TextChar>> chars = {};
+
+		chars.reserve(height);
+		for (int r = 0; r < height; r++)
 		{
-			result[r].emplace_back(color, chars[r][c]);
+			chars.push_back({});
+			chars[r].reserve(width);
+			for (int c = 0; c < width; c++)
+			{
+				chars[r].push_back(duplicateBufferChar);
+			}
+		}
+		return chars;
+	}
+
+	std::vector<std::vector<TextChar>> TextArray::CreateBufferOfChar(const ColHDR4& color,
+		const std::vector<std::vector<char>>& chars) const
+	{
+		std::vector<std::vector<TextChar>> result = {};
+
+		result.reserve(chars.size());
+		for (int r = 0; r < chars.size(); r++)
+		{
+			result.push_back({});
+			result[r].reserve(chars[r].size());
+			for (int c = 0; c < chars[r].size(); c++)
+			{
+				result[r].emplace_back(color, chars[r][c]);
+			}
+		}
+		return result;
+	}
+
+	int TextArray::GetWidth() const
+	{
+		return m_width;
+	}
+
+	int TextArray::GetHeight() const
+	{
+		return m_height;
+	}
+
+	Vec2Int TextArray::GetSize() const
+	{
+		return Vec2Int(GetWidth(), GetHeight());
+	}
+
+	bool TextArray::IsValidRow(const int& rowPos) const
+	{
+		return 0 <= rowPos && rowPos < m_height;
+	}
+
+	bool TextArray::IsValidCol(const int& colPos) const
+	{
+		return 0 <= colPos && colPos < m_width;
+	}
+
+	bool TextArray::IsValidPos(const Array2DPosition& rowColPos) const
+	{
+		return IsValidRow(rowColPos.GetRow()) && IsValidCol(rowColPos.GetCol());
+	}
+
+	void TextArray::SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar)
+	{
+		if (!Assert(IsValidPos(rowColPos), "Tried to set the char: '{}' "
+			"at INVALID row col: {} of full buffer: (Max r:{} c:{}){}",
+			Utils::ToString(newBufferChar.GetChar()), rowColPos.ToString(), std::to_string(m_width - 1),
+			std::to_string(m_height - 1), ToString()))
+			return;
+
+		m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()] = newBufferChar;
+	}
+
+	void TextArray::SetAt(const Array2DPosition& rowColPos, const char& newChar)
+	{
+		if (!Assert(IsValidPos(rowColPos), "Tried to set the char: {} "
+			"at INVALID row col: {} of full buffer: {}",
+			Utils::ToString(newChar), rowColPos.ToString(), ToString()))
+			return;
+
+		m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].SetChar(newChar);
+	}
+
+	void TextArray::SetAt(const Array2DPosition& rowColPos, const ColHDR4& newColor)
+	{
+		if (!Assert(IsValidPos(rowColPos),
+			"Tried to set the color: {} at INVALID row col: {} of full buffer: {}",
+			newColor.ToString(), rowColPos.ToString(), ToString()))
+			return;
+
+		m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].m_Color = newColor;
+	}
+
+	void TextArray::SetAt(const std::vector<Array2DPosition>& rowColPos, const TextChar& newBufferChar)
+	{
+		for (const auto& pos : rowColPos)
+		{
+			SetAt(rowColPos, newBufferChar);
 		}
 	}
-	return result;
-}
 
-int TextArray::GetWidth() const
-{
-	return m_width;
-}
-
-int TextArray::GetHeight() const
-{
-	return m_height;
-}
-
-Vec2Int TextArray::GetSize() const
-{
-	return Vec2Int(GetWidth(), GetHeight());
-}
-
-bool TextArray::IsValidRow(const int& rowPos) const
-{
-	return 0 <= rowPos && rowPos < m_height;
-}
-
-bool TextArray::IsValidCol(const int& colPos) const
-{
-	return 0 <= colPos && colPos < m_width;
-}
-
-bool TextArray::IsValidPos(const Array2DPosition& rowColPos) const
-{
-	return IsValidRow(rowColPos.GetRow()) && IsValidCol(rowColPos.GetCol());
-}
-
-void TextArray::SetAt(const Array2DPosition& rowColPos, const TextChar& newBufferChar)
-{
-	if (!Assert(IsValidPos(rowColPos), "Tried to set the char: '{}' "
-		"at INVALID row col: {} of full buffer: (Max r:{} c:{}){}",
-		Utils::ToString(newBufferChar.GetChar()), rowColPos.ToString(), std::to_string(m_width-1), 
-		std::to_string(m_height-1), ToString())) 
-		return;
-
-	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()] = newBufferChar;
-}
-
-void TextArray::SetAt(const Array2DPosition& rowColPos, const char& newChar)
-{
-	if (!Assert(IsValidPos(rowColPos), "Tried to set the char: {} "
-		"at INVALID row col: {} of full buffer: {}",
-		Utils::ToString(newChar), rowColPos.ToString(), ToString())) 
-		return;
-
-	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].SetChar(newChar);
-}
-
-void TextArray::SetAt(const Array2DPosition& rowColPos, const HDRColor& newColor)
-{
-	if (!Assert(IsValidPos(rowColPos), 
-		"Tried to set the color: {} at INVALID row col: {} of full buffer: {}",
-		newColor.ToString(), rowColPos.ToString(), ToString())) 
-		return;
-
-	m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()].m_Color = newColor;
-}
-
-void TextArray::SetAt(const std::vector<Array2DPosition>& rowColPos, const TextChar& newBufferChar)
-{
-	for (const auto& pos : rowColPos)
+	void TextArray::SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos)
 	{
-		SetAt(rowColPos, newBufferChar);
+		for (const auto& posChar : updatedCharsAtPos)
+		{
+			SetAt(posChar.m_RowColPos, posChar.m_Text);
+		}
 	}
-}
 
-void TextArray::SetAt(const std::vector<TextCharArrayPosition>& updatedCharsAtPos)
-{
-	for (const auto& posChar : updatedCharsAtPos)
+	void TextArray::SetAt(const std::vector<ColorPosition>& updateColorsAtPos)
 	{
-		SetAt(posChar.m_RowColPos, posChar.m_Text);
+		for (const auto& colorPos : updateColorsAtPos)
+		{
+			SetAt(colorPos.m_RowColPos, colorPos.m_Color);
+		}
 	}
-}
 
-void TextArray::SetAt(const std::vector<ColorPosition>& updateColorsAtPos)
-{
-	for (const auto& colorPos : updateColorsAtPos)
+	bool TextArray::TrySetRegion(const Array2DPosition& rowColStartPos, const Vec2Int& size,
+		const std::vector<std::vector<TextChar>>& chars)
 	{
-		SetAt(colorPos.m_RowColPos, colorPos.m_Color);
-	}
-}
+		//Subtract one from width and col since start pos is inclusive
+		Array2DPosition rowColEndPos = rowColStartPos + GetAsArray2DPos(size) + Array2DPosition(-1, -1);
+		if (!Assert(IsValidPos(rowColEndPos), "Tried to set text buffer region but size is too big!"))
+			return false;
 
-bool TextArray::TrySetRegion(const Array2DPosition& rowColStartPos, const Vec2Int& size,
-	const std::vector<std::vector<TextChar>>& chars)
-{
-	//Subtract one from width and col since start pos is inclusive
-	Array2DPosition rowColEndPos = rowColStartPos + GetAsArray2DPos(size) + Array2DPosition(-1, -1);
-	if (!Assert(IsValidPos(rowColEndPos), "Tried to set text buffer region but size is too big!"))
-		return false;
-
-	if (!Assert(chars.size() == size.m_Y, "Tried to set text buffer region but HEIGHT "
-		"size does not match provided chars"))
-		return false;
-
-	Array2DPosition globalRowCol = {};
-	for (int r = 0; r <= chars.size(); r++)
-	{
-		if (!Assert(chars[r].size() == size.m_X, "Tried to set text buffer region but WIDTH "
+		if (!Assert(chars.size() == size.m_Y, "Tried to set text buffer region but HEIGHT "
 			"size does not match provided chars"))
 			return false;
 
-		for (int c = 0; c <= chars[r].size(); c++)
+		Array2DPosition globalRowCol = {};
+		for (int r = 0; r <= chars.size(); r++)
 		{
-			globalRowCol = { rowColStartPos.GetRow() + r, rowColStartPos.GetCol() + c };
-			SetAt(globalRowCol, chars[r][c]);
-		}
-	}
-	return true;
-}
+			if (!Assert(chars[r].size() == size.m_X, "Tried to set text buffer region but WIDTH "
+				"size does not match provided chars"))
+				return false;
 
-const TextChar* TextArray::GetAt(const Array2DPosition& rowColPos) const
-{
-	if (!Assert(IsValidPos(rowColPos), "Tried to get INVALID pos at row col: {} of full buffer: {}",
-		rowColPos.ToString(), ToString())) 
-		return nullptr;
-
-	/*Log(std::format("WHEN ACCESSING POS {} char: {} color is: {}",
-		rowColPos.ToString(), Utils::ToString(m_TextArray[rowColPos.m_X][rowColPos.m_Y].m_Char),
-		RaylibUtils::ToString(m_TextArray[rowColPos.m_X][rowColPos.m_Y].m_Color)));*/
-
-	return &(m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()]);
-}
-
-const TextChar& TextArray::GetAtUnsafe(const Array2DPosition& rowColPos) const
-{
-	return m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()];
-}
-
-const std::vector<TextChar>& TextArray::GetAt(const int& rowPos) const
-{
-	if (!Assert(IsValidRow(rowPos), "Tried to get INVALID row pos {} of full buffer: {}",
-		std::to_string(rowPos), ToString())) 
-		return {};
-
-	return m_TextArray[rowPos];
-}
-
-std::string TextArray::GetStringAt(const int& rowColPos) const
-{
-	if (!Assert(IsValidRow(rowColPos), "Tried to get INVALID row pos {} of full buffer: {}",
-		std::to_string(rowColPos), ToString())) 
-		return {};
-
-	std::string rowStr = "";
-	for (const auto& textChar : m_TextArray[rowColPos])
-	{
-		rowStr += textChar.m_Char;
-	}
-	return rowStr;
-}
-
-const TextArrayCollectionType& TextArray::GetFull() const
-{
-	return m_TextArray;
-}
-
-std::string TextArray::ToString(const std::vector<std::vector<TextChar>>& buffer,
-	const bool convertAll)
-{
-	std::string fullStr = "";
-	char currentChar = '0';
-	for (int r = 0; r < buffer.size(); r++)
-	{
-		for (int c = 0; c < buffer[r].size(); c++)
-		{
-			currentChar = buffer[r][c].GetChar();
-			fullStr += currentChar;
-
-			if (convertAll)
+			for (int c = 0; c <= chars[r].size(); c++)
 			{
-				fullStr += buffer[r][c].m_Color.ToString() + " ";
+				globalRowCol = { rowColStartPos.GetRow() + r, rowColStartPos.GetCol() + c };
+				SetAt(globalRowCol, chars[r][c]);
 			}
-			/*if (currentChar == EMPTY_CHAR_PLACEHOLDER) fullStr += " ";
-			else fullStr += currentChar;*/
 		}
-		fullStr += "\n";
+		return true;
 	}
-	return fullStr;
-}
 
-std::string TextArray::ToString(bool convertChars) const
-{
-	return std::format("(W:{} H:{})",
-		std::to_string(m_width), std::to_string(m_height)) + ToString(m_TextArray, convertChars);
-}
+	const TextChar* TextArray::GetAt(const Array2DPosition& rowColPos) const
+	{
+		if (!Assert(IsValidPos(rowColPos), "Tried to get INVALID pos at row col: {} of full buffer: {}",
+			rowColPos.ToString(), ToString()))
+			return nullptr;
 
-TextArray& TextArray::operator=(const TextArray& other)
-{
-	//Log("USING TEXT BUFFER LVALUE = OPERATOR");
-	if (&other == this) return *this;
-	/*Log("COPY ASSIGNMNT");*/
-	//Log(std::format("ASSIGNGIN BUFFER: {} to {}", other.ToString(), ToString()));
-	//Log(std::format("ASSIGNGIN BUFFER: {} -> {}", other.ToString(), ToString()));
+		/*Log(std::format("WHEN ACCESSING POS {} char: {} color is: {}",
+			rowColPos.ToString(), ::Utils::ToString(m_TextArray[rowColPos.m_X][rowColPos.m_Y].m_Char),
+			RaylibUtils::ToString(m_TextArray[rowColPos.m_X][rowColPos.m_Y].m_Color)));*/
 
-	//m_TextArray = other.m_TextArray;
-	m_TextArray = other.m_TextArray;
-	m_width = other.m_width;
-	m_height = other.m_height;
-	return *this;
-}
+		return &(m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()]);
+	}
 
-TextArray& TextArray::operator=(TextArray&& other) noexcept
-{
-	//Log("USING TEXT BUFFER RVALUE = OPERATOR");
-	if (this == &other)
+	const TextChar& TextArray::GetAtUnsafe(const Array2DPosition& rowColPos) const
+	{
+		return m_TextArray[rowColPos.GetRow()][rowColPos.GetCol()];
+	}
+
+	const std::vector<TextChar>& TextArray::GetAt(const int& rowPos) const
+	{
+		if (!Assert(IsValidRow(rowPos), "Tried to get INVALID row pos {} of full buffer: {}",
+			std::to_string(rowPos), ToString()))
+			return {};
+
+		return m_TextArray[rowPos];
+	}
+
+	std::string TextArray::GetStringAt(const int& rowColPos) const
+	{
+		if (!Assert(IsValidRow(rowColPos), "Tried to get INVALID row pos {} of full buffer: {}",
+			std::to_string(rowColPos), ToString()))
+			return {};
+
+		std::string rowStr = "";
+		for (const auto& textChar : m_TextArray[rowColPos])
+		{
+			rowStr += textChar.m_Char;
+		}
+		return rowStr;
+	}
+
+	const TextArrayCollectionType& TextArray::GetFull() const
+	{
+		return m_TextArray;
+	}
+
+	std::string TextArray::ToString(const std::vector<std::vector<TextChar>>& buffer,
+		const bool convertAll)
+	{
+		std::string fullStr = "";
+		char currentChar = '0';
+		for (int r = 0; r < buffer.size(); r++)
+		{
+			for (int c = 0; c < buffer[r].size(); c++)
+			{
+				currentChar = buffer[r][c].GetChar();
+				fullStr += currentChar;
+
+				if (convertAll)
+				{
+					fullStr += buffer[r][c].m_Color.ToString() + " ";
+				}
+				/*if (currentChar == EMPTY_CHAR_PLACEHOLDER) fullStr += " ";
+				else fullStr += currentChar;*/
+			}
+			fullStr += "\n";
+		}
+		return fullStr;
+	}
+
+	std::string TextArray::ToString(bool convertChars) const
+	{
+		return std::format("(W:{} H:{})",
+			std::to_string(m_width), std::to_string(m_height)) + ToString(m_TextArray, convertChars);
+	}
+
+	TextArray& TextArray::operator=(const TextArray& other)
+	{
+		//Log("USING TEXT BUFFER LVALUE = OPERATOR");
+		if (&other == this) return *this;
+		/*Log("COPY ASSIGNMNT");*/
+		//Log(std::format("ASSIGNGIN BUFFER: {} to {}", other.ToString(), ToString()));
+		//Log(std::format("ASSIGNGIN BUFFER: {} -> {}", other.ToString(), ToString()));
+
+		//m_TextArray = other.m_TextArray;
+		m_TextArray = other.m_TextArray;
+		m_width = other.m_width;
+		m_height = other.m_height;
 		return *this;
+	}
 
-	/*Log("MOVE ASSIGNMNT");*/
-	m_TextArray = std::exchange(other.m_TextArray, {});
-	m_width = std::exchange(other.m_width, 0);
-	m_height = std::exchange(other.m_height, 0);
+	TextArray& TextArray::operator=(TextArray&& other) noexcept
+	{
+		//Log("USING TEXT BUFFER RVALUE = OPERATOR");
+		if (this == &other)
+			return *this;
 
-	return *this;
+		/*Log("MOVE ASSIGNMNT");*/
+		m_TextArray = std::exchange(other.m_TextArray, {});
+		m_width = std::exchange(other.m_width, 0);
+		m_height = std::exchange(other.m_height, 0);
+
+		return *this;
+	}
 }
+

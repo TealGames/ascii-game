@@ -39,7 +39,7 @@ namespace DebugProperties
 
 std::optional<LogType> StringToLogType(const std::string& str)
 {
-	std::string strFormatted = Utils::StringUtil(str).ToLowerCase().ToString();
+	std::string strFormatted = ::Utils::StringUtil(str).ToLowerCase().ToString();
 	if (strFormatted == "none") return LogType::None;
 	else if (strFormatted == "error") return LogType::Error;
 	else if (strFormatted == "warning") return LogType::Warning;
@@ -52,17 +52,17 @@ std::string LogTypeToString(const LogType& logType)
 	std::vector<std::string> elementBits = {};
 	if (logType == LogType::None) return "[]";
 
-	if (Utils::HasFlagAll(logType, LogType::Log)) elementBits.emplace_back("Log");
-	if (Utils::HasFlagAll(logType, LogType::Warning)) elementBits.emplace_back("Warning");
-	if (Utils::HasFlagAll(logType, LogType::Error)) elementBits.emplace_back("Error");
+	if (::Utils::HasFlagAll(logType, LogType::Log)) elementBits.emplace_back("Log");
+	if (::Utils::HasFlagAll(logType, LogType::Warning)) elementBits.emplace_back("Warning");
+	if (::Utils::HasFlagAll(logType, LogType::Error)) elementBits.emplace_back("Error");
 
-	return Utils::ToStringIterable(elementBits);
+	return ::Utils::ToStringIterable(elementBits);
 }
 
 std::string FormatCurrentTime()
 {
 	return std::format("{}[{}{}{}]{}", ANSI_COLOR_WHITE, ANSI_COLOR_GRAY,
-		Utils::ToStringTime(Utils::GetCurrentTime()), ANSI_COLOR_WHITE, ANSI_COLOR_CLEAR);
+		Utils::ToStringTime(::Utils::GetCurrentTime()), ANSI_COLOR_WHITE, ANSI_COLOR_CLEAR);
 }
 
 void LogMessage(const LogType& logType, const CallerLogDetails logDetails, const std::string& message, const bool showStackTrace, const bool logTime,
@@ -72,7 +72,7 @@ void LogMessage(const LogType& logType, const CallerLogDetails logDetails, const
 		return;
 
 	//if ((LOG_MESSAGE_TYPES & logType) != LogType::None) return;
-	if (!Utils::HasFlagAny(DebugProperties::LogTypeFilter, logType))
+	if (!::Utils::HasFlagAny(DebugProperties::LogTypeFilter, logType))
 		return;
 
 	if (!DebugProperties::MessageFilter.empty() &&
@@ -85,7 +85,7 @@ void LogMessage(const LogType& logType, const CallerLogDetails logDetails, const
 #if !_HAS_CXX23
 		stackTraceMessage += "\nSTACK TRACE: NULL (need C++23)";
 #elif
-		stackTraceMessage += std::format("\n-------> STACK TRACE: {}", Utils::GetCurrentStackTrace());
+		stackTraceMessage += std::format("\n-------> STACK TRACE: {}", ::Utils::GetCurrentStackTrace());
 #endif
 	}
 
@@ -150,7 +150,7 @@ void LogMessage(const LogType& logType, const CallerLogDetails logDetails, const
 	DebugProperties::OnMessageLogged.Invoke(logType, message, setEventFlag);
 }
 
-void Log(const std::string& message, const bool logTime, const char* overrideAnsiColor, 
+void Log(const std::string& message, const bool logTime, const char* overrideAnsiColor,
 	const bool setEventFlag, const std::source_location& loc)
 {
 	LogMessage(LogType::Log, DebugProperties::CallerDetails, message, false, logTime, overrideAnsiColor, setEventFlag, loc);
@@ -163,7 +163,7 @@ void Log(const std::string& message, const bool logTime, const char* overrideAns
 /// <param name="objPtr"></param>
 /// <param name="str"></param>
 /// <param name="logTime"></param>
-void LogWarning(const std::string& message, const bool logTime, 
+void LogWarning(const std::string& message, const bool logTime,
 	const bool setEventFlag, const std::source_location& loc)
 {
 	LogMessage(LogType::Warning, DebugProperties::CallerDetails, message, false, logTime, nullptr, setEventFlag, loc);
@@ -176,12 +176,12 @@ void LogWarning(const std::string& message, const bool logTime,
 /// <param name="logTime"></param>
 void LogError(const std::string& message, const bool logTime, const bool showStackTrace, const std::source_location& loc)
 {
-	LogMessage(LogType::Error, DebugProperties::CallerDetails, message, showStackTrace, logTime, nullptr, 
-		(DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::EventFlag)!=0, loc);
-	if ((DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::Throw)!=0) throw std::invalid_argument(message);
-	else if ((DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::Break)!=0) Break();
+	LogMessage(LogType::Error, DebugProperties::CallerDetails, message, showStackTrace, logTime, nullptr,
+		(DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::EventFlag) != 0, loc);
+	if ((DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::Throw) != 0) throw std::invalid_argument(message);
+	else if ((DebugProperties::ERROR_LOG_BEHAVIOR & ErroneousBehavior::Break) != 0) Break();
 }
- 
+
 void Break()
 {
 #if defined(_MSC_VER)
@@ -192,3 +192,4 @@ void Break()
 	std::abort();
 #endif
 }
+

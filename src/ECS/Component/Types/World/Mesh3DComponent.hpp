@@ -1,26 +1,35 @@
 #pragma once
-#include "Core/Rendering/Model3d.hpp"
 #include "ECS/Component/Component.hpp"
 
-class Mesh3DComponent : public Component
+namespace Engine::Rendering
 {
-private:
-public:
-	const Rendering::ModelMesh* m_Mesh;
-	Rendering::Material* m_Material;
+	class Model3dAsset;
+	class MaterialAsset;
+	class ModelObject;
+	class ModelMesh;
+	class Mesh3DComponent : public ECS::Component
+	{
+	private:
+	public:
+		Model3dAsset* m_ModelAsset;
+		size_t m_ObjectIndex;
+		MaterialAsset* m_MaterialAsset;
 
-private:
-public:
-	Mesh3DComponent();
-	Mesh3DComponent(Rendering::Model3d& model, const size_t meshIndex, 
-		Rendering::Material* overrideMaterial = nullptr);
+	private:
+	public:
+		Mesh3DComponent();
+		Mesh3DComponent(Model3dAsset& model, const size_t meshIndex,
+			MaterialAsset* overrideMaterial = nullptr);
 
-	void SetModel(Rendering::Model3d& model, const size_t meshIndex, 
-		Rendering::Material* overrideMaterial = nullptr);
+		void SetModel(Model3dAsset& model, const size_t meshIndex,
+			MaterialAsset* overrideMaterial = nullptr);
 
-	void InitFields() override;
-	std::string ToString() const override;
+		const ModelObject* GetModelObject() const;
+		const ModelMesh* GetMesh() const;
 
-	void Deserialize(const Json& json) override;
-	Json Serialize() override;
-};
+		void InitFields() override;
+		void Serialize(Serialization::Serializer& serializer) const override;
+		void Deserialize(Serialization::Deserializer& deserializer) override;
+		std::string ToString() const override;
+	};
+}

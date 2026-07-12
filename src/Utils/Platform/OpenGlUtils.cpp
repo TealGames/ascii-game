@@ -5,6 +5,7 @@
 
 namespace OpenGlUtils
 {
+	using namespace Engine;
 	int GetTextureCubeFaceIndex(const Rendering::TextureCubeFace face)
 	{
 		return static_cast<int>(face);

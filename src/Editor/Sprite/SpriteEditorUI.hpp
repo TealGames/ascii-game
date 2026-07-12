@@ -2,25 +2,29 @@
 #include "ECS/Component/Types/UI/UIButtonComponent.hpp"
 #include "ECS/Component/Types/UI/UIContainer.hpp"
 
-class UIHierarchy;
-namespace AssetManagement { class AssetManager; }
-namespace Input { class InputManager; }
-
-class SpriteEditorUI
+namespace Engine::UI { class UIHierarchy; }
+namespace Engine::Assets { class AssetManager; }
+namespace Engine::Input { class InputManager; }
+namespace Engine::Editor::UI
 {
-private:
-	AssetManagement::AssetManager* m_assetManager;
-	const Input::InputManager* m_inputManager;
+	namespace MainUI = Engine::UI;
+	class SpriteEditorUI
+	{
+	private:
+		Assets::AssetManager* m_assetManager;
+		const Input::InputManager* m_inputManager;
 
-	UIContainer m_guiContainer;
-	//ButtonGUI m_saveButton;
-public:
+		MainUI::UIContainer m_guiContainer;
+		//ButtonGUI m_saveButton;
+	public:
 
-private:
-public:
-	SpriteEditorUI(UIHierarchy& hierarchy, const Input::InputManager& inputManager, AssetManagement::AssetManager& assetManager);
+	private:
+	public:
+		SpriteEditorUI(MainUI::UIHierarchy& hierarchy, const Input::InputManager& inputManager, Assets::AssetManager& assetManager);
 
-	void Update(const float deltaTime);
-	//ScreenPosition Render(const RenderInfo& renderInfo) override;
-};
+		void Update(const float deltaTime);
+		//ScreenPosition Render(const RenderInfo& renderInfo) override;
+	};
+}
+
 

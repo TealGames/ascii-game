@@ -1,51 +1,55 @@
 #pragma once
 #include <vector>	
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 #include "Editor/Entity/ComponentUI.hpp"
 
-class UIHierarchy;
-class PopupUIManager;
-class UILayoutComponent;
-class UIPanelComponent;
-class UIToggleComponent;
-class UITextComponent;
-namespace AssetManagement { class AssetManager; };
-namespace Input { class InputManager; }
-
-class EntityUI //: public ITreeGUIConstructible
+namespace Engine::UI
 {
-private:
-	const Input::InputManager* m_inputManager;
-	PopupUIManager* m_popupManager;
-	AssetManagement::AssetManager* m_assetManager;
+	class UIHierarchy;
+	class PopupUIManager;
+	class UILayoutComponent;
+	class UIPanelComponent;
+	class UIToggleComponent;
+	class UITextComponent;
+}
+namespace Engine::Assets { class AssetManager; };
+namespace Engine::Input { class InputManager; }
+namespace Engine::Editor::UI
+{
+	namespace UI = Engine::UI;
+	class EntityUI //: public ITreeGUIConstructible
+	{
+	private:
+		const Input::InputManager* m_inputManager;
+		UI::PopupUIManager* m_popupManager;
+		Assets::AssetManager* m_assetManager;
 
-	EntityData* m_layoutParent;
-	UILayoutComponent* m_guiLayout;
-	UIPanelComponent* m_entityHeader;
-	EntityData* m_entity;
+		ECS::EntityData* m_layoutParent;
+		UI::UILayoutComponent* m_guiLayout;
+		UI::UIPanelComponent* m_entityHeader;
+		ECS::EntityData* m_entity;
 
-	std::vector<ComponentUI> m_componentUIs;
-	UITextComponent* m_entityNameText;
-	UIToggleComponent* m_activeToggle;
-public: 
+		std::vector<ComponentUI> m_componentUIs;
+		UI::UITextComponent* m_entityNameText;
+		UI::UIToggleComponent* m_activeToggle;
+	public:
 
-private:
-	void CreateLayout();
-public:
-	EntityUI(const Input::InputManager& manager, PopupUIManager& popupManager, 
-		AssetManagement::AssetManager& assetManager);
-	~EntityUI();
+	private:
+		void CreateLayout();
+	public:
+		EntityUI(const Input::InputManager& manager, UI::PopupUIManager& popupManager,
+			Assets::AssetManager& assetManager);
+		~EntityUI();
 
-	void Init(EntityData& parent);
+		void Init(ECS::EntityData& parent);
 
-	void Update();
-	void SetEntity(EntityData& entity);
-	bool HasEntity() const;
-	void ClearEntity();
-	//ScreenPosition Render(const RenderInfo& renderInfo) override;
+		void Update();
+		void SetEntity(ECS::EntityData& entity);
+		bool HasEntity() const;
+		void ClearEntity();
 
-	//GUIElement* GetTreeGUI() override;
+		const ECS::EntityData& GetEntity() const;
+	};
+}
 
-	const EntityData& GetEntity() const;
-};
 

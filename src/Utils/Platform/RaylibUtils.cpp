@@ -4,7 +4,7 @@
 #include "pch.hpp"
 #include "Core/Analyzation/Debug.hpp"
 #include <limits>
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 
 namespace RaylibUtils
 {
@@ -86,7 +86,7 @@ namespace RaylibUtils
 			std::to_string(color.r), std::to_string(color.g), std::to_string(color.b), std::to_string(color.a));
 	}
 
-	Color MultiplyColorsRGBA(const Color& color, const Utils::Point4D& factor)
+	Color MultiplyColorsRGBA(const Color& color, const ::Utils::Point4D& factor)
 	{
 		unsigned char newR = color.r * factor.m_X;
 		unsigned char newG = color.g * factor.m_Y;
@@ -95,7 +95,7 @@ namespace RaylibUtils
 		return {newR, newG, newB, newA};
 	}
 
-	Color MultiplyColorsRGB(const Color& color, const Utils::Point3D& factor)
+	Color MultiplyColorsRGB(const Color& color, const ::Utils::Point3D& factor)
 	{
 		unsigned char newR = color.r * factor.m_X;
 		unsigned char newG = color.g * factor.m_Y;
@@ -105,12 +105,12 @@ namespace RaylibUtils
 
 	Utils::Point4D DivideColorRGBA(const Color& divided, const Color& divisor)
 	{
-		return Utils::Point4D((float)divided.r / divisor.r, (float)divided.g / divisor.g, (float)divided.b / divisor.b, (float)divided.a / divisor.a);
+		return ::Utils::Point4D((float)divided.r / divisor.r, (float)divided.g / divisor.g, (float)divided.b / divisor.b, (float)divided.a / divisor.a);
 	}
 
 	Utils::Point3D DivideColorRGB(const Color& divided, const Color& divisor)
 	{
-		return Utils::Point3D((float)divided.r / divisor.r, (float)divided.g / divisor.g, (float)divided.b / divisor.b);
+		return ::Utils::Point3D((float)divided.r / divisor.r, (float)divided.g / divisor.g, (float)divided.b / divisor.b);
 	}
 
 	Utils::Point4D GetFractionalColorRGBA(const Color& color, const float& multiplier)
@@ -123,7 +123,7 @@ namespace RaylibUtils
 		return { color.r * multiplier , color.g * multiplier, color.b * multiplier};
 	}
 
-	Color GetColorFromPoint(const Utils::Point4D& rgba)
+	Color GetColorFromPoint(const ::Utils::Point4D& rgba)
 	{
 		return { static_cast<unsigned char>(rgba.m_X),
 				 static_cast<unsigned char>(rgba.m_Y),
@@ -131,7 +131,7 @@ namespace RaylibUtils
 				 static_cast<unsigned char>(rgba.m_W) };
 	}
 
-	Color GetColorFromPoint(const Utils::Point3D& rgb)
+	Color GetColorFromPoint(const ::Utils::Point3D& rgb)
 	{
 		return { static_cast<unsigned char>(rgb.m_X),
 				 static_cast<unsigned char>(rgb.m_Y),

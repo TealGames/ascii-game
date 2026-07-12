@@ -2,7 +2,7 @@
 #include "Utils/IOHandler.hpp"
 #include "Core/Rendering/Model3d.hpp"
 
-namespace VTXConverter
+namespace Engine::VTXConverter
 {
 	inline constexpr const char* MODEL_3D_FILE_EXTENSION = ".vtx";
 	inline constexpr std::uint16_t CURRENT_VERSION = 1;

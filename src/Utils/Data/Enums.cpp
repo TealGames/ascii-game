@@ -11,15 +11,3 @@ std::string ToString(const AngleMode& mode)
 		return "";
 	}
 }
-
-std::string ToString(const VectorForm& form)
-{
-	if (form == VectorForm::Component) return "Component";
-	else if (form == VectorForm::MagnitudeDirection) return "Magnitude@Direction";
-	else if (form == VectorForm::Unit) return "Unit";
-	else
-	{
-		LogError("Tried to convert undefined Vec2Int form mode to string");
-		return "";
-	}
-}

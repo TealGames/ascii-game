@@ -1872,7 +1872,7 @@ If the test suite is not found, several test suites will fail like this:
 json/tests/src/make_test_data_available.hpp:21:
 TEST CASE:  check test suite is downloaded
 
-json/tests/src/make_test_data_available.hpp:23: FATAL ERROR: REQUIRE( utils::check_testsuite_downloaded() ) is NOT correct!
+json/tests/src/make_test_data_available.hpp:23: FATAL ERROR: REQUIRE( ::Utils::check_testsuite_downloaded() ) is NOT correct!
   values: REQUIRE( false )
   logged: Test data not found in 'json/cmake-build-debug/json_test_data'.
           Please execute target 'download_test_data' before running this test suite.

@@ -2,21 +2,22 @@
 #include "Core/Asset/Asset.hpp"
 #include "Core/Rendering/Material.hpp"
 
-class MaterialAsset : public Asset
+namespace Engine::Rendering
 {
-private:
-	Rendering::Material m_material;
-public:
+	class MaterialAsset : public Assets::Asset
+	{
+	private:
+		Rendering::Material m_material;
+	public:
+		static const std::array<std::string_view,1> EXTENSIONS;
+	private:
+		Rendering::Texture* ToTexture(const std::string& value);
+	public:
+		MaterialAsset(const std::filesystem::path& path);
+		~MaterialAsset() = default;
 
-private:
-	Rendering::Texture* ToTexture(const std::string& value);
-public:
-	MaterialAsset(const std::filesystem::path& path);
-	~MaterialAsset() = default;
-
-	const Rendering::Material& GetMaterial() const;
-	Rendering::Material& GetMaterialMutable();
-	void UpdateAssetFromFile() override;
-};
-
-bool HasMaterialExtension(const std::string& extension);
+		const Rendering::Material& GetMaterial() const;
+		Rendering::Material& GetMaterialMutable();
+		void UpdateAssetFromFile() override;
+	};
+}

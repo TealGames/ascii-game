@@ -1,7 +1,7 @@
 #include "Core/Serialization/StringSerializers.hpp"
 #include "Utils/HelperFunctions.hpp"
 #include "Utils/ToStringFunctions.hpp"
-#include "Utils/Math/Math.hpp"
+#include "Utils/Math.hpp"
 
 namespace StringSerializers
 {
@@ -13,22 +13,22 @@ namespace StringSerializers
 	template<>
 	int Deserialize<int>(const std::string_view& val)
 	{
-		return Utils::TryParseView<int>(val).value_or(0);
+		return ::Utils::TryParseView<int>(val).value_or(0);
 	}
 	template<>
 	float Deserialize<float>(const std::string_view& val)
 	{
-		return Utils::TryParseView<float>(val).value_or(0.0f);
+		return ::Utils::TryParseView<float>(val).value_or(0.0f);
 	}
 	template<>
 	std::uint8_t Deserialize<std::uint8_t>(const std::string_view& val)
 	{
-		return Utils::TryParseView<std::uint8_t>(val).value_or(0);
+		return ::Utils::TryParseView<std::uint8_t>(val).value_or(0);
 	}
 	template<>
 	std::uint32_t Deserialize<std::uint32_t>(const std::string_view& val)
 	{
-		return Utils::TryParseView<std::uint32_t>(val).value_or(0);
+		return ::Utils::TryParseView<std::uint32_t>(val).value_or(0);
 	}
 
 	template<>
@@ -45,7 +45,7 @@ namespace StringSerializers
 	template<>
 	std::string Serialize<float>(const float val)
 	{
-		return Utils::ToStringRoundTrip(val);
+		return ::Utils::ToStringRoundTrip(val);
 	}
 	template<>
 	std::string Serialize<std::uint8_t>(const uint8_t val)

@@ -1,30 +1,23 @@
 #include "pch.hpp"
 #include "Core/UI/PopupUI.hpp"
 #include "Editor/EditorStyles.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
-#include "ECS/Component/Types/UI/UITransformData.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UITransformComponent.hpp"
 #include "ECS/Component/Types/UI/UIPanelComponent.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 
-static constexpr float POPUP_PADDING = 0.05;
-
-PopupUI::PopupUI() : m_Container(nullptr) {}
-
-void PopupUI::CreatePopup(UITransformData& parent)
+namespace Engine::UI
 {
-	m_Container = &parent;
-	m_Container->GetEntityMutable().AddComponent<UIPanelComponent>(UIPanelComponent(EditorStyles::EDITOR_BACKGROUND_COLOR));
+	static constexpr float POPUP_PADDING = 0.05;
 
-	m_Container->SetEventBlocker(true);
-	//m_Container->GetPaddingMutable().SetAll(POPUP_PADDING);
+	PopupUI::PopupUI() : m_Container(nullptr) {}
 
-	AddPopupElements();
+	void PopupUI::CreatePopup(UITransformComponent& parent)
+	{
+		m_Container = &parent;
+		m_Container->GetEntityMutable().AddComponent<UIPanelComponent>(UIPanelComponent(Editor::Styles::EDITOR_BACKGROUND_COLOR));
+		m_Container->SetEventBlocker(true);
+
+		AddPopupElements();
+	}
 }
-
-//RenderInfo PopupGUI::Render(const RenderInfo& parentInfo)
-//{
-//	DrawRectangle(parentInfo.m_TopLeftPos.m_X, parentInfo.m_TopLeftPos.m_Y, parentInfo.m_RenderSize.m_X,
-//		parentInfo.m_RenderSize.m_Y, EditorStyles::EDITOR_BACKGROUND_COLOR);
-//	InsideRender(parentInfo);
-//	return parentInfo;
-//}

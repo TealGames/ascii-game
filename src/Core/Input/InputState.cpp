@@ -1,9 +1,9 @@
 #include "pch.hpp"
 #include "Core/Input/InputState.hpp"
 #include "Utils/HelperFunctions.hpp"
-#include "Utils/Math/Math.hpp"
+#include "Utils/Math.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	std::string ToString(const KeyState& state)
 	{
@@ -52,7 +52,7 @@ namespace Input
 
 	bool InputState::HasCooldown() const
 	{
-		return !Utils::ApproximateEqualsF(m_cooldownTime, InputState::NO_COOLDOWN_TIME);
+		return !::Math::ApproximateEqualsF(m_cooldownTime, InputState::NO_COOLDOWN_TIME);
 	}
 
 	void InputState::SetCooldownTime(const float& time) { m_cooldownTime = time; }

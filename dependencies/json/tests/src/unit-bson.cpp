@@ -1230,7 +1230,7 @@ TEST_CASE("BSON roundtrips" * doctest::skip())
                 const json j1 = json::parse(f_json);
 
                 // parse BSON file
-                auto packed = utils::read_binary_file(filename + ".bson");
+                auto packed = ::Utils::read_binary_file(filename + ".bson");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_bson(packed));
 
@@ -1260,7 +1260,7 @@ TEST_CASE("BSON roundtrips" * doctest::skip())
                 const json j1 = json::parse(f_json);
 
                 // parse BSON file
-                auto packed = utils::read_binary_file(filename + ".bson");
+                auto packed = ::Utils::read_binary_file(filename + ".bson");
                 json j2;
                 CHECK_NOTHROW(j2 = json::from_bson({packed.data(), packed.size()}));
 
@@ -1275,7 +1275,7 @@ TEST_CASE("BSON roundtrips" * doctest::skip())
                 json const j1 = json::parse(f_json);
 
                 // parse BSON file
-                auto packed = utils::read_binary_file(filename + ".bson");
+                auto packed = ::Utils::read_binary_file(filename + ".bson");
 
                 {
                     INFO_WITH_TEMP(filename + ": output adapters: std::vector<std::uint8_t>");

@@ -1,27 +1,29 @@
 #pragma once
 #include "pch.hpp"
-//#include "raylib.h"
-#include "Utils/Math/Vec2Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 #include "Core/UI/UIStyle.hpp"
-#include "StaticReferenceGlobals.hpp"
-#include "Utils/Data/ColorConstants.hpp"
+#include "Core/UI/UITextStyle.hpp"
+#include "Core/Rendering/FontData.hpp"
+#include "Core/Asset/FontAsset.hpp"
 
-namespace EditorStyles
+namespace Engine::Editor::Styles
 {
+	namespace MainUI = Engine::UI;
+
 	//-------------------------------------------------------------------
 	//			DEBUG STYLES
 	//-------------------------------------------------------------------
-	inline constexpr HDRColor DEBUG_TEXT_COLOR = COLOR_WHITE;
-	inline constexpr HDRColor DEBUG_HIGHLIGHTED_TEXT_COLOR = COLOR_YELLOW;
+	inline constexpr ColHDR4 DEBUG_TEXT_COLOR = COLOR_WHITE;
+	inline constexpr ColHDR4 DEBUG_HIGHLIGHTED_TEXT_COLOR = COLOR_YELLOW;
 
 	//-------------------------------------------------------------------
 	//			EDITOR STYLES
 	//-------------------------------------------------------------------
-	inline constexpr HDRColor EDITOR_TEXT_DEFAULT_COLOR = COLOR_WHITE;
-	inline constexpr HDRColor EDITOR_BACKGROUND_COLOR = HDRColor(30, 30, 30, 255);
-	inline constexpr HDRColor EDITOR_SECONDARY_BACKGROUND_COLOR = { 60, 60, 60, 255 };
-	inline constexpr HDRColor EDITOR_SECONDARY_COLOR = COLOR_GRAY;
-	inline constexpr HDRColor EDITOR_PRIMARY_COLOR = {100, 100, 100, 255};
+	inline constexpr ColHDR4 EDITOR_TEXT_DEFAULT_COLOR = COLOR_WHITE;
+	inline constexpr ColHDR4 EDITOR_BACKGROUND_COLOR = ColHDR4(30, 30, 30, 255);
+	inline constexpr ColHDR4 EDITOR_SECONDARY_BACKGROUND_COLOR = { 60, 60, 60, 255 };
+	inline constexpr ColHDR4 EDITOR_SECONDARY_COLOR = COLOR_GRAY;
+	inline constexpr ColHDR4 EDITOR_PRIMARY_COLOR = {100, 100, 100, 255};
 
 	inline constexpr Vec2 EDITOR_CHAR_SPACING = { 3, 2 };
 	inline constexpr float DEFAULT_TEXT_FACTOR = 0.8;
@@ -29,40 +31,45 @@ namespace EditorStyles
 	//-------------------------------------------------------------------
 	//			GUI STYLES
 	//-------------------------------------------------------------------
-	inline const FontAsset& GetEditorFont()
+	inline const Rendering::FontAsset& GetEditorFont()
 	{
-		return StaticReferenceGlobals::GetDefaultRaylibFont();
+		//TODO: this should be replaced
+		Rendering::Font* font = new Rendering::Font();
+		return *(new Rendering::FontAsset(*font));
 	}
-	inline TextUIStyle GetTextStyleFactorSize(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR, const HDRColor color= EDITOR_TEXT_DEFAULT_COLOR)
+	inline MainUI::TextUIStyle GetTextStyleFactorSize(const MainUI::TextAlignment alignment,
+		const float factor = DEFAULT_TEXT_FACTOR, const ColHDR4 color= EDITOR_TEXT_DEFAULT_COLOR)
 	{
-		return TextUIStyle(color, ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
-			alignment, UIPadding(), factor);
+		return MainUI::TextUIStyle(color, Rendering::ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
+			alignment, MainUI::UIPadding(), factor);
 	}
-	inline TextUIStyle GetTextStyleSetSize(const TextAlignment alignment, const float textSize, const HDRColor color = EDITOR_TEXT_DEFAULT_COLOR)
+	inline MainUI::TextUIStyle GetTextStyleSetSize(const MainUI::TextAlignment alignment, 
+		const float textSize, const ColHDR4 color = EDITOR_TEXT_DEFAULT_COLOR)
 	{
-		return TextUIStyle(color, ScreenFontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
-			alignment, UIPadding());
-	}
-
-	inline UIStyle GetInputFieldStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
-	{
-		return UIStyle(EDITOR_PRIMARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR,
-			ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()), alignment, UIPadding(), factor));
+		return MainUI::TextUIStyle(color, Rendering::ScreenFontProperties(textSize, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
+			alignment, MainUI::UIPadding());
 	}
 
-	inline UIStyle GetSliderStyle()
+	inline MainUI::UIStyle GetInputFieldStyle(const MainUI::TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
 	{
-		return UIStyle(EDITOR_PRIMARY_COLOR, EDITOR_SECONDARY_COLOR, TextUIStyle());
+		return MainUI::UIStyle(EDITOR_PRIMARY_COLOR, MainUI::TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR,
+			Rendering::ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()), alignment, MainUI::UIPadding(), factor));
 	}
 
-	inline UIStyle GetToggleStyle()
+	inline MainUI::UIStyle GetSliderStyle()
 	{
-		return UIStyle(EDITOR_BACKGROUND_COLOR, COLOR_WHITE, TextUIStyle());
+		return MainUI::UIStyle(EDITOR_PRIMARY_COLOR, EDITOR_SECONDARY_COLOR, MainUI::TextUIStyle());
 	}
 
-	inline UIStyle GetButtonStyle(const TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
+	inline MainUI::UIStyle GetToggleStyle()
 	{
-		return UIStyle(EDITOR_PRIMARY_COLOR, TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR, ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
-				alignment, UIPadding(), factor));
+		return MainUI::UIStyle(EDITOR_BACKGROUND_COLOR, COLOR_WHITE, MainUI::TextUIStyle());
+	}
+
+	inline MainUI::UIStyle GetButtonStyle(const MainUI::TextAlignment alignment, const float factor = DEFAULT_TEXT_FACTOR)
+	{
+		return MainUI::UIStyle(EDITOR_PRIMARY_COLOR, MainUI::TextUIStyle(EDITOR_TEXT_DEFAULT_COLOR, 
+			Rendering::ScreenFontProperties(0, EDITOR_CHAR_SPACING.m_X, GetEditorFont()),
+				alignment, MainUI::UIPadding(), factor));
 	}
 }

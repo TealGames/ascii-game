@@ -1,8 +1,8 @@
 #pragma once
 #include <cstdint>
-#include "Utils/Math/Vec3Type.hpp"
+#include "Core/Primitives/Vector.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	enum class InputDirection : std::uint8_t
 	{

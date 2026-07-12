@@ -4,24 +4,18 @@
 #include <string>
 #include <optional>
 #include <filesystem>
-#include "Utils/Data/Direction.hpp"
+#include "Core/Primitives/Direction.hpp"
 #include "Core/Input/CompoundInput.hpp"
 #include "Core/Input/InputKey.hpp"
-#include "Utils/Math/ScreenPosition.hpp"
+#include "Core/Primitives/ScreenPosition.hpp"
 #include "Core/Asset/InputProfileAsset.hpp"
 
 //TODO: predefined data like compounds should be mutated and set up to work with file loading
 //rather than force user to add all compounds themselves (should leave option, but mainly all should be 
 //loaded from memory, along with other input settings)
 
-namespace AssetManagement
-{
-	class AssetManager;
-}
-namespace Core
-{
-	class WindowManager;
-}
+namespace Engine::Assets { class AssetManager; }
+namespace Engine::Core { class WindowManager; }
 
 /// <summary>
 /// The hierarchy/description for the Input system is as follows:
@@ -31,14 +25,15 @@ namespace Core
 /// InputAction-> holds multiple inputKeys and other info about an action
 /// CompoundInput-> can hold multiple input actions and is most useful for directional inputs
 /// </summary>
-namespace Input
+namespace Engine::Input
 {
+	using AssetManager = Engine::Assets::AssetManager;
 	class InputManager
 	{
 	private:
 		static const std::filesystem::path INPUT_PROFILES_FOLDER;
 
-		AssetManagement::AssetManager& m_assetManager;
+		AssetManager& m_assetManager;
 		std::unordered_map<std::string, InputProfileAsset*> m_profiles;
 
 		mutable std::unordered_map<KeyCode, InputKeyState> m_keyStates;
@@ -61,7 +56,7 @@ namespace Input
 		void UpdateState(InputState& inputState, const float& deltaTime);
 
 	public:
-		InputManager(AssetManagement::AssetManager& assetManager, Core::WindowManager& windowManager);
+		InputManager(AssetManager& assetManager, Core::WindowManager& windowManager);
 		void Init();
 
 		void SetInputCooldown(const std::map<KeyCode, float>& keyCooldownTime);

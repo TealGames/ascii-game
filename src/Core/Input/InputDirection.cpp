@@ -2,9 +2,9 @@
 #include "Core/Input/InputDirection.hpp"
 #include "Utils/StringUtil.hpp"
 #include "Utils/Debug.hpp"
-#include "Math/PlatformMath.hpp"
+#include "Conventions.hpp"
 
-namespace Input
+namespace Engine::Input
 {
 	std::string ToString(const InputDirection& dir)
 	{
@@ -21,7 +21,7 @@ namespace Input
 
 	std::optional<InputDirection> TryConvertStringToDirection(const std::string& str)
 	{
-		std::string formattedStr = Utils::StringUtil(str).ToLowerCase().ToString();
+		std::string formattedStr = ::Utils::StringUtil(str).ToLowerCase().ToString();
 		if (formattedStr == "up") return InputDirection::Up;
 		else if (formattedStr == "down") return InputDirection::Down;
 		else if (formattedStr == "left") return InputDirection::Left;

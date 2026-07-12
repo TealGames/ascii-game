@@ -11,7 +11,7 @@
 #include "Platform/Raylib/RaylibWindow.hpp"
 #endif 
 
-namespace Core
+namespace Engine::Core
 {
 	WindowManager::WindowManager() : m_windows(), m_windowLimit(-1), m_OnWindowCreated(), m_OnWindowUpdated()
 	{ 

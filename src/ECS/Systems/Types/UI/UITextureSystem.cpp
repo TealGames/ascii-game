@@ -1,20 +1,21 @@
 #include "pch.hpp"
 #include "ECS/Systems/Types/UI/UITextureSystem.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
+#include "ECS/Component/Types/UI/UITextureComponent.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
 	UITextureSystem::UITextureSystem() {}
 	void UITextureSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UITextureData),
-			ComponentInfo(CreateComponentTypes<UIRendererData>(), CreateRequiredComponentFunction(UIRendererData()),
-				[](EntityData& entity)-> void
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UITextureComponent),
+			ECS::ComponentInfo(ECS::CreateComponentTypes<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
+				[](ECS::EntityData& entity)-> void
 				{
-					//if (entity.m_Name == "OnStateTexture") LogError(std::format("Entity has renderer:{}", entity.HasComponent<UIRendererData>()));
-					entity.TryGetComponentMutable<UITextureData>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>();
+					//if (entity.m_Name == "OnStateTexture") LogError(std::format("Entity has renderer:{}", entity.HasComponent<UIRendererComponent>()));
+					entity.TryGetComponentMutable<UITextureComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererComponent>();
 				}));
 	}
 }

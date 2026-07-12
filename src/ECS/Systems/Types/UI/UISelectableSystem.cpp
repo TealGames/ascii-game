@@ -2,18 +2,19 @@
 #include "ECS/Systems/Types/UI/UISelectableSystem.hpp"
 #include "ECS/Component/GlobalComponentInfo.hpp"
 #include "ECS/Component/Types/UI/UIRendererComponent.hpp"
-#include "ECS/Component/Types/World/EntityComponent.hpp"
+#include "ECS/Component/Types/UI/UISelectableComponent.hpp"
+#include "ECS/Component/Types/World/EntityData.hpp"
 
-namespace ECS
+namespace Engine::UI
 {
 	UISelectableSystem::UISelectableSystem() {}
 	void UISelectableSystem::Init()
 	{
-		GlobalComponentInfo::AddComponentInfo(typeid(UISelectableData),
-			ComponentInfo(CreateComponentTypes<UIRendererData>(), CreateRequiredComponentFunction(UIRendererData()),
-				[](EntityData& entity)-> void
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UISelectableComponent),
+			ECS::ComponentInfo(ECS::CreateComponentTypes<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
+				[](ECS::EntityData& entity)-> void
 				{
-					entity.TryGetComponentMutable<UISelectableData>()->m_renderer = entity.TryGetComponentMutable<UIRendererData>();
+					entity.TryGetComponentMutable<UISelectableComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererComponent>();
 				}));
 	}
 }
