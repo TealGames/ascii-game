@@ -97,6 +97,11 @@ for (const auto& extension : Namespace::AssetName::EXTENSIONS) \
 		}
 		createdAsset = assetCreatorFuncIt->second(assetPath);
 
+#if LOG_VERBOSE
+		if (createdAsset != nullptr) 
+			LogWarning(std::format("Successfully created asset at path: {} from extension: {}", assetPath.string(), fileExtension));
+#endif
+
 		if (outResult != nullptr)
 			*outResult = createdAsset != nullptr ? AssetCreationResult::Success : AssetCreationResult::FailedToCreate;
 		return createdAsset;
@@ -186,7 +191,7 @@ for (const auto& extension : Namespace::AssetName::EXTENSIONS) \
 			//asset retrieval)
 			if (::Utils::IO::DoesPathExist(GetAbsoluteAssetPath(relPath)))
 			{
-				LogWarning(std::format("Attempting to create asset from extension when getting asset:{}", relPath.string()));
+				//LogWarning(std::format("Attempting to create asset from extension when getting asset:{}", relPath.string()));
 				return TryCreateAssetFromExtension(relPath);
 			}
 			else return nullptr;

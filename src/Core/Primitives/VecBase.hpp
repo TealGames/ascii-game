@@ -811,7 +811,7 @@ namespace Engine
 		using CommonType = std::common_type_t<TLhs, TRhs>;
 		for (size_t i = 0; i < N; i++)
 		{
-			if constexpr (std::floating_point<CommonType>)
+			if constexpr (std::is_floating_point_v<CommonType>)
 			{
 				if (!::Math::ApproximateEqualsF(lhs[i], rhs[i]))
 					return false;
@@ -828,35 +828,5 @@ namespace Engine
 	bool operator!=(const Vec<TLhs, N, LHS_ALIGN>& lhs, const Vec<TRhs, N, RHS_ALIGN>& rhs)
 	{
 		return !(lhs == rhs);
-	}
-	template<typename TLhs, size_t LHS_ALIGN, size_t N, typename TRhs, size_t RHS_ALIGN>
-	constexpr bool operator>(const Vec<TLhs, N, LHS_ALIGN>& lhs, const Vec<TRhs, N, RHS_ALIGN>& rhs)
-	{
-		for (size_t i = 0; i < N; i++)
-		{
-			if (lhs[i] <= rhs[i])
-				return false;
-		}
-		return true;
-	}
-	template<typename TLhs, size_t LHS_ALIGN, size_t N, typename TRhs, size_t RHS_ALIGN>
-	bool operator>=(const Vec<TLhs, N, LHS_ALIGN>& lhs, const Vec<TRhs, N, RHS_ALIGN>& rhs)
-	{
-		return (lhs > rhs || lhs == rhs);
-	}
-	template<typename TLhs, size_t LHS_ALIGN, size_t N, typename TRhs, size_t RHS_ALIGN>
-	constexpr bool operator<(const Vec<TLhs, N, LHS_ALIGN>& lhs, const Vec<TRhs, N, RHS_ALIGN>& rhs)
-	{
-		for (size_t i = 0; i < N; i++)
-		{
-			if (lhs[i] >= rhs[i])
-				return false;
-		}
-		return true;
-	}
-	template<typename TLhs, size_t LHS_ALIGN, size_t N, typename TRhs, size_t RHS_ALIGN>
-	bool operator<=(const Vec<TLhs, N, LHS_ALIGN>& lhs, const Vec<TRhs, N, RHS_ALIGN>& rhs)
-	{
-		return (lhs < rhs || lhs == rhs);
 	}
 }

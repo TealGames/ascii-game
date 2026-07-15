@@ -8,18 +8,20 @@
 namespace Utils
 {
 	/// <summary>
-/// A map that retains the insertion order. It is implemented by having a hashtable that stores key values normally so
-/// we still have the fast insertion and quick key lookup. However, there is a vector that stores the key order so we can
-/// have fast retrieval for ALL values (something that is difficult with fragmented values in a map) and so we can 
-/// maintain the same order as the value pairs were addded
-/// </summary>
-/// <typeparam name="KType"></typeparam>
-/// <typeparam name="VType"></typeparam>
+	/// A map that retains the insertion order. It is implemented by having a hashtable that stores key values normally so
+	/// we still have the fast insertion and quick key lookup. However, there is a vector that stores the key order so we can
+	/// have fast retrieval for ALL values (something that is difficult with fragmented values in a map) and so we can 
+	/// maintain the same order as the value pairs were addded
+	/// </summary>
+	/// <typeparam name="KType"></typeparam>
+	/// <typeparam name="VType"></typeparam>
 	template<typename KType, typename VType>
 	class PreservedMap
 	{
 	public:
 		using MapType = std::unordered_map<KType, VType>;
+		//NOTE: this is really inefficent to use the actual key since if it is expensive we end up needing 2, 
+		// one for knowing order and the other for keeping place in map
 		using KeyOrderType = std::vector<KType>;
 
 		class Iterator
@@ -377,6 +379,11 @@ namespace Utils
 		}
 		Iterator end() { return EndMutable(); }
 		ConstIterator end() const { return End(); }
+
+		const std::unordered_map<KType, VType>& AsUnorderedMap() const
+		{
+			return m_map;
+		}
 
 		std::string ToString(const bool displayMapAndKeyOrder = false) const
 		{

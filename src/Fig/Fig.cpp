@@ -3,6 +3,7 @@
 #include "pch.hpp"
 #include "Fig/Fig.hpp"
 #include "Utils/HelperFunctions.hpp"
+#include "Utils/IOHandler.hpp"
 #include "Utils/StringUtil.hpp"
 #include "Utils/Debug.hpp"
 
@@ -10,6 +11,9 @@ namespace FigFormat
 {
 	const std::string Fig::COMMENT_START = "/*";
 	const std::string Fig::COMMENT_CLOSE = "*\\";
+
+	static constexpr const char* BOOL_VALUE_TRUE = "true";
+	static constexpr const char* BOOL_VALUE_FALSE = "false";
 
 	FigPropertyRef::FigPropertyRef(const std::string& key, const FigValue& value)
 		: m_Key(key.c_str()), m_Value(&value) {}
@@ -63,7 +67,7 @@ namespace FigFormat
 		}
 		CreateFigFormat(fileLines);
 	}
-	Fig::Fig(const std::filesystem::path& path, const FigFlag flag) : Fig()
+	Fig::Fig(const std::filesystem::path& path, const FigParseFlag flag) : Fig()
 	{
 		std::string currentLine = "";
 		std::fstream fstream = std::fstream(path);
@@ -175,7 +179,7 @@ namespace FigFormat
 			endSymbolIdx >= startSymbolIdx + COMMENT_START.size();
 	}
 
-	void Fig::AddProperty(const std::string& line, const FigFlag flag)
+	void Fig::ParseProperty(const std::string& line, const FigParseFlag flag)
 	{
 		std::string key = "";
 		std::string value = "";
@@ -195,7 +199,7 @@ namespace FigFormat
 
 			//LogError(std::format("Line has no key: {}", line));
 			//Note: if the line contains the spaces, we keep the line as it appeared, otherwise we trim
-			const std::string lineFormatted = ::Utils::HasFlagAll(flag, FigFlag::IncludeOverflowLineStartSpaces) ?
+			const std::string lineFormatted = ::Utils::HasFlagAll(flag, FigParseFlag::IncludeOverflowLineStartSpaces) ?
 				line : ::Utils::StringUtil(line).TrimSpaces().ToString();
 
 			//Log(std::format("Line formatted is:{}", lineFormatted));
@@ -225,7 +229,7 @@ namespace FigFormat
 
 		ParseValueIntoProperty(propertyIt.first, value);
 	}
-	void Fig::AddMarkedProperty(const std::string& header, const std::string& line, const FigFlag flag)
+	void Fig::ParseHeaderProperty(const std::string& header, const std::string& line, const FigParseFlag flag)
 	{
 		MarkedPropertyCollection::iterator markedSectionIt = m_markedProperties.find(header);
 		if (markedSectionIt == m_markedProperties.end())
@@ -239,10 +243,30 @@ namespace FigFormat
 		}
 
 		//LogError(std::format("Adding marked proeprty:{} of line:{}", header, line));
-		markedSectionIt->second->AddProperty(line, flag);
+		markedSectionIt->second->ParseProperty(line, flag);
 	}
 
-	void Fig::CreateFigFormat(const std::vector<std::string>& lineContents, const FigFlag flags)
+	void Fig::AddProperty(const std::string& propertyName, const std::string& propertyValue)
+	{
+		auto insertResult = m_properties.Insert(propertyName, FigValue());
+		if (!Assert(insertResult.second, "Tried to add property: {} with value: {} but failed "
+			"due to a property with that name already existing", propertyName, propertyValue))
+			return;
+
+		auto it = insertResult.first;
+		ParseValueIntoProperty(it, propertyValue);
+	}
+	void Fig::AddHeaderProperty(const std::string& headerName, const std::string propertyName, const std::string& propertyValue)
+	{
+		auto it = m_markedProperties.find(headerName);
+		if (it == m_markedProperties.end())
+		{
+			it = m_markedProperties.emplace(headerName, new Fig()).first;
+		}
+		it->second->AddProperty(propertyName, propertyValue);
+	}
+
+	void Fig::CreateFigFormat(const std::vector<std::string>& lineContents, const FigParseFlag flags)
 	{
 		std::string currentMarker = "";
 		std::string cleanedLine = "";
@@ -284,8 +308,8 @@ namespace FigFormat
 				continue;
 			}
 
-			if (currentMarker.empty()) AddProperty(cleanedLine, flags);
-			else AddMarkedProperty(currentMarker, cleanedLine, flags);
+			if (currentMarker.empty()) ParseProperty(cleanedLine, flags);
+			else ParseHeaderProperty(currentMarker, cleanedLine, flags);
 		}
 	}
 
@@ -376,7 +400,28 @@ namespace FigFormat
 			markedProperty.second->GetAllProperties(properties);
 		}
 	}
+	void Fig::GetAllProperties(std::unordered_map<std::string, FigValue>& properties) const
+	{
+		properties = m_properties.AsUnorderedMap();
+
+		if (m_markedProperties.empty())
+			return;
+
+		for (const auto& markedProperty : m_markedProperties)
+		{
+			if (markedProperty.second == nullptr) continue;
+			markedProperty.second->GetAllProperties(properties);
+		}
+	}
 	void Fig::GetAllProperties(const std::string& markerName, std::vector<FigPropertyRef>& properties) const
+	{
+		auto markerIt = m_markedProperties.find(markerName);
+		if (markerIt == m_markedProperties.end() || markerIt->second == nullptr)
+			return;
+
+		markerIt->second->GetAllProperties(properties);
+	}
+	void Fig::GetAllProperties(const std::string& markerName, std::unordered_map<std::string, FigValue>& properties) const
 	{
 		auto markerIt = m_markedProperties.find(markerName);
 		if (markerIt == m_markedProperties.end() || markerIt->second == nullptr)
@@ -413,64 +458,98 @@ namespace FigFormat
 		}
 		return result;
 	}
-
-
-	bool ToBool(const std::string& value)
+	void Fig::ToFormattedString(std::string& outVal) const
 	{
-		return ::Utils::StringUtil(value).ToLowerCase().ToString() == "true";
+		for (const auto& property : m_properties)
+		{
+			outVal += std::format("{}{}", *property.first, KEY_VALUE_SEPARATOR);
+			const FigValue& propertyVals = *property.second;
+			if (propertyVals.empty()) continue;
+
+			outVal += propertyVals[0];
+			size_t propertyValCount = property.second->size();
+			for (size_t i=1; i< propertyValCount; i++)
+			{
+				outVal += std::format("{} {}", VALUE_SEPARATOR_CHAR, propertyVals[i]);
+			}
+			outVal += "\n";
+		}
+
+		if (m_markedProperties.empty())
+			return;
+
+		for (const auto& markedProperty : m_markedProperties)
+		{
+			outVal += std::format("{}{}\n", MARKER_CHAR, markedProperty.first); 
+			markedProperty.second->ToFormattedString(outVal);
+		}
 	}
 
+	void Fig::WriteToPath(const std::filesystem::path& path) const
+	{
+		std::string formattedStr = "";
+		ToFormattedString(formattedStr);
+		Utils::IO::TryWriteFile(path, formattedStr);
+	}
+
+	void FromFigValue(const std::string& value, bool& outVal)
+	{
+		outVal = (::Utils::StringUtil(value).ToLowerCase().ToString() == BOOL_VALUE_TRUE);
+	}
+	void ToFigValue(const bool value, std::string& outVal)
+	{
+		outVal += (value) ? BOOL_VALUE_TRUE : BOOL_VALUE_FALSE;
+	}
+	bool ToBool(const std::string& value)
+	{
+		bool outVal = false;
+		FromFigValue(value, outVal);
+		return outVal;
+	}
+
+	void FromFigValue(const std::string& value, int& outVal)
+	{
+		outVal = ::Utils::TryParse<int>(value).value_or(0);
+	}
+	void ToFigValue(const int value, std::string& outVal)
+	{
+		outVal += std::to_string(value);
+	}
 	int ToInt32(const std::string& value)
 	{
-		return ::Utils::TryParse<int>(value).value_or(0);
+		int outVal = 0;
+		FromFigValue(value, outVal);
+		return outVal;
+	}
+
+	void FromFigValue(const std::string& value, float& outVal)
+	{
+		outVal = ::Utils::TryParse<float>(value).value_or(0);
+	}
+	void ToFigValue(const float value, std::string& outVal)
+	{
+		outVal += ::Utils::ToStringRoundTrip(value);
 	}
 	float ToFloat(const std::string& value)
 	{
-		return ::Utils::TryParse<float>(value).value_or(0);
+		float outVal = 0;
+		FromFigValue(value, outVal);
+		return outVal;
+	}
+	
+	void FromFigValue(const std::string& value, std::uint8_t& outVal)
+	{
+		outVal = ::Utils::TryParse<std::uint8_t>(value).value_or(0);
+	}
+	void ToFigValue(const std::uint8_t value, std::string& outVal)
+	{
+		outVal += std::to_string(value);
 	}
 	std::uint8_t ToUint8(const std::string& value)
 	{
-		return ::Utils::TryParse<std::uint8_t>(value).value_or(0);
-	}
-	std::array<float, 4> ToFloatVec4(const std::string& value)
-	{
-		std::array<float, 4> arr = {};
-		std::uint8_t arrIndex = 0;
-		std::string componentStr = "";
-		for (std::uint32_t i = 0; i < value.length(); i++)
-		{
-			const bool isSpace = (value[i] == ' ');
-			if (isSpace) continue;
-			//If the previous element was a space and we are not at a space, increase index
-			if (i > 0 && value[i - 1] == ' ' && !isSpace)
-			{
-				arr[arrIndex] = ToFloat(componentStr);
-				arrIndex++;
-				componentStr = "";
-			}
-			componentStr += value[i];
-		}
-		return arr;
-	}
-	std::array<int, 4> ToInt32Vec4(const std::string& value)
-	{
-		std::array<int, 4> arr = {};
-		std::uint8_t arrIndex = 0;
-		std::string componentStr = "";
-		for (std::uint32_t i = 0; i < value.length(); i++)
-		{
-			const bool isSpace = (value[i] == ' ');
-			if (isSpace) continue;
-			//If the previous element was a space and we are not at a space, increase index
-			if (i > 0 && value[i - 1] == ' ' && !isSpace)
-			{
-				arr[arrIndex] = ToInt32(componentStr);
-				arrIndex++;
-				componentStr = "";
-			}
-			componentStr += value[i];
-		}
-		return arr;
+		std::uint8_t outVal = 0;
+		FromFigValue(value, outVal);
+		return outVal;
 	}
 
 	bool IsNull(const std::string& value, bool trimSpaces)

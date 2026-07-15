@@ -17,7 +17,7 @@ namespace Engine::Physics
 		: m_physicsManager(physicsManager) //m_lineBuffer(),
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(PhysicsBodyComponent), 
-			ECS::ComponentInfo(ECS::CreateComponentTypes<CollisionBoxComponent>(), CreateRequiredComponentFunction(CollisionBoxComponent()),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<CollisionBoxComponent>(), CreateRequiredComponentFunction(CollisionBoxComponent()),
 				[](EntityData& entity)-> void
 				{
 					PhysicsBodyComponent& body = *(entity.TryGetComponentMutable<PhysicsBodyComponent>());

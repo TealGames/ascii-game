@@ -11,7 +11,7 @@ namespace Engine::UI
 	void UITextureSystem::Init()
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UITextureComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
 				[](ECS::EntityData& entity)-> void
 				{
 					//if (entity.m_Name == "OnStateTexture") LogError(std::format("Entity has renderer:{}", entity.HasComponent<UIRendererComponent>()));

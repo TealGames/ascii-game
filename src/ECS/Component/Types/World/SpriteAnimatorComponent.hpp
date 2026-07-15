@@ -8,6 +8,7 @@ namespace Engine::Animation
 {
 	class SpriteAnimationAsset;
 	class SpriteAnimation;
+	class SpriteAnimatorSystem;
 
 	class SpriteAnimatorComponent : public Engine::ECS::Component
 	{
@@ -16,6 +17,7 @@ namespace Engine::Animation
 		std::unordered_map<std::string, SpriteAnimationAsset*> m_animations;
 		SpriteAnimationAsset* m_playingAnimation;
 	public:
+		friend class SpriteAnimatorSystem;
 
 	private:
 	public:

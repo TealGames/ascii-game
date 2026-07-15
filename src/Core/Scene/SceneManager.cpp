@@ -53,7 +53,9 @@ namespace Engine::Scenes
 		if (!LOAD_SCENES_FROM_ASSETS) 
 			return;
 
+		auto allScenes = m_assetManager->GetAssetsOfTypeMutable<SceneAsset>();
 		auto sceneAssets = m_assetManager->GetAssetsOfTypeMutable<SceneAsset>(SCENES_FOLDER);
+
 		if (sceneAssets.size() <= 0)
 		{
 			LogError(std::format("Tried to load all scenes in scene manager "
@@ -67,13 +69,12 @@ namespace Engine::Scenes
 			m_allScenes.push_back(sceneAsset);
 		}
 
-		//We need to load the scenes only after they are added in order for deserialization
-		//to be able to find the scene when retrieving it from scene manager
+		//NOTE: We need to load the scenes only after they are added in order for deserialization
+		//which occurs during `UpdateAssetFromFile` to be able to find the scene when retrieving it from scene manager
 		for (auto& scene : m_allScenes)
 		{
 			scene->UpdateAssetFromFile();
 			m_OnSceneAssetLoad.Invoke(&(scene->GetSceneMutable()));
-			//Log(std::format("Loaded scene: {}", scene->GetName()));
 		}
 	}
 
@@ -148,7 +149,7 @@ namespace Engine::Scenes
 	bool SceneManager::TrySetActiveScene(const std::string& sceneName)
 	{
 		SceneAsset* asset = TryGetSceneAssetMutable(sceneName);
-		if (asset != nullptr)
+		if (asset == nullptr)
 		{
 			LogError(std::format("Tried to load a scene with name: {} "
 				"but that scene does not exist. Total scenes:{}", sceneName,

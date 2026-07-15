@@ -16,7 +16,7 @@ namespace Engine::UI
 	void UIInputFieldSystem::Init()
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UIInputFieldComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<UITextComponent, UIPanelComponent, UISelectableComponent>(),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<UITextComponent, UIPanelComponent, UISelectableComponent>(),
 				CreateRequiredComponentFunction<UITextComponent, UIPanelComponent, UISelectableComponent>(
 					UITextComponent("", Editor::Styles::GetTextStyleFactorSize(TextAlignment::Center)), UIPanelComponent(), UISelectableComponent()),
 				[this](ECS::EntityData& entity)-> void

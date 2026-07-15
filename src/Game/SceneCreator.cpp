@@ -43,6 +43,7 @@ namespace Engine::Scenes::SceneCreator
 		globalLight.m_IsImmovable = true;
 		*/
 
+		/*
 		ECS::EntityData& monkey = scene->CreateEntity("Monkey", TransformComponent(Vec3(0, 0.1, 0), Vec3(0.2, 0.2, 0.2), Math::Quat::Identity()));
 		Rendering::Model3dAsset* modelAsset = EngineState->m_AssetManager->TryGetTypeAssetFromPathMutable<Rendering::Model3dAsset>(
 			"models/monkey" BASIC_MESH_EXTENSION);
@@ -86,7 +87,7 @@ namespace Engine::Scenes::SceneCreator
 
 		const std::filesystem::path path = SCENE_ASSET_DIR "scene1.json";
 		SaveSceneToPath(*scene, path);
-		LogError("SAVED");
+		*/
 	}
 
 	//Occurs whenever a new scene becomes active

@@ -36,7 +36,8 @@ namespace Engine
 
 
 		template<typename T>
-		concept HasJsonConversionFunctions = requires(T& mutableT, const T& constT, Json& mutableJson, const Json& constJson) {
+		concept HasJsonConversionFunctions = requires(T& mutableT, const T& constT, Json& mutableJson, const Json& constJson) 
+		{
 			{ from_json(constJson, mutableT) } -> std::same_as<void>;
 			{ to_json(mutableJson, constT) } -> std::same_as<void>;
 		};

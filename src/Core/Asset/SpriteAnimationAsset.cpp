@@ -36,7 +36,7 @@ namespace Engine::Animation
 
 	void SpriteAnimationAsset::UpdateAssetFromFile()
 	{
-		FigFormat::Fig fig = FigFormat::Fig(GetAbsolutePathCopy(), FigFormat::FigFlag::IncludeOverflowLineStartSpaces);
+		FigFormat::Fig fig = FigFormat::Fig(GetAbsolutePathCopy(), FigFormat::FigParseFlag::IncludeOverflowLineStartSpaces);
 		//Assert(false, std::format("Found fig:{}", fig.ToString()));
 
 		std::vector<FigFormat::FigPropertyRef> figProperties = {};

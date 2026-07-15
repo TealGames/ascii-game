@@ -13,7 +13,7 @@ namespace Engine::World
 	TriggerSystem::TriggerSystem() 
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(TriggerComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<CollisionBoxComponent>(), CreateRequiredComponentFunction(CollisionBoxComponent()),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<CollisionBoxComponent>(), CreateRequiredComponentFunction(CollisionBoxComponent()),
 				[](ECS::EntityData& entity)-> void
 				{
 					TriggerComponent& trigger = *(entity.TryGetComponentMutable<TriggerComponent>());

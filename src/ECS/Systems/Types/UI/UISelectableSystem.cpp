@@ -11,7 +11,7 @@ namespace Engine::UI
 	void UISelectableSystem::Init()
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UISelectableComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
 				[](ECS::EntityData& entity)-> void
 				{
 					entity.TryGetComponentMutable<UISelectableComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererComponent>();

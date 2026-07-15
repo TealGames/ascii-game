@@ -223,6 +223,8 @@ namespace Engine::Core
 	//If true, will log all output from command contrller when executing commands
 	constexpr bool DEBUG_LOG_COMMAND_OUTPUT = true;
 
+	constexpr const char* START_SCENE_NAME = "scene1";
+
 	void Engine::Destroy()
 	{
 		EngineLog("DESTROYED ENGINE");
@@ -295,6 +297,7 @@ namespace Engine::Core
 		m_uiHierarchy.Init();
 		m_popupManager.Init();
 		m_uiSystemExecutor.Init();
+		m_spriteAnimatorSystem.Init();
 		Scenes::GlobalEntityCreator::OnGlobalsInit(m_sceneManager.m_GlobalEntityManager, m_sceneManager, m_cameraController, m_assetManager);
 
 		//NOTE: we have to load all scenes AFTER all globals are created so that scenes can use globals for deserialization
@@ -307,7 +310,7 @@ namespace Engine::Core
 		m_sceneManager.m_OnActiveSceneChange.AddListener([this](Scenes::Scene* scene) -> void {SystemStart(*scene); });
 		EngineLog("LOADED ALL SCENES");
 
-		if (!Assert(m_sceneManager.TrySetActiveScene(0), "Tried to set the active scene to the first one, but failed!"))
+		if (!Assert(m_sceneManager.TrySetActiveScene(START_SCENE_NAME), "Tried to set the active scene to:{}, but failed!", START_SCENE_NAME))
 			return;
 
 		EngineLog("SET FIRST SCENE:{}", m_sceneManager.GetActiveScene()->ToString());

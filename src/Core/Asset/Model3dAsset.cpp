@@ -28,26 +28,36 @@ namespace Engine::Rendering
 	static constexpr bool BAKE_TRANSFORMS_IN_VERTICES = true;
 	//If true, will write all non-vtx formats to vtx to reduce file size
 	static constexpr bool WRITE_ANY_FORMAT_TO_CUSTOM = false;
+	//If true, will force a newly created imported asset from the model to be saved immediately after it is created
+	//rather than waiting for the scene to change or the application to end
+	static constexpr bool FORCE_SAVE_FOR_IMPORTED_ASSETS = true;
 
 	static std::unordered_map<std::string_view, aiLight*> SceneLights = {};
 	static std::unordered_map<std::string_view, aiCamera*> SceneCameras = {};
-
-#define IMPORTED_MATERIAL_DIR MATERIAL_ASSET_DIR "imported/"
-#define IMPORTED_SCENE_DIR SCENE_ASSET_DIR "imported/"
 
 	Model3dAsset::Model3dAsset(const std::filesystem::path& path) : Asset(path), m_model(), m_engineState(nullptr)
 	{
 		ASSET_EXTENSION_CHECK
 	}
 
-	/// <summary>
-	/// Will process the geometry (meshes) of the scene by traversing through hierarchy
-	/// </summary>
-	/// <param name="model"></param>
-	/// <param name="modelScene"></param>
-	/// <param name="node"></param>
-	/// <param name="parentTransform"></param>
-	static void ProcessMeshNodes(Core::EngineState& engineState, Rendering::Model3d& model, Scenes::Scene* engineScene, ECS::EntityData* parentEntity,
+	static void AppendImportSubPath(std::filesystem::path& path, const aiScene& modelScene, const Model3dAsset& asset)
+	{
+		path += "imported/";
+
+		const aiString& modelSceneName = modelScene.mName;
+		std::string_view modelSceneNameView = AssimpUtils::ToStringView(modelSceneName);
+		if (!modelSceneNameView.empty())
+		{
+			path += modelSceneNameView;
+		}
+		else
+		{
+			path += asset.GetName();
+		}
+	}
+
+	static void ProcessMeshNodes(const Model3dAsset& thisAsset, Core::EngineState& engineState, Rendering::Model3d& model, 
+		Scenes::Scene* engineScene, ECS::EntityData* parentEntity,
 		const aiScene* modelScene, aiNode* node, const aiMatrix4x4* parentTransform)
 	{
 		//NOTE: we do NOT need any conversion because Assimp converts models into +x -> right, +y ->up, -z -> forward, which match this engine coordinate system
@@ -167,11 +177,11 @@ namespace Engine::Rendering
 				aiString importMaterialName = importMaterial->GetName();
 				const std::string_view importMaterialNameView = AssimpUtils::ToStringView(importMaterialName);
 				
-				std::filesystem::path materialAssetpath = IMPORTED_MATERIAL_DIR;
-				materialAssetpath += sceneNameView;
-				materialAssetpath /= importMaterialNameView;
+				std::filesystem::path materialAssetpath = MATERIAL_ASSET_DIR;
+				AppendImportSubPath(materialAssetpath, *modelScene, thisAsset);
+				materialAssetpath += "/";
+				materialAssetpath += importMaterialNameView;
 				materialAssetpath += MaterialAsset::EXTENSIONS[0];
-				LogWarning(std::format("Path: {}", materialAssetpath.string()));
 
 				bool hadAssetFile = false;
 				MaterialAsset* materialAsset = engineState.m_AssetManager->TryCreateOrGetAsset<MaterialAsset>(materialAssetpath, &hadAssetFile);
@@ -199,12 +209,14 @@ namespace Engine::Rendering
 				{
 					engineMaterial.SetRoughness(metallic);
 				}
+
+				if constexpr (FORCE_SAVE_FOR_IMPORTED_ASSETS) materialAsset->SaveToSelf();
 			}
 		}
 
 		for (size_t i = 0; i < node->mNumChildren; i++)
 		{
-			ProcessMeshNodes(engineState, model, engineScene, thisEntity, modelScene, node->mChildren[i], &globalTransform);
+			ProcessMeshNodes(thisAsset, engineState, model, engineScene, thisEntity, modelScene, node->mChildren[i], &globalTransform);
 		}
 	}
 
@@ -238,9 +250,8 @@ namespace Engine::Rendering
 			LogError(std::format("Tried to load 3d model at path: '{}' but could not find any meshes", path.string()));
 			return;
 		}
-		aiString modelSceneName = modelScene->mName;
-		std::string_view modelSceneNameView = AssimpUtils::ToStringView(modelSceneName);
-		Scenes::Scene* engineScene = nullptr;
+		
+		Scenes::Scene* createdEngineScene = nullptr;
 
 		const bool sceneHasLights = modelScene->HasLights();
 		if (sceneHasLights)
@@ -270,23 +281,26 @@ namespace Engine::Rendering
 			}
 		}
 		//If the scene has special node types, then we create a scene in addition to the model
+		Scenes::SceneAsset* sceneAsset = nullptr;
 		if (sceneHasLights || sceneHasCameras)
 		{
-			std::filesystem::path sceneAssetPath = IMPORTED_MATERIAL_DIR;
-			sceneAssetPath += modelSceneNameView;
+			std::filesystem::path sceneAssetPath = SCENE_ASSET_DIR;
+			AppendImportSubPath(sceneAssetPath, *modelScene, *this);
 			sceneAssetPath += Scenes::SceneAsset::EXTENSIONS[0];
 
 			bool hadAssetFile = false;
-			Scenes::SceneAsset* sceneAsset = state.m_AssetManager->TryCreateOrGetAsset<Scenes::SceneAsset>(sceneAssetPath, &hadAssetFile);
+			sceneAsset = state.m_AssetManager->TryCreateOrGetAsset<Scenes::SceneAsset>(sceneAssetPath, &hadAssetFile);
 			//NOTE: since whether scene is created is based on if scene asset is not null, if we already had an asset 
 			//file for the scene, it means it must already be created and we dont try to create scene from scratch again
 			if (!hadAssetFile)
 			{
-				engineScene = &(sceneAsset->GetSceneMutable());
+				createdEngineScene = &(sceneAsset->GetSceneMutable());
 			}
 		}
 		m_model.m_Objects.reserve(modelScene->mNumMeshes);
-		ProcessMeshNodes(*m_engineState, m_model, engineScene, nullptr, modelScene, modelScene->mRootNode, nullptr);
+		ProcessMeshNodes(*this, *m_engineState, m_model, createdEngineScene, nullptr, modelScene, modelScene->mRootNode, nullptr);
+		if (FORCE_SAVE_FOR_IMPORTED_ASSETS && createdEngineScene != nullptr) sceneAsset->SaveToSelf();
+		if (createdEngineScene != nullptr) LogError(createdEngineScene->ToString());
 		//if (path.stem() == "plane") LogError(std::format("created model tree: {}", m_model.m_Objects[0].m_Mesh.m_BLASTree.ToString(BVHToStringType::NodeBounds)));
 
 		//If we write any format to vtx, then after the first import from a non-vtx format we write as compressed

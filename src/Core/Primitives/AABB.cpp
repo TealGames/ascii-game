@@ -7,7 +7,8 @@ namespace Engine
 	AABB2D::AABB2D(const WorldPosition2D& minPos, const WorldPosition2D& maxPos)
 		: m_MinPos(minPos), m_MaxPos(maxPos)
 	{
-		ENGINE_ASSERT(maxPos > minPos, "Attempted to create AABB2d with invalid max: {} and/or min pos:{}", maxPos.ToString(), minPos.ToString());
+		ENGINE_ASSERT(Math::AllGreater(maxPos, minPos), "Attempted to create AABB2d with invalid max: {} and/or min pos:{}", 
+			maxPos.ToString(), minPos.ToString());
 	}
 
 	AABB2D::AABB2D(const Vec2& size) : m_MinPos(size / 2 * -1), m_MaxPos(size / 2)

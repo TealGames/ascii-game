@@ -355,27 +355,13 @@ namespace Engine::Assets
 		std::vector<T*> GetAssetsOfTypeMutable(const std::function<bool(const Asset&)>& assetPredicate = nullptr)
 		{
 			std::vector<T*> assets = {};
-			const std::string tTypeName = ::Utils::ToStringTypeName<T>();
-			std::string assetTypeName = "";
-
 			for (auto& asset : m_assets)
 			{
 				if (asset.second == nullptr) continue;
-				assetTypeName = ::Utils::FormatTypeName(typeid(*(asset.second)).name());
-
-				//LogError(std::format("Checking asset:{} ttype:{} current:{}", asset.second->ToString(), tTypeName, assetTypeName));
-				if (tTypeName == assetTypeName && (assetPredicate == nullptr || assetPredicate(*(asset.second))))
+				if (T* tPtr = dynamic_cast<T*>(asset.second))
 				{
-					try
-					{
-						assets.emplace_back(dynamic_cast<T*>(asset.second));
-					}
-					catch (const std::exception& e)
-					{
-						LogError(std::format("Tried to get assets of type:{} but asset at path:{} "
-							"could not be converted to this type", tTypeName, asset.second->GetAbsolutePathCopy().string()));
-						return {};
-					}
+					if (assetPredicate == nullptr || assetPredicate(*asset.second))
+						assets.emplace_back(tPtr);
 				}
 			}
 			return assets;
@@ -393,9 +379,16 @@ namespace Engine::Assets
 			return GetAssetsOfTypeMutable<T>([&targetAssetPath](const Asset& asset)->bool
 				{
 					std::string assetpath = asset.GetAbsolutePath().string();
+					if (targetAssetPath.find("scenes") != -1)
+						LogWarning(std::format("Found scene: {}", assetpath));
+
+					
 					//LogError(std::format("Checking path of asset: {} to {}", asset.ToString(), targetAssetPath));
 					if (assetpath.size() < targetAssetPath.size()) return false;
-					return assetpath.substr(0, targetAssetPath.size()) == targetAssetPath;
+					const bool matchesPath = assetpath.substr(0, targetAssetPath.size()) == targetAssetPath;
+					if (targetAssetPath.find("scenes") != -1) LogWarning(std::format("Matches path: {}", matchesPath));
+
+					return matchesPath;
 				});
 		}
 

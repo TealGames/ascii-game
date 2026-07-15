@@ -18,5 +18,6 @@ namespace Engine::Animation
 	public:
 		SpriteAnimatorSystem(Rendering::EntityRenderer2DSystem& entityRenderer);
 		void SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime);
+		void Init();
 	};
 }

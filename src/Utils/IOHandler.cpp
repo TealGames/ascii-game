@@ -104,11 +104,8 @@ namespace Utils::IO
 		{
 			const std::filesystem::path& cleanedPath = forceCleanPath ? CleanPath(path) : path;
 
-			//NOTE: IF WE NEED FILE CREATION AND NOT JUST DIRECTORIES: 
-			//ofstream automatically creates the path, so we use "touch" behavior to create stream 
-			//and instantly close it to create an empty file at the path 
-			if (cleanedPath.has_filename()) std::ofstream(path).close();
-			else std::filesystem::create_directories(cleanedPath);
+			std::filesystem::create_directories(path.parent_path());
+			std::ofstream(path).close();
 			return true;
 		}
 		return false;

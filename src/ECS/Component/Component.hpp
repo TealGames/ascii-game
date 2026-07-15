@@ -145,7 +145,7 @@ namespace Engine::ECS
 	std::string FormatComponentName(const std::type_info& typeInfo);
 
 	template<typename... ComponentTs>
-	std::vector<const std::type_info*> CreateComponentTypes()
+	std::vector<const std::type_info*> CreateComponentTypeInfo()
 	{
 		return { (&typeid(ComponentTs))... };
 	}

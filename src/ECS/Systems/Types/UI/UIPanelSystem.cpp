@@ -12,7 +12,7 @@ namespace Engine::UI
 	void UIPanelSystem::Init()
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UIPanelComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
 				[](ECS::EntityData& entity)-> void
 				{
 					entity.TryGetComponentMutable<UIPanelComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererComponent>();

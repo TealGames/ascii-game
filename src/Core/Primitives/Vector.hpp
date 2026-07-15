@@ -199,6 +199,116 @@ namespace Engine::Math
 		return min;
 	}
 
+	/// <summary>
+	/// Returns true if and only if every component of lhs >= every component of rhs
+	/// </summary>
+	/// <typeparam name="TLhs"></typeparam>
+	/// <typeparam name="TRhs"></typeparam>
+	/// <typeparam name="LHS_ALIGN"></typeparam>
+	/// <typeparam name="N"></typeparam>
+	/// <typeparam name="RHS_ALIGN"></typeparam>
+	/// <param name="lhs"></param>
+	/// <param name="rhs"></param>
+	/// <returns></returns>
+	template<typename TLhs, size_t LHS_ALIGN, size_t N, typename TRhs, size_t RHS_ALIGN>
+	constexpr bool AllGreaterEqual(const Vec<TLhs, N, LHS_ALIGN>& lhs, const Vec<TRhs, N, RHS_ALIGN>& rhs)
+	{
+		for (size_t i = 0; i < N; i++)
+		{
+			if (lhs[i] < rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	/// <summary>
+	/// Returns true if and only if every component of lhs > every component of rhs
+	/// </summary>
+	/// <typeparam name="TLhs"></typeparam>
+	/// <typeparam name="TRhs"></typeparam>
+	/// <typeparam name="LHS_ALIGN"></typeparam>
+	/// <typeparam name="N"></typeparam>
+	/// <typeparam name="RHS_ALIGN"></typeparam>
+	/// <param name="lhs"></param>
+	/// <param name="rhs"></param>
+	/// <returns></returns>
+	template<typename TLhs, size_t LHS_ALIGN, size_t N, typename TRhs, size_t RHS_ALIGN>
+	constexpr bool AllGreater(const Vec<TLhs, N, LHS_ALIGN>& lhs, const Vec<TRhs, N, RHS_ALIGN>& rhs)
+	{
+		for (size_t i = 0; i < N; i++)
+		{
+			if (lhs[i] < rhs[i])
+				return false;
+
+			if constexpr (std::is_floating_point_v<TLhs> || std::is_floating_point_v<TRhs>)
+			{
+				if (::Math::ApproximateEqualsF(lhs[i], rhs[i]))
+					return false;
+			}
+			else
+			{
+				if (lhs[i] == rhs[i])
+					return false;
+			}
+		}
+		return true;
+	}
+
+	/// <summary>
+	/// Returns true if and only if every component of lhs <= every component of rhs
+	/// </summary>
+	/// <typeparam name="TLhs"></typeparam>
+	/// <typeparam name="TRhs"></typeparam>
+	/// <typeparam name="LHS_ALIGN"></typeparam>
+	/// <typeparam name="N"></typeparam>
+	/// <typeparam name="RHS_ALIGN"></typeparam>
+	/// <param name="lhs"></param>
+	/// <param name="rhs"></param>
+	/// <returns></returns>
+	template<typename TLhs, size_t LHS_ALIGN, size_t N, typename TRhs, size_t RHS_ALIGN>
+	constexpr bool AllLessEqual(const Vec<TLhs, N, LHS_ALIGN>& lhs, const Vec<TRhs, N, RHS_ALIGN>& rhs)
+	{
+		for (size_t i = 0; i < N; i++)
+		{
+			if (lhs[i] > rhs[i])
+				return false;
+		}
+		return true;
+	}
+
+	/// <summary>
+	/// Returns true if and only if every component of lhs < every component of rhs
+	/// </summary>
+	/// <typeparam name="TLhs"></typeparam>
+	/// <typeparam name="TRhs"></typeparam>
+	/// <typeparam name="LHS_ALIGN"></typeparam>
+	/// <typeparam name="N"></typeparam>
+	/// <typeparam name="RHS_ALIGN"></typeparam>
+	/// <param name="lhs"></param>
+	/// <param name="rhs"></param>
+	/// <returns></returns>
+	template<typename TLhs, size_t LHS_ALIGN, size_t N, typename TRhs, size_t RHS_ALIGN>
+	constexpr bool AllLess(const Vec<TLhs, N, LHS_ALIGN>& lhs, const Vec<TRhs, N, RHS_ALIGN>& rhs)
+	{
+		for (size_t i = 0; i < N; i++)
+		{
+			if (lhs[i] > rhs[i])
+				return false;
+
+			if constexpr (std::is_floating_point_v<TLhs> || std::is_floating_point_v<TRhs>)
+			{
+				if (::Math::ApproximateEqualsF(lhs[i], rhs[i]))
+					return false;
+			}
+			else
+			{
+				if (lhs[i] == rhs[i])
+					return false;
+			}
+		}
+		return true;
+	}
+
 	template<typename T>
 	Vec<T, 2> Abs(const Vec<T, 2>& vec)
 	{

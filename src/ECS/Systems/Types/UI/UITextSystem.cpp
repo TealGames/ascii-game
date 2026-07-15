@@ -11,7 +11,7 @@ namespace Engine::UI
 	void UITextSystem::Init()
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UITextComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<UIRendererComponent>(), CreateRequiredComponentFunction(UIRendererComponent()),
 				[](ECS::EntityData& entity)-> void
 				{
 					entity.TryGetComponentMutable<UITextComponent>()->m_renderer = entity.TryGetComponentMutable<UIRendererComponent>();

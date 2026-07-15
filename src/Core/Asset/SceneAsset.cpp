@@ -302,6 +302,10 @@ namespace Engine::Scenes
 				"because resulting json was null", scene.ToString(), path.string()));
 			return;
 		}
-		::Utils::IO::TryWriteFile(path, sceneJson.dump());
+		if (!::Utils::IO::TryWriteFile(path, sceneJson.dump()))
+		{
+			LogError(std::format("Attempted to save scene: {} to path:{} but failed to write to file", scene.GetName(), path.string()));
+			return;
+		}
 	}
 }

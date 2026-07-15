@@ -16,6 +16,16 @@ namespace Engine::Animation
 	SpriteAnimatorSystem::SpriteAnimatorSystem(Rendering::EntityRenderer2DSystem& entityRenderer) 
 		: m_EntityRenderer(entityRenderer) {}
 
+	void SpriteAnimatorSystem::Init()
+	{
+		//TODO: decide -> should button allow required components from other entities?? if so technically we should not require
+		//text and selectable since it will look for on its own entity and instead maybe it is a different variant of required where
+		//it checks in the post add action if it has those component refs after construction and if not force adds them?
+		ECS::GlobalComponentInfo::AddComponentInfo(typeid(SpriteAnimatorComponent),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<Rendering::EntityRenderer2DComponent>(),
+				ECS::CreateRequiredComponentFunction(Rendering::EntityRenderer2DComponent())));
+	}
+
 	void SpriteAnimatorSystem::SystemUpdate(Scenes::Scene& scene, Camera::CameraComponent& mainCamera, const float& deltaTime)
 	{
 #ifdef ENABLE_PROFILER

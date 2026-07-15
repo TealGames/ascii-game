@@ -5,7 +5,7 @@
 
 namespace Engine::Rendering
 {
-	const std::array<std::string_view,1> SpriteAsset::EXTENSIONS = { ".json" };
+	const std::array<std::string_view,1> SpriteAsset::EXTENSIONS = { ".sprite" };
 
 	SpriteAsset::SpriteAsset(const std::filesystem::path& path)
 		: Asset(path), m_visual()

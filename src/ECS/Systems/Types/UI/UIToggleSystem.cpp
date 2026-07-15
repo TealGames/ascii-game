@@ -11,7 +11,7 @@ namespace Engine::UI
 	void UIToggleSystem::Init()
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UIToggleComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<UISelectableComponent>(), CreateRequiredComponentFunction(UISelectableComponent()),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<UISelectableComponent>(), CreateRequiredComponentFunction(UISelectableComponent()),
 				[](ECS::EntityData& entity)-> void
 				{
 					UIToggleComponent& toggle = *(entity.TryGetComponentMutable<UIToggleComponent>());

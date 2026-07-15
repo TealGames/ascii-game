@@ -21,7 +21,7 @@ namespace Engine::Player
 		m_inputManager(input), m_cheatsEnabled(CHEATS_ENABLED_DEFAULT), m_lastFrameGrounded(false)
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(PlayerComponent), 
-			Engine::ECS::ComponentInfo(Engine::ECS::CreateComponentTypes<Physics::PhysicsBodyComponent>(), 
+			Engine::ECS::ComponentInfo(Engine::ECS::CreateComponentTypeInfo<Physics::PhysicsBodyComponent>(), 
 				CreateRequiredComponentFunction(Physics::PhysicsBodyComponent()),
 			[](Engine::ECS::EntityData& entity)-> void
 			{

@@ -17,15 +17,16 @@ namespace Engine::UI
 		//text and selectable since it will look for on its own entity and instead maybe it is a different variant of required where
 		//it checks in the post add action if it has those component refs after construction and if not force adds them?
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UIButtonComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<UITextComponent, UISelectableComponent>(),
-				ECS::CreateRequiredComponentFunction(UITextComponent("", Editor::Styles::GetTextStyleFactorSize(TextAlignment::Center)), UISelectableComponent()),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<UITextComponent, UISelectableComponent>(),
+				ECS::CreateRequiredComponentFunction(UITextComponent("", 
+					Editor::Styles::GetTextStyleFactorSize(TextAlignment::Center)), UISelectableComponent()),
 				[](ECS::EntityData& entity) -> void
 				{
 					UIButtonComponent& button = *(entity.TryGetComponentMutable<UIButtonComponent>());
 					//NOTE: since button allows text and selectable component in constructor AND they are not checked to be part 
 					//of the same button entity, it means we do not want to override with its components if it has other references it wants to use
-					if (button.m_textGUI != nullptr) button.m_textGUI = entity.TryGetComponentMutable<UITextComponent>();
-					if (button.m_selectable != nullptr) button.m_selectable = entity.TryGetComponentMutable<UISelectableComponent>();
+					if (button.m_textGUI == nullptr) button.m_textGUI = entity.TryGetComponentMutable<UITextComponent>();
+					if (button.m_selectable == nullptr) button.m_selectable = entity.TryGetComponentMutable<UISelectableComponent>();
 				}));
 	}
 

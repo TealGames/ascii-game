@@ -114,9 +114,9 @@ namespace Engine::Math
 	template<size_t ALIGN = 0>
 	bool IsFullyOutsideBounds(const AABB3DBase<ALIGN>& aabb, const Vec3& pos)
 	{
-		if (pos > aabb.m_MinPos && pos > aabb.m_MaxPos)
+		if (Math::AllGreater(pos, aabb.m_MinPos) && Math::AllGreater(pos, aabb.m_MaxPos))
 			return true;
-		if (pos < aabb.m_MinPos && pos < aabb.m_MaxPos)
+		if (Math::AllLess(pos, aabb.m_MinPos) && Math::AllLess(pos, aabb.m_MaxPos))
 			return true;
 
 		return false;

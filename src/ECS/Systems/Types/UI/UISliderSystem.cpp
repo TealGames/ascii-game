@@ -13,7 +13,7 @@ namespace Engine::UI
 	void UISliderSystem::Init()
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(UISliderComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<UIRendererComponent, UIPanelComponent, UISelectableComponent>(),
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<UIRendererComponent, UIPanelComponent, UISelectableComponent>(),
 				CreateRequiredComponentFunction(UIRendererComponent(), UIPanelComponent(), UISelectableComponent()),
 				[this](ECS::EntityData& entity)-> void
 				{

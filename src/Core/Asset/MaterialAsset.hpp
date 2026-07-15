@@ -4,14 +4,18 @@
 
 namespace Engine::Rendering
 {
+	class TextureAsset;
 	class MaterialAsset : public Assets::Asset
 	{
 	private:
+		Rendering::TextureAsset* m_albedoAsset;
+		Rendering::TextureAsset* m_normalMapAsset;
 		Rendering::Material m_material;
+
 	public:
 		static const std::array<std::string_view,1> EXTENSIONS;
+
 	private:
-		Rendering::Texture* ToTexture(const std::string& value);
 	public:
 		MaterialAsset(const std::filesystem::path& path);
 		~MaterialAsset() = default;
@@ -19,5 +23,6 @@ namespace Engine::Rendering
 		const Rendering::Material& GetMaterial() const;
 		Rendering::Material& GetMaterialMutable();
 		void UpdateAssetFromFile() override;
+		void SaveToPath(const std::filesystem::path& path) override;
 	};
 }

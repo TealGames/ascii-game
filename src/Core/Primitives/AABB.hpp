@@ -65,7 +65,8 @@ namespace Engine
 		{
 			// NOTE: ideally max is STRICTLY greater than min but due to floating imprecission operations
 			// we allow equal and we just fix 0 or close to 0 size axes 
-			ENGINE_ASSERT(maxPos >= minPos, "Attempted to create AABB3d with invalid max: {} and/or min pos:{}", maxPos.ToString(), minPos.ToString());
+			ENGINE_ASSERT(Math::AllGreaterEqual(m_MaxPos, m_MinPos), "Attempted to create AABB3d with invalid max: {} and/or min pos:{}", 
+				m_MaxPos.ToString(), m_MinPos.ToString());
 			if (fixZeroAxis) FixZeroAxes();
 		}
 

@@ -15,7 +15,7 @@ namespace Engine::Editor::UI
 	void UIColorPickerSystem::Init()
 	{
 		ECS::GlobalComponentInfo::AddComponentInfo(typeid(ColorPickerEditorComponent),
-			ECS::ComponentInfo(ECS::CreateComponentTypes<UI::UIRendererComponent, UI::UISelectableComponent>(), 
+			ECS::ComponentInfo(ECS::CreateComponentTypeInfo<UI::UIRendererComponent, UI::UISelectableComponent>(), 
 				ECS::CreateRequiredComponentFunction(UI::UIRendererComponent(), UI::UISelectableComponent()),
 				[this](ECS::EntityData& entity)-> void
 				{

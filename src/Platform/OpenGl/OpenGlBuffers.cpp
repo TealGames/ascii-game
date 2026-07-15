@@ -181,8 +181,9 @@ namespace Engine::Rendering::OpenGl
 		GL_CALL(glUnmapNamedBuffer(id));
 		return;
 	}
-	static void DeallocateVertexBuffer(const RenderObjectId id)
+	static void DeallocateBuffer(const RenderObjectId id)
 	{
+		if (id == 12) LogWarning("Deallocated buffer 12");
 		GL_CALL(glDeleteBuffers(1, &id));
 	}
 
@@ -193,7 +194,7 @@ namespace Engine::Rendering::OpenGl
 			{
 				AllocateVertexBuffer,
 				WriteVertexBuffer,
-				DeallocateVertexBuffer
+				DeallocateBuffer
 			});
 	}
 
@@ -241,10 +242,6 @@ namespace Engine::Rendering::OpenGl
 		GL_CALL(glUnmapNamedBuffer(id));
 		return;
 	}
-	static void DeallocateIndexBuffer(const RenderObjectId id)
-	{
-		GL_CALL(glDeleteBuffers(1, &id));
-	}
 
 	IndexBuffer CreateIndexBuffer(const IndexType* indexArray, const size_t arraySize)
 	{
@@ -253,7 +250,7 @@ namespace Engine::Rendering::OpenGl
 			{
 				AllocateIndexBuffer,
 				WriteIndexBuffer,
-				DeallocateIndexBuffer
+				DeallocateBuffer
 			});
 	}
 
@@ -281,10 +278,6 @@ namespace Engine::Rendering::OpenGl
 		GL_CALL(glGetNamedBufferSubData(id, byteOffset, readByteSize, writeData));
 	}
 
-	static void DeallocateUniformBuffer(const RenderObjectId id)
-	{
-		GL_CALL(glDeleteBuffers(1, &id));
-	}
 	UniformBuffer CreateUniformBuffer(const char* blockName)
 	{
 		return UniformBuffer(blockName,
@@ -294,7 +287,7 @@ namespace Engine::Rendering::OpenGl
 				BindUniformBuffer,
 				WriteUniformBuffer,
 				ReadUniformBuffer,
-				DeallocateUniformBuffer
+				DeallocateBuffer
 			});
 	}
 
@@ -321,11 +314,6 @@ namespace Engine::Rendering::OpenGl
 		ENGINE_ASSERT(glIsBuffer(id) == GL_TRUE, "OPENGL: Attempted to READ shader storage buffer but id:{} is not a valid buffer", id);
 		GL_CALL(glGetNamedBufferSubData(id, byteOffset, readByteSize, writeData));
 	}
-	static void DeallocateShaderStorageBuffer(const RenderObjectId id)
-	{
-		LogWarning(std::format("Is buffer:{}", glIsBuffer(id) == GL_TRUE));
-		GL_CALL(glDeleteBuffers(1, &id));
-	}
 	ShaderStorageBuffer CreateShaderStorageBuffer(const char* blockName)
 	{
 		return ShaderStorageBuffer(blockName,
@@ -335,7 +323,7 @@ namespace Engine::Rendering::OpenGl
 				BindShaderStorageBuffer,
 				WriteShaderStorageBuffer,
 				ReadShaderStorageBuffer,
-				DeallocateShaderStorageBuffer
+				DeallocateBuffer
 			});
 	}
 
